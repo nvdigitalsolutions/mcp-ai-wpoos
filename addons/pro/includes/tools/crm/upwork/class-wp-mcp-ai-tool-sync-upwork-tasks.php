@@ -150,6 +150,7 @@ class WP_MCP_AI_Tool_Sync_Upwork_Tasks implements WP_MCP_AI_Tool_Interface, WP_M
 			'idempotent',
 			'requires-capability',
 			'external-api',
+			'rate-limited',
 		);
 	}
 

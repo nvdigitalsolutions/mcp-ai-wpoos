@@ -1210,13 +1210,171 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			return $result;
 		}
 
-		return array(
-			'type'     => 'agent',
-			'agent_id' => $agent_id,
-			'prompt'   => $prompt,
-			'status'   => 'completed',
-			'message'  => __( 'Agent execution queued.', 'mcp-ai-wpoos' ),
+		// Resolve agent_id to a numeric assistant post ID if it's a slug/name.
+		$resolved_id = $this->resolve_agent_to_assistant_id( $agent_id );
+		if ( ! $resolved_id ) {
+			return new WP_Error(
+				'agent_not_found',
+				sprintf(
+					/* translators: %s: agent identifier */
+					__( 'Agent "%s" could not be resolved to an assistant.', 'mcp-ai-wpoos' ),
+					$agent_id
+				)
+			);
+		}
+
+		// Dispatch the agent run via the internal REST API, following the
+		// same pattern as dispatch_assistant_run() in the pro schedule manager.
+		if ( ! function_exists( 'rest_do_request' ) ) {
+			return new WP_Error(
+				'rest_unavailable',
+				__( 'REST API is not available for agent execution.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$rest_server = rest_get_server();
+		if ( ! $rest_server ) {
+			return new WP_Error(
+				'rest_server_unavailable',
+				__( 'REST API server is not available.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => $prompt,
+			),
 		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $resolved_id,
+				'messages'     => $messages,
+				'stream'       => false,
+				'context'      => array(
+					'source'      => 'workflow_builder_agent_node',
+					'agent_id'    => $agent_id,
+				),
+			)
+		);
+
+		try {
+			$response = rest_do_request( $request );
+
+			if ( $response->is_error() ) {
+				$error_data = $response->get_data();
+				return new WP_Error(
+					'agent_execution_failed',
+					isset( $error_data['message'] )
+						? $error_data['message']
+						: __( 'Agent execution request failed.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$response_data = $response->get_data();
+
+			// Extract the assistant reply.
+			$reply = '';
+			if ( isset( $response_data['data']['choices'] ) && is_array( $response_data['data']['choices'] ) ) {
+				foreach ( $response_data['data']['choices'] as $choice ) {
+					if ( isset( $choice['finish_reason'] ) && 'stop' === $choice['finish_reason']
+						&& isset( $choice['message']['content'] )
+					) {
+						$reply = $choice['message']['content'];
+						break;
+					}
+				}
+
+				if ( '' === $reply ) {
+					$last = end( $response_data['data']['choices'] );
+					if ( isset( $last['message']['content'] ) ) {
+						$reply = $last['message']['content'];
+					}
+				}
+			}
+
+			if ( '' === $reply && isset( $response_data['agentic_tool_messages'] ) && is_array( $response_data['agentic_tool_messages'] ) ) {
+				foreach ( $response_data['agentic_tool_messages'] as $msg ) {
+					if ( isset( $msg['role'] ) && 'assistant' === $msg['role'] && ! empty( $msg['content'] ) ) {
+						$reply = $msg['content'];
+						break;
+					}
+				}
+			}
+
+			return array(
+				'type'     => 'agent',
+				'agent_id' => $agent_id,
+				'prompt'   => $prompt,
+				'status'   => 'completed',
+				'response' => $reply,
+			);
+		} catch ( \Throwable $e ) {
+			return new WP_Error(
+				'agent_execution_error',
+				sprintf(
+					'%s in %s:%d',
+					$e->getMessage(),
+					str_replace( ABSPATH, '', $e->getFile() ),
+					$e->getLine()
+				)
+			);
+		}
+	}
+
+	/**
+	 * Resolve an agent identifier (slug, name, or numeric string) to an
+	 * assistant post ID.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $agent_id Agent identifier.
+	 * @return int|null Assistant post ID or null if not found.
+	 */
+	private function resolve_agent_to_assistant_id( $agent_id ) {
+		if ( is_numeric( $agent_id ) ) {
+			$post = get_post( (int) $agent_id );
+			if ( $post && 'mcp_ai_assistant' === $post->post_type && 'publish' === $post->post_status ) {
+				return (int) $agent_id;
+			}
+			return null;
+		}
+
+		// Try slug first.
+		$slug  = sanitize_title( $agent_id );
+		$posts = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'name'           => $slug,
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
+
+		if ( ! empty( $posts ) ) {
+			return (int) $posts[0];
+		}
+
+		// Try title.
+		$posts = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'title'          => $agent_id,
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
+
+		if ( ! empty( $posts ) ) {
+			return (int) $posts[0];
+		}
+
+		return null;
 	}
 
 	/**

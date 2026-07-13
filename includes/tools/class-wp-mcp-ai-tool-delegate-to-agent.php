@@ -20,8 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Delegates a subtask to a specialized agent.
  *
  * This tool enables AI models to assign specific subtasks to appropriate agent roles
- * (planner, executor, critic) by profession ID. The agent will execute the task
- * using its specialized tools and expertise.
+ * (planner, executor, critic) by profession ID, assistant name/slug, or virtual agent ID.
+ * The agent will execute the task using its specialized tools and expertise.
  *
  * @since 1.1.0
  */
@@ -58,7 +58,7 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'agent_id'        => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'The agent_id value from the create_agent_team response. This can be an integer assistant post ID or a virtual agent string ID (e.g., "virtual_executor_abc123"). Do NOT use profession names.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The target agent to delegate to. Accepts: (1) numeric assistant post ID, (2) assistant name or slug (e.g., "content-writer" or "Content Writer"), (3) profession name/slug (resolves to the profession\'s associated assistant), or (4) virtual agent string ID from create_agent_team (e.g., "virtual_executor_abc123").', 'mcp-ai-wpoos' ),
 				),
 				'task'            => array(
 					'type'        => 'string',
@@ -128,11 +128,25 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		// agent_id can be an integer (real assistant) or string (virtual agent).
-		$agent_id        = $arguments['agent_id'];
+		// agent_id can be an integer (real assistant), string name/slug, or virtual agent string.
+		$raw_agent_id    = $arguments['agent_id'];
 		$task            = sanitize_textarea_field( $arguments['task'] );
 		$task_context    = isset( $arguments['context'] ) ? $arguments['context'] : array();
 		$expected_output = isset( $arguments['expected_output'] ) ? $arguments['expected_output'] : array();
+
+		// Resolve agent_id: numeric IDs and virtual_ strings pass through;
+		// names/slugs/profession names are resolved to assistant post IDs.
+		$resolution  = $this->resolve_agent_id( $raw_agent_id );
+		$agent_id    = $resolution['agent_id'];
+		$target_type = $resolution['target_type'];
+		$resolved_by = $resolution['resolved_by'];
+
+		if ( null === $agent_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				$resolution['error']
+			);
+		}
 
 		// Merge execution context with task context to preserve team_id and other workflow data.
 		// This ensures virtual agents can be resolved properly.
@@ -153,7 +167,10 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			'Task delegation requested',
 			array(
 				'agent_id'    => $agent_id,
-				'is_virtual'  => is_string( $agent_id ) && 0 === strpos( $agent_id, 'virtual_' ),
+				'raw_input'   => $raw_agent_id,
+				'target_type' => $target_type,
+				'resolved_by' => $resolved_by,
+				'is_virtual'  => 'virtual_agent' === $target_type,
 				'team_id'     => isset( $merged_context['team_id'] ) ? $merged_context['team_id'] : 'none',
 				'workflow_id' => isset( $merged_context['workflow_id'] ) ? $merged_context['workflow_id'] : 'none',
 				'task'        => substr( $task, 0, 100 ) . ( strlen( $task ) > 100 ? '...' : '' ),
@@ -175,16 +192,21 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			'description'     => $task,
 			'context'         => $merged_context,
 			'expected_output' => $expected_output,
-			'delegated_by'    => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
+			'delegated_by'    => isset( $context['user_id'] ) ? $context['user_id'] : 0,
 			'delegated_at'    => current_time( 'mysql' ),
 		);
 
-		// Delegate task, passing merged context so virtual agents can be resolved.
+		// Delegate task inline (run_inline = true) so the parent assistant
+		// receives the actual result rather than a fire-and-forget status.
+		// This matches the synchronous behaviour of image generation and
+		// other AI-interactive tools — the tool blocks until the target
+		// agent completes, then returns the agent's response.
 		$result = $communication_service->delegate_task(
 			isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
 			$agent_id,
 			$task_data,
-			$merged_context
+			$merged_context,
+			true // Run inline.
 		);
 
 		if ( is_wp_error( $result ) ) {
@@ -207,15 +229,44 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		// Log successful delegation.
+		$delegation_id = $result['delegation_id'];
+
+		// Log successful delegation record creation.
 		WP_MCP_AI_Logger::log_event(
-			'agent_delegation_successful',
-			'Task successfully delegated to agent',
+			'agent_delegation_created',
+			'Delegation record created; processing inline',
 			array(
-				'delegation_id' => $result['delegation_id'],
+				'delegation_id' => $delegation_id,
 				'agent_id'      => $agent_id,
 				'agent_name'    => $result['agent_name'],
 				'agent_role'    => $result['agent_role'],
+				'mode'          => 'inline',
+			)
+		);
+
+		// Process the delegation synchronously — the parent assistant
+		// waits for the target agent to complete before continuing.
+		// Virtual agents cannot be dispatched to the chat endpoint and
+		// will fail inside process_pending_delegation(); the result is
+		// still captured so callers always see a concrete outcome.
+		WP_MCP_AI_Agent_Communication_Service::process_pending_delegation( $delegation_id );
+
+		// Read the final result from the delegation transient.
+		$delegation_key  = 'wp_mcp_ai_delegation_' . $delegation_id;
+		$delegation_data = get_transient( $delegation_key );
+
+		$final_status = is_array( $delegation_data ) && isset( $delegation_data['status'] )
+			? $delegation_data['status']
+			: 'unknown';
+
+		// Log the final outcome.
+		WP_MCP_AI_Logger::log_event(
+			'agent_delegation_completed',
+			'Inline delegation processing finished',
+			array(
+				'delegation_id' => $delegation_id,
+				'agent_id'      => $agent_id,
+				'status'        => $final_status,
 			)
 		);
 
@@ -226,40 +277,226 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 				$orchestrator->update_workflow_task_status(
 					$merged_context['workflow_id'],
 					$merged_context['task_name'],
-					'completed',
+					'completed' === $final_status ? 'completed' : 'failed',
 					array(
-						'agent_id'       => $agent_id,
-						'agent_name'     => $result['agent_name'],
-						'execution_time' => 0, // Actual execution happens async.
+						'agent_id'      => $agent_id,
+						'agent_name'    => $result['agent_name'],
+						'delegation_id' => $delegation_id,
+						'final_status'  => $final_status,
 					)
 				);
 			}
 		}
 
-		// Format delegation result.
-		return array(
+		// Build the response that the parent assistant sees.
+		$response = array(
 			'success'    => true,
-			'message'    => __( 'Task successfully delegated to agent.', 'mcp-ai-wpoos' ),
+			'message'    => __( 'Task delegated and completed.', 'mcp-ai-wpoos' ),
 			'delegation' => array(
-				'delegation_id' => $result['delegation_id'],
+				'delegation_id' => $delegation_id,
 				'agent_id'      => $agent_id,
 				'agent_name'    => $result['agent_name'],
 				'agent_role'    => $result['agent_role'],
+				'target_type'   => $target_type,
 				'task'          => $task,
-				'status'        => $result['status'],
+				'status'        => $final_status,
 				'delegated_at'  => $result['delegated_at'],
 			),
-			'next_steps' => array(
-				__( 'Wait for agent to complete the task', 'mcp-ai-wpoos' ),
-				__( 'Check delegation status if needed', 'mcp-ai-wpoos' ),
-				__( 'Use aggregate_agent_results to combine with other agent outputs', 'mcp-ai-wpoos' ),
+		);
+
+		// Surface the agent's actual response when available.
+		if ( 'completed' === $final_status && isset( $delegation_data['result']['response'] ) ) {
+			$response['agent_response'] = $delegation_data['result']['response'];
+		} elseif ( 'failed' === $final_status && isset( $delegation_data['error'] ) ) {
+			$response['error']   = $delegation_data['error'];
+			$response['message'] = sprintf(
+				/* translators: %s: error message from the target agent */
+				__( 'Agent task failed: %s', 'mcp-ai-wpoos' ),
+				$delegation_data['error']
+			);
+		}
+
+		return $response;
+	}
+
+
+	/**
+	 * Resolve an agent_id input to a concrete agent identifier.
+	 *
+	 * Accepts numeric post IDs, virtual agent strings, assistant names/slugs,
+	 * and profession names/slugs. Returns the resolved ID, target type flag,
+	 * and resolution method used.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param int|string $raw_agent_id Agent identifier from tool arguments.
+	 * @return array {
+	 *     @type int|string|null $agent_id    Resolved agent ID, or null on failure.
+	 *     @type string         $target_type 'assistant', 'virtual_agent', or 'unknown'.
+	 *     @type string         $resolved_by How the ID was resolved: 'numeric_id', 'virtual_prefix',
+	 *                                        'assistant_slug', 'assistant_title', 'profession_name', 'none'.
+	 *     @type string         $error       Error message when agent_id is null.
+	 * }
+	 */
+	protected function resolve_agent_id( $raw_agent_id ) {
+		// 1. Numeric ID — pass through as real assistant.
+		if ( is_numeric( $raw_agent_id ) ) {
+			return array(
+				'agent_id'    => absint( $raw_agent_id ),
+				'target_type' => 'assistant',
+				'resolved_by' => 'numeric_id',
+				'error'       => '',
+			);
+		}
+
+		// 2. String input.
+		if ( ! is_string( $raw_agent_id ) || '' === trim( $raw_agent_id ) ) {
+			return array(
+				'agent_id'    => null,
+				'target_type' => 'unknown',
+				'resolved_by' => 'none',
+				'error'       => __( 'Agent ID is empty.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$raw_agent_id = trim( $raw_agent_id );
+
+		// 3. Virtual agent — pass through unchanged.
+		if ( 0 === strpos( $raw_agent_id, 'virtual_' ) ) {
+			return array(
+				'agent_id'    => $raw_agent_id,
+				'target_type' => 'virtual_agent',
+				'resolved_by' => 'virtual_prefix',
+				'error'       => '',
+			);
+		}
+
+		// 4. Try to resolve as an assistant by slug (post_name).
+		$slug  = sanitize_title( $raw_agent_id );
+		$posts = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'name'           => $slug,
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
+
+		if ( ! empty( $posts ) ) {
+			return array(
+				'agent_id'    => $posts[0],
+				'target_type' => 'assistant',
+				'resolved_by' => 'assistant_slug',
+				'error'       => '',
+			);
+		}
+
+		// 5. Try exact match by assistant title.
+		$posts = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'title'          => $raw_agent_id,
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
+
+		if ( ! empty( $posts ) ) {
+			return array(
+				'agent_id'    => $posts[0],
+				'target_type' => 'assistant',
+				'resolved_by' => 'assistant_title',
+				'error'       => '',
+			);
+		}
+
+		// 6. Try partial match by assistant title.
+		$posts = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				's'              => $raw_agent_id,
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
+
+		if ( ! empty( $posts ) ) {
+			return array(
+				'agent_id'    => $posts[0],
+				'target_type' => 'assistant',
+				'resolved_by' => 'assistant_title',
+				'error'       => '',
+			);
+		}
+
+		// 7. Try profession name/slug → associated assistant.
+		$profession_post = null;
+
+		// Look up profession by slug.
+		$prof_query = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_profession',
+				'post_status'    => 'publish',
+				'name'           => $slug,
+				'posts_per_page' => 1,
+			)
+		);
+
+		if ( empty( $prof_query ) ) {
+			// Try profession by title.
+			$prof_query = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_profession',
+					'post_status'    => 'publish',
+					'title'          => $raw_agent_id,
+					'posts_per_page' => 1,
+				)
+			);
+		}
+
+		if ( ! empty( $prof_query ) ) {
+			$profession_post = $prof_query[0];
+		}
+
+		if ( $profession_post ) {
+			$associated_assistant = get_post_meta(
+				$profession_post->ID,
+				'_wp_mcp_ai_profession_associated_assistant',
+				true
+			);
+			$associated_assistant = absint( $associated_assistant );
+
+			if ( $associated_assistant > 0 ) {
+				$assistant_post = get_post( $associated_assistant );
+				if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
+					return array(
+						'agent_id'    => $associated_assistant,
+						'target_type' => 'assistant',
+						'resolved_by' => 'profession_name',
+						'error'       => '',
+					);
+				}
+			}
+		}
+
+		// 8. Could not resolve.
+		return array(
+			'agent_id'    => null,
+			'target_type' => 'unknown',
+			'resolved_by' => 'none',
+			'error'       => sprintf(
+				/* translators: %s: the unresolved agent identifier */
+				__( 'Could not find an assistant or profession named "%s". Use an assistant post ID, assistant name/slug, profession name, or virtual agent ID from create_agent_team.', 'mcp-ai-wpoos' ),
+				$raw_agent_id
 			),
 		);
 	}
 
 
 	/**
-
 	 * Get extended tool definition including toolkit metadata.
 	 *
 	 * @since 1.1.0
@@ -267,21 +504,13 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return array Tool definition with metadata.
 	 */
 	public function get_definition() {
-
 		return array(
-
 			'name'                  => $this->get_name(),
-
 			'description'           => $this->get_description(),
-
 			'toolkit'               => 'workflow_automation',
-
 			'pattern_compatibility' => array( 'hierarchical' ),
-
 			'profession_tags'       => array( 'project_manager' ),
-
 			'risk_level'            => 'standard',
-
 		);
 	}
 

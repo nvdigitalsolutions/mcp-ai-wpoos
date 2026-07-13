@@ -7,8 +7,8 @@
  * the active conversation session.
  */
 
-import { type JSX, useCallback, useMemo } from 'react';
-import { HashRouter, useNavigate } from 'react-router-dom';
+import { type JSX, useMemo } from 'react';
+import { HashRouter } from 'react-router-dom';
 import { __ } from '@wordpress/i18n';
 
 import { readProSpaConfig } from '../../api/config';
@@ -21,19 +21,20 @@ import { StatusBar } from './StatusBar';
 import { AppRouter } from '../../router';
 
 // ---------------------------------------------------------------------------
-// Inner component — rendered inside HashRouter so useNavigate is available
+// Inner component — rendered inside HashRouter
 // ---------------------------------------------------------------------------
 
 interface LayoutContentProps {
 	transcriptsEndpoint: string;
-	threadsEndpoint: string;
 	assistantsEndpoint: string;
 	nonce: string;
 	assistantId: number;
+	apiRoot: string;
+	mediaEndpoint: string;
 }
 
 function LayoutContent( props: LayoutContentProps ): JSX.Element {
-	const { transcriptsEndpoint, threadsEndpoint, assistantsEndpoint, nonce, assistantId } = props;
+	const { transcriptsEndpoint, assistantsEndpoint, nonce, assistantId, apiRoot, mediaEndpoint } = props;
 
 	// ---- transcripts (conversation sessions) — single source of truth ----
 	const transcripts = useTranscripts( {
@@ -44,21 +45,12 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 
 	// ---- UI store (sidebar / right-panel toggles / theme) ----
 	const sidebarOpen = useUIStore( ( s ) => s.sidebarOpen );
+	const toggleSidebar = useUIStore( ( s ) => s.toggleSidebar );
+	const setSidebarOpen = useUIStore( ( s ) => s.setSidebarOpen );
 	const rightPanelOpen = useUIStore( ( s ) => s.rightPanelOpen );
 	const theme = useUIStore( ( s ) => s.theme );
 
-	// ---- thread selection callback (no URL navigation needed) ----
-	const navigate = useNavigate();
-	const handleSelectThread = useCallback(
-		( threadId: number ) => {
-			// Navigate to the chat route so ChatPage is rendered.
-			// Thread messages are loaded by the sidebar and injected
-			// into ChatPage via chatSpoke.setMessages() in the router.
-			navigate( '/chat' );
-		},
-		[ navigate ]
-	);
-
+	// ---- UI store (sidebar / right-panel toggles / theme) ----
 	return (
 		<div
 			className={ [
@@ -79,10 +71,10 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 				onSelectSession={ transcripts.selectSession }
 				onDeleteSession={ transcripts.deleteSession }
 				onNewSession={ transcripts.startNewSession }
-				threadsEndpoint={ threadsEndpoint }
 				nonce={ nonce }
-				onSelectThread={ handleSelectThread }
 				assistantsEndpoint={ assistantsEndpoint }
+				apiRoot={ apiRoot }
+				mediaEndpoint={ mediaEndpoint }
 			/>
 
 			{ /* ---- main content ---- */ }
@@ -91,6 +83,23 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 				id="nvoos-pro-spa-main-content"
 				role="main"
 			>
+				{ /* Mobile sidebar toggle (visible only on small screens) */ }
+				<button
+					type="button"
+					className="nvoos-pro-spa-mobile-sidebar-toggle"
+					onClick={ toggleSidebar }
+					aria-label={
+						sidebarOpen
+							? __( 'Close sidebar', 'nvoos-pro-spa' )
+							: __( 'Open sidebar', 'nvoos-pro-spa' )
+					}
+					aria-expanded={ sidebarOpen }
+				>
+					<span className="nvoos-pro-spa-mobile-sidebar-toggle__icon">
+						☰
+					</span>
+				</button>
+
 				<AppRouter transcripts={ transcripts } />
 			</main>
 
@@ -102,6 +111,16 @@ function LayoutContent( props: LayoutContentProps ): JSX.Element {
 				transcriptsEndpoint={ transcriptsEndpoint }
 				nonce={ nonce }
 			/>
+
+			{/* Mobile sidebar overlay */}
+			{ sidebarOpen && (
+				// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+				<div
+					className="nvoos-pro-spa-sidebar-overlay"
+					onClick={ () => setSidebarOpen( false ) }
+					aria-hidden="true"
+				/>
+			) }
 
 		</div>
 	);
@@ -132,19 +151,21 @@ export function Layout(): JSX.Element {
 	}
 
 	const {
-		endpoints: { transcripts: transcriptsEndpoint, threads: threadsEndpoint, assistants: assistantsEndpoint },
+		endpoints: { transcripts: transcriptsEndpoint, assistants: assistantsEndpoint, upload: mediaEndpoint },
 		nonce,
 		config: { assistantId },
+		apiUrl,
 	} = runtime;
 
 	return (
 		<HashRouter>
 			<LayoutContent
 				transcriptsEndpoint={ transcriptsEndpoint }
-				threadsEndpoint={ threadsEndpoint }
 				assistantsEndpoint={ assistantsEndpoint }
 				nonce={ nonce }
 				assistantId={ assistantId ?? 0 }
+				apiRoot={ apiUrl }
+				mediaEndpoint={ mediaEndpoint ?? '' }
 			/>
 		</HashRouter>
 	);

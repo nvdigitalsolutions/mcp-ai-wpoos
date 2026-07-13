@@ -1,7 +1,7 @@
 # NV oOS Pro vs Base Version Guide
 
 > **GSD Context File** — Load this when making decisions about Base vs Pro feature placement.
-> Last reviewed: June 29, 2026.
+> Last reviewed: July 13, 2026.
 
 ---
 
@@ -12,7 +12,7 @@ NV oOS has two distribution modes:
 | Mode | Constant | Tools | Description |
 |------|---------|-------|-------------|
 | **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~195 core tools | Open-source, WordPress.org compatible |
-| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,000+ tools (~195 base + ~800+ Pro) | Premium addon with third-party integrations |
+| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,025+ tools (~195 base + ~830+ Pro) | Premium addon with third-party integrations |
 
 ---
 
@@ -39,6 +39,9 @@ NV oOS has two distribution modes:
 - AI safety features (Layer I guardrails, jailbreak detection)
 - SaaS platforms (Schedule Anything with Stripe)
 - Advanced AI features (code interpreter, speech services via LibreChat)
+- Meta-Harness auto-optimization (trace capture, search engine, proposer, auto-deploy)
+- Agent delegation (inline execution, REST dispatch, cron resilience)
+- Tool presets system (essentials layers, auto-upgrade, deduplication)
 
 ---
 

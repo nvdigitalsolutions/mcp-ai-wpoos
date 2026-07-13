@@ -88,7 +88,10 @@ Every agent session loads these two files:
 | [`.context/chat-ui.md`](.context/chat-ui.md) | Working on frontend chat interface |
 | [`.context/testing.md`](.context/testing.md) | Writing or reviewing tests |
 | [`.context/pro-vs-base.md`](.context/pro-vs-base.md) | Making Base vs Pro placement decisions |
-| [`docs/features/llm-harness.md`](docs/features/llm-harness.md) | Working on LLM Harnessing (Layers A–H) |
+| [`docs/features/llm-harness.md`](docs/features/llm-harness.md) | Working on LLM Harnessing (Layers A–J) |
+| [`docs/features/meta-harness-auto-optimization.md`](docs/features/meta-harness-auto-optimization.md) | Working on Meta-Harness trace capture, search, proposals, or auto-deploy |
+| [`docs/features/agent-delegation-system.md`](docs/features/agent-delegation-system.md) | Working on agent delegation, cron resilience, or tasks drawer |
+| [`docs/features/tool-presets-system.md`](docs/features/tool-presets-system.md) | Working on tool presets, essentials layers, or auto-upgrade |
 | [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md) | Working on the Chat-client Memory Bridge or Memory Drawer |
 | [`docs/features/context-window-management.md`](docs/features/context-window-management.md) | Working on context-window validation, tiktoken, or token-budget capping |
 | [`docs/features/pro-toolkit-optimization.md`](docs/features/pro-toolkit-optimization.md) | Working on Pro toolkit performance optimization classes |

@@ -24,6 +24,15 @@ import { __, sprintf } from '@wordpress/i18n';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { renderMarkdown } from '../api/markdown';
 import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
+import { UsageBadges, type UsageData } from './UsageBadges';
+import { CapabilityFlagBadges } from './CapabilityFlagBadges';
+import { SpeechButton } from './SpeechButton';
+import { JobCard } from './JobCard';
+import type { SpeechState } from '../hooks/useSpeechPlayback';
+import type { JobRecord } from '../hooks/useJobBus';
+import type { WorkflowState, DelegationData } from '../hooks/useAgentTeam';
+import { WorkflowTracker } from './WorkflowTracker';
+import { DelegationNotice } from './DelegationNotice';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -63,6 +72,24 @@ export interface MessageActionProps {
 	onFeedback?: ( msgId: string, rating: 'up' | 'down' ) => void;
 	/** Previously recorded feedback for this message. */
 	feedback?: 'up' | 'down' | null;
+	/** Usage data (tokens, cost, model) for this message (Phase 1: v0.8.0). */
+	usage?: UsageData | null;
+	/** Speech-TTS play callback (Phase 2: v0.8.0). */
+	onSpeechPlay?: ( text: string ) => void;
+	/** Speech-TTS stop callback (Phase 2: v0.8.0). */
+	onSpeechStop?: () => void;
+	/** Speech state lookup (Phase 2: v0.8.0). */
+	speechStateFor?: ( text: string ) => SpeechState;
+	/** Job records for async tool cards (Phase 3: v0.9.0). */
+	jobs?: Record< string, JobRecord >;
+	/** Cancel a job (Phase 3: v0.9.0). */
+	onCancelJob?: ( jobId: string ) => void;
+	/** Retry a job (Phase 3: v0.9.0). */
+	onRetryJob?: ( jobId: string ) => void;
+	/** Latest workflow state (Phase 4: v0.9.0). */
+	workflow?: WorkflowState | null;
+	/** Delegation notices to render (Phase 4: v0.9.0). */
+	delegations?: DelegationData[];
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -164,6 +191,15 @@ export function MessageView( {
 	onDelete,
 	onFeedback,
 	feedback,
+	usage,
+	onSpeechPlay,
+	onSpeechStop,
+	speechStateFor,
+	jobs,
+	onCancelJob,
+	onRetryJob,
+	workflow,
+	delegations,
 }: MessageActionProps ): JSX.Element {
 	const tools = Array.isArray( message.toolInvocations ) ? message.toolInvocations : [];
 	const annotations = Array.isArray( message.annotations ) ? message.annotations : [];
@@ -187,9 +223,33 @@ export function MessageView( {
 
 			{ tools.length > 0 && (
 				<div className="nvoos-chat-spa-tools">
-					{ tools.map( ( inv ) => (
-						<ToolCallCard key={ inv.toolCallId } invocation={ inv } />
-					) ) }
+					{ tools.map( ( inv ) => {
+						// Check for async tool results with job_id (Phase 3: v0.9.0).
+						const result = inv.result as Record< string, unknown > | undefined;
+						const asyncJobId =
+							inv.state === 'result' &&
+							result &&
+							( typeof result.job_id === 'string' ||
+								typeof result.jobId === 'string' )
+								? ( ( result.job_id ?? result.jobId ) as string )
+								: null;
+
+						// If we have a matching job in the job bus, show a live JobCard.
+						if ( asyncJobId && jobs?.[ asyncJobId ] ) {
+							return (
+								<JobCard
+									key={ inv.toolCallId }
+									job={ jobs[ asyncJobId ] }
+									onCancel={ onCancelJob }
+									onRetry={ onRetryJob }
+								/>
+							);
+						}
+
+						return (
+							<ToolCallCard key={ inv.toolCallId } invocation={ inv } />
+						);
+					} ) }
 				</div>
 			) }
 
@@ -204,6 +264,30 @@ export function MessageView( {
 				</div>
 			) }
 
+			{ /* Usage badges (Phase 1: v0.8.0) */ }
+			{ isAssistant && usage && (
+				<UsageBadges usage={ usage } />
+			) }
+
+			{ /* Capability flags (Phase 1: v0.8.0) */ }
+			{ isAssistant && (
+				<CapabilityFlagBadges
+					flags={
+						annotations
+							.filter(
+								( a ) =>
+									a !== null &&
+									typeof a === 'object' &&
+									( a as Record< string, unknown > ).type === 'capabilities'
+							)
+							.flatMap( ( a ) => {
+								const caps = ( a as Record< string, unknown > ).flags;
+								return Array.isArray( caps ) ? ( caps as string[] ) : [];
+							} )
+					}
+				/>
+			) }
+
 			{ showToolbar && content !== '' && (
 				<MessageToolbar
 					messageId={ message.id }
@@ -213,7 +297,23 @@ export function MessageView( {
 					feedback={ feedback }
 					onDelete={ onDelete }
 					onFeedback={ onFeedback }
+					onSpeechPlay={ onSpeechPlay }
+					onSpeechStop={ onSpeechStop }
+					speechStateFor={ speechStateFor }
 				/>
+			) }
+
+			{ /* Delegation notices (Phase 4: v0.9.0) — render per message */ }
+			{ isAssistant &&
+				delegations &&
+				delegations.length > 0 &&
+				delegations.map( ( d, di ) => (
+					<DelegationNotice key={ di } delegation={ d } />
+				) ) }
+
+			{ /* Workflow tracker (Phase 4: v0.9.0) — only on last assistant message */ }
+			{ isLastAssistant && workflow && workflow.steps.length > 0 && (
+				<WorkflowTracker workflow={ workflow } />
 			) }
 		</div>
 	);
@@ -249,10 +349,24 @@ function MessageContent( { content }: { content: string } ): JSX.Element {
 		return <VideoBlock url={ videoUrl } />;
 	}
 
-	// ── Image(s) ────────────────────────────────────────────────────────
+	// ── Image gallery — when images are present, render both the
+	// accompanying text and the gallery so the LLM's explanatory
+	// response isn't dropped (e.g. after a tool returns an image).
 	const imageUrls = extractImageUrls( content );
 	if ( imageUrls.length > 0 ) {
-		return <ImageGalleryBlock urls={ imageUrls } />;
+		// Strip markdown image syntax and bare image URLs from the
+		// text to avoid duplicating images rendered by the gallery.
+		const textWithoutImages = content
+			.replace( /!\[[^\]]*\]\([^)]*\)/g, '' )
+			.replace( /https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?\S*)?/gi, '' )
+			.trim();
+
+		return (
+			<>
+				{ textWithoutImages && <SafeMarkdownContent text={ textWithoutImages } /> }
+				<ImageGalleryBlock urls={ imageUrls } />
+			</>
+		);
 	}
 
 	// ── Standard markdown ───────────────────────────────────────────────
@@ -605,6 +719,10 @@ interface MessageToolbarProps {
 	feedback?: 'up' | 'down' | null;
 	onDelete?: ( msgId: string ) => void;
 	onFeedback?: ( msgId: string, rating: 'up' | 'down' ) => void;
+	/** Speech (v0.8.0). */
+	onSpeechPlay?: ( text: string ) => void;
+	onSpeechStop?: () => void;
+	speechStateFor?: ( text: string ) => SpeechState;
 }
 
 function MessageToolbar( {
@@ -615,6 +733,9 @@ function MessageToolbar( {
 	feedback,
 	onDelete,
 	onFeedback,
+	onSpeechPlay,
+	onSpeechStop,
+	speechStateFor,
 }: MessageToolbarProps ): JSX.Element {
 	const { copy, justCopied } = useCopyToClipboard();
 
@@ -695,6 +816,16 @@ function MessageToolbar( {
 				>
 					🗑
 				</button>
+			) }
+
+			{/* Speech (v0.8.0) */}
+			{ isAssistant && content !== '' && onSpeechPlay && onSpeechStop && speechStateFor && (
+				<SpeechButton
+					text={ content }
+					state={ speechStateFor( content ) }
+					onPlay={ onSpeechPlay }
+					onStop={ onSpeechStop }
+				/>
 			) }
 		</div>
 	);

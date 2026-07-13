@@ -1080,9 +1080,38 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			HOUR_IN_SECONDS * 6
 		);
 
-		// Schedule cron event.
-		if ( ! wp_next_scheduled( self::CRON_POLL_HOOK, array( $job_id ) ) ) {
-			wp_schedule_single_event( time() + self::POLLING_INTERVAL, self::CRON_POLL_HOOK, array( $job_id ) );
+		// Schedule first poll with a 1-second delay to ensure transient is saved.
+		// This prevents race condition where cron executes before database commit.
+		$first_poll_time = time() + 1;
+		wp_schedule_single_event( $first_poll_time, self::CRON_POLL_HOOK, array( $job_id ) );
+
+		// Trigger WordPress cron immediately so polling starts right away.
+		// WordPress cron is virtual and only runs on page loads by default.
+		// Without this, the job sits idle until the next page load, which may
+		// never arrive (especially on SSE connections).
+		// This matches the pattern used by the VEO video generation service.
+		spawn_cron();
+
+		// Inline-async-tick: fire the first poll on the shutdown of the current
+		// request so that jobs on hosts with DISABLE_WP_CRON (or a firewalled
+		// wp-cron.php) are advanced without waiting for the next loopback.
+		// The tick lock inside poll_video_async() prevents the shutdown kick and
+		// the WP-Cron event from both executing concurrently for the same job_id.
+		if ( self::inline_async_kick_enabled( $job_id, __CLASS__ ) ) {
+			$self = $this;
+			add_action(
+				'shutdown',
+				function () use ( $self, $job_id ) {
+					self::inline_async_detach_worker_from_client();
+					self::inline_async_run_kick(
+						__CLASS__,
+						$job_id,
+						function () use ( $self, $job_id ) {
+							$self->poll_video_async( $job_id );
+						}
+					);
+				}
+			);
 		}
 
 		WP_MCP_AI_Logger::log_event(

@@ -10,6 +10,13 @@ import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { type Message } from '@ai-sdk/react';
 import { renderMarkdown } from '../../components/shared/MarkdownContent';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
+import { UsageBadges, type UsageData } from '../../components/shared/UsageBadges';
+import { CapabilityFlagBadges } from '../../components/shared/CapabilityFlagBadges';
+import { SpeechButton, type SpeechState } from '../../components/shared/SpeechButton';
+import { JobCard, type JobRecord } from '../../components/shared/JobCard';
+import { WorkflowTracker, type WorkflowState } from '../../components/shared/WorkflowTracker';
+import { DelegationNotice, type DelegationData } from '../../components/shared/DelegationNotice';
+import { normaliseToolResult, type NormalisedToolResult, type AttachmentEntry } from '../../utils/normalise-tool-result';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -36,6 +43,19 @@ export interface MessageViewProps {
 	feedback?: 'up' | 'down' | null;
 	onEdit?: ( msgId: string ) => void;
 	onRegenerate?: () => void;
+	/** Usage data (v0.9.0). */
+	usage?: UsageData | null;
+	/** Speech (v0.9.0). */
+	onSpeechPlay?: ( text: string ) => void;
+	onSpeechStop?: () => void;
+	speechStateFor?: ( text: string ) => SpeechState;
+	/** Job cards (v0.9.0). */
+	jobs?: Record< string, JobRecord >;
+	onCancelJob?: ( id: string ) => void;
+	onRetryJob?: ( id: string ) => void;
+	/** Workflow + delegation (v0.9.0). */
+	workflow?: WorkflowState | null;
+	delegations?: DelegationData[];
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -57,7 +77,11 @@ function isLikelyJson( text: string ): boolean {
 }
 
 function isTruncatedContent( text: string ): boolean {
-	return text.includes( '…[truncated]' ) || text.includes( '…[content truncated' );
+	return (
+		text.includes( '…[truncated]' ) ||
+		text.includes( '…[content truncated' ) ||
+		text.includes( '[tool_result_truncated]' )
+	);
 }
 
 interface ChartData {
@@ -123,10 +147,10 @@ function messageText( message: Message ): string {
 			.map( ( part ) => {
 				if ( typeof part === 'string' ) return part;
 				if ( part && typeof part === 'object' && 'text' in part ) {
-					return String( ( part as { text: string } ).text );
+					return String( ( part as unknown as { text: string } ).text );
 				}
 				if ( part && typeof part === 'object' && 'type' in part && ( part as { type: string } ).type === 'text' ) {
-					return String( ( part as { text: string } ).text );
+					return String( ( part as unknown as { text: string } ).text );
 				}
 				return '';
 			} )
@@ -140,6 +164,7 @@ function roleLabel( role: string ): string {
 		case 'user': return __( 'You', 'nvoos-pro-spa' );
 		case 'assistant': return __( 'Assistant', 'nvoos-pro-spa' );
 		case 'system': return __( 'System', 'nvoos-pro-spa' );
+		case 'tool': return __( 'Tool', 'nvoos-pro-spa' );
 		default: return role || __( 'Unknown', 'nvoos-pro-spa' );
 	}
 }
@@ -148,6 +173,7 @@ function roleEmoji( role: string ): string {
 	switch ( role ) {
 		case 'assistant': return '🤖';
 		case 'user': return '👤';
+		case 'tool': return '🔧';
 		default: return '📋';
 	}
 }
@@ -164,12 +190,21 @@ export function MessageView( {
 	feedback,
 	onEdit,
 	onRegenerate,
+	usage,
+	onSpeechPlay,
+	onSpeechStop,
+	speechStateFor,
+	jobs,
+	onCancelJob,
+	onRetryJob,
+	workflow,
+	delegations,
 }: MessageViewProps ): JSX.Element {
-	const tools = Array.isArray( ( message as Record<string,unknown> ).toolInvocations )
-		? ( message as Record<string,unknown> ).toolInvocations as ToolInvocation[]
+	const tools = Array.isArray( ( message as unknown as Record<string,unknown> ).toolInvocations )
+		? ( message as unknown as Record<string,unknown> ).toolInvocations as ToolInvocation[]
 		: [];
-	const annotations = Array.isArray( ( message as Record<string,unknown> ).annotations )
-		? ( message as Record<string,unknown> ).annotations as Annotation[]
+	const annotations = Array.isArray( ( message as unknown as Record<string,unknown> ).annotations )
+		? ( message as unknown as Record<string,unknown> ).annotations as Annotation[]
 		: [];
 	const content = messageText( message );
 
@@ -231,23 +266,29 @@ export function MessageView( {
 			{/* Tool invocations */}
 			{ tools.length > 0 && (
 				<div className="nvoos-pro-spa-message-view__tools">
-					{ tools.map( ( inv ) => (
-						<ToolCallCard key={ inv.toolCallId } invocation={ inv } />
-					) ) }
+					{ tools.map( ( inv ) => {
+						const result = inv.result as Record< string, unknown > | undefined;
+						const asyncJobId = inv.state === 'result' && result && ( typeof result.job_id === 'string' || typeof result.jobId === 'string' )
+							? ( ( result.job_id ?? result.jobId ) as string ) : null;
+						if ( asyncJobId && jobs?.[ asyncJobId ] ) {
+							return <JobCard key={ inv.toolCallId } job={ jobs[ asyncJobId ] } onCancel={ onCancelJob } onRetry={ onRetryJob } />;
+						}
+						return <ToolCallCard key={ inv.toolCallId } invocation={ inv } />;
+					} ) }
 				</div>
 			) }
 
 			{/* Annotations */}
-			{ annotations.length > 0 && (
-				<div className="nvoos-pro-spa-message-view__annotations">
-					{ annotations.map( ( ann, idx ) => (
-						<AnnotationPill
-							key={ `${ message.id }-ann-${ idx }` }
-							annotation={ ann }
-						/>
-					) ) }
-				</div>
-			) }
+				{ annotations.length > 0 && (
+					<div className="nvoos-pro-spa-message-view__annotations">
+						{ annotations.map( ( ann, idx ) => (
+							<AnnotationPill
+								key={ `${ message.id }-ann-${ idx }` }
+								annotation={ ann }
+							/>
+						) ) }
+					</div>
+				) }
 
 			{/* Toolbar */}
 			{ showToolbar && content !== '' && (
@@ -261,7 +302,32 @@ export function MessageView( {
 					onFeedback={ onFeedback }
 					onEdit={ onEdit }
 					onRegenerate={ onRegenerate }
+					onSpeechPlay={ onSpeechPlay }
+					onSpeechStop={ onSpeechStop }
+					speechStateFor={ speechStateFor }
 				/>
+			) }
+
+			{/* Usage badges (v0.9.0) */}
+			{ isAssistant && usage && <UsageBadges usage={ usage } /> }
+
+			{/* Capability flags (v0.9.0) */}
+			{ isAssistant && (
+				<CapabilityFlagBadges
+					flags={ annotations
+						.filter( ( a ) => a?.type === 'capabilities' )
+						.flatMap( ( a ) => ( Array.isArray( ( a as Record< string, unknown > ).flags ) ? ( a as Record< string, unknown > ).flags as string[] : [] ) ) }
+				/>
+			) }
+
+			{/* Delegation notices (v0.9.0) */}
+			{ isAssistant && delegations && delegations.length > 0 && delegations.map( ( d, di ) => (
+				<DelegationNotice key={ di } delegation={ d } />
+			) ) }
+
+			{/* Workflow tracker (v0.9.0) */}
+			{ isLastAssistant && workflow && workflow.steps.length > 0 && (
+				<WorkflowTracker workflow={ workflow } />
 			) }
 		</article>
 	);
@@ -297,10 +363,24 @@ function MessageContent( { content }: { content: string } ): JSX.Element {
 		return <VideoBlock url={ videoUrl } />;
 	}
 
-	// Image gallery
+	// Image gallery — when images are present, render both the
+	// accompanying text and the gallery so the LLM's explanatory
+	// response isn't dropped (e.g. after a tool returns an image).
 	const imageUrls = extractImageUrls( content );
 	if ( imageUrls.length > 0 ) {
-		return <ImageGalleryBlock urls={ imageUrls } />;
+		// Strip markdown image syntax and bare image URLs from the
+		// text to avoid duplicating images rendered by the gallery.
+		const textWithoutImages = content
+			.replace( /!\[[^\]]*\]\([^)]*\)/g, '' )
+			.replace( /https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?\S*)?/gi, '' )
+			.trim();
+
+		return (
+			<>
+				{ textWithoutImages && <SafeMarkdownContent text={ textWithoutImages } /> }
+				<ImageGalleryBlock urls={ imageUrls } />
+			</>
+		);
 	}
 
 	// Standard markdown
@@ -494,25 +574,108 @@ function ImageGalleryBlock( { urls }: { urls: string[] } ): JSX.Element {
 
 // ── Tool invocation card ───────────────────────────────────────────────────────
 
+/** Render a single attachment with thumbnail, label, and download link. */
+function AttachmentItem( { att }: { att: AttachmentEntry } ): JSX.Element {
+	const isImg = att.isImage || ( att.mimeType?.startsWith( 'image/' ) ?? false ) || /^data:image\//i.test( att.url );
+	const isVid = att.isVideo || ( att.mimeType?.startsWith( 'video/' ) ?? false );
+
+	return (
+		<div className="nvoos-pro-spa-tool-attachment">
+			{ isImg ? (
+				<a href={ att.url } target="_blank" rel="noopener noreferrer" className="nvoos-pro-spa-tool-attachment-thumb">
+					<img src={ att.url } alt={ att.label } loading="lazy" />
+				</a>
+			) : isVid ? (
+				<video controls className="nvoos-pro-spa-tool-attachment-video" preload="metadata" src={ att.url } />
+			) : (
+				<span className="nvoos-pro-spa-tool-attachment-icon" aria-hidden="true">📄</span>
+			) }
+			<div className="nvoos-pro-spa-tool-attachment-info">
+				<a
+					href={ att.url }
+					target="_blank"
+					rel="noopener noreferrer"
+					download={ att.downloadName || undefined }
+					className="nvoos-pro-spa-tool-attachment-label"
+				>
+					{ att.label }
+				</a>
+				{ att.meta && (
+					<span className="nvoos-pro-spa-tool-attachment-meta">{ att.meta }</span>
+				) }
+			</div>
+		</div>
+	);
+}
+
+/** Render chart HTML in a sandboxed iframe. */
+function ToolChart( { html, width = 600, height = 400, title }: { html: string; width?: number; height?: number; title?: string } ): JSX.Element {
+	const blob = useMemo(
+		() =>
+			new Blob(
+				[
+					'<!DOCTYPE html><html><head><meta charset="utf-8">' +
+					'<script src="https://cdn.jsdelivr.net/npm/chart.js@4"><\/script>' +
+					'</head><body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh">' +
+					html +
+					'</body></html>',
+				],
+				{ type: 'text/html' }
+			),
+		[ html ]
+	);
+	const src = useMemo( () => URL.createObjectURL( blob ), [ blob ] );
+	useEffect( () => () => URL.revokeObjectURL( src ), [ src ] );
+
+	return (
+		<div className="nvoos-pro-spa-tool-chart">
+			{ title && <div className="nvoos-pro-spa-tool-chart-title">{ title }</div> }
+			<iframe
+				src={ src }
+				width={ width }
+				height={ height }
+				className="nvoos-pro-spa-tool-chart-iframe"
+				title={ __( 'Chart', 'nvoos-pro-spa' ) }
+				sandbox="allow-scripts allow-same-origin"
+			/>
+		</div>
+	);
+}
+
 function ToolCallCard( { invocation }: { invocation: ToolInvocation } ): JSX.Element {
 	const [ open, setOpen ] = useState( false );
 	const isResult = invocation.state === 'result';
-	const label = isResult
-		? __( 'tool result', 'nvoos-pro-spa' )
-		: __( 'running…', 'nvoos-pro-spa' );
+
+	// Normalise the result for structured display.
+	const normalised: NormalisedToolResult | null = useMemo(
+		() => ( isResult ? normaliseToolResult( invocation.toolName, invocation.result ) : null ),
+		[ isResult, invocation.toolName, invocation.result ]
+	);
+
+	// Build the summary label.
+	const summaryLabel = useMemo( () => {
+		if ( ! isResult ) return __( 'running…', 'nvoos-pro-spa' );
+		if ( normalised?.isAsyncPending ) return __( 'pending…', 'nvoos-pro-spa' );
+		if ( normalised?.isError ) return __( 'error', 'nvoos-pro-spa' );
+		return __( 'completed', 'nvoos-pro-spa' );
+	}, [ isResult, normalised ] );
+
+	const stateClass = normalised?.isError ? 'error' : normalised?.isAsyncPending ? 'pending' : invocation.state;
 
 	return (
 		<details
-			className={ `nvoos-pro-spa-tool nvoos-pro-spa-tool--${ invocation.state }` }
+			className={ `nvoos-pro-spa-tool nvoos-pro-spa-tool--${ stateClass }` }
 			open={ open }
 			onToggle={ ( e ) => setOpen( ( e.currentTarget as HTMLDetailsElement ).open ) }
 			data-tool-name={ invocation.toolName }
 		>
 			<summary>
 				<span className="nvoos-pro-spa-tool-name">{ invocation.toolName }</span>
-				<span className="nvoos-pro-spa-tool-state">{ label }</span>
+				<span className="nvoos-pro-spa-tool-state">{ summaryLabel }</span>
 			</summary>
-			{ invocation.args !== undefined && (
+
+			{/* Arguments (always show if present) */}
+			{ invocation.args !== undefined && Object.keys( invocation.args as object ).length > 0 && (
 				<div className="nvoos-pro-spa-tool-block">
 					<div className="nvoos-pro-spa-tool-block-label">
 						{ __( 'Arguments', 'nvoos-pro-spa' ) }
@@ -520,12 +683,69 @@ function ToolCallCard( { invocation }: { invocation: ToolInvocation } ): JSX.Ele
 					<pre>{ safeStringify( invocation.args ) }</pre>
 				</div>
 			) }
-			{ isResult && (
-				<div className="nvoos-pro-spa-tool-block">
-					<div className="nvoos-pro-spa-tool-block-label">
-						{ __( 'Result', 'nvoos-pro-spa' ) }
-					</div>
-					<pre>{ safeStringify( invocation.result ) }</pre>
+
+			{/* Result */}
+			{ isResult && normalised && (
+				<>
+					{/* Summary text */}
+					{ normalised.text && ! normalised.isTruncated && (
+						<div className="nvoos-pro-spa-tool-result-text">
+							{ normalised.isError && (
+								<span className="nvoos-pro-spa-tool-result-prefix" aria-hidden="true">⚠️ </span>
+							) }
+							{ normalised.isAsyncPending && (
+								<span className="nvoos-pro-spa-tool-result-prefix" aria-hidden="true">⏳ </span>
+							) }
+							{ normalised.text }
+						</div>
+					) }
+
+					{/* Chart */}
+					{ normalised.chartHtml && (
+						<ToolChart
+							html={ normalised.chartHtml }
+							width={ normalised.chartWidth }
+							height={ normalised.chartHeight }
+						/>
+					) }
+
+					{/* Attachments (images, videos, files) */}
+					{ normalised.attachments.length > 0 && (
+						<div className="nvoos-pro-spa-tool-attachments">
+							{ normalised.attachments.map( ( att, i ) => (
+								<AttachmentItem key={ `att-${ i }-${ att.url.slice( 0, 40 ) }` } att={ att } />
+							) ) }
+						</div>
+					) }
+
+					{/* Truncated content — show raw in a collapsible block */}
+					{ normalised.isTruncated && (
+						<details className="nvoos-pro-spa-tool-truncated">
+							<summary className="nvoos-pro-spa-tool-truncated-summary">
+								<span aria-hidden="true">{ '…' }</span>{ ' ' }
+								{ __( 'Truncated result', 'nvoos-pro-spa' ) }
+							</summary>
+							<pre>{ safeStringify( invocation.result ) }</pre>
+						</details>
+					) }
+
+					{/* Raw JSON fallback — always collapsible for in-depth inspection */}
+					{ ! normalised.isTruncated && (
+						<details className="nvoos-pro-spa-tool-raw">
+							<summary className="nvoos-pro-spa-tool-raw-summary">
+								{ __( 'Raw result', 'nvoos-pro-spa' ) }
+							</summary>
+							<pre>{ safeStringify( invocation.result ) }</pre>
+						</details>
+					) }
+				</>
+			) }
+
+			{/* Still running — show a spinner placeholder */}
+			{ ! isResult && (
+				<div className="nvoos-pro-spa-tool-running">
+					<span className="nvoos-pro-spa-tool-running-spinner" aria-hidden="true" />
+					{ __( 'Executing tool…', 'nvoos-pro-spa' ) }
 				</div>
 			) }
 		</details>
@@ -628,6 +848,10 @@ interface MessageToolbarProps {
 	onFeedback?: ( msgId: string, rating: 'up' | 'down' ) => void;
 	onEdit?: ( msgId: string ) => void;
 	onRegenerate?: () => void;
+	/** Speech (v0.9.0). */
+	onSpeechPlay?: ( text: string ) => void;
+	onSpeechStop?: () => void;
+	speechStateFor?: ( text: string ) => SpeechState;
 }
 
 function MessageToolbar( {
@@ -640,8 +864,11 @@ function MessageToolbar( {
 	onFeedback,
 	onEdit,
 	onRegenerate,
+	onSpeechPlay,
+	onSpeechStop,
+	speechStateFor,
 }: MessageToolbarProps ): JSX.Element {
-	const { copy, justCopied } = useCopyToClipboard();
+	const { copy, copied: justCopied } = useCopyToClipboard();
 	const [ saved, setSaved ] = useState( false );
 
 	const handleCopy = useCallback( () => {
@@ -730,6 +957,16 @@ function MessageToolbar( {
 				>
 					🗑
 				</button>
+			) }
+
+			{/* Speech (v0.9.0) */}
+			{ isAssistant && content !== '' && onSpeechPlay && onSpeechStop && speechStateFor && (
+				<SpeechButton
+					text={ content }
+					state={ speechStateFor( content ) }
+					onPlay={ onSpeechPlay }
+					onStop={ onSpeechStop }
+				/>
 			) }
 		</div>
 	);

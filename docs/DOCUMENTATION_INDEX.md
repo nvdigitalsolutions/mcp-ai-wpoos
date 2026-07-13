@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** July 8, 2026  
-**Plugin Version:** 1.1.37  
+**Last Updated:** July 10, 2026  
+**Plugin Version:** 1.1.38  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,8 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **JULY 10, 2026 UPDATE (v1.1.38):** PAGE AGENT ADDON v0.1.0, PRO SPA v2 MAJOR PARITY & POLISH, PER-USER CHAT MEMORY TOGGLE, CREATE_POST/SAVE_POST MARKDOWN-TO-HTML + TAXONOMY SUGGESTIONS, WORKFLOW BLUEPRINT EXISTING-CONTENT AWARENESS, SPA ACCESSIBILITY, ZAP TRIAGE
+>
 > **JULY 8, 2026 UPDATE (v1.1.37):** JETENGINE META HELPER UNIVERSAL, PLACES ENRICHMENT, RABBITMQ + QUEUE INFRASTRUCTURE, MULTI-TENANT DB ISOLATION PHASE 0-4, DSPARK ADMIN UI, CROCOBLOCK DS ADDON, TEST COVERAGE (329 TOOLS / 28 TOOLKITS), DOCS HUB BROKEN LINK ENGINE, OWASP ZAP DAST, 30+ BUG FIXES
 >
 > **JULY 4, 2026 UPDATE (v1.1.36):** EZUITE INVENTORY SYNC, RALPH LOOP ORCHESTRATION, JETBOOKING/JETAPPOINTMENT, MOONSHOT/Z.AI PARITY, SYNC LOG MANAGER, TOOL PRESETS AUTO-SELECT, HTTRACK CACHE, 45+ BUG FIXES
@@ -482,6 +484,21 @@ This document provides a comprehensive index of all documentation available for 
 - **[docs/features/memory/transcript-mining.md](features/memory/transcript-mining.md)** ⭐ **NEW** — Retroactive Transcript Mining: background job, REST API (3 endpoints), `mine_agent_memory` `transcripts` source, provenance metadata, de-duplication, filters, admin UI, PHPUnit coverage.
 - **[docs/features/memory/chat-client-integration.md](features/memory/chat-client-integration.md)** ⭐ **UPDATED** — G-series completion (G2 audit tab, G3 badge, G6 pagehide, G8 SSE frame, G11 export); two-gates section (`wp_mcp_ai_chat_memory_enabled` filter + per-user meta).
 - **[docs/features/slash-commands-guide.md](features/slash-commands-guide.md)** ⭐ **NEW** — Complete reference for all 24 base + 8 Pro slash commands with capability, aliases, and description. Replaces the dated Phase 1 guide for day-to-day reference.
+
+---
+
+## 🆕 July 2026 — Meta-Harness Auto-Optimization, Agent Delegation Rework, Pro SPA v2 Polish, Tool Presets Refactor, CRM Enhancements
+
+### New and updated documents (July 10–13, 2026)
+
+- **[docs/features/meta-harness-auto-optimization.md](features/meta-harness-auto-optimization.md)** ⭐ **NEW** — Meta-Harness auto-optimization system: Trace Store, Trace Capture, Harness Search Engine, Pro Coding-Agent Proposer, Cues, Population, Auto-Deploy, DSpark, and test infrastructure across all 7 phases.
+- **[docs/features/agent-delegation-system.md](features/agent-delegation-system.md)** ⭐ **NEW** — Agent delegation architecture: inline execution, REST chat dispatch, cron resilience with retry, `spawn_cron()` deferred execution, name-based agent resolution, tasks drawer wire-up.
+- **[docs/features/pro-spa-v2.md](features/pro-spa-v2.md)** ⭐ **UPDATED** — Post-v1.1.38 Pro SPA v2 fixes and polish: vector store, autocomplete, cost badges, `allowSensitiveTools`, tool result rendering, auto-save transcripts, attachments + storage, tasks drawer toolbar, speech/audio, capability flags, usage badges, sidebar/media, system prompt, layout/mobile.
+- **[docs/features/tool-presets-system.md](features/tool-presets-system.md)** ⭐ **NEW** — Tool presets system: essentials layers, deduplication, auto-upgrade for validated variants, SSE adapter fixes, `tool_call_id` fallback handling.
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.39 entries added covering all post-release changes.
+- **[docs/ROADMAP.md](ROADMAP.md)** ⭐ **UPDATED** — v1.1.39 released section with capability snapshot update.
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.39 section with full PR-level detail across 7 categories.
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
 
 ---
 

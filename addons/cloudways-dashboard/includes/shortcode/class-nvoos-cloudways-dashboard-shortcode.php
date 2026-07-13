@@ -79,12 +79,16 @@ class NV_oOS_CloudwaysDashboard_Shortcode {
 	 * @return void
 	 */
 	public static function enqueue_assets( $config = array() ) {
-		$handle = 'nvoos-cloudways-dashboard';
-		$src    = NVOOS_CLOUDWAYS_DASHBOARD_URL . 'assets/dist/cloudways-dashboard.js';
-		$css    = NVOOS_CLOUDWAYS_DASHBOARD_URL . 'assets/dist/cloudways-dashboard.css';
+		$handle  = 'nvoos-cloudways-dashboard';
+		$src     = NVOOS_CLOUDWAYS_DASHBOARD_URL . 'assets/dist/cloudways-dashboard.js';
+		$css     = NVOOS_CLOUDWAYS_DASHBOARD_URL . 'assets/dist/cloudways-dashboard.css';
+		$js_path = NVOOS_CLOUDWAYS_DASHBOARD_PATH . 'assets/dist/cloudways-dashboard.js';
+		$css_path= NVOOS_CLOUDWAYS_DASHBOARD_PATH . 'assets/dist/cloudways-dashboard.css';
+		$js_ver  = file_exists( $js_path ) ? filemtime( $js_path ) : NVOOS_CLOUDWAYS_DASHBOARD_VERSION;
+		$css_ver = file_exists( $css_path ) ? filemtime( $css_path ) : NVOOS_CLOUDWAYS_DASHBOARD_VERSION;
 
-		wp_register_style( $handle, $css, array(), NVOOS_CLOUDWAYS_DASHBOARD_VERSION );
-		wp_register_script( $handle, $src, array(), NVOOS_CLOUDWAYS_DASHBOARD_VERSION, true );
+		wp_register_style( $handle, $css, array(), $css_ver );
+		wp_register_script( $handle, $src, array(), $js_ver, true );
 
 		wp_localize_script(
 			$handle,

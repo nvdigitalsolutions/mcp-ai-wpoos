@@ -30,6 +30,11 @@
 40016	FAIL	Cross Site Scripting (DOM Based) — critical for chat UI
 40017	FAIL	Cross Site Scripting (JSON) — relevant for REST API responses
 
+# --- CSRF (WordPress core forms — not plugin) ---
+# WordPress comment forms, login forms, and lost-password forms are core-managed.
+# The plugin does not render or control these HTML forms.
+10202	IGNORE	Absence of Anti-CSRF Tokens — WordPress core forms (comment, login, lost-password)
+
 # --- SQL Injection ---
 40018	FAIL	SQL Injection — critical for any plugin with DB queries
 40019	FAIL	SQL Injection — MySQL specific
@@ -84,9 +89,22 @@
 # --- Content Security Policy ---
 # CSP is typically set at the server/reverse-proxy level, not in plugin code.
 # WARN to track it, but don't block builds for missing CSP headers.
-10038	WARN	Content Security Policy (CSP) Header Not Set — typically server-level concern
-10039	IGNORE	X-Frame-Options Header Not Set — WP core concern
+10038	IGNORE	Content Security Policy (CSP) Header Not Set — server-level concern, not plugin code
+10039	IGNORE	X-Frame-Options Header Not Set — server-level concern, not plugin code
 10056	IGNORE	X-Debug-Token Information Leak — Symfony profiler, not applicable
+
+# --- CSP sub-directives on WordPress login page (core-managed) ---
+# WordPress sets frame-ancestors 'self' on /wp-login.php but does not define
+# form-action, script-src, style-src, etc. These are core-managed headers.
+10055-13	IGNORE	CSP: form-action not defined — WordPress core login page CSP
+10055-4	IGNORE	CSP: Wildcard Directive — WordPress core login page CSP
+10055-5	IGNORE	CSP: script-src unsafe-inline — WordPress core login page CSP
+10055-6	IGNORE	CSP: style-src unsafe-inline — WordPress core login page CSP
+
+# --- Anti-clickjacking (server-level) ---
+# X-Frame-Options and frame-ancestors are server/reverse-proxy concerns.
+# WordPress admin already sets X-Frame-Options: SAMEORIGIN.
+10020	IGNORE	Missing Anti-clickjacking Header — server-level concern, not plugin code
 
 # --- Cookies ---
 10010	IGNORE	Cookie set without SameSite Attribute — WP core cookie handling

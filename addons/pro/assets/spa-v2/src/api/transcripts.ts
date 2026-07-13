@@ -9,12 +9,16 @@ import { __ } from '@wordpress/i18n';
 export interface TranscriptSession {
 	session_key: string;
 	assistant_id?: number | string;
+	assistant_title?: string;
 	assistant_model?: string;
 	turn_count?: number;
 	started_at?: string;
 	completed_at?: string;
+	updated_at?: string;
 	first_created?: string;
 	last_created?: string;
+	/** First user message text (max ~100 chars from backend). */
+	preview?: string;
 }
 
 export interface TranscriptListResponse {

@@ -1,0 +1,337 @@
+/**
+ * Pro SPA v2 — Tool Shortcuts & Slash Commands Drawer Styles
+ *
+ * @since 2.1.0
+ */
+
+/* ── Shared Drawer Layout ─────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tool-shortcuts-drawer,
+.nvoos-pro-spa-slash-commands-drawer {
+	position: fixed;
+	top: 32px;
+	right: 0;
+	width: 380px;
+	max-width: 90vw;
+	height: calc(100vh - 32px);
+	background: var(--nvoos-bg-secondary, #fff);
+	border-left: 1px solid var(--nvoos-border, #dcdcde);
+	box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+@media screen and (max-width: 782px) {
+	.nvoos-pro-spa-tool-shortcuts-drawer,
+	.nvoos-pro-spa-slash-commands-drawer {
+		top: 46px;
+		height: calc(100vh - 46px);
+	}
+}
+
+/* ── Drawer Header ────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tool-shortcuts-drawer-header,
+.nvoos-pro-spa-slash-commands-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-title,
+.nvoos-pro-spa-slash-commands-drawer-title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-close,
+.nvoos-pro-spa-slash-commands-drawer-close {
+	background: none;
+	border: none;
+	font-size: 20px;
+	cursor: pointer;
+	color: var(--nvoos-text-secondary, #787c82);
+	padding: 4px 8px;
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-close:hover,
+.nvoos-pro-spa-slash-commands-drawer-close:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+/* ── Search ───────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tool-shortcuts-drawer-search,
+.nvoos-pro-spa-slash-commands-drawer-search {
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-search-input,
+.nvoos-pro-spa-slash-commands-drawer-search-input {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	font-size: 13px;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-search-input:focus,
+.nvoos-pro-spa-slash-commands-drawer-search-input:focus {
+	outline: none;
+	border-color: var(--nvoos-primary, #2271b1);
+	box-shadow: 0 0 0 1px var(--nvoos-primary, #2271b1);
+}
+
+/* ── Drawer Body ──────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tool-shortcuts-drawer-body,
+.nvoos-pro-spa-slash-commands-drawer-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+}
+
+/* ── Loading / Error / Empty States ───────────────────────────────────── */
+
+.nvoos-pro-spa-tool-shortcuts-drawer-loading,
+.nvoos-pro-spa-slash-commands-drawer-loading {
+	padding: 24px 16px;
+	text-align: center;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-error,
+.nvoos-pro-spa-slash-commands-drawer-error {
+	padding: 16px;
+	text-align: center;
+	color: var(--nvoos-danger, #d63638);
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-error p,
+.nvoos-pro-spa-slash-commands-drawer-error p {
+	margin: 0 0 8px;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-empty,
+.nvoos-pro-spa-slash-commands-drawer-empty {
+	padding: 16px;
+	text-align: center;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 13px;
+}
+
+/* ── Section ──────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tool-shortcuts-drawer-section,
+.nvoos-pro-spa-slash-commands-drawer-section {
+	margin-bottom: 20px;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-section-title,
+.nvoos-pro-spa-slash-commands-drawer-section-title {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin: 0 0 8px;
+	letter-spacing: 0.05em;
+}
+
+/* ── Shortcut Card ────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tool-shortcuts-drawer-card {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 10px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: transparent;
+	cursor: pointer;
+	font-family: inherit;
+	text-align: left;
+	margin-bottom: 6px;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-card:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+	border-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-card-icon {
+	font-size: 18px;
+	flex-shrink: 0;
+	width: 28px;
+	text-align: center;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-card-text {
+	flex: 1;
+	min-width: 0;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-card-label {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-card-desc {
+	display: block;
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-top: 2px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-card-fav {
+	flex-shrink: 0;
+	background: none;
+	border: none;
+	font-size: 16px;
+	cursor: pointer;
+	color: var(--nvoos-warning, #f0c33c);
+	padding: 4px;
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-tool-shortcuts-drawer-card-fav:hover {
+	background: #f0c33c14;
+}
+
+/* ── Slash Command Item ───────────────────────────────────────────────── */
+
+.nvoos-pro-spa-slash-commands-drawer-item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	width: 100%;
+	padding: 10px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: transparent;
+	cursor: pointer;
+	font-family: inherit;
+	text-align: left;
+	margin-bottom: 6px;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.nvoos-pro-spa-slash-commands-drawer-item:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+	border-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-slash-commands-drawer-item-code {
+	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--nvoos-primary, #2271b1);
+}
+
+	.nvoos-pro-spa-slash-commands-drawer-item-desc {
+		font-size: 11px;
+		color: var(--nvoos-text-secondary, #787c82);
+	}
+
+	/* ---- Inline Command Autocomplete (v2.2.0) ---- */
+	.nvoos-pro-spa-autocomplete {
+		background: var(--nvoos-bg-secondary, #fff);
+		border: 1px solid var(--nvoos-border, #dcdcde);
+		border-radius: 8px;
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+		max-height: 260px;
+		overflow: hidden;
+		z-index: 10000;
+		min-width: 280px;
+		font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+	}
+	.nvoos-pro-spa-autocomplete__list {
+		list-style: none;
+		margin: 0;
+		padding: 4px 0;
+		max-height: 220px;
+		overflow-y: auto;
+	}
+	.nvoos-pro-spa-autocomplete__item {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		padding: 7px 12px;
+		cursor: pointer;
+		transition: background 0.1s;
+		border-left: 2px solid transparent;
+	}
+	.nvoos-pro-spa-autocomplete__item:nth-child(even) {
+		background: rgba(0, 0, 0, 0.01);
+	}
+	.nvoos-pro-spa-autocomplete__item--selected,
+	.nvoos-pro-spa-autocomplete__item:hover {
+		background: var(--nvoos-selected-bg, #e5e5ff);
+		border-left-color: var(--nvoos-primary, #2271b1);
+	}
+	.nvoos-pro-spa-autocomplete__cmd {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--nvoos-primary, #2271b1);
+		font-family: inherit;
+	}
+	.nvoos-pro-spa-autocomplete__desc {
+		font-size: 11px;
+		color: var(--nvoos-text-secondary, #787c82);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.nvoos-pro-spa-autocomplete__footer {
+		display: flex;
+		gap: 12px;
+		padding: 4px 12px;
+		border-top: 1px solid var(--nvoos-border, #dcdcde);
+		background: var(--nvoos-bg, #f0f0f1);
+	}
+	.nvoos-pro-spa-autocomplete__hint {
+		font-size: 10px;
+		color: var(--nvoos-text-secondary, #787c82);
+		font-family: inherit;
+	}
+	/* Dark theme */
+	.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-autocomplete {
+		background: var(--nvoos-bg, #1f2937);
+		border-color: var(--nvoos-border, #374151);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+	}
+	.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-autocomplete__item--selected,
+	.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-autocomplete__item:hover {
+		background: var(--nvoos-selected-bg, #2a2a4a);
+	}
+	@media (prefers-color-scheme: dark) {
+		.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-autocomplete {
+			background: var(--nvoos-bg, #1f2937);
+			border-color: var(--nvoos-border, #374151);
+			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+		}
+		.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-autocomplete__item--selected,
+		.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-autocomplete__item:hover {
+			background: var(--nvoos-selected-bg, #2a2a4a);
+		}
+	}

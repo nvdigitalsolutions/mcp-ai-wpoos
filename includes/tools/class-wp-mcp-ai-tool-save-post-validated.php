@@ -16,12 +16,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/../validators/class-wp-mcp-ai-validated-tool.php';
 require_once __DIR__ . '/../validators/arguments/class-save-post-arguments.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-markdown-converter.php';
 
 /**
  * Creates a new post or updates an existing one using Symfony Validator.
  */
 class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Markdown_Converter;
 
 	/**
 	 * {@inheritdoc}
@@ -143,9 +145,16 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 
 		// Content is already validated as NotBlank by Symfony Validator.
 		$raw_content = $validated_args->content;
-		$content     = wp_kses_post( $raw_content );
 
-		if ( 'post' === $post_type ) {
+		// Convert Markdown to HTML if the content appears to be Markdown rather
+		// than already-formatted HTML or block markup.
+		$raw_content = $this->maybe_convert_markdown( $raw_content );
+
+		$content = wp_kses_post( $raw_content );
+
+		// Preserve block structure for any post type that uses the block editor.
+		// Hardcoding 'post' would corrupt pages and custom post types that also use blocks.
+		if ( function_exists( 'use_block_editor_for_post_type' ) && use_block_editor_for_post_type( $post_type ) ) {
 			$content = $this->ensure_post_content_uses_blocks( $content, $raw_content );
 		}
 
@@ -229,7 +238,10 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 	}
 
 	/**
-	 * Ensures post content uses block markup when working with the core `post` post type.
+	 * Ensures post content uses block markup when the post type supports the block editor.
+	 *
+	 * Plain text is converted to paragraph blocks; HTML that lacks block markers
+	 * is wrapped in a single wp:html block to prevent block-editor corruption.
 	 *
 	 * @param string $sanitized_content The sanitized post content.
 	 * @param string $raw_content       The raw post content, prior to sanitization.

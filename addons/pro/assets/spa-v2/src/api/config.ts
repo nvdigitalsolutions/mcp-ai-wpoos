@@ -8,6 +8,7 @@
 export interface ProSpaPerInstanceConfig {
 	assistantId?: number;
 	theme?: 'auto' | 'light' | 'dark' | string;
+	allowSensitiveTools?: boolean;
 }
 
 export interface ProSpaEndpoints {
@@ -17,11 +18,22 @@ export interface ProSpaEndpoints {
 	memory: string;
 	threads: string;
 	tools: string;
+	/** WordPress media upload endpoint (v0.9.0). */
+	upload: string;
 	assistants: string;
 	settings: string;
 	workflows: string;
 	analytics: string;
 	approvals: string;
+	shortcuts: string;
+	slashCommands: string;
+}
+
+export interface RuntimeAssistantSummary {
+	id: number;
+	title: string;
+	provider?: string;
+	model?: string;
 }
 
 export interface ProSpaRuntime {
@@ -32,6 +44,8 @@ export interface ProSpaRuntime {
 	endpoints: ProSpaEndpoints;
 	user: ProSpaUser;
 	mentionTypes: MentionType[];
+	/** Pre-loaded assistants from the server — avoids a separate REST round-trip. */
+	assistants?: RuntimeAssistantSummary[];
 }
 
 export interface ProSpaUser {
@@ -89,13 +103,17 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			memory: typeof e.memory === 'string' ? e.memory : '',
 			threads: e.threads,
 			tools: e.tools,
+			upload: typeof e.upload === 'string' ? e.upload : '',
 			assistants: e.assistants,
 			settings: e.settings,
 			workflows: typeof e.workflows === 'string' ? e.workflows : '',
 			analytics: typeof e.analytics === 'string' ? e.analytics : '',
 			approvals: typeof e.approvals === 'string' ? e.approvals : '',
+			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
+			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
 		},
 		user: ( g.user ?? { id: 0, login: '', displayName: '', capabilities: [] } ) as ProSpaUser,
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],
+		assistants: Array.isArray( g.assistants ) ? g.assistants : undefined,
 	};
 }

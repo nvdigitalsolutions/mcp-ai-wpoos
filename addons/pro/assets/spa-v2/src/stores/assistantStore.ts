@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import type { AssistantRecord } from '../api/assistants';
-import { readProSpaConfig } from '../api/config';
+import { readProSpaConfig, type RuntimeAssistantSummary } from '../api/config';
 
 export interface AssistantState {
 	assistantId: number;
@@ -51,9 +51,27 @@ function getUserId(): number {
 	return config?.user?.id ?? 0;
 }
 
+/**
+ * Read pre-loaded assistants from the server runtime config and
+ * map them to the shape the ChatSidebar select expects.
+ */
+function getInitialAssistants(): AssistantRecord[] {
+	const config = readProSpaConfig();
+	const list = config?.assistants;
+	if ( ! Array.isArray( list ) || list.length === 0 ) {
+		return [];
+	}
+	return list.map( ( a: RuntimeAssistantSummary ) => ( {
+		id: a.id,
+		title: a.title,
+		provider: a.provider,
+		model: a.model,
+	} ) );
+}
+
 export const useAssistantStore = create< AssistantState >( ( set ) => ( {
 	assistantId: getInitialAssistantId(),
-	assistants: [],
+	assistants: getInitialAssistants(),
 
 	setActiveAssistant: ( id ) => {
 		const userId = getUserId();

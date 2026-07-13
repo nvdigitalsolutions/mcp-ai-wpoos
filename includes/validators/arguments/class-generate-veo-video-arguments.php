@@ -149,13 +149,13 @@ class GenerateVeoVideoArguments {
 	public $save_to_media = null;
 
 	/**
-	 * Force a specific Veo model.
+	 * Force a specific model.
 	 *
 	 * @var string|null
 	 */
 	#[Assert\Type( type: 'string', message: 'Model must be a string.' )]
 	#[Assert\Choice(
-		choices: array( 'veo-3.1', 'veo-2.0' ),
+		choices: array( 'omni', 'veo-3.1', 'veo-2.0' ),
 		message: 'Model must be one of: {{ choices }}.'
 	)]
 	public $model = null;

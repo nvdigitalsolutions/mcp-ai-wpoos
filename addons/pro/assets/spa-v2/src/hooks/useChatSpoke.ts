@@ -2,24 +2,33 @@
  * useChatSpoke — Wraps `useChat` from `@ai-sdk/react` with the pro SSE adapter.
  *
  * This is the core chat hook that replaces the legacy messagesStore + sse.js.
+ *
+ * Transcript auto-save happens client-side on each completed turn (onFinish).
+ * This mirrors chat-spa's App.tsx persistFinishedTurn pattern so conversations
+ * are visible across the Pro SPA, chat-spa, and legacy chat.js transcript lists.
+ * The server-side WP_MCP_AI_Chat_Transcript_Recorder also records transcripts,
+ * and sse-adapter.ts now forwards session_key so both pathways use the same key.
  */
 
-import { useMemo, useCallback, useRef, useEffect, type RefObject } from 'react';
+import { useMemo, useCallback, useRef, useState, type RefObject } from 'react';
 import { useChat, type Message } from '@ai-sdk/react';
 import { createChatFetch } from '../sse-adapter';
-import {
-	TranscriptsClient,
-	type TranscriptMessage,
-} from '../api/transcripts';
+import { TranscriptsClient } from '../api/transcripts';
 import { useUIStore } from '../stores/uiStore';
 
 export interface UseChatSpokeOptions {
 	chatClientEndpoint: string;
 	nonce: string;
 	assistantId: number;
-	transcriptsEndpoint?: string;
 	initialMessages?: Message[];
 	sessionKey?: string;
+	/** Optional model override to send as options.provider / options.model. */
+	model?: string;
+	provider?: string;
+	/** When true, forwards allow_sensitive_tools to the chat endpoint. */
+	allowSensitiveTools?: boolean;
+	/** Transcripts REST endpoint for manual save (v2.1.0). */
+	transcriptsEndpoint?: string;
 }
 
 export interface UseChatSpokeReturn {
@@ -27,6 +36,8 @@ export interface UseChatSpokeReturn {
 	input: string;
 	handleInputChange: ( e: React.ChangeEvent< HTMLTextAreaElement > | string ) => void;
 	handleSubmit: ( e?: { preventDefault?: () => void } ) => void;
+	/** Submit with file attachments (v0.9.0). */
+	handleSubmitWithAttachments: ( attachments: Array< { name?: string; contentType?: string; url: string } > ) => void;
 	status: 'submitted' | 'streaming' | 'ready' | 'error';
 	error: Error | undefined;
 	stop: () => void;
@@ -35,6 +46,9 @@ export interface UseChatSpokeReturn {
 	isStreaming: boolean;
 	fileInputRef: RefObject< HTMLInputElement | null >;
 	sendMessage: ( content: string ) => void;
+	usageMap: Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; costUsd?: number; model?: string; provider?: string } >;
+	/** Manually persist current session messages to the CCT transcripts store (v2.1.0). */
+	saveConversation: () => Promise< void >;
 }
 
 export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn {
@@ -42,55 +56,29 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		chatClientEndpoint,
 		nonce,
 		assistantId,
-		transcriptsEndpoint,
 		initialMessages = [],
 		sessionKey = '',
+		model,
+		provider,
+		allowSensitiveTools,
+		transcriptsEndpoint,
 	} = options;
 
 	const addToast = useUIStore( ( s ) => s.addToast );
 
-	const transcriptsClient = useMemo(
-		() =>
-			transcriptsEndpoint && sessionKey
-				? new TranscriptsClient( {
-						endpoint: transcriptsEndpoint,
-						nonce,
-						assistantId,
-				  } )
-				: null,
-		[ transcriptsEndpoint, nonce, assistantId, sessionKey ]
-	);
-
 	const customFetch = useMemo(
 		() =>
 			createChatFetch( {
-				endpoint: chatClientEndpoint,
-				nonce,
-				assistantId,
-				guest: false,
-			} ),
-		[ chatClientEndpoint, nonce, assistantId ]
-	);
-
-	const persistFinishedTurn = useCallback(
-		async ( messages: Message[] ) => {
-			if ( ! transcriptsClient || ! sessionKey ) {
-				return;
-			}
-			try {
-				const wireMessages: TranscriptMessage[] = messages.map( ( m ) => ( {
-					role: m.role,
-					content: typeof m.content === 'string' ? m.content : '',
-				} ) );
-				await transcriptsClient.save( sessionKey, wireMessages, {
-					finish_reason: 'stop',
-					source: 'pro-spa-v2',
-				} );
-			} catch {
-				// Transcript persistence is best-effort.
-			}
-		},
-		[ transcriptsClient, sessionKey ]
+					endpoint: chatClientEndpoint,
+					nonce,
+					assistantId,
+					guest: false,
+					model,
+					provider,
+					sessionKey,
+					allowSensitiveTools,
+				} ),
+				[ chatClientEndpoint, nonce, assistantId, model, provider, sessionKey, allowSensitiveTools ]
 	);
 
 	const {
@@ -109,30 +97,82 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		fetch: customFetch,
 		streamProtocol: 'data',
 		initialMessages,
-		onFinish: ( message ) => {
-			// Persist full turn after completion.
-			// Use the ref to avoid the stale-closure problem — `messages`
-			// inside this callback is captured at construction time.
-			const priorMessages = messagesRef.current ?? [];
-			const last = priorMessages[ priorMessages.length - 1 ];
-			const alreadyPresent =
-				last && message.id && last.id === message.id;
-			const updated = alreadyPresent
-				? priorMessages
-				: [ ...priorMessages, message ];
-			void persistFinishedTurn( updated );
+		onFinish: ( _message, { usage, finishReason } ) => {
+			// Capture usage data (v0.9.0).
+			// Guard against NaN token counts that some providers return in edge cases.
+			if ( usage ) {
+				const pt = typeof usage.promptTokens === 'number' && ! Number.isNaN( usage.promptTokens ) ? usage.promptTokens : undefined;
+				const ct = typeof usage.completionTokens === 'number' && ! Number.isNaN( usage.completionTokens ) ? usage.completionTokens : undefined;
+				const tt = typeof usage.totalTokens === 'number' && ! Number.isNaN( usage.totalTokens ) ? usage.totalTokens : undefined;
+				setUsageMap( ( prev ) => ( { ...prev, [ _message.id ]: { promptTokens: pt, completionTokens: ct, totalTokens: tt } } ) );
+			}
+			// Persist model/provider so UsageBadges can show the model badge.
+			if ( model || provider ) {
+				setUsageMap( ( prev ) => {
+					const existing = prev[ _message.id ] || {};
+					return {
+						...prev,
+						[ _message.id ]: { ...existing, model, provider },
+					};
+				} );
+			}
+
+			// Auto-save transcript after each completed turn (v2.1.0).
+			// Mirrors chat-spa's persistFinishedTurn pattern so conversations
+			// appear in the transcript list across all clients.
+			// Fire-and-forget — failures don't block the chat surface.
+			if ( transcriptsClient && sessionKey ) {
+				// Guard against duplication: if the last message already matches
+				// the just-completed assistant message, use messages as-is;
+				// otherwise append it (onFinish may fire before React
+				// re-renders with the new message in state).
+				const last = messages[ messages.length - 1 ];
+				const alreadyPresent =
+					last && _message.id && last.id === _message.id;
+				const wireMessages = (
+					alreadyPresent ? messages : [ ...messages, _message ]
+				).map( ( m ) => ( {
+					role: m.role as string,
+					content: typeof m.content === 'string' ? m.content : '',
+				} ) );
+				if ( typeof console !== 'undefined' && console.info ) {
+					console.info(
+						'[NV oOS Pro SPA] Auto-saving conversation transcript',
+						{ session_key: sessionKey, message_count: wireMessages.length },
+					);
+				}
+				void transcriptsClient
+					.save( sessionKey, wireMessages, {
+						finish_reason:
+							typeof finishReason === 'string'
+								? finishReason
+								: 'stop',
+						source: 'pro-spa-v2',
+					} )
+					.then( () => {
+						if ( typeof console !== 'undefined' && console.info ) {
+							console.info(
+								'[NV oOS Pro SPA] Conversation auto-saved successfully',
+							);
+						}
+					} )
+					.catch( ( err: unknown ) => {
+						if ( typeof console !== 'undefined' && console.warn ) {
+							console.warn(
+								'[NV oOS Pro SPA] Failed to auto-save conversation',
+								( err as Error )?.message ?? err,
+							);
+						}
+					} );
+			}
 		},
 		onError: ( err ) => {
 			addToast( err.message || 'Chat error', 'error' );
 		},
 	} );
 
-	// Keep a ref to the current message list so `onFinish` (which is
-	// captured at construction time) can read the latest array.
-	const messagesRef = useRef< Message[] >( messages );
-	useEffect( () => {
-		messagesRef.current = messages;
-	}, [ messages ] );
+	// Usage tracking (v0.9.0).
+	const [ usageMap, setUsageMap ] = useState< Record< string, { promptTokens?: number; completionTokens?: number; totalTokens?: number; costUsd?: number; model?: string; provider?: string } > >( {} );
 
 	const fileInputRef = useRef< HTMLInputElement | null >( null );
 
@@ -167,11 +207,66 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		[ chatHandleInputChange, chatHandleSubmit ]
 	);
 
+	const handleSubmitWithAttachments = useCallback(
+		( attachments: Array< { name?: string; contentType?: string; url: string } > ) => {
+			chatHandleSubmit( undefined, { experimental_attachments: attachments } );
+		},
+		[ chatHandleSubmit ]
+	);
+
+	// ── Manual save callback (v2.1.0) ───────────────────────────────────
+	// Auto-save runs in onFinish after every completed turn.  This
+	// callback provides an explicit manual save for edge cases (e.g.
+	// snapshotting the conversation before switching sessions).
+	const transcriptsClient = useMemo(
+		() =>
+			transcriptsEndpoint
+				? new TranscriptsClient( {
+					endpoint: transcriptsEndpoint,
+					nonce,
+					assistantId,
+				  } )
+				: null,
+		[ transcriptsEndpoint, nonce, assistantId ]
+	);
+
+	const saveConversation = useCallback( async () => {
+		if ( ! transcriptsClient || ! sessionKey ) {
+			return;
+		}
+		const transcriptMessages = messages.map( ( m ) => ( {
+			role: m.role as string,
+			content: typeof m.content === 'string' ? m.content : '',
+		} ) );
+		try {
+			if ( typeof console !== 'undefined' && console.info ) {
+				console.info(
+					'[NV oOS Pro SPA] Manually saving conversation',
+					{ session_key: sessionKey, message_count: transcriptMessages.length },
+				);
+			}
+			await transcriptsClient.save( sessionKey, transcriptMessages );
+			if ( typeof console !== 'undefined' && console.info ) {
+				console.info(
+					'[NV oOS Pro SPA] Conversation saved successfully',
+				);
+			}
+		} catch ( err: unknown ) {
+			if ( typeof console !== 'undefined' && console.warn ) {
+				console.warn(
+					'[NV oOS Pro SPA] Failed to save conversation',
+					( err as Error )?.message ?? err,
+				);
+			}
+		}
+	}, [ transcriptsClient, sessionKey, messages ] );
+
 	return {
 		messages,
 		input,
 		handleInputChange,
 		handleSubmit,
+		handleSubmitWithAttachments,
 		status,
 		error,
 		stop,
@@ -180,5 +275,7 @@ export function useChatSpoke( options: UseChatSpokeOptions ): UseChatSpokeReturn
 		isStreaming: status === 'streaming' || status === 'submitted',
 		fileInputRef,
 		sendMessage,
+		usageMap,
+		saveConversation,
 	};
 }

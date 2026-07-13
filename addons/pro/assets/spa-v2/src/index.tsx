@@ -10,6 +10,7 @@
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './styles/main.css';
+import './styles/drawers.css';
 
 declare global {
 	interface Window {

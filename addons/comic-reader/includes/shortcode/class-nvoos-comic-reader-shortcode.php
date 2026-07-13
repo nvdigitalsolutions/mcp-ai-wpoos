@@ -87,17 +87,22 @@ class NV_oOS_Comic_Reader_Shortcode {
 	 * @return void
 	 */
 	public static function enqueue_assets( $config ) {
+		$js_path  = NVOOS_COMIC_READER_PATH . 'assets/dist/comic-reader.js';
+		$css_path = NVOOS_COMIC_READER_PATH . 'assets/dist/comic-reader.css';
+		$js_ver   = file_exists( $js_path ) ? filemtime( $js_path ) : NVOOS_COMIC_READER_VERSION;
+		$css_ver  = file_exists( $css_path ) ? filemtime( $css_path ) : NVOOS_COMIC_READER_VERSION;
+
 		wp_register_style(
 			'nvoos-comic-reader',
 			NVOOS_COMIC_READER_URL . 'assets/dist/comic-reader.css',
 			array(),
-			NVOOS_COMIC_READER_VERSION
+			$css_ver
 		);
 		wp_register_script(
 			'nvoos-comic-reader',
 			NVOOS_COMIC_READER_URL . 'assets/dist/comic-reader.js',
 			array( 'wp-i18n' ),
-			NVOOS_COMIC_READER_VERSION,
+			$js_ver,
 			true
 		);
 		wp_set_script_translations(

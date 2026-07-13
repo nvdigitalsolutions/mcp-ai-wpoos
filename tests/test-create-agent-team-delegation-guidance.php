@@ -127,7 +127,9 @@ class Test_Create_Agent_Team_Delegation_Guidance extends WP_UnitTestCase {
 	/**
 	 * Test delegate_to_agent parameter description is clear
 	 *
-	 * Verifies that the agent_id parameter description warns against using profession names.
+	 * Verifies that the agent_id parameter description documents all accepted
+	 * input types: numeric IDs, assistant names/slugs, profession names/slugs,
+	 * and virtual agent IDs.
 	 */
 	public function test_delegate_to_agent_parameter_description() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Delegate_To_Agent' ) ) {
@@ -143,17 +145,18 @@ class Test_Create_Agent_Team_Delegation_Guidance extends WP_UnitTestCase {
 
 		$description = $schema['properties']['agent_id']['description'];
 
-		// Verify it warns against using profession names.
-		$this->assertStringContainsString(
-			'NOT',
-			$description,
-			'Description should explicitly warn NOT to use profession names'
-		);
-
+		// Verify it documents profession name/slug acceptance.
 		$this->assertStringContainsString(
 			'profession',
 			$description,
-			'Description should mention profession in the warning'
+			'Description should mention profession name/slug resolution'
+		);
+
+		// Verify it documents assistant name/slug acceptance.
+		$this->assertStringContainsString(
+			'assistant name',
+			$description,
+			'Description should document assistant name/slug acceptance'
 		);
 
 		// Verify it references create_agent_team response.
@@ -161,6 +164,13 @@ class Test_Create_Agent_Team_Delegation_Guidance extends WP_UnitTestCase {
 			'create_agent_team',
 			$description,
 			'Description should reference create_agent_team response'
+		);
+
+		// Verify both accepted types are listed (integer and string).
+		$this->assertEquals(
+			array( 'integer', 'string' ),
+			$schema['properties']['agent_id']['type'],
+			'agent_id schema should accept both integer and string types'
 		);
 	}
 
@@ -203,6 +213,7 @@ class Test_Create_Agent_Team_Delegation_Guidance extends WP_UnitTestCase {
 		$workflow_transient_name = '_transient_wp_mcp_ai_workflow_wf_' . $team_id;
 
 		// Query the database to check if the workflow transient exists.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Intentional: test verifies transient was persisted; caching is not applicable.
 		$workflow_exists = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name = %s",

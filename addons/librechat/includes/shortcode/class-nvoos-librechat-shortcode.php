@@ -92,17 +92,22 @@ class NV_oOS_LibreChat_Shortcode {
 	public static function enqueue_assets( $config ) {
 		$settings = NV_oOS_LibreChat_Plugin::get_settings();
 
+		$js_path  = NVOOS_LIBRECHAT_PATH . 'assets/dist/librechat.js';
+		$css_path = NVOOS_LIBRECHAT_PATH . 'assets/dist/librechat.css';
+		$js_ver   = file_exists( $js_path ) ? filemtime( $js_path ) : NVOOS_LIBRECHAT_VERSION;
+		$css_ver  = file_exists( $css_path ) ? filemtime( $css_path ) : NVOOS_LIBRECHAT_VERSION;
+
 		wp_register_style(
 			'nvoos-librechat',
 			NVOOS_LIBRECHAT_URL . 'assets/dist/librechat.css',
 			array(),
-			NVOOS_LIBRECHAT_VERSION
+			$css_ver
 		);
 		wp_register_script(
 			'nvoos-librechat',
 			NVOOS_LIBRECHAT_URL . 'assets/dist/librechat.js',
 			array( 'wp-i18n' ),
-			NVOOS_LIBRECHAT_VERSION,
+			$js_ver,
 			true
 		);
 		wp_set_script_translations(

@@ -20,6 +20,7 @@
 #   build/nvoos-cloudways-dashboard-v<cloudways-dashboard-version>.zip
 #   build/nvoos-funiq-bridge-v<funiq-bridge-version>.zip
 #   build/nvoos-crocoblock-ds-v<crocoblock-ds-version>.zip
+#   build/nvoos-page-agent-v<page-agent-version>.zip
 #   build/nvoos-schedule-anything-platform-v<schedule-anything-platform-version>.zip
 #
 # Usage:
@@ -149,6 +150,9 @@ SAP_VERSION=${SAP_VERSION:-dev}
 CDS_VERSION=$(_read_addon_version "addons/crocoblock-ds/nvoos-crocoblock-ds.php")
 CDS_VERSION=${CDS_VERSION:-dev}
 
+PAGE_AGENT_VERSION=$(_read_addon_version "addons/page-agent/nvoos-page-agent.php")
+PAGE_AGENT_VERSION=${PAGE_AGENT_VERSION:-dev}
+
 if ! command -v zip >/dev/null 2>&1; then
 echo "❌ Error: zip is required but not installed."
 exit 1
@@ -177,8 +181,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ] || [ ! -d "addons/crocoblock-ds" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, and addons/schedule-anything-platform must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ] || [ ! -d "addons/crocoblock-ds" ] || [ ! -d "addons/page-agent" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, addons/schedule-anything-platform, addons/crocoblock-ds, and addons/page-agent must exist."
 exit 1
 fi
 
@@ -208,6 +212,7 @@ CW_DASHBOARD_ZIP="${OUTPUT_DIR}/nvoos-cloudways-dashboard-v${CW_DASHBOARD_VERSIO
 FUNIQ_BRIDGE_ZIP="${OUTPUT_DIR}/nvoos-funiq-bridge-v${FUNIQ_BRIDGE_VERSION}.zip"
 SAP_ZIP="${OUTPUT_DIR}/nvoos-schedule-anything-platform-v${SAP_VERSION}.zip"
 CDS_ZIP="${OUTPUT_DIR}/nvoos-crocoblock-ds-v${CDS_VERSION}.zip"
+PAGE_AGENT_ZIP="${OUTPUT_DIR}/nvoos-page-agent-v${PAGE_AGENT_VERSION}.zip"
 
 # Remove any previously built ZIPs for these slugs (they may carry a stale version stamp).
 rm -f "$OUTPUT_DIR"/nvoos-algorave-linux-x64-v*.zip
@@ -224,14 +229,15 @@ rm -f "$OUTPUT_DIR"/nvoos-cloudways-dashboard-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-funiq-bridge-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-schedule-anything-platform-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-crocoblock-ds-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-page-agent-v*.zip
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$OUTPUT_DIR"/nvoos-canvas-linux-x64-v*.zip
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=15
-else
 TOTAL_STEPS=16
+else
+TOTAL_STEPS=17
 fi
 
 echo "=========================================="
@@ -657,6 +663,41 @@ CDS_SIZE=$(du -h "$CDS_ZIP" | cut -f1)
 echo "✅ ${CDS_ZIP} (${CDS_SIZE})"
 echo ""
 
+echo "[16/${TOTAL_STEPS}] Building nvoos-page-agent-v${PAGE_AGENT_VERSION}.zip"
+# Build the JavaScript bundles if Node is available, then package.
+if [ -d "addons/page-agent/node_modules" ] || command -v npm >/dev/null 2>&1; then
+	if [ ! -d "addons/page-agent/node_modules" ]; then
+		echo "  ℹ️  Installing page-agent npm dependencies (npm ci)..."
+		( cd addons/page-agent && npm ci --no-audit --no-fund --silent ) || {
+			echo "⚠️  Warning: npm ci failed for page-agent — packaging without rebuilt artifacts."
+		}
+	fi
+	if [ -d "addons/page-agent/node_modules" ]; then
+		echo "  ℹ️  Building page-agent artifacts (npx esbuild --prod)..."
+		( cd addons/page-agent && node esbuild.config.js --prod ) || {
+			echo "⚠️  Warning: esbuild failed for page-agent — packaging existing artifacts (if any)."
+		}
+	fi
+else
+	echo "  ℹ️  npm not available — packaging existing assets/js/ if present."
+fi
+mkdir -p "${TMP_DIR}/page-agent-stage/nvoos-page-agent"
+rsync -a "addons/page-agent/" "${TMP_DIR}/page-agent-stage/nvoos-page-agent/" \
+	--exclude 'node_modules/' \
+	--exclude '.git/' \
+	--exclude '.DS_Store' \
+	--exclude '.gitignore' \
+	--exclude 'tests/' \
+	--exclude 'package-lock.json' \
+	--exclude 'src/'
+(
+	cd "${TMP_DIR}/page-agent-stage"
+	zip -r -q "${ROOT_DIR}/${PAGE_AGENT_ZIP}" nvoos-page-agent/
+)
+PAGE_AGENT_SIZE=$(du -h "$PAGE_AGENT_ZIP" | cut -f1)
+echo "✅ ${PAGE_AGENT_ZIP} (${PAGE_AGENT_SIZE})"
+echo ""
+
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
 # container. This step is best-effort:
 #   - Canvas is platform-specific and is NOT part of the WordPress.org
@@ -679,7 +720,7 @@ echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavail
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[16/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
+echo "[17/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${CANVAS_VERSION}.zip"
 
 # Defensive re-check: in long-running pipelines the docker daemon may have
 # disappeared between the start-of-script check and now. Bail out softly
@@ -773,6 +814,8 @@ echo "  - ${LIBRECHAT_ZIP}"
 echo "  - ${CW_DASHBOARD_ZIP}"
 echo "  - ${FUNIQ_BRIDGE_ZIP}"
 echo "  - ${SAP_ZIP}"
+echo "  - ${CDS_ZIP}"
+echo "  - ${PAGE_AGENT_ZIP}"
 if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
 elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then

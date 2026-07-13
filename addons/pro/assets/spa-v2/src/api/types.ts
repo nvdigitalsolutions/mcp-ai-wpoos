@@ -22,3 +22,5 @@ export type { AssistantRecord, AssistantsListResponse } from './assistants';
 export type { MemoryPreferences, MemoryContext, AuditEntry } from './memory';
 
 export type { ApprovalRecord } from './hitl';
+
+export type { MediaItem, MediaListResponse } from './media';

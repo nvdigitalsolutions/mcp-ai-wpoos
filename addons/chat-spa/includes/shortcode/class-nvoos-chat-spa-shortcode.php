@@ -37,10 +37,11 @@ class NV_oOS_Chat_Spa_Shortcode {
 	public static function render( $atts ) {
 		$atts = shortcode_atts(
 			array(
-				'assistant_id' => '',
-				'theme'        => 'auto',
-				'height'       => '',
-				'guest'        => '0',
+				'assistant_id'          => '',
+				'theme'                 => 'auto',
+				'height'                => '',
+				'guest'                 => '0',
+				'allow_sensitive_tools' => '0',
 			),
 			$atts,
 			self::SHORTCODE
@@ -52,10 +53,11 @@ class NV_oOS_Chat_Spa_Shortcode {
 		}
 
 		$config = array(
-			'assistantId' => absint( $atts['assistant_id'] ),
-			'theme'       => in_array( $atts['theme'], array( 'auto', 'light', 'dark' ), true ) ? $atts['theme'] : 'auto',
-			'height'      => sanitize_text_field( $atts['height'] ),
-			'guest'       => ! empty( $atts['guest'] ) && '0' !== (string) $atts['guest'],
+			'assistantId'         => absint( $atts['assistant_id'] ),
+			'theme'               => in_array( $atts['theme'], array( 'auto', 'light', 'dark' ), true ) ? $atts['theme'] : 'auto',
+			'height'              => sanitize_text_field( $atts['height'] ),
+			'guest'               => ! empty( $atts['guest'] ) && '0' !== (string) $atts['guest'],
+			'allowSensitiveTools' => ! empty( $atts['allow_sensitive_tools'] ) && '0' !== (string) $atts['allow_sensitive_tools'],
 		);
 
 		self::enqueue_assets( $config );
@@ -82,17 +84,22 @@ class NV_oOS_Chat_Spa_Shortcode {
 	 * @return void
 	 */
 	public static function enqueue_assets( $config ) {
+		$js_path  = NVOOS_CHAT_SPA_PATH . 'assets/dist/chat-spa.js';
+		$css_path = NVOOS_CHAT_SPA_PATH . 'assets/dist/chat-spa.css';
+		$js_ver   = file_exists( $js_path ) ? filemtime( $js_path ) : NVOOS_CHAT_SPA_VERSION;
+		$css_ver  = file_exists( $css_path ) ? filemtime( $css_path ) : NVOOS_CHAT_SPA_VERSION;
+
 		wp_register_style(
 			'nvoos-chat-spa',
 			NVOOS_CHAT_SPA_URL . 'assets/dist/chat-spa.css',
 			array(),
-			NVOOS_CHAT_SPA_VERSION
+			$css_ver
 		);
 		wp_register_script(
 			'nvoos-chat-spa',
 			NVOOS_CHAT_SPA_URL . 'assets/dist/chat-spa.js',
 			array( 'wp-i18n' ),
-			NVOOS_CHAT_SPA_VERSION,
+			$js_ver,
 			true
 		);
 		wp_set_script_translations(
@@ -118,6 +125,8 @@ class NV_oOS_Chat_Spa_Shortcode {
 					'endpoints' => array(
 						'chat'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
 						'chatClient'  => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
+						'tools'       => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
+						'upload'      => esc_url_raw( rest_url( 'wp/v2/media' ) ),
 						'transcripts' => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
 						'memory'      => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
 						'threads'     => esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),

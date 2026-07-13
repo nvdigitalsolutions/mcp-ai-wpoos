@@ -9,18 +9,31 @@
  * Threads are a read-only browse view loaded via the sidebar.
  */
 
-import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { type Message } from '@ai-sdk/react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { useChatSpoke } from '../../hooks/useChatSpoke';
 import { useTranscripts } from '../../hooks/useTranscripts';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { useSpeechPlayback } from '../../hooks/useSpeechPlayback';
+import { useJobBus } from '../../hooks/useJobBus';
+import { useTabTitleBadge } from '../../hooks/useTabTitleBadge';
 import { useModelStore } from '../../stores/modelStore';
 import { useAssistantStore } from '../../stores/assistantStore';
+import { useUIStore } from '../../stores/uiStore';
 import { ThreadsClient } from '../../api/threads';
+import { exportConversation } from '../../utils/export-conversation';
 import { AgentPanel } from './AgentPanel';
 import { MemoryDrawer, type MemoryTab } from '../../components/shared/MemoryDrawer';
 import { HitlApprovalBar } from '../../components/shared/HitlApprovalBar';
+import { ToolShortcutsDrawer } from './ToolShortcutsDrawer';
+import { SlashCommandsDrawer } from './SlashCommandsDrawer';
+import { KeyboardShortcutsHelp } from '../../components/shared/KeyboardShortcutsHelp';
+import { SuggestedPrompts } from '../../components/shared/SuggestedPrompts';
+import { TasksDrawer } from '../../components/shared/TasksDrawer';
+import { useWorkflowState, useDelegationNotices } from '../../hooks/useAgentTeam';
 
 export interface ChatPageProps {
 	/** Transcript hook result lifted from Layout. */
@@ -39,6 +52,22 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const availableModels = useModelStore( ( s ) => s.availableModels );
 	const availableProfiles = useModelStore( ( s ) => s.availableProfiles );
 
+	// Deduplicate models by provider|model combo (backend may send duplicates).
+	const uniqueModels = useMemo(
+		() => {
+			const seen = new Set< string >();
+			return availableModels.filter( ( m ) => {
+				const key = `${ m.provider }|${ m.model }`;
+				if ( seen.has( key ) ) {
+					return false;
+				}
+				seen.add( key );
+				return true;
+			} );
+		},
+		[ availableModels ]
+	);
+
 	// Use assistant store for dynamic selection (with runtime config fallback).
 	const storedAssistantId = useAssistantStore( ( s ) => s.assistantId );
 	const assistantId = storedAssistantId > 0 ? storedAssistantId : ( runtime?.config?.assistantId ?? runtime?.user?.assistant_id ?? 0 );
@@ -46,19 +75,24 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const nonce = runtime?.nonce ?? '';
 
 	// Map transcript messages to AI SDK Message shape (needs `id`).
-	const initialMessages = useMemo(
-		() =>
-			transcripts.initialMessages.map( ( m, idx ) => ( {
-				id: `${ transcripts.sessionKey }:${ idx }`,
-				role: ( m.role === 'system' || m.role === 'tool' ? 'assistant' : m.role ) as
-					| 'user'
-					| 'assistant'
-					| 'system'
-					| 'data',
-				content: typeof m.content === 'string' ? m.content : '',
-			} ) ),
-		[ transcripts.initialMessages, transcripts.sessionKey ]
-	);
+		// Preserve the original role so tool messages are properly surfaced;
+		// only system messages are re-mapped to assistant (the AI SDK does not
+		// render system messages).  Spread the original message so annotations
+		// and toolInvocations survive the mapping for CCT-loaded history.
+		const initialMessages = useMemo(
+			() =>
+				transcripts.initialMessages.map( ( m, idx ) => ( {
+					...m,
+					id: `${ transcripts.sessionKey }:${ idx }`,
+					role: ( m.role === 'system' ? 'assistant' : m.role ) as
+						| 'user'
+						| 'assistant'
+						| 'system'
+						| 'data',
+					content: typeof m.content === 'string' ? m.content : '',
+				} ) ),
+			[ transcripts.initialMessages, transcripts.sessionKey ]
+		);
 
 	// ---- Chat spoke (conversation-driven) ----
 	// sessionKey owns the useChat `id` — switching conversations rebinds cleanly.
@@ -66,9 +100,12 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		chatClientEndpoint: endpoints?.chatClient ?? '',
 		nonce,
 		assistantId,
-		transcriptsEndpoint: endpoints?.transcripts ?? '',
 		initialMessages,
 		sessionKey: transcripts.sessionKey,
+		model: model.model,
+		provider: model.provider,
+		transcriptsEndpoint: endpoints?.transcripts ?? '',
+		allowSensitiveTools: !!runtime?.config?.allowSensitiveTools,
 	} );
 
 	const {
@@ -82,7 +119,182 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		reload,
 		isStreaming,
 		sendMessage,
+		usageMap,
+		handleSubmitWithAttachments,
+		saveConversation,
+		setMessages,
 	} = chatSpoke;
+
+	// ── Slash command execution (v2.1.0) ───────────────────────────────
+	const handleExecuteSlashCommand = useCallback(
+		async ( cmd: string, rawInput: string ) => {
+			if ( ! endpoints?.slashCommands ) return;
+
+			const executeUrl = `${ endpoints.slashCommands.replace( /\/+$/, '' ) }/execute`;
+
+			const userMessage = {
+				id: `slash-usr-${ Date.now() }`,
+				role: 'user' as const,
+				content: rawInput,
+			};
+			setMessages( [ ...messages, userMessage as Message ] );
+
+			try {
+				const resp = await fetch( executeUrl, {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': nonce,
+					},
+					body: JSON.stringify( { command: rawInput } ),
+				} );
+
+				if ( ! resp.ok ) {
+					const errData = await resp.json().catch( () => ( {} ) );
+					throw new Error(
+						( errData as { message?: string } ).message ||
+							`HTTP ${ resp.status }`,
+					);
+				}
+
+				const data = ( await resp.json() ) as {
+					success?: boolean;
+					result?: string;
+					message?: string;
+				};
+
+				const resultText =
+					data.result ??
+					data.message ??
+					__( 'Command executed successfully.', 'nvoos-pro-spa' );
+
+				const assistantMessage = {
+					id: `slash-asst-${ Date.now() }`,
+					role: 'assistant' as const,
+					content: resultText,
+				};
+				setMessages( [
+					...messages,
+					assistantMessage as Message,
+				] );
+			} catch ( err: unknown ) {
+				const errorText =
+					( err as Error )?.message ??
+					__( 'Command execution failed.', 'nvoos-pro-spa' );
+				const errorMessage = {
+					id: `slash-err-${ Date.now() }`,
+					role: 'assistant' as const,
+					content: `\u274C ${ errorText }`,
+				};
+				setMessages( [
+					...messages,
+					errorMessage as Message,
+				] );
+				throw err;
+			}
+		},
+		[ endpoints?.slashCommands, nonce, setMessages ],
+	);
+
+	// Enhance usageMap with cost/model data extracted from "data"
+	// annotations that arrive via the SSE adapter's type-8 frames.
+	const enhancedUsageMap = useMemo( () => {
+		const map = { ...usageMap };
+		for ( const msg of messages ) {
+			const anns = Array.isArray( ( msg as unknown as Record< string, unknown > ).annotations )
+				? ( msg as unknown as Record< string, unknown > ).annotations as Array< Record< string, unknown > >
+				: [];
+			for ( const ann of anns ) {
+				if ( ann.type === 'data' && ann.data && typeof ann.data === 'object' ) {
+					const d = ann.data as Record< string, unknown >;
+					// Cost may be nested inside ann.data (from done/finish
+					// annotations or the re-wrapped SSE adapter path) or
+					// at ann's top level (from raw message frames).
+					// Check both locations so cost badges never go missing.
+					const costFromData = d.cost as Record< string, unknown > | undefined;
+					const costFromAnn = ann.cost as Record< string, unknown > | undefined;
+					const cost = costFromData || costFromAnn;
+					const usage = d.usage as Record< string, unknown > | undefined;
+					const existing = map[ msg.id ] || {};
+					if ( ! existing.costUsd && cost && typeof cost.cost_usd === 'number' ) {
+						existing.costUsd = cost.cost_usd as number;
+					}
+					if ( ! existing.totalTokens && usage && typeof usage.total_tokens === 'number' ) {
+						existing.totalTokens = usage.total_tokens as number;
+					}
+					if ( ! existing.promptTokens && usage && typeof usage.prompt_tokens === 'number' ) {
+						existing.promptTokens = usage.prompt_tokens as number;
+					}
+					if ( ! existing.completionTokens && usage && typeof usage.completion_tokens === 'number' ) {
+						existing.completionTokens = usage.completion_tokens as number;
+					}
+					if ( ! existing.model && typeof d.model === 'string' && d.model ) {
+						existing.model = d.model as string;
+					}
+					if ( ! existing.provider && typeof d.provider === 'string' && d.provider ) {
+						existing.provider = d.provider as string;
+					}
+					map[ msg.id ] = existing;
+				}
+			}
+		}
+		return map;
+	}, [ usageMap, messages ] );
+		// ── Refresh sidebar after each completed response ──
+		// The server-side WP_MCP_AI_Chat_Transcript_Recorder auto-saves
+		// transcripts during every chat request, and tool-generated files
+		// (images, videos) land in the Media Library during the agentic
+		// loop.  Bump both refresh signals so the sidebar thread list
+		// and media tab re-fetch after the stream ends.
+		const bumpMediaRefresh = useUIStore( ( s ) => s.bumpMediaRefresh );
+		const prevStreamingRef = useRef( isStreaming );
+		useEffect( () => {
+			const wasStreaming = prevStreamingRef.current;
+			prevStreamingRef.current = isStreaming;
+			// Transition from streaming → ready: the LLM has finished and
+			// the server-side transcript + media should now be persisted.
+			if ( wasStreaming && ! isStreaming && status === 'ready' ) {
+				// Small delay to give the server-side recorder a chance to
+				// finish writing before we re-fetch both lists.
+				const timer = setTimeout( () => {
+					void transcripts.refreshList();
+					bumpMediaRefresh();
+				}, 500 );
+				return () => clearTimeout( timer );
+			}
+		}, [ isStreaming, status, transcripts, bumpMediaRefresh ] );
+
+	// Watch for media insert events from the sidebar Media tab.
+	// When the user clicks "Insert into chat", append attachment ID
+	// references to the composer so the image is easily referenced.
+	const mediaInsert = useUIStore( ( s ) => s.mediaInsert );
+	const clearMediaInsert = useUIStore( ( s ) => s.clearMediaInsert );
+	useEffect( () => {
+		if ( ! mediaInsert || mediaInsert.length === 0 ) {
+			return;
+		}
+		const refs = mediaInsert.map( ( id ) => `[attachment:${ id }]` ).join( ' ' );
+
+		// Programmatically set the composer value and fire an input event
+		// so useChat/AI SDK's internal state stays in sync.
+		const composer = document.getElementById( 'nvoos-pro-spa-composer-input' ) as HTMLTextAreaElement | null;
+		if ( composer ) {
+			const nativeSetter = Object.getOwnPropertyDescriptor(
+				window.HTMLTextAreaElement.prototype,
+				'value'
+			)?.set;
+			if ( nativeSetter ) {
+				const current = composer.value || '';
+				const newValue = current ? `${ current } ${ refs }` : refs;
+				nativeSetter.call( composer, newValue );
+				composer.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				composer.focus();
+			}
+		}
+
+		clearMediaInsert();
+	}, [ mediaInsert, clearMediaInsert ] );
 
 	// ---- Thread read‑only state (populated by ChatSidebar) ----
 	// When the sidebar selects a thread, LayoutContent calls
@@ -98,6 +310,29 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const [ memoryOpen, setMemoryOpen ] = useState< boolean >( false );
 	const [ memoryTab, setMemoryTab ] = useState< MemoryTab >( 'memories' );
 	const memoryToggleRef = useRef< HTMLButtonElement | null >( null );
+
+	// ---- Tool Shortcuts drawer ----
+	const [ toolsOpen, setToolsOpen ] = useState< boolean >( false );
+	const toolsToggleRef = useRef< HTMLButtonElement | null >( null );
+
+	// ---- Slash Commands drawer ----
+	const [ commandsOpen, setCommandsOpen ] = useState< boolean >( false );
+	const commandsToggleRef = useRef< HTMLButtonElement | null >( null );
+
+	// ---- Tasks drawer ----
+	const [ tasksOpen, setTasksOpen ] = useState< boolean >( false );
+	const tasksToggleRef = useRef< HTMLButtonElement | null >( null );
+
+	// Shared callback: close one drawer when another opens.
+	const openDrawer = useCallback(
+		( which: 'memory' | 'tools' | 'commands' | 'tasks' ) => {
+			setMemoryOpen( which === 'memory' );
+			setToolsOpen( which === 'tools' );
+			setCommandsOpen( which === 'commands' );
+			setTasksOpen( which === 'tasks' );
+		},
+		[]
+	);
 
 	// ---- Feedback state ----
 	const [ feedbackState, setFeedbackState ] = useState< Record< string, 'up' | 'down' > >( {} );
@@ -150,6 +385,77 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 
 	const hasMemory = typeof endpoints?.memory === 'string' && endpoints.memory.length > 0;
 	const hasApprovals = typeof endpoints?.approvals === 'string' && endpoints.approvals.length > 0;
+	const hasShortcuts = typeof endpoints?.shortcuts === 'string' && endpoints.shortcuts.length > 0;
+	const hasSlashCommands = typeof endpoints?.slashCommands === 'string' && endpoints.slashCommands.length > 0;
+
+	// ── Console: Slash Commands (v2.1.1 — mirrors legacy slash-commands.js) ───
+	useEffect( () => {
+		if ( hasSlashCommands && typeof console !== 'undefined' && console.info ) {
+			console.info(
+				'[NV oOS Pro SPA] SlashCommands endpoint registered',
+				{
+					endpoint: endpoints?.slashCommands,
+					assistantId,
+				},
+			);
+		}
+	}, [ hasSlashCommands, endpoints?.slashCommands, assistantId ] );
+
+	// ── Keyboard shortcuts (v0.9.0) ────────────────────────────────────────────
+	const ks = useKeyboardShortcuts( {
+		onExport: () => { if ( messages.length > 0 ) exportConversation( messages, 'json', assistantId, transcripts.sessionKey ); },
+		onNewChat: () => transcripts.startNewSession(),
+	} );
+
+	// ── Speech playback (v0.9.0) ──────────────────────────────────────────────
+	const speech = useSpeechPlayback( { toolsEndpoint: endpoints?.tools ?? '', nonce, assistantId } );
+
+	// ── Job system (v0.9.0) ───────────────────────────────────────────────────
+	const cronBase = ( endpoints?.chat ?? '' ).replace( /\/chat\/?$/, '' );
+	const jobBus = useJobBus( cronBase, nonce );
+	useTabTitleBadge( jobBus.runningCount );
+
+	// ── Dark mode (v0.9.0) — uses existing uiStore ────────────────────────────
+	const theme = useUIStore( ( s ) => s.theme );
+	const setTheme = useUIStore( ( s ) => s.setTheme );
+
+	// ── Workflow + delegation (v0.9.0) ─────────────────────────────────
+	const workflowState = useWorkflowState( messages );
+	const delegationNotices = useDelegationNotices( messages );
+
+	// ── Bridge delegation results to job bus so they appear in Tasks drawer ────
+	// delegate_to_agent is synchronous (no cron job), so we create pseudo-job
+	// entries from the tool result so the user can see delegation activity.
+	const bridgedDelegations = useRef< Set< string > >( new Set() );
+	useEffect( () => {
+		const bus = ( window as unknown as { wpMcpAiJobBus?: EventTarget } )
+			.wpMcpAiJobBus;
+		if ( ! bus ) return;
+
+		for ( const notice of delegationNotices ) {
+			const key = `${ notice.agentName || 'agent' }::${ notice.task }`;
+			if ( bridgedDelegations.current.has( key ) ) continue;
+			bridgedDelegations.current.add( key );
+
+			const status =
+				notice.status === 'complete' || notice.status === 'completed'
+					? 'completed'
+					: notice.status === 'error' || notice.status === 'failed'
+					? 'failed'
+					: 'running';
+
+			bus.dispatchEvent(
+				new CustomEvent( 'job:started', {
+					detail: {
+						job_id: `delegation-${ notice.agentName || 'agent' }`,
+						tool_name: `Delegate to ${ notice.agentName || 'agent' }`,
+						status,
+						message: notice.task,
+					},
+				} )
+			);
+		}
+	}, [ delegationNotices ] );
 
 	// ---- Render ----
 
@@ -194,7 +500,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		>
 			<div className="nvoos-pro-spa-chat-page__toolbar">
 				{/* Model selector */}
-				{ availableModels.length > 0 && (
+				{ uniqueModels.length > 0 && (
 					<div className="nvoos-pro-spa-chat-page__model-select">
 						<label
 							htmlFor="nvoos-pro-spa-model-select"
@@ -213,7 +519,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 								}
 							} }
 						>
-							{ availableModels.map( ( m ) => (
+							{ uniqueModels.map( ( m ) => (
 								<option
 									key={ `${ m.provider }|${ m.model }` }
 									value={ `${ m.provider }|${ m.model }` }
@@ -255,14 +561,80 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 						type="button"
 						ref={ memoryToggleRef }
 						className="nvoos-pro-spa-chat-page__memory-btn nvoos-pro-spa-btn"
-						onClick={ () => setMemoryOpen( ( prev ) => ! prev ) }
+						onClick={ () => openDrawer( 'memory' ) }
 						aria-label={ __( 'Toggle memory drawer', 'nvoos-pro-spa' ) }
 						aria-expanded={ memoryOpen }
 					>
 						{ __( 'Memory', 'nvoos-pro-spa' ) }
-					</button>
-				) }
-			</div>
+											</button>
+										) }
+
+										{/* Tool Shortcuts drawer toggle */}
+										{ hasShortcuts && (
+											<button
+												type="button"
+												ref={ toolsToggleRef }
+												className="nvoos-pro-spa-chat-page__tools-btn nvoos-pro-spa-btn"
+												onClick={ () => openDrawer( 'tools' ) }
+												aria-label={ __( 'Toggle tool shortcuts drawer', 'nvoos-pro-spa' ) }
+												aria-expanded={ toolsOpen }
+											>
+												{ __( 'Tools', 'nvoos-pro-spa' ) }
+											</button>
+										) }
+
+										{/* Slash Commands drawer toggle */}
+										{ hasSlashCommands && (
+											<button
+												type="button"
+												ref={ commandsToggleRef }
+												className="nvoos-pro-spa-chat-page__commands-btn nvoos-pro-spa-btn"
+												onClick={ () => openDrawer( 'commands' ) }
+												aria-label={ __( 'Toggle slash commands drawer', 'nvoos-pro-spa' ) }
+												aria-expanded={ commandsOpen }
+											>
+												{ __( 'Commands', 'nvoos-pro-spa' ) }
+											</button>
+										) }
+										{/* Tasks drawer toggle (v0.9.0) */}
+										<button
+											type="button"
+											ref={ tasksToggleRef }
+											className="nvoos-pro-spa-chat-page__tasks-btn nvoos-pro-spa-btn"
+											onClick={ () => openDrawer( 'tasks' ) }
+											aria-label={ __( 'Toggle tasks drawer', 'nvoos-pro-spa' ) }
+											aria-expanded={ tasksOpen }
+										>
+											{ __( 'Tasks', 'nvoos-pro-spa' ) }
+											{ jobBus.runningCount > 0 && (
+												<span className="nvoos-pro-spa-tasks-badge">
+													{ jobBus.runningCount }
+												</span>
+											) }
+											{ jobBus.failedCount > 0 && jobBus.runningCount === 0 && (
+												<span className="nvoos-pro-spa-tasks-badge nvoos-pro-spa-tasks-badge--error">!</span>
+											) }
+										</button>
+										{/* Theme toggle (v0.9.0) */}
+										<button type="button" className="nvoos-pro-spa-btn"
+											onClick={ () => setTheme( theme === 'dark' ? 'light' : 'dark' ) }
+											aria-label={ theme === 'dark' ? __( 'Light mode', 'nvoos-pro-spa' ) : __( 'Dark mode', 'nvoos-pro-spa' ) }>
+											{ theme === 'dark' ? '☀️' : '🌙' }
+										</button>
+										{/* Export (v0.9.0) */}
+										<button type="button" className="nvoos-pro-spa-btn"
+											disabled={ messages.length === 0 }
+											onClick={ () => exportConversation( messages, 'json', assistantId, transcripts.sessionKey ) }
+											aria-label={ __( 'Export conversation', 'nvoos-pro-spa' ) }>
+											📥
+										</button>
+										{/* Keyboard shortcuts (v0.9.0) */}
+										<button type="button" className="nvoos-pro-spa-btn"
+											onClick={ ks.toggleHelp }
+											aria-label={ __( 'Keyboard shortcuts', 'nvoos-pro-spa' ) }>
+											⌨
+										</button>
+									</div>
 
 			{/* HITL approval bar */}
 			{ hasApprovals && (
@@ -275,24 +647,46 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				/>
 			) }
 
+			{/* Suggested prompts (GAP-07: v0.9.0) */}
+			<SuggestedPrompts
+				prompts={ ( runtime?.config as Record< string, unknown > )?.suggestedPrompts as string[] | undefined }
+				onSelect={ ( prompt ) => sendMessage( prompt ) }
+			/>
+
 			<AgentPanel
-			messages={ messages }
-			input={ input }
-			handleInputChange={ handleInputChange }
-			handleSubmit={ handleSubmit }
-			status={ status }
-			error={ chatError }
-			stop={ stop }
-			reload={ reload }
-			isStreaming={ isStreaming }
-			sendMessage={ sendMessage }
-			threadId={ 0 }
-			threadTitle={ '' }
-			onRegenerate={ handleRegenerate }
-			onDeleteMessage={ handleDeleteMessage }
-			onFeedback={ handleFeedback }
-			onEditMessage={ handleEditMessage }
-			feedbackState={ feedbackState }
+				messages={ messages }
+				input={ input }
+				handleInputChange={ handleInputChange }
+				handleSubmit={ handleSubmit }
+				status={ status }
+				error={ chatError }
+				stop={ stop }
+				reload={ reload }
+				isStreaming={ isStreaming }
+				sendMessage={ sendMessage }
+				threadId={ 0 }
+				threadTitle={ '' }
+				onRegenerate={ handleRegenerate }
+				onDeleteMessage={ handleDeleteMessage }
+				onFeedback={ handleFeedback }
+				onEditMessage={ handleEditMessage }
+				feedbackState={ feedbackState }
+				usageMap={ enhancedUsageMap }
+				onSpeechPlay={ ( t ) => void speech.play( t ) }
+				onSpeechStop={ speech.stop }
+				speechStateFor={ speech.stateFor }
+				jobs={ jobBus.jobs }
+				onCancelJob={ ( id ) => void jobBus.cancelJob( id ) }
+				onRetryJob={ ( id ) => void jobBus.retryJob( id ) }
+				workflow={ workflowState }
+				delegations={ delegationNotices }
+				toolsEndpoint={ endpoints?.tools }
+				uploadEndpoint={ endpoints?.upload }
+				nonce={ nonce }
+				assistantId={ assistantId }
+				onSubmitWithAttachments={ ( atts ) => handleSubmitWithAttachments( atts ) }
+				onSaveConversation={ saveConversation }
+				slashCommandsEndpoint={ endpoints?.slashCommands }
 			/>
 
 			{/* Memory drawer */}
@@ -308,6 +702,48 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					toggleRef={ memoryToggleRef }
 				/>
 			) }
+
+			{/* Tool Shortcuts drawer */}
+			{ hasShortcuts && (
+				<ToolShortcutsDrawer
+					endpoint={ endpoints!.shortcuts }
+					nonce={ nonce }
+					assistantId={ assistantId }
+					isOpen={ toolsOpen }
+					onClose={ () => setToolsOpen( false ) }
+					onInsertPayload={ sendMessage }
+					toggleRef={ toolsToggleRef }
+				/>
+			) }
+
+			{/* Slash Commands drawer */}
+			{ hasSlashCommands && (
+				<SlashCommandsDrawer
+					endpoint={ endpoints!.slashCommands }
+					nonce={ nonce }
+					isOpen={ commandsOpen }
+					onClose={ () => setCommandsOpen( false ) }
+					onInsertPayload={ sendMessage }
+					onExecuteCommand={ ( cmd, raw ) => handleExecuteSlashCommand( cmd, raw ) }
+					toggleRef={ commandsToggleRef }
+				/>
+			) }
+
+			{/* Tasks drawer (v0.9.0) */}
+			<TasksDrawer
+				jobs={ jobBus.jobs }
+				runningCount={ jobBus.runningCount }
+				isOpen={ tasksOpen }
+				onClose={ () => setTasksOpen( false ) }
+				toggleRef={ tasksToggleRef }
+				onCancelJob={ jobBus.cancelJob }
+				onRetryJob={ jobBus.retryJob }
+				onDismissJob={ jobBus.dismissJob }
+				onDismissAll={ jobBus.dismissAllTerminal }
+			/>
+
+		{/* Keyboard shortcuts help modal (v0.9.0) */}
+		<KeyboardShortcutsHelp isOpen={ ks.isHelpOpen } onClose={ ks.closeHelp } />
 		</div>
 	);
-}
+	}

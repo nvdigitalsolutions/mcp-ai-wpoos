@@ -603,11 +603,27 @@ jobs:
           fi
           echo "Target reachable (HTTP ${HTTP_CODE})."
 
+      - name: Resolve ZAP-accessible target (fix Docker network isolation)
+        id: zap_target
+        run: |
+          RAW_TARGET="${{ steps.target.outputs.url }}"
+
+          if [ "${{ steps.target.outputs.use_docker }}" = "true" ]; then
+            GW=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}' 2>/dev/null || echo "172.17.0.1")
+            RESOLVED=$(echo "${RAW_TARGET}" | sed "s|localhost|${GW}|g" | sed "s|127\.0\.0\.1|${GW}|g")
+            echo "Docker gateway: ${GW}"
+            echo "Resolved target: ${RESOLVED}"
+          else
+            RESOLVED="${RAW_TARGET}"
+          fi
+
+          echo "url=${RESOLVED}" >> $GITHUB_OUTPUT
+
       - name: ZAP Baseline Scan
         id: zap
         uses: zaproxy/action-baseline@v0.13.0
         with:
-          target: ${{ steps.target.outputs.url }}
+          target: ${{ steps.zap_target.outputs.url }}
           fail_action: 'warn'
           rules_file_name: '.zap-rules.tsv'
           cmd_options: '-j -J zap-preflight-report.json -r zap-preflight-report.html --auto'

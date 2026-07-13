@@ -15,6 +15,11 @@ export interface UIState {
 	rightPanelOpen: boolean;
 	toasts: Toast[];
 	theme: 'light' | 'dark' | 'auto';
+	/** Pending media attachment IDs to insert into the chat composer. */
+	mediaInsert: number[] | null;
+	/** Incremented each time the chat response completes so the Media
+	 *  tab can auto-refresh after tool-generated files land. */
+	mediaRefreshCounter: number;
 
 	toggleSidebar: () => void;
 	toggleRightPanel: () => void;
@@ -22,6 +27,12 @@ export interface UIState {
 	addToast: ( message: string, variant?: Toast[ 'variant' ] ) => void;
 	removeToast: ( id: number ) => void;
 	setTheme: ( theme: UIState[ 'theme' ] ) => void;
+	/** Queue media attachment IDs for insertion into the chat composer. */
+	insertMediaToChat: ( ids: number[] ) => void;
+	/** Clear the pending media insert after consumption. */
+	clearMediaInsert: () => void;
+	/** Bump the counter so the Media tab re-fetches. */
+	bumpMediaRefresh: () => void;
 }
 
 const THEME_STORAGE_KEY = 'nvoos-pro-spa.theme';
@@ -51,6 +62,8 @@ export const useUIStore = create< UIState >( ( set ) => ( {
 	rightPanelOpen: false,
 	toasts: [],
 	theme: getInitialTheme(),
+	mediaInsert: null,
+	mediaRefreshCounter: 0,
 
 	toggleSidebar: () => set( ( s ) => ( { sidebarOpen: ! s.sidebarOpen } ) ),
 	toggleRightPanel: () => set( ( s ) => ( { rightPanelOpen: ! s.rightPanelOpen } ) ),
@@ -71,4 +84,9 @@ export const useUIStore = create< UIState >( ( set ) => ( {
 		persistTheme( theme );
 		set( { theme } );
 	},
+
+	insertMediaToChat: ( ids ) => set( { mediaInsert: ids } ),
+	clearMediaInsert: () => set( { mediaInsert: null } ),
+
+	bumpMediaRefresh: () => set( ( s ) => ( { mediaRefreshCounter: s.mediaRefreshCounter + 1 } ) ),
 } ) );

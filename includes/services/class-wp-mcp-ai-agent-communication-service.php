@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-inline-async-tick.php';
+
 /**
  * Agent Communication Service class
  *
@@ -25,9 +27,51 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Context sharing and propagation
  * - Message queue management
  *
+ * Adopts {@see WP_MCP_AI_Inline_Async_Tick_Trait} so that the first delegation
+ * processing attempt fires inline on the shutdown of the request that created
+ * the delegation, rather than waiting for the next WP-Cron loopback. On hosts
+ * with DISABLE_WP_CRON the cron loopback never fires; the cooperative tick
+ * lock prevents the inline kick and a concurrent cron event from both
+ * executing process_pending_delegation() for the same delegation
+ * simultaneously.
+ *
  * @since 1.1.0
  */
 class WP_MCP_AI_Agent_Communication_Service {
+	use WP_MCP_AI_Inline_Async_Tick_Trait;
+
+	/**
+	 * Cron hook for processing pending delegations.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const CRON_HOOK = 'wp_mcp_ai_process_delegation';
+
+	/**
+	 * Whether the cron hook has been registered.
+	 *
+	 * @since 1.1.0
+	 * @var bool
+	 */
+	private static $cron_registered = false;
+
+	/**
+	 * Bootstrap the delegation processing system.
+	 *
+	 * Registers the cron hook that processes pending delegations.
+	 * Called once per request.
+	 *
+	 * @since 1.1.0
+	 * @return void
+	 */
+	public static function init() {
+		if ( self::$cron_registered ) {
+			return;
+		}
+		add_action( self::CRON_HOOK, array( __CLASS__, 'process_pending_delegation' ) );
+		self::$cron_registered = true;
+	}
 
 	/**
 	 * Delegate a task to another agent
@@ -36,9 +80,12 @@ class WP_MCP_AI_Agent_Communication_Service {
 	 * @param int|string $to_agent_id Target agent ID (integer post ID or string virtual ID).
 	 * @param array      $task Task data to delegate.
 	 * @param array      $context Shared context.
+	 * @param bool       $run_inline When true, skip cron scheduling so the caller
+	 *                               can process the delegation synchronously via
+	 *                               {@see process_pending_delegation()}. Default false.
 	 * @return array|WP_Error Delegation result or error.
 	 */
-	public function delegate_task( $from_agent_id, $to_agent_id, $task, $context = array() ) {
+	public function delegate_task( $from_agent_id, $to_agent_id, $task, $context = array(), $run_inline = false ) {
 		// Validate target agent (required).
 		if ( empty( $to_agent_id ) ) {
 			return new WP_Error(
@@ -132,15 +179,25 @@ class WP_MCP_AI_Agent_Communication_Service {
 		// Log delegation.
 		$this->log_delegation( $delegation, 'created' );
 
-		return array(
-			'delegation_id' => $delegation['delegation_id'],
-			'status'        => 'delegated',
-			'agent_id'      => $to_agent_id,
-			'agent_name'    => $to_agent_name,
-			'agent_role'    => $to_agent_role,
-			'delegated_at'  => $delegation['created_at'],
-			'message'       => __( 'Task successfully delegated to target agent.', 'mcp-ai-wpoos' ),
-		);
+		// When running inline the caller handles processing synchronously;
+		// skip cron scheduling to avoid a duplicate (and unnecessary) async tick.
+		if ( ! $run_inline ) {
+			// Schedule cron processing for this delegation.
+			$this->schedule_delegation_processing( $delegation );
+
+			// Register with Cron Manager for visibility in the Tasks drawer.
+			$this->register_delegation_with_cron_manager( $delegation );
+		}
+
+			return array(
+				'delegation_id' => $delegation['delegation_id'],
+				'status'        => $run_inline ? 'pending' : 'delegated',
+				'agent_id'      => $to_agent_id,
+				'agent_name'    => $to_agent_name,
+				'agent_role'    => $to_agent_role,
+				'delegated_at'  => $delegation['created_at'],
+				'message'       => __( 'Task successfully delegated to target agent.', 'mcp-ai-wpoos' ),
+			);
 	}
 
 	/**
@@ -419,6 +476,398 @@ class WP_MCP_AI_Agent_Communication_Service {
 	}
 
 	/**
+	 * Schedule a cron event to process this delegation.
+	 *
+	 * Ensures the cron hook is registered, then schedules a one-off
+	 * event to execute immediately (on the next WP-Cron cycle).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $delegation Delegation record.
+	 * @return void
+	 */
+	protected function schedule_delegation_processing( $delegation ) {
+		self::init();
+
+		$args = array( $delegation['delegation_id'] );
+
+		// Avoid duplicate scheduling.
+		if ( wp_next_scheduled( self::CRON_HOOK, $args ) ) {
+			return;
+		}
+
+		// Schedule in the immediate past so that spawn_cron() always sees the
+		// event in wp_get_ready_cron_jobs(). Previously scheduled at time()+3
+		// which caused spawn_cron() to miss the event when no other cron jobs
+		// were due, leaving the delegation sitting pending indefinitely.
+		// Matches the canonical pattern from the Tool Async Executor.
+		$result = wp_schedule_single_event( time() - 1, self::CRON_HOOK, $args );
+
+		if ( ! $result ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to schedule delegation cron event',
+					array(
+						'delegation_id' => $delegation['delegation_id'],
+						'hook'          => self::CRON_HOOK,
+					)
+				);
+			}
+			return;
+		}
+
+		// Trigger WordPress cron immediately so the delegation starts right away.
+		// Without this, the delegation sits in the cron queue until the next
+		// HTTP request, which may never arrive (especially on SSE connections).
+		// This matches the pattern used by the VEO video generation service's
+		// queue_async_polling() which also calls spawn_cron() after scheduling.
+		spawn_cron();
+
+		// Inline-async-tick fallback: fire the delegation processing on the
+		// shutdown of the current request so that delegations on hosts with
+		// DISABLE_WP_CRON (or a firewalled wp-cron.php) are processed
+		// immediately without waiting for the next loopback or page load.
+		// The cooperative tick lock inside process_pending_delegation() (via
+		// the status guard: only processes when status === 'pending') prevents
+		// the shutdown kick and a concurrent cron event from both executing
+		// for the same delegation_id simultaneously.
+		// Pattern: mirrors Tool Async Executor, VEO Video Generation,
+		// Transcript Mining, and SaaS Controller jobs.
+		if ( self::inline_async_kick_enabled( $delegation['delegation_id'], __CLASS__ ) ) {
+			$delegation_id = $delegation['delegation_id'];
+			add_action(
+				'shutdown',
+				static function () use ( $delegation_id ) {
+					self::inline_async_detach_worker_from_client();
+					self::inline_async_run_kick(
+						__CLASS__,
+						$delegation_id,
+						static function () use ( $delegation_id ) {
+							self::process_pending_delegation( $delegation_id );
+						}
+					);
+				},
+				21
+			);
+		}
+	}
+
+	/**
+	 * Register the delegation with the Cron Manager for UI visibility.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $delegation Delegation record.
+	 * @return void
+	 */
+	protected function register_delegation_with_cron_manager( $delegation ) {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			return;
+		}
+
+		$user_id = isset( $delegation['task']['delegated_by'] )
+			? absint( $delegation['task']['delegated_by'] )
+			: 0;
+
+		// If delegated_by is a virtual agent or 0, try to get the current user.
+		if ( 0 === $user_id && function_exists( 'get_current_user_id' ) ) {
+			$user_id = get_current_user_id();
+		}
+
+		WP_MCP_AI_Cron_Manager::record_job(
+			self::CRON_HOOK,
+			array( $delegation['delegation_id'] ),
+			'single',
+			time(),
+			$user_id
+		);
+	}
+
+	/**
+	 * Process a pending delegation (cron callback).
+	 *
+	 * Reads the delegation from its transient, executes the task via
+	 * the target agent's role, and updates the delegation status.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $delegation_id The delegation identifier.
+	 * @return void
+	 */
+	public static function process_pending_delegation( $delegation_id ) {
+		$key  = 'wp_mcp_ai_delegation_' . $delegation_id;
+		$data = get_transient( $key );
+
+		if ( ! is_array( $data ) || empty( $data['to_agent_id'] ) ) {
+			// Delegation expired or invalid — attempt retry before giving up.
+			$retry_key   = 'wp_mcp_ai_delegation_retry_' . $delegation_id;
+			$retries     = (int) get_transient( $retry_key );
+			$max_retries = 3;
+
+			if ( $retries < $max_retries ) {
+				++$retries;
+				set_transient( $retry_key, $retries, 5 * MINUTE_IN_SECONDS );
+
+				// Reschedule with an exponential backoff: 3s, 9s, 27s.
+				$delay = (int) pow( 3, $retries );
+				self::init();
+				wp_schedule_single_event( time() + $delay, self::CRON_HOOK, array( $delegation_id ) );
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'delegation_cron_retry',
+						'Delegation transient not found, rescheduling',
+						array(
+							'delegation_id' => $delegation_id,
+							'retry'         => $retries,
+							'delay_seconds' => $delay,
+						)
+					);
+				}
+				return;
+			}
+
+			// Max retries exceeded — mark tracked job as failed if Cron Manager exists.
+			if ( $retries >= $max_retries && class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				$job_id = WP_MCP_AI_Cron_Manager::generate_job_id_static(
+					self::CRON_HOOK,
+					array( $delegation_id )
+				);
+				$job    = WP_MCP_AI_Cron_Manager::get_job( $job_id );
+				if ( $job ) {
+					// Store failure in Cron Manager — append error.
+					$jobs = get_option( 'wp_mcp_ai_cron_jobs', array() );
+					if ( isset( $jobs[ $job_id ] ) ) {
+						$jobs[ $job_id ]['last_error'] = sprintf(
+							'Delegation not found after %d retries.',
+							$max_retries
+						);
+						$jobs[ $job_id ]['error_at']   = time();
+						update_option( 'wp_mcp_ai_cron_jobs', $jobs );
+					}
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'delegation_cron_miss',
+					'Delegation not found for cron processing (retries exhausted)',
+					array(
+						'delegation_id' => $delegation_id,
+						'retries'       => $retries,
+					)
+				);
+			}
+			return;
+		}
+
+		// Skip if already completed or failed.
+		if ( ! empty( $data['status'] ) && 'pending' !== $data['status'] ) {
+			return;
+		}
+
+		// Clean up retry counter — delegation data was found.
+		$retry_key = 'wp_mcp_ai_delegation_retry_' . $delegation_id;
+		delete_transient( $retry_key );
+
+		$to_agent_id = $data['to_agent_id'];
+		$task_data   = isset( $data['task'] ) ? $data['task'] : array();
+		$context     = isset( $data['context'] ) ? $data['context'] : array();
+
+		// Mark as in-progress.
+		$data['status']     = 'running';
+		$data['started_at'] = current_time( 'mysql' );
+		set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+
+		// Log delegation execution start.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'delegation_execution_started',
+				'Processing delegated task',
+				array(
+					'delegation_id' => $delegation_id,
+					'to_agent_id'   => $to_agent_id,
+				)
+			);
+		}
+
+		// Virtual agents cannot be dispatched to the chat endpoint — they
+		// only exist in team context. The rest of this method is for real
+		// assistant post IDs only.
+		$is_virtual = is_string( $to_agent_id ) && 0 === strpos( $to_agent_id, 'virtual_' );
+		if ( $is_virtual ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'Cannot process delegation for virtual agents via cron. Virtual agents must be handled within their team context.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		$to_agent_id = absint( $to_agent_id );
+
+		// Verify the target assistant post exists.
+		$assistant_post = get_post( $to_agent_id );
+		if ( ! $assistant_post || 'mcp_ai_assistant' !== $assistant_post->post_type || 'publish' !== $assistant_post->post_status ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'Target assistant not found or not published.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		// Build the chat message from the delegated task.
+		$task_description = isset( $task_data['description'] ) ? $task_data['description'] : '';
+		if ( '' === $task_description ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'Delegated task has no description.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		// Dispatch the assistant run via the internal REST API, following the
+		// same pattern as WP_MCP_AI_Pro_Schedule_Manager::dispatch_assistant_run()
+		// so the full agentic pipeline (AI model, tool execution, response
+		// generation) is exercised.
+		if ( ! function_exists( 'rest_do_request' ) ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'REST API is not available for delegation processing.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		// Pre-flight: verify the REST server is initialised so that
+		// rest_do_request() does not throw a fatal error on a null server.
+		// Matches the pattern in dispatch_assistant_run().
+		$rest_server = rest_get_server();
+		if ( ! $rest_server ) {
+			$data['status']       = 'failed';
+			$data['error']        = __( 'REST API server is not available.', 'mcp-ai-wpoos' );
+			$data['completed_at'] = current_time( 'mysql' );
+			set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+			return;
+		}
+
+		// Resolve the user context: use the user who delegated, or the
+		// current user, so the REST request inherits proper capabilities.
+		$delegated_by  = isset( $data['task']['delegated_by'] ) ? absint( $data['task']['delegated_by'] ) : 0;
+		$previous_user = get_current_user_id();
+		if ( $delegated_by > 0 && $delegated_by !== $previous_user ) {
+			wp_set_current_user( $delegated_by );
+		}
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => $task_description,
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_body_params(
+			array(
+				'assistant_id'          => $to_agent_id,
+				'messages'              => $messages,
+				'stream'                => false,
+				'allow_sensitive_tools' => true,
+				'context'               => array(
+					'source'        => 'agent_delegation',
+					'delegation_id' => $delegation_id,
+					'delegated_by'  => isset( $data['from_agent_id'] ) ? $data['from_agent_id'] : 0,
+				),
+			)
+		);
+
+		try {
+			$response = rest_do_request( $request );
+
+			// Restore the previous user context.
+			if ( $delegated_by > 0 && $delegated_by !== $previous_user ) {
+				wp_set_current_user( $previous_user );
+			}
+
+			if ( $response->is_error() ) {
+				$error_data     = $response->get_data();
+				$data['status'] = 'failed';
+				$data['error']  = isset( $error_data['message'] )
+					? $error_data['message']
+					: __( 'Chat API request failed.', 'mcp-ai-wpoos' );
+			} else {
+				$response_data = $response->get_data();
+
+				// Extract the assistant reply using the same two-pass
+				// extraction as the pro schedule manager.
+				$reply = '';
+				if ( isset( $response_data['data']['choices'] ) && is_array( $response_data['data']['choices'] ) ) {
+					foreach ( $response_data['data']['choices'] as $choice ) {
+						if ( isset( $choice['finish_reason'] ) && 'stop' === $choice['finish_reason']
+							&& isset( $choice['message']['content'] )
+						) {
+							$reply = $choice['message']['content'];
+							break;
+						}
+					}
+
+					// Fallback: use the last choice's content.
+					if ( '' === $reply ) {
+						$last = end( $response_data['data']['choices'] );
+						if ( isset( $last['message']['content'] ) ) {
+							$reply = $last['message']['content'];
+						}
+					}
+				}
+
+				// Fallback: check agentic_tool_messages for content.
+				if ( '' === $reply && isset( $response_data['agentic_tool_messages'] ) && is_array( $response_data['agentic_tool_messages'] ) ) {
+					foreach ( $response_data['agentic_tool_messages'] as $msg ) {
+						if ( isset( $msg['role'] ) && 'assistant' === $msg['role'] && ! empty( $msg['content'] ) ) {
+							$reply = $msg['content'];
+							break;
+						}
+					}
+				}
+
+				$data['status'] = 'completed';
+				$data['result'] = array(
+					'assistant_id' => $to_agent_id,
+					'message'      => $task_description,
+					'response'     => $reply,
+				);
+			}
+		} catch ( \Throwable $e ) {
+			// Restore the previous user context on exception.
+			if ( $delegated_by > 0 && $delegated_by !== $previous_user ) {
+				wp_set_current_user( $previous_user );
+			}
+
+			$data['status'] = 'failed';
+			$data['error']  = sprintf(
+				'%s in %s:%d',
+				$e->getMessage(),
+				str_replace( ABSPATH, '', $e->getFile() ),
+				$e->getLine()
+			);
+		}
+
+		$data['completed_at'] = current_time( 'mysql' );
+		set_transient( $key, $data, isset( $data['ttl'] ) ? $data['ttl'] : HOUR_IN_SECONDS );
+
+		// Log result.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'delegation_execution_finished',
+				'Delegated task processing complete',
+				array(
+					'delegation_id' => $delegation_id,
+					'status'        => $data['status'],
+				)
+			);
+		}
+	}
+
+	/**
 	 * Log delegation activity
 	 *
 	 * @param array  $delegation Delegation data.
@@ -528,5 +977,105 @@ class WP_MCP_AI_Agent_Communication_Service {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Watchdog scanner — find and re-schedule stale pending delegations.
+	 *
+	 * Called periodically (every 5 minutes via cron) to detect delegations
+	 * that were recorded in Cron Manager but whose WP-Cron event was
+	 * consumed without the delegation being processed. This is a safety
+	 * net for when spawn_cron() loopback fails or the cron handler
+	 * encounters a race condition with transient availability.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return int Number of stale delegations re-scheduled.
+	 */
+	public static function watchdog_scan_stale_delegations() {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			return 0;
+		}
+
+		$jobs    = WP_MCP_AI_Cron_Manager::get_jobs();
+		$rescued = 0;
+		$max_age = 2 * HOUR_IN_SECONDS; // Don't bother with very old delegations.
+
+		foreach ( $jobs as $job ) {
+			$hook = isset( $job['hook'] ) ? (string) $job['hook'] : '';
+
+			// Only scan delegation events.
+			if ( self::CRON_HOOK !== $hook ) {
+				continue;
+			}
+
+			$args  = isset( $job['args'] ) ? $job['args'] : array();
+			$event = wp_get_scheduled_event( $hook, $args );
+
+			// Skip if already scheduled.
+			if ( $event ) {
+				continue;
+			}
+
+			// Extract delegation ID from args.
+			$delegation_id = isset( $args[0] ) ? (string) $args[0] : '';
+			if ( '' === $delegation_id ) {
+				continue;
+			}
+
+			// Check if the delegation transient still exists.
+			$key  = 'wp_mcp_ai_delegation_' . $delegation_id;
+			$data = get_transient( $key );
+
+			if ( ! is_array( $data ) ) {
+				// Transient is gone — check age before giving up.
+				$created = isset( $job['created_at'] ) ? (int) $job['created_at'] : 0;
+				if ( $created > 0 && ( time() - $created ) < $max_age ) {
+					// Transient missing but delegation is recent — may indicate
+					// an object-cache inconsistency. Log and skip.
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'delegation_watchdog_transient_missing',
+							'Delegation transient missing for recent delegation',
+							array(
+								'delegation_id' => $delegation_id,
+								'age_seconds'   => time() - $created,
+							)
+						);
+					}
+				}
+				continue;
+			}
+
+			// Only re-schedule if still pending.
+			if ( ! empty( $data['status'] ) && 'pending' !== $data['status'] ) {
+				continue;
+			}
+
+			// Check retry count — don't infinitely re-schedule.
+			$retry_key = 'wp_mcp_ai_delegation_retry_' . $delegation_id;
+			$retries   = (int) get_transient( $retry_key );
+			if ( $retries >= 3 ) {
+				continue;
+			}
+
+			// Re-schedule the delegation processing.
+			self::init();
+			wp_schedule_single_event( time() + 5, self::CRON_HOOK, array( $delegation_id ) );
+			++$rescued;
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'delegation_watchdog_rescued',
+					'Watchdog re-scheduled stale delegation',
+					array(
+						'delegation_id' => $delegation_id,
+						'created_at'    => isset( $job['created_at'] ) ? $job['created_at'] : 0,
+					)
+				);
+			}
+		}
+
+		return $rescued;
 	}
 }

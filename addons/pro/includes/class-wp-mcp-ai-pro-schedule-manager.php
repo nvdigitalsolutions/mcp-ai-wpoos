@@ -3260,6 +3260,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 									}
 								}
 								$response = implode( "\n\n", $parts );
+
+								// Fallback: when no step produced a string result,
+								// build a human-readable summary from structured
+								// result data so email/chat recipients see useful
+								// output instead of an empty body.
+								if ( '' === $response ) {
+									$response = self::build_workflow_structured_response( $steps );
+								}
 							}
 						}
 						break;
@@ -3363,11 +3371,102 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			 * @param array  $action_log    Dispatcher's structured action log.
 			 * @param bool   $success       Whether the run succeeded.
 			 */
-			return (array) apply_filters( 'wp_mcp_ai_pro_schedule_result_envelope', $envelope, $schedule, $action_log, $success );
+		return (array) apply_filters( 'wp_mcp_ai_pro_schedule_result_envelope', $envelope, $schedule, $action_log, $success );
+	}
+
+	/**
+	 * Build a human-readable text response from structured workflow step
+	 * results when no step produced a plain string output.
+	 *
+	 * Walks each step's result array and extracts descriptive fields
+	 * (notice, message, total_count, item lists with title/name) into a
+	 * readable summary suitable for email, chat, and SMS delivery.
+	 *
+	 * @since  1.1.33
+	 * @param  array $steps Workflow step results from the action log.
+	 * @return string Human-readable summary text.
+	 */
+	protected static function build_workflow_structured_response( array $steps ) {
+		$lines = array();
+
+		foreach ( $steps as $idx => $step ) {
+			if ( ! is_array( $step ) ) {
+				continue;
+			}
+			$result = isset( $step['result'] ) ? $step['result'] : null;
+			if ( ! is_array( $result ) ) {
+				continue;
+			}
+
+			$label = isset( $step['label'] ) ? (string) $step['label'] : '';
+
+			// Step header.
+			if ( '' !== $label ) {
+				$lines[] = "\n## {$label}";
+			}
+
+			// Notice / message — often the most useful field.
+			$notice = isset( $result['notice'] ) ? (string) $result['notice'] : '';
+			if ( '' !== $notice ) {
+				$lines[] = $notice;
+			}
+			$message = isset( $result['message'] ) ? (string) $result['message'] : '';
+			if ( '' !== $message && $message !== $notice ) {
+				$lines[] = $message;
+			}
+
+			// Count summary.
+			$total = isset( $result['total_count'] ) ? (int) $result['total_count'] : 0;
+			$count = isset( $result['count'] ) ? (int) $result['count'] : 0;
+			if ( $total > 0 || $count > 0 ) {
+				$display_count = $total > 0 ? $total : $count;
+				$lines[]       = sprintf(
+					/* translators: %d: number of items found */
+					_n( '%d result found.', '%d results found.', $display_count, 'mcp-ai-wpoos-pro' ),
+					$display_count
+				);
+			}
+
+			// Item list — look for common array keys that hold lists.
+			$item_keys = array( 'jobs', 'products', 'orders', 'posts', 'items', 'results', 'files', 'records' );
+			foreach ( $item_keys as $item_key ) {
+				if ( ! empty( $result[ $item_key ] ) && is_array( $result[ $item_key ] ) ) {
+					$items      = $result[ $item_key ];
+					$max_display = min( 5, count( $items ) );
+					$item_lines  = array();
+					for ( $i = 0; $i < $max_display; $i++ ) {
+						if ( ! is_array( $items[ $i ] ) ) {
+							continue;
+						}
+						$name = isset( $items[ $i ]['title'] )
+							? (string) $items[ $i ]['title']
+							: ( isset( $items[ $i ]['name'] ) ? (string) $items[ $i ]['name'] : '' );
+						if ( '' !== $name ) {
+							$item_lines[] = ( $i + 1 ) . '. ' . $name;
+						}
+					}
+					if ( ! empty( $item_lines ) ) {
+						$lines = array_merge( $lines, $item_lines );
+					}
+					$remaining = count( $items ) - $max_display;
+					if ( $remaining > 0 ) {
+						$lines[] = sprintf(
+							/* translators: %d: number of additional items */
+							__( '… and %d more.', 'mcp-ai-wpoos-pro' ),
+							$remaining
+						);
+					}
+					// Only process the first matching item key.
+					break;
+				}
+			}
 		}
 
-		/**
-		 * Persist a result envelope for a schedule.
+		return '' !== implode( '', $lines ) ? implode( "\n", $lines ) : '';
+	}
+
+	/**
+	 * Persist a result envelope for a schedule.
 		 *
 		 * @since 1.0.0
 		 *

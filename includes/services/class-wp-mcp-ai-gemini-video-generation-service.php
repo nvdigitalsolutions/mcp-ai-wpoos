@@ -466,6 +466,17 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			return false;
 		}
 
+		// 404 / model-not-found errors: do NOT fallback to Veo 2.
+		// Google deprecated Veo 2.0 in mid-2026 and may have restricted Veo 3.1.
+		// Falling back to another deprecated model just wastes quota with another 404.
+		$deprecation_indicators = array(
+			'not found for API version',
+			'is not found',
+		);
+		if ( $this->error_message_contains( $error_message, $deprecation_indicators ) ) {
+			return false;
+		}
+
 		// Quota/rate limit errors.
 		$quota_indicators = array(
 			'quota',
@@ -480,11 +491,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			return true;
 		}
 
-		// Model unavailable errors.
+		// Model unavailable errors (generic — exclude the specific 404 patterns above).
 		$availability_indicators = array(
 			'not available',
 			'unavailable',
-			'not found',
 			'does not exist',
 			'not supported',
 			'model not found',
@@ -500,6 +510,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		if ( isset( $error_data['status'] ) ) {
 			$status = $error_data['status'];
 			// 429 = Too Many Requests, 403 = Forbidden (quota), 503 = Service Unavailable.
+			// Note: 404 is excluded here — model deprecation should not trigger fallback.
 			if ( in_array( $status, array( 403, 429, 503 ), true ) ) {
 				return true;
 			}
@@ -760,8 +771,20 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$api_error_message = $data['error']['message'];
 				$error_message     = $api_error_message;
 
+				// Detect deprecated/removed Veo models (404 not found).
+				// Google deprecated Veo 2.0 in mid-2026; Veo 3.1 may also be affected.
+				$deprecation_indicators = array( 'not found', 'not supported', 'is not found for API version' );
+				if ( 404 === $code || $this->error_message_contains( $api_error_message, $deprecation_indicators ) ) {
+					$error_code    = 'wp_mcp_ai_veo_model_not_available';
+					$error_message = sprintf(
+						/* translators: 1: model name, 2: API error message */
+						__( 'The Veo model "%1$s" is no longer available via the Gemini API. Google deprecated Veo 2.0 in mid-2026 and may have restricted Veo 3.1 access. Use Gemini Omni Flash (gemini-omni-flash) for video generation — it is the recommended replacement with 10s duration, native audio, and multi-turn editing. Original error: %2$s', 'mcp-ai-wpoos' ),
+						$model,
+						$api_error_message
+					);
+				}
 				// Provide more helpful error messages for common issues.
-				if ( $this->is_content_policy_error( $api_error_message ) ) {
+				elseif ( $this->is_content_policy_error( $api_error_message ) ) {
 					$error_code    = 'wp_mcp_ai_content_policy_violation';
 					$error_message = sprintf(
 						/* translators: %s: API error message */

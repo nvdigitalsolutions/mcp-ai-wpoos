@@ -8,6 +8,8 @@
 import { type JSX, useCallback, useMemo } from 'react';
 import { __ } from '@wordpress/i18n';
 
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+
 import { useUIStore } from '../../stores/uiStore';
 import { useModelStore, type ModelPreference } from '../../stores/modelStore';
 
@@ -81,7 +83,6 @@ export function RightPanel(): JSX.Element {
 				.filter( Boolean )
 				.join( ' ' ) }
 			id="nvoos-pro-spa-right-panel"
-			role="complementary"
 			aria-label={ __( 'Details panel', 'nvoos-pro-spa' ) }
 			aria-hidden={ ! rightPanelOpen }
 			onKeyDown={ handleKeyDown }

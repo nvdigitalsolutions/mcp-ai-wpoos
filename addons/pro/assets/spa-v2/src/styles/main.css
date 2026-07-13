@@ -58,27 +58,83 @@
  * admin menu.  #wpbody-content is floated which causes height collapse.
  *
  * The body class `toplevel_page_wp-mcp-ai-spa` is specific to this menu page.
+ *
+ * Strategy: Constrain #wpwrap to the viewport height (accounting for the
+ * admin bar via calc).  Chain height:100% from #wpwrap down through every
+ * ancestor so #wp-mcp-ai-pro-spa-root fills #wpbody exactly — no viewport
+ * math needed on the nested root element.
  */
 
-/* Unfloat the content area so it stretches to the viewport height.
-   Remove footer padding (the SPA has its own status bar). */
+/* Prevent document-level scrolling — the SPA handles all internal overflow.
+   overflow:hidden on html AND body locks the viewport so browser focus-scroll
+   (e.g. textarea auto-focus on load) cannot shift the page.
+   html:has() targets the root when this admin page is active since WordPress
+   only adds the body class. */
+html:has(body.toplevel_page_wp-mcp-ai-spa),
+body.toplevel_page_wp-mcp-ai-spa {
+	overflow: hidden;
+	overscroll-behavior: none;
+}
+
+/* WordPress core adds padding-left on #wpcontent (20px default) for the
+   admin menu gutter.  Remove it so the SPA uses the full content area. */
+body.toplevel_page_wp-mcp-ai-spa #wpcontent {
+	padding-left: 0;
+}
+
+/* ── Height chain: fill #wpbody exactly ──────────────────────────────────── */
+
+/* Constrain the outer wrapper to the viewport (minus the 32px admin bar).
+   html has margin-top:32px from WP core admin-bar.css, so #wpwrap starts
+   at y=32px and calc(100vh - 32px) fills the remaining viewport.
+   overflow:hidden on every ancestor in the chain prevents content from
+   leaking past the constrained boundary — without it the browser may
+   scroll the document when a child input receives focus. */
+body.toplevel_page_wp-mcp-ai-spa #wpwrap {
+	height: calc(100vh - 32px);
+	overflow: hidden;
+}
+
+/* Chain height:100% through the content ancestors so the SPA root
+   inherits the exact available space inside #wpbody.
+   overflow:hidden is essential: without it any overflow leaks out of
+   the height-constrained container and pushes the SPA off-screen. */
+body.toplevel_page_wp-mcp-ai-spa #wpcontent,
+body.toplevel_page_wp-mcp-ai-spa #wpbody,
+body.toplevel_page_wp-mcp-ai-spa #wpbody-content {
+	height: 100%;
+	overflow: hidden;
+}
+
+/* Unfloat the content area and remove footer padding (the SPA has its
+   own status bar). */
 body.toplevel_page_wp-mcp-ai-spa #wpbody-content {
 	float: none;
 	padding-bottom: 0;
 }
 
-/* Fill the available viewport below the 32px admin bar.
-   On small screens (≤782px) the admin bar is 46px. */
+/* Hide the WordPress admin footer and any admin notices on this page.
+   The SPA renders its own status bar and toast notification system. */
+body.toplevel_page_wp-mcp-ai-spa #wpfooter,
+body.toplevel_page_wp-mcp-ai-spa .notice,
+body.toplevel_page_wp-mcp-ai-spa .update-nag {
+	display: none;
+}
+
+/* SPA root fills its parent (#wpbody-content, which is 100% of #wpbody).
+   No calc() needed — the height chain handles the admin bar offset. */
 body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
-	min-height: calc(100vh - 32px);
+	height: 100%;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
 }
 
+/* On small screens (≤782px) the admin bar is 46px.  Only #wpwrap needs
+   the adjusted calc; the rest of the 100% chain adapts automatically. */
 @media screen and ( max-width: 782px ) {
-	body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
-		min-height: calc(100vh - 46px);
+	body.toplevel_page_wp-mcp-ai-spa #wpwrap {
+		height: calc(100vh - 46px);
 	}
 }
 
@@ -266,11 +322,17 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	border-bottom-color: var(--nvoos-primary, #2271b1);
 }
 
-.nvoos-pro-spa-sidebar__panel {
-	flex: 1;
-	overflow-y: auto;
-	padding: 8px;
-}
+	.nvoos-pro-spa-sidebar__panel {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow-y: auto;
+		padding: 8px;
+	}
+
+	.nvoos-pro-spa-sidebar__panel[hidden] {
+		display: none;
+	}
 
 .nvoos-pro-spa-sidebar__list {
 	list-style: none;
@@ -344,6 +406,42 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-sidebar__new-btn {
 	width: 100%;
 	margin-top: 8px;
+}
+
+/* ── Media tab insert bar ────────────────────────────────────────────── */
+
+.nvoos-pro-spa-sidebar__media-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 10px;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-sidebar__media-count {
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-sidebar__media-insert-btn {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 12px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.4;
+	color: #fff;
+	background: var(--nvoos-primary, #2271b1);
+	border: none;
+	border-radius: 3px;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.nvoos-pro-spa-sidebar__media-insert-btn:hover {
+	background: var(--nvoos-primary-dark, #135e96);
 }
 
 /* ── Right Panel ──────────────────────────────────────────────────────────── */
@@ -524,6 +622,14 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	overflow: hidden;
 }
 
+/* On mobile, add extra top margin so the fixed hamburger button
+   (46px from top) doesn't overlap the chat page content. */
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-chat-page {
+		margin-top: 50px;
+	}
+}
+
 .nvoos-pro-spa-chat-page--loading,
 .nvoos-pro-spa-chat-page--error,
 .nvoos-pro-spa-chat-page--welcome {
@@ -560,9 +666,28 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 .nvoos-pro-spa-chat-page__toolbar {
 	display: flex;
 	align-items: center;
-	gap: 16px;
+	flex-wrap: wrap;
+	gap: 12px 16px;
 	padding: 12px 20px;
 	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+/* On mobile, tighten up the toolbar so Memory / Tools / Commands
+   buttons wrap naturally instead of overflowing off-screen. */
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-chat-page__toolbar {
+		gap: 6px 10px;
+		padding: 10px 12px;
+	}
+
+	.nvoos-pro-spa-chat-page__toolbar .nvoos-pro-spa-btn {
+		padding: 6px 10px;
+		font-size: 12px;
+	}
+
+	.nvoos-pro-spa-chat-page__select {
+		max-width: 160px;
+	}
 }
 
 .nvoos-pro-spa-chat-page__select-label {
@@ -608,6 +733,17 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	flex: 1;
 	overflow-y: auto;
 	padding: 16px 20px;
+	/* Reserve space below the messages container so the anchor
+	   leaves clearance above the composer bar. */
+	scroll-padding-bottom: 100px;
+}
+
+/* Scroll anchor — kept at the bottom of the message list.
+   scroll-margin-bottom leaves 100px of breathing room so the
+   streaming response text is not hidden behind the composer. */
+.nvoos-pro-spa-agent-panel__scroll-anchor {
+	scroll-margin-bottom: 100px;
+	height: 0;
 }
 
 .nvoos-pro-spa-agent-panel__empty {
@@ -633,11 +769,21 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	align-items: flex-end;
 }
 
+/* On mobile, add extra bottom padding so the wrapped toolbar
+   buttons (mic, voice, attach) aren't clipped by the viewport edge. */
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-agent-panel__composer {
+		padding: 8px 12px 36px;
+	}
+}
+
 .nvoos-pro-spa-agent-panel__composer-form {
 	display: flex;
 	gap: 8px;
 	width: 100%;
 	align-items: flex-end;
+	flex-wrap: wrap;
+	position: relative;
 }
 
 .nvoos-pro-spa-agent-panel__composer-input {
@@ -1935,6 +2081,84 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	opacity: 0.6;
 }
 
+/* ── Tool card extended styles ─────────────────────────────────────────── */
+
+.nvoos-pro-spa-tool-result-text {
+	padding: 8px 10px;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	font-size: 13px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+.nvoos-pro-spa-tool-result-prefix { font-weight: 600; }
+
+.nvoos-pro-spa-tool--error { border-color: var(--nvoos-danger, #d63638); }
+.nvoos-pro-spa-tool--error .nvoos-pro-spa-tool-name { color: var(--nvoos-danger, #d63638); }
+.nvoos-pro-spa-tool--pending { border-color: var(--nvoos-warning, #f0c33c); }
+.nvoos-pro-spa-tool--pending .nvoos-pro-spa-tool-name { color: var(--nvoos-warning, #dba617); }
+
+.nvoos-pro-spa-tool-running {
+	display: flex; align-items: center; gap: 8px;
+	padding: 10px; border-top: 1px solid var(--nvoos-border, #dcdcde);
+	font-size: 13px; color: var(--nvoos-text-secondary, #787c82);
+}
+.nvoos-pro-spa-tool-running-spinner {
+	display: inline-block; width: 14px; height: 14px;
+	border: 2px solid var(--nvoos-border, #dcdcde);
+	border-top-color: var(--nvoos-primary, #2271b1);
+	border-radius: 50%;
+	animation: nvoos-pro-spa-spin 0.6s linear infinite;
+}
+@keyframes nvoos-pro-spa-spin { to { transform: rotate(360deg); } }
+
+.nvoos-pro-spa-tool-attachments {
+	display: flex; flex-direction: column; gap: 4px;
+	padding: 6px 10px; border-top: 1px solid var(--nvoos-border, #dcdcde);
+}
+.nvoos-pro-spa-tool-attachment {
+	display: flex; align-items: flex-start; gap: 8px;
+	padding: 6px; border-radius: 4px;
+	background: var(--nvoos-bg, #f0f0f1);
+}
+.nvoos-pro-spa-tool-attachment-thumb img {
+	max-width: 80px; max-height: 60px; border-radius: 3px;
+	object-fit: cover; display: block;
+}
+.nvoos-pro-spa-tool-attachment-video { width: 160px; max-height: 90px; border-radius: 3px; }
+.nvoos-pro-spa-tool-attachment-icon { font-size: 24px; line-height: 1; }
+.nvoos-pro-spa-tool-attachment-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nvoos-pro-spa-tool-attachment-label {
+	font-size: 12px; font-weight: 500;
+	color: var(--nvoos-primary, #2271b1); text-decoration: none; word-break: break-word;
+}
+.nvoos-pro-spa-tool-attachment-label:hover { text-decoration: underline; }
+.nvoos-pro-spa-tool-attachment-meta { font-size: 11px; color: var(--nvoos-text-secondary, #787c82); }
+
+.nvoos-pro-spa-tool-chart { padding: 8px 10px; border-top: 1px solid var(--nvoos-border, #dcdcde); }
+.nvoos-pro-spa-tool-chart-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.nvoos-pro-spa-tool-chart-iframe { border: 1px solid var(--nvoos-border, #dcdcde); border-radius: 3px; max-width: 100%; }
+
+.nvoos-pro-spa-tool-truncated { border-top: 1px solid var(--nvoos-border, #dcdcde); }
+.nvoos-pro-spa-tool-truncated-summary {
+	padding: 6px 10px; cursor: pointer; font-size: 12px;
+	color: var(--nvoos-warning, #dba617); background: var(--nvoos-bg, #f0f0f1);
+}
+.nvoos-pro-spa-tool-truncated pre {
+	margin: 0; padding: 8px 10px; font-size: 11px;
+	max-height: 300px; overflow: auto; background: rgba(0,0,0,0.02);
+}
+
+.nvoos-pro-spa-tool-raw { border-top: 1px solid var(--nvoos-border, #dcdcde); }
+.nvoos-pro-spa-tool-raw-summary {
+	padding: 6px 10px; cursor: pointer; font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82); background: var(--nvoos-bg, #f0f0f1);
+}
+.nvoos-pro-spa-tool-raw pre {
+	margin: 0; padding: 8px 10px; font-size: 11px;
+	max-height: 300px; overflow: auto; background: rgba(0,0,0,0.02);
+}
+
 /* ── Annotation pills ────────────────────────────────────────────────── */
 
 .nvoos-pro-spa-message-view__annotations {
@@ -2115,6 +2339,62 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	margin: 0;
 }
 
+.nvoos-pro-spa-sidebar__assistant-error {
+	font-size: 12px;
+	color: var(--nvoos-danger, #d63638);
+	margin: 0;
+	padding: 4px 0;
+}
+
+.nvoos-pro-spa-sidebar__assistant-empty {
+	font-size: 12px;
+	opacity: 0.5;
+	margin: 0;
+	padding: 4px 0;
+}
+
+/* ── Vector store status indicator (v2.1.0) ────────────────────────── */
+
+.nvoos-pro-spa-sidebar__vs-status {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 12px 8px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-sidebar__vs-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	transition: background 0.3s ease;
+}
+
+.nvoos-pro-spa-sidebar__vs-status--loading .nvoos-pro-spa-sidebar__vs-dot {
+	background: #dba617;
+	animation: nvoos-pro-spa-pulse 1.2s infinite;
+}
+
+.nvoos-pro-spa-sidebar__vs-status--ready .nvoos-pro-spa-sidebar__vs-dot {
+	background: #46b450;
+}
+
+.nvoos-pro-spa-sidebar__vs-status--error .nvoos-pro-spa-sidebar__vs-dot {
+	background: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-sidebar__vs-status--none .nvoos-pro-spa-sidebar__vs-dot {
+	background: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-sidebar__vs-label {
+	font-weight: 500;
+	line-height: 1;
+}
+
 /* ── Screen-reader only utility ──────────────────────────────────────── */
 
 .nvoos-pro-spa-screen-reader-only {
@@ -2127,6 +2407,530 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	clip: rect(0, 0, 0, 0);
 	white-space: nowrap;
 	border: 0;
+}
+
+/* ── Composer toolbar (v0.9.0) ───────────────────────────────────────── */
+
+.nvoos-pro-spa-agent-panel__composer-toolbar {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	padding: 4px 0;
+}
+
+/* On mobile, reorder the composer so the toolbar and attachment strip
+   wrap below the textarea and send button instead of sitting beside them. */
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-agent-panel__composer-toolbar {
+		width: 100%;
+		order: 3;
+		padding: 2px 0 0;
+	}
+
+	.nvoos-pro-spa-agent-panel__composer-input {
+		order: 0;
+		flex: 1 1 calc( 100% - 80px );
+		min-width: 0;
+	}
+
+	.nvoos-pro-spa-agent-panel__composer-actions {
+		order: 1;
+	}
+
+	.nvoos-pro-spa-attachment-strip {
+		order: 2;
+		width: 100%;
+	}
+}
+
+/* ── Audio recorder button (v0.9.0) ──────────────────────────────────── */
+
+.nvoos-pro-spa-audio-btn {
+	background: none;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	padding: 6px 8px;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+.nvoos-pro-spa-audio-btn:hover:not(:disabled) {
+	background: var(--nvoos-hover-bg, #f0f0f1);
+}
+.nvoos-pro-spa-audio-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+.nvoos-pro-spa-audio-btn--recording {
+	border-color: #d63638;
+	background: #fdf2f2;
+}
+.nvoos-pro-spa-audio-status {
+	font-size: 12px;
+	color: var(--nvoos-muted, #757575);
+	margin-left: 4px;
+}
+
+/* ── File attachment button (v0.9.0) ─────────────────────────────────── */
+
+.nvoos-pro-spa-attach-btn {
+	background: none;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	padding: 6px 8px;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	transition: background 0.15s ease;
+}
+.nvoos-pro-spa-attach-btn:hover:not(:disabled) {
+	background: var(--nvoos-hover-bg, #f0f0f1);
+}
+.nvoos-pro-spa-attach-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* ── Attachment strip (v0.9.0) ───────────────────────────────────────── */
+
+.nvoos-pro-spa-attachment-strip {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	align-items: center;
+	list-style: none;
+	margin: 4px 0;
+	padding: 0;
+	max-height: 72px;
+	overflow-y: auto;
+}
+.nvoos-pro-spa-attachment-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	background: var(--nvoos-chip-bg, #f0f0f1);
+	border-radius: 6px;
+	padding: 3px 8px;
+	font-size: 12px;
+	max-width: 200px;
+}
+.nvoos-pro-spa-attachment-thumb {
+	width: 20px;
+	height: 20px;
+	min-width: 20px;
+	object-fit: cover;
+	border-radius: 3px;
+	flex-shrink: 0;
+}
+.nvoos-pro-spa-attachment-icon {
+	font-size: 14px;
+	flex-shrink: 0;
+}
+.nvoos-pro-spa-attachment-name {
+	max-width: 100px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	flex-shrink: 1;
+	min-width: 0;
+}
+.nvoos-pro-spa-attachment-remove {
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 14px;
+	line-height: 1;
+	padding: 0 2px;
+	color: var(--nvoos-muted, #757575);
+	flex-shrink: 0;
+}
+.nvoos-pro-spa-attachment-remove:hover {
+	color: var(--nvoos-danger, #d63638);
+}
+.nvoos-pro-spa-attachment-clear-all {
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 11px;
+	color: var(--nvoos-muted, #757575);
+	text-decoration: underline;
+	padding: 2px 4px;
+	flex-shrink: 0;
+	margin-left: auto;
+}
+.nvoos-pro-spa-attachment-clear-all:hover {
+	color: var(--nvoos-danger, #d63638);
+}
+.nvoos-pro-spa-attachment-error {
+	font-size: 12px;
+	color: var(--nvoos-danger, #d63638);
+	margin: 2px 0;
+}
+
+/* ── Speech button (v0.9.0) ──────────────────────────────────────────── */
+
+.nvoos-pro-spa-speech-btn {
+	background: none;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	padding: 4px 8px;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	transition: background 0.15s ease;
+}
+.nvoos-pro-spa-speech-btn:hover:not(:disabled) {
+	background: var(--nvoos-hover-bg, #f0f0f1);
+}
+.nvoos-pro-spa-speech-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+.nvoos-pro-spa-speech-btn--error {
+	border-color: var(--nvoos-danger, #d63638);
+	color: var(--nvoos-danger, #d63638);
+}
+.nvoos-pro-spa-speech-btn--loading {
+	border-color: var(--nvoos-primary, #2271b1);
+}
+
+/* ── Usage badges (v0.9.0 — v2.1.1 spacing) ──────────────────── */
+
+.nvoos-pro-spa-usage-badges {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-top: 10px;
+	margin-bottom: 5px;
+}
+.nvoos-pro-spa-usage-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	padding: 2px 8px;
+	border-radius: 10px;
+	background: var(--nvoos-chip-bg, #f0f0f1);
+	color: var(--nvoos-muted, #757575);
+}
+.nvoos-pro-spa-usage-badge__label {
+	font-weight: 500;
+}
+.nvoos-pro-spa-usage-badge__value {
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+.nvoos-pro-spa-usage-badge--tokens {
+	border: 1px solid var(--nvoos-border, #dcdcde);
+}
+.nvoos-pro-spa-usage-badge--cost {
+	border: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+/* ------------------------------------------------------------------ */
+/* Capability flags (v0.9.0 — v2.1.1 Zed-style refresh)               */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-capabilities {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	margin-top: 12px;
+	margin-bottom: 5px;
+}
+.nvoos-pro-spa-capability {
+	display: inline-flex;
+	align-items: center;
+	padding: 1px 7px;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+	color: var(--nvoos-cap-fg, #fff);
+	background: var(--nvoos-cap-bg, #6b7280);
+	border: 1px solid var(--nvoos-cap-border, rgba(0, 0, 0, 0.12));
+	user-select: none;
+}
+.nvoos-pro-spa-capability--read-only,
+.nvoos-pro-spa-capability--local-only {
+	--nvoos-cap-bg: #059669;
+	--nvoos-cap-fg: #fff;
+	--nvoos-cap-border: rgba(0, 0, 0, 0.1);
+}
+.nvoos-pro-spa-capability--write,
+.nvoos-pro-spa-capability--state-changing,
+.nvoos-pro-spa-capability--modifies-data {
+	--nvoos-cap-bg: #d97706;
+	--nvoos-cap-fg: #fff;
+	--nvoos-cap-border: rgba(0, 0, 0, 0.1);
+}
+.nvoos-pro-spa-capability--requires-capability,
+.nvoos-pro-spa-capability--requires-credentials {
+	--nvoos-cap-bg: #2563eb;
+	--nvoos-cap-fg: #fff;
+	--nvoos-cap-border: rgba(0, 0, 0, 0.1);
+}
+.nvoos-pro-spa-capability--external-api,
+.nvoos-pro-spa-capability--network-dependent {
+	--nvoos-cap-bg: #7c3aed;
+	--nvoos-cap-fg: #fff;
+	--nvoos-cap-border: rgba(0, 0, 0, 0.1);
+}
+.nvoos-pro-spa-capability--consumes-tokens {
+	--nvoos-cap-bg: #db2777;
+	--nvoos-cap-fg: #fff;
+	--nvoos-cap-border: rgba(0, 0, 0, 0.1);
+}
+.nvoos-pro-spa-capability--async,
+.nvoos-pro-spa-capability--background-only {
+	--nvoos-cap-bg: #ea580c;
+	--nvoos-cap-fg: #fff;
+	--nvoos-cap-border: rgba(0, 0, 0, 0.1);
+}
+.nvoos-pro-spa-capability--non-deterministic {
+	--nvoos-cap-bg: #dc2626;
+	--nvoos-cap-fg: #fff;
+	--nvoos-cap-border: rgba(0, 0, 0, 0.1);
+}
+.nvoos-pro-spa-capability--idempotent,
+.nvoos-pro-spa-capability--cacheable {
+	--nvoos-cap-bg: #0d9488;
+	--nvoos-cap-fg: #fff;
+	--nvoos-cap-border: rgba(0, 0, 0, 0.1);
+}
+.nvoos-pro-spa-capability--pro {
+	--nvoos-cap-bg: #4f46e5;
+	--nvoos-cap-fg: #fff;
+	--nvoos-cap-border: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme – use desaturated background tones on capability badges */
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability {
+	border-color: var(--nvoos-cap-border, rgba(255, 255, 255, 0.1));
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--read-only,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--local-only {
+	--nvoos-cap-bg: #047857;
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--write,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--state-changing,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--modifies-data {
+	--nvoos-cap-bg: #b45309;
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--requires-capability,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--requires-credentials {
+	--nvoos-cap-bg: #1d4ed8;
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--external-api,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--network-dependent {
+	--nvoos-cap-bg: #6d28d9;
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--consumes-tokens {
+	--nvoos-cap-bg: #be185d;
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--async,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--background-only {
+	--nvoos-cap-bg: #c2410c;
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--non-deterministic {
+	--nvoos-cap-bg: #b91c1c;
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--idempotent,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--cacheable {
+	--nvoos-cap-bg: #0f766e;
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-capability--pro {
+	--nvoos-cap-bg: #4338ca;
+}
+
+/* Capability: auto (system) dark mode */
+@media (prefers-color-scheme: dark) {
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability {
+		border-color: var(--nvoos-cap-border, rgba(255, 255, 255, 0.1));
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--read-only,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--local-only {
+		--nvoos-cap-bg: #047857;
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--write,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--state-changing,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--modifies-data {
+		--nvoos-cap-bg: #b45309;
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--requires-capability,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--requires-credentials {
+		--nvoos-cap-bg: #1d4ed8;
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--external-api,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--network-dependent {
+		--nvoos-cap-bg: #6d28d9;
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--consumes-tokens {
+		--nvoos-cap-bg: #be185d;
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--async,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--background-only {
+		--nvoos-cap-bg: #c2410c;
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--non-deterministic {
+		--nvoos-cap-bg: #b91c1c;
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--idempotent,
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--cacheable {
+		--nvoos-cap-bg: #0f766e;
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-capability--pro {
+		--nvoos-cap-bg: #4338ca;
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Delegation notice banner (v0.9.0 — v2.1.1 Zed-style refresh)       */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-delegation {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin-top: 12px;
+	margin-bottom: 5px;
+	padding: 8px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-bg, #f0f0f1);
+	font-size: 13px;
+	line-height: 1.5;
+	font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+}
+.nvoos-pro-spa-delegation--complete {
+	border-color: var(--nvoos-delegation-success-border, rgba(0, 163, 42, 0.3));
+	background: var(--nvoos-delegation-success-bg, rgba(0, 163, 42, 0.06));
+}
+.nvoos-pro-spa-delegation--error {
+	border-color: var(--nvoos-delegation-error-border, rgba(214, 54, 56, 0.3));
+	background: var(--nvoos-delegation-error-bg, rgba(214, 54, 56, 0.06));
+}
+.nvoos-pro-spa-delegation-icon {
+	flex-shrink: 0;
+	font-size: 14px;
+	line-height: 1.5;
+	width: 20px;
+	text-align: center;
+}
+.nvoos-pro-spa-delegation-body {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.nvoos-pro-spa-delegation-title {
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+.nvoos-pro-spa-delegation-details {
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Dark theme for delegation notices */
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-delegation--complete {
+	border-color: var(--nvoos-delegation-success-border, rgba(34, 197, 94, 0.25));
+	background: var(--nvoos-delegation-success-bg, rgba(34, 197, 94, 0.08));
+}
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-delegation--error {
+	border-color: var(--nvoos-delegation-error-border, rgba(248, 99, 99, 0.25));
+	background: var(--nvoos-delegation-error-bg, rgba(248, 99, 99, 0.08));
+}
+@media (prefers-color-scheme: dark) {
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-delegation--complete {
+		border-color: var(--nvoos-delegation-success-border, rgba(34, 197, 94, 0.25));
+		background: var(--nvoos-delegation-success-bg, rgba(34, 197, 94, 0.08));
+	}
+	.nvoos-pro-spa-layout[data-theme="auto"] .nvoos-pro-spa-delegation--error {
+		border-color: var(--nvoos-delegation-error-border, rgba(248, 99, 99, 0.25));
+		background: var(--nvoos-delegation-error-bg, rgba(248, 99, 99, 0.08));
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Workflow progress tracker (v0.9.0 — v2.1.1 spacing)                */
+/* ------------------------------------------------------------------ */
+.nvoos-pro-spa-workflow-tracker {
+	margin-top: 12px;
+	margin-bottom: 5px;
+	padding: 10px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-bg, #f0f0f1);
+}
+.nvoos-pro-spa-workflow-tracker-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 6px;
+}
+.nvoos-pro-spa-workflow-tracker-title {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+.nvoos-pro-spa-workflow-tracker-pct {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+.nvoos-pro-spa-workflow-tracker-bar {
+	height: 4px;
+	border-radius: 2px;
+	background: var(--nvoos-border, #dcdcde);
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+.nvoos-pro-spa-workflow-tracker-fill {
+	height: 100%;
+	background: var(--nvoos-primary, #2271b1);
+	border-radius: 2px;
+	transition: width 0.3s ease;
+}
+.nvoos-pro-spa-workflow-tracker-steps {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+.nvoos-pro-spa-workflow-step {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+	padding: 2px 8px;
+	border-radius: 10px;
+	background: var(--nvoos-bg-secondary, #fff);
+	border: 1px solid var(--nvoos-border, #dcdcde);
+}
+.nvoos-pro-spa-workflow-step-icon {
+	font-size: 10px;
+	line-height: 1;
+}
+.nvoos-pro-spa-workflow-step--completed {
+	color: var(--nvoos-success, #00a32a);
+	border-color: var(--nvoos-success, #00a32a);
+}
+.nvoos-pro-spa-workflow-step--active {
+	color: var(--nvoos-primary, #2271b1);
+	border-color: var(--nvoos-primary, #2271b1);
+}
+.nvoos-pro-spa-workflow-step--failed {
+	color: var(--nvoos-danger, #d63638);
+	border-color: var(--nvoos-danger, #d63638);
 }
 
 /* ------------------------------------------------------------------ */
@@ -2195,4 +2999,1699 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	text-align: center;
 	font-size: 13px;
 	color: var(--nvoos-text-secondary, #787c82);
+}
+
+/* =========================================================================
+   Mobile sidebar behaviour (v2.0.2)
+   ========================================================================= */
+
+/* Close button inside sidebar (hidden on desktop, visible on mobile) */
+/* Mobile sidebar toggle — hamburger button fixed to top-left of main content.
+   Offset by the WP admin bar height (32px desktop / 46px mobile) so it
+   does not overlap the admin bar. */
+.nvoos-pro-spa-mobile-sidebar-toggle {
+	display: none;
+	position: fixed;
+	top: 32px;
+	left: 0;
+	z-index: 90;
+	background: var(--nvoos-bg-secondary, #fff);
+	border: none;
+	border-right: 1px solid var(--nvoos-border, #dcdcde);
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 0 0 6px 0;
+	cursor: pointer;
+	padding: 10px 14px;
+	font-size: 22px;
+	line-height: 1;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-mobile-sidebar-toggle:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-mobile-sidebar-toggle__icon {
+	font-size: 22px;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-mobile-sidebar-toggle {
+	color: #e0e0e0;
+}
+
+.nvoos-pro-spa-sidebar__close {
+	display: none;
+	position: absolute;
+	top: 8px;
+	right: 12px;
+	background: none;
+	border: none;
+	font-size: 22px;
+	color: #6b7280;
+	cursor: pointer;
+	padding: 4px 8px;
+	line-height: 1;
+	z-index: 10;
+}
+
+.nvoos-pro-spa-sidebar__close:hover {
+	color: #111827;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-sidebar__close {
+	color: #9ca3af;
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-sidebar__close:hover {
+	color: #f3f4f6;
+}
+
+/* Overlay behind sidebar on mobile */
+.nvoos-pro-spa-sidebar-overlay {
+	display: none;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-sidebar__close {
+		display: block;
+	}
+
+	/* Mobile sidebar — fixed overlay, offset below the admin bar.
+	   On mobile the admin bar is 46px tall. */
+	.nvoos-pro-spa-sidebar {
+		position: fixed;
+		top: 32px;
+		left: 0;
+		bottom: 0;
+		z-index: 1000;
+		width: 300px;
+		max-width: 85vw;
+		transform: translateX( -100% );
+		transition: transform 0.25s ease;
+		overflow-y: auto;
+		height: calc( 100vh - 32px );
+	}
+
+	.nvoos-pro-spa-layout--sidebar-open .nvoos-pro-spa-sidebar {
+		transform: translateX( 0 );
+	}
+
+	.nvoos-pro-spa-layout:not( .nvoos-pro-spa-layout--sidebar-open ) .nvoos-pro-spa-sidebar {
+		transform: translateX( -100% );
+	}
+
+	/* Overlay — offset below the admin bar so it only covers the SPA area.
+	   On mobile the admin bar is 46px tall; use the same calc as #wpwrap. */
+	.nvoos-pro-spa-sidebar-overlay {
+		display: block;
+		position: fixed;
+		top: 32px;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		z-index: 999;
+		background: rgba( 0, 0, 0, 0.4 );
+	}
+
+	/* Mobile hamburger button — show as fixed top-left toggle,
+	   offset by the 46px mobile admin bar. */
+	.nvoos-pro-spa-mobile-sidebar-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		top: 46px;
+	}
+
+	/* Push the mobile sidebar and overlay below the 46px admin bar. */
+	.nvoos-pro-spa-sidebar {
+		top: 46px;
+		height: calc( 100vh - 46px );
+	}
+
+	.nvoos-pro-spa-sidebar-overlay {
+		top: 46px;
+	}
+}
+
+.nvoos-pro-spa-prompts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 8px 16px 0;
+}
+
+.nvoos-pro-spa-prompt-chip {
+	padding: 4px 12px;
+	border: 1px solid #374151;
+	border-radius: 16px;
+	background: #1f2937;
+	font-size: 13px;
+	color: #e5e7eb;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.nvoos-pro-spa-prompt-chip:hover {
+	background: #374151;
+}
+
+/* =========================================================================
+   Media Library tab styles (v2.0.3)
+   ========================================================================= */
+
+/* ── Media tab container ─────────────────────────────────────────────── */
+.nvoos-pro-spa-media-tab {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-media-tab__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 8px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-media-tab__search {
+	flex: 1;
+	min-width: 100px;
+}
+
+.nvoos-pro-spa-media-tab__search-input {
+	width: 100%;
+	padding: 4px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	font-size: 12px;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-media-tab__filters {
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-media-tab__filter-select {
+	padding: 4px 6px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	font-size: 11px;
+	font-family: inherit;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-media-tab__view-toggle {
+	display: flex;
+	gap: 2px;
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-media-tab__view-btn {
+	padding: 4px 6px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 3px;
+	background: var(--nvoos-bg-secondary, #fff);
+	cursor: pointer;
+	font-size: 14px;
+	line-height: 1;
+	color: var(--nvoos-text-secondary, #787c82);
+	transition: background 0.15s, color 0.15s;
+}
+
+.nvoos-pro-spa-media-tab__view-btn--active {
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	border-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-media-tab__refresh-btn {
+	flex-shrink: 0;
+}
+
+/* ── Body / content area ─────────────────────────────────────────────── */
+.nvoos-pro-spa-media-tab__body {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 4px;
+}
+
+.nvoos-pro-spa-media-tab__state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 24px 8px;
+	text-align: center;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-media-tab__state--notice {
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-media-tab__state--error {
+	color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-media-tab__spinner {
+	width: 24px;
+	height: 24px;
+	border: 3px solid var(--nvoos-border, #dcdcde);
+	border-top-color: var(--nvoos-primary, #2271b1);
+	border-radius: 50%;
+	animation: nvoos-pro-spa-spin 0.8s linear infinite;
+	margin-bottom: 8px;
+}
+
+.nvoos-pro-spa-media-tab__spinner--small {
+	width: 16px;
+	height: 16px;
+	border-width: 2px;
+	margin-bottom: 0;
+}
+
+.nvoos-pro-spa-media-tab__sentinel {
+	height: 1px;
+}
+
+.nvoos-pro-spa-media-tab__loading-more {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 12px 8px;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-media-tab__footer {
+	padding: 6px 8px;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-media-tab__footer p {
+	margin: 0;
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+	text-align: center;
+}
+
+/* ── Grid view ───────────────────────────────────────────────────────── */
+.nvoos-pro-spa-media-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-pro-spa-media-grid__item {
+	position: relative;
+	flex: 0 0 calc( 33.333% - 3px );
+	max-width: calc( 33.333% - 3px );
+}
+
+/* On wider sidebars, show 4 columns. */
+@media screen and ( min-width: 400px ) {
+	.nvoos-pro-spa-media-grid__item {
+		flex: 0 0 calc( 25% - 3px );
+		max-width: calc( 25% - 3px );
+	}
+}
+
+.nvoos-pro-spa-media-grid__card {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	padding: 0;
+	border: 2px solid transparent;
+	border-radius: 4px;
+	background: transparent;
+	cursor: pointer;
+	font-family: inherit;
+	text-align: left;
+	transition: border-color 0.15s, background 0.15s;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-media-grid__card:hover {
+	border-color: var(--nvoos-primary, #2271b1);
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-media-grid__item--selected .nvoos-pro-spa-media-grid__card {
+	border-color: var(--nvoos-primary, #2271b1);
+	background: var(--nvoos-selected-bg, #e5e5ff);
+}
+
+.nvoos-pro-spa-media-grid__thumb {
+	position: relative;
+	width: 100%;
+	max-width: 80px;
+	aspect-ratio: 1 / 1;
+	overflow: hidden;
+	background: var(--nvoos-bg, #f0f0f1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.nvoos-pro-spa-media-grid__img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.nvoos-pro-spa-media-grid__icon {
+	font-size: 24px;
+	opacity: 0.5;
+}
+
+.nvoos-pro-spa-media-grid__check {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	font-size: 11px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+}
+
+.nvoos-pro-spa-media-grid__info {
+	padding: 4px 6px;
+	min-height: 36px;
+}
+
+.nvoos-pro-spa-media-grid__name {
+	display: block;
+	font-size: 11px;
+	line-height: 1.3;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-media-grid__meta {
+	display: flex;
+	gap: 6px;
+	font-size: 10px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-media-grid__mime {
+	font-weight: 500;
+}
+
+.nvoos-pro-spa-media-grid__size {
+	opacity: 0.8;
+}
+
+/* ── List view ───────────────────────────────────────────────────────── */
+.nvoos-pro-spa-media-list-wrap {
+	font-size: 12px;
+}
+
+.nvoos-pro-spa-media-list__header {
+	display: flex;
+	border-bottom: 2px solid var(--nvoos-border, #dcdcde);
+	background: var(--nvoos-bg, #f0f0f1);
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.nvoos-pro-spa-media-list__row {
+	display: flex;
+	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
+	transition: background 0.1s;
+}
+
+.nvoos-pro-spa-media-list__row:hover {
+	background: var(--nvoos-bg, #f8f9fa);
+}
+
+.nvoos-pro-spa-media-list__row--selected {
+	background: var(--nvoos-selected-bg, #e5e5ff);
+}
+
+.nvoos-pro-spa-media-list__cell {
+	padding: 6px 8px;
+	font-size: 12px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-media-list__cell--head {
+	font-weight: 600;
+	font-size: 11px;
+	text-transform: uppercase;
+	color: var(--nvoos-text-secondary, #555);
+}
+
+.nvoos-pro-spa-media-list__cell--name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	background: none;
+	border: none;
+	font-family: inherit;
+	text-align: left;
+	cursor: pointer;
+	color: var(--nvoos-primary, #2271b1);
+	padding: 6px 8px;
+}
+
+.nvoos-pro-spa-media-list__cell--name:hover {
+	text-decoration: underline;
+}
+
+/* ==========================================================================
+   Tasks Drawer (v0.9.0)
+   ========================================================================== */
+
+/* ── Toolbar Tasks Button ─────────────────────────────────────────────── */
+
+.nvoos-pro-spa-chat-page__tasks-btn {
+	position: relative;
+}
+
+/* ── Toolbar Button Badge ─────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-badge {
+	position: absolute;
+	top: -4px;
+	right: -4px;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	border-radius: 8px;
+	background: #3b82f6;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 16px;
+	text-align: center;
+}
+
+.nvoos-pro-spa-tasks-badge--error {
+	background: #ef4444;
+}
+
+/* ── Overlay ──────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-overlay {
+	position: fixed;
+	top: 32px;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 900;
+	background: rgba(0, 0, 0, 0.3);
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-tasks-overlay {
+		top: 46px;
+	}
+}
+
+/* ── Drawer Panel ─────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer {
+	position: fixed;
+	top: 32px;  /* below the WordPress admin bar */
+	right: 0;
+	width: 340px;
+	max-width: 90vw;
+	height: calc(100vh - 32px);
+	z-index: 950;
+	background: var(--nvoos-bg-secondary, #fff);
+	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	transform: translateX(100%);
+	transition: transform 0.25s ease;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-pro-spa-tasks-drawer {
+		top: 46px;
+		height: calc(100vh - 46px);
+	}
+}
+
+.nvoos-pro-spa-tasks-drawer--open {
+	transform: translateX(0);
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-pro-spa-tasks-drawer-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	border-radius: 10px;
+	background: var(--nvoos-bg, #f0f0f1);
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.nvoos-pro-spa-tasks-drawer-close {
+	background: none;
+	border: none;
+	font-size: 22px;
+	cursor: pointer;
+	color: var(--nvoos-text-secondary, #787c82);
+	line-height: 1;
+	padding: 4px;
+	border-radius: 4px;
+}
+
+.nvoos-pro-spa-tasks-drawer-close:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+/* ── Filter Tabs ──────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-tabs {
+	display: flex;
+	border-bottom: 1px solid var(--nvoos-border, #dcdcde);
+	padding: 0 12px;
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-tab {
+	flex: 1;
+	padding: 10px 4px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	background: none;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--nvoos-text-secondary, #787c82);
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tasks-drawer-tab:hover {
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-tasks-drawer-tab--active {
+	color: var(--nvoos-text, #1e1e1e);
+	border-bottom-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-tasks-drawer-tab-count {
+	font-size: 11px;
+	background: var(--nvoos-bg, #f0f0f1);
+	padding: 0 5px;
+	border-radius: 4px;
+}
+
+/* ── Batch Bar ────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-batch {
+	padding: 8px 16px;
+	border-bottom: 1px solid var(--nvoos-border-light, #f3f4f6);
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-batch-btn {
+	background: none;
+	border: none;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 12px;
+	cursor: pointer;
+	padding: 4px 0;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tasks-drawer-batch-btn:hover {
+	color: var(--nvoos-danger, #d63638);
+}
+
+/* ── Job List ─────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-list {
+	flex: 1;
+	overflow-y: auto;
+	padding: 8px 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-empty {
+	padding: 24px;
+	text-align: center;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 14px;
+}
+
+/* ── Job Item ─────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-tasks-drawer-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 16px;
+	border-bottom: 1px solid var(--nvoos-border-light, #f3f4f6);
+	transition: background 0.1s;
+}
+
+.nvoos-pro-spa-tasks-drawer-item:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-tasks-drawer-item-icon {
+	flex-shrink: 0;
+	width: 20px;
+	text-align: center;
+	font-size: 14px;
+	margin-top: 1px;
+}
+
+.nvoos-pro-spa-tasks-drawer-item--running .nvoos-pro-spa-tasks-drawer-item-icon {
+	color: #3b82f6;
+}
+
+.nvoos-pro-spa-tasks-drawer-item--completed .nvoos-pro-spa-tasks-drawer-item-icon {
+	color: #22c55e;
+}
+
+.nvoos-pro-spa-tasks-drawer-item--failed .nvoos-pro-spa-tasks-drawer-item-icon {
+	color: #ef4444;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-name {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-meta {
+	display: block;
+	font-size: 11px;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-top: 2px;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-progress {
+	height: 3px;
+	background: var(--nvoos-border, #dcdcde);
+	border-radius: 2px;
+	margin-top: 6px;
+	overflow: hidden;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-progress-fill {
+	height: 100%;
+	background: #3b82f6;
+	border-radius: 2px;
+	transition: width 0.3s ease;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-actions {
+	display: flex;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn,
+.nvoos-pro-spa-tasks-drawer-item-btn-dismiss {
+	padding: 2px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: #fff;
+	font-size: 11px;
+	cursor: pointer;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn:hover {
+	background: var(--nvoos-danger-bg, #fef2f2);
+	border-color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn--retry {
+	color: var(--nvoos-primary, #2271b1);
+	border-color: var(--nvoos-primary, #2271b1);
+	background: var(--nvoos-primary-bg, #f0f6fc);
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn--retry:hover {
+	filter: brightness(0.95);
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn-dismiss {
+	border: none;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 16px;
+	line-height: 1;
+}
+
+.nvoos-pro-spa-tasks-drawer-item-btn-dismiss:hover {
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────── */
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-overlay {
+	background: rgba(0, 0, 0, 0.6);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer {
+	background: var(--nvoos-bg, #1f2937);
+	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-header {
+	border-color: var(--nvoos-border, #374151);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-close {
+	color: var(--nvoos-text-secondary, #9ca3af);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-tabs {
+	border-color: var(--nvoos-border, #374151);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-tab {
+	color: var(--nvoos-text-secondary, #9ca3af);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-tab--active {
+	color: var(--nvoos-text, #f3f4f6);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-item {
+	border-color: var(--nvoos-border, #374151);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-item:hover {
+	background: var(--nvoos-bg, #1f2937);
+}
+
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-item-btn,
+.nvoos-pro-spa-layout[data-theme="dark"] .nvoos-pro-spa-tasks-drawer-item-btn-dismiss {
+	background: var(--nvoos-bg, #1f2937);
+	border-color: var(--nvoos-border, #374151);
+	color: var(--nvoos-text, #e5e7eb);
+}
+
+/* =========================================================================
+   Keyboard shortcuts help modal (v2.1.0)
+   ========================================================================= */
+
+.nvoos-pro-spa-shortcuts-help {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 100001;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.nvoos-pro-spa-shortcuts-help__overlay {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: rgba(0, 0, 0, 0.4);
+}
+
+.nvoos-pro-spa-shortcuts-help__modal {
+	position: relative;
+	width: 400px;
+	max-width: 90vw;
+	max-height: 80vh;
+	overflow-y: auto;
+	background: var(--nvoos-bg-secondary, #fff);
+	border-radius: 12px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+	padding: 24px;
+}
+
+.nvoos-pro-spa-shortcuts-help__title {
+	margin: 0 0 16px;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-shortcuts-help__close {
+	position: absolute;
+	top: 12px;
+	right: 16px;
+	background: none;
+	border: none;
+	font-size: 22px;
+	cursor: pointer;
+	color: var(--nvoos-text-secondary, #787c82);
+	padding: 0;
+	line-height: 1;
+}
+
+.nvoos-pro-spa-shortcuts-help__close:hover {
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-shortcuts-help__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-pro-spa-shortcuts-help__item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
+}
+
+.nvoos-pro-spa-shortcuts-help__item:last-child {
+	border-bottom: none;
+}
+
+.nvoos-pro-spa-shortcuts-help__key {
+	display: inline-block;
+	padding: 2px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg, #f0f0f1);
+	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+	font-size: 12px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-shortcuts-help__desc {
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+/* =========================================================================
+   Save conversation button (v2.1.0)
+   ========================================================================= */
+
+.nvoos-pro-spa-save-btn {
+	background: none;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	padding: 6px 8px;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	transition: background 0.15s ease;
+}
+
+.nvoos-pro-spa-save-btn:hover:not(:disabled) {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-save-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* =========================================================================
+   Right panel detail fields (v2.1.0)
+   ========================================================================= */
+
+.nvoos-pro-spa-right-panel__body {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.nvoos-pro-spa-right-panel__fieldset {
+	border: none;
+	padding: 0;
+	margin: 0;
+}
+
+.nvoos-pro-spa-right-panel__legend {
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-bottom: 4px;
+	letter-spacing: 0.05em;
+}
+
+.nvoos-pro-spa-right-panel__value {
+	font-size: 13px;
+	color: var(--nvoos-text, #1e1e1e);
+	margin: 0;
+}
+
+.nvoos-pro-spa-right-panel__placeholder {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+	text-align: center;
+}
+
+/* =========================================================================
+   Page-level helpers & states
+   ========================================================================= */
+
+.nvoos-pro-spa-page__subtitle {
+	margin: 0 0 16px;
+	font-size: 14px;
+	color: var(--nvoos-text-secondary, #787c82);
+	line-height: 1.5;
+}
+
+.nvoos-pro-spa-page__message {
+	margin: 0 0 12px;
+	font-size: 14px;
+}
+
+.nvoos-pro-spa-page__message--error {
+	color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-page__loader {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 48px 0;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 14px;
+	gap: 12px;
+}
+
+.nvoos-pro-spa-page__spinner {
+	width: 24px;
+	height: 24px;
+	border: 3px solid var(--nvoos-border, #dcdcde);
+	border-top-color: var(--nvoos-primary, #2271b1);
+	border-radius: 50%;
+	animation: nvoos-pro-spa-spin 0.8s linear infinite;
+}
+
+.nvoos-pro-spa-page__retry {
+	padding: 6px 16px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-bg-secondary, #fff);
+	cursor: pointer;
+	font-size: 13px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-page__retry:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+/* =========================================================================
+   Assistants page
+   ========================================================================= */
+
+.nvoos-pro-spa-assistants-page__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 20px;
+}
+
+.nvoos-pro-spa-assistants-page__add-btn {
+	padding: 6px 16px;
+	border: 1px solid var(--nvoos-primary, #2271b1);
+	border-radius: 6px;
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	cursor: pointer;
+	font-size: 13px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-assistants-page__add-btn:hover {
+	background: var(--nvoos-primary-hover, #135e96);
+}
+
+.nvoos-pro-spa-assistants-page__empty {
+	padding: 48px 0;
+	text-align: center;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 14px;
+}
+
+/* ── Assistants list ───────────────────────────────────────────────── */
+
+.nvoos-pro-spa-assistants-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.nvoos-pro-spa-assistants-list__item {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+	transition: border-color 0.15s;
+}
+
+.nvoos-pro-spa-assistants-list__item:hover {
+	border-color: var(--nvoos-primary, #2271b1);
+}
+
+.nvoos-pro-spa-assistants-list__body {
+	flex: 1;
+	min-width: 0;
+}
+
+.nvoos-pro-spa-assistants-list__title {
+	margin: 0 0 8px;
+	font-size: 16px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-pro-spa-assistants-list__badge {
+	display: inline-block;
+	padding: 1px 6px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 500;
+	background: var(--nvoos-bg, #f0f0f1);
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-assistants-list__meta {
+	display: flex;
+	gap: 12px;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-bottom: 8px;
+}
+
+.nvoos-pro-spa-assistants-list__prompt {
+	margin: 0;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+	line-height: 1.5;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 500px;
+}
+
+.nvoos-pro-spa-assistants-list__actions {
+	display: flex;
+	gap: 8px;
+	flex-shrink: 0;
+	align-items: center;
+}
+
+.nvoos-pro-spa-assistants-list__edit-btn,
+.nvoos-pro-spa-assistants-list__delete-btn {
+	padding: 4px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary, #fff);
+	cursor: pointer;
+	font-size: 12px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-assistants-list__edit-btn:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-assistants-list__delete-btn {
+	color: var(--nvoos-danger, #d63638);
+	border-color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-assistants-list__delete-btn:hover {
+	background: var(--nvoos-danger, #d63638);
+	color: #fff;
+}
+
+.nvoos-pro-spa-assistants-list__confirm {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+}
+
+.nvoos-pro-spa-assistants-list__confirm-yes,
+.nvoos-pro-spa-assistants-list__confirm-no {
+	padding: 2px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 3px;
+	background: var(--nvoos-bg-secondary, #fff);
+	cursor: pointer;
+	font-size: 11px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-assistants-list__confirm-yes {
+	color: var(--nvoos-danger, #d63638);
+	border-color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-assistants-list__confirm-yes:hover {
+	background: var(--nvoos-danger, #d63638);
+	color: #fff;
+}
+
+/* ── Assistants form (overlay) ─────────────────────────────────────── */
+
+.nvoos-pro-spa-assistants-form-overlay {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 100000;
+	background: rgba(0, 0, 0, 0.4);
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding-top: 80px;
+}
+
+.nvoos-pro-spa-assistants-form {
+	width: 520px;
+	max-width: 90vw;
+	max-height: 80vh;
+	overflow-y: auto;
+	background: var(--nvoos-bg-secondary, #fff);
+	border-radius: 12px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+	padding: 24px;
+}
+
+.nvoos-pro-spa-assistants-form__title {
+	margin: 0 0 20px;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.nvoos-pro-spa-assistants-form__field {
+	margin-bottom: 16px;
+}
+
+.nvoos-pro-spa-assistants-form__row {
+	display: flex;
+	gap: 16px;
+}
+
+.nvoos-pro-spa-assistants-form__row .nvoos-pro-spa-assistants-form__field {
+	flex: 1;
+}
+
+.nvoos-pro-spa-assistants-form__label {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	margin-bottom: 4px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-assistants-form__input,
+.nvoos-pro-spa-assistants-form__select {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	font-size: 14px;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.nvoos-pro-spa-assistants-form__textarea {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	font-size: 14px;
+	font-family: inherit;
+	box-sizing: border-box;
+	resize: vertical;
+	min-height: 80px;
+}
+
+.nvoos-pro-spa-assistants-form__range {
+	width: 100%;
+}
+
+.nvoos-pro-spa-assistants-form__actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 8px;
+}
+
+.nvoos-pro-spa-assistants-form__save-btn {
+	padding: 8px 20px;
+	border: 1px solid var(--nvoos-primary, #2271b1);
+	border-radius: 6px;
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	cursor: pointer;
+	font-size: 14px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-assistants-form__save-btn:hover {
+	background: var(--nvoos-primary-hover, #135e96);
+}
+
+.nvoos-pro-spa-assistants-form__save-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.nvoos-pro-spa-assistants-form__cancel-btn {
+	padding: 8px 16px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	cursor: pointer;
+	font-size: 14px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-assistants-form__cancel-btn:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+/* =========================================================================
+   Tools page
+   ========================================================================= */
+
+.nvoos-pro-spa-tools-page__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 20px;
+}
+
+.nvoos-pro-spa-tools-page__controls {
+	display: flex;
+	gap: 16px;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	margin-bottom: 16px;
+	padding: 12px 16px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-tools-page__search,
+.nvoos-pro-spa-tools-page__filter,
+.nvoos-pro-spa-tools-page__sort {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.nvoos-pro-spa-tools-page__label {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tools-page__input {
+	padding: 6px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	font-size: 13px;
+	font-family: inherit;
+	width: 240px;
+}
+
+.nvoos-pro-spa-tools-page__select {
+	padding: 6px 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	font-size: 13px;
+	font-family: inherit;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-tools-page__empty {
+	padding: 48px 0;
+	text-align: center;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-size: 14px;
+}
+
+.nvoos-pro-spa-tools-page__footer {
+	margin-top: 16px;
+	padding: 8px 0;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tools-list__header {
+	display: flex;
+	border-bottom: 2px solid var(--nvoos-border, #dcdcde);
+	background: var(--nvoos-bg, #f0f0f1);
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.nvoos-pro-spa-tools-list__row {
+	display: flex;
+	border-bottom: 1px solid var(--nvoos-border, #f0f0f1);
+	transition: background 0.1s;
+}
+
+.nvoos-pro-spa-tools-list__row:hover {
+	background: rgba(0, 0, 0, 0.02);
+}
+
+.nvoos-pro-spa-tools-list__cell {
+	padding: 10px 12px;
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-tools-list__cell--head {
+	font-weight: 600;
+	font-size: 11px;
+	text-transform: uppercase;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tools-list__name {
+	display: block;
+	font-weight: 500;
+}
+
+.nvoos-pro-spa-tools-list__slug {
+	display: block;
+	font-size: 11px;
+	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-top: 2px;
+}
+
+.nvoos-pro-spa-tools-list__badge {
+	display: inline-block;
+	padding: 1px 6px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 500;
+}
+
+.nvoos-pro-spa-tools-list__badge--empty {
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tools-list__capability {
+	font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-tools-list__cell--desc {
+	flex: 2;
+	color: var(--nvoos-text-secondary, #787c82);
+	line-height: 1.4;
+}
+
+/* =========================================================================
+   Settings page
+   ========================================================================= */
+
+.nvoos-pro-spa-settings-page__header {
+	margin-bottom: 24px;
+}
+
+.nvoos-pro-spa-settings-page__subtitle {
+	margin: 0;
+	font-size: 14px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-settings-form__actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.nvoos-pro-spa-settings-form__row {
+	display: flex;
+	gap: 16px;
+}
+
+.nvoos-pro-spa-settings-form__row > * {
+	flex: 1;
+}
+
+.nvoos-pro-spa-settings-form__select {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	font-size: 14px;
+	font-family: inherit;
+	box-sizing: border-box;
+	max-width: 480px;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-settings-form__field--checkbox {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.nvoos-pro-spa-settings-form__checkbox-label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.nvoos-pro-spa-settings-form__checkbox {
+	width: 18px;
+	height: 18px;
+}
+
+.nvoos-pro-spa-settings-form__checkbox-text {
+	font-weight: 500;
+}
+
+.nvoos-pro-spa-settings-form__help {
+	margin: 0;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
+.nvoos-pro-spa-settings-form__toggle-visibility {
+	background: none;
+	border: none;
+	color: var(--nvoos-primary, #2271b1);
+	cursor: pointer;
+	font-size: 13px;
+	font-family: inherit;
+	padding: 0;
+	text-decoration: underline;
+}
+
+.nvoos-pro-spa-settings-form__save-btn {
+	padding: 8px 20px;
+	border: 1px solid var(--nvoos-primary, #2271b1);
+	border-radius: 6px;
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	cursor: pointer;
+	font-size: 14px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-settings-form__save-btn:hover {
+	background: var(--nvoos-primary-hover, #135e96);
+	border-color: var(--nvoos-primary-hover, #135e96);
+}
+
+.nvoos-pro-spa-settings-form__save-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.nvoos-pro-spa-settings-form__reset-btn {
+	padding: 8px 16px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	cursor: pointer;
+	font-size: 14px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-settings-form__reset-btn:hover {
+	background: var(--nvoos-bg, #f0f0f1);
+}
+
+.nvoos-pro-spa-settings-form__reset-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* =========================================================================
+   Workflows page
+   ========================================================================= */
+
+.nvoos-pro-spa-workflows-page__header {
+	margin-bottom: 24px;
+}
+
+.nvoos-pro-spa-workflows-page__placeholder {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 64px 24px;
+	text-align: center;
+}
+
+.nvoos-pro-spa-workflows-page__icon {
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-bottom: 16px;
+	opacity: 0.5;
+}
+
+.nvoos-pro-spa-workflows-page__coming-soon {
+	font-size: 24px;
+	font-weight: 600;
+	margin: 0 0 8px;
+}
+
+.nvoos-pro-spa-workflows-page__description {
+	color: var(--nvoos-text-secondary, #787c82);
+	max-width: 480px;
+	line-height: 1.6;
+}
+
+.nvoos-pro-spa-workflows-page__note {
+	margin: 16px 0 0;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-style: italic;
+}
+
+/* =========================================================================
+   Analytics page
+   ========================================================================= */
+
+.nvoos-pro-spa-analytics-page__header {
+	margin-bottom: 24px;
+}
+
+.nvoos-pro-spa-analytics-page__placeholder {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 64px 24px;
+	text-align: center;
+}
+
+.nvoos-pro-spa-analytics-page__icon {
+	color: var(--nvoos-text-secondary, #787c82);
+	margin-bottom: 16px;
+	opacity: 0.5;
+}
+
+.nvoos-pro-spa-analytics-page__coming-soon {
+	font-size: 24px;
+	font-weight: 600;
+	margin: 0 0 8px;
+}
+
+.nvoos-pro-spa-analytics-page__description {
+	color: var(--nvoos-text-secondary, #787c82);
+	max-width: 480px;
+	line-height: 1.6;
+}
+
+.nvoos-pro-spa-analytics-page__note {
+	margin: 16px 0 0;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #787c82);
+	font-style: italic;
 }

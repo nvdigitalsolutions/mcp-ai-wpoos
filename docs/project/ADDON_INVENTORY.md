@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** June 12, 2026
+**Last Updated:** July 10, 2026
 
 ---
 
@@ -43,24 +43,27 @@
 | 13 | **Comic Reader** | `addons/comic-reader/` | 0.2.0 | ✅ Production | GPL-3.0 | Base plugin | Comic book reader & creator. Supports CBR/CBZ/CB7/CBT formats with React-based reading interface. AI-powered comic creation tools. |
 | 14 | **Funiq Bridge** | `addons/funiq-bridge/` | 1.0.0 | ✅ Production | GPL-3.0 | Base plugin | Payload CMS-to-WordPress bridge for the Funiq React PWA. REST API, CPTs (Product, Promotion, Promocode), taxonomies (Category, Brand, Color, Status), React admin SPA. |
 | 15 | **LibreChat** | `addons/librechat/` | 0.1.0 | ✅ Production | GPL-3.0 | Base plugin | Code interpreter (sandboxed Python/JavaScript), speech services (TTS/STT), and web search reranker. SPA build integration. |
-| 16 | **Schedule Anything** | `addons/schedule-anything/` | 0.1.0 | ⚠️ Experimental | Proprietary | Base plugin | Full SaaS booking platform with Stripe payment integration, calendar management, and multi-tenant architecture. |
-
-| 17 | **Crocoblock DS** | `addons/crocoblock-ds/` | 0.1.0 | ⚠️ Experimental | GPL-3.0 | None | Design token system for Crocoblock suite. 55+ CSS tokens, admin editor, DTCG export, a11y tokens. |
+| 16 | **Page Agent** | `addons/page-agent/` | 0.1.0 | ⚠️ Experimental | GPL-3.0 | Base plugin | AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Give any WordPress page its own AI agent that can click, type, and navigate via natural language. Client-side only — no headless browser required. Includes shortcode, Elementor widget, REST endpoints, and MCP tool bridge. |
+| 17 | **Schedule Anything** | `addons/schedule-anything-platform/` | 0.1.0 | ⚠️ Experimental | Proprietary | Base plugin | Full SaaS booking platform with Stripe payment integration, calendar management, and multi-tenant architecture. |
+| 18 | **Schedule Anything SPA** | `addons/schedule-anything-spa/` | 0.1.0 | ⚠️ Experimental | Proprietary | Schedule Anything Platform | React SPA frontend for the Schedule Anything SaaS booking platform. Vite + Tailwind + React frontend. |
+| 19 | **Crocoblock DS** | `addons/crocoblock-ds/` | 0.1.0 | ⚠️ Experimental | GPL-3.0 | None | Design token system for Crocoblock suite. 55+ CSS tokens, admin editor, DTCG export, a11y tokens. |
 
 ### Blueprint-Generated SPAs
 
 | # | Addon | Directory | Version | Status | License | Requires | Description |
 |---|---|---|---|---|---|---|---|
-| 18 | **Canvas Toolkit** | `addons/canvas-toolkit/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Provides a canvas-based surface for the plugin. |
-| 19 | **Document Editor** | `addons/document-editor/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Document editing surface. |
-| 20 | **Media Studio** | `addons/media-studio/` | 0.1.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Media management surface with zoom/pan/drawing tools. |
-| 21 | **Toolkit Shell** | `addons/toolkit-shell/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Pro addon | Manifest-driven React SPA shell. One bundle drives multiple toolkit SPAs (CRM, calendar, financial, legal, ecommerce, etc.) via per-toolkit JSON manifests. |
+| 20 | **Canvas Toolkit** | `addons/canvas-toolkit/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Provides a canvas-based surface for the plugin. |
+| 21 | **Document Editor** | `addons/document-editor/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Document editing surface. |
+| 22 | **Media Studio** | `addons/media-studio/` | 0.1.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Media management surface with zoom/pan/drawing tools. |
+| 23 | **Toolkit Shell** | `addons/toolkit-shell/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Pro addon | Manifest-driven React SPA shell. One bundle drives multiple toolkit SPAs (CRM, calendar, financial, legal, ecommerce, etc.) via per-toolkit JSON manifests. |
 
 ### Non-WordPress Components
 
 | # | Component | Directory | Status | Type | Description |
 |---|---|---|---|---|---|
-| 22 | **Cloud Worker** | `addons/cloud-worker/` | 🗂️ Reference | Cloudflare Worker | SaaS backend for NV oOS Cloud. Inference proxy, Stripe billing, D1 ledger. Deployed independently on Cloudflare — never runs inside WordPress. Shipped in monorepo for review/reference only. |
+| 24 | **Cloud Worker** | `addons/cloud-worker/` | 🗂️ Reference | Cloudflare Worker | SaaS backend for NV oOS Cloud. Inference proxy, Stripe billing, D1 ledger. Deployed independently on Cloudflare — never runs inside WordPress. Shipped in monorepo for review/reference only. |
+| 25 | **AI Platform** | `addons/ai-platform/` | 🗂️ Reference | WordPress Plugin | AI platform admin dashboard + CPTs (Project, Resource, Template). Top-level NV Platform AI admin menu. In active development. |
+| 26 | **Tenant Router** | `addons/tenant-router/` | 🗂️ Reference | Cloudflare Worker | Edge-level routing worker for Schedule Anything multi-tenant SaaS. Maps subdomain requests to correct WordPress Multisite tenant via Cloudflare KV with REST API fallback. |
 
 ---
 
@@ -106,11 +109,11 @@ If you're auditing this repo on a limited budget, use this prioritization:
 5. Algorave (`addons/algorave/`)
 
 ### Tier 3 — Nice to review
-6. Docs Hub, Embedded, Canvas, Cornerstone3D, Fantasy Football, SaaS Controller, Cloudways Dashboard, Comic Reader
+6. Docs Hub, Embedded, Canvas, Cornerstone3D, Fantasy Football, SaaS Controller, Cloudways Dashboard, Comic Reader, Page Agent
 
 ### Tier 4 — Skip
 7. Blueprint-generated SPAs (Canvas Toolkit, Document Editor, Media Studio, Toolkit Shell)
-8. Cloud Worker (not a WordPress plugin)
+8. Cloud Worker, AI Platform, Tenant Router (not WordPress plugins)
 9. Core plugin (separate product, v1.0.0)
 
 ---

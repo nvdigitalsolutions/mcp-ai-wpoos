@@ -59,7 +59,7 @@ export interface TranscriptsClientOptions {
 }
 
 interface InternalRequest {
-	method: 'GET' | 'POST' | 'DELETE';
+	method: 'GET' | 'POST' | 'PUT' | 'DELETE';
 	url: string;
 	body?: unknown;
 	signal?: AbortSignal;
@@ -108,16 +108,22 @@ export class TranscriptsClient {
 		this.assistantId = opts.assistantId;
 	}
 
-	async list( signal?: AbortSignal ): Promise< TranscriptListResponse > {
+	async list( opts?: { page?: number; search?: string; signal?: AbortSignal } ): Promise< TranscriptListResponse > {
 		const url = new URL( this.endpoint, window.location.origin );
 		if ( this.assistantId ) {
 			url.searchParams.set( 'assistant_id', String( this.assistantId ) );
 		}
-		url.searchParams.set( 'per_page', '50' );
+		url.searchParams.set( 'per_page', '20' );
+		if ( opts?.page && opts.page > 1 ) {
+			url.searchParams.set( 'page', String( opts.page ) );
+		}
+		if ( opts?.search ) {
+			url.searchParams.set( 'search', opts.search );
+		}
 		const data = await this.request< TranscriptListResponse >( {
 			method: 'GET',
 			url: url.toString(),
-			signal,
+			signal: opts?.signal,
 		} );
 		// Defensive shape coercion — CCT-disabled responses still carry a
 		// `message` field but may omit `sessions`.
@@ -171,6 +177,17 @@ export class TranscriptsClient {
 	async delete( sessionKey: string, signal?: AbortSignal ): Promise< void > {
 		const url = `${ this.endpoint }/${ encodeURIComponent( sessionKey ) }`;
 		await this.request( { method: 'DELETE', url, signal } );
+	}
+
+	/** Update a session title (GAP-18: v0.9.0). */
+	async updateTitle( sessionKey: string, title: string, signal?: AbortSignal ): Promise< void > {
+		const url = `${ this.endpoint }/${ encodeURIComponent( sessionKey ) }`;
+		await this.request( {
+			method: 'PUT',
+			url,
+			body: { title },
+			signal,
+		} );
 	}
 
 	private async request< T = unknown >( req: InternalRequest ): Promise< T > {

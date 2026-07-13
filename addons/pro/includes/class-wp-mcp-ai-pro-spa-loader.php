@@ -108,13 +108,18 @@ class WP_MCP_AI_Pro_SPA_Loader {
 			return;
 		}
 
+		// Use file modification time for cache-busting so browsers pick up
+		// new builds immediately, even on sites where WP_MCP_AI_PRO_VERSION
+		// hasn't been bumped.
 		$version = defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '2.0.0';
+		$js_ver  = filemtime( $js_path ) ? filemtime( $js_path ) : $version;
+		$css_ver = file_exists( $css_path ) ? filemtime( $css_path ) : $version;
 
 		wp_enqueue_script(
 			'wp-mcp-ai-pro-spa-v2',
 			$js_url,
 			array( 'wp-i18n' ),
-			$version,
+			$js_ver,
 			true
 		);
 
@@ -129,7 +134,7 @@ class WP_MCP_AI_Pro_SPA_Loader {
 				'wp-mcp-ai-pro-spa-v2',
 				$css_url,
 				array(),
-				$version
+				$css_ver
 			);
 		}
 
@@ -150,35 +155,70 @@ class WP_MCP_AI_Pro_SPA_Loader {
 			}
 		}
 
+		// Pre-load published assistants so the SPA sidebar can render the
+		// dropdown immediately without a separate REST API round-trip.
+		$assistants = array();
+		if ( post_type_exists( 'mcp_ai_assistant' ) && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$query = new WP_Query(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+					'no_found_rows'  => true,
+				)
+			);
+
+			foreach ( $query->posts as $post ) {
+				$config   = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post->ID );
+				$provider = isset( $config['provider'] ) ? sanitize_key( $config['provider'] ) : '';
+				$model    = isset( $config['model'] ) ? (string) $config['model'] : '';
+
+				$assistants[] = array(
+					'id'       => $post->ID,
+					'title'    => get_the_title( $post ),
+					'provider' => $provider,
+					'model'    => $model,
+				);
+			}
+		}
+
 		$runtime = array(
 			'apiUrl'       => esc_url_raw( rest_url( 'mcp-ai/v1' ) ),
 			'proApi'       => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
 			'nonce'        => wp_create_nonce( 'wp_rest' ),
 			'config'       => array(
-				'assistantId' => $assistant_id,
-				'theme'       => 'auto',
+				'assistantId'         => $assistant_id,
+				'theme'               => 'auto',
+				'allowSensitiveTools' => true,
 			),
 			'endpoints'    => array(
 				// Core chat endpoints (mcp-ai/v1).
-				'chat'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
-				'chatClient'  => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
-				'transcripts' => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
-				'memory'      => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
-				'threads'     => esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
-				'tools'       => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
-				'assistants'  => esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
-				'settings'    => esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
+				'chat'          => esc_url_raw( rest_url( 'mcp-ai/v1/chat' ) ),
+				'chatClient'    => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
+				'transcripts'   => esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
+				'memory'        => esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
+				'threads'       => esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
+				'tools'         => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
+				'assistants'    => esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
+				'settings'      => esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
+
+				// WordPress media upload endpoint (matches legacy chat-spa).
+				'upload'        => esc_url_raw( rest_url( 'wp/v2/media' ) ),
 
 				// Pro endpoints (mcp-ai-pro/v1).
-				'workflows'   => class_exists( 'WP_MCP_AI_Pro_Workflow_Controller' )
+				'workflows'     => class_exists( 'WP_MCP_AI_Pro_Workflow_Controller' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflows' ) )
 					: '',
-				'analytics'   => $is_admin
+				'analytics'     => $is_admin
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/analytics' ) )
 					: '',
-				'approvals'   => $is_admin
+				'approvals'     => $is_admin
 					? esc_url_raw( rest_url( 'mcp-ai/v1/approvals' ) )
 					: '',
+				'shortcuts'     => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
+				'slashCommands' => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),
 			),
 			'user'         => array(
 				'id'           => $user_id,
@@ -188,6 +228,8 @@ class WP_MCP_AI_Pro_SPA_Loader {
 				'assistant_id' => $assistant_id,
 			),
 			'mentionTypes' => array(),
+			// Pre-loaded assistants so the sidebar renders immediately.
+			'assistants'   => $assistants,
 		);
 
 		// Populate mention types if the resolver is available.

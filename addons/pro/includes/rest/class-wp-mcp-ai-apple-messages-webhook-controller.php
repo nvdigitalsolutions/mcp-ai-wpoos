@@ -373,10 +373,11 @@ class WP_MCP_AI_Apple_Messages_Webhook_Controller extends WP_REST_Controller {
 		// Dispatch AI reply asynchronously via cron to avoid webhook timeout.
 		if ( ! wp_next_scheduled( self::REPLY_CRON_HOOK, array( $conversation_id, $message_text, $connection_id ) ) ) {
 			wp_schedule_single_event(
-				time(),
+				time() - 1,
 				self::REPLY_CRON_HOOK,
 				array( $conversation_id, $message_text, $connection_id )
 			);
+			spawn_cron();
 		}
 	}
 

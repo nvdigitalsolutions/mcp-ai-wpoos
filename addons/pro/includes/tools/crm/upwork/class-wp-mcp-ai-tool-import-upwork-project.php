@@ -128,6 +128,7 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 			'state-changing',
 			'requires-capability',
 			'external-api',
+			'rate-limited',
 		);
 	}
 
@@ -139,7 +140,7 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 	 * @return array|WP_Error Tool results or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, $this->get_required_capability() ) ) {
 			return new WP_Error(
@@ -152,15 +153,25 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 		$job_description = ! empty( $arguments['job_description'] ) ? sanitize_textarea_field( $arguments['job_description'] ) : '';
 		$estimated_value = isset( $arguments['estimated_value'] ) ? (float) $arguments['estimated_value'] : 0;
 		$save_as         = ! empty( $arguments['save_as'] ) ? sanitize_text_field( $arguments['save_as'] ) : 'deal';
+		$job_id          = ! empty( $arguments['job_id'] ) ? sanitize_text_field( $arguments['job_id'] ) : '';
 
 		// Attempt API fetch when a connection is available and job_id is provided.
 		$api_fetched = false;
+		$api_data    = array();
 		if ( ! empty( $arguments['job_id'] ) ) {
 			$api_data = $this->fetch_job_details( $arguments );
 			if ( ! is_wp_error( $api_data ) && ! empty( $api_data ) ) {
 				$job_title       = ! empty( $api_data['title'] ) ? $api_data['title'] : $job_title;
 				$job_description = ! empty( $api_data['description'] ) ? $api_data['description'] : $job_description;
 				$api_fetched     = true;
+				// Resolve budget from API if not explicitly provided.
+				if ( empty( $estimated_value ) ) {
+					if ( ! empty( $api_data['budget']['amount'] ) ) {
+						$estimated_value = (float) $api_data['budget']['amount'];
+					} elseif ( ! empty( $api_data['hourlyBudget']['max'] ) ) {
+						$estimated_value = (float) $api_data['hourlyBudget']['max'];
+					}
+				}
 			}
 		}
 
@@ -180,14 +191,62 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 			$default_stage = ! empty( $stage_keys[0] ) ? $stage_keys[0] : 'qualification';
 		}
 
+		// Build description with all available metadata.
 		$description  = '';
 		$description .= $job_description . "\n\n";
+
+		// Include skills from API response.
+		$skills_list = array();
+		if ( ! empty( $api_data['skills'] ) && is_array( $api_data['skills'] ) ) {
+			foreach ( $api_data['skills'] as $skill ) {
+				if ( ! empty( $skill['prettyName'] ) ) {
+					$skills_list[] = $skill['prettyName'];
+				}
+			}
+		}
+		if ( ! empty( $skills_list ) ) {
+			$description .= sprintf(
+				/* translators: %s: comma-separated skills */
+				__( 'Skills: %s', 'mcp-ai-wpoos-pro' ) . "\n",
+				implode( ', ', $skills_list )
+			);
+		}
+
+		// Include client info from API response.
+		$client_name = '';
+		if ( ! empty( $api_data['client']['location']['country'] ) ) {
+			$client_name = $api_data['client']['location']['country'];
+			$spent       = ! empty( $api_data['client']['totalSpent']['amount'] )
+				? '$' . number_format( (float) $api_data['client']['totalSpent']['amount'], 0 )
+				: '';
+			$hires       = isset( $api_data['client']['totalHires'] ) ? (int) $api_data['client']['totalHires'] : 0;
+			$description .= sprintf(
+				/* translators: 1: country, 2: spend, 3: hires */
+				__( 'Client: %1$s | Spent: %2$s | Hires: %3$d', 'mcp-ai-wpoos-pro' ) . "\n",
+				$client_name,
+				$spent,
+				$hires
+			);
+		}
+
+		// Include Upwork job URL.
+		$upwork_url = '';
+		if ( ! empty( $job_id ) ) {
+			$upwork_url  = 'https://www.upwork.com/jobs/' . $job_id;
+			$description .= sprintf(
+				/* translators: %s: Upwork job URL */
+				__( 'Upwork URL: %s', 'mcp-ai-wpoos-pro' ) . "\n",
+				$upwork_url
+			);
+		}
+
 		$description .= sprintf(
 			/* translators: %s: source platform */
 			__( 'Source: Upwork (imported %s)', 'mcp-ai-wpoos-pro' ) . "\n",
 			gmdate( 'Y-m-d H:i' )
 		);
 
+		// Create the CRM entity.
 		if ( 'deal' === $save_as && class_exists( 'WP_MCP_AI_Deal_CPT' ) ) {
 			$entity_data = array(
 				'name'   => $job_title,
@@ -239,6 +298,13 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
+		}
+
+		// Save Upwork URL as post meta on the created entity.
+		if ( ! empty( $upwork_url ) ) {
+			update_post_meta( $post_id, '_external_source_url', esc_url_raw( $upwork_url ) );
+			update_post_meta( $post_id, '_external_source_id', sanitize_text_field( $job_id ) );
+			update_post_meta( $post_id, '_external_source_platform', 'upwork' );
 		}
 
 		return array(

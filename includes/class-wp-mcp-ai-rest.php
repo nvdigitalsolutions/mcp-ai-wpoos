@@ -2065,6 +2065,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $base_check;
 			}
 
+			// Authenticated WordPress users with at least 'read' capability always
+			// have access to the assistant directory via the Pro SPA admin interface.
+			// The rest_enable_assistant_list setting only gates external API access.
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) && current_user_can( 'read' ) ) {
+				return true;
+			}
+
 			// Then check if REST assistant listing is enabled.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
@@ -3199,6 +3207,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
 
+					// Ensure tool_call_id is never empty so downstream
+					// tool-result messages are valid for the next turn.
+					if ( '' === $tool_call_id ) {
+						$tool_call_id = uniqid( 'tool_', true );
+					}
+
 					// Check if this is an async pending result (background-only tools like video generation).
 					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop
 					// after processing this iteration. The frontend will handle polling for the async result.
@@ -3243,9 +3257,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name, $tool_instance ),
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$full_tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id so the frontend never sends back
+					// a tool message that fails REST validation on the next turn.
+					$full_tool_message['tool_call_id'] = '' !== $tool_call_id
+						? $tool_call_id
+						: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$full_tool_message['name'] = $tool_name;
@@ -3295,9 +3311,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $sanitized_result,
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id to keep the message valid
+					// for provider payload filtering and subsequent turns.
+					$tool_message['tool_call_id'] = '' !== $tool_call_id
+					? $tool_call_id
+					: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$tool_message['name'] = $tool_name;
@@ -3318,15 +3336,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'tool_count'   => count( $tool_result_messages ),
 						)
 					);
-					$this->snapshot_chat_continuation_on_async_pending(
-						$pending_async_jobs,
-						$messages,
-						$assistant_id,
-						$user_id,
-						$options,
-						$transcript_context
-					);
-					break;
+						$this->snapshot_chat_continuation_on_async_pending(
+							$pending_async_jobs,
+							$messages,
+							$assistant_id,
+							$user_id,
+							$options,
+							$transcript_context
+						);
+						break;
 				}
 
 				// Phase 4: Proactive agentic-loop context compaction.
@@ -4097,6 +4115,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
 
+					// Ensure tool_call_id is never empty so downstream
+					// tool-result messages are valid for the next turn.
+					if ( '' === $tool_call_id ) {
+						$tool_call_id = uniqid( 'tool_', true );
+					}
+
 					// Stream tool start event.
 					$this->send_sse_event(
 						'tool_execution',
@@ -4255,9 +4279,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $result_content,
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$full_tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id so the frontend never sends back
+					// a tool message that fails REST validation on the next turn.
+					$full_tool_message['tool_call_id'] = '' !== $tool_call_id
+						? $tool_call_id
+						: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$full_tool_message['name'] = $tool_name;
@@ -4311,9 +4337,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => $sanitized_result,
 					);
 
-					if ( '' !== $tool_call_id ) {
-						$tool_message['tool_call_id'] = $tool_call_id;
-					}
+					// Always include tool_call_id to keep the message valid
+					// for provider payload filtering and subsequent turns.
+					$tool_message['tool_call_id'] = '' !== $tool_call_id
+					? $tool_call_id
+					: uniqid( 'tool_', true );
 
 					if ( '' !== $tool_name ) {
 						$tool_message['name'] = $tool_name;
@@ -4336,15 +4364,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'tool_count'   => count( $tool_result_messages ),
 						)
 					);
-					$this->snapshot_chat_continuation_on_async_pending(
-						$pending_async_jobs,
-						$messages,
-						$assistant_id,
-						$user_id,
-						$options,
-						$transcript_context
-					);
-					break;
+						$this->snapshot_chat_continuation_on_async_pending(
+							$pending_async_jobs,
+							$messages,
+							$assistant_id,
+							$user_id,
+							$options,
+							$transcript_context
+						);
+						break;
 				}
 
 				// Stream thinking status immediately after tool execution completes.
@@ -7393,8 +7421,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'BME summary applied to chat request.',
 				array(
 					'middle_summarized' => count( $middle_messages ),
-					'end_kept'         => count( $end_messages ),
-					'summary_length'   => strlen( $summary ),
+					'end_kept'          => count( $end_messages ),
+					'summary_length'    => strlen( $summary ),
 				)
 			);
 
@@ -8701,6 +8729,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$tools_truncated_by_token_budget = false;
 				$truncated_tool_count            = 0;
 
+				// Track resolved tool slugs to prevent duplicate entries.
+				// When both a base slug (e.g. generate_openai_image) and its
+				// _validated variant are present in the assistant config, the
+				// registry auto-upgrades both to the validated tool.  Without
+				// deduplication the LLM receives duplicate function names and
+				// rejects the request with "Tool names must be unique".
+				$seen_resolved_slugs = array();
+
 			foreach ( $allowed_tool_slugs as $slug ) {
 				// Enforce the token budget: stop adding tools once the cumulative
 				// token count exceeds the configured maximum.
@@ -8754,10 +8790,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Add provider-specific fallback text for tools that require a different provider.
 					$description = $this->maybe_add_provider_fallback_text( $tool, $description, $chat_provider );
 
+					// Prevent duplicate tool definitions when both base and
+					// _validated variants resolve to the same registered tool.
+					$resolved_slug = $tool->get_slug();
+					if ( isset( $seen_resolved_slugs[ $resolved_slug ] ) ) {
+						continue;
+					}
+					$seen_resolved_slugs[ $resolved_slug ] = true;
+
+					// Use the original config slug as the tool name sent to
+					// the LLM.  The registry transparently auto-upgrades to
+					// the validated variant at execution time via get_tool().
+					// This keeps the naming surface stable so the LLM calls
+					// base slugs that always resolve correctly.
 					$tools_payload[] = array(
 						'type'     => 'function',
 						'function' => array(
-							'name'        => $tool->get_slug(),
+							'name'        => $slug,
 							'description' => $description,
 							'parameters'  => $schema,
 						),
@@ -10512,6 +10561,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					continue;
 				}
 
+				// Skip system-role messages entirely — system prompts are internal
+				// LLM context and must never be exposed to frontend consumers.
+				if ( 'system' === $role ) {
+					continue;
+				}
+
 				$content = $this->prepare_message_text( $message );
 
 				// Check if message has image content (even if text content is empty).
@@ -10519,12 +10574,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Skip messages with empty content, except:
 				// - tool role messages (required for tool responses).
-				// - system role messages (can be empty for context).
 				// - assistant role messages with tool_calls (required for agentic flow).
 				// - messages with image content (required to preserve images in chat).
 				$has_tool_calls = 'assistant' === $role && isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) && ! empty( $message['tool_calls'] );
 
-				if ( '' === $content && 'tool' !== $role && 'system' !== $role && ! $has_tool_calls && ! $has_image_content ) {
+				if ( '' === $content && 'tool' !== $role && ! $has_tool_calls && ! $has_image_content ) {
 					WP_MCP_AI_Logger::log_event(
 						'debug',
 						'extract_request_messages: skipping message with empty content',
@@ -10547,9 +10601,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$message_entry['content'] = $message['content'];
 				}
 
-				// Preserve tool_call_id for tool messages (required by OpenAI for proper request validation).
-				if ( 'tool' === $role && isset( $message['tool_call_id'] ) && '' !== $message['tool_call_id'] ) {
-					$message_entry['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
+				// Always include tool_call_id for tool messages so the frontend never
+				// sends back a tool message that fails REST validation on the next turn.
+				// Use the stored id when present; generate a stable fallback otherwise.
+				if ( 'tool' === $role ) {
+					$message_entry['tool_call_id'] = ( isset( $message['tool_call_id'] ) && '' !== $message['tool_call_id'] )
+						? sanitize_text_field( $message['tool_call_id'] )
+						: uniqid( 'tool_loaded_', true );
 				}
 
 				// Preserve name for tool messages (optional but helpful for debugging).

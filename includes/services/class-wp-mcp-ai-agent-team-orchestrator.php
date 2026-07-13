@@ -364,7 +364,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 * @param array $previous_results Results from previous steps.
 	 * @return mixed|WP_Error Step result or error.
 	 */
-	protected function execute_workflow_step( $team, $step, $task, $context, $previous_results ) {
+	public function execute_workflow_step( $team, $step, $task, $context, $previous_results ) {
 		$step_type = isset( $step['type'] ) ? $step['type'] : 'execute';
 		$role      = isset( $step['role'] ) ? $step['role'] : null;
 
@@ -461,7 +461,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			$context,
 			array(
 				'assistant_id'   => $agent['id'],
-				'delegated_by'   => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
+				'delegated_by'   => isset( $context['user_id'] ) ? $context['user_id'] : 0,
 				'parent_task'    => isset( $task['id'] ) ? $task['id'] : null,
 				'workflow_state' => $this->get_workflow_state(),
 				'previous_steps' => $this->get_completed_steps(),
@@ -480,8 +480,134 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			)
 		);
 
-		// Execute the task using the agent's role.
-		$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+		// Execute the task by dispatching to the assistant via REST API.
+		// This follows the same pattern as dispatch_assistant_run() in the
+		// pro schedule manager, ensuring the full agentic pipeline (AI model,
+		// tool execution, response generation) is exercised.
+		//
+		// Virtual agents (string IDs prefixed with 'virtual_') and agents
+		// without a numeric ID fall back to the role executor, which handles
+		// planner/critic/executor roles with their specialised logic.
+		$is_virtual = isset( $agent['id'] ) && is_string( $agent['id'] ) && 0 === strpos( $agent['id'], 'virtual_' );
+		$is_numeric = isset( $agent['id'] ) && is_numeric( $agent['id'] );
+
+		if ( $is_numeric && ! $is_virtual && function_exists( 'rest_do_request' ) ) {
+			$assistant_id   = absint( $agent['id'] );
+			$assistant_post = get_post( $assistant_id );
+
+			if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
+				$rest_server = rest_get_server();
+				if ( $rest_server ) {
+					// Switch to the originating user so the REST request inherits
+					// their capabilities (same pattern as dispatch_assistant_run).
+					$user_id       = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+					$previous_user = get_current_user_id();
+					if ( $user_id > 0 && $user_id !== $previous_user ) {
+						wp_set_current_user( $user_id );
+					}
+
+					$messages = array(
+						array(
+							'role'    => 'user',
+							'content' => $agent_task['description'],
+						),
+					);
+
+					$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+					$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+					$request->set_body_params(
+						array(
+							'assistant_id' => $assistant_id,
+							'messages'     => $messages,
+							'stream'       => false,
+							'context'      => array(
+								'source'   => 'team_orchestrator',
+								'task_id'  => $task_id,
+								'trace_id' => $trace_id,
+							),
+						)
+					);
+
+					try {
+						$response = rest_do_request( $request );
+
+						// Restore the previous user context.
+						if ( $user_id > 0 && $user_id !== $previous_user ) {
+							wp_set_current_user( $previous_user );
+						}
+
+						if ( $response->is_error() ) {
+							$error_data = $response->get_data();
+							$result     = new WP_Error(
+								'wp_mcp_ai_orchestrator_chat_failed',
+								isset( $error_data['message'] )
+									? $error_data['message']
+									: __( 'Chat API request failed.', 'mcp-ai-wpoos' )
+							);
+						} else {
+							$response_data = $response->get_data();
+
+							// Extract the assistant reply.
+							$reply = '';
+							if ( isset( $response_data['data']['choices'] ) && is_array( $response_data['data']['choices'] ) ) {
+								foreach ( $response_data['data']['choices'] as $choice ) {
+									if ( isset( $choice['finish_reason'] ) && 'stop' === $choice['finish_reason']
+										&& isset( $choice['message']['content'] )
+									) {
+										$reply = $choice['message']['content'];
+										break;
+									}
+								}
+
+								if ( '' === $reply ) {
+									$last = end( $response_data['data']['choices'] );
+									if ( isset( $last['message']['content'] ) ) {
+										$reply = $last['message']['content'];
+									}
+								}
+							}
+
+							if ( '' === $reply && isset( $response_data['agentic_tool_messages'] ) && is_array( $response_data['agentic_tool_messages'] ) ) {
+								foreach ( $response_data['agentic_tool_messages'] as $msg ) {
+									if ( isset( $msg['role'] ) && 'assistant' === $msg['role'] && ! empty( $msg['content'] ) ) {
+										$reply = $msg['content'];
+										break;
+									}
+								}
+							}
+
+							$result = array(
+								'assistant_id' => $assistant_id,
+								'task'         => $agent_task['description'],
+								'response'     => $reply,
+							);
+						}
+					} catch ( \Throwable $e ) {
+						// Restore the previous user context on exception.
+						if ( $user_id > 0 && $user_id !== $previous_user ) {
+							wp_set_current_user( $previous_user );
+						}
+
+						$result = new WP_Error(
+							'wp_mcp_ai_orchestrator_dispatch_error',
+							sprintf(
+								'%s in %s:%d',
+								$e->getMessage(),
+								str_replace( ABSPATH, '', $e->getFile() ),
+								$e->getLine()
+							)
+						);
+					}
+				} else {
+					$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+				}
+			} else {
+				$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+			}
+		} else {
+			// Fall back to role executor for virtual agents or when REST is unavailable.
+			$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+		}
 
 		// Cache result for idempotency.
 		$this->cache_task_result( $task_id, $result );
@@ -679,8 +805,128 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			)
 		);
 
-		// Execute task with agent role.
-		$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+		// Execute task by dispatching to the assistant via REST API when
+		// the agent has a numeric (real) assistant ID. Virtual agents and
+		// agents without REST availability fall back to the role executor.
+		$is_virtual = isset( $agent['id'] ) && is_string( $agent['id'] ) && 0 === strpos( $agent['id'], 'virtual_' );
+		$is_numeric = isset( $agent['id'] ) && is_numeric( $agent['id'] );
+
+		if ( $is_numeric && ! $is_virtual && function_exists( 'rest_do_request' ) ) {
+			$assistant_id   = absint( $agent['id'] );
+			$assistant_post = get_post( $assistant_id );
+
+			if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
+				$rest_server = rest_get_server();
+				if ( $rest_server ) {
+					// Switch to the originating user so the REST request inherits
+					// their capabilities (same pattern as dispatch_assistant_run).
+					$user_id       = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+					$previous_user = get_current_user_id();
+					if ( $user_id > 0 && $user_id !== $previous_user ) {
+						wp_set_current_user( $user_id );
+					}
+
+					$messages = array(
+						array(
+							'role'    => 'user',
+							'content' => $agent_task['description'],
+						),
+					);
+
+					$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+					$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+					$request->set_body_params(
+						array(
+							'assistant_id' => $assistant_id,
+							'messages'     => $messages,
+							'stream'       => false,
+							'context'      => array(
+								'source'    => 'team_orchestrator_generic',
+								'step_name' => $step['name'] ?? 'unnamed',
+							),
+						)
+					);
+
+					try {
+						$response = rest_do_request( $request );
+
+						// Restore the previous user context.
+						if ( $user_id > 0 && $user_id !== $previous_user ) {
+							wp_set_current_user( $previous_user );
+						}
+
+						if ( $response->is_error() ) {
+							$error_data = $response->get_data();
+							$result     = new WP_Error(
+								'wp_mcp_ai_orchestrator_chat_failed',
+								isset( $error_data['message'] )
+									? $error_data['message']
+									: __( 'Chat API request failed.', 'mcp-ai-wpoos' )
+							);
+						} else {
+							$response_data = $response->get_data();
+
+							// Extract the assistant reply.
+							$reply = '';
+							if ( isset( $response_data['data']['choices'] ) && is_array( $response_data['data']['choices'] ) ) {
+								foreach ( $response_data['data']['choices'] as $choice ) {
+									if ( isset( $choice['finish_reason'] ) && 'stop' === $choice['finish_reason']
+										&& isset( $choice['message']['content'] )
+									) {
+										$reply = $choice['message']['content'];
+										break;
+									}
+								}
+
+								if ( '' === $reply ) {
+									$last = end( $response_data['data']['choices'] );
+									if ( isset( $last['message']['content'] ) ) {
+										$reply = $last['message']['content'];
+									}
+								}
+							}
+
+							if ( '' === $reply && isset( $response_data['agentic_tool_messages'] ) && is_array( $response_data['agentic_tool_messages'] ) ) {
+								foreach ( $response_data['agentic_tool_messages'] as $msg ) {
+									if ( isset( $msg['role'] ) && 'assistant' === $msg['role'] && ! empty( $msg['content'] ) ) {
+										$reply = $msg['content'];
+										break;
+									}
+								}
+							}
+
+							$result = array(
+								'assistant_id' => $assistant_id,
+								'task'         => $agent_task['description'],
+								'response'     => $reply,
+							);
+						}
+					} catch ( \Throwable $e ) {
+						// Restore the previous user context on exception.
+						if ( $user_id > 0 && $user_id !== $previous_user ) {
+							wp_set_current_user( $previous_user );
+						}
+
+						$result = new WP_Error(
+							'wp_mcp_ai_orchestrator_dispatch_error',
+							sprintf(
+								'%s in %s:%d',
+								$e->getMessage(),
+								str_replace( ABSPATH, '', $e->getFile() ),
+								$e->getLine()
+							)
+						);
+					}
+				} else {
+					$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+				}
+			} else {
+				$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+			}
+		} else {
+			// Fall back to role executor for virtual agents or when REST is unavailable.
+			$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+		}
 
 		return array(
 			'step_type'   => 'execute',

@@ -32,3 +32,47 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_harness_tools' ) ) {
 }
 
 add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_harness_tools', 10 );
+
+// -------------------------------------------------------------------------
+// Layer I — Pro Harness Proposer (coding-agent-based profile optimization)
+// -------------------------------------------------------------------------
+
+if ( ! function_exists( 'wp_mcp_ai_pro_register_harness_proposer' ) ) {
+	/**
+	 * Register the Pro proposer with the harness search engine.
+	 *
+	 * Loads the proposer class on demand (only when the filter fires)
+	 * and hooks it into `wp_mcp_ai_harness_proposer`. When active,
+	 * this replaces the base plugin's best-of-N random restarter with
+	 * a coding-agent proposer that inspects execution traces.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_pro_register_harness_proposer() {
+		$file = WP_MCP_AI_PRO_PATH . 'includes/harness/class-wp-mcp-ai-pro-harness-proposer.php';
+		if ( file_exists( $file ) ) {
+			require_once $file;
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Pro_Harness_Proposer' ) ) {
+			$config = WP_MCP_AI_Pro_Harness_Proposer::get_config();
+
+			// Only activate the Pro proposer if auto_optimize or if explicitly
+			// requested via the admin. The filter is always hooked so admins
+			// can toggle it at runtime.
+			add_filter(
+				'wp_mcp_ai_harness_proposer',
+				array( 'WP_MCP_AI_Pro_Harness_Proposer', 'propose' ),
+				10,
+				6
+			);
+		}
+	}
+}
+
+// Register the Pro proposer early so it's available when harness
+// classes are loaded. The actual proposer class is only loaded when
+// the filter fires (lazy-load pattern).
+add_action( 'init', 'wp_mcp_ai_pro_register_harness_proposer', 20 );

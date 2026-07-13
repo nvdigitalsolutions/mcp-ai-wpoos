@@ -17,6 +17,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Register the five_minutes cron schedule for delegation watchdog.
+if ( ! has_filter( 'cron_schedules', 'wp_mcp_ai_add_five_minutes_schedule' ) ) {
+	// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- 5-minute interval is intentional for delegation watchdog recovery; matches the pattern used by Pro Schedule Manager's wp_mcp_ai_every_5_minutes.
+	add_filter( 'cron_schedules', 'wp_mcp_ai_add_five_minutes_schedule' );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_add_five_minutes_schedule' ) ) {
+	/**
+	 * Add a five-minute cron interval.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $schedules Existing cron schedules.
+	 * @return array Modified schedules.
+	 */
+	function wp_mcp_ai_add_five_minutes_schedule( $schedules ) {
+		$schedules['five_minutes'] = array(
+			'interval' => 5 * MINUTE_IN_SECONDS,
+			'display'  => __( 'Every 5 Minutes', 'mcp-ai-wpoos' ),
+		);
+		return $schedules;
+	}
+}
+
 if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_ensure_cleanup_cron_scheduled' ) ) {
 	add_action( 'plugins_loaded', 'wp_mcp_ai_ensure_cleanup_cron_scheduled', 25 );
 }
@@ -88,6 +112,19 @@ if ( ! has_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_researc
 
 if ( ! has_action( 'wp_mcp_ai_model_catalog_discovery', 'wp_mcp_ai_model_catalog_discovery_handler' ) ) {
 	add_action( 'wp_mcp_ai_model_catalog_discovery', 'wp_mcp_ai_model_catalog_discovery_handler' );
+}
+
+if ( ! has_action( 'wp_mcp_ai_process_delegation', 'wp_mcp_ai_process_delegation_handler' ) ) {
+	add_action( 'wp_mcp_ai_process_delegation', 'wp_mcp_ai_process_delegation_handler', 10, 1 );
+}
+
+if ( ! has_action( 'wp_mcp_ai_delegation_watchdog', 'wp_mcp_ai_delegation_watchdog_handler' ) ) {
+	add_action( 'wp_mcp_ai_delegation_watchdog', 'wp_mcp_ai_delegation_watchdog_handler' );
+}
+
+// Ensure delegation watchdog runs every 5 minutes to recover stale delegations.
+if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_ensure_delegation_watchdog_scheduled' ) ) {
+	add_action( 'plugins_loaded', 'wp_mcp_ai_ensure_delegation_watchdog_scheduled', 26 );
 }
 
 if ( ! function_exists( 'wp_mcp_ai_model_catalog_discovery_handler' ) ) {
@@ -199,6 +236,61 @@ if ( ! function_exists( 'wp_mcp_ai_deep_research_background_handler' ) ) {
 }
 
 // Initialize async tool executor during plugin bootstrap (registers its cron hook handler).
+if ( ! function_exists( 'wp_mcp_ai_process_delegation_handler' ) ) {
+	/**
+	 * Cron job handler for processing pending agent delegations.
+	 *
+	 * Delegates to
+	 * {@see WP_MCP_AI_Agent_Communication_Service::process_pending_delegation()}.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $delegation_id The delegation identifier.
+	 * @return void
+	 */
+	function wp_mcp_ai_process_delegation_handler( $delegation_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Agent_Communication_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-agent-communication-service.php';
+		}
+		WP_MCP_AI_Agent_Communication_Service::process_pending_delegation( $delegation_id );
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_ensure_delegation_watchdog_scheduled' ) ) {
+	/**
+	 * Ensure the delegation watchdog scan runs every 5 minutes.
+	 *
+	 * The watchdog detects delegations whose WP-Cron event was consumed
+	 * without the delegation being processed, and re-schedules them.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	function wp_mcp_ai_ensure_delegation_watchdog_scheduled() {
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_delegation_watchdog' ) ) {
+			wp_schedule_event( time() + 5 * MINUTE_IN_SECONDS, 'five_minutes', 'wp_mcp_ai_delegation_watchdog' );
+		}
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_delegation_watchdog_handler' ) ) {
+	/**
+	 * Cron job handler for the delegation watchdog scanner.
+	 *
+	 * Scans Cron Manager for pending delegations that have no associated
+	 * WP-Cron event and re-schedules them.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	function wp_mcp_ai_delegation_watchdog_handler() {
+		if ( ! class_exists( 'WP_MCP_AI_Agent_Communication_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-agent-communication-service.php';
+		}
+		WP_MCP_AI_Agent_Communication_Service::watchdog_scan_stale_delegations();
+	}
+}
+
 if ( ! has_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor' ) ) {
 	add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor', 5 );
 }

@@ -53,9 +53,27 @@ import { MessageView } from './components/MessageView';
 import { MemoryDrawer, type MemoryTab } from './components/MemoryDrawer';
 import { TranscriptsSidebar } from './components/TranscriptsSidebar';
 import { HitlApprovalBar } from './components/HitlApprovalBar';
+import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp';
+import { AudioRecorderButton } from './components/AudioRecorderButton';
+import { TasksDrawer } from './components/TasksDrawer';
+import { AgentPanel } from './components/AgentPanel';
+import { SuggestedPrompts } from './components/SuggestedPrompts';
+import { ToolShortcuts, type ToolShortcut } from './components/ToolShortcuts';
+import { type UsageData } from './components/UsageBadges';
 import { useTranscriptSession } from './hooks/useTranscriptSession';
 import { useThreadsSidebar } from './hooks/useThreadsSidebar';
 import { useAttachments, ACCEPT_ATTR } from './hooks/useAttachments';
+import { useDarkMode } from './hooks/useDarkMode';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useSpeechPlayback } from './hooks/useSpeechPlayback';
+import { useJobBus } from './hooks/useJobBus';
+import { useTabTitleBadge } from './hooks/useTabTitleBadge';
+import {
+	useAgentTeam,
+	useWorkflowState,
+	useDelegationNotices,
+} from './hooks/useAgentTeam';
+import { exportConversation } from './utils/export-conversation';
 
 interface AppProps {
 	config: ChatSpaConfig;
@@ -93,6 +111,7 @@ export function App( { config }: AppProps ) {
 	const endpoint = runtime.endpoints.chatClient;
 	const assistantId = config.assistantId ?? 0;
 	const isGuest = !! config.guest;
+	const allowSensitiveTools = !! config.allowSensitiveTools;
 
 	// Guest sessions can't list/save transcripts (the REST endpoint
 	// requires an authenticated user), so we disable the feature there.
@@ -177,8 +196,9 @@ export function App( { config }: AppProps ) {
 				nonce: runtime.nonce,
 				assistantId,
 				guest: isGuest,
+				allowSensitiveTools,
 			} ),
-		[ endpoint, runtime.nonce, assistantId, isGuest ]
+			[ endpoint, runtime.nonce, assistantId, isGuest, allowSensitiveTools ]
 	);
 
 	const { messages, input, handleInputChange, handleSubmit, status, error, stop, reload, setMessages } = useChat( {
@@ -192,7 +212,18 @@ export function App( { config }: AppProps ) {
 		// Stream Protocol that `useChat` expects.
 		fetch: customFetch as typeof globalThis.fetch,
 		streamProtocol: 'data',
-		onFinish: ( assistantMessage, { finishReason } ) => {
+		onFinish: ( assistantMessage, { finishReason, usage } ) => {
+			// Capture usage data for this turn (Phase 1: v0.8.0).
+			if ( usage ) {
+				setUsageMap( ( prev ) => ( {
+					...prev,
+					[ assistantMessage.id ]: {
+						promptTokens: usage.promptTokens,
+						completionTokens: usage.completionTokens,
+						totalTokens: usage.totalTokens,
+					},
+				} ) );
+			}
 			// Persist the conversation after every completed turn. Save is
 			// fire-and-forget — failures are surfaced via the sidebar's
 			// error slot but do not block the chat surface.
@@ -282,8 +313,107 @@ export function App( { config }: AppProps ) {
 
 	const isStreaming = status === 'streaming' || status === 'submitted';
 
+	// ── Dark mode (Phase 1: v0.8.0) ───────────────────────────────────────────
+	const darkMode = useDarkMode( config.theme ?? 'auto' );
+
+	// ── Usage tracking per message (Phase 1: v0.8.0) ──────────────────────────
+	const [ usageMap, setUsageMap ] = useState< Record< string, UsageData > >( {} );
+
+	// ── Keyboard shortcuts (Phase 1: v0.8.0) ──────────────────────────────────
+	const shortcuts = useKeyboardShortcuts( {
+		onSave: () => {
+			// Auto-saved via onFinish; no-op for now.
+		},
+		onNewChat: () => {
+			session.startNewSession();
+		},
+		onExport: () => {
+			if ( messages.length > 0 ) {
+				exportConversation( messages, 'json', assistantId, session.sessionKey );
+			}
+		},
+	} );
+
 	// ── Attachment state ──────────────────────────────────────────────────────
 	const attachments = useAttachments();
+
+	// ── Speech playback (Phase 2: v0.8.0) ─────────────────────────────────────
+	const speech = useSpeechPlayback( {
+		toolsEndpoint: runtime.endpoints.tools,
+		nonce: runtime.nonce,
+		assistantId,
+	} );
+
+	// ── Job system (Phase 3: v0.9.0) ──────────────────────────────────────────
+	const cronStatusBaseUrl = runtime.endpoints.chat.replace( /\/chat\/?$/, '' );
+	const jobBus = useJobBus( cronStatusBaseUrl, runtime.nonce );
+	useTabTitleBadge( jobBus.runningCount );
+
+	// ── Agent team & workflow (Phase 4: v0.9.0) ────────
+	const agentTeam = useAgentTeam( messages );
+	const workflowState = useWorkflowState( messages );
+	const delegationNotices = useDelegationNotices( messages );
+
+	// ── Bridge delegation results to job bus so they appear in Tasks drawer ──
+	// delegate_to_agent is synchronous (no cron job), so we create pseudo-job
+	// entries from the tool result.
+	const bridgedDelegations = useRef< Set< string > >( new Set() );
+	useEffect( () => {
+		const bus = ( window as unknown as { wpMcpAiJobBus?: EventTarget } )
+			.wpMcpAiJobBus;
+		if ( ! bus ) return;
+
+		for ( const notice of delegationNotices ) {
+			const key = `${ notice.agentName || 'agent' }::${ notice.task }`;
+			if ( bridgedDelegations.current.has( key ) ) continue;
+			bridgedDelegations.current.add( key );
+
+			const status =
+				notice.status === 'complete' || notice.status === 'completed'
+					? 'completed'
+					: notice.status === 'error' || notice.status === 'failed'
+					? 'failed'
+					: 'running';
+
+			bus.dispatchEvent(
+				new CustomEvent( 'job:started', {
+					detail: {
+						job_id: `delegation-${ notice.agentName || 'agent' }`,
+						tool_name: `Delegate to ${ notice.agentName || 'agent' }`,
+						status,
+						message: notice.task,
+					},
+				} )
+			);
+		}
+	}, [ delegationNotices ] );
+
+	// ── Vector store preload (GAP-16: v0.9.0) ────────────────────────────────
+	useEffect( () => {
+		if ( ! runtime.endpoints.chat || isGuest ) return;
+		const baseUrl = runtime.endpoints.chat.replace( /\/chat\/?$/, '' );
+		// Fire-and-forget: warm the vector store cache.
+		fetch( `${ baseUrl }/vector-store/preload?assistant_id=${ assistantId }`, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'X-WP-Nonce': runtime.nonce },
+		} ).catch( () => {} );
+	}, [ runtime.endpoints.chat, runtime.nonce, assistantId, isGuest ] );
+
+	// ── localStorage quota (GAP-15: v0.9.0) ──────────────────────────────────
+	const quotaUsed = useMemo( () => {
+		if ( typeof window === 'undefined' ) return 0;
+		let total = 0;
+		try {
+			for ( let i = 0; i < localStorage.length; i++ ) {
+				const key = localStorage.key( i );
+				if ( key?.startsWith( 'wp_mcp_ai_' ) || key?.startsWith( 'nvoos-chat-spa' ) ) {
+					total += ( localStorage.getItem( key ) ?? '' ).length;
+				}
+			}
+		} catch { /* ignore */ }
+		return total;
+	}, [ messages.length ] );
 	const fileInputRef = useRef< HTMLInputElement | null >( null );
 
 	const onFileChange = useCallback(
@@ -397,8 +527,15 @@ export function App( { config }: AppProps ) {
 					onTabChange={ handleTabChange }
 					onSelectThread={ ( id ) => void threads.selectThread( id ) }
 					onDeselectThread={ threads.deselectThread }
+					searchTerm={ session.searchTerm }
+					onSearchChange={ session.setSearch }
+					hasMore={ session.hasMore }
+					onLoadMore={ () => void session.loadMore() }
+					onUpdateTitle={ ( key, title ) => void session.updateTitle( key, title ) }
 				/>
 			) }
+			{ /* Agent panel (Phase 4: v0.9.0) */ }
+			<AgentPanel team={ agentTeam } />
 			<div className="nvoos-chat-spa-main">
 				{ memoryEnabled && (
 					<MemoryDrawer
@@ -433,6 +570,15 @@ export function App( { config }: AppProps ) {
 								onDelete={ handleDelete }
 								onFeedback={ handleFeedback }
 								feedback={ feedbackState[ m.id ] ?? null }
+								usage={ usageMap[ m.id ] ?? null }
+								onSpeechPlay={ ( text ) => void speech.play( text ) }
+								onSpeechStop={ speech.stop }
+								speechStateFor={ speech.stateFor }
+								jobs={ jobBus.jobs }
+								onCancelJob={ ( id ) => void jobBus.cancelJob( id ) }
+								onRetryJob={ ( id ) => void jobBus.retryJob( id ) }
+								workflow={ workflowState }
+								delegations={ delegationNotices }
 							/>
 							{ /* Edit button: only on user messages when idle */ }
 							{ ! isStreaming && m.role === 'user' && (
@@ -476,6 +622,54 @@ export function App( { config }: AppProps ) {
 						isStreaming={ isStreaming }
 					/>
 				) }
+				{ /* Tasks drawer (Phase 3: v0.9.0) */ }
+				<TasksDrawer
+					jobs={ jobBus.jobs }
+					runningCount={ jobBus.runningCount }
+					onCancelJob={ jobBus.cancelJob }
+					onRetryJob={ jobBus.retryJob }
+					onDismissJob={ jobBus.dismissJob }
+					onDismissAll={ jobBus.dismissAllTerminal }
+				/>
+				{ /* Suggested prompts (Phase 5: v0.9.0) */ }
+				<SuggestedPrompts
+					prompts={ ( config as Record< string, unknown > ).suggestedPrompts as string[] | undefined }
+					onSelect={ ( prompt ) => {
+						const inputEl = document.getElementById(
+							'nvoos-chat-spa-input'
+						) as HTMLInputElement | null;
+						if ( inputEl ) {
+							const setter = Object.getOwnPropertyDescriptor(
+								window.HTMLInputElement.prototype,
+								'value'
+							)?.set;
+							if ( setter ) {
+								setter.call( inputEl, prompt );
+								inputEl.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+							}
+						}
+					} }
+				/>
+				{ /* Tool shortcuts (Phase 5: v0.9.0) */ }
+				<ToolShortcuts
+					shortcuts={ ( config as Record< string, unknown > ).toolShortcuts as ToolShortcut[] | undefined }
+					onInsert={ ( text ) => {
+						const inputEl = document.getElementById(
+							'nvoos-chat-spa-input'
+						) as HTMLInputElement | null;
+						if ( inputEl ) {
+							const current = inputEl.value;
+							const setter = Object.getOwnPropertyDescriptor(
+								window.HTMLInputElement.prototype,
+								'value'
+							)?.set;
+							if ( setter ) {
+								setter.call( inputEl, current ? `${ current } ${ text }` : text );
+								inputEl.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+							}
+						}
+					} }
+				/>
 				<form className="nvoos-chat-spa-composer" onSubmit={ onSubmit }>
 					{ memoryEnabled && (
 						<button
@@ -489,6 +683,45 @@ export function App( { config }: AppProps ) {
 							🧠
 						</button>
 					) }
+					{ /* Dark mode toggle (Phase 1: v0.8.0) */ }
+					<button
+						type="button"
+						className="nvoos-chat-spa-dark-toggle"
+						aria-label={
+							darkMode.isDark
+								? __( 'Switch to light mode', 'nvoos-chat-spa' )
+								: __( 'Switch to dark mode', 'nvoos-chat-spa' )
+						}
+						title={
+							darkMode.isDark
+								? __( 'Switch to light mode', 'nvoos-chat-spa' )
+								: __( 'Switch to dark mode', 'nvoos-chat-spa' )
+						}
+						onClick={ darkMode.toggle }
+					>
+						{ darkMode.isDark ? '☀️' : '🌙' }
+					</button>
+					{ /* Export button (Phase 5: v0.9.0) */ }
+					<button
+						type="button"
+						className="nvoos-chat-spa-shortcuts-btn"
+						aria-label={ __( 'Export conversation', 'nvoos-chat-spa' ) }
+						title={ __( 'Export conversation (Ctrl+E)', 'nvoos-chat-spa' ) }
+						disabled={ messages.length === 0 }
+						onClick={ () => exportConversation( messages, 'json', assistantId, session.sessionKey ) }
+					>
+						📥
+					</button>
+					{ /* Keyboard shortcuts help (Phase 1: v0.8.0) */ }
+					<button
+						type="button"
+						className="nvoos-chat-spa-shortcuts-btn"
+						aria-label={ __( 'Keyboard shortcuts', 'nvoos-chat-spa' ) }
+						title={ __( 'Keyboard shortcuts', 'nvoos-chat-spa' ) }
+						onClick={ shortcuts.toggleHelp }
+					>
+						⌨
+					</button>
 					{ /* Hidden file input */ }
 					<input
 						ref={ fileInputRef }
@@ -511,6 +744,63 @@ export function App( { config }: AppProps ) {
 					>
 						📎
 					</button>
+					{ /* Transcribe button (Phase 2: v0.8.0) */ }
+					<AudioRecorderButton
+						mode="transcribe"
+						toolsEndpoint={ runtime.endpoints.tools }
+						uploadEndpoint={ runtime.endpoints.upload }
+						nonce={ runtime.nonce }
+						assistantId={ assistantId }
+						disabled={ isStreaming }
+						onTranscribed={ ( text ) => {
+							// Insert transcribed text into the input.
+							const inputEl = document.getElementById(
+								'nvoos-chat-spa-input'
+							) as HTMLInputElement | null;
+							if ( inputEl ) {
+								const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+									window.HTMLInputElement.prototype,
+									'value'
+								)?.set;
+								if ( nativeInputValueSetter ) {
+									nativeInputValueSetter.call( inputEl, text );
+									inputEl.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+								}
+							}
+						} }
+					/>
+					{ /* Voice chat button (Phase 2: v0.8.0) */ }
+					<AudioRecorderButton
+						mode="voice"
+						toolsEndpoint={ runtime.endpoints.tools }
+						uploadEndpoint={ runtime.endpoints.upload }
+						nonce={ runtime.nonce }
+						assistantId={ assistantId }
+						disabled={ isStreaming }
+						onVoiceSubmit={ ( text ) => {
+							// Build a synthetic submit with the transcribed text.
+							const inputEl = document.getElementById(
+								'nvoos-chat-spa-input'
+							) as HTMLInputElement | null;
+							if ( inputEl ) {
+								const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+									window.HTMLInputElement.prototype,
+									'value'
+								)?.set;
+								if ( nativeInputValueSetter ) {
+									nativeInputValueSetter.call( inputEl, text );
+									inputEl.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+								}
+							}
+							// Trigger form submit.
+							const form = inputEl?.closest( 'form' );
+							if ( form ) {
+								form.dispatchEvent(
+									new Event( 'submit', { bubbles: true, cancelable: true } )
+								);
+							}
+						} }
+					/>
 					<label className="screen-reader-text" htmlFor="nvoos-chat-spa-input">
 						{ __( 'Message', 'nvoos-chat-spa' ) }
 					</label>
@@ -577,7 +867,21 @@ export function App( { config }: AppProps ) {
 						</button>
 					) }
 				</form>
+				{ /* Quota monitor (GAP-15: v0.9.0) */ }
+				{ quotaUsed > 0 && (
+					<div className="nvoos-chat-spa-quota">
+						{ __( 'Local storage used:', 'nvoos-chat-spa' ) }{ ' ' }
+						{ quotaUsed > 1_048_576
+							? ( quotaUsed / 1_048_576 ).toFixed( 1 ) + ' MB'
+							: Math.round( quotaUsed / 1024 ) + ' KB' }
+					</div>
+				) }
 			</div>
+			{ /* Keyboard shortcuts help modal (Phase 1: v0.8.0) */ }
+			<KeyboardShortcutsHelp
+				isOpen={ shortcuts.isHelpOpen }
+				onClose={ shortcuts.closeHelp }
+			/>
 		</div>
 	);
 }

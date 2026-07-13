@@ -535,9 +535,13 @@ require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
 // Admin-only includes
 // ---------------------------------------------------------------------------
 
-if ( is_admin() ) {
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-scripts.php';
-	WP_MCP_AI_Admin_Scripts::init();
+	if ( is_admin() ) {
+		// User profile — chat memory preferences (per-user recovery toggle).
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-user-profile-memory.php';
+		WP_MCP_AI_User_Profile_Memory::init();
+
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-scripts.php';
+		WP_MCP_AI_Admin_Scripts::init();
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-dlq-manager.php';

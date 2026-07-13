@@ -1538,3 +1538,1617 @@ border-color: rgba( 255, 255, 255, 0.1 );
 .nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-gallery-img {
 	border-color: #374151;
 }
+
+/* =========================================================================
+   Phase 1 additions (v0.8.0) — dark toggle, shortcuts, usage badges, capabilities
+   ========================================================================= */
+
+/* ── Dark mode toggle ─────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-dark-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	background: #f9fafb;
+	font-size: 16px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+	flex-shrink: 0;
+}
+
+.nvoos-chat-spa-dark-toggle:hover {
+	background: #e5e7eb;
+	border-color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-dark-toggle {
+	border-color: #4b5563;
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-dark-toggle:hover {
+	background: #374151;
+	border-color: #6b7280;
+}
+
+/* ── Keyboard shortcuts button ────────────────────────────────────────── */
+
+.nvoos-chat-spa-shortcuts-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	background: #f9fafb;
+	font-size: 16px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+	flex-shrink: 0;
+}
+
+.nvoos-chat-spa-shortcuts-btn:hover {
+	background: #e5e7eb;
+	border-color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-shortcuts-btn {
+	border-color: #4b5563;
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-shortcuts-btn:hover {
+	background: #374151;
+	border-color: #6b7280;
+}
+
+/* ── Keyboard shortcuts help modal ────────────────────────────────────── */
+
+.nvoos-chat-spa-shortcuts-help {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.nvoos-chat-spa-shortcuts-help-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.nvoos-chat-spa-shortcuts-help-modal {
+	position: relative;
+	background: #fff;
+	border-radius: 12px;
+	padding: 24px;
+	max-width: 400px;
+	width: 90vw;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.nvoos-chat-spa-shortcuts-help-title {
+	margin: 0 0 16px;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.nvoos-chat-spa-shortcuts-help-close {
+	position: absolute;
+	top: 12px;
+	right: 16px;
+	background: none;
+	border: none;
+	font-size: 24px;
+	cursor: pointer;
+	color: #6b7280;
+	line-height: 1;
+	padding: 4px;
+}
+
+.nvoos-chat-spa-shortcuts-help-close:hover {
+	color: #111827;
+}
+
+.nvoos-chat-spa-shortcuts-help-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-chat-spa-shortcuts-help-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 0;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.nvoos-chat-spa-shortcuts-help-item:last-child {
+	border-bottom: none;
+}
+
+.nvoos-chat-spa-shortcuts-help-key {
+	display: inline-block;
+	padding: 2px 8px;
+	font-family: monospace;
+	font-size: 13px;
+	background: #f3f4f6;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	white-space: nowrap;
+}
+
+.nvoos-chat-spa-shortcuts-help-desc {
+	font-size: 14px;
+	color: #6b7280;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-shortcuts-help-modal {
+	background: #1f2937;
+	color: #f3f4f6;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-shortcuts-help-close {
+	color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-shortcuts-help-close:hover {
+	color: #f3f4f6;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-shortcuts-help-item {
+	border-color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-shortcuts-help-key {
+	background: #374151;
+	border-color: #4b5563;
+	color: #e5e7eb;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-shortcuts-help-desc {
+	color: #9ca3af;
+}
+
+/* ── Usage badges (tokens, cost, model) ───────────────────────────────── */
+
+.nvoos-chat-spa-usage-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.nvoos-chat-spa-usage-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.nvoos-chat-spa-usage-badge--tokens {
+	background: #f3f4f6;
+	color: #374151;
+	border: 1px solid #e5e7eb;
+}
+
+.nvoos-chat-spa-usage-badge--cost {
+	background: #ecfdf5;
+	color: #065f46;
+	border: 1px solid #a7f3d0;
+}
+
+.nvoos-chat-spa-usage-badge--model {
+	background: #eff6ff;
+	color: #1e40af;
+	border: 1px solid #bfdbfe;
+}
+
+.nvoos-chat-spa-usage-badge-label {
+	font-weight: 500;
+}
+
+.nvoos-chat-spa-usage-badge-value {
+	font-variant-numeric: tabular-nums;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-usage-badge--tokens {
+	background: #1f2937;
+	color: #e5e7eb;
+	border-color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-usage-badge--cost {
+	background: #064e3b;
+	color: #6ee7b7;
+	border-color: #065f46;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-usage-badge--model {
+	background: #1e3a5f;
+	color: #93c5fd;
+	border-color: #1e40af;
+}
+
+/* ── Capability flag badges ───────────────────────────────────────────── */
+
+.nvoos-chat-spa-capabilities {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 6px;
+}
+
+.nvoos-chat-spa-capability {
+	display: inline-block;
+	padding: 1px 6px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.6;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.nvoos-chat-spa-capability--voice,
+.nvoos-chat-spa-capability--audio {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.nvoos-chat-spa-capability--vision {
+	background: #ede9fe;
+	color: #5b21b6;
+}
+
+.nvoos-chat-spa-capability--tools,
+.nvoos-chat-spa-capability--tool-use,
+.nvoos-chat-spa-capability--function-calling {
+	background: #dbeafe;
+	color: #1e40af;
+}
+
+.nvoos-chat-spa-capability--code {
+	background: #fce7f3;
+	color: #9d174d;
+}
+
+.nvoos-chat-spa-capability--search {
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.nvoos-chat-spa-capability--reasoning,
+.nvoos-chat-spa-capability--planning {
+	background: #e0e7ff;
+	color: #3730a3;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--voice,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--audio {
+	background: #78350f;
+	color: #fcd34d;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--vision {
+	background: #4c1d95;
+	color: #c4b5fd;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--tools,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--tool-use,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--function-calling {
+	background: #1e3a5f;
+	color: #93c5fd;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--code {
+	background: #831843;
+	color: #f9a8d4;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--search {
+	background: #064e3b;
+	color: #6ee7b7;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--reasoning,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--planning {
+	background: #312e81;
+	color: #a5b4fc;
+}
+
+/* Tool-level capability flags (read-only, local-only, write, etc.) */
+.nvoos-chat-spa-capability--read-only,
+.nvoos-chat-spa-capability--local-only,
+.nvoos-chat-spa-capability--idempotent,
+.nvoos-chat-spa-capability--cacheable {
+	background: #d1fae5;
+	color: #065f46;
+}
+.nvoos-chat-spa-capability--write,
+.nvoos-chat-spa-capability--state-changing,
+.nvoos-chat-spa-capability--modifies-data {
+	background: #fef3c7;
+	color: #92400e;
+}
+.nvoos-chat-spa-capability--requires-capability,
+.nvoos-chat-spa-capability--requires-credentials {
+	background: #dbeafe;
+	color: #1e40af;
+}
+.nvoos-chat-spa-capability--external-api,
+.nvoos-chat-spa-capability--network-dependent {
+	background: #ede9fe;
+	color: #5b21b6;
+}
+.nvoos-chat-spa-capability--consumes-tokens {
+	background: #fce7f3;
+	color: #9d174d;
+}
+.nvoos-chat-spa-capability--async,
+.nvoos-chat-spa-capability--background-only {
+	background: #fff7ed;
+	color: #9a3412;
+}
+.nvoos-chat-spa-capability--non-deterministic {
+	background: #fef2f2;
+	color: #991b1b;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--read-only,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--local-only,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--idempotent,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--cacheable {
+	background: #064e3b;
+	color: #6ee7b7;
+}
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--write,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--state-changing,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--modifies-data {
+	background: #78350f;
+	color: #fcd34d;
+}
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--requires-capability,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--requires-credentials {
+	background: #1e3a5f;
+	color: #93c5fd;
+}
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--external-api,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--network-dependent {
+	background: #4c1d95;
+	color: #c4b5fd;
+}
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--consumes-tokens {
+	background: #831843;
+	color: #f9a8d4;
+}
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--async,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--background-only {
+	background: #7c2d12;
+	color: #fdba74;
+}
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-capability--non-deterministic {
+	background: #7f1d1d;
+	color: #fca5a5;
+}
+
+/* =========================================================================
+   Phase 2 additions (v0.8.0) — speech button, audio recorder buttons
+   ========================================================================= */
+
+/* ── Speech (TTS) button on assistant messages ──────────────────────────── */
+
+.nvoos-chat-spa-speech-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	margin-top: 4px;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	background: #f9fafb;
+	font-size: 14px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.nvoos-chat-spa-speech-btn:hover {
+	background: #e5e7eb;
+	border-color: #d1d5db;
+}
+
+.nvoos-chat-spa-speech-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.nvoos-chat-spa-speech-btn--playing {
+	background: #dbeafe;
+	border-color: #93c5fd;
+	color: #1d4ed8;
+}
+
+.nvoos-chat-spa-speech-btn--error {
+	background: #fee2e2;
+	border-color: #fca5a5;
+}
+
+.nvoos-chat-spa-speech-btn--loading {
+	animation: nvoos-chat-spa-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes nvoos-chat-spa-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.4; }
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-speech-btn {
+	border-color: #374151;
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-speech-btn:hover {
+	background: #374151;
+	border-color: #4b5563;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-speech-btn--playing {
+	background: #1e3a5f;
+	border-color: #1d4ed8;
+	color: #93c5fd;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-speech-btn--error {
+	background: #7f1d1d;
+	border-color: #dc2626;
+}
+
+/* ── Audio recorder buttons (composer) ──────────────────────────────────── */
+
+.nvoos-chat-spa-audio-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	background: #f9fafb;
+	font-size: 16px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
+	flex-shrink: 0;
+}
+
+.nvoos-chat-spa-audio-btn:hover:not(:disabled) {
+	background: #e5e7eb;
+	border-color: #9ca3af;
+}
+
+.nvoos-chat-spa-audio-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.nvoos-chat-spa-audio-btn--recording {
+	background: #fef2f2;
+	border-color: #fca5a5;
+	color: #dc2626;
+	animation: nvoos-chat-spa-pulse 1.5s ease-in-out infinite;
+}
+
+.nvoos-chat-spa-audio-btn--processing {
+	background: #fef3c7;
+	border-color: #fcd34d;
+}
+
+.nvoos-chat-spa-audio-status {
+	display: inline-block;
+	font-size: 12px;
+	color: #6b7280;
+	padding: 0 4px;
+	white-space: nowrap;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-audio-btn {
+	border-color: #4b5563;
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-audio-btn:hover:not(:disabled) {
+	background: #374151;
+	border-color: #6b7280;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-audio-btn--recording {
+	background: #7f1d1d;
+	border-color: #dc2626;
+	color: #fca5a5;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-audio-btn--processing {
+	background: #78350f;
+	border-color: #f59e0b;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-audio-status {
+	color: #9ca3af;
+}
+
+/* =========================================================================
+   Phase 3 additions (v0.9.0) — job cards, tasks drawer
+   ========================================================================= */
+
+/* ── Job card (inline message) ─────────────────────────────────────────── */
+
+.nvoos-chat-spa-job-card {
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	padding: 12px;
+	margin: 8px 0;
+	background: #f9fafb;
+	font-size: 13px;
+}
+
+.nvoos-chat-spa-job-card--completed {
+	border-color: #a7f3d0;
+	background: #f0fdf4;
+}
+
+.nvoos-chat-spa-job-card--failed {
+	border-color: #fca5a5;
+	background: #fef2f2;
+}
+
+.nvoos-chat-spa-job-card--cancelled {
+	border-color: #e5e7eb;
+	opacity: 0.7;
+}
+
+.nvoos-chat-spa-job-card__header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.nvoos-chat-spa-job-card__title {
+	font-weight: 600;
+	flex: 1;
+}
+
+.nvoos-chat-spa-job-card__status {
+	font-size: 12px;
+	color: #6b7280;
+}
+
+.nvoos-chat-spa-job-card__cancel,
+.nvoos-chat-spa-job-card__retry {
+	padding: 2px 10px;
+	border: 1px solid #d1d5db;
+	border-radius: 5px;
+	background: #fff;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.nvoos-chat-spa-job-card__cancel:hover {
+	background: #fef2f2;
+	border-color: #fca5a5;
+}
+
+.nvoos-chat-spa-job-card__retry {
+	color: #1d4ed8;
+	border-color: #93c5fd;
+	background: #eff6ff;
+}
+
+.nvoos-chat-spa-job-card__retry:hover {
+	background: #dbeafe;
+}
+
+.nvoos-chat-spa-job-card__progress-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.nvoos-chat-spa-job-card__progress-bar {
+	flex: 1;
+	height: 6px;
+	background: #e5e7eb;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.nvoos-chat-spa-job-card__progress-fill {
+	height: 100%;
+	background: #3b82f6;
+	border-radius: 3px;
+	transition: width 0.3s ease;
+}
+
+.nvoos-chat-spa-job-card--failed .nvoos-chat-spa-job-card__progress-fill {
+	background: #ef4444;
+}
+
+.nvoos-chat-spa-job-card--completed .nvoos-chat-spa-job-card__progress-fill {
+	background: #22c55e;
+}
+
+.nvoos-chat-spa-job-card__progress-pct {
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	color: #6b7280;
+	min-width: 35px;
+}
+
+.nvoos-chat-spa-job-card__eta {
+	font-size: 12px;
+	color: #9ca3af;
+}
+
+.nvoos-chat-spa-job-card__message {
+	font-size: 12px;
+	color: #374151;
+	margin-bottom: 4px;
+}
+
+.nvoos-chat-spa-job-card__steps {
+	list-style: none;
+	margin: 4px 0 0;
+	padding: 0;
+	font-size: 12px;
+}
+
+.nvoos-chat-spa-job-card__step {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 2px 0;
+	color: #6b7280;
+}
+
+.nvoos-chat-spa-job-card__step--completed {
+	color: #16a34a;
+}
+
+.nvoos-chat-spa-job-card__step--running {
+	color: #2563eb;
+}
+
+.nvoos-chat-spa-job-card__step--failed {
+	color: #dc2626;
+}
+
+.nvoos-chat-spa-job-card__step-icon {
+	width: 16px;
+	text-align: center;
+	flex-shrink: 0;
+}
+
+.nvoos-chat-spa-job-card__steps-more {
+	background: none;
+	border: none;
+	color: #6b7280;
+	cursor: pointer;
+	font-size: 12px;
+	padding: 2px 0;
+}
+
+.nvoos-chat-spa-job-card__steps-more:hover {
+	color: #374151;
+}
+
+/* ── Tasks drawer toggle ───────────────────────────────────────────────── */
+
+.nvoos-chat-spa-tasks-toggle {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	background: #f9fafb;
+	font-size: 16px;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+	flex-shrink: 0;
+}
+
+.nvoos-chat-spa-tasks-toggle:hover {
+	background: #e5e7eb;
+	border-color: #9ca3af;
+}
+
+.nvoos-chat-spa-tasks-toggle-badge {
+	position: absolute;
+	top: -4px;
+	right: -4px;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	border-radius: 8px;
+	background: #3b82f6;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 16px;
+	text-align: center;
+}
+
+.nvoos-chat-spa-tasks-toggle-badge--error {
+	background: #ef4444;
+}
+
+/* ── Tasks drawer overlay ──────────────────────────────────────────────── */
+
+.nvoos-chat-spa-tasks-drawer-overlay {
+	position: fixed;
+	top: 32px;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 900;
+	background: rgba(0, 0, 0, 0.3);
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-chat-spa-tasks-drawer-overlay {
+		top: 46px;
+	}
+}
+
+/* ── Tasks drawer panel ────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-tasks-drawer {
+	position: fixed;
+	top: 32px;  /* below the WordPress admin bar */
+	right: 0;
+	width: 340px;
+	max-width: 90vw;
+	height: calc(100vh - 32px);
+	z-index: 950;
+	background: #fff;
+	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	transform: translateX(100%);
+	transition: transform 0.25s ease;
+}
+
+@media screen and ( max-width: 782px ) {
+	.nvoos-chat-spa-tasks-drawer {
+		top: 46px;
+		height: calc(100vh - 46px);
+	}
+}
+
+.nvoos-chat-spa-tasks-drawer--open {
+	transform: translateX(0);
+}
+
+.nvoos-chat-spa-tasks-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.nvoos-chat-spa-tasks-drawer-title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-chat-spa-tasks-drawer-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	border-radius: 10px;
+	background: #e5e7eb;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.nvoos-chat-spa-tasks-drawer-close {
+	background: none;
+	border: none;
+	font-size: 22px;
+	cursor: pointer;
+	color: #6b7280;
+	line-height: 1;
+	padding: 4px;
+}
+
+.nvoos-chat-spa-tasks-drawer-close:hover {
+	color: #111827;
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-tasks-drawer-tabs {
+	display: flex;
+	border-bottom: 1px solid #e5e7eb;
+	padding: 0 12px;
+}
+
+.nvoos-chat-spa-tasks-drawer-tab {
+	flex: 1;
+	padding: 10px 4px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	background: none;
+	font-size: 13px;
+	font-weight: 500;
+	color: #6b7280;
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+}
+
+.nvoos-chat-spa-tasks-drawer-tab:hover {
+	color: #374151;
+}
+
+.nvoos-chat-spa-tasks-drawer-tab--active {
+	color: #111827;
+	border-bottom-color: #3b82f6;
+}
+
+.nvoos-chat-spa-tasks-drawer-tab-count {
+	font-size: 11px;
+	background: #f3f4f6;
+	padding: 0 5px;
+	border-radius: 4px;
+}
+
+/* ── Batch bar ─────────────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-tasks-drawer-batch {
+	padding: 8px 16px;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.nvoos-chat-spa-tasks-drawer-batch-btn {
+	background: none;
+	border: none;
+	color: #6b7280;
+	font-size: 12px;
+	cursor: pointer;
+	padding: 4px 0;
+}
+
+.nvoos-chat-spa-tasks-drawer-batch-btn:hover {
+	color: #dc2626;
+}
+
+/* ── Job list ──────────────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-tasks-drawer-list {
+	flex: 1;
+	overflow-y: auto;
+	padding: 8px 0;
+}
+
+.nvoos-chat-spa-tasks-drawer-empty {
+	padding: 24px;
+	text-align: center;
+	color: #9ca3af;
+	font-size: 14px;
+}
+
+.nvoos-chat-spa-tasks-drawer-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 16px;
+	border-bottom: 1px solid #f9fafb;
+	transition: background 0.1s;
+}
+
+.nvoos-chat-spa-tasks-drawer-item:hover {
+	background: #f9fafb;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-icon {
+	flex-shrink: 0;
+	width: 20px;
+	text-align: center;
+	font-size: 14px;
+	margin-top: 1px;
+}
+
+.nvoos-chat-spa-tasks-drawer-item--running .nvoos-chat-spa-tasks-drawer-item-icon {
+	color: #3b82f6;
+}
+
+.nvoos-chat-spa-tasks-drawer-item--completed .nvoos-chat-spa-tasks-drawer-item-icon {
+	color: #22c55e;
+}
+
+.nvoos-chat-spa-tasks-drawer-item--failed .nvoos-chat-spa-tasks-drawer-item-icon {
+	color: #ef4444;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-name {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-meta {
+	display: block;
+	font-size: 11px;
+	color: #9ca3af;
+	margin-top: 2px;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-progress {
+	height: 3px;
+	background: #e5e7eb;
+	border-radius: 2px;
+	margin-top: 6px;
+	overflow: hidden;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-progress-fill {
+	height: 100%;
+	background: #3b82f6;
+	border-radius: 2px;
+	transition: width 0.3s ease;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-actions {
+	display: flex;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-btn-cancel,
+.nvoos-chat-spa-tasks-drawer-item-btn-retry,
+.nvoos-chat-spa-tasks-drawer-item-btn-dismiss {
+	padding: 2px 8px;
+	border: 1px solid #e5e7eb;
+	border-radius: 4px;
+	background: #fff;
+	font-size: 11px;
+	cursor: pointer;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-btn-cancel:hover {
+	background: #fef2f2;
+	border-color: #fca5a5;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-btn-retry {
+	color: #1d4ed8;
+	border-color: #93c5fd;
+	background: #eff6ff;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-btn-retry:hover {
+	background: #dbeafe;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-btn-dismiss {
+	border: none;
+	color: #9ca3af;
+	font-size: 16px;
+	line-height: 1;
+}
+
+.nvoos-chat-spa-tasks-drawer-item-btn-dismiss:hover {
+	color: #6b7280;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-job-card {
+	border-color: #374151;
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-job-card--completed {
+	border-color: #065f46;
+	background: #064e3b;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-job-card--failed {
+	border-color: #7f1d1d;
+	background: #450a0a;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-toggle {
+	border-color: #4b5563;
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-toggle:hover {
+	background: #374151;
+	border-color: #6b7280;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer {
+	background: #111827;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer-header {
+	border-color: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer-close {
+	color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer-tabs {
+	border-color: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer-tab {
+	color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer-tab--active {
+	color: #f3f4f6;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer-item {
+	border-color: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer-item:hover {
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer-item-btn-cancel,
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tasks-drawer-item-btn-dismiss {
+	background: #1f2937;
+	border-color: #374151;
+	color: #d1d5db;
+}
+
+/* =========================================================================
+   Phase 4 additions (v0.9.0) — agent panel, workflow, delegation
+   ========================================================================= */
+
+/* ── Agent panel ───────────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-agent-panel {
+	margin: 0 16px 12px;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.nvoos-chat-spa-agent-panel-toggle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 10px 14px;
+	border: none;
+	background: #f9fafb;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	text-align: left;
+}
+
+.nvoos-chat-spa-agent-panel-toggle:hover {
+	background: #f3f4f6;
+}
+
+.nvoos-chat-spa-agent-panel-toggle-label {
+	flex: 1;
+}
+
+.nvoos-chat-spa-agent-panel-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	border-radius: 10px;
+	background: #3b82f6;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.nvoos-chat-spa-agent-panel-chevron {
+	color: #9ca3af;
+	font-size: 12px;
+}
+
+.nvoos-chat-spa-agent-panel-body {
+	padding: 8px 12px;
+	border-top: 1px solid #e5e7eb;
+}
+
+/* ── Agent card ────────────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-agent-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 8px;
+	border-radius: 6px;
+	margin-bottom: 6px;
+}
+
+.nvoos-chat-spa-agent-card:last-child {
+	margin-bottom: 0;
+}
+
+.nvoos-chat-spa-agent-card--active {
+	background: #eff6ff;
+}
+
+.nvoos-chat-spa-agent-card--completed {
+	background: #f0fdf4;
+}
+
+.nvoos-chat-spa-agent-card--error {
+	background: #fef2f2;
+}
+
+.nvoos-chat-spa-agent-card--idle {
+	background: #f9fafb;
+}
+
+.nvoos-chat-spa-agent-card-status {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	margin-top: 5px;
+	flex-shrink: 0;
+}
+
+.nvoos-chat-spa-agent-card--active .nvoos-chat-spa-agent-card-status {
+	background: #3b82f6;
+	animation: nvoos-chat-spa-pulse 1.5s ease-in-out infinite;
+}
+
+.nvoos-chat-spa-agent-card--completed .nvoos-chat-spa-agent-card-status {
+	background: #22c55e;
+}
+
+.nvoos-chat-spa-agent-card--error .nvoos-chat-spa-agent-card-status {
+	background: #ef4444;
+}
+
+.nvoos-chat-spa-agent-card--idle .nvoos-chat-spa-agent-card-status {
+	background: #d1d5db;
+}
+
+.nvoos-chat-spa-agent-card-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.nvoos-chat-spa-agent-card-name {
+	display: block;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.nvoos-chat-spa-agent-card-role {
+	display: block;
+	font-size: 11px;
+	color: #6b7280;
+	margin-top: 1px;
+}
+
+.nvoos-chat-spa-agent-card-task {
+	display: block;
+	font-size: 11px;
+	color: #9ca3af;
+	margin-top: 2px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ── Workflow tracker ──────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-workflow-tracker {
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	padding: 12px;
+	margin: 8px 0;
+	background: #f9fafb;
+}
+
+.nvoos-chat-spa-workflow-tracker-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.nvoos-chat-spa-workflow-tracker-title {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.nvoos-chat-spa-workflow-tracker-pct {
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+	color: #6b7280;
+}
+
+.nvoos-chat-spa-workflow-tracker-bar {
+	height: 6px;
+	background: #e5e7eb;
+	border-radius: 3px;
+	overflow: hidden;
+	margin-bottom: 10px;
+}
+
+.nvoos-chat-spa-workflow-tracker-fill {
+	height: 100%;
+	background: #3b82f6;
+	border-radius: 3px;
+	transition: width 0.3s ease;
+}
+
+.nvoos-chat-spa-workflow-tracker-steps {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	counter-reset: step;
+}
+
+.nvoos-chat-spa-workflow-step {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+	font-size: 12px;
+	color: #6b7280;
+}
+
+.nvoos-chat-spa-workflow-step--completed {
+	color: #16a34a;
+}
+
+.nvoos-chat-spa-workflow-step--active {
+	color: #2563eb;
+}
+
+.nvoos-chat-spa-workflow-step--failed {
+	color: #dc2626;
+}
+
+.nvoos-chat-spa-workflow-step-icon {
+	width: 20px;
+	text-align: center;
+	flex-shrink: 0;
+	font-weight: 600;
+}
+
+.nvoos-chat-spa-workflow-step-label {
+	flex: 1;
+}
+
+/* ── Delegation notice ─────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-delegation {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 14px;
+	margin: 6px 0;
+	border: 1px solid #e0e7ff;
+	border-radius: 8px;
+	background: #eff6ff;
+	font-size: 13px;
+}
+
+.nvoos-chat-spa-delegation--complete {
+	border-color: #a7f3d0;
+	background: #f0fdf4;
+}
+
+.nvoos-chat-spa-delegation--error {
+	border-color: #fca5a5;
+	background: #fef2f2;
+}
+
+.nvoos-chat-spa-delegation-icon {
+	flex-shrink: 0;
+	font-size: 18px;
+	margin-top: 1px;
+}
+
+.nvoos-chat-spa-delegation-body {
+	flex: 1;
+	min-width: 0;
+}
+
+.nvoos-chat-spa-delegation-title {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.nvoos-chat-spa-delegation-details {
+	display: block;
+	color: #6b7280;
+	font-size: 12px;
+}
+
+/* ── Dark mode ─────────────────────────────────────────────────────────── */
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-agent-panel {
+	border-color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-agent-panel-toggle {
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-agent-panel-body {
+	border-color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-agent-card--active {
+	background: #1e3a5f;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-agent-card--completed {
+	background: #064e3b;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-agent-card--error {
+	background: #7f1d1d;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-agent-card--idle {
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-agent-card-role {
+	color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-workflow-tracker {
+	border-color: #374151;
+	background: #1f2937;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-delegation {
+	border-color: #1e3a5f;
+	background: #0f172a;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-delegation--complete {
+	border-color: #065f46;
+	background: #064e3b;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-delegation--error {
+	border-color: #7f1d1d;
+	background: #450a0a;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-delegation-details {
+	color: #9ca3af;
+}
+
+/* =========================================================================
+   Phase 5 additions (v0.9.0) — suggested prompts, tool shortcuts, export
+   ========================================================================= */
+
+.nvoos-chat-spa-prompts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 8px 16px 0;
+}
+
+.nvoos-chat-spa-prompt-chip {
+	padding: 4px 12px;
+	border: 1px solid #e5e7eb;
+	border-radius: 16px;
+	background: #f9fafb;
+	font-size: 13px;
+	color: #374151;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.nvoos-chat-spa-prompt-chip:hover {
+	background: #e5e7eb;
+	border-color: #d1d5db;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-prompt-chip {
+	border-color: #374151;
+	background: #1f2937;
+	color: #e5e7eb;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-prompt-chip:hover {
+	background: #374151;
+	border-color: #4b5563;
+}
+
+.nvoos-chat-spa-tool-shortcuts {
+	padding: 4px 16px 0;
+}
+
+.nvoos-chat-spa-tool-shortcuts-toggle {
+	padding: 4px 10px;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	background: #f9fafb;
+	font-size: 12px;
+	color: #6b7280;
+	cursor: pointer;
+}
+
+.nvoos-chat-spa-tool-shortcuts-toggle:hover {
+	background: #e5e7eb;
+}
+
+.nvoos-chat-spa-tool-shortcuts-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 6px;
+}
+
+.nvoos-chat-spa-tool-shortcut-btn {
+	padding: 3px 10px;
+	border: 1px solid #bfdbfe;
+	border-radius: 5px;
+	background: #eff6ff;
+	font-size: 12px;
+	color: #1d4ed8;
+	cursor: pointer;
+}
+
+.nvoos-chat-spa-tool-shortcut-btn:hover {
+	background: #dbeafe;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tool-shortcuts-toggle {
+	border-color: #374151;
+	background: #1f2937;
+	color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tool-shortcut-btn {
+	border-color: #1e3a5f;
+	background: #0f172a;
+	color: #93c5fd;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-tool-shortcut-btn:hover {
+	background: #1e3a5f;
+}
+
+/* =========================================================================
+   GAP-17/18/19 additions (v0.9.0) — search, title edit, load more
+   ========================================================================= */
+
+.nvoos-chat-spa-sidebar-search {
+	width: 100%;
+	padding: 6px 10px;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	font-size: 13px;
+	margin-bottom: 8px;
+	background: #fff;
+}
+
+.nvoos-chat-spa-sidebar-search:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-search {
+	background: #1f2937;
+	border-color: #374151;
+	color: #e5e7eb;
+}
+
+.nvoos-chat-spa-sidebar-load-more {
+	width: 100%;
+	padding: 8px;
+	border: none;
+	background: #f3f4f6;
+	color: #6b7280;
+	font-size: 13px;
+	cursor: pointer;
+	border-radius: 6px;
+	margin-top: 4px;
+}
+
+.nvoos-chat-spa-sidebar-load-more:hover {
+	background: #e5e7eb;
+	color: #374151;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-load-more {
+	background: #1f2937;
+	color: #9ca3af;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-load-more:hover {
+	background: #374151;
+	color: #d1d5db;
+}
+
+.nvoos-chat-spa-sidebar-item-title-input {
+	width: 100%;
+	padding: 2px 6px;
+	border: 1px solid #3b82f6;
+	border-radius: 4px;
+	font-size: 13px;
+	font-weight: 500;
+	background: #fff;
+}
+
+.nvoos-chat-spa-sidebar-item-title-input:focus {
+	outline: none;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-sidebar-item-title-input {
+	background: #374151;
+	border-color: #60a5fa;
+	color: #f3f4f6;
+}
+
+.nvoos-chat-spa-quota {
+	font-size: 11px;
+	color: #9ca3af;
+	padding: 2px 16px 4px;
+	text-align: right;
+}
+
+.nvoos-chat-spa-app[data-theme="dark"] .nvoos-chat-spa-quota {
+	color: #6b7280;
+}

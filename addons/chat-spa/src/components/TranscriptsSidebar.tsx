@@ -9,7 +9,7 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import { type JSX } from 'react';
+import { type JSX, useRef, useState, useEffect } from 'react';
 import type { TranscriptSession } from '../api/transcripts';
 import type { ThreadSummary } from '../api/threads';
 
@@ -37,6 +37,13 @@ interface TranscriptsSidebarProps {
 	onTabChange: ( tab: SidebarTab ) => void;
 	onSelectThread: ( threadId: number ) => void;
 	onDeselectThread: () => void;
+
+	// ── Search + pagination + title edit (GAP-17/18/19: v0.9.0) ──
+	searchTerm?: string;
+	onSearchChange?: ( term: string ) => void;
+	hasMore?: boolean;
+	onLoadMore?: () => void;
+	onUpdateTitle?: ( sessionKey: string, title: string ) => void;
 }
 
 export function TranscriptsSidebar( props: TranscriptsSidebarProps ): JSX.Element {
@@ -59,9 +66,27 @@ export function TranscriptsSidebar( props: TranscriptsSidebarProps ): JSX.Elemen
 		onTabChange,
 		onSelectThread,
 		onDeselectThread,
+		searchTerm,
+		onSearchChange,
+		hasMore,
+		onLoadMore,
+		onUpdateTitle,
 	} = props;
 
 	const isTranscriptsTab = activeTab === 'transcripts';
+
+	// Prepend a virtual entry for the current (unsaved) session so it
+	// appears in the sidebar immediately on page load — matching the
+	// legacy chat client behaviour where a new conversation line is
+	// always visible.
+	const safeSessions: TranscriptSession[] = Array.isArray( sessions ) ? sessions : [];
+	const hasActiveSession = safeSessions.some( ( s ) => s.session_key === activeSessionKey );
+	const displaySessions: TranscriptSession[] = (
+		! hasActiveSession &&
+		sessions !== null &&
+		! unavailableMessage &&
+		! transcriptError
+	) ? [ { session_key: activeSessionKey, turn_count: 0 }, ...safeSessions ] : safeSessions;
 
 	return (
 		<aside
@@ -124,6 +149,17 @@ export function TranscriptsSidebar( props: TranscriptsSidebarProps ): JSX.Elemen
 					{ /* ── Transcripts panel ──────────────────────────────── */ }
 					{ isTranscriptsTab && (
 						<div className="nvoos-chat-spa-sidebar-panel" role="tabpanel">
+							{ /* Search input (GAP-17: v0.9.0) */ }
+							{ onSearchChange && (
+								<input
+									type="search"
+									className="nvoos-chat-spa-sidebar-search"
+									placeholder={ __( 'Search conversations…', 'nvoos-chat-spa' ) }
+									value={ searchTerm ?? '' }
+									onChange={ ( e ) => onSearchChange( e.target.value ) }
+									aria-label={ __( 'Search conversations', 'nvoos-chat-spa' ) }
+								/>
+							) }
 							{ transcriptError && (
 								<p className="nvoos-chat-spa-sidebar-error" role="alert">
 									{ transcriptError }
@@ -137,23 +173,40 @@ export function TranscriptsSidebar( props: TranscriptsSidebarProps ): JSX.Elemen
 									{ __( 'Loading…', 'nvoos-chat-spa' ) }
 								</p>
 							) }
-							{ ! unavailableMessage && sessions !== null && sessions.length === 0 && (
+							{ ! unavailableMessage && sessions !== null && displaySessions.length === 0 && (
 								<p className="nvoos-chat-spa-sidebar-empty">
 									{ __( 'No saved conversations yet.', 'nvoos-chat-spa' ) }
 								</p>
 							) }
-							{ ! unavailableMessage && Array.isArray( sessions ) && sessions.length > 0 && (
+							{ ! unavailableMessage && displaySessions.length > 0 && (
+								<>
 								<ul className="nvoos-chat-spa-sidebar-list">
-									{ sessions.map( ( session ) => (
+									{ displaySessions.map( ( session ) => {
+										const isSaved = safeSessions.some( ( s ) => s.session_key === session.session_key );
+										return (
 										<SessionRow
 											key={ session.session_key }
 											session={ session }
 											isActive={ session.session_key === activeSessionKey }
 											onSelect={ onSelect }
 											onDelete={ onDelete }
+											onUpdateTitle={ onUpdateTitle }
+											isVirtual={ ! isSaved }
 										/>
-									) ) }
+										);
+									} ) }
 								</ul>
+								{ /* Load more (GAP-19: v0.9.0) */ }
+								{ hasMore && onLoadMore && (
+									<button
+										type="button"
+										className="nvoos-chat-spa-sidebar-load-more"
+										onClick={ onLoadMore }
+									>
+										{ __( 'Load more…', 'nvoos-chat-spa' ) }
+									</button>
+								) }
+								</>
 							) }
 						</div>
 					) }
@@ -208,9 +261,22 @@ interface SessionRowProps {
 	isActive: boolean;
 	onSelect: ( sessionKey: string ) => void;
 	onDelete: ( sessionKey: string ) => void;
+	onUpdateTitle?: ( sessionKey: string, title: string ) => void;
+	/** True when this is a virtual placeholder for a not-yet-saved session. */
+	isVirtual?: boolean;
 }
 
-function SessionRow( { session, isActive, onSelect, onDelete }: SessionRowProps ): JSX.Element {
+function SessionRow( { session, isActive, onSelect, onDelete, onUpdateTitle, isVirtual = false }: SessionRowProps ): JSX.Element {
+	const [ editing, setEditing ] = useState( false );
+	const [ titleDraft, setTitleDraft ] = useState( '' );
+	const inputRef = useRef< HTMLInputElement | null >( null );
+
+	// Focus the input when editing starts.
+	useEffect( () => {
+		if ( editing && inputRef.current ) {
+			inputRef.current.focus();
+		}
+	}, [ editing ] );
 	const turnCount = typeof session.turn_count === 'number' ? session.turn_count : 0;
 	const stamp =
 		session.last_created || session.completed_at || session.first_created || session.started_at;
@@ -236,23 +302,59 @@ function SessionRow( { session, isActive, onSelect, onDelete }: SessionRowProps 
 				onClick={ () => onSelect( session.session_key ) }
 				aria-current={ isActive ? 'true' : undefined }
 			>
-				<span className="nvoos-chat-spa-sidebar-item-label">{ label }</span>
+				{ editing && onUpdateTitle && ! isVirtual ? (
+					<input
+						ref={ inputRef }
+						className="nvoos-chat-spa-sidebar-item-title-input"
+						value={ titleDraft }
+						onChange={ ( e ) => setTitleDraft( e.target.value ) }
+						onBlur={ () => {
+							setEditing( false );
+							if ( titleDraft.trim() && titleDraft !== label ) {
+								onUpdateTitle( session.session_key, titleDraft.trim() );
+							}
+						} }
+						onKeyDown={ ( e ) => {
+							if ( e.key === 'Enter' ) {
+								( e.target as HTMLInputElement ).blur();
+							} else if ( e.key === 'Escape' ) {
+								setEditing( false );
+							}
+						} }
+						onClick={ ( e ) => e.stopPropagation() }
+					/>
+				) : (
+					<span
+						className="nvoos-chat-spa-sidebar-item-label"
+						title={ onUpdateTitle ? __( 'Double-click to rename', 'nvoos-chat-spa' ) : undefined }
+						onDoubleClick={ onUpdateTitle ? () => {
+							setTitleDraft( label );
+							setEditing( true );
+						} : undefined }
+					>
+						{ isVirtual ? __( 'New Conversation', 'nvoos-chat-spa' ) : label }
+					</span>
+				) }
 				<span className="nvoos-chat-spa-sidebar-item-meta">
-					{ sprintf(
-						/* translators: %d: number of turns in the conversation. */
-						__( '%d turns', 'nvoos-chat-spa' ),
-						turnCount
-					) }
+					{ isVirtual
+						? __( '0 turns', 'nvoos-chat-spa' )
+						: sprintf(
+							/* translators: %d: number of turns in the conversation. */
+							__( '%d turns', 'nvoos-chat-spa' ),
+							turnCount
+						) }
 				</span>
 			</button>
-			<button
-				type="button"
-				className="nvoos-chat-spa-sidebar-item-delete"
-				aria-label={ __( 'Delete conversation', 'nvoos-chat-spa' ) }
-				onClick={ handleDelete }
-			>
-				×
-			</button>
+			{ ! isVirtual && (
+				<button
+					type="button"
+					className="nvoos-chat-spa-sidebar-item-delete"
+					aria-label={ __( 'Delete conversation', 'nvoos-chat-spa' ) }
+					onClick={ handleDelete }
+				>
+					×
+				</button>
+			) }
 		</li>
 	);
 }
