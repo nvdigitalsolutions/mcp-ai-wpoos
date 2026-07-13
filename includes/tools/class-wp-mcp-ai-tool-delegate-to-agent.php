@@ -192,7 +192,7 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			'description'     => $task,
 			'context'         => $merged_context,
 			'expected_output' => $expected_output,
-			'delegated_by'    => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
+			'delegated_by'    => isset( $context['user_id'] ) ? $context['user_id'] : 0,
 			'delegated_at'    => current_time( 'mysql' ),
 		);
 

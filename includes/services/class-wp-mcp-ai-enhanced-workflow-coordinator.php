@@ -357,6 +357,7 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 			'task_id'          => $task['task_id'],
 			'previous_results' => $previous_results,
 			'assistant_id'     => $agent['id'],
+			'user_id'          => isset( $workflow['config']['metadata']['user_id'] ) ? $workflow['config']['metadata']['user_id'] : 0,
 		);
 
 		// Execute via orchestrator.
