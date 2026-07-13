@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { __ } from '@wordpress/i18n';
 
 export interface VectorStoreStatus {
 	/** The vector store is being fetched / is syncing. */
@@ -24,6 +25,10 @@ export interface VectorStoreStatus {
 	fileCount: number | null;
 	/** Raw status string from the API (e.g. "completed", "in_progress"). */
 	status: string | null;
+	/** Whether the assistant has a vector store configured at all. */
+	hasStore: boolean;
+	/** Informational message from the API (e.g. "No vector store configured"). */
+	message: string | null;
 }
 
 const CACHE: Record< number, { ts: number; data: VectorStoreStatus } > = {};
@@ -45,14 +50,14 @@ export function useVectorStoreStatus(
 		if ( cached && Date.now() - cached.ts < CACHE_TTL_MS ) {
 			return cached.data;
 		}
-		return { loading: false, ready: false, error: null, name: null, fileCount: null, status: null };
+		return { loading: false, ready: false, error: null, name: null, fileCount: null, status: null, hasStore: false, message: null };
 	} );
 
 	const fetchRef = useRef< AbortController | null >( null );
 
 	const fetchStatus = useCallback( async ( id: number, signal: AbortSignal ) => {
 		if ( id <= 0 ) {
-			setState( { loading: false, ready: false, error: null, name: null, fileCount: null, status: null } );
+			setState( { loading: false, ready: false, error: null, name: null, fileCount: null, status: null, hasStore: false, message: null } );
 			return;
 		}
 
@@ -87,6 +92,14 @@ export function useVectorStoreStatus(
 			const data: Record< string, unknown > =
 				( json.data as Record< string, unknown > ) ?? json;
 
+			const hasStore = Boolean( data.has_vector_store );
+
+			if ( ! hasStore ) {
+				const msg = ( data.message as string ) ?? __( 'No vector store configured.', 'nvoos-pro-spa' );
+				setState( { loading: false, ready: false, error: null, name: null, fileCount: null, status: null, hasStore: false, message: msg } );
+				return;
+			}
+
 			const status = String( data.status ?? '' );
 				const ready = status === 'completed';
 
@@ -98,6 +111,14 @@ export function useVectorStoreStatus(
 						{ id: data.id ?? data.vector_store_id, name: data.name, status, file_counts: data.file_counts },
 					);
 				}
+
+			// Handle API-level error (e.g. OpenAI call failed).
+			if ( status === 'error' ) {
+				const errMsg = ( data.error as string ) ?? __( 'Vector store unavailable.', 'nvoos-pro-spa' );
+				setState( { loading: false, ready: false, error: errMsg, name: null, fileCount: null, status, hasStore: true, message: null } );
+				return;
+			}
+
 			const fileCounts =
 				( data.file_counts as Record< string, number > | undefined ) ??
 				( data.fileCounts as Record< string, number > | undefined );
@@ -110,6 +131,8 @@ export function useVectorStoreStatus(
 				name: ( data.name as string ) ?? null,
 				fileCount: typeof fileCount === 'number' ? fileCount : null,
 				status: status || null,
+				hasStore: true,
+				message: null,
 			};
 
 			CACHE[ id ] = { ts: Date.now(), data: newState };
@@ -123,6 +146,8 @@ export function useVectorStoreStatus(
 				name: null,
 				fileCount: null,
 				status: null,
+				hasStore: false,
+				message: null,
 			} );
 		}
 	}, [ apiRoot, nonce ] );
@@ -135,7 +160,7 @@ export function useVectorStoreStatus(
 		if ( assistantId > 0 ) {
 			fetchStatus( assistantId, ac.signal );
 		} else {
-			setState( { loading: false, ready: false, error: null, name: null, fileCount: null, status: null } );
+			setState( { loading: false, ready: false, error: null, name: null, fileCount: null, status: null, hasStore: false, message: null } );
 		}
 
 		// Poll every 30 seconds while the store is not yet ready.

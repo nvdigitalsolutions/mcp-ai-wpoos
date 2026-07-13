@@ -40,6 +40,10 @@ export function VectorStoreIndicator( props: VectorStoreIndicatorProps ): JSX.El
 		cls += ' nvoos-pro-spa-sidebar__vs-status--error';
 		dot = '\u25CF'; // ●
 		label = __( 'Error', 'nvoos-pro-spa' );
+	} else if ( ! vss.hasStore ) {
+			cls += ' nvoos-pro-spa-sidebar__vs-status--none';
+			dot = '\u25CF'; // ●
+			label = vss.message ?? __( 'No knowledge base', 'nvoos-pro-spa' );
 	}
 
 	if ( ! label ) {
@@ -56,6 +60,8 @@ export function VectorStoreIndicator( props: VectorStoreIndicatorProps ): JSX.El
 		  )
 		: vss.error
 		? sprintf( __( 'Vector store error: %s', 'nvoos-pro-spa' ), vss.error )
+		: vss.hasStore === false
+		? ( vss.message ?? __( 'No vector store configured.', 'nvoos-pro-spa' ) )
 		: '';
 
 	return (
