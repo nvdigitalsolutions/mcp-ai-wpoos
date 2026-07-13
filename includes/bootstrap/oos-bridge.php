@@ -94,6 +94,7 @@ function wp_mcp_ai_oos_orchestrator() {
 	$cache         = new Nvoos\WordPress\Adapter\CacheStore( (bool) wp_using_ext_object_cache() );
 	$queue         = new Nvoos\WordPress\Adapter\QueueClient();
 	$events        = new Nvoos\WordPress\Adapter\EventDispatcher();
+	$schema        = new Nvoos\WordPress\Adapter\SchemaStore();
 
 	// Map existing wp_mcp_ai_* hooks to the event dispatcher for backward compat.
 	$events->mapEventToHook(
@@ -241,6 +242,9 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	// Site admin tools.
 	$tool_registry->register( new Nvoos\Core\Tool\GetSiteSummaryTool( $error_factory, $settings ) );
+
+	// Schema tools (use WordPress SchemaStore adapter).
+	$tool_registry->register( new Nvoos\Core\Tool\GetPostTypeSchemaTool( $error_factory, $schema ) );
 
 	$tool_registry->notifyRegistered();
 

@@ -1,7 +1,7 @@
 # Cross-Platform Extraction — Implementation Status & Gap Analysis
 
-**Date:** 2026-06-03 (original), refreshed 2026-07-01 (v1.1.35 multi-agent review)
-**Status:** Live assessment — the extraction is operational behind a feature flag. Phases 0-2 complete, Phase 3 (tool migration) at ~22% (43/195 base tools). Pro tool migration not yet started (0/~810). **New:** Laravel-scale deployment architecture proposed with 4 new domain contracts, Graphify ecosystem integration.
+**Date:** 2026-06-03 (original), refreshed 2026-07-13 (v1.1.35+ tools-verified audit)
+**Status:** Live assessment — the extraction is operational behind a feature flag. Phases 0-2 complete, Phase 3 (tool migration) at **42% (82/~195 base tools)**. Pro tool migration not yet started (0/~810). **Key delta since July 1:** tool count was under-reported (43 → 82 verified in bridge), 17 test files now exist (was "none"), PHPStan config exists at level 5 (was "missing"), domain contracts fully decoupled from PSR/Symfony. Laravel-scale deployment architecture proposed with 4 new domain contracts, Graphify ecosystem integration.
 **Feature Flag:** `?engine=oos`, `X-WP-MCP-AI-Engine: oos` header, `WP_MCP_AI_OOS_ENGINE` constant, or admin setting `enable_oos_engine`
 
 **Key Files:**
@@ -116,12 +116,14 @@ All injected with domain contracts — zero WordPress references.
 | `Nvoos\WordPress\Adapter\EventDispatcher` | `EventDispatcherInterface` | `do_action`, `apply_filters` (with mapEventToHook bridge) |
 | `Nvoos\WordPress\Adapter\ErrorFactory` | `ErrorFactoryInterface` | `WP_Error` ↔ domain exceptions |
 
-### 🟡 Migrated Tools (43 / ~195 base — 22% Complete)
+### 🟡 Migrated Tools (82 / ~195 base — 42% Complete)
+
+> **v1.1.35+ correction (2026-07-13):** The previous report under-counted at 43 tools. A line-by-line audit of `oos-bridge.php` confirms **82 `$tool_registry->register()` calls** — 42% of base tools are now framework-agnostic and running through the OOS engine. This includes a larger utility/cache/queue/file tool surface added in June 2026 batch migrations that were not reflected in the prior count.
 
 Registered in `wp_mcp_ai_oos_orchestrator()` in `oos-bridge.php`:
 
-**Tier 1 — External API / Public Data (14 tools):**
-`WebSearchTool`, `GetGdacsEventsTool`, `GetNhcActiveStormsTool`, `GetOpenMeteoForecastTool`, `ReliefwebReportsTool`, `GetModelInformationTool`, `ListAvailableModelsTool`, `ModerateContentTool`, `CreateTextEmbeddingsTool`, `SuggestBestModelTool`, `DeepResearchTool`, `ProbeRemoteMcpTool`, `RunCrawl4AiJobTool`, `Crawl4AiPriceLookupTool`
+**Tier 1 — External API / Public Data + Utility (53 tools):**
+`WebSearchTool`, `GetGdacsEventsTool`, `GetNhcActiveStormsTool`, `GetOpenMeteoForecastTool`, `ReliefwebReportsTool`, `GetModelInformationTool`, `ListAvailableModelsTool`, `ModerateContentTool`, `CreateTextEmbeddingsTool`, `SuggestBestModelTool`, `CountTokensTool`, `GetPostTaxonomiesTool`, `CountPostsTool`, `TruncateTextTool`, `MathEvalTool`, `ColorConvertTool`, `GetSettingTool`, `UpdateSettingTool`, `ListSettingsTool`, `DeleteSettingTool`, `GenerateSlugTool`, `FormatBytesTool`, `StripHtmlTool`, `CheckCapabilityTool`, `GetCurrentUserTool`, `GenerateUuidTool`, `HashStringTool`, `ValidateJsonTool`, `EnqueueJobTool`, `GetJobStatusTool`, `CancelJobTool`, `ScheduleJobTool`, `UnscheduleJobTool`, `ListJobsTool`, `UploadFileTool`, `GetFileInfoTool`, `DeleteFileTool`, `Base64Tool`, `ExtractDomainTool`, `GetCacheTool`, `SetCacheTool`, `DeleteCacheTool`, `IncrementCacheTool`, `DispatchEventTool`, `GetPostMetaTool`, `FormatDateTool`, `TimeAgoTool`, `MergeArraysTool`, `ParseCsvTool`, `DeepResearchTool`, `ProbeRemoteMcpTool`, `RunCrawl4AiJobTool`, `Crawl4AiPriceLookupTool`
 
 **HuggingFace Datasets (11 tools):**
 `HuggingFaceDatasetSearch`, `GetInfo`, `GetRows`, `GetSize`, `GetStatistics`, `IsValid`, `ListSplits`, `Filter`, `GetParquet`, `PreviewRows`, `RecommendedDatasets`
@@ -129,7 +131,7 @@ Registered in `wp_mcp_ai_oos_orchestrator()` in `oos-bridge.php`:
 **Client-Side (6 tools):**
 `ClientAnalyzeSentiment`, `ClientSummarizeText`, `ClientTranslateText`, `ClientExtractEntities`, `ClientQuestionAnswering`, `ClientSemanticSearch`
 
-**Tier 2 — Content (6 tools):**
+**Content (6 tools):**
 `GetPostTool`, `GetRecentPostsTool`, `SearchContentTool`, `CreatePostTool`, `UpdatePostTool`, `DeletePostTool`
 
 **User (1 tool):**
@@ -169,14 +171,14 @@ The existing `handle_chat_request()` in `class-wp-mcp-ai-rest.php` checks `wp_mc
 
 ## What Remains (Gap Summary)
 
-> **v1.1.35 Refresh (June 29, 2026):** Base tool count is now ~195 (was 195 at v1.1.29). Pro tools have grown from ~765 to ~810+ with the addition of FlowHub (6), Shopify Sync (5), DietPi (19+), Cloudways (60), and CRM expansions. Migration percentages recalculated below.
+> **v1.1.35+ Refresh (2026-07-13):** Base tool count is ~195 (unchanged). 82 tools are now framework-agnostic (42%, up from the previously under-reported 22%). Pro tool count has grown to ~810+ with FlowHub (6), Shopify Sync (5), DietPi (19+), Cloudways (60), and CRM expansions. A test suite exists (17 files) but coverage is thin. PHPStan runs at level 5 (target 8). Domain contracts fully decoupled from PSR/Symfony inheritance.
 
 ### 🔴 Blocking Full Production Activation
 
 | Gap | Impact | Effort |
 |---|---|---|
-| **Tests for lib/core** | No test directory exists under `lib/core/tests/` — the extracted packages lack test coverage | Medium (3–4 weeks) |
-| **~152 base tool migrations (78% remaining)** | 78% of base tools still call WordPress APIs directly. These work in the legacy path but aren't available in the OOS engine. | High (8–16 weeks) |
+| **Test coverage is thin (17 files)** | 17 test files cover 141 source files — mainly tool unit tests. Domain entities (3/10 tested), errors (1/5 tested), and providers (1/15 tested) have minimal coverage. No integration tests exist. | Medium (3–4 weeks) |
+| **~113 base tool migrations (58% remaining)** | 58% of base tools still call WordPress APIs directly. These work in the legacy path but aren't available in the OOS engine. | High (6–12 weeks — revised down from 8–16) |
 | **~810+ Pro tool migrations (0% complete)** | All Pro tools (FlowHub, Shopify, DietPi, Cloudways, CRM, etc.) remain in the WordPress-only path. External API tools are easy to migrate; plugin-specific tools (WooCommerce, JetEngine) are harder. | High (ongoing) |
 | **PHP 8.1+ requirement for core** | Core uses `readonly`/enums. WordPress sites on PHP 7.4 can't use the OOS engine. The adapter targets PHP 7.4 but the core doesn't. | Low (documentation only — this is by design per the proposal) |
 
@@ -184,22 +186,22 @@ The existing `handle_chat_request()` in `class-wp-mcp-ai-rest.php` checks `wp_mc
 
 | Gap | Impact | Effort |
 |---|---|---|
+| **PHPStan level 5 → 8** | `lib/core/phpstan.neon.dist` exists (✅) targeting level 5. Blocked from level 8 by ~251 "no value type specified in iterable type array" errors from `ToolInterface` and provider contracts. Unblocked once adapter requires PHP 8.1+ and array shape types can be added. | Medium (1–2 weeks after PHP 8.1 requirement) |
 | **Pro addon tools (~810+)** | All ~810+ Pro tools not migrated. Many are external API tools (easy to migrate — FlowHub, Shopify, Cloudways), some are plugin-specific (WooCommerce, JetEngine — harder). This is the largest migration block. | High (ongoing — 16+ weeks) |
 | **Laravel adapter deployment wiring** | The 8 adapters are **implemented** (ContentStore via Eloquent, AuthProvider via Sanctum/Gates, CacheStore via Redis, QueueClient via Redis/SQS/Database, etc.) but no Laravel application scaffold, Octane config, or Horizon setup exists yet. See [`laravel-scale-deployment-architecture.md`](./laravel-scale-deployment-architecture.md). | Medium (16 weeks for full deployment) |
 | **New domain contracts for Laravel orchestrator** | 4 new interfaces needed for the scale deployment: `VectorStoreInterface` (pgvector adapter), `FederationClientInterface` (peer querying), `MeshRouterInterface` (intelligent peer selection), `StreamingInterface` (Reverb WebSocket adapter). These are framework-agnostic domain contracts in `lib/core/`. | Medium (2 weeks for contracts + Laravel adapters) |
 | **Craft adapter** | 0% — implementations written but untested. Craft Commerce and element-type expertise needed. | Medium (4–6 weeks) |
-| **Monorepo tooling** | `lib/` lives inside the WP plugin repo. Not yet a standalone monorepo with CI/CD across packages. | Low (1–2 weeks) |
-| **Composer package publishing** | Neither `nvoos/core` nor `nvoos/wordpress-adapter` are published to Packagist. | Low (setup + docs) |
-| **PHPStan/static analysis** | No PHPStan config for `lib/core` or `lib/wordpress-adapter`. | Low (1 week) |
+| **Composer package publishing** | `composer.json` files prepared for Packagist (commit `6454d4938`) but neither `nvoos/core` nor `nvoos/wordpress-adapter` are published yet. | Low (setup + docs) |
 
 ### 🟢 Low Priority / Nice to Have
 
 | Gap | Notes |
 |---|---|
-| **AbstractTool base class** | Exists (`lib/core/src/Tool/AbstractTool.php`) — confirmed by `GetPostTool extends AbstractTool`. |
+| **Monorepo CI/CD** | `lib/` lives inside the WP plugin repo. Separate CI runs for extracted packages not yet set up (PHPUnit/PHPStan per package). |
 | **WordPress.org base build exclusion** | Already handled — `lib/` is absent from base builds, guarded in `oos-bridge.php`. |
-| **Async tool execution** | Action Scheduler adapter exists (`QueueClient`). Need to verify async tool flow works through the OOS engine. |
+| **Async tool execution verification** | Action Scheduler adapter exists (`QueueClient`). Need to verify async tool flow works through the OOS engine end-to-end. |
 | **Voice/realtime providers** | Not yet extracted. OpenAI Realtime and Gemini Live currently live in the WP plugin classes. |
+| **Integration test suite** | `phpunit.xml.dist` defines an `Integration` testsuite but `tests/Integration/` directory does not exist yet. |
 
 ---
 
@@ -278,39 +280,57 @@ The original proposal estimated 52 weeks at ~5.75 FTE. With 43 of 195 tools migr
 
 ---
 
-## Recommended Next Steps (Updated)
+## Delta Since Last Refresh (2026-07-01 → 2026-07-13)
+
+| Metric | Previous (July 1) | Current (July 13) | Change |
+|---|---|---|---|
+| Registered tools in bridge | 43 (under-reported) | **82** (verified via `grep -c`) | +39 (correction + net new) |
+| Tool migration % | 22% | **42%** | +20pp |
+| Test files | 0 (reported "no test directory") | **17** (3 entity, 1 error, 1 provider, 11 tool, 1 bootstrap) | +17 (existed, not reflected) |
+| PHPStan config | "No PHPStan config" | **Exists** (`phpstan.neon.dist`, level 5) | ✅ corrected |
+| Domain contracts | Extended PSR/Symfony | **Domain-owned** (zero PSR/Symfony inheritance) | ✅ completed |
+| Provider clients | 12 | **15** (+Baseten, +OpenAiCompatible, +AbstractProviderClient) | +3 |
+| Infrastructure services | SSE, Cost | **+TokenBudgetManager** | +1 |
+| Composer Packagist | Not prepared | **composer.json files prepared** (commit `6454d4938`) | ✅ ready for publish |
+| Last commit to lib/core | 2026-07-01 | 2026-07-01 (unchanged in 12 days) | — |
+
+## Recommended Next Steps (Updated 2026-07-13)
 
 ### Immediate (Next 2 Weeks)
 
-1. **Add PHPUnit tests for `lib/core`** — domain entities, error classes, and provider clients with mocked adapters. This is the single largest quality gap.
+1. **Expand test coverage for `lib/core`** — 17 files exist but cover only 3/10 entities, 1/5 errors, 1/15 providers. Priority: finish entity tests (ContentCollection, CreateContentCommand, Credential, HttpResponse, JobStatus, StoredFile, UpdateContentCommand, UserInfo), error tests (AccessDeniedException, AuthenticationException, NotFoundException, ValidationException), and top-5 provider clients (OpenAI, Gemini, Anthropic, DeepSeek, Ollama).
 
-2. **Add PHPStan config for extracted packages** — Level 8 for `lib/core/src/`, Level 5 for `lib/wordpress-adapter/src/`.
+2. **Add missing provider client tests** — 14 of 15 provider clients have zero test coverage (only DeepSeekClient tested). Provider clients form the most critical path for AI requests.
 
-3. **Publish `nvoos/core` to Packagist** — even as `dev-master`. Enables `composer require nvoos/core` for Laravel adapter development.
+3. **Create `tests/Integration/` directory** — the `phpunit.xml.dist` already declares an Integration testsuite but the directory doesn't exist. Add at least one end-to-end test: `ChatOrchestrator` + mocked provider + real tool through the full agentic loop.
 
 ### Short-Term (2–8 Weeks)
 
-4. **Migrate Tier 2 tools** — content-reading tools (`get-site-health`, `get-cron-job`, `list-cron-jobs`, `get-post-type-schema`) to use `ContentStoreInterface`.
+4. **Migrate the next batch of ~30 base tools** — target content-reading tools (`get-site-health`, `get-cron-job`, `list-cron-jobs`, `get-post-type-schema`), settings tools, and caching tools that already have adapter implementations. Batch migration pattern is proven (see June 4 commits: 5-tool batches with tests).
 
 5. **Begin Laravel adapter** — implement `ContentStore` (Eloquent), `AuthProvider` (Sanctum), `SettingsStore` (Config), and `CacheStore` (Redis). Start with the ChatController.
 
 6. **Document the feature flag** in `docs/features/oos-engine.md` — how to enable, what changes, migration path from legacy engine.
 
+7. **Publish `nvoos/core` to Packagist** — composer.json is prepared. Even as `dev-master` to unblock Laravel adapter development.
+
 ### Medium-Term (2–6 Months)
 
-7. **Complete Tier 2 + Tier 3 tool migration** — ~90 remaining content and state-changing tools.
+8. **Complete Tier 2 + Tier 3 tool migration** — ~60 remaining content and state-changing tools.
 
-8. **Extract voice/realtime providers** — OpenAI Realtime and Gemini Live into `lib/core/src/Infrastructure/Voice/`.
+9. **Promote PHPStan to level 8** — once adapter targets PHP 8.1+, add array shape/value types to all interface methods (currently blocked by ~251 bare `array` type errors).
 
-9. **Establish CI/CD for extracted packages** — separate PHPUnit/Stan runs for `lib/core` and `lib/wordpress-adapter`.
+10. **Extract voice/realtime providers** — OpenAI Realtime and Gemini Live into `lib/core/src/Infrastructure/Voice/`.
 
-10. **Begin Craft CMS adapter** — element-type-backed implementations.
+11. **Establish CI/CD for extracted packages** — separate PHPUnit/Stan runs for `lib/core` and `lib/wordpress-adapter`.
+
+12. **Begin Craft CMS adapter** — element-type-backed implementations.
 
 ### Long-Term (6–12 Months)
 
-11. **Sunset the legacy engine path** — once all tools are migrated and the OOS engine is default, remove the feature flag and legacy code paths.
+13. **Sunset the legacy engine path** — once all tools are migrated and the OOS engine is default, remove the feature flag and legacy code paths.
 
-12. **Publish `nvoos/laravel-adapter` and `nvoos/craft-adapter`** — documentation, Packagist, marketing.
+14. **Publish `nvoos/laravel-adapter` and `nvoos/craft-adapter`** — documentation, Packagist, marketing.
 
 ---
 
@@ -331,4 +351,6 @@ The original proposal estimated 52 weeks at ~5.75 FTE. With 43 of 195 tools migr
 
 ## Key Insight
 
-The cross-platform extraction is **not a proposal gathering dust** — it's a fully operational, feature-flagged implementation with 43 tools, 12 providers, 8 adapters, and a complete Hexagonal Architecture. The Strangler Fig pattern is working exactly as described: the new engine coexists with the legacy path, and the bridge file (`oos-bridge.php`) is the single integration point. The hardest work — designing the interfaces, building the adapters, wiring the agentic loop — is done. What remains is volume: migrating tools one by one and building adapters for additional platforms.
+The cross-platform extraction is **not a proposal gathering dust** — it's a fully operational, feature-flagged implementation with **82 tools** (42% of base), **15 provider clients**, **8 adapters**, and a complete Hexagonal Architecture. The Strangler Fig pattern is working exactly as described: the new engine coexists with the legacy path, and the bridge file (`oos-bridge.php`) is the single integration point. The hardest work — designing the interfaces, building the adapters, wiring the agentic loop — is done. What remains is volume: migrating tools one by one (58% of base + all Pro), building test coverage (17 files → target 60+), and building adapters for additional platforms (Laravel, Craft).
+
+**The most impactful next action is test coverage.** With 17 test files for 141 source files (12% file coverage), any regression in the OOS engine path is invisible. Provider client tests alone (1 of 15 clients tested) would catch the most dangerous bugs — these are the classes that send API keys over the wire.
