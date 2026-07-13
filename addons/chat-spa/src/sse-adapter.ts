@@ -50,6 +50,8 @@ export interface ChatFetchOptions {
 	assistantId: number;
 	/** When true, sends an `X-WP-MCP-AI-Guest` header instead of the nonce. */
 	guest: boolean;
+	/** When true, forwards allow_sensitive_tools to the chat endpoint. */
+	allowSensitiveTools?: boolean;
 }
 
 interface NvOosFrame {
@@ -500,11 +502,15 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 				body = {};
 			}
 		}
-		const merged = {
+		const merged: Record< string, unknown > = {
 			...( body as Record< string, unknown > ),
 			assistant_id: opts.assistantId,
 			stream: true,
 		};
+
+		if ( opts.allowSensitiveTools ) {
+			merged.allow_sensitive_tools = true;
+		}
 
 		const upstream = await fetch( opts.endpoint, {
 			method: 'POST',

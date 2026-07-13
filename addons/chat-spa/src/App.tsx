@@ -111,6 +111,7 @@ export function App( { config }: AppProps ) {
 	const endpoint = runtime.endpoints.chatClient;
 	const assistantId = config.assistantId ?? 0;
 	const isGuest = !! config.guest;
+	const allowSensitiveTools = !! config.allowSensitiveTools;
 
 	// Guest sessions can't list/save transcripts (the REST endpoint
 	// requires an authenticated user), so we disable the feature there.
@@ -195,8 +196,9 @@ export function App( { config }: AppProps ) {
 				nonce: runtime.nonce,
 				assistantId,
 				guest: isGuest,
+				allowSensitiveTools,
 			} ),
-		[ endpoint, runtime.nonce, assistantId, isGuest ]
+			[ endpoint, runtime.nonce, assistantId, isGuest, allowSensitiveTools ]
 	);
 
 	const { messages, input, handleInputChange, handleSubmit, status, error, stop, reload, setMessages } = useChat( {

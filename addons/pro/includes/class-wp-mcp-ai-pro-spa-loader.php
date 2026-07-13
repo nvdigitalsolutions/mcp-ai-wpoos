@@ -189,8 +189,9 @@ class WP_MCP_AI_Pro_SPA_Loader {
 			'proApi'       => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
 			'nonce'        => wp_create_nonce( 'wp_rest' ),
 			'config'       => array(
-				'assistantId' => $assistant_id,
-				'theme'       => 'auto',
+				'assistantId'         => $assistant_id,
+				'theme'               => 'auto',
+				'allowSensitiveTools' => true,
 			),
 			'endpoints'    => array(
 				// Core chat endpoints (mcp-ai/v1).

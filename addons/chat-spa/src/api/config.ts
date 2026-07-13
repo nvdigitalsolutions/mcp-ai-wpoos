@@ -11,6 +11,7 @@ export interface ChatSpaPerInstanceConfig {
 	theme?: 'auto' | 'light' | 'dark' | string;
 	height?: string;
 	guest?: boolean;
+	allowSensitiveTools?: boolean;
 }
 
 export interface ChatSpaEndpoints {

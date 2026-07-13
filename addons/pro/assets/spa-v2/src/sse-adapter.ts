@@ -15,6 +15,8 @@ export interface ChatFetchOptions {
 	/** Optional override — when provided, sent to server as options.provider / options.model. */
 	model?: string;
 	provider?: string;
+	/** When true, forwards allow_sensitive_tools to the chat endpoint. */
+	allowSensitiveTools?: boolean;
 	/**
 	 * Client-side session key forwarded in the chat request body so the
 	 * server-side WP_MCP_AI_Chat_Transcript_Recorder uses the same key.
@@ -460,13 +462,18 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 		}
 
 		const merged: Record< string, unknown > = {
-			...( body as Record< string, unknown > ),
-			assistant_id: opts.assistantId,
-			session_key: opts.sessionKey || '',
-			stream: true,
-		};
+				...( body as Record< string, unknown > ),
+				assistant_id: opts.assistantId,
+				session_key: opts.sessionKey || '',
+				stream: true,
+			};
 
-		// Forward model/provider overrides when the user has selected a specific model.
+			// Forward allow_sensitive_tools when the caller has opted in.
+			if ( opts.allowSensitiveTools ) {
+				merged.allow_sensitive_tools = true;
+			}
+
+			// Forward model/provider overrides when the user has selected a specific model.
 		if ( opts.provider && opts.model ) {
 			merged.options = {
 				...( ( merged.options as Record< string, unknown > ) ?? {} ),
