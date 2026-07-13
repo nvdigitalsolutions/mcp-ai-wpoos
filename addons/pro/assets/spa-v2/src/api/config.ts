@@ -8,6 +8,7 @@
 export interface ProSpaPerInstanceConfig {
 	assistantId?: number;
 	theme?: 'auto' | 'light' | 'dark' | string;
+	allowSensitiveTools?: boolean;
 }
 
 export interface ProSpaEndpoints {

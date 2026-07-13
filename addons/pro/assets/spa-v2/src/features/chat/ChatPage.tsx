@@ -105,7 +105,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		model: model.model,
 		provider: model.provider,
 		transcriptsEndpoint: endpoints?.transcripts ?? '',
-		allowSensitiveTools: !!( runtime?.config as Record< string, unknown > | undefined )?.allowSensitiveTools,
+		allowSensitiveTools: !!runtime?.config?.allowSensitiveTools,
 	} );
 
 	const {
