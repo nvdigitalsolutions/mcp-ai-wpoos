@@ -328,6 +328,28 @@ function translateFrame(
 				// Completion frames with data — mark as 'data' type.
 				if ( frame.data || frame.choices || frame.model ) {
 					out.push( encodeChunk( '8', [ { ...frame, type: 'data' } ] ) );
+
+					// Emit cost / model / provider as a properly-structured
+					// data annotation so ChatPage.enhancedUsageMap picks
+					// them up for the UsageBadges component (cost badge,
+					// model badge).  The server's "message" SSE event
+					// carries `cost` at the top level, but enhancedUsageMap
+					// expects it nested inside `data` (matching the
+					// done/finish case above).  Re-wrap here to avoid
+					// cost badges silently disappearing (v0.9.0).
+					const extras: Record< string, unknown > = {};
+					if ( frame.cost && typeof frame.cost === 'object' ) {
+						extras.cost = frame.cost;
+						const c = frame.cost as Record< string, unknown >;
+						if ( ! extras.model && c.model ) extras.model = c.model;
+						if ( ! extras.provider && c.provider ) extras.provider = c.provider;
+					}
+					if ( frame.model && ! extras.model ) extras.model = frame.model;
+					if ( frame.provider && ! extras.provider ) extras.provider = frame.provider;
+					if ( Object.keys( extras ).length > 0 ) {
+						out.push( encodeChunk( '8', [ { type: 'data', data: extras } ] ) );
+					}
+
 					// Emit tool_results as individual tool-call events
 					// so ToolCallCard renders rich content (images,
 					// videos, files, charts) instead of raw JSON
