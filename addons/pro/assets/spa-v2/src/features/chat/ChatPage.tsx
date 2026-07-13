@@ -135,7 +135,13 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 			for ( const ann of anns ) {
 				if ( ann.type === 'data' && ann.data && typeof ann.data === 'object' ) {
 					const d = ann.data as Record< string, unknown >;
-					const cost = d.cost as Record< string, unknown > | undefined;
+					// Cost may be nested inside ann.data (from done/finish
+					// annotations or the re-wrapped SSE adapter path) or
+					// at ann's top level (from raw message frames).
+					// Check both locations so cost badges never go missing.
+					const costFromData = d.cost as Record< string, unknown > | undefined;
+					const costFromAnn = ann.cost as Record< string, unknown > | undefined;
+					const cost = costFromData || costFromAnn;
 					const usage = d.usage as Record< string, unknown > | undefined;
 					const existing = map[ msg.id ] || {};
 					if ( ! existing.costUsd && cost && typeof cost.cost_usd === 'number' ) {
