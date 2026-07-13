@@ -67,7 +67,7 @@ export function useVectorStoreStatus(
 
 		try {
 			const url = new URL(
-				`${ apiRoot.replace( /\/+$/, '' ) }/mcp-ai/v1/vector-store-preload`,
+				`${ apiRoot.replace( /\/+$/, '' ) }/vector-store-preload`,
 				window.location.origin,
 			);
 			url.searchParams.set( 'assistant_id', String( id ) );
