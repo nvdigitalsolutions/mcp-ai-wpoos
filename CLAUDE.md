@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **July 7, 2026** · Version: **2.8**
+> Last reviewed: **July 13, 2026** · Version: **2.9**
 
 ### Related Files
 
@@ -231,7 +231,7 @@ Inspired by DeepSeek V4 DSpark confidence-scheduled speculative decoding, five s
 
 ### Provider Clients
 
-Ten providers supported. New across v1.1.15–v1.1.19:
+Fifteen providers supported:
 - **OpenRouter** (`WP_MCP_AI_OpenRouter_Client`, v1.1.15) — unified gateway for OpenAI, Anthropic, Google, Meta, Mistral, and others via one API key
 - **DigitalOcean Serverless Inference** (`WP_MCP_AI_DigitalOcean_Client`, v1.1.17) — OpenAI-compatible API at `https://inference.do-ai.run/v1`; Llama 3.3, DeepSeek-R1 distill, gpt-oss, plus native `/embeddings`
 - **DeepSeek** (`WP_MCP_AI_DeepSeek_Client`, v1.1.15) — `reasoning_content` / `<think>…</think>` passthrough
@@ -240,9 +240,10 @@ Ten providers supported. New across v1.1.15–v1.1.19:
 
 ### Voice / Realtime API
 
-Multi-provider voice support via a pluggable voice controller (`WP_MCP_AI_REST_Voice_Controller`, `includes/rest/class-wp-mcp-ai-rest-voice-controller.php`). Two providers registered by default:
+Multi-provider voice support via a pluggable voice controller (`WP_MCP_AI_REST_Voice_Controller`, `includes/rest/class-wp-mcp-ai-rest-voice-controller.php`). Two providers registered by default plus video generation:
 - **OpenAI Realtime** (`WP_MCP_AI_OpenAI_Realtime_Client`) — WebRTC/S2S realtime voice via OpenAI's Realtime API.
 - **Gemini Live** (`WP_MCP_AI_Gemini_Live_Client`) — realtime voice via Google's Gemini Live API.
+- **Veo 2.0 deprecated (mid-2026).** Google deprecated Veo 2.0 and may restrict Veo 3.1. The replacement is **Gemini Omni Flash** (`gemini-omni-flash`) — 10s duration, native audio, multi-turn editing. Deprecation detection prevents wasteful 404 fallback loops.
 
 Provider registration pattern: `$voice_controller->register_provider( new ProviderClient() )`. REST routes registered under `mcp-ai/v1/voice/*`.
 
@@ -309,6 +310,49 @@ Stay-on-target jailbreak prevention that runs before every AI provider request:
 - **Capability boundary enforcement** — configurable thresholds that limit what the assistant can access or modify.
 - **Agent capability boundary** (`WP_MCP_AI_Agent_Capability_Boundary`) — enforces per-assistant guardrails at the framework level, before the prompt reaches the provider.
 - All guardrails are opt-in per assistant and configurable in the Orchestration → Guardrails admin tab.
+
+### Meta-Harness Auto-Optimization System (v1.1.39)
+
+Self-improving agent infrastructure that observes, analyzes, and self-optimizes AI agent execution across 7 phases (`includes/harness/`):
+
+- **Trace Store** (`WP_MCP_AI_Harness_Trace_Store`) — Persistent storage for execution telemetry with queryable indexes by agent, tool, outcome, timing, and provider.
+- **Trace Capture** (`WP_MCP_AI_Harness_Trace_Capture`) — Hooks into the tool execution pipeline to record tool calls, arguments, duration, tokens, errors, and outcomes.
+- **Harness Search Engine** (`WP_MCP_AI_Harness_Search_Engine`) — Full-text search and faceted filtering across execution traces. WP-CLI integration (`wp mcp-ai harness search`).
+- **Auto-Deploy** (`WP_MCP_AI_Harness_Auto_Deploy`) — Pushes approved optimizations (prompt refinements, tool selection, parameter tuning) to production with rollback capability.
+- **Population** (`WP_MCP_AI_Harness_Population`) — Batch-processes historical traces through the proposer. Chunked, resumable.
+- **Pro Coding-Agent Proposer** (`addons/pro/includes/harness/`) — Analyzes traces and generates structured optimization proposals with confidence scoring. Human-in-the-loop review.
+- **Cues + DSpark** — Threshold-based auto-triggers and speculative orchestration coordinating the full optimization lifecycle.
+
+**Key hooks:** `wp_mcp_ai_harness_trace_captured`, `wp_mcp_ai_harness_proposal_generated`, `wp_mcp_ai_harness_before_deploy`, `wp_mcp_ai_harness_after_deploy`.
+
+Reference: `docs/features/meta-harness-auto-optimization.md`.
+
+### Agent Delegation Rework (v1.1.39)
+
+Delegation subsystem underwent a major rework for reliability and performance:
+
+- **Inline execution** — delegation now runs synchronously instead of async, with immediate result delivery.
+- **REST-based dispatch** — delegated tasks dispatched via `/wp-json/mcp-ai/v1/chat` instead of role executor, supporting streaming and uniform auth.
+- **Cron resilience** — retry logic (3 attempts, exponential backoff), stuck-job detection, `spawn_cron()` for instant deferred job execution.
+- **Name-based agent resolution** — `delegate_to_agent` tool now supports `agent_name` in addition to `agent_id`.
+- **SPA v2 Tasks Drawer** — toolbar button with `failedCount` badge, retry mechanism for failed tasks.
+- **`allowSensitiveTools`** — config flag propagated through delegation dispatch chain.
+
+Reference: `docs/features/agent-delegation-system.md`.
+
+### Tool Presets System (v1.1.39)
+
+Curated tool groupings organized in a layered hierarchy:
+
+- **Essentials layers** — Base → Essentials → Extended → Specialist. Additive; assigning essentials auto-includes base.
+- **Deduplication** — within-layer, cross-layer, and assistant-level dedup.
+- **Auto-upgrade** — validated tool variants automatically replace non-validated versions (no duplicate names).
+- **Chips Bar UI** — selected tools shown as clickable chips with +N overflow toggle.
+- **Tool payload cap** raised from 50 to 100 tools per assistant.
+- **SSE adapter fix** — double tool execution eliminated in streaming mode.
+- **`tool_call_id` handling** — DeepSeek streaming now includes `tool_call_id`; messages without it stripped.
+
+Reference: `docs/features/tool-presets-system.md`.
 
 ### Pro Toolkit Optimizations
 

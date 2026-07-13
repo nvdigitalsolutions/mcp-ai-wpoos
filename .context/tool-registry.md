@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations.
-> Last reviewed: June 2026.
+> Last reviewed: July 2026.
 
 ---
 
@@ -14,7 +14,21 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,000+ (~195 base + ~800+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,025+ (~195 base + ~830+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+---
+
+## Tool Presets System (v1.1.39)
+
+Tools can be grouped into presets organized in a layered hierarchy:
+
+- **Base Layer** → **Essentials Layer** → **Extended Layer** → **Specialist Layer**. Additive; assigning essentials auto-includes base.
+- **Deduplication** — within-layer, cross-layer, and assistant-level. No tool appears twice in the final list.
+- **Auto-upgrade** — validated tool variants automatically replace non-validated versions when available.
+- **Tool payload cap** — 100 tools per assistant (raised from 50).
+- Tools without `tool_call_id` in DeepSeek streaming are now handled: always included in `extract_request_messages` fallback; stripped from conversation when missing.
+
+Reference: `docs/features/tool-presets-system.md`.
 
 ---
 

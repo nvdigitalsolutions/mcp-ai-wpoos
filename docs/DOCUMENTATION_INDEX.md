@@ -487,6 +487,21 @@ This document provides a comprehensive index of all documentation available for 
 
 ---
 
+## 🆕 July 2026 — Meta-Harness Auto-Optimization, Agent Delegation Rework, Pro SPA v2 Polish, Tool Presets Refactor, CRM Enhancements
+
+### New and updated documents (July 10–13, 2026)
+
+- **[docs/features/meta-harness-auto-optimization.md](features/meta-harness-auto-optimization.md)** ⭐ **NEW** — Meta-Harness auto-optimization system: Trace Store, Trace Capture, Harness Search Engine, Pro Coding-Agent Proposer, Cues, Population, Auto-Deploy, DSpark, and test infrastructure across all 7 phases.
+- **[docs/features/agent-delegation-system.md](features/agent-delegation-system.md)** ⭐ **NEW** — Agent delegation architecture: inline execution, REST chat dispatch, cron resilience with retry, `spawn_cron()` deferred execution, name-based agent resolution, tasks drawer wire-up.
+- **[docs/features/pro-spa-v2.md](features/pro-spa-v2.md)** ⭐ **UPDATED** — Post-v1.1.38 Pro SPA v2 fixes and polish: vector store, autocomplete, cost badges, `allowSensitiveTools`, tool result rendering, auto-save transcripts, attachments + storage, tasks drawer toolbar, speech/audio, capability flags, usage badges, sidebar/media, system prompt, layout/mobile.
+- **[docs/features/tool-presets-system.md](features/tool-presets-system.md)** ⭐ **NEW** — Tool presets system: essentials layers, deduplication, auto-upgrade for validated variants, SSE adapter fixes, `tool_call_id` fallback handling.
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.39 entries added covering all post-release changes.
+- **[docs/ROADMAP.md](ROADMAP.md)** ⭐ **UPDATED** — v1.1.39 released section with capability snapshot update.
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.39 section with full PR-level detail across 7 categories.
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
+
+---
+
 ## 🆕 Latest Updates - January 2026 ⭐ **LATEST UPDATES**
 
 ### WordPress.org Plugin Check Review Complete (January 31, 2026) ✅ **LATEST** ⭐

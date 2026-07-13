@@ -1,11 +1,11 @@
 # NV oOS Roadmap
 
-**Last Updated:** July 10, 2026
-**Version:** 1.1.38
+**Last Updated:** July 13, 2026
+**Version:** 1.1.39
 
 ---
 
-## Current Capability Snapshot (v1.1.38)
+## Current Capability Snapshot (v1.1.39)
 
 | Dimension | Count |
 |-----------|-------|
@@ -36,6 +36,23 @@
 3. **Open Standards** — MCP protocol compliance, extensible architecture
 4. **Community Driven** — Open source with transparent development
 5. **Production Ready** — Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.39 — July 2026 ✅
+
+**Release Date:** July 13, 2026
+
+### What was delivered in v1.1.39
+
+- ✅ **Meta-Harness Auto-Optimization (All 7 Phases).** Trace Store + Trace Capture, Harness Search Engine, Pro Coding-Agent Proposer, Cues/Population/Auto-Deploy/DSpark, and tests. Self-improving agent infrastructure for observing, analyzing, and self-optimizing AI agent execution.
+- ✅ **Agent Delegation — Major Rework.** Inline execution with async timestamp fix. REST-based dispatch via chat endpoint. Cron resilience with retry. `spawn_cron()` for instant deferred job execution. Name-based agent resolution. SPA v2 wire-up and tasks drawer fixes.
+- ✅ **Pro SPA v2 — Polish & Fixes (20+ PRs).** Vector store indicator and autocomplete positioning. TDZ crash fix in CommandAutocomplete. Inline command autocomplete + Zed-style refresh. Cost badges restored. `allowSensitiveTools` config propagation. Tool result rich rendering, sidebar auto-refresh, media cache-busting. Auto-save transcripts. Attachment support + save button + storage display. Tasks drawer toolbar with failedCount badge. Speech/audio response envelope fix. Capability flags, usage badges, image+text rendering fixes. Sidebar media panel, media insert, speech button fixes. System prompt leak, sidebar empty state, media-to-chat bridge fixes. Tool display and conversation duplication fix. Composer mobile padding. Media grid flexbox layout.
+- ✅ **Tool Presets Refactor.** Essentials layers with duplication stripped. Auto-upgrade for validated variants (no duplicate names). Double tool execution fix in SSE. `tool_call_id` fallback for DeepSeek streaming. Save button and tool message cleanup.
+- ✅ **CRM Enhancements.** Cache loop fix. Upwork rate limiting. Freelance Platforms & External Sourcing configuration.
+- ✅ **Infrastructure.** Veo 2.0 deprecated — Gemini Omni Flash replacement with deprecation detection (PR #5667). Workflow auth fix. ZAP scan Docker isolation fix. npm packages rebuilt.
+- ✅ **Documentation.** OpenMed integration plan v2.
+- 📦 **Versioning** — bumped to **1.1.39** across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative). Addon count: 26.
 
 ---
 

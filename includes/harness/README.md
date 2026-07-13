@@ -1,8 +1,8 @@
-# Harness — LLM Harness Layers A–I
+# Harness — LLM Harness Layers A–J + Meta-Harness
 
 ## Purpose
 
-Implements the nine opt-in LLM harness layers (Profile, Prompt cues, Reasoning/Self-consistency, Tool routing, Retrieval, Self-Refine, PII filter, Eval scheduling, Guardrails, Necessity Gate) that wrap provider calls with rate-limit, retry, telemetry, and reflection behaviour — and nothing else.
+Implements the nine opt-in LLM harness layers (Profile, Prompt cues, Reasoning/Self-consistency, Tool routing, Retrieval, Self-Refine, PII filter, Eval scheduling, Guardrails, Necessity Gate) that wrap provider calls with rate-limit, retry, telemetry, and reflection behaviour — plus the Meta-Harness auto-optimization subsystem (Trace Store, Trace Capture, Search Engine, Auto-Deploy, Population) that observes, analyzes, and self-optimizes AI agent execution.
 
 ## Tier
 
@@ -28,6 +28,11 @@ Implements the nine opt-in LLM harness layers (Profile, Prompt cues, Reasoning/S
 | `WP_MCP_AI_Harness_Eval_Scheduler` | `class-wp-mcp-ai-harness-eval-scheduler.php` | self-registers a WP-Cron handler on load |
 | `WP_MCP_AI_Guardrails` | `class-wp-mcp-ai-guardrails.php` | self-registers as system-prompt + pre-screen subscriber on load |
 | `WP_MCP_AI_Necessity_Gate` | `class-wp-mcp-ai-necessity-gate.php` | self-registers as tool-execution filter on load; 3-tier gating (safe-allowlist → necessity → irreversibility) |
+| `WP_MCP_AI_Harness_Trace_Store` | `class-wp-mcp-ai-harness-trace-store.php` | Meta-Harness: persists execution telemetry with queryable indexes |
+| `WP_MCP_AI_Harness_Trace_Capture` | `class-wp-mcp-ai-harness-trace-capture.php` | Meta-Harness: hooks into tool pipeline to record calls, duration, tokens, errors |
+| `WP_MCP_AI_Harness_Search_Engine` | `class-wp-mcp-ai-harness-search-engine.php` | Meta-Harness: full-text search + faceted filtering across traces |
+| `WP_MCP_AI_Harness_Auto_Deploy` | `class-wp-mcp-ai-harness-auto-deploy.php` | Meta-Harness: pushes approved optimizations to production with rollback |
+| `WP_MCP_AI_Harness_Population` | `class-wp-mcp-ai-harness-population.php` | Meta-Harness: batch-processes historical traces through the proposer |
 
 The seven harness tools (`list_prompt_cues`, `select_prompt_cue`, `apply_prompt_cue`, `self_consistency_vote`, `retrieve_with_provenance`, `record_reflection`, `scope_memory`) live in [`includes/tools/harness/`](../tools/harness/) and are registered from this folder's init via `wp_mcp_ai_register_tools`.
 
@@ -73,6 +78,7 @@ vendor/bin/phpunit tests/test-harness-eval-scheduler-inline-kick.php
 - [`.context/tool-registry.md`](../../.context/tool-registry.md) — the seven harness tools live in `includes/tools/harness/`
 - [`CLAUDE.md`](../../CLAUDE.md) — PHP-compat and canonical tool envelope
 - [`includes/data/README.md`](../data/README.md) — upstream attention router that feeds semantic scores into Layer C (since 1.8.0)
+- [`docs/features/meta-harness-auto-optimization.md`](../../docs/features/meta-harness-auto-optimization.md) — full Meta-Harness Phases 0-7 reference
 
 ## See Also
 
