@@ -1,9 +1,9 @@
 /**
  * Pro SPA v2 — Vector store status hook.
  *
- * Polls the /vector-store-preload endpoint for the selected assistant
- * and exposes loading / ready / error state so the UI can reflect
- * whether the assistant's knowledge base is available.
+ * Fetches the /vector-store-preload endpoint for the selected assistant
+ * on mount and on assistant change, exposing loading / ready / error state
+ * so the UI can reflect whether the assistant's knowledge base is available.
  *
  * @package NV_oOS_Pro_Spa
  * @since   2.1.0
@@ -35,11 +35,11 @@ const CACHE: Record< number, { ts: number; data: VectorStoreStatus } > = {};
 const CACHE_TTL_MS = 60_000; // 1 minute
 
 /**
- * Fetch vector store status for an assistant.
- *
- * Returns a stable `VectorStoreStatus` object that updates
- * when the assistant ID changes or on a polling interval.
- */
+	 * Fetch vector store status for an assistant.
+	 *
+	 * Returns a stable `VectorStoreStatus` object that updates
+	 * when the assistant ID changes (on page load or assistant switch).
+	 */
 export function useVectorStoreStatus(
 	apiRoot: string,
 	nonce: string,
@@ -163,21 +163,8 @@ export function useVectorStoreStatus(
 			setState( { loading: false, ready: false, error: null, name: null, fileCount: null, status: null, hasStore: false, message: null } );
 		}
 
-		// Poll every 30 seconds while the store is not yet ready.
-		const timer = setInterval( () => {
-			if ( assistantId > 0 ) {
-				// Re-check: only poll if not already ready.
-				setState( ( prev ) => {
-					if ( prev.ready || prev.error ) return prev;
-					fetchStatus( assistantId, ac.signal );
-					return prev;
-				} );
-			}
-		}, 30_000 );
-
 		return () => {
 			ac.abort();
-			clearInterval( timer );
 		};
 	}, [ assistantId, fetchStatus ] );
 
