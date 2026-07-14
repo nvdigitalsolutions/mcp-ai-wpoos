@@ -77,14 +77,10 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
 		await page.waitForTimeout(PAUSE.MEDIUM);
 
 		// ═══════════════════════════════════════════════════════
-		// 3. Click "Add New"
+		// 3. Navigate to "Add New" page
 		// ═══════════════════════════════════════════════════════
-		console.log('  ▶ Click Add New');
-		const clicked = await tryClick(page, SELECTORS.admin.addNewButton);
-
-		if (!clicked) {
-			await admin.goToPostTypeNew('mcp_ai_assistant');
-		}
+		console.log('  ▶ Navigate to Add New assistant');
+		await admin.goToPostTypeNew('mcp_ai_assistant');
 		await page.waitForTimeout(PAUSE.LONG);
 
 		// ═══════════════════════════════════════════════════════
@@ -191,14 +187,16 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
 		// 10. Publish
 		// ═══════════════════════════════════════════════════════
 		console.log('  ▶ Publish assistant');
-		const published = await tryClick(page, SELECTORS.admin.publishButton);
-
-		if (!published) {
-			console.log('    ⚠️  Publish button not found — trying save draft');
-			await tryClick(page, SELECTORS.admin.saveDraftButton);
-		}
-		await page.waitForTimeout(PAUSE.LONG);
-		await page.waitForTimeout(PAUSE.MEDIUM);
+		// Scroll publish button into view and click without waiting for navigation
+		await page.evaluate(() => {
+			const btn = document.querySelector('#publish');
+			if (btn) btn.scrollIntoView({ block: 'center' });
+		});
+		await page.waitForTimeout(500);
+		await page.click('#publish', { timeout: 10000, noWaitAfter: true });
+		console.log('    ✅ Published');
+		// Wait for redirect to settle, then navigate to list
+		await page.waitForTimeout(8000);
 
 		// ═══════════════════════════════════════════════════════
 		// 11. Verify — return to list

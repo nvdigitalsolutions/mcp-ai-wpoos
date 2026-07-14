@@ -26,8 +26,8 @@ const SELECTORS = {
 	assistant: {
 		titleInput: ['#title', '[data-testid="assistant-title-input"]'],
 		contentArea: ['#content', '.wp-block-post-content', '[data-testid="assistant-description"]', 'textarea[name="post_content"]'],
-		systemPrompt: ['[data-testid="system-prompt"]', '#mcp_ai_system_prompt', 'textarea[name*="system_prompt"]', 'textarea[name="_mcp_ai_system_prompt"]', '.mcp-ai-system-prompt textarea'],
-		modelSelect: ['[data-testid="model-select"]', 'select[name*="model"]', '#mcp_ai_model', 'select[name="_mcp_ai_model"]'],
+		systemPrompt: ['[data-testid="system-prompt"]', '#wp-mcp-ai-system-prompt', 'textarea[name="wp_mcp_ai_system_prompt"]', '#mcp_ai_system_prompt', 'textarea[name*="system_prompt"]'],
+		modelSelect: ['[data-testid="model-select"]', '#wp-mcp-ai-model', 'select[name="wp_mcp_ai_model"]', 'select[name*="model"]'],
 		toolsTab: ['[data-testid="tools-tab"]', '.nav-tab-wrapper a[href*="tools"]', 'button:has-text("Tools")', '.mcp-ai-tools-tab', 'a.nav-tab:has-text("Tools")', '.components-tab-panel__tabs button:has-text("Tools")'],
 		toolSearchInput: ['[data-testid="tools-search-input"]', 'input[type="search"]', 'input[placeholder*="search" i]', 'input[placeholder*="Search"]', '.mcp-ai-tool-search input'],
 		toolCheckboxes: ['[data-testid="tool-toggle"]', 'input[type="checkbox"]'],

@@ -6,12 +6,17 @@
  * test data creation/cleanup utilities.
  */
 
+const { VIDEO_CONFIG } = require('./video-utils');
+
 class WPAdmin {
 	/**
 	 * @param {import('playwright').Page} page
+	 * @param {string} [baseUrl] - Base URL for the WordPress site (default: VIDEO_CONFIG.baseUrl).
 	 */
-	constructor(page) {
+	constructor(page, baseUrl) {
 		this.page = page;
+		this.baseUrl = (baseUrl || VIDEO_CONFIG.baseUrl).replace(/\/$/, '');
+		this.adminUrl = `${this.baseUrl}/wp-admin`;
 	}
 
 	/**
@@ -24,7 +29,7 @@ class WPAdmin {
 		username = process.env.WP_ADMIN_USER || 'admin',
 		password = process.env.WP_ADMIN_PASS || 'password'
 	) {
-		await this.page.goto('/wp-admin', { waitUntil: 'networkidle', timeout: 30000 });
+		await this.page.goto(`${this.adminUrl}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
 		// Already logged in?
 		const adminBar = await this.page.$('#wpadminbar');
@@ -64,11 +69,11 @@ class WPAdmin {
 	 * @param {string} [options.tab] - Optional tab query parameter.
 	 */
 	async goToAdminPage(slug, options = {}) {
-		let url = `/wp-admin/admin.php?page=${slug}`;
+		let url = `${this.adminUrl}/admin.php?page=${slug}`;
 		if (options.tab) {
 			url += `&tab=${options.tab}`;
 		}
-		await this.page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+		await this.page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 	}
 
 	/**
@@ -77,8 +82,8 @@ class WPAdmin {
 	 * @param {string} postType - The post type slug (e.g., 'mcp_ai_assistant').
 	 */
 	async goToPostTypeList(postType) {
-		await this.page.goto(`/wp-admin/edit.php?post_type=${postType}`, {
-			waitUntil: 'networkidle',
+		await this.page.goto(`${this.adminUrl}/edit.php?post_type=${postType}`, {
+			waitUntil: 'domcontentloaded',
 			timeout: 30000,
 		});
 	}
@@ -89,8 +94,8 @@ class WPAdmin {
 	 * @param {string} postType - The post type slug.
 	 */
 	async goToPostTypeNew(postType) {
-		await this.page.goto(`/wp-admin/post-new.php?post_type=${postType}`, {
-			waitUntil: 'networkidle',
+		await this.page.goto(`${this.adminUrl}/post-new.php?post_type=${postType}`, {
+			waitUntil: 'domcontentloaded',
 			timeout: 30000,
 		});
 	}
@@ -104,7 +109,7 @@ class WPAdmin {
 	 */
 	async createTestPost(title, content = '') {
 		const nonce = await this.getRestNonce();
-		const response = await this.page.request.post('/wp-json/wp/v2/posts', {
+		const response = await this.page.request.post(`${this.baseUrl}/wp-json/wp/v2/posts`, {
 			headers: {
 				'X-WP-Nonce': nonce,
 				'Content-Type': 'application/json',
@@ -127,7 +132,7 @@ class WPAdmin {
 	async deleteTestPost(postId) {
 		const nonce = await this.getRestNonce();
 		await this.page.request.delete(
-			`/wp-json/wp/v2/posts/${postId}?force=true`,
+			`${this.baseUrl}/wp-json/wp/v2/posts/${postId}?force=true`,
 			{ headers: { 'X-WP-Nonce': nonce } }
 		);
 	}
