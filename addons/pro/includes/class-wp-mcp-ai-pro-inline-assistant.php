@@ -121,7 +121,7 @@ class WP_MCP_AI_Pro_Inline_Assistant {
 					'model'    => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
-						'default'           => 'gpt-4o',
+						'default'           => 'gpt-4.1',
 					),
 					'provider' => array(
 						'type'              => 'string',

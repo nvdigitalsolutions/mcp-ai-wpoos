@@ -467,6 +467,11 @@ class WP_MCP_AI_Usage_Tracker {
 		// Common model pricing (as of June 2026).
 		// See: https://openai.com/api/pricing/.
 		$pricing_map = array(
+						// OpenAI GPT-5.6 series (July 2026).
+			'gpt-5.6'                                      => array(
+				'input_cost_per_1k'  => 0.005,
+				'output_cost_per_1k' => 0.03,
+			),
 			// OpenAI GPT-5.5 series (April 2026).
 			'gpt-5.5'                                      => array(
 				'input_cost_per_1k'  => 0.005,  // $5.00/1M.
@@ -606,7 +611,16 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.00125,
 				'output_cost_per_1k' => 0.01,
 			),
-			// Anthropic Claude 4.6 series (February 2026).
+						// Anthropic Claude Fable 5 / Sonnet 5 (June 2026).
+			'claude-fable-5'                               => array(
+				'input_cost_per_1k'  => 0.01,
+				'output_cost_per_1k' => 0.05,
+			),
+			'claude-sonnet-5'                              => array(
+				'input_cost_per_1k'  => 0.002,
+				'output_cost_per_1k' => 0.01,
+			),
+			// Anthropic Claude 4.8/4.7/4.6 series (February 2026).
 			'claude-sonnet-4-6'                            => array(
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.015,
@@ -803,8 +817,8 @@ class WP_MCP_AI_Usage_Tracker {
 				'output_cost_per_1k' => 0.00028, // $0.28 per 1M tokens = $0.00028 per 1K.
 			),
 			'deepseek-v4-pro'                              => array(
-				'input_cost_per_1k'  => 0.000435, // Promotional: $0.435/1M (regular: $1.74/1M).
-				'output_cost_per_1k' => 0.00087,  // Promotional: $0.87/1M (regular: $3.48/1M).
+				'input_cost_per_1k'  => 0.00174, // Promotional: $0.435/1M (regular: $1.74/1M).
+				'output_cost_per_1k' => 0.00348, // Regular: $0.87/1M (regular: $3.48/1M).
 			),
 			'deepseek-chat'                                => array(
 				'input_cost_per_1k'  => 0.00027, // $0.27 per 1M tokens (deprecated, use v4-flash).

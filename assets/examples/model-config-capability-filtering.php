@@ -40,8 +40,8 @@ Array(
     'anthropic_group' => Array(
         'label' => 'Anthropic (Claude)',
         'options' => Array(
-            'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet',
-            'claude-3-5-haiku-20241022' => 'Claude 3.5 Haiku'
+            'claude-sonnet-5' => 'Claude 3.5 Sonnet',
+            'claude-haiku-4-5' => 'Claude 3.5 Haiku'
             // All Claude models are multimodal
         )
     ),
@@ -49,8 +49,8 @@ Array(
         'label' => 'Google Gemini',
         'options' => Array(
             'gemini-2.5-flash' => 'Gemini 2.5 Flash',
-            'gemini-1.5-pro' => 'Gemini 1.5 Pro',
-            'gemini-1.5-flash' => 'Gemini 1.5 Flash'
+            'gemini-2.5-pro' => 'Gemini 1.5 Pro',
+            'gemini-3.1-flash' => 'Gemini 1.5 Flash'
             // Note: gemma models NOT included (text-only)
         )
     )
@@ -134,7 +134,7 @@ $flags = get_model_capability_flags( 'gpt-3.5-turbo', 'openai' );
 // [] - Legacy models are text-only
 
 // Anthropic models
-$flags = get_model_capability_flags( 'claude-3-5-sonnet-20241022', 'anthropic' );
+$flags = get_model_capability_flags( 'claude-sonnet-5', 'anthropic' );
 // ['vision', 'multimodal'] - All Claude models are multimodal
 
 // Gemini models
@@ -184,16 +184,16 @@ Array(
     'anthropic_group' => Array(
         'label' => 'Anthropic (Claude)',
         'options' => Array(
-            'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet',
-            'claude-3-5-haiku-20241022' => 'Claude 3.5 Haiku'
+            'claude-sonnet-5' => 'Claude 3.5 Sonnet',
+            'claude-haiku-4-5' => 'Claude 3.5 Haiku'
         )
     ),
     'gemini_group' => Array(
         'label' => 'Google Gemini',
         'options' => Array(
             'gemini-2.5-flash' => 'Gemini 2.5 Flash',
-            'gemini-1.5-pro' => 'Gemini 1.5 Pro',
-            'gemini-1.5-flash' => 'Gemini 1.5 Flash'
+            'gemini-2.5-pro' => 'Gemini 1.5 Pro',
+            'gemini-3.1-flash' => 'Gemini 1.5 Flash'
         )
     )
 )

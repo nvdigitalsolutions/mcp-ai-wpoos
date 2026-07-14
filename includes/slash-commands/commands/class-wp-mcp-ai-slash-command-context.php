@@ -274,7 +274,7 @@ class WP_MCP_AI_Slash_Command_Context {
 
 		// Fallback known limits.
 		$known_limits = array(
-			'gpt-4o'            => 128000,
+			'gpt-4.1'            => 128000,
 			'gpt-4o-mini'       => 128000,
 			'gpt-4.1'           => 1000000,
 			'gpt-4.1-mini'      => 1000000,
@@ -282,8 +282,8 @@ class WP_MCP_AI_Slash_Command_Context {
 			'gpt-4-turbo'       => 128000,
 			'gpt-3.5-turbo'     => 16385,
 			'gemini-2.5-flash'  => 1048576,
-			'gemini-2.0-flash'  => 1048576,
-			'gemini-1.5-pro'    => 2097152,
+			'gemini-2.5-flash'  => 1048576,
+			'gemini-2.5-flash'    => 2097152,
 			'claude-3.5-sonnet' => 200000,
 			'claude-3-opus'     => 200000,
 		);

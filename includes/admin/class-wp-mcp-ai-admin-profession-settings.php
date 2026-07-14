@@ -263,7 +263,7 @@ class WP_MCP_AI_Admin_Profession_Settings {
 								</label>
 							</th>
 							<td>
-								<input type="text" name="wp_mcp_ai_profession_default_model" id="wp_mcp_ai_profession_default_model" value="<?php echo esc_attr( $default_model ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., gpt-4o, claude-3-5-sonnet-20241022', 'mcp-ai-wpoos' ); ?>">
+								<input type="text" name="wp_mcp_ai_profession_default_model" id="wp_mcp_ai_profession_default_model" value="<?php echo esc_attr( $default_model ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., gpt-4.1, claude-sonnet-5', 'mcp-ai-wpoos' ); ?>">
 								<p class="description">
 									<?php esc_html_e( 'Default AI model for all professions. Leave empty to use the provider\'s default model. Individual professions can override this setting.', 'mcp-ai-wpoos' ); ?>
 								</p>

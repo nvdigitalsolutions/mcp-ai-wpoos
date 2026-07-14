@@ -493,7 +493,7 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	protected function get_research_model( $provider, $settings ) {
 		switch ( $provider ) {
 			case 'openai':
-				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4o';
+				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
 
 			case 'gemini':
 				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';

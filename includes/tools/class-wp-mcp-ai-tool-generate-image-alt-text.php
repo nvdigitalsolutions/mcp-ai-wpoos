@@ -472,7 +472,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		// Get model from settings.
 		$model = isset( $settings['anthropic_vision_model'] ) && ! empty( $settings['anthropic_vision_model'] )
 			? $settings['anthropic_vision_model']
-			: ( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-3-5-sonnet-20241022' );
+			: ( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5' );
 
 		// Build messages with image content.
 		$messages = array(

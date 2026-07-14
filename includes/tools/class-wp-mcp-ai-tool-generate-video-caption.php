@@ -304,7 +304,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 			'gemini-live-2.5-flash-preview',
 
 			// Gemini 2.0 series (stable - use these instead of -exp variants).
-			'gemini-2.0-flash',
+			'gemini-2.5-flash',
 			'gemini-2.0-flash-lite',
 
 			// Experimental models (still available but may be deprecated).
