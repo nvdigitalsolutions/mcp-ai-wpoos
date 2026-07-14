@@ -1,0 +1,21 @@
+# Narration: Chat Conversation
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~90 seconds
+
+Welcome to NV oOS. In this video, we will demonstrate the AI chat interface with real-time streaming responses.
+
+First, we navigate to a page that has the AI chat shortcode embedded. This is where your visitors will interact with your assistant.
+
+The chat interface loads automatically. Notice how it is ready to accept messages immediately.
+
+Let's send our first message. Type a greeting and click send or press Enter to submit.
+
+Watch as the response streams in real time. Each word appears as the AI generates it, giving users immediate feedback.
+
+Now let's ask a follow-up question. The assistant remembers the conversation context from our previous message.
+
+Notice how the response builds on what we discussed earlier. The assistant maintains context throughout the conversation.
+
+You can scroll back to review earlier messages at any time. The full conversation history is preserved.
+
+That's it. The chat interface provides a natural, conversational experience for your website visitors.

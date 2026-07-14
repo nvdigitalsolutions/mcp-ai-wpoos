@@ -1,0 +1,25 @@
+# Narration: Blueprint System
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~75 seconds
+
+Welcome to NV oOS Pro. In this video, we will use the Blueprint System to export and import complete assistant configurations.
+
+Open the Blueprints page from the Pro admin menu.
+
+Blueprints are portable JSON files that contain everything an assistant needs: its system prompt, model selection, tool assignments, and profession template.
+
+Click Export to download a blueprint from an existing assistant.
+
+The blueprint file includes all configuration details. You can share this file with other site administrators or use it for backups.
+
+Now let's import a blueprint onto a different site. Click Import and select the blueprint file.
+
+Review the configuration that will be created. The import preview shows exactly what will be set up.
+
+Confirm the import. The system creates the assistant, assigns its tools, and configures its model all in one step.
+
+Verify that the imported assistant appears in your Assistants list with all settings intact.
+
+You can also use blueprints to version-control your assistant configurations alongside your code.
+
+That's it. The Blueprint System makes it easy to replicate, share, and back up your AI assistant configurations.

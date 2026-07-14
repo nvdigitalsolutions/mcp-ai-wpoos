@@ -1,0 +1,25 @@
+# Narration: Federation / Mesh Setup
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~75 seconds
+
+Welcome to NV oOS Pro. In this video, we will set up site federation to connect multiple WordPress sites into a unified AI mesh.
+
+Navigate to the Federation settings page in the Pro admin menu.
+
+Federation allows AI assistants on one site to access tools and data from connected remote sites. This enables cross-site workflows.
+
+Click Add Remote to connect a new site to your mesh.
+
+Enter the remote site's URL and a descriptive name for the connection.
+
+Choose your authentication method. You can use API keys, OAuth tokens, or WordPress application passwords.
+
+Optionally, select which tools from the remote site you want to make available locally.
+
+Test the connection to verify that the remote site is reachable and authentication works.
+
+Once connected, your local assistants can now call tools on the remote site just like local tools.
+
+View the connected sites in your mesh. You can manage permissions and revoke access at any time.
+
+That's it. Federation extends your AI capabilities across your entire network of WordPress sites.

@@ -1,131 +1,80 @@
 # NV oOS Demo Video Pipeline — Comprehensive Implementation Plan
 
-**Status:** Draft for review  
-**Date:** 2026-06-08  
-**Author:** AI Agent (Zed)  
-**Scope:** Automated generation of feature demo videos for Base + Pro plugin, driven by Docker + Playwright
+**Status:** Updated — 2026-07-14
+**Author:** AI Agent (Zed)
+**Scope:** Automated generation of narrated feature demo videos for Base + Pro plugin, driven by Docker + Playwright + TTS + FFmpeg
 
 ---
 
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
-2. [Research Findings & Industry Best Practices](#research-findings--industry-best-practices)
-3. [Existing Infrastructure Audit](#existing-infrastructure-audit)
-4. [Architecture Decision](#architecture-decision)
+2. [Industry Research & Best Practices (2024–2026)](#industry-research--best-practices-20242026)
+3. [Architecture Decision](#architecture-decision)
+4. [Current State Assessment](#current-state-assessment)
 5. [Target Video Catalog](#target-video-catalog)
 6. [File Structure & Deliverables](#file-structure--deliverables)
 7. [Implementation Phases](#implementation-phases)
-8. [Script Design Specifications](#script-design-specifications)
-9. [Docker Integration](#docker-integration)
-10. [Narration Pipeline (Phase 3)](#narration-pipeline-phase-3)
-11. [CI/CD Integration (Phase 4)](#cicd-integration-phase-4)
-12. [Quality Standards](#quality-standards)
-13. [Risk Register](#risk-register)
-14. [Open Questions](#open-questions)
+    - [Phase 0: Hardening (Week 1)](#phase-0-hardening-foundation--selector-stability-week-1)
+    - [Phase 1: Silent Pipeline — Complete & Polish (Week 1–2)](#phase-1-silent-pipeline--complete--polish-week-12)
+    - [Phase 2: Pro Plugin Videos — Interactions (Week 2)](#phase-2-pro-plugin-videos--interactions-week-2)
+    - [Phase 3: Narration Pipeline (Week 3)](#phase-3-narration-pipeline-week-3)
+    - [Phase 4: Polish & Production (Week 4)](#phase-4-polish--production-week-4)
+    - [Phase 5: CI/CD Integration (Week 5)](#phase-5-cicd-integration-week-5)
+8. [Quality Standards](#quality-standards)
+9. [Risk Register](#risk-register)
+10. [Open Questions](#open-questions)
+11. [Quick Start](#quick-start)
 
 ---
 
 ## Executive Summary
 
-Create an automated pipeline that spins up a Dockerized WordPress environment, configures the NV oOS plugin (Base + Pro), and produces `.mp4` feature-demo videos — one per user task — via **Playwright browser automation with built-in `recordVideo`**. Each video demonstrates one complete user story (e.g., "Add an assistant and assign tools"). The pipeline is designed to be re-run on every release so videos never go stale.
+Create an end-to-end automated pipeline that:
+1. Spins up a **Dockerized WordPress** environment with the NV oOS plugin
+2. Configures the plugin via **WP-CLI** (activation, API keys, test data)
+3. Produces **silent `.webm` demo videos** via Playwright `recordVideo` (Phase 1–2)
+4. Generates **AI-narrated `.mp4` videos** via OpenAI TTS + FFmpeg merge (Phase 3)
+5. Adds **visual polish**: chapter markers, action highlights, intro/outro cards (Phase 4)
+6. Runs on **every release** via GitHub Actions CI (Phase 5)
 
-**Core technology stack:** Docker Compose → WordPress 6.9 → Playwright `recordVideo` → FFmpeg optimization → `.mp4` output.
+**Core principle:** The narration script + Playwright script = single source of truth. Change the feature, update the script, re-run the pipeline. Videos are build artifacts, never manually recorded.
 
-**Key design principle:** The narration script + Playwright test = single source of truth. Change the feature, update the script, re-run the pipeline.
-
----
-
-## Research Findings & Industry Best Practices
-
-### What the Industry Is Doing (2024–2026)
-
-| Technique | Example Tools | Best For |
-|---|---|---|
-| **Playwright `recordVideo`** | Playwright native, `@playwright/test` | Automated test-to-video, CI pipelines |
-| **Playwright + TTS Narration** | Playwright + ElevenLabs/OpenAI TTS + FFmpeg | Polished product walkthroughs with AI voiceover |
-| **Playwright Trace → Video** | `playwright-recast` (npm) | Converting existing test traces to demo videos |
-| **Traditional screen recording** | OBS Studio, Camtasia, Loom | One-off manual demos (not recommended for this project) |
-
-### Key Articles Applied to This Project
-
-1. **PurpleOwl: "We Automated Our Product Walkthrough Video. The Whole Thing."** (March 2026)  
-   → Pattern: narration array → TTS → Playwright actions timed to audio durations → FFmpeg merge.  
-   → Applied here: Phase 3 of this plan.
-
-2. **Playwright Docs: `recordVideo`**  
-   → `browser.newContext({ recordVideo: { dir, size } })` produces WebM directly.  
-   → Applied here: Phase 1 — zero additional dependencies, immediate output.
-
-3. **DEV.to: "I Was Tired of Re-Recording Product Demos Every Sprint"** (March 2026)  
-   → `playwright-recast` library converts Playwright traces to polished videos with voiceover.  
-   → Applied here: Option for Phase 3 if trace-based generation is preferred.
-
-4. **Reddit r/Playwright: "Turn Playwright scripts into polished product demo videos"** (2026)  
-   → Community consensus: Playwright recording with click annotations + chapters is the modern standard.  
-   → Applied here: `show: { actions }` annotations in Phase 2.
-
-### Decision Rationale
-
-- **Start with Approach A (Playwright `recordVideo`)** — reuses existing Playwright patterns in `bin/capture-admin-screenshots.js` and `bin/playwright-capture-screenshots.js`. Zero new dependencies. Immediate working output.
-- **Graduate to Approach B (TTS narration)** — once task scripts are stable and the output quality needs a polish boost.
-- **Do NOT use traditional screen recording** — the plugin has ~830 tools and frequent UI changes. Manual re-recording is unsustainable.
+**Technology stack:** Docker Compose → WordPress 6.9 → Playwright Library API (`recordVideo` + `page.screencast` in v1.59) → OpenAI TTS → FFmpeg → `.mp4` output.
 
 ---
 
-## Existing Infrastructure Audit
+## Industry Research & Best Practices (2024–2026)
 
-### What We Already Have (That the Video Pipeline Reuses)
+### Key References Applied to This Plan
 
-```
-# Docker
-docker-compose.yml          → WordPress 6.9 + MySQL 8.0 + WP-CLI (profiles: tools)
-docker/README.md            → Docker docs
-docker/setup.sh             → Laravel/Craft env setup (not used for WP videos)
+| Source | Key Insight | Applied In |
+|--------|------------|------------|
+| **PurpleOwl — "We Automated Our Product Walkthrough Video"** (Mar 2026) | Narration script as single source of truth; `durations.json` timing manifest; ElevenLabs ID passthrough for voice consistency; FFmpeg concat with silence gaps; `-shortest` safety net | Phase 3 (narration pipeline architecture) |
+| **playwright-recast (npm)** — DEV.to (Mar 2026) | Lazy/immutable pipeline API; `speedUp(duringIdle)` for dead time; `hideSteps()` to skip login; multi-language from one trace | Phase 3 (TTS generation design), Phase 4 (speed controls) |
+| **Justin Abrahms — "Generating Demo Videos with Playwright"** (Feb 2026) | CSS-injected fake cursor for headless; `page.setContent()` title cards; FFmpeg background music with audio ducking | Phase 4 (cursor, intro/outro cards, background music) |
+| **Playwright v1.59 `page.screencast` API** (May 2026) | `showActions()` for automatic interaction annotations; `showChapter()` for segment markers; `showOverlay()` for HTML overlays; `onFrame` for real-time streaming; agentic "video receipts" | Phase 4 (visual polish), Phase 5 (CI integration) |
+| **Playwright Official Docs — Videos** | `video: 'retain-on-failure'` for CI (never `'on'`); `recordVideo` requires `context.close()`; 640×480 reduces file size ~60% | Phase 5 (CI config) |
+| **BrowserStack — "15 Playwright Best Practices 2026"** | `data-testid` attributes for selector stability; role-based locators over CSS; no hardcoded waits | Phase 0 (selector hardening) |
 
-# Playwright (library API — standalone scripts)
-bin/capture-admin-screenshots.js     → Captures 80+ admin page screenshots
-bin/playwright-capture-screenshots.js → Drives chat UI, captures 12 chat screenshots
+### What the Industry Has Converged On
 
-# Playwright (@playwright/test API — test framework)
-tests/qa/playwright/
-├── package.json            → @playwright/test ^1.60.0
-├── playwright.config.ts    → Video: 'off' (needs toggling for video capture)
-├── fixtures/wp-admin.ts    → WPAdmin class (login, nonce, REST helpers)
-├── utils/wp-helpers.ts     → mcpApiRequest, listAssistants, listTools, etc.
-└── tests/
-    ├── smoke.spec.ts       → 6 critical-path smoke tests
-    ├── admin.spec.ts       → Admin page tests
-    └── auth.spec.ts        → Authentication tests
+1. **Narration-first workflow.** Write the spoken script first. Everything else — browser actions, TTS, timing — derives from it. (PurpleOwl, playwright-recast)
+2. **Playwright as the recording engine.** `recordVideo` for full-session captures; `page.screencast` (v1.59+) for focused recordings with annotations. No one uses OBS/screen recorders for this anymore.
+3. **FFmpeg as the post-production layer.** WebM → H.264 MP4 conversion, audio concatenation, video+audio mux, background music ducking. Universal tool across all examples.
+4. **TTS over human voiceover.** ElevenLabs for highest quality (paid); OpenAI TTS for simplicity (same API key); Edge TTS for free fallback.
+5. **`data-testid` is non-negotiable.** Every article, every guide, every Reddit thread converges on this: stable selectors demand dedicated test attributes in the UI. Multi-selector fallback patterns are a stopgap, not a strategy.
+6. **CI as the execution environment.** Videos are build artifacts. They're regenerated on release, never manually recorded. GitHub Actions is the standard.
 
-# WP-CLI Setup (bash)
-bin/capture-chat-screenshots.sh     → WP-CLI: install WP, activate plugin,
-                                       configure AI provider, create test assistant & pages
+### FFmpeg Encoding Reference
 
-# Output directories
-docs/screenshots/admin/     → Admin screenshots (63 captured)
-docs/screenshots/chat/      → Chat screenshots (12 captured)
-docs/screenshots/dashboard/ → Pro dashboard screenshots
-docs/screenshots/frontend/  → Frontend screenshots
-docs/screenshots/tools/     → Tool screenshots
-docs/screenshots/integrations/ → Integration screenshots
-
-# Docs
-docs/features/README.md     → Feature guide index
-docs/screenshots/INDEX.md   → Screenshot index (66/71 captured)
-docs/videos/                → **NEW** — video output directory (created by this plan)
-```
-
-### Key Reusable Components
-
-| Component | File | What We Reuse |
-|---|---|---|
-| Docker WP env | `docker-compose.yml` | `docker compose up -d` → ready in ~30s |
-| WP-CLI scripting | Pattern from `capture-chat-screenshots.sh` | Install WP, activate plugin, set options, create posts |
-| Playwright login | `capture-admin-screenshots.js` lines 30–38 | `login(page)` function |
-| Playwright `ss()` helper | `capture-admin-screenshots.js` lines 40–52 | `goto + waitForTimeout + screenshot` — adapt to video |
-| WPAdmin fixture | `tests/qa/playwright/fixtures/wp-admin.ts` | `login()`, `goToAdminPage()`, `getRestNonce()` |
-| REST helpers | `tests/qa/playwright/utils/wp-helpers.ts` | `listAssistants()`, `listTools()`, `executeTool()` |
+| Use Case | Command | Notes |
+|----------|---------|-------|
+| **Silent demo (default)** | `-c:v libx264 -preset fast -crf 28 -an` | ~2–5 MB/min at 1080p |
+| **Narrated demo** | `-c:v libx264 -preset fast -crf 28 -c:a aac -b:a 192k` | AAC 192kbps for clear voice |
+| **CI draft** | `-c:v libx264 -preset ultrafast -crf 35` | 5× faster, larger files; discard after review |
+| **Production quality** | `-c:v libx264 -preset medium -crf 23 -c:a aac -b:a 256k` | For public-facing videos |
+| **Web streaming** | Add `-movflags +faststart` | Enables progressive download |
 
 ---
 
@@ -133,51 +82,83 @@ docs/videos/                → **NEW** — video output directory (created by t
 
 ### Phase 1–2: Playwright Library API (standalone scripts)
 
-**Decision:** Build video scripts as standalone Node.js scripts using `require('playwright')` (library API), following the exact pattern of `bin/capture-admin-screenshots.js`.
+**Decision:** Build video scripts as standalone Node.js scripts using `require('playwright')` (library API).
 
 **Why not `@playwright/test`?**
 - `@playwright/test` has `video: 'on'` in config, but it's per-test and requires the test runner.
-- Standalone scripts give us full control over when recording starts/stops, viewport size, and annotations.
-- Consistent with the existing `bin/*.js` screenshot scripts.
-- Simpler: one `node bin/capture-demo-video-assistant.js` command.
+- Standalone scripts give full control over when recording starts/stops, viewport size, and annotations.
+- Consistent with existing `bin/*.js` screenshot scripts.
+- One command: `node bin/capture-demo-video-assistant.js`
 
-**However:** The `WPAdmin` class and `wp-helpers.ts` utilities from the E2E suite will be **ported to CommonJS** versions in `bin/video-helpers/` for reuse.
+**Why not `playwright-recast` (npm library)?**
+- Adds an external dependency. Our pipeline is already built on the Playwright library API.
+- `playwright-recast` is v0.1.0 (as of Mar 2026) — too immature for production dependency.
+- We can adopt its design patterns (lazy pipeline, speed controls, multi-language branching) in our own code.
 
-### Phase 3: Optional TTS narration layer
+### Phase 3: Narration Pipeline Architecture
 
-**Decision:** Add a separate `narration/` directory with `.txt` scripts per video. A `bin/generate-narration-audio.js` script converts text to MP3 via ElevenLabs/OpenAI TTS. A `bin/merge-video-audio.js` script uses FFmpeg to combine silent video + narration audio.
-
-### Architecture Diagram
+Based directly on the PurpleOwl pattern, adapted for our WordPress environment:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                  bin/capture-demo-videos.sh               │
-│  Orchestrator: docker up → WP-CLI setup → run all scripts │
-└──────────┬──────────────────────────────────┬────────────┘
-           │                                  │
-    ┌──────▼──────┐                   ┌───────▼───────┐
-    │  WP-CLI     │                   │  Playwright    │
-    │  setup      │                   │  video scripts │
-    │             │                   │                │
-    │ • install WP│                   │ • login        │
-    │ • activate  │                   │ • navigate     │
-    │ • configure │                   │ • interact     │
-    │ • create    │                   │ • recordVideo  │
-    │   test data │                   │ • close context│
-    └─────────────┘                   └───────┬───────┘
-                                             │
-                                      ┌──────▼──────┐
-                                      │  Output:     │
-                                      │  .webm files │
-                                      └──────┬──────┘
-                                             │
-                                    (Phase 3: FFmpeg)
-                                             │
-                                      ┌──────▼──────┐
-                                      │  Final .mp4  │
-                                      │  + narration │
-                                      └─────────────┘
+narration/<video-name>.txt          ← Single source of truth
+        │
+        ▼
+bin/generate-narration-audio.js     ← OpenAI TTS → MP3 per segment
+        │                               + durations.json manifest
+        ▼
+docs/videos/narration/audio/<name>/ ← seg-0.mp3, seg-1.mp3, ...
+        │                               durations.json
+        ▼
+bin/merge-demo-video.js             ← FFmpeg: concat audio + silence
+        │                               → mux with silent .webm
+        ▼
+docs/videos/base/<name>.mp4         ← Final narrated video
 ```
+
+**Key design decisions:**
+- **OpenAI TTS as primary provider.** Same API key as the plugin's AI provider. Simpler than adding an ElevenLabs dependency.
+- **One narration `.txt` file per video.** Line = spoken segment. Blank line = pause. `#` comments ignored.
+- **`durations.json` as timing bridge.** Generated by TTS script. Consumed by merge script. Also consumable by future video scripts for action-timing sync.
+- **Silence gaps between segments:** Configurable via `GAP_MS` env var (default 500 ms).
+
+### Phase 4: Visual Polish Layer
+
+Using Playwright v1.59's `page.screencast` API where available, falling back to `page.evaluate()` DOM injection:
+
+| Feature | v1.59 API | Fallback | Applied To |
+|---------|-----------|----------|------------|
+| Action annotations | `page.screencast.showActions()` | CSS overlay via `page.evaluate()` | All interaction steps |
+| Chapter markers | `page.screencast.showChapter()` | `showOverlay()` with HTML | Video section transitions |
+| Mouse cursor | N/A (headless) | CSS circle + animation injection | All videos |
+| Intro/outro cards | `page.screencast.showOverlay()` | `page.setContent()` | Start/end of each video |
+
+---
+
+## Current State Assessment
+
+### What's Built (Commit `9776d378e`)
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Orchestrator** `capture-demo-videos.sh` | ✅ Complete | Docker → WP-CLI → dispatch → FFmpeg optimize |
+| **Video helpers** (`wp-admin.js`, `wp-api.js`, `video-utils.js`) | ✅ Complete | CommonJS ports of E2E test fixtures |
+| **Base video scripts** (7 scripts) | ✅ Complete | assistant, provider, chat, chat-tools, guest, tools-manager, profession |
+| **Pro video script** (1 script, 8 tasks) | ⚠️ Partial | Navigates pages but no interactions (bare `page.goto` + scroll) |
+| **Narration merge** `merge-demo-video.js` | ✅ Complete | FFmpeg audio concat + video mux with `durations.json` |
+| **Narration text** | ⚠️ 1 of 15 | Only `add-assistant-tools.txt` exists |
+| **TTS generation** `generate-narration-audio.js` | ❌ Missing | Referenced by merge script but never built |
+| **CI/CD workflow** `.github/workflows/demo-videos.yml` | ❌ Missing | Planned but not implemented |
+| **`data-testid` attributes in plugin UI** | ❌ Missing | Scripts rely on fragile multi-selector fallbacks |
+| **Intro/outro cards** | ❌ Missing | No title cards or outro screens |
+| **Mouse cursor visualization** | ❌ Missing | Headless captures have invisible cursor |
+| **Background music** | ❌ Missing | No ambient audio support |
+
+### Critical Gaps
+
+1. **No TTS generation script.** `merge-demo-video.js` expects `durations.json` and audio segments that don't exist. The narration pipeline is scaffolded but non-functional.
+2. **Selector fragility.** Every script uses `tryClick(page, [5+ selectors])` fallback patterns. Industry consensus is `data-testid` attributes in the UI. Without them, every UI change breaks videos.
+3. **Pro videos show no interactions.** Just page loads and scrolls. No clicking, typing, or feature demonstration.
+4. **No visual polish.** Silent, cursorless, annotation-free raw captures. Not suitable for public-facing marketing.
 
 ---
 
@@ -185,720 +166,807 @@ docs/videos/                → **NEW** — video output directory (created by t
 
 ### Phase 1: Core Base Plugin Tasks (7 videos)
 
-These are the most important user-facing tasks. Each video is **60–120 seconds**, self-contained, and shows one complete user story.
-
-| # | Task | Video File | User Story | Key Interactions |
-|---|---|---|---|---|
-| 1 | **Add Assistant & Assign Tools** | `add-assistant-tools.mp4` | As a site admin, I want to create an AI assistant and assign tools so it can help my users | Navigate Assistants CPT → click Add New → enter title/system prompt → select model → open Tools tab → search/enable tools → publish → verify on frontend |
-| 2 | **Configure AI Provider** | `configure-ai-provider.mp4` | As a site admin, I want to connect OpenAI/Gemini/Ollama so the plugin can generate responses | Settings → AI Providers tab → enter API key → select default model → test connection → save |
-| 3 | **Chat Conversation** | `chat-conversation.mp4` | As a visitor, I want to chat with an AI assistant and see streaming responses | Frontend page with `[mcp_ai_chat]` shortcode → type message → send → see streaming response → ask follow-up → see context awareness |
-| 4 | **Chat with Tool Execution** | `chat-tool-execution.mp4` | As a user, I want the AI to use tools to fetch real data from my site | Chat → ask "search my site for recent posts" → see tool execution indicator → see results from wp_post_search tool |
-| 5 | **Guest Mode Chat** | `guest-mode-chat.mp4` | As an anonymous visitor, I want to chat without logging in | Incognito window → guest-enabled chat page → token generation → message exchange → history in localStorage |
-| 6 | **Manage Tools & Presets** | `manage-tools-presets.mp4` | As a site admin, I want to enable/disable specific tools for different assistants | Tools Manager page → browse categories → toggle tools → create preset → assign preset to assistant |
-| 7 | **Create Profession Template** | `create-profession.mp4` | As a site admin, I want to create a profession template that other admins can use | Add New Profession → name/description → system prompt template → assigned tool preset → publish → see in template grid |
+| # | Video File | User Story | Key Interactions | Duration |
+|---|-----------|------------|-----------------|----------|
+| 1 | `add-assistant-tools.mp4` | Create an AI assistant and assign tools | Navigate CPT → Add New → title/system prompt/model → Tools tab → search/enable tools → Publish → verify | 90–120s |
+| 2 | `configure-ai-provider.mp4` | Connect OpenAI/Gemini/Ollama | Settings → Providers tab → enter API key → select default model → test connection → save | 60–90s |
+| 3 | `chat-conversation.mp4` | Chat with streaming responses | Frontend → type message → send → streaming response → follow-up → context awareness | 90–120s |
+| 4 | `chat-tool-execution.mp4` | AI uses tools to fetch real data | Chat → "search my site for posts" → tool indicator → results from wp_post_search | 90–120s |
+| 5 | `guest-mode-chat.mp4` | Anonymous visitor chat | Incognito → guest page → token generation → message exchange → history in localStorage | 90–120s |
+| 6 | `manage-tools-presets.mp4` | Enable/disable tools, create presets | Tools Manager → browse categories → search → toggle tools → create preset → assign | 90–120s |
+| 7 | `create-profession.mp4` | Create a profession template | Add New → name/description → system prompt template → assigned preset → publish → grid view | 60–90s |
 
 ### Phase 2: Pro Plugin Tasks (8 videos)
 
-| # | Task | Video File | User Story |
-|---|---|---|---|
-| 8 | **Pro Dashboard Overview** | `pro-dashboard.mp4` | As a Pro user, I want to see analytics, monitoring, and usage stats at a glance |
-| 9 | **Multi-Agent Orchestration** | `orchestration-workflow.mp4` | As a developer, I want to chain multiple AI agents for complex workflows |
-| 10 | **Run Security Audit** | `security-audit.mp4` | As a security admin, I want to scan my site and see actionable findings |
-| 11 | **Site Creator (Template → Deploy)** | `site-creator.mp4` | As a developer, I want to generate a complete site from a template |
-| 12 | **Federation / Mesh Setup** | `federation-setup.mp4` | As a network admin, I want to connect remote sites for cross-site tool access |
-| 13 | **Schedule Manager** | `schedule-manager.mp4` | As an admin, I want to schedule recurring AI tasks |
-| 14 | **Workflow Builder** | `workflow-builder.mp4` | As a power user, I want to visually build multi-step AI pipelines |
-| 15 | **Blueprint System** | `blueprints.mp4` | As a developer, I want to export/import complete assistant configurations |
+| # | Video File | User Story | Key Interactions | Duration |
+|---|-----------|------------|-----------------|----------|
+| 8 | `pro-dashboard.mp4` | Analytics, monitoring, usage stats | Dashboard → scan metrics → usage charts → quick actions | 60–90s |
+| 9 | `orchestration-workflow.mp4` | Chain multiple AI agents | Orchestration page → create workflow → add agents → define triggers → test run | 90–120s |
+| 10 | `security-audit.mp4` | Scan site, see findings | Audits page → run scan → review findings → apply fixes | 90–120s |
+| 11 | `site-creator.mp4` | Generate site from template | Site Creator → select template → configure options → deploy → preview | 90–120s |
+| 12 | `federation-setup.mp4` | Connect remote sites | Mesh settings → add remote → authenticate → verify cross-site tools | 60–90s |
+| 13 | `schedule-manager.mp4` | Schedule recurring AI tasks | Schedule Manager → create schedule → set recurrence → assign agent → activate | 60–90s |
+| 14 | `workflow-builder.mp4` | Visually build AI pipelines | Workflow Builder → drag nodes → connect steps → configure params → save | 90–120s |
+| 15 | `blueprints.mp4` | Export/import assistant configs | Blueprints → export assistant → download JSON → import on another site → verify | 60–90s |
 
-### Phase 3: Narration + Polish (all 15 videos)
+### Stretch Goals (Post-Phase 5)
 
-Add AI voiceover narration to all Phase 1–2 videos.
-
-### Stretch Goals (Post-Phase 3)
-
-- **Mobile-responsive chat** (375×667 viewport)
-- **Error handling** (disconnect, invalid API key, rate limiting)
-- **File upload** (attach PDF/image to chat)
-- **Elementor widget integration** (requires Elementor installed in Docker)
-- **WooCommerce tools demo** (requires WooCommerce installed)
-- **REST API authentication flow** (nonce, bearer token, guest token)
+- Mobile-responsive viewport (375×667)
+- Error handling scenarios (invalid API key, rate limiting, disconnect)
+- File upload demonstration (PDF/image in chat)
+- Elementor widget integration (requires Elementor in Docker)
+- WooCommerce tools demo (requires WooCommerce)
+- REST API authentication flow (nonce, bearer, guest token)
+- Multi-language variants (one narration → multiple TTS languages)
 
 ---
 
 ## File Structure & Deliverables
 
 ```
-# ── New Files Created by This Plan ──
-
-docs/videos/
-├── IMPLEMENTATION_PLAN.md          ← THIS FILE
-├── README.md                       ← Index of all videos, how to regenerate, quick start
-├── CATALOG.md                      ← Video catalog with descriptions, durations, status
-├── base/                           ← Phase 1 output
-│   ├── add-assistant-tools.mp4
-│   ├── configure-ai-provider.mp4
-│   ├── chat-conversation.mp4
-│   ├── chat-tool-execution.mp4
-│   ├── guest-mode-chat.mp4
-│   ├── manage-tools-presets.mp4
-│   └── create-profession.mp4
-├── pro/                            ← Phase 2 output
-│   ├── pro-dashboard.mp4
-│   ├── orchestration-workflow.mp4
-│   ├── security-audit.mp4
-│   ├── site-creator.mp4
-│   ├── federation-setup.mp4
-│   ├── schedule-manager.mp4
-│   ├── workflow-builder.mp4
-│   └── blueprints.mp4
-└── narration/                      ← Phase 3
-    ├── add-assistant-tools.txt
-    ├── configure-ai-provider.txt
-    ├── chat-conversation.txt
-    └── ...
+# ── Existing (committed) ──
 
 bin/
-├── capture-demo-videos.sh                  ← Orchestrator: docker up → WP-CLI setup → run all
-├── capture-demo-video-assistant.js         ← Video #1: Add Assistant & Tools
-├── capture-demo-video-provider.js          ← Video #2: Configure AI Provider
-├── capture-demo-video-chat.js              ← Video #3: Chat Conversation
-├── capture-demo-video-chat-tools.js        ← Video #4: Chat with Tool Execution
-├── capture-demo-video-guest.js             ← Video #5: Guest Mode Chat
-├── capture-demo-video-tools-manager.js     ← Video #6: Manage Tools & Presets
-├── capture-demo-video-profession.js        ← Video #7: Create Profession Template
-├── capture-demo-video-pro.js               ← Video #8–15: Pro plugin tasks
-├── generate-narration-audio.js             ← Phase 3: Text → TTS MP3s
-├── merge-demo-video.js                     ← Phase 3: WebM + MP3s → polished MP4
-└── video-helpers/                          ← Shared helpers (ported from E2E suite)
-    ├── wp-admin.js                         ← CommonJS port of fixtures/wp-admin.ts
-    ├── wp-api.js                           ← CommonJS port of utils/wp-helpers.ts
-    └── video-utils.js                      ← recordVideo config, FFmpeg wrappers, timing helpers
+├── capture-demo-videos.sh                  ✅ Orchestrator
+├── capture-demo-video-assistant.js         ✅ Video #1
+├── capture-demo-video-provider.js          ✅ Video #2
+├── capture-demo-video-chat.js              ✅ Video #3
+├── capture-demo-video-chat-tools.js        ✅ Video #4
+├── capture-demo-video-guest.js             ✅ Video #5
+├── capture-demo-video-tools-manager.js     ✅ Video #6
+├── capture-demo-video-profession.js        ✅ Video #7
+├── capture-demo-video-pro.js               ⚠️  Video #8–15 (page loads only)
+├── merge-demo-video.js                     ✅ Audio-video merger
+└── video-helpers/
+    ├── wp-admin.js                         ✅ Login, navigation, REST
+    ├── wp-api.js                           ✅ MCP API helpers
+    └── video-utils.js                      ✅ Config, context, FFmpeg
+
+docs/videos/
+├── IMPLEMENTATION_PLAN.md                  ✅ This file
+├── README.md                               ✅ Quick start guide
+├── narration/
+│   └── add-assistant-tools.txt             ⚠️  Only 1 of 15
+├── base/                                   📁 Output (gitignored)
+└── pro/                                    📁 Output (gitignored)
+
+# ── To Be Created ──
+
+bin/
+├── generate-narration-audio.js             ❌ Phase 3: Text → TTS MP3s + durations.json
+├── video-helpers/
+│   ├── narration-utils.js                  ❌ Phase 3: Shared narration helpers
+│   ├── cursor-utils.js                     ❌ Phase 4: Fake cursor injection
+│   ├── annotation-utils.js                 ❌ Phase 4: Screencast/chapter helpers
+│   └── card-utils.js                       ❌ Phase 4: Intro/outro card templates
+└── utils/
+    └── video-selectors.js                  ❌ Phase 0: Centralized selector registry
+
+docs/videos/
+├── CATALOG.md                              ❌ Phase 3: Video catalog with status, duration, links
+└── narration/
+    ├── configure-ai-provider.txt           ❌
+    ├── chat-conversation.txt               ❌
+    ├── chat-tool-execution.txt             ❌
+    ├── guest-mode-chat.txt                 ❌
+    ├── manage-tools-presets.txt            ❌
+    ├── create-profession.txt               ❌
+    ├── pro-dashboard.txt                   ❌
+    ├── orchestration-workflow.txt          ❌
+    ├── security-audit.txt                  ❌
+    ├── site-creator.txt                    ❌
+    ├── federation-setup.txt                ❌
+    ├── schedule-manager.txt                ❌
+    ├── workflow-builder.txt                ❌
+    └── blueprints.txt                      ❌
+
+.github/workflows/
+└── demo-videos.yml                         ❌ Phase 5: CI pipeline on release
 ```
 
 ---
 
 ## Implementation Phases
 
-### Phase 1: Foundation + Core Scripts (Week 1)
+### Phase 0: Hardening — Foundation & Selector Stability (Week 1)
 
-**Goal:** One-command pipeline that produces silent `.webm` videos for all 7 base plugin tasks.
+**Goal:** Make the existing pipeline robust enough that UI changes don't break videos. This is a prerequisite for all subsequent phases.
 
-#### Step 1.1: Create shared video helpers
+#### Step 0.1: Audit plugin UI for `data-testid` coverage
 
-**File:** `bin/video-helpers/wp-admin.js`  
-**Contents:** CommonJS port of `WPAdmin` class from `tests/qa/playwright/fixtures/wp-admin.ts`.
-
-```js
-// bin/video-helpers/wp-admin.js
-const { chromium } = require('playwright');
-const path = require('path');
-const fs = require('fs');
-
-class WPAdmin {
-  constructor(page) { this.page = page; }
-
-  async login(username = process.env.WP_ADMIN_USER || 'admin',
-              password = process.env.WP_ADMIN_PASS || 'password') {
-    await this.page.goto('/wp-admin', { waitUntil: 'networkidle' });
-    if (await this.page.$('#user_login')) {
-      await this.page.fill('#user_login', username);
-      await this.page.fill('#user_pass', password);
-      await this.page.click('#wp-submit');
-      await this.page.waitForSelector('#wpadminbar', { timeout: 15000 });
-    }
-  }
-
-  async goToAdminPage(slug) {
-    await this.page.goto(`/wp-admin/admin.php?page=${slug}`, { waitUntil: 'networkidle' });
-  }
-
-  // ... (port remaining methods from TypeScript fixture)
-}
-
-module.exports = { WPAdmin };
-```
-
-**File:** `bin/video-helpers/video-utils.js`  
-**Contents:** Shared configuration, context factory, FFmpeg optimization wrapper.
-
-```js
-const VIDEO_CONFIG = {
-  viewport: { width: 1920, height: 1080 },
-  recordVideo: {
-    dir: path.resolve(__dirname, '..', '..', 'docs', 'videos', 'base'),
-    size: { width: 1920, height: 1080 },
-  },
-  baseUrl: process.env.BASE_URL || 'http://localhost:8000',
-};
-
-async function createVideoContext(browser, outputDir) {
-  return browser.newContext({
-    viewport: VIDEO_CONFIG.viewport,
-    recordVideo: {
-      dir: outputDir,
-      size: VIDEO_CONFIG.size,
-    },
-  });
-}
-
-async function optimizeVideo(inputPath, outputPath) {
-  const { execSync } = require('child_process');
-  execSync(
-    `ffmpeg -y -i "${inputPath}" -c:v libx264 -preset fast -crf 28 -c:a aac -b:a 128k "${outputPath}"`,
-    { stdio: 'inherit' }
-  );
-}
-
-module.exports = { VIDEO_CONFIG, createVideoContext, optimizeVideo };
-```
-
-#### Step 1.2: Build the orchestrator script
-
-**File:** `bin/capture-demo-videos.sh`
-
-Following the proven pattern from `bin/capture-chat-screenshots.sh`:
+Run each video script and catalog every selector that fails. Produce a list of UI elements that need `data-testid` attributes:
 
 ```bash
-#!/bin/bash
-set -euo pipefail
-
-# ── Configuration ──
-BASE_URL="${BASE_URL:-http://localhost:8000}"
-ADMIN_USER="${WP_ADMIN_USER:-admin}"
-ADMIN_PASS="${WP_ADMIN_PASS:-password}"
-VIDEO_DIR="docs/videos/base"
-
-# ── Colour helpers ──
-GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
-info()  { echo -e "${GREEN}[VIDEO]${NC} $1"; }
-warn()  { echo -e "${YELLOW}[VIDEO]${NC} $1"; }
-err()   { echo -e "${RED}[VIDEO]${NC} $1"; }
-
-# ── Prerequisites check ──
-check_prereqs() {
-  info "Checking prerequisites..."
-
-  if ! docker compose ps 2>/dev/null | grep -q "Up"; then
-    info "Starting Docker environment..."
-    docker compose up -d
-    info "Waiting for WordPress to be ready..."
-    for i in $(seq 1 30); do
-      if curl -s -o /dev/null -w "%{http_code}" "$BASE_URL" 2>/dev/null | grep -q "200\|302"; then
-        break
-      fi
-      sleep 2
-    done
-  fi
-
-  if ! curl -s -o /dev/null -w "%{http_code}" "$BASE_URL" | grep -q "200\|302"; then
-    err "WordPress is not responding at $BASE_URL"
-    exit 1
-  fi
-
-  info "WordPress is ready at $BASE_URL"
-}
-
-# ── WordPress setup via WP-CLI ──
-setup_wordpress() {
-  info "Setting up WordPress..."
-
-  INSTALL_STATUS=$(docker compose run --rm wp-cli core is-installed 2>&1 || echo "not installed")
-
-  if echo "$INSTALL_STATUS" | grep -q "not installed"; then
-    info "Installing WordPress..."
-    docker compose run --rm wp-cli core install \
-      --url="$BASE_URL" \
-      --title="NV oOS Demo" \
-      --admin_user="$ADMIN_USER" \
-      --admin_password="$ADMIN_PASS" \
-      --admin_email="demo@example.com" \
-      --skip-email
-  fi
-
-  info "Activating plugin..."
-  docker compose run --rm wp-cli plugin activate mcp-ai-wpoos 2>&1 || true
-
-  # Activate pro if available
-  if [ -d "addons/pro" ]; then
-    docker compose run --rm wp-cli plugin activate mcp-ai-wpoos-pro 2>&1 || true
-  fi
-
-  # Configure AI provider if API key is set
-  if [ -n "${OPENAI_API_KEY:-}" ]; then
-    info "Configuring OpenAI..."
-    docker compose run --rm wp-cli option update wp_mcp_ai_openai_api_key "$OPENAI_API_KEY"
-    docker compose run --rm wp-cli option update wp_mcp_ai_default_provider "openai"
-    docker compose run --rm wp-cli option update wp_mcp_ai_default_model "gpt-4o"
-  elif [ -n "${GEMINI_API_KEY:-}" ]; then
-    info "Configuring Gemini..."
-    docker compose run --rm wp-cli option update wp_mcp_ai_gemini_api_key "$GEMINI_API_KEY"
-    docker compose run --rm wp-cli option update wp_mcp_ai_default_provider "gemini"
-  fi
-
-  info "WordPress setup complete."
-}
-
-# ── Create test data ──
-create_test_data() {
-  info "Creating test data..."
-
-  # Create a demo page with chat shortcode
-  PAGE_ID=$(docker compose run --rm wp-cli post create \
-    --post_type=page --post_title="AI Chat Demo" --post_status=publish \
-    --post_content='[mcp_ai_chat allow_guests="true"]' \
-    --porcelain 2>&1 | grep -o '[0-9]*' | head -1 || echo "")
-
-  if [ -n "$PAGE_ID" ]; then
-    info "Created chat demo page (ID: $PAGE_ID)"
-    export PAGE_ID
-  fi
-
-  # Create a test post for search tools to find
-  docker compose run --rm wp-cli post create \
-    --post_type=post --post_title="Sample Blog Post" --post_status=publish \
-    --post_content="This is a sample post for testing the AI search tools." 2>&1 || true
-}
-
-# ── Run video capture scripts ──
-capture_base_videos() {
-  mkdir -p "$VIDEO_DIR"
-
-  info "Capturing Base Plugin videos..."
-
-  node bin/capture-demo-video-assistant.js && info "✅ add-assistant-tools.mp4" || warn "⚠️  add-assistant-tools.mp4 FAILED"
-  node bin/capture-demo-video-provider.js  && info "✅ configure-ai-provider.mp4" || warn "⚠️  configure-ai-provider.mp4 FAILED"
-  node bin/capture-demo-video-chat.js      && info "✅ chat-conversation.mp4" || warn "⚠️  chat-conversation.mp4 FAILED"
-  node bin/capture-demo-video-chat-tools.js && info "✅ chat-tool-execution.mp4" || warn "⚠️  chat-tool-execution.mp4 FAILED"
-  node bin/capture-demo-video-guest.js     && info "✅ guest-mode-chat.mp4" || warn "⚠️  guest-mode-chat.mp4 FAILED"
-  node bin/capture-demo-video-tools-manager.js && info "✅ manage-tools-presets.mp4" || warn "⚠️  manage-tools-presets.mp4 FAILED"
-  node bin/capture-demo-video-profession.js && info "✅ create-profession.mp4" || warn "⚠️  create-profession.mp4 FAILED"
-}
-
-capture_pro_videos() {
-  if [ ! -d "addons/pro" ]; then
-    warn "Pro addon not found — skipping Pro videos."
-    return
-  fi
-
-  mkdir -p "docs/videos/pro"
-
-  info "Capturing Pro Plugin videos..."
-  node bin/capture-demo-video-pro.js && info "✅ Pro videos captured" || warn "⚠️  Pro videos FAILED"
-}
-
-# ── Optimize output ──
-optimize_videos() {
-  if command -v ffmpeg &> /dev/null; then
-    info "Optimizing videos with FFmpeg..."
-    find docs/videos -name "*.webm" -exec sh -c '
-      for f; do
-        out="${f%.webm}.mp4"
-        ffmpeg -y -i "$f" -c:v libx264 -preset fast -crf 28 -c:a aac -b:a 128k "$out" 2>/dev/null
-        echo "  Optimized: $out"
-      done
-    ' _ {} +
-  else
-    warn "FFmpeg not found — videos remain as .webm"
-  fi
-}
-
-# ── Main ──
-main() {
-  echo ""
-  info "═══════════════════════════════════════════"
-  info "  NV oOS Demo Video Pipeline"
-  info "═══════════════════════════════════════════"
-  echo ""
-
-  check_prereqs
-  setup_wordpress
-  create_test_data
-
-  echo ""
-  info "Starting video capture..."
-  echo ""
-
-  capture_base_videos
-
-  if [ "${CAPTURE_PRO:-true}" = "true" ]; then
-    capture_pro_videos
-  fi
-
-  optimize_videos
-
-  echo ""
-  info "═══════════════════════════════════════════"
-  info "  Pipeline Complete!"
-  info "  Videos: docs/videos/base/*.mp4"
-  [ -d "docs/videos/pro" ] && info "  Pro:     docs/videos/pro/*.mp4"
-  info "═══════════════════════════════════════════"
-  echo ""
-}
-
-main "$@"
+# Run all scripts in dry-run/verbose mode, collecting selector misses
+node bin/capture-demo-video-assistant.js --dry-run --verbose 2>&1 | grep "⚠️.*not found"
 ```
 
-#### Step 1.3: Build the first video script (Add Assistant & Tools)
+**Output:** `docs/videos/data-testid-gap-report.md` — a prioritized list of UI components that need test IDs.
 
-**File:** `bin/capture-demo-video-assistant.js`
+#### Step 0.2: Add `data-testid` attributes to plugin UI
+
+For every element the video scripts interact with, add a `data-testid` attribute to the PHP/JSX template:
+
+```php
+<!-- Before -->
+<button class="button button-primary" id="publish">Publish</button>
+
+<!-- After -->
+<button class="button button-primary" id="publish"
+        data-testid="publish-button">Publish</button>
+```
+
+**Priority order:** (1) Buttons/actions, (2) Input fields, (3) Navigation tabs, (4) Content areas, (5) Status indicators.
+
+**Naming convention:** `{component}-{element}` — e.g., `assistant-title-input`, `tools-search-input`, `chat-send-button`.
+
+#### Step 0.3: Create centralized selector registry
+
+**File:** `bin/utils/video-selectors.js`
+
+```js
+/**
+ * Centralized selector registry for demo video scripts.
+ *
+ * Every selector used by video scripts lives here, organized by page/feature.
+ * Scripts import named exports instead of defining inline selector arrays.
+ *
+ * When the UI changes, update the selector HERE — not in each script.
+ */
+
+const SELECTORS = {
+  // ── WordPress Admin (global) ──
+  admin: {
+    loginForm: { user: '#user_login', pass: '#user_pass', submit: '#wp-submit' },
+    adminBar: '#wpadminbar',
+    addNewButton: ['a.page-title-action', '[data-testid="add-new-button"]'],
+    publishButton: ['#publish', '[data-testid="publish-button"]'],
+  },
+
+  // ── Assistant Editor ──
+  assistant: {
+    titleInput: ['#title', '[data-testid="assistant-title-input"]'],
+    contentArea: ['#content', '[data-testid="assistant-description"]'],
+    systemPrompt: ['[data-testid="system-prompt"]', 'textarea[name*="system_prompt"]'],
+    modelSelect: ['[data-testid="model-select"]', 'select[name*="model"]'],
+    toolsTab: ['[data-testid="tools-tab"]', '.nav-tab-wrapper a[href*="tools"]'],
+    toolSearchInput: ['[data-testid="tools-search-input"]', 'input[type="search"]'],
+    toolCheckboxes: ['[data-testid="tool-toggle"]', 'input[type="checkbox"]'],
+  },
+
+  // ── Chat UI ──
+  chat: {
+    input: ['[data-testid="chat-input"]', 'textarea[placeholder*="Message"]'],
+    sendButton: ['[data-testid="send-button"]', 'button[type="submit"]'],
+    response: ['[data-testid="assistant-message"]', '.mcp-ai-message-assistant'],
+    toolIndicator: ['[data-testid="tool-execution"]', '.mcp-ai-tool-call'],
+    guestBadge: ['[data-testid="guest-badge"]', '.guest-badge'],
+  },
+
+  // ── ... per-page sections for all 15 features ──
+};
+
+module.exports = { SELECTORS };
+```
+
+#### Step 0.4: Refactor existing scripts to use centralized selectors
+
+Replace inline selector arrays in all 7 base scripts + 1 pro script with imports from `video-selectors.js`:
+
+```js
+// Before (each script duplicates this)
+const CHAT_INPUT_SELECTORS = [
+    '[data-testid="chat-input"]',
+    'textarea[placeholder*="message" i]',
+    // ... 6 more
+];
+
+// After (one import)
+const { SELECTORS } = require('../utils/video-selectors');
+// Usage: await findElement(page, SELECTORS.chat.input);
+```
+
+#### Step 0.5: Add Playwright v1.59+ detection and screencast capability flag
+
+Add a feature detection helper so scripts can use `page.screencast` when available:
+
+```js
+// video-helpers/screencast-utils.js
+function supportsScreencast(page) {
+    return typeof page.screencast !== 'undefined';
+}
+
+async function startAnnotatedRecording(page, options = {}) {
+    if (supportsScreencast(page)) {
+        await page.screencast.start({ path: options.path, size: options.size });
+        await page.screencast.showActions({ position: 'top-right', duration: 800 });
+    }
+    // Fallback: rely on recordVideo in browser context
+}
+```
+
+---
+
+### Phase 1: Silent Pipeline — Complete & Polish (Week 1–2)
+
+**Goal:** 7 base videos that are robust, reliable, and visually clear — even without narration.
+
+#### Step 1.1: Standardize script template
+
+Create a canonical script template at `bin/_video-template.js` that all scripts follow:
 
 ```js
 #!/usr/bin/env node
 /**
- * NV oOS Demo Video — Add Assistant & Assign Tools
+ * NV oOS Demo Video — {TASK NAME}
  *
- * Demonstrates:
- *   1. Navigating to AI Assistants CPT
- *   2. Creating a new assistant (title, description, system prompt, model)
- *   3. Opening the Tools tab and searching/enabling tools
- *   4. Publishing the assistant
- *   5. Verifying the assistant appears in the list
+ * User Story: {ONE SENTENCE}
+ * Duration:    {TARGET SECONDS}
  *
- * Usage:   node bin/capture-demo-video-assistant.js
- * Prereq:  docker compose up -d && bash bin/capture-demo-videos.sh (setup phase)
- * Output:  docs/videos/base/add-assistant-tools.webm
+ * Usage:   node bin/capture-demo-video-{slug}.js
+ * Prereq:  docker compose up -d
+ * Output:  docs/videos/base/{slug}.webm
  */
 
 const { chromium } = require('playwright');
-const path = require('path');
-const fs = require('fs');
 const { WPAdmin } = require('./video-helpers/wp-admin');
-
-const BASE_URL = process.env.BASE_URL || 'http://localhost:8000';
-const ADMIN_URL = `${BASE_URL}/wp-admin`;
-const OUT_DIR = path.resolve(__dirname, '..', 'docs', 'videos', 'base');
-const VIDEO_FILE = 'add-assistant-tools';
-
-fs.mkdirSync(OUT_DIR, { recursive: true });
-
-// ── Timing Constants (milliseconds) ──
-const PAUSE_SHORT  = 800;   // Brief pause after navigation
-const PAUSE_MEDIUM = 1500;  // Let user read content
-const PAUSE_LONG   = 3000;  // Wait for JS rendering / API responses
-const TYPE_DELAY   = 50;    // ms between keystrokes
+const { VIDEO_CONFIG, PAUSE } = require('./video-helpers/video-utils');
+const { SELECTORS } = require('./utils/video-selectors');
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({
-    viewport: { width: 1920, height: 1080 },
-    recordVideo: {
-      dir: OUT_DIR,
-      size: { width: 1920, height: 1080 },
-    },
-  });
-
-  const page = await context.newPage();
-  const admin = new WPAdmin(page);
-
-  try {
-    // ── Login ──
-    await admin.login();
-    await page.waitForTimeout(PAUSE_SHORT);
-
-    // ── Step 1: Navigate to Assistants list ──
-    await page.goto(`${ADMIN_URL}/edit.php?post_type=mcp_ai_assistant`, {
-      waitUntil: 'networkidle', timeout: 30000,
+    const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext({
+        viewport: VIDEO_CONFIG.viewport,
+        recordVideo: { dir: OUT_DIR, size: VIDEO_CONFIG.size },
     });
-    await page.waitForTimeout(PAUSE_MEDIUM);
+    const page = await context.newPage();
+    const admin = new WPAdmin(page);
 
-    // ── Step 2: Click "Add New" ──
-    const addNewBtn = await page.$('a.page-title-action, .wrap a[href*="post-new"]');
-    if (addNewBtn) {
-      await addNewBtn.click();
-    } else {
-      await page.goto(`${ADMIN_URL}/post-new.php?post_type=mcp_ai_assistant`, {
-        waitUntil: 'networkidle',
-      });
+    try {
+        // 1. Login
+        // 2. Navigate to feature
+        // 3. Perform interactions
+        // 4. Verify result
+        // 5. Closing shot
+    } finally {
+        await context.close();
+        await browser.close();
     }
-    await page.waitForTimeout(PAUSE_MEDIUM);
-
-    // ── Step 3: Fill assistant details ──
-    // Title
-    await page.fill('#title', 'Demo Support Assistant');
-    await page.waitForTimeout(PAUSE_SHORT);
-
-    // Description (if using classic editor)
-    const contentArea = await page.$('#content, .wp-block-post-content, [data-testid="assistant-description"]');
-    if (contentArea) {
-      await contentArea.fill('A helpful AI assistant for customer support demonstrations.');
-      await page.waitForTimeout(PAUSE_SHORT);
-    }
-
-    // ── Step 4: System Prompt (if Gutenberg meta box is visible) ──
-    const systemPromptField = await page.$(
-      '[data-testid="system-prompt"], #mcp_ai_system_prompt, textarea[name*="system_prompt"]'
-    );
-    if (systemPromptField) {
-      await systemPromptField.fill(
-        'You are a friendly customer support assistant. Answer questions clearly and concisely. ' +
-        'If you do not know the answer, say so honestly.'
-      );
-      await page.waitForTimeout(PAUSE_SHORT);
-    }
-
-    // ── Step 5: Select Model (if dropdown exists) ──
-    const modelSelect = await page.$(
-      'select[name*="model"], [data-testid="model-select"], #mcp_ai_model'
-    );
-    if (modelSelect) {
-      await modelSelect.selectOption({ label: 'GPT-4o' });
-      await page.waitForTimeout(PAUSE_SHORT);
-    }
-
-    // ── Step 6: Assign Tools ──
-    // Look for the Tools tab/panel
-    const toolsTab = await page.$(
-      '[data-testid="tools-tab"], .nav-tab-wrapper a[href*="tools"], button:has-text("Tools")'
-    );
-    if (toolsTab) {
-      await toolsTab.click();
-      await page.waitForTimeout(PAUSE_MEDIUM);
-
-      // Search for tools
-      const searchInput = await page.$(
-        'input[type="search"], input[placeholder*="search"], input[placeholder*="Search"]'
-      );
-      if (searchInput) {
-        await searchInput.fill('wp_post');
-        await page.waitForTimeout(PAUSE_MEDIUM);
-      }
-
-      // Enable some tools (checkboxes)
-      const checkboxes = await page.$$('input[type="checkbox"]:not(:checked)');
-      for (let i = 0; i < Math.min(5, checkboxes.length); i++) {
-        try {
-          await checkboxes[i].check();
-          await page.waitForTimeout(200);
-        } catch (e) { /* skip if not interactable */ }
-      }
-      await page.waitForTimeout(PAUSE_SHORT);
-    }
-
-    // ── Step 7: Publish ──
-    const publishBtn = await page.$('#publish, button.editor-post-publish-button, [data-testid="publish-button"]');
-    if (publishBtn) {
-      await publishBtn.click();
-      await page.waitForTimeout(PAUSE_MEDIUM);
-    } else {
-      // Classic editor
-      await page.click('#publish');
-      await page.waitForTimeout(PAUSE_MEDIUM);
-    }
-
-    // ── Step 8: Verify — return to list and confirm the assistant appears ──
-    await page.goto(`${ADMIN_URL}/edit.php?post_type=mcp_ai_assistant`, {
-      waitUntil: 'networkidle',
-    });
-    await page.waitForTimeout(PAUSE_LONG);
-
-    // ── End recording ──
-    console.log(`✅ Video captured: ${path.join(OUT_DIR, VIDEO_FILE + '.webm')}`);
-
-  } catch (error) {
-    console.error('❌ Error during video capture:', error.message);
-  } finally {
-    await context.close(); // ← writes the .webm file
-    await browser.close();
-  }
 })();
 ```
 
-#### Step 1.4: Build remaining base video scripts
+#### Step 1.2: Add fake cursor visualization
 
-Each follows the same pattern as Step 1.3:
+Following Justin Abrahms' pattern, inject a visible mouse cursor for headless recordings:
 
-| Script | Admin URL / Interaction Target |
-|---|---|
-| `capture-demo-video-provider.js` | `admin.php?page=wp-mcp-ai-dashboard&tab=ai_providers` |
-| `capture-demo-video-chat.js` | Frontend `/?page_id=<ID>` — send messages via chat input |
-| `capture-demo-video-chat-tools.js` | Chat page — ask "search my site for recent posts" |
-| `capture-demo-video-guest.js` | Incognito context → guest chat page |
-| `capture-demo-video-tools-manager.js` | `admin.php?page=wp-mcp-ai-tools-manager` |
-| `capture-demo-video-profession.js` | `post-new.php?post_type=mcp_ai_profession` |
+```js
+// video-helpers/cursor-utils.js
+async function injectCursor(page) {
+    await page.evaluate(() => {
+        const cursor = document.createElement('div');
+        cursor.id = '__demo_cursor';
+        cursor.style.cssText = `
+            position: fixed; pointer-events: none; z-index: 999999;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: rgba(255, 50, 50, 0.5);
+            border: 2px solid rgba(255, 50, 50, 0.8);
+            transition: left 0.15s ease-out, top 0.15s ease-out;
+        `;
+        document.body.appendChild(cursor);
+    });
+}
 
-### Phase 2: Pro Plugin Videos (Week 2)
+async function moveCursorTo(page, selector) {
+    const box = await page.locator(selector).boundingBox();
+    if (!box) return;
+    await page.evaluate(({ x, y }) => {
+        const cursor = document.getElementById('__demo_cursor');
+        if (cursor) {
+            cursor.style.left = (x + 10) + 'px';
+            cursor.style.top = (y + 10) + 'px';
+        }
+    }, { x: box.x, y: box.y });
+}
+```
 
-**Goal:** Extend the pipeline to capture 8 Pro plugin videos.
+#### Step 1.3: Verify all 7 base scripts against fresh Docker environment
 
-**Key considerations:**
-- Pro pages are JS-heavy (React-rendered). Need `waitUntil: 'networkidle'` + extra `waitForTimeout(3000)`.
-- Pro addon activation requires `addons/pro/` directory present.
-- Some Pro features depend on `JetEngine`, `WooCommerce`, `Elementor` — optional dependencies.
+Run the full pipeline from a clean state and fix any broken selectors or timing issues:
 
-**Approach:** One script `bin/capture-demo-video-pro.js` that captures all 8 Pro tasks. Each task maps to a specific admin page:
+```bash
+docker compose down -v
+bash bin/capture-demo-videos.sh
+```
+
+Each script must produce a viewable `.webm`. Failures should be graceful (warn + continue, not crash).
+
+---
+
+### Phase 2: Pro Plugin Videos — Interactions (Week 2)
+
+**Goal:** 8 Pro videos that actually demonstrate features, not just page loads.
+
+#### Step 2.1: Audit Pro pages for interactive elements
+
+For each Pro admin page, document the available interactive elements (buttons, forms, charts, toggles). Some pages may be read-only dashboards — that's fine, but document it.
+
+#### Step 2.2: Add interactions to each Pro task
+
+Update `capture-demo-video-pro.js` with `extraActions` functions for each task:
 
 ```js
 const PRO_TASKS = [
-  { file: 'pro-dashboard',           url: 'nvoos-pro-dashboard' },
-  { file: 'orchestration-workflow',  url: 'wp-mcp-ai-pro-orchestration' },
-  { file: 'security-audit',          url: 'nvoos-pro-dashboard-audits' },
-  { file: 'site-creator',            url: 'admin.php?page=wp-mcp-ai-site-creator' },
-  { file: 'federation-setup',        url: 'wp-mcp-ai-mesh-settings' },
-  { file: 'schedule-manager',        url: 'wp-mcp-ai-schedule-manager' },
-  { file: 'workflow-builder',        url: 'wp-mcp-ai-pro-workflow-builder' },
-  { file: 'blueprints',              url: 'wp-mcp-ai-blueprints' },
+    {
+        file: 'pro-dashboard',
+        label: 'Pro Dashboard Overview',
+        url: 'nvoos-pro-dashboard',
+        extraActions: async (page) => {
+            // Click between dashboard tabs
+            await page.click('[data-testid="tab-analytics"]');
+            await page.waitForTimeout(PAUSE.MEDIUM);
+            await page.click('[data-testid="tab-usage"]');
+            await page.waitForTimeout(PAUSE.MEDIUM);
+            // Hover over a chart to show tooltip
+            await page.hover('[data-testid="chart-token-usage"]');
+            await page.waitForTimeout(PAUSE.MEDIUM);
+        },
+    },
+    {
+        file: 'security-audit',
+        label: 'Run Security Audit',
+        url: 'nvoos-pro-dashboard-audits',
+        extraActions: async (page) => {
+            await page.click('[data-testid="start-audit-button"]');
+            await page.waitForTimeout(PAUSE.LONG); // wait for scan
+            await page.waitForSelector('[data-testid="audit-results"]', { timeout: 60000 });
+        },
+    },
+    // ... remaining 6 tasks
 ];
 ```
 
+#### Step 2.3: Split Pro script if individual tasks need unique setup
+
+If any Pro task requires significant setup (creating test data, configuring services), split it into its own script following the Phase 1 template pattern.
+
+---
+
 ### Phase 3: Narration Pipeline (Week 3)
 
-**Goal:** Add AI-generated voiceover narration to videos.
+**Goal:** All 15 videos narrated with AI voiceover. One command: silent `.webm` → narrated `.mp4`.
 
-#### Step 3.1: Narration script format
-
-Each video gets a `narration/<video-name>.txt` file:
-
-```text
-# add-assistant-tools.txt
-# One line = one narration segment. Blank lines = pauses.
-
-Welcome to NV oOS. In this video, we will create a new AI assistant and assign tools to it.
-
-First, navigate to AI Assistants in the WordPress admin menu. This is where all your AI assistants live.
-
-Click "Add New" to create your first assistant.
-
-Give your assistant a name. This is how you will identify it later.
-
-Write a system prompt. This defines how the AI behaves and responds to users. ...
-
-Choose a model. GPT-4o is a great default for most use cases. ...
-
-Now, let's assign tools. Open the Tools tab and search for the tools you want your assistant to use. ...
-
-Check the boxes to enable tools. Your assistant can now search posts, manage users, and more. ...
-
-Click Publish, and your assistant is ready. Let's verify it appears in the list. ...
-
-That's it. Your AI assistant with tools is ready to use.
-```
-
-#### Step 3.2: TTS audio generation
+#### Step 3.1: Build the TTS generation script
 
 **File:** `bin/generate-narration-audio.js`
 
 ```js
+#!/usr/bin/env node
 /**
- * Converts narration/*.txt files to narration/audio/*.mp3 via TTS API.
+ * NV oOS — Narration Audio Generator
  *
- * Supported providers:
- *   - ElevenLabs     (ELEVENLABS_API_KEY)
- *   - OpenAI TTS     (OPENAI_API_KEY)
+ * Converts narration/*.txt files to individual MP3 segments via OpenAI TTS.
+ * Produces a durations.json manifest for timing synchronization with merge-demo-video.js.
  *
- * Also writes narration/durations.json for timing synchronization.
+ * Usage:
+ *   node bin/generate-narration-audio.js <video-name>
+ *   node bin/generate-narration-audio.js --all
+ *   node bin/generate-narration-audio.js add-assistant-tools --force
+ *
+ * Environment:
+ *   OPENAI_API_KEY       Required. Used for TTS API calls.
+ *   TTS_VOICE            OpenAI voice: alloy, echo, fable, onyx, nova, shimmer (default: nova)
+ *   TTS_MODEL            Model: tts-1 (faster) or tts-1-hd (higher quality). Default: tts-1
+ *   GAP_MS               Silence between segments in ms (default: 500)
  */
 
-const VOICE_ID = process.env.TTS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM'; // ElevenLabs "Rachel"
-const PROVIDER = process.env.TTS_PROVIDER || 'openai'; // or 'elevenlabs'
+const fs = require('fs');
+const path = require('path');
+const OpenAI = require('openai');
 
-async function generateSegmentAudio(text, voiceId) {
-  switch (PROVIDER) {
-    case 'elevenlabs':
-      return generateElevenLabs(text, voiceId);
-    case 'openai':
-      return generateOpenAITTS(text);
-    default:
-      throw new Error(`Unknown TTS provider: ${PROVIDER}`);
-  }
+const REPO_ROOT = path.resolve(__dirname, '..');
+const NARRATION_DIR = path.join(REPO_ROOT, 'docs', 'videos', 'narration');
+const AUDIO_DIR = path.join(NARRATION_DIR, 'audio');
+const VOICE = process.env.TTS_VOICE || 'nova';
+const MODEL = process.env.TTS_MODEL || 'tts-1';
+const GAP_MS = parseInt(process.env.GAP_MS || '500', 10);
+
+if (!process.env.OPENAI_API_KEY) {
+    console.error('❌ OPENAI_API_KEY environment variable is required.');
+    process.exit(1);
+}
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+/**
+ * Parse a narration .txt file into an array of segment objects.
+ *
+ * Format:
+ *   - One line = one spoken segment.
+ *   - Blank lines are ignored (they become silence gaps in the merge step).
+ *   - Lines starting with # are comments (ignored).
+ *
+ * @param {string} filePath
+ * @returns {{ id: string, text: string }[]}
+ */
+function parseNarrationScript(filePath) {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 0 && !l.startsWith('#'));
+
+    return lines.map((text, i) => ({
+        id: `seg-${String(i).padStart(2, '0')}`,
+        text,
+    }));
+}
+
+/**
+ * Generate TTS audio for a single segment.
+ *
+ * @param {string} text
+ * @param {object} options
+ * @returns {Promise<{ buffer: Buffer, durationMs: number }>}
+ */
+async function generateSegmentAudio(text) {
+    const response = await openai.audio.speech.create({
+        model: MODEL,
+        voice: VOICE,
+        input: text,
+        response_format: 'mp3',
+    });
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    // Measure duration using mp3-duration or ffprobe fallback
+    // (simplified: OpenAI returns Content-Length; we estimate ~16 KB/s for tts-1)
+    const estimatedDurationMs = Math.round((buffer.length / 16000) * 1000);
+
+    return { buffer, durationMs: estimatedDurationMs };
+}
+
+async function generateForVideo(videoName) {
+    // ... (main logic: parse script → generate audio per segment → write .mp3 files → write durations.json)
 }
 ```
 
-#### Step 3.3: Video-audio merge
+**Critical design: `durations.json` format**
 
-**File:** `bin/merge-demo-video.js`
-
-```js
-/**
- * Merges silent Playwright .webm with narration .mp3 segments.
- *
- * Steps:
- *   1. Read durations.json for segment timing
- *   2. Generate silence gaps between segments
- *   3. FFmpeg concat: segment1.mp3 | silence | segment2.mp3 | silence | ...
- *   4. FFmpeg mux: combined_audio.mp3 + video.webm → final.mp4
- *
- * Usage:  node bin/merge-demo-video.js add-assistant-tools
- */
+```json
+{
+    "seg-00": 8420,
+    "seg-01": 6180,
+    "seg-02": 5930,
+    "seg-03": 3210
+}
 ```
 
-### Phase 4: CI/CD Integration (Week 4+)
+This is what `merge-demo-video.js` already reads. The merge script expects this format at `narration/audio/<video-name>/durations.json`.
 
-**Goal:** Run video pipeline in GitHub Actions on every release.
+#### Step 3.2: Write narration scripts for all 15 videos
+
+Following the existing `add-assistant-tools.txt` format:
+
+```text
+# <video-name>.txt
+# One line = one spoken segment. Blank lines = pauses. # = comments.
+# Target: ~90 seconds
+
+Welcome to NV oOS. In this video, we will configure your AI provider connection.
+
+Navigate to Settings and open the AI Providers tab. This is where you manage all your AI service connections.
+
+Enter your OpenAI API key. You can generate one from the OpenAI dashboard at platform.openai.com.
+
+Select your default model. GPT-4o is recommended for most use cases.
+
+Click Test Connection to verify your API key is valid. You should see a green success indicator.
+
+Save your settings. Your AI provider is now connected and ready to use.
+
+That's it. The plugin is now configured to generate AI responses using your OpenAI account.
+```
+
+**Writing guidelines:**
+- **Conversational, not robotic.** Read it aloud. If it sounds like a script, rewrite it.
+- **One action per segment.** Don't pack multiple steps into one sentence.
+- **80–120 words per 60 seconds.** TTS ~150 WPM.
+- **No filler.** Every sentence conveys information. Cut "you know," "basically," "just."
+- **Active voice.** "Click the Publish button" not "The Publish button should be clicked."
+
+#### Step 3.3: Update orchestrator to include narration step
+
+Add a `generate_narration()` function to `capture-demo-videos.sh`:
+
+```bash
+generate_narration() {
+    if [ -z "${OPENAI_API_KEY:-}" ]; then
+        warn "OPENAI_API_KEY not set — skipping narration generation."
+        warn "Videos will remain silent."
+        return
+    fi
+
+    info "Generating narration audio..."
+    node bin/generate-narration-audio.js --all
+}
+```
+
+And a `merge_videos()` step after video capture:
+
+```bash
+merge_videos() {
+    if ! command -v ffmpeg &>/dev/null; then
+        warn "FFmpeg not found — skipping video merge."
+        return
+    fi
+
+    info "Merging video + narration..."
+    node bin/merge-demo-video.js --all
+}
+```
+
+#### Step 3.4: Add narration helpers module
+
+**File:** `bin/video-helpers/narration-utils.js`
+
+Shared utilities for narration scripts: text parsing, duration estimation, OpenAI TTS wrapper, ElevenLabs fallback, Edge TTS free fallback.
+
+---
+
+### Phase 4: Polish & Production (Week 4)
+
+**Goal:** Videos that look professional — not raw test recordings.
+
+#### Step 4.1: Intro and outro cards
+
+Using `page.setContent()` to render HTML title cards before/after the main content:
+
+```js
+// video-helpers/card-utils.js
+async function showIntroCard(page, { title, subtitle, duration = 3000 }) {
+    await page.setContent(`
+        <!DOCTYPE html>
+        <html>
+        <head><style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                display: flex; align-items: center; justify-content: center;
+                height: 100vh; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            }
+            .card { text-align: center; color: #fff; }
+            .card h1 { font-size: 2.8rem; margin-bottom: 1rem; font-weight: 700; }
+            .card p { font-size: 1.4rem; color: rgba(255,255,255,0.7); }
+            .logo { font-size: 1rem; color: rgba(255,255,255,0.4); margin-top: 3rem; }
+        </style></head>
+        <body>
+            <div class="card">
+                <h1>${title}</h1>
+                <p>${subtitle}</p>
+                <div class="logo">NV oOS — Open Operator System</div>
+            </div>
+        </body></html>
+    `);
+    await page.waitForTimeout(duration);
+}
+```
+
+#### Step 4.2: Action annotations (Playwright v1.59 screencast API)
+
+For environments with Playwright ≥1.59, use the `page.screencast` API for built-in action highlights:
+
+```js
+if (supportsScreencast(page)) {
+    await page.screencast.showActions({
+        position: 'top-right',
+        duration: 800,
+        fontSize: 16,
+    });
+}
+```
+
+Fallback for older Playwright: inject a CSS overlay that briefly highlights clicked elements.
+
+#### Step 4.3: Chapter markers
+
+Insert visual section dividers during the recording:
+
+```js
+// With v1.59
+await page.screencast.showChapter('Step 2: Assign Tools', {
+    description: 'Search and enable the tools your assistant will use',
+    duration: 2500,
+});
+
+// Fallback: overlay div
+await showOverlayCard(page, {
+    title: 'Step 2: Assign Tools',
+    subtitle: 'Search and enable the tools your assistant will use',
+    duration: 2500,
+});
+```
+
+#### Step 4.4: Background music (optional, configurable)
+
+Add support for an ambient background track with audio ducking during narration:
+
+```js
+// FFmpeg filter for background music with ducking
+const ffmpegArgs = [
+    `-i "${videoPath}"`,           // 0:v — silent video
+    `-i "${combinedAudioPath}"`,   // 1:a — narration
+    `-i "${bgMusicPath}"`,         // 2:a — background music
+    `-filter_complex`,
+    `[2:a]volume=0.08[bg];` +                    // Reduce music to 8%
+    `[1:a]asplit=[narration][sidechain];` +       // Split narration
+    `[bg][sidechain]sidechaincompress=` +         // Duck music when narration plays
+        `threshold=0.01:ratio=4:attack=5:release=100[bgducked];` +
+    `[narration][bgducked]amix=inputs=2:duration=first[aout]`,
+    `-map 0:v -map "[aout]"`,
+    `-c:v libx264 -preset fast -crf 28`,
+    `-c:a aac -b:a 192k`,
+    `-shortest "${finalPath}"`,
+].join(' ');
+```
+
+Controlled by env var: `BG_MUSIC_PATH=/path/to/ambient.mp3`
+
+#### Step 4.5: Video catalog page
+
+**File:** `docs/videos/CATALOG.md`
+
+A markdown page with embedded video previews, links to scripts, durations, and status badges:
+
+```markdown
+| # | Video | Duration | Status | Script | Narrated |
+|---|-------|----------|--------|--------|----------|
+| 1 | Add Assistant & Tools | 1:45 | ✅ | `capture-demo-video-assistant.js` | ✅ |
+| 2 | Configure AI Provider | 1:20 | ✅ | `capture-demo-video-provider.js` | ⏳ |
+| ... | ... | ... | ... | ... | ... |
+```
+
+---
+
+### Phase 5: CI/CD Integration (Week 5)
+
+**Goal:** Videos regenerated automatically on every release.
+
+#### Step 5.1: GitHub Actions workflow
+
+**File:** `.github/workflows/demo-videos.yml`
 
 ```yaml
-# .github/workflows/demo-videos.yml
 name: Generate Demo Videos
 
 on:
   workflow_dispatch:  # Manual trigger
+    inputs:
+      narration:
+        description: 'Generate narrated videos'
+        type: boolean
+        default: true
+      pro:
+        description: 'Include Pro videos'
+        type: boolean
+        default: true
   release:
     types: [published]
 
 jobs:
   videos:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+
     services:
-      # Uses existing Docker Compose or GitHub service containers
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: sudo apt-get install -y ffmpeg
-      - run: bash bin/capture-demo-videos.sh
+        with:
+          node-version: '20'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg curl
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start WordPress with Docker Compose
+        run: |
+          docker compose up -d
+          # Wait for WordPress healthcheck
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8000 > /dev/null 2>&1; then
+              echo "WordPress is ready."
+              break
+            fi
+            echo "Waiting for WordPress... ($i)"
+            sleep 3
+          done
+
+      - name: Run video pipeline
+        run: bash bin/capture-demo-videos.sh
+        env:
+          BASE_URL: http://localhost:8000
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CAPTURE_PRO: ${{ inputs.pro || 'false' }}
+
+      - name: Generate narration audio
+        if: ${{ inputs.narration && env.OPENAI_API_KEY != '' }}
+        run: node bin/generate-narration-audio.js --all
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-      - uses: actions/upload-artifact@v4
+
+      - name: Merge video + narration
+        if: ${{ inputs.narration }}
+        run: |
+          for dir in docs/videos/base docs/videos/pro; do
+            [ -d "$dir" ] || continue
+            for webm in "$dir"/*.webm; do
+              [ -f "$webm" ] || continue
+              name=$(basename "$webm" .webm)
+              node bin/merge-demo-video.js "$name" || true
+            done
+          done
+
+      - name: Upload video artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: demo-videos
-          path: docs/videos/**/*.mp4
+          path: |
+            docs/videos/base/*.mp4
+            docs/videos/pro/*.mp4
+          retention-days: 30
+
+      - name: Attach videos to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            docs/videos/base/*.mp4
+            docs/videos/pro/*.mp4
 ```
 
----
+#### Step 5.2: CI performance tuning
 
-## Docker Integration
+- **Reduce resolution for CI** to 1280×720 (vs 1920×1080 for local dev). Controlled by `CI_VIDEO_SIZE` env var.
+- **Use `preset ultrafast`** for CI encoding (5× faster, larger files — fine for artifacts).
+- **Parallelize** base and pro video capture (separate GitHub Actions jobs).
+- **Cache Playwright browsers** and npm dependencies.
+- **Clean up Docker volumes** after the job to free disk space.
 
-### Startup Flow
+#### Step 5.3: Slack/notification integration
 
+Post a summary to a Slack channel when videos are generated:
+
+```yaml
+- name: Notify Slack
+  uses: slackapi/slack-github-action@v2
+  with:
+    webhook: ${{ secrets.SLACK_DEMO_VIDEOS_WEBHOOK }}
+    webhook-type: incoming-webhook
+    payload: |
+      {
+        "text": "🎬 Demo videos regenerated for release ${{ github.ref_name }}\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      }
 ```
-docker compose up -d          # Start WordPress + MySQL
-    │
-    ├─ wordpress container     # Apache/PHP on port 8000
-    ├─ db container            # MySQL 8.0
-    └─ (wp-cli on-demand)      # docker compose run --rm wp-cli ...
-    │
-    ▼
-WordPress auto-installs (if first run)
-    │
-    ▼
-capture-demo-videos.sh runs WP-CLI:
-    ├─ core install (if needed)
-    ├─ plugin activate mcp-ai-wpoos
-    ├─ plugin activate mcp-ai-wpoos-pro (if addons/pro/ exists)
-    ├─ option update wp_mcp_ai_openai_api_key ...
-    ├─ post create (test page with shortcode)
-    └─ post create (sample content for search tools)
-    │
-    ▼
-Node.js Playwright scripts connect to http://localhost:8000
-    │
-    ├─ Headless Chromium navigates admin pages
-    ├─ recordVideo captures everything
-    └─ context.close() → .webm written
-    │
-    ▼
-FFmpeg optimization → .mp4 output
-```
-
-### Key Docker-Specific Considerations
-
-1. **Network:** Playwright scripts run on the host, connect to `http://localhost:8000` (port mapped in `docker-compose.yml`).
-2. **Volume mount:** Plugin code at `.` is mounted at `/var/www/html/wp-content/plugins/mcp-ai-wpoos` — live edits are reflected immediately.
-3. **WP-CLI profile:** The `wp-cli` service uses `profiles: [tools]` — it doesn't auto-start. Use `docker compose run --rm wp-cli <command>`.
-4. **Reset:** `docker compose down -v && docker compose up -d` gives a clean WordPress install.
-5. **Chrome in Docker (if running Playwright inside a container):** Use `chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] })` when Playwright runs inside Docker. For Phase 1, Playwright runs on the host so this is not needed.
 
 ---
 
@@ -906,97 +974,112 @@ FFmpeg optimization → .mp4 output
 
 ### Video Standards
 
-| Property | Requirement |
-|---|---|
-| Resolution | 1920×1080 (Full HD) |
-| Frame rate | 30 fps (default) |
-| Codec | H.264 (`.mp4`) |
-| Audio | AAC 128kbps (if narrated) |
-| Duration | 60–180 seconds per task |
-| Mouse cursor | Visible (default in headed mode; for headless, add `await page.mouse.move()` calls to show intent) |
-| Click annotations | Phase 2: use Playwright `show: { actions }` option |
-| Sensitive data | Never show real API keys, emails, or domains on screen |
-| File size target | < 20 MB per video (optimize with CRF 28) |
+| Property | Requirement | Rationale |
+|----------|------------|-----------|
+| Resolution | 1920×1080 (local), 1280×720 (CI) | Full HD for marketing; 720p sufficient for CI review |
+| Codec | H.264 (`.mp4`) | Universal playback |
+| Audio | AAC 192 kbps (narrated), silent otherwise | Clear voice without bloat |
+| Duration | 60–180 seconds per video | Attention span + information density |
+| File size | < 25 MB per video | GitHub artifact limits, download speed |
+| Mouse cursor | Visible (CSS-injected for headless) | Viewers need to see what's being clicked |
+| `data-testid` coverage | All interacted elements | Industry standard for selector stability |
 
 ### Script Standards
 
-- All scripts are standalone (no test runner dependency).
-- Each script does ONE task (Unix theory).
-- Scripts are idempotent — re-running produces the same output.
-- Failure in one script does not block others (`|| warn "FAILED"` pattern).
-- All scripts use `#!/usr/bin/env node` shebang.
-- JSDoc header block describes purpose, usage, prerequisites, outputs.
-- Timeout handling: wrap all `page.goto()` in try-catch with graceful skip.
+- **One script, one task.** Each script demonstrates one complete user story.
+- **Idempotent.** Re-running produces the same output. No cumulative side effects.
+- **Graceful degradation.** Failure in one script does not block others.
+- **Environment-configurable.** All URLs, credentials, and paths come from `process.env` with sensible defaults.
+- **Selectors in registry, not inline.** `bin/utils/video-selectors.js` is the single source of truth.
+- **JSDoc headers.** Every script documents purpose, usage, prerequisites, output.
+
+### Narration Standards
+
+- **Conversational tone.** Not a spec sheet read aloud.
+- **One action per spoken segment.** Each line of the narration `.txt` maps to one UI action.
+- **80–120 words per 60 seconds.** Matches TTS ~150 WPM.
+- **Active voice, present tense.** "Click the button" not "The button is clicked."
+- **Version controlled.** Narration `.txt` files live in `docs/videos/narration/` alongside the code they describe.
 
 ### Commit Standards
 
-- One commit per new script file.
-- Commit message format: `Add demo video script: <task-name>`
-- Output `.mp4` / `.webm` files are **gitignored** (too large). They live as artifacts.
+- **One commit per deliverable.** New script, new narration file, new workflow = separate commits.
+- **Commit message format:** `Add demo video {type}: {description}`
+  - `Add demo video script: Configure AI Provider`
+  - `Add demo video narration: Chat Conversation`
+  - `Add demo video CI: GitHub Actions workflow`
+- **Output files are gitignored.** `.webm` and `.mp4` files never committed. They are build artifacts.
 
 ---
 
 ## Risk Register
 
 | Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| Playwright selectors break when plugin UI changes | High | Medium | Use data-testid attributes if available; fall back to broad selectors; re-run pipeline on each release |
-| AI provider API key missing → chat videos fail | Medium | High | Skip chat-dependent videos if `OPENAI_API_KEY` not set; use mock responses for offline capture |
-| Pro addon not available in some environments | Medium | Low | Detect `addons/pro/` and skip gracefully |
-| FFmpeg not installed → .webm not converted to .mp4 | Medium | Low | .webm is playable in most browsers; add FFmpeg to install instructions |
-| CI runner disk space for video artifacts | Low | Medium | Optimize videos aggressively (CRF 30 for CI); use artifact retention policies |
-| Plugin JS not loaded → blank pages captured | Medium | Medium | Always use `waitUntil: 'networkidle'` + extra `waitForTimeout` for JS-heavy pages |
-| Docker port 8000 already in use | Low | Low | Allow override via `BASE_URL` env var |
-| Slow CI runner → video generation times out | Low | Medium | Split video capture into parallel jobs; increase timeout |
+|------|-----------|--------|------------|
+| **Selectors break on UI change** | High | High | Phase 0: add `data-testid` attributes. Centralized selector registry. Re-run pipeline on each release. |
+| **AI API key missing → chat/narration fails** | Medium | High | Skip chat-dependent scripts gracefully. Warn clearly. CI secrets rotation. |
+| **Pro addon not available** | Medium | Low | Detect `addons/pro/` at runtime. Skip Pro section gracefully. |
+| **FFmpeg not installed → no MP4 output** | Medium | Low | `.webm` is playable in modern browsers. Document FFmpeg as optional optimization. |
+| **CI runner disk space for videos** | Medium | Medium | Use CRF 35 for CI drafts. 30-day artifact retention. Clean up Docker volumes post-job. |
+| **TTS API costs at scale** | Low | Medium | OpenAI `tts-1` is $0.015/1K chars. ~$0.03 per 90s video. 15 videos ≈ $0.50 per full run. Acceptable. |
+| **JS-heavy pages don't render in time** | Medium | Medium | `waitUntil: 'networkidle'` + generous `waitForTimeout`. Option to use `page.screencast.start()` after render. |
+| **Port 8000 already in use** | Low | Low | Override via `BASE_URL` env var. |
+| **Playwright version mismatch** | Low | Medium | Pin Playwright version in `package.json`. Screencast API is v1.59+ — feature-detect with graceful fallback. |
 
 ---
 
 ## Open Questions
 
-1. **Where should Playwright run?** Host machine (Phase 1) vs. in a Docker container alongside WordPress (Phase 4 CI)? The host-machine approach is simpler for development. For CI, adding a Playwright service container to `docker-compose.yml` would be cleaner.
+1. **TTS provider?** Plan defaults to OpenAI TTS (`tts-1`, `nova` voice) — same API key as the plugin, $0.015/1K chars. ElevenLabs has better voice quality but requires a separate paid key. **Decision:** Ship with OpenAI TTS. Offer ElevenLabs as an optional override via `TTS_PROVIDER=elevenlabs` env var.
 
-2. **TTS provider?** ElevenLabs has the best voice quality but requires a paid API key. OpenAI TTS is simpler if already using their API. Edge TTS (`edge-tts` Python package) is free but lower quality. **Recommendation:** Start with OpenAI TTS (same API key as the plugin).
+2. **Video hosting?** Where will the final `.mp4` files live?
+   - **GitHub Releases** (CI artifacts) — automatic, versioned, free
+   - **YouTube unlisted playlist** — embeddable, accessible
+   - **Plugin website** (`nvdigitalsolutions.com/wpoos`) — self-hosted, branded
+   - **WordPress.org plugin page** — limited upload size, manual process
+   **Recommendation:** YouTube unlisted playlist for public sharing. GitHub Releases for archival/version history.
 
-3. **Video hosting?** Where will these videos live? Options:
-   - GitHub Releases (artifacts)
-   - YouTube unlisted playlist
-   - Plugin website (`nvdigitalsolutions.com/wpoos`)
-   - WordPress.org plugin page (limited uploads)
-   **Recommendation:** YouTube unlisted for sharing; GitHub Releases for archiving.
+3. **Should videos be silent or narrated?** Phase 1–2 produce silent `.webm` (useful for debugging). Phase 3 adds narration (for public demos). **Decision:** Pipeline supports both. Narration is optional (gated on `OPENAI_API_KEY`).
 
-4. **Should videos be silent or narrated?** Phase 1 produces silent videos (good enough for internal testing). Phase 3 adds narration (good for public-facing demos). **Recommendation:** Ship Phase 1 first, gather feedback, then add narration.
+4. **One Pro script or per-task scripts?** Current `capture-demo-video-pro.js` handles all 8 tasks in one file. This works for simple page-load demos. If individual Pro tasks need complex interactions, split them into per-task scripts following the Phase 1.3 template.
 
-5. **Should we gitignore the output videos?** Yes. `.webm` and `.mp4` files in `docs/videos/base/` and `docs/videos/pro/` should be in `.gitignore`. They are build artifacts, not source code. Add exception for a sample thumbnail `.png` per video if needed.
+5. **Background music license?** If we add ambient music in Phase 4, it must be royalty-free with commercial license. Options: Epidemic Sound, Artlist, or free sources like Pixabay Music (CC0). **Decision:** Make background music optional and configurable via `BG_MUSIC_PATH`. Ship a default CC0 track.
 
-6. **Pro video script: one file or one-per-task?** One script (`capture-demo-video-pro.js`) is simpler for Phase 2. If individual Pro videos need different setup/teardown, split into per-task scripts later.
+6. **Should we adopt `playwright-recast` (npm)?** It solves many of the same problems (narration sync, speed control, subtitles) but is v0.1.0 (Mar 2026). **Decision:** Do not adopt as a dependency. Borrow its design patterns. Re-evaluate when it reaches v1.0.
+
+7. **Playwright v1.59 `page.screencast` adoption?** The API was released May 2026 and adds `showActions()`, `showChapter()`, `showOverlay()`. **Decision:** Feature-detect and use when available. Fall back to DOM injection for older Playwright versions.
 
 ---
 
-## Summary: Getting Started Today
+## Quick Start
 
 ```bash
 # 1. Ensure Docker is running
 docker compose up -d
 
-# 2. Set your API key
+# 2. Set your API key (required for narration; optional for silent videos)
 export OPENAI_API_KEY="sk-proj-..."
 
-# 3. Create the video helpers directory
-mkdir -p bin/video-helpers docs/videos/base docs/videos/pro
-
-# 4. Create the first video script
-#    → bin/capture-demo-video-assistant.js (as specified in Phase 1.3)
-
-# 5. Create the orchestrator
-#    → bin/capture-demo-videos.sh (as specified in Phase 1.2)
-
-# 6. Run it
+# 3. Run the full silent pipeline (Phase 1–2)
 bash bin/capture-demo-videos.sh
 
-# 7. Check output
+# 4. Generate narration and merge (Phase 3)
+node bin/generate-narration-audio.js --all
+node bin/merge-demo-video.js --all
+
+# 5. View results
 ls -lh docs/videos/base/
+ls -lh docs/videos/pro/
+
+# 6. Record a single video
+node bin/capture-demo-video-assistant.js
+
+# 7. Reset and re-record everything
+docker compose down -v
+docker compose up -d
+bash bin/capture-demo-videos.sh
 ```
 
 ---
 
-*End of plan. Next step: begin Phase 1 implementation.*
+*End of plan. Next action: begin Phase 0 — audit selectors and add `data-testid` attributes.*

@@ -1,0 +1,23 @@
+# Narration: Chat with Tool Execution
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~90 seconds
+
+Welcome to NV oOS. In this video, we will see how the AI assistant uses tools to fetch real data from your WordPress site.
+
+We start on the chat page with an assistant that has the WordPress post search tool enabled.
+
+Let's ask the assistant to search for recent blog posts on our site.
+
+Watch carefully as a tool execution indicator appears. This shows that the AI is actively using a tool to fulfill your request.
+
+The assistant calls the WordPress post search tool, which queries your site's database for matching content.
+
+The tool returns the results, and the AI formats them into a readable response. This all happens in seconds.
+
+You can see the exact posts found on your site, including their titles and publication dates.
+
+Let's try another tool. We will ask the assistant what tools it has access to.
+
+The assistant lists all available tools, demonstrating transparency about its capabilities.
+
+This tool integration makes your AI assistant genuinely useful, connecting natural conversation with real site data.

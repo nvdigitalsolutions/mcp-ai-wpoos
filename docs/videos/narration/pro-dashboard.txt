@@ -1,0 +1,21 @@
+# Narration: Pro Dashboard Overview
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~75 seconds
+
+Welcome to NV oOS Pro. In this video, we will explore the Pro dashboard and its analytics capabilities.
+
+The Pro dashboard provides a comprehensive overview of your AI operations in one centralized view.
+
+At the top, you can see key metrics including total chat sessions, token usage, and active assistants.
+
+Scroll down to view the token usage chart. This tracks your AI consumption over time across all providers.
+
+Switch to the Analytics tab to see more detailed breakdowns by assistant, model, and time period.
+
+The Usage tab shows which assistants are most active and which tools are being called most frequently.
+
+You can filter the data by date range to analyze specific time periods or identify usage trends.
+
+Return to the main dashboard view. All your critical AI metrics are available at a glance.
+
+That's it. The Pro dashboard gives you full visibility into how your AI assistants are being used.
