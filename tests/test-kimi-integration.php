@@ -252,6 +252,7 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 	 */
 	public function test_tool_support_detection_per_model() {
 		// Models that support tools.
+		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.7-code' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.6' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.5' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2' ) );
@@ -264,6 +265,7 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 	 * Test context window sizes are correct.
 	 */
 	public function test_context_window_sizes() {
+		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.7-code' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.6' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.5' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2' ) );
@@ -322,7 +324,7 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 
 		$sanitized = $section->sanitize_settings( $input );
 
-		$this->assertEquals( 'kimi-k2.6', $sanitized['kimi_model'] );
+		$this->assertEquals( 'kimi-k2.7-code', $sanitized['kimi_model'] );
 	}
 
 	/**
@@ -397,13 +399,14 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 	public function test_available_models_list() {
 		$models = WP_MCP_AI_Section_Kimi::get_available_models();
 
+		$this->assertArrayHasKey( 'kimi-k2.7-code', $models );
 		$this->assertArrayHasKey( 'kimi-k2.6', $models );
 		$this->assertArrayHasKey( 'kimi-k2.5', $models );
 		$this->assertArrayHasKey( 'kimi-k2', $models );
 		$this->assertArrayHasKey( 'kimi-k2-thinking', $models );
 
-		$this->assertStringContainsString( 'K2.6', $models['kimi-k2.6'] );
-		$this->assertStringContainsString( '256K', $models['kimi-k2.6'] );
+		$this->assertStringContainsString( 'K2.7', $models['kimi-k2.7-code'] );
+		$this->assertStringContainsString( '256K', $models['kimi-k2.7-code'] );
 	}
 
 	/**
@@ -514,13 +517,18 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 
 		$normalized = $method->invoke( $this->client, $api_response );
 
-		$this->assertEquals( 'test-id-123', $normalized['id'] );
-		$this->assertEquals( 'chat.completion', $normalized['object'] );
-		$this->assertEquals( 1234567890, $normalized['created'] );
+		$this->assertEquals( 'Hello!', $normalized['content'] );
+		$this->assertEquals( 'stop', $normalized['finish_reason'] );
 		$this->assertEquals( 'kimi-k2.6', $normalized['model'] );
+		$this->assertEquals( 'kimi', $normalized['provider'] );
+		$this->assertArrayHasKey( 'raw', $normalized );
+		$this->assertEquals( 'test-id-123', $normalized['raw']['id'] );
+		$this->assertEquals( 'chat.completion', $normalized['raw']['object'] );
+		$this->assertEquals( 1234567890, $normalized['raw']['created'] );
 		$this->assertCount( 1, $normalized['choices'] );
 		$this->assertEquals( 'assistant', $normalized['choices'][0]['message']['role'] );
 		$this->assertEquals( 'Hello!', $normalized['choices'][0]['message']['content'] );
+		$this->assertArrayHasKey( 'usage', $normalized );
 		$this->assertEquals( 10, $normalized['usage']['prompt_tokens'] );
 		$this->assertEquals( 5, $normalized['usage']['completion_tokens'] );
 		$this->assertEquals( 15, $normalized['usage']['total_tokens'] );

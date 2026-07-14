@@ -102,6 +102,13 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		 * @return string Empty string when not configured.
 		 */
 		public function get_api_key() {
+			// If a transient API key was set via set_api_key(), use it instead
+			// of the persisted setting. This prevents TOCTOU race conditions
+			// when testing a key before saving it.
+			if ( isset( $this->api_key_override ) && is_string( $this->api_key_override ) ) {
+				return $this->api_key_override;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$key      = isset( $settings['deepseek_api_key'] ) ? $settings['deepseek_api_key'] : '';
 
@@ -111,6 +118,28 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 
 			return $key;
 		}
+
+		/**
+		 * Override the API key for the lifetime of this instance only.
+		 *
+		 * Use this when testing a key before persisting it, instead of
+		 * temporarily writing it to wp_options (which creates a TOCTOU
+		 * race condition).
+		 *
+		 * @since 2026.07
+		 * @param string $api_key The API key to use for this instance.
+		 */
+		public function set_api_key( $api_key ) {
+			$this->api_key_override = $api_key;
+		}
+
+		/**
+		 * In-memory API key override. Set via set_api_key().
+		 *
+		 * @since 2026.07
+		 * @var string|null
+		 */
+		private $api_key_override = null;
 
 		/**
 		 * Retrieve the configured default model.
@@ -218,17 +247,22 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		 * @param array $options Request options may carry a 'timeout' key.
 		 * @return int
 		 */
-		protected function resolve_timeout( array $options ) {
-			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
-			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+		protected function resolve_timeout( array $options = array() ) {
+		if ( ! empty( $options['timeout'] ) && is_numeric( $options['timeout'] ) ) {
+			return max( 10, absint( $options['timeout'] ) );
+		}
 
-			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 
-			if ( ! empty( $options['timeout'] ) && is_numeric( $options['timeout'] ) ) {
-				$timeout = max( 10, absint( $options['timeout'] ) );
-			}
+		// Provider-specific override (for backward compatibility).
+		if ( ! empty( $settings['deepseek_timeout'] ) ) {
+			return max( 10, absint( $settings['deepseek_timeout'] ) );
+		}
 
-			return max( 10, $timeout );
+		$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+
+		return max( 10, $timeout );
 		}
 
 		/**
@@ -237,7 +271,7 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		 * @param array $options Request options.
 		 * @return string
 		 */
-		protected function resolve_model( array $options ) {
+		protected function resolve_model( array $options = array() ) {
 			if ( ! empty( $options['model'] ) ) {
 				return sanitize_text_field( $options['model'] );
 			}
@@ -704,6 +738,9 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			if ( null !== $usage ) {
 				$assembled['usage'] = $usage;
 			}
+			if ( ! empty( $model ) ) {
+				$assembled['model'] = $model;
+			}
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event( 'deepseek_realtime_stream', 'Real-time streaming response assembled.', array( 'model' => $model ) );
@@ -794,44 +831,29 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		/**
 		 * Test the connection to the DeepSeek API.
 		 *
-		 * Sends a 1-token chat completion to verify API key and network access.
+		 * Lists available models to verify the API key and network connectivity.
+		 * Using the models endpoint avoids consuming chat tokens during the test.
 		 *
 		 * @return array|WP_Error Success array or WP_Error on failure.
 		 */
 		public function test_connection() {
-			$api_key = $this->get_api_key();
+			$models = $this->list_models();
 
-			if ( empty( $api_key ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_deepseek_api_key',
-					__( 'No DeepSeek API key has been configured.', 'mcp-ai-wpoos' ),
-					array( 'status' => 400 )
-				);
+			if ( is_wp_error( $models ) ) {
+				return $models;
 			}
 
-			$test_model = $this->get_model() ? $this->get_model() : self::DEFAULT_MODEL;
-
-			$result = $this->create_chat_completion(
-				array(
-					array(
-						'role'    => 'user',
-						'content' => 'Hi',
-					),
-				),
-				array(
-					'model'      => $test_model,
-					'max_tokens' => 5,
-				)
-			);
-
-			if ( is_wp_error( $result ) ) {
-				return $result;
-			}
+			$model_count = count( $models );
 
 			return array(
-				'success' => true,
-				'message' => __( 'Successfully connected to DeepSeek.', 'mcp-ai-wpoos' ),
-				'model'   => $test_model,
+				'success'     => true,
+				'message'     => sprintf(
+					/* translators: %d: number of models */
+					__( 'Successfully connected to DeepSeek. Found %d models.', 'mcp-ai-wpoos' ),
+					$model_count
+				),
+				'model'       => $this->get_model() ? $this->get_model() : self::DEFAULT_MODEL,
+				'model_count' => $model_count,
 			);
 		}
 
@@ -919,15 +941,23 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 
 			// Optional parameters.
 			if ( isset( $options['temperature'] ) && is_numeric( $options['temperature'] ) ) {
-				$payload['temperature'] = (float) $options['temperature'];
+				$payload['temperature'] = max( 0.0, min( 2.0, (float) $options['temperature'] ) );
 			}
 
 			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
-				$payload['top_p'] = (float) $options['top_p'];
+				$payload['top_p'] = max( 0.0, min( 1.0, (float) $options['top_p'] ) );
 			}
 
-			if ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
+			// Max tokens — support both naming conventions.
+			if ( isset( $options['max_completion_tokens'] ) && is_numeric( $options['max_completion_tokens'] ) ) {
+				$payload['max_tokens'] = absint( $options['max_completion_tokens'] );
+			} elseif ( isset( $options['max_tokens'] ) && is_numeric( $options['max_tokens'] ) ) {
 				$payload['max_tokens'] = absint( $options['max_tokens'] );
+			}
+
+			// Stop sequences.
+			if ( isset( $options['stop'] ) ) {
+				$payload['stop'] = $options['stop'];
 			}
 
 			// JSON mode.
