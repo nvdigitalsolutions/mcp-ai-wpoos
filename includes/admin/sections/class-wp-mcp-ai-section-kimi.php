@@ -151,6 +151,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 		 */
 		public static function get_available_models() {
 			return array(
+				'kimi-k2.7-code'   => __( 'Kimi K2.7 Code (Latest, Multimodal, 256K)', 'mcp-ai-wpoos' ),
 				'kimi-k2.6'        => __( 'Kimi K2.6 (Latest, Multimodal, 256K)', 'mcp-ai-wpoos' ),
 				'kimi-k2.5'        => __( 'Kimi K2.5 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
 				'kimi-k2'          => __( 'Kimi K2 (Base, 256K)', 'mcp-ai-wpoos' ),
@@ -179,7 +180,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 			// Model.
 			if ( isset( $input['kimi_model'] ) ) {
 				$allowed_models          = array_keys( self::get_available_models() );
-				$sanitized['kimi_model'] = in_array( $input['kimi_model'], $allowed_models, true ) ? $input['kimi_model'] : 'kimi-k2.6';
+				$sanitized['kimi_model'] = in_array( $input['kimi_model'], $allowed_models, true ) ? $input['kimi_model'] : 'kimi-k2.7-code';
 			}
 
 			// Base URL.

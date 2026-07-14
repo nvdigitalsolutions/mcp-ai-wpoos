@@ -82,9 +82,13 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		/**
 		 * Models that explicitly support tool/function calling.
 		 *
+		 * Informational allowlist; model_supports_tools() defaults to true
+		 * for any model not in MODELS_WITHOUT_TOOL_CALLING.
+		 *
 		 * @var array
 		 */
 		const MODELS_WITH_TOOL_CALLING = array(
+			'kimi-k2.7-code',
 			'kimi-k2.6',
 			'kimi-k2.5',
 			'kimi-k2',
@@ -111,6 +115,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		 * @var array
 		 */
 		const MODEL_CONTEXT_WINDOWS = array(
+			'kimi-k2.7-code'   => 256000,
 			'kimi-k2.6'        => 256000,
 			'kimi-k2.5'        => 256000,
 			'kimi-k2'          => 256000,
@@ -676,6 +681,17 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 			}
 			if ( ! empty( $tool_calls_by_idx ) ) {
 				ksort( $tool_calls_by_idx );
+				// Ensure every tool call has a non-empty id.
+				// Streaming deltas may not include the id in every chunk;
+				// a missing id causes downstream tool-result messages to
+				// lack tool_call_id, which the REST validator rejects
+				// on the next turn. Generate a stable fallback.
+				foreach ( $tool_calls_by_idx as $idx => &$tc ) {
+					if ( '' === $tc['id'] ) {
+						$tc['id'] = uniqid( 'call_kimi_', true );
+					}
+				}
+				unset( $tc );
 				$message['tool_calls'] = array_values( $tool_calls_by_idx );
 			}
 			$assembled = array(

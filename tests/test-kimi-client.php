@@ -149,6 +149,7 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 	 * Test get_context_window returns correct value for known models.
 	 */
 	public function test_get_context_window_for_known_models() {
+		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.7-code' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.6' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.5' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2' ) );
@@ -167,6 +168,7 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 	 */
 	public function test_model_supports_tools() {
 		// Models that support tools.
+		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.7-code' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.6' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2.5' ) );
 		$this->assertTrue( $this->client->model_supports_tools( 'kimi-k2' ) );
@@ -273,7 +275,7 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 	 * Test models with tool calling constant.
 	 */
 	public function test_models_with_tool_calling_constant() {
-		$expected = array( 'kimi-k2.6', 'kimi-k2.5', 'kimi-k2' );
+		$expected = array( 'kimi-k2.7-code', 'kimi-k2.6', 'kimi-k2.5', 'kimi-k2' );
 		$this->assertEquals( $expected, WP_MCP_AI_Kimi_Client::MODELS_WITH_TOOL_CALLING );
 	}
 
