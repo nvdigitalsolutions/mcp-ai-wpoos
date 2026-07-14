@@ -124,7 +124,7 @@ async function ensureGuestPage(admin, page) {
 	// Try the guest-specific slug first, then fall back to generic
 	for (const slug of [GUEST_PAGE_SLUG, 'ai-chat-demo']) {
 		const searchResp = await page.request.get(
-			`/wp-json/wp/v2/pages?slug=${slug}&per_page=1`,
+			`${BASE_URL}/wp-json/wp/v2/pages?slug=${slug}&per_page=1`,
 			{ headers: { 'X-WP-Nonce': nonce } }
 		);
 		if (searchResp.status() === 200) {
@@ -135,7 +135,7 @@ async function ensureGuestPage(admin, page) {
 
 	// Create a new guest-enabled page
 	console.log('    Creating guest chat page via REST API...');
-	const createResp = await page.request.post('/wp-json/wp/v2/pages', {
+	const createResp = await page.request.post(`${BASE_URL}/wp-json/wp/v2/pages`, {
 		headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
 		data: {
 			title: 'AI Chat Demo (Guest)',
