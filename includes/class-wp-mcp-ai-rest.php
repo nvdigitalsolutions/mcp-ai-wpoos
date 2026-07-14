@@ -5873,6 +5873,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// If a candidate ends with `_validated`, also try its base slug.
+			// This handles the registry auto-upgrade where get_tool( 'web_search' )
+			// transparently returns the web_search_validated instance, and the MCP
+			// tools/list endpoint reports the validated slug while the assistant
+			// config stores the base slug.
+			foreach ( $candidates as $candidate ) {
+				if ( substr( $candidate, -10 ) === '_validated' ) {
+					$base = substr( $candidate, 0, -10 );
+					if ( '' !== $base && isset( $allowed_lookup[ $base ] ) ) {
+						return $allowed_lookup[ $base ];
+					}
+				}
+			}
+
 			if ( ! empty( $allowed_lookup ) ) {
 				$normalised_candidates = array();
 				foreach ( $candidates as $candidate ) {

@@ -608,7 +608,15 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Check if tool is allowed for this assistant.
-		if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
+		// Also try the base slug (without _validated suffix) to handle the
+		// registry auto-upgrade where get_tool( 'web_search' ) transparently
+		// resolves to web_search_validated.
+		$is_allowed = in_array( $tool_slug, $allowed_tools, true );
+		if ( ! $is_allowed && substr( $tool_slug, -10 ) === '_validated' ) {
+			$base_slug = substr( $tool_slug, 0, -10 );
+			$is_allowed = '' !== $base_slug && in_array( $base_slug, $allowed_tools, true );
+		}
+		if ( ! $is_allowed ) {
 			return $this->error(
 				'wp_mcp_ai_tool_forbidden',
 				__( 'This assistant is not allowed to execute the requested tool.', 'mcp-ai-wpoos' ),
