@@ -437,7 +437,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'enable_logging'                        => false,
 				'markup_enabled'                        => true,
 				'default_model'                         => 'gpt-4.1',
-				'default_gemini_model'                  => 'gemini-2.5-flash',
+				'default_gemini_model'                  => 'gemini-3.5-flash',
 				'default_provider'                      => 'openai',
 				'provider_priority_list'                => $provider_list,
 				'web_search_provider'                   => 'duckduckgo',
@@ -490,7 +490,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'enable_nvidia'                         => false,
 				'nvidia_api_key'                        => '',
 				'nvidia_endpoint_url'                   => 'https://integrate.api.nvidia.com/v1',
-				'nvidia_model'                          => 'meta/llama-3.1-8b-instruct',
+				'nvidia_model'                          => 'nvidia/nemotron-3-nano-30b-a3b',
 				// RabbitMQ settings (Cloudways integration).
 				'rabbitmq_enabled'                      => false,
 				'rabbitmq_host'                         => 'localhost',
@@ -685,7 +685,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'realtime_translate_output_lang'        => 'es',
 				'realtime_whisper_latency_delay'        => 1.0,
 				'realtime_safety_identifier_enabled'    => false,
-				'gemini_live_model'                     => 'gemini-2.5-flash-live',
+				'gemini_live_model'                     => 'gemini-3.1-flash-live-preview',
 				'gemini_live_voice'                     => 'Puck',
 				'chat_enable_voice_chat_button'         => true,
 

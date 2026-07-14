@@ -312,7 +312,7 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Get model from settings.
 		$model = isset( $settings['anthropic_vision_model'] ) && ! empty( $settings['anthropic_vision_model'] )
 			? $settings['anthropic_vision_model']
-			: ( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-3-5-sonnet-20241022' );
+			: ( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5' );
 
 		// Use settings for max_tokens if configured.
 		if ( isset( $settings['anthropic_max_image_tokens'] ) && ! empty( $settings['anthropic_max_image_tokens'] ) ) {

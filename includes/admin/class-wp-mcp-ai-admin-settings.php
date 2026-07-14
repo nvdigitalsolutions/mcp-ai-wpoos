@@ -1290,7 +1290,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public static function get_default_model() {
 			$settings = self::get_settings();
-			return isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini';
+			return isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4.1-mini';
 		}
 
 		/**
@@ -5317,8 +5317,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			// Final fallback to minimal hardcoded list.
 			$choices = array(
-				'gpt-4o'      => __( 'GPT-4o', 'mcp-ai-wpoos' ),
-				'gpt-4o-mini' => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+				'gpt-4.1'       => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
+			'gpt-4.1-mini'  => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
+			'gpt-4.1-nano'  => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
+			'gpt-4o-mini'   => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
 				'gpt-4-turbo' => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
 			);
 

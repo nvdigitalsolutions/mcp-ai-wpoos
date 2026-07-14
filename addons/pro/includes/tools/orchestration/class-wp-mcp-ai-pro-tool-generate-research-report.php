@@ -817,13 +817,13 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		switch ( $provider ) {
 			case 'openai':
 				// Prefer GPT-4 for research if available.
-				return isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-4o';
+				return isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-4.1';
 
 			case 'gemini':
-				return isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-1.5-pro';
+				return isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.5-flash';
 
 			case 'anthropic':
-				return isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-3-5-sonnet-20241022';
+				return isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5';
 
 			case 'deepseek':
 				return ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-chat';

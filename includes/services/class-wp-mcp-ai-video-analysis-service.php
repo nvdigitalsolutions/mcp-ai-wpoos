@@ -360,7 +360,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 
 		// Use GPT-4o or specified model (vision-capable model required).
 		if ( empty( $model ) ) {
-			$model = 'gpt-4o';
+			$model = 'gpt-4.1';
 		}
 
 		// Send request to OpenAI.

@@ -530,9 +530,9 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 */
 		public function get_draft_model_for_provider( string $provider ): array {
 			$draft_models = array(
-				'openai'       => 'gpt-4o-mini',
-				'gemini'       => 'gemini-2.0-flash',
-				'anthropic'    => 'claude-3-haiku-20240307',
+				'openai'       => 'gpt-4.1-nano',
+				'gemini'       => 'gemini-2.5-flash',
+				'anthropic'    => 'claude-haiku-4-5',
 				'deepseek'     => 'deepseek-chat',
 				'ollama'       => 'llama3.2:3b',
 				'huggingface'  => 'microsoft/phi-4-mini-instruct',
@@ -543,7 +543,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 				'digitalocean' => 'llama-3.2-3b-instruct',
 				'kimi'         => 'moonshot-v1-8k',
 				'zai'          => 'glm-4-flash',
-				'openrouter'   => 'openai/gpt-4o-mini',
+				'openrouter'   => 'openai/gpt-4.1-mini',
 				'embedded'     => 'llama-3.2-3b-instruct',
 			);
 
@@ -583,9 +583,9 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 */
 		public function get_verification_model_for_provider( string $provider ): array {
 			$verification_models = array(
-				'openai'       => 'gpt-4o',
+				'openai'       => 'gpt-4.1',
 				'gemini'       => 'gemini-2.5-pro',
-				'anthropic'    => 'claude-3-opus-20240229',
+				'anthropic'    => 'claude-opus-4-8',
 				'deepseek'     => 'deepseek-reasoner',
 				'ollama'       => 'qwen2.5:72b',
 				'huggingface'  => 'meta-llama/Llama-3.3-70B-Instruct',
@@ -596,7 +596,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 				'digitalocean' => 'llama-3.3-70b-instruct',
 				'kimi'         => 'moonshot-v1-128k',
 				'zai'          => 'glm-4-plus',
-				'openrouter'   => 'anthropic/claude-3.5-sonnet',
+				'openrouter'   => 'anthropic/claude-sonnet-5',
 				'embedded'     => 'qwen2.5-72b-instruct',
 			);
 
@@ -612,7 +612,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			 */
 			$verification_models = apply_filters( 'wp_mcp_ai_verification_models', $verification_models, $provider );
 
-			$model = isset( $verification_models[ $provider ] ) ? $verification_models[ $provider ] : 'gpt-4o';
+			$model = isset( $verification_models[ $provider ] ) ? $verification_models[ $provider ] : 'gpt-4.1';
 
 			return array(
 				'model'    => $model,
