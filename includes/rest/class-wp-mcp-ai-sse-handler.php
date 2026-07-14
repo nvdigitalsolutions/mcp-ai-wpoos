@@ -68,18 +68,26 @@ class WP_MCP_AI_SSE_Handler {
 		@ini_set( 'output_buffering', 'Off' );
 		// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
 
-		// Flush (do NOT clean/destroy) any pre-existing output buffers so
-		// their contents (WP REST headers, etc.) reach the client before
-		// the SSE stream begins.  Using ob_end_clean() destroys buffers
-		// that WordPress relies on and can cause HTTP/2 protocol errors
-		// when WP shutdown hooks attempt to write after the SSE handler.
-			// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: flush may fail on restricted hosts; non-critical.
+		// Clean (do NOT flush) pre-existing output buffer content so it
+		// does not appear before the SSE Content-Type header and corrupt
+		// the HTTP/2 response.  Keep the outermost buffer alive — if it
+		// is destroyed, WordPress shutdown hooks attempt to write to a
+		// closed buffer and produce HTTP/2 protocol errors.
+		//
+		// ob_end_flush() is avoided here: it sends buffered content to
+		// the client BEFORE the SSE headers, which causes the browser to
+		// see a mixed-content response and fail with
+		// ERR_HTTP2_PROTOCOL_ERROR.
+			// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: clean/end may fail on restricted hosts; non-critical.
 		$level = ob_get_level();
-		for ( $i = 0; $i < $level; $i++ ) {
-			if ( function_exists( 'ob_flush' ) ) {
-				@ob_flush();
+		if ( $level > 0 ) {
+			// End (and discard) all buffers except the outermost.
+			for ( $i = 1; $i < $level; $i++ ) {
+				@ob_end_clean();
 			}
-			@ob_end_flush();
+			// Keep the outermost buffer alive for WP shutdown hooks
+			// but discard its content so nothing leaks into the SSE stream.
+			@ob_clean();
 		}
 			// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
 
