@@ -143,35 +143,66 @@ setup_wordpress() {
 	info "WordPress setup complete."
 }
 
-# ── Create test data ──────────────────────────────────────────
+# ── Create test data (idempotent — skips if already exists) ─────
 create_test_data() {
 	info "Creating test data..."
 
-	# Create a demo page with chat shortcode
-	PAGE_ID=$(docker compose run --rm wp-cli post create \
+	# ── Chat demo page (slug: ai-chat-demo) ──
+	# Check if page already exists before creating a duplicate.
+	EXISTING_PAGE_ID=$(docker compose run --rm wp-cli post list \
 		--post_type=page \
-		--post_title="AI Chat Demo" \
-		--post_status=publish \
-		--post_content='[mcp_ai_chat allow_guests="true"]' \
-		--porcelain 2>&1 | grep -o '[0-9]*' | head -1 || echo "")
+		--name=ai-chat-demo \
+		--format=ids \
+		--posts_per_page=1 2>&1 | grep -o '[0-9]*' | head -1 || echo "")
 
-	if [ -n "$PAGE_ID" ]; then
-		info "Created chat demo page (ID: $PAGE_ID)"
-		export PAGE_ID
+	if [ -n "$EXISTING_PAGE_ID" ]; then
+		info "Chat demo page already exists (ID: $EXISTING_PAGE_ID)"
+		PAGE_ID="$EXISTING_PAGE_ID"
 	else
-		warn "Could not create chat demo page"
+		step "Creating chat demo page..."
+		PAGE_ID=$(docker compose run --rm wp-cli post create \
+			--post_type=page \
+			--post_title="AI Chat Demo" \
+			--post_name=ai-chat-demo \
+			--post_status=publish \
+			--post_content='[mcp_ai_chat allow_guests="true"]' \
+			--porcelain 2>&1 | grep -o '[0-9]*' | head -1 || echo "")
+
+		if [ -n "$PAGE_ID" ]; then
+			info "  Created (ID: $PAGE_ID)"
+		else
+			warn "  Could not create chat demo page"
+		fi
 	fi
 
-	# Create sample posts for search tools to find
+	# Export so downstream Playwright scripts pick it up.
+	if [ -n "$PAGE_ID" ]; then
+		export PAGE_ID
+	fi
+
+	# ── Sample posts for search tools ──
+	# Check each by title to avoid accumulating duplicates.
 	for title in "Sample Blog Post" "Getting Started Guide" "Product Announcement"; do
-		docker compose run --rm wp-cli post create \
+		EXISTING_POST_ID=$(docker compose run --rm wp-cli post list \
 			--post_type=post \
-			--post_title="$title" \
-			--post_status=publish \
-			--post_content="This is a sample post for testing the AI search and content tools." \
-			--porcelain 2>&1 | grep -o '[0-9]*' | head -1 > /dev/null || true
+			--title="$title" \
+			--format=ids \
+			--posts_per_page=1 2>&1 | grep -o '[0-9]*' | head -1 || echo "")
+
+		if [ -n "$EXISTING_POST_ID" ]; then
+			info "  Sample post already exists: '$title' (ID: $EXISTING_POST_ID)"
+		else
+			docker compose run --rm wp-cli post create \
+				--post_type=post \
+				--post_title="$title" \
+				--post_status=publish \
+				--post_content="This is a sample post for testing the AI search and content tools." \
+				--porcelain 2>&1 | grep -o '[0-9]*' | head -1 > /dev/null || true
+			info "  Created sample post: '$title'"
+		fi
 	done
-	info "Created sample content"
+
+	info "Test data ready."
 }
 
 # ── Run video capture scripts ──────────────────────────────────
