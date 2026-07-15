@@ -43,7 +43,11 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 	 * @return bool True if WebChat is enabled in settings.
 	 */
 	public static function is_available() {
-		$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+		$settings    = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+		$credentials = get_option( 'wp_mcp_ai_credentials', array() );
+		if ( is_array( $credentials ) && count( $credentials ) > 0 ) {
+			$settings = array_merge( $settings, $credentials );
+		}
 		return ! empty( $settings['enable_webchat_integration'] );
 	}
 
@@ -126,6 +130,10 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 
 		// Get WebChat settings.
 		$settings      = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
+		$credentials   = get_option( 'wp_mcp_ai_credentials', array() );
+		if ( is_array( $credentials ) && count( $credentials ) > 0 ) {
+			$settings = array_merge( $settings, $credentials );
+		}
 		$signaling_url = isset( $settings['webchat_signaling_url'] ) ? $settings['webchat_signaling_url'] : '';
 		$api_key       = isset( $settings['webchat_api_key'] ) ? $settings['webchat_api_key'] : '';
 		$use_rest_api  = ! empty( $settings['webchat_use_rest_api'] );

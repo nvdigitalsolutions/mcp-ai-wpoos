@@ -105,8 +105,12 @@ if ( ! class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) :
 		 * @return string|null
 		 */
 		private static function from_nvoos_settings( string $provider ): ?string {
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
-			$key      = $settings[ "{$provider}_api_key" ] ?? '';
+			$settings    = get_option( 'wp_mcp_ai_settings', array() );
+			$credentials = get_option( 'wp_mcp_ai_credentials', array() );
+			if ( is_array( $credentials ) && count( $credentials ) > 0 ) {
+				$settings = array_merge( $settings, $credentials );
+			}
+			$key = $settings[ "{$provider}_api_key" ] ?? '';
 
 			return '' !== $key ? $key : null;
 		}

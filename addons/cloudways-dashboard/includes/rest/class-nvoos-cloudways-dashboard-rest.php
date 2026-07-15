@@ -597,6 +597,12 @@ class NV_oOS_CloudwaysDashboard_REST {
 		$settings['cloudways_api_key'] = sanitize_text_field( $api_key );
 		update_option( 'wp_mcp_ai_settings', $settings );
 
+		// Also store the API key in the credentials option so it is not lost
+		// when the main settings dashboard splits sensitive keys on next save.
+		$credentials                        = get_option( 'wp_mcp_ai_credentials', array() );
+		$credentials['cloudways_api_key']   = sanitize_text_field( $api_key );
+		update_option( 'wp_mcp_ai_credentials', $credentials, false );
+
 		// Force re-auth.
 		if ( class_exists( 'WP_MCP_AI_Cloudways_Client' ) ) {
 			\WP_MCP_AI_Cloudways_Client::instance()->disconnect();
