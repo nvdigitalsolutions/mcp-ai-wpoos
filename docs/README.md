@@ -111,5 +111,5 @@ Usage examples and demos
 
 ---
 
-**Plugin Version:** 1.1.27
+**Plugin Version:** 1.1.40
 **WordPress:** 6.0+ | **PHP:** 7.4+

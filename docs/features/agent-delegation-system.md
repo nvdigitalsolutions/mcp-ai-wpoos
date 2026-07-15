@@ -1,6 +1,6 @@
 # Agent Delegation System
 
-**Status:** Stable — v1.1.39  
+**Status:** Stable — v1.1.40
 **Category:** Pro Feature — Multi-Agent Orchestration  
 **Introduced:** July 2026 (PRs #5640, #5644, #5647, #5654–#5657)  
 

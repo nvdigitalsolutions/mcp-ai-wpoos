@@ -18,7 +18,7 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 
 ---
 
-## Tool Presets System (v1.1.39)
+## Tool Presets System (v1.1.40)
 
 Tools can be grouped into presets organized in a layered hierarchy:
 

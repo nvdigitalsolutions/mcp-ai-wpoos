@@ -311,7 +311,7 @@ Stay-on-target jailbreak prevention that runs before every AI provider request:
 - **Agent capability boundary** (`WP_MCP_AI_Agent_Capability_Boundary`) — enforces per-assistant guardrails at the framework level, before the prompt reaches the provider.
 - All guardrails are opt-in per assistant and configurable in the Orchestration → Guardrails admin tab.
 
-### Meta-Harness Auto-Optimization System (v1.1.39)
+### Meta-Harness Auto-Optimization System (v1.1.40)
 
 Self-improving agent infrastructure that observes, analyzes, and self-optimizes AI agent execution across 7 phases (`includes/harness/`):
 
@@ -327,7 +327,7 @@ Self-improving agent infrastructure that observes, analyzes, and self-optimizes 
 
 Reference: `docs/features/meta-harness-auto-optimization.md`.
 
-### Agent Delegation Rework (v1.1.39)
+### Agent Delegation Rework (v1.1.40)
 
 Delegation subsystem underwent a major rework for reliability and performance:
 
@@ -340,7 +340,7 @@ Delegation subsystem underwent a major rework for reliability and performance:
 
 Reference: `docs/features/agent-delegation-system.md`.
 
-### Tool Presets System (v1.1.39)
+### Tool Presets System (v1.1.40)
 
 Curated tool groupings organized in a layered hierarchy:
 
@@ -410,6 +410,7 @@ test(scope): brief description
 | `.context/conventions.md` | Always — naming, style, PHP compat |
 | `.context/security-checklist.md` | Always — security requirements |
 | `.context/tool-registry.md` | Working on tools |
+| `.context/settings-storage.md` | Working on settings, credentials, import/export |
 | `.context/rest-api.md` | Working on REST endpoints |
 | `.context/chat-ui.md` | Working on frontend chat |
 | `.context/testing.md` | Writing PHPUnit tests |

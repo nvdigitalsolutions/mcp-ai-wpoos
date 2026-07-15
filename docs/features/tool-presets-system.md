@@ -1,6 +1,6 @@
 # Tool Presets System
 
-**Status:** Stable — v1.1.39  
+**Status:** Stable — v1.1.40
 **Category:** Pro Feature — Tool Management  
 **Introduced:** July 2026 (PRs #5660, #5662)  
 

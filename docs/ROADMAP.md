@@ -1,11 +1,11 @@
 # NV oOS Roadmap
 
 **Last Updated:** July 13, 2026
-**Version:** 1.1.39
+**Version:** 1.1.40
 
 ---
 
-## Current Capability Snapshot (v1.1.39)
+## Current Capability Snapshot (v1.1.40)
 
 | Dimension | Count |
 |-----------|-------|
@@ -36,6 +36,29 @@
 3. **Open Standards** — MCP protocol compliance, extensible architecture
 4. **Community Driven** — Open source with transparent development
 5. **Production Ready** — Enterprise reliability with community accessibility
+
+---
+
+## Released: v1.1.40 — July 2026 ✅
+
+**Release Date:** July 15, 2026
+
+### What was delivered in v1.1.40
+
+- ✅ **Content Format Awareness.** `WP_MCP_AI_Content_Format_Helper` detects and preserves content format (Markdown, HTML, plain text) in post-modifying and analysis tools. Full test coverage.
+- ✅ **Research → Paper Store → WordPress Draft Pipeline.** All research tools support `save_to_paper_store` for staging. New `create_post_from_research` Pro tool bridges Paper Store to WordPress drafts. Proposals 013 implemented.
+- ✅ **Demo Video Pipeline Complete (Phases 0–5).** Scripted scene recording with AI voiceover. GitHub Actions CI workflow. 14 narration scripts. Video catalog.
+- ✅ **Settings Credential Split.** Two-option architecture: `wp_mcp_ai_settings` (autoload, non-sensitive) + `wp_mcp_ai_credentials` (non-autoload, sensitive). Transparent merge via `get_settings()`. One-time activation migration. Defense-in-depth with `wp_suspend_cache_addition` and dual cache clearing.
+- ✅ **Kimi & DeepSeek Client Parity.** Full streaming, tool use, token tracking, and error handling parity across both providers.
+- ✅ **Model Catalog Update (July 2026).** 24 files across base + pro. Default model bumps: Gemini `2.5-flash` → `3.5-flash`, NVIDIA `llama-3.1-8b` → `nemotron-3-nano-30b-a3b`, Gemini Live `2.5-flash-live` → `3.1-flash-live-preview`.
+- ✅ **DeepSeek + 9 Missing Providers in Research Tools.** All research tools now support full provider range.
+- ✅ **OOS Engine: SchemaStoreInterface + Test Coverage.** New domain contract, entities, tool, and WordPress adapter. 45 new unit + integration tests across domain, providers, and registry.
+- ✅ **SSE HTTP/2 Protocol Fixes.** `ob_clean()` replaces `ob_flush()`. 524 timeout and HTTP/2 protocol errors in Pro SPA v2 resolved.
+- ✅ **Vector Store Sync No Polling.** Status checked only on assistant change and page load — reduces API load.
+- ✅ **Settings Import/Export Batch (4 PRs).** Credential merge, save key wipe, subtab sanitization, export consistency — all fixed.
+- ✅ **Credential Fixes (2 PRs).** Credential wipe on save. Fatal error for undefined `is_sensitive_setting_key` method.
+- ✅ **Validated Tool Slug Allowlist.** Tool slug matching fixed.
+- 📦 **Versioning** — bumped to **1.1.40** across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative). Provider count: **15** first-class. Addon count: 26.
 
 ---
 

@@ -1,5 +1,91 @@
 # oOS – Changelog
 
+## [1.1.40] - 2026-07-15
+
+### Added — Content Format Awareness
+
+- **Content Format Helper** (`WP_MCP_AI_Content_Format_Helper`) — detects and preserves content format (Markdown, HTML, plain text) in post-modifying and analysis tools. Ensures AI-generated content retains its intended format through the full create/update pipeline.
+- Full test coverage in `tests/test-content-format-helper.php`.
+
+### Added — Research → Paper Store → WordPress Draft Pipeline
+
+- **Bridged research tools to Paper Store** — all research tools now support `save_to_paper_store` parameter for staging results in the flat-file Paper Store before publishing.
+- **`create_post_from_research` tool** — new Pro tool that reads staged research from Paper Store and creates WordPress draft posts.
+- Optional `create_draft_post` convenience parameter on orchestration research tools for single-call workflows.
+
+### Added — Demo Video Pipeline Complete (Phases 0–5)
+
+- **Automated demo video pipeline** — scripted scene recording with AI voiceover generation and automated video assembly.
+- GitHub Actions workflow (`.github/workflows/demo-videos.yml`), bin scripts, video helpers, and 14 narration scripts.
+- Video catalog at `docs/videos/CATALOG.md`.
+
+### Added — Settings Credential Split
+
+- **Two-option credential isolation** — sensitive API keys moved from `wp_mcp_ai_settings` (autoload) to separate non-autoload `wp_mcp_ai_credentials` option with transparent merge via `get_settings()`.
+- One-time migration (`wp_mcp_ai_migrate_credentials_to_split`) on activation with verify step.
+- Defense-in-depth: `wp_suspend_cache_addition`, dual cache clearing, sensitive-key protection in save flow.
+
+### Added — Demo Video Pipeline Local Execution Fix
+
+- Fixed demo video pipeline for local execution environments (PR #5679).
+
+### Enhanced — Kimi & DeepSeek Client Parity
+
+- Kimi (Moonshot) and DeepSeek clients brought to full feature parity — streaming, tool use, token tracking, and error handling match all other first-class providers (PR #5682).
+
+### Enhanced — Model Catalog Update (July 2026)
+
+- **24 files touched** across base + pro: model-catalog.json (single source of truth), model selector routing fallbacks, language model router tier maps, admin defaults, token budget context windows/pricing, all provider client defaults, 35+ research tool default models, and admin description examples.
+- Default model bumps: Gemini `gemini-2.5-flash` → `gemini-3.5-flash`, NVIDIA `meta/llama-3.1-8b-instruct` → `nvidia/nemotron-3-nano-30b-a3b`, Gemini Live `gemini-2.5-flash-live` → `gemini-3.1-flash-live-preview`.
+- Process documentation at `docs/reference/models/model-update-process-2026-07.md`.
+
+### Enhanced — DeepSeek + 9 Missing Providers in Research Tools
+
+- All research tools now support DeepSeek and 9 previously missing AI providers for AI synthesis (PR #5670).
+
+### Enhanced — OOS Engine: SchemaStoreInterface + Test Coverage
+
+- **SchemaStoreInterface** (`lib/core/src/Domain/Contract/SchemaStoreInterface.php`) — domain contract for post type and taxonomy schema introspection.
+- **PostTypeSchema** and **TaxonomySchema** domain entities.
+- **GetPostTypeSchemaTool** — new OOS tool for querying post type schemas.
+- **WordPress adapter** (`lib/wordpress-adapter/src/Adapter/SchemaStore.php`) bridges the interface to WordPress registries.
+- **45 new unit + integration tests** across domain entities, provider clients, and tool registry.
+
+### Fixed — SSE HTTP/2 Protocol Errors
+
+- SSE output buffer handling fixed: `ob_clean()` replaces `ob_flush()` to prevent HTTP/2 protocol errors (PR #5684).
+
+### Fixed — SSE 524 Timeout
+
+- Pro SPA v2 SSE 524 timeout and HTTP/2 protocol errors fixed (PR #5683).
+
+### Fixed — Vector Store Sync No Polling
+
+- Vector store polling removed — status now checked only on assistant change and page load to reduce API load (PR #5671).
+
+### Fixed — Settings Import/Export Batch
+
+- **Import credential merge** — false failure on no-change imports fixed (PR #5697).
+- **Save key wipe** — API key loss fixed via credential split, cache suspension, and dual-cache clearing (PR #5696).
+- **Import subtab sanitization** — validation failure from subtab sections fixed (PR #5694).
+- **Export consistent counts** — export now uses `get_settings()` for consistent export/import (PR #5693).
+
+### Fixed — Credential Batch
+
+- Credential wipe on save fixed via merge of `wp_mcp_ai_credentials` before save/export/resolve (PR #5689).
+- Fatal error fixed: undefined method `WP_MCP_AI_Admin_Settings::is_sensitive_setting_key` (PR #5688).
+
+### Fixed — Validated Tool Slug Allowlist
+
+- Validated tool slug now correctly matches assistant allowlist (PR #5680).
+
+### Versioning
+
+- Bumped to **1.1.40** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, `DOCUMENTATION_INDEX.md`, `CLAUDE.md`, and `.context/tool-registry.md`.
+- Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+
 ## [1.1.39] - 2026-07-13
 
 ### Added — Meta-Harness Auto-Optimization System (All 7 Phases)
@@ -61,7 +147,7 @@
 
 ### Versioning
 
-- Bumped to **1.1.39** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`.
+- Bumped to **1.1.40** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`.
 - Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 - Provider count: **15** first-class language-model providers.
 - Addon count: **26**.
