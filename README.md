@@ -522,20 +522,6 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Previous Updates (v1.1.38 — July 2026)
-
-### July 10, 2026 — Page Agent Addon, Pro SPA v2 Parity, User Memory Toggle, Tool Enhancements, Workflow Improvements 🤖💬👤📝🔄
-
-- ✅ **Page Agent Addon v0.1.0.** New addon at `addons/page-agent/` — AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Gives any WordPress page its own AI agent that can click, type, and navigate via natural language. Runs entirely client-side with no headless browser, Python, or Chrome extension required. Includes shortcode `[mcp_ai_page_agent]`, Elementor widget, REST endpoints, MCP tool bridge, and admin settings page.
-- ✅ **Pro SPA v2 — Major Parity & Polish.** Voice pipeline, tasks drawer, workflow tracker, and file attachment upload to WordPress Media Library. Tool Shortcuts and Slash Commands drawers for quick tool access. Mobile hamburger sidebar toggle. Speech/audio button fixes using correct ToolsClient REST endpoint. Conversation title improvements and turn count display fix. Button and token NaN fixes. Model sync and auth bypass fixes. Assistant preloading in runtime config to fix sidebar loading.
-- ✅ **Pro SPA v2 — UI Polish.** Autoscroll fixes (scroll-to-bottom on submit, streaming start, user-at-bottom guard, restored via direct scrollTop instead of scrollIntoView). Viewport height fixes via CSS height chain instead of `calc(100vh - Xpx)`. `overflow:hidden` on height-chain ancestors. `filemtime`-based cache-busting across all SPA addons. Lint errors resolved in both chat-SPA and pro-SPA. Deduplicated model selector to prevent React duplicate-key warning. REST route registration fixed and production assets rebuilt.
-- ✅ **Per-User Chat Memory Preferences.** Users can now toggle chat memory on/off from their WordPress user profile. Individual control over AI memory retention without affecting site-wide defaults. Settings page integration.
-- ✅ **create_post / save_post Tool Enhancements.** Markdown-to-HTML conversion via new `WP_MCP_AI_Tool_Markdown_Converter` trait — auto-converts Markdown content to HTML when creating or updating posts. Smart taxonomy suggestions auto-detect relevant categories and tags. Block content corruption fix for non-post post types.
-- ✅ **Workflow Blueprint & Schedule Improvements.** Existing-content awareness in Content Publisher and Keyword Pipeline blueprints. Blog schedule presets now check for duplicate content before publishing. Readable response generation for workflow schedule result delivery.
-- ✅ **SPA Accessibility.** Annotation pills made clickable with meaningful labels for screen readers.
-- ✅ **Security.** OWASP ZAP DAST medium findings triaged as false positives.
-- 📦 **Versioning** — bumped to **1.1.38** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **26**.
-
 ## 🆕 Latest Updates (v1.1.40 — July 2026)
 
 ### July 12–15, 2026 — Content Format Awareness, Research Pipeline, Settings Credential Split, Model Catalog, Provider Parity, SSE Fixes
@@ -564,6 +550,20 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **Infrastructure.** Veo 2.0 deprecated — Gemini Omni Flash replacement (PR #5667): migration path, deprecation detection preventing wasteful 404 fallback loops, user-facing error messages recommending `gemini-omni-flash` (10s duration, native audio, multi-turn editing), cost calculator updated, tool schema defaults updated, admin settings updated, tests updated. Workflow auth and protected method errors fixed (PR #5659). ZAP scan Docker network isolation resolved (PR #5637). npm packages rebuilt and built assets updated (PR #5653).
 - ✅ **Documentation.** Comprehensive OpenMed integration plan v2 added (PR #5641).
 - 📦 **Versioning** — bumped to **1.1.39** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **26**.
+
+## 🆕 Previous Updates (v1.1.38 — July 2026)
+
+### July 10, 2026 — Page Agent Addon, Pro SPA v2 Parity, User Memory Toggle, Tool Enhancements, Workflow Improvements 🤖💬👤📝🔄
+
+- ✅ **Page Agent Addon v0.1.0.** New addon at `addons/page-agent/` — AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Gives any WordPress page its own AI agent that can click, type, and navigate via natural language. Runs entirely client-side with no headless browser, Python, or Chrome extension required. Includes shortcode `[mcp_ai_page_agent]`, Elementor widget, REST endpoints, MCP tool bridge, and admin settings page.
+- ✅ **Pro SPA v2 — Major Parity & Polish.** Voice pipeline, tasks drawer, workflow tracker, and file attachment upload to WordPress Media Library. Tool Shortcuts and Slash Commands drawers for quick tool access. Mobile hamburger sidebar toggle. Speech/audio button fixes using correct ToolsClient REST endpoint. Conversation title improvements and turn count display fix. Button and token NaN fixes. Model sync and auth bypass fixes. Assistant preloading in runtime config to fix sidebar loading.
+- ✅ **Pro SPA v2 — UI Polish.** Autoscroll fixes (scroll-to-bottom on submit, streaming start, user-at-bottom guard, restored via direct scrollTop instead of scrollIntoView). Viewport height fixes via CSS height chain instead of `calc(100vh - Xpx)`. `overflow:hidden` on height-chain ancestors. `filemtime`-based cache-busting across all SPA addons. Lint errors resolved in both chat-SPA and pro-SPA. Deduplicated model selector to prevent React duplicate-key warning. REST route registration fixed and production assets rebuilt.
+- ✅ **Per-User Chat Memory Preferences.** Users can now toggle chat memory on/off from their WordPress user profile. Individual control over AI memory retention without affecting site-wide defaults. Settings page integration.
+- ✅ **create_post / save_post Tool Enhancements.** Markdown-to-HTML conversion via new `WP_MCP_AI_Tool_Markdown_Converter` trait — auto-converts Markdown content to HTML when creating or updating posts. Smart taxonomy suggestions auto-detect relevant categories and tags. Block content corruption fix for non-post post types.
+- ✅ **Workflow Blueprint & Schedule Improvements.** Existing-content awareness in Content Publisher and Keyword Pipeline blueprints. Blog schedule presets now check for duplicate content before publishing. Readable response generation for workflow schedule result delivery.
+- ✅ **SPA Accessibility.** Annotation pills made clickable with meaningful labels for screen readers.
+- ✅ **Security.** OWASP ZAP DAST medium findings triaged as false positives.
+- 📦 **Versioning** — bumped to **1.1.38** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **26**.
 
 ## 🆕 Previous Updates (v1.1.37 — July 2026)
 
