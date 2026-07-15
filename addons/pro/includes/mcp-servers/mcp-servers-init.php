@@ -3,7 +3,7 @@
  * Toolkit MCP Servers — Bootstrap
  *
  * Loads framework classes, primes the registry on init, and registers all
- * toolkit servers (Phases 1-3 + 6 + DietPi = 29 servers).
+ * toolkit servers (Phases 1-3 + 6 + 8 + DietPi = 33 servers).
  *
  * @package WP_MCP_AI_Pro
  * @since 1.2.0
@@ -20,6 +20,9 @@ require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-rest-controller.php';
 require_once __DIR__ . '/class-wp-mcp-ai-toolkit-mcp-audit-log.php';
 require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-mcp-observability-card.php';
 require_once __DIR__ . '/class-wp-mcp-ai-pro-toolkit-server-token.php';
+
+// Phase 8 — shared trait for Action Scheduler-backed sync servers.
+require_once __DIR__ . '/trait-wp-mcp-ai-scheduled-toolkit-server.php';
 
 // Phase 1 pilot servers.
 require_once __DIR__ . '/servers/class-wp-mcp-ai-crm-mcp-server.php';
@@ -57,6 +60,12 @@ require_once __DIR__ . '/servers/class-wp-mcp-ai-site-creator-mcp-server.php';
 
 // DietPi Pro Toolkit (Phase 1).
 require_once __DIR__ . '/servers/class-wp-mcp-ai-dietpi-mcp-server.php';
+
+// Phase 8 — Pro Scheduler + Inventory Sync MCP Servers (4 servers).
+require_once __DIR__ . '/servers/class-wp-mcp-ai-pro-scheduler-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-flowhub-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-shopify-sync-mcp-server.php';
+require_once __DIR__ . '/servers/class-wp-mcp-ai-ezuite-mcp-server.php';
 
 // Phase 6 — /.well-known/mcp discovery endpoint.
 require_once __DIR__ . '/class-wp-mcp-ai-pro-well-known-mcp.php';
@@ -119,6 +128,12 @@ add_action(
 		$registry->register( new WP_MCP_AI_Healthcare_Imaging_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Healthcare_Wellness_MCP_Server() );
 		$registry->register( new WP_MCP_AI_Site_Creator_MCP_Server() );
+
+		// Phase 8 — Pro Scheduler + Inventory Sync servers (alphabetical).
+		$registry->register( new WP_MCP_AI_EZuite_MCP_Server() );
+		$registry->register( new WP_MCP_AI_FlowHub_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Pro_Scheduler_MCP_Server() );
+		$registry->register( new WP_MCP_AI_Shopify_Sync_MCP_Server() );
 	}
 );
 

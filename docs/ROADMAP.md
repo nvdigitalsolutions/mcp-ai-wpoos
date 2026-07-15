@@ -489,7 +489,22 @@ The following features were originally planned for v1.2.0 (Q2 2026) and v1.3.0 (
 20. ✅ **FlowHub Inventory Sync** (6 tools) — Cannabis dispensary management: products, inventory, locations, analytics
 21. ✅ **Shopify Sync** (5 tools) — Bi-directional e-commerce sync: products, orders, inventory, analytics
 
-> ℹ️ **Tool counts are approximate.** The live tool registry (`WP_MCP_AI_Tool_Registry::get_tools()`) is the authoritative source. Total Pro tools: ~810+ across 21+ toolkits. Combined with ~195 base tools = ~1,005+ total.
+**Added Since v1.1.36 (4+ toolkits):**
+22. ✅ **EZuite ERP Sync** (6 tools) — ERP inventory → WooCommerce sync, CCT cache, low-stock alerts
+
+> ℹ️ **Tool counts are approximate.** The live tool registry (`WP_MCP_AI_Tool_Registry::get_tools()`) is the authoritative source. Total Pro tools: ~810+ across 22+ toolkits. Combined with ~195 base tools = ~1,005+ total.
+
+### Toolkit MCP Server Fleet (ADR 002)
+
+Currently **29 toolkit MCP servers** across Phases 1, 2, 6, and DietPi — each with its own JSON-RPC endpoint under `/wp-json/mcp-ai-pro/v1/mcp/{slug}`, discovery descriptor, and per-server admin governance.
+
+**Phase 8 (Proposed — v1.5.0):** Promote 4 additional toolkits to MCP servers:
+- Pro Scheduler (14 tools, R&A surface)
+- FlowHub Inventory Sync (6 tools)
+- Shopify Sync (5 tools)
+- EZuite ERP Sync (6 tools)
+
+→ See [`docs/project/proposals/pro-toolkit-mcp-servers-expansion-plan.md`](project/proposals/pro-toolkit-mcp-servers-expansion-plan.md) for the full proposal.
 
 ### Future Expansion Opportunities 💡
 
