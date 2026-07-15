@@ -1,0 +1,27 @@
+# Narration: Site Creator
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~90 seconds
+
+Welcome to NV oOS Pro. In this video, we will use the Site Creator to generate a complete WordPress site from a template.
+
+Open the Site Creator from the Pro menu.
+
+Browse the available site templates. Each template includes a pre-configured structure with pages, posts, and settings.
+
+Select a template that matches your project type. You can preview the template before deploying.
+
+Configure the site options. Choose a site name, tagline, and admin email.
+
+Select which plugins to include. The creator can automatically install and activate required plugins.
+
+Configure the AI assistant that will be embedded on your new site.
+
+Choose your preferred page builder integration if you plan to customize the design later.
+
+Review your configuration and click Deploy to generate the site.
+
+The site creator provisions your new WordPress site with all content, plugins, and AI assistants pre-configured.
+
+Once deployment is complete, you can preview your new site immediately.
+
+That's it. The Site Creator turns days of setup work into a few minutes of configuration.

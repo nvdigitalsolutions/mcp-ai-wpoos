@@ -647,7 +647,7 @@ class WP_MCP_AI_OCR_Service {
 		$response = $client->create_chat_completion(
 			$messages,
 			array(
-				'model'      => 'gpt-4o',
+				'model'      => 'gpt-4.1',
 				'max_tokens' => 4096,
 			)
 		);

@@ -13,18 +13,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Intelligently selects between gpt-4o-mini and gpt-4o based on task complexity.
+ * Intelligently selects between light and advanced models based on task complexity.
  */
 class WP_MCP_AI_Model_Selector {
 
 	/**
 	 * Token threshold for considering a task "long-form".
-	 * Tasks with more input tokens than this will use gpt-4o.
+	 * Tasks with more input tokens than this will use the advanced model.
 	 */
 	const LONG_FORM_TOKEN_THRESHOLD = 4000;
 
 	/**
-	 * Keywords that indicate complex tasks requiring gpt-4o.
+	 * Keywords that indicate complex tasks requiring the advanced model.
 	 *
 	 * @var array
 	 */
@@ -105,9 +105,9 @@ class WP_MCP_AI_Model_Selector {
 		}
 
 		if ( $is_complex ) {
-			$model = 'gpt-4o';
+			$model = self::get_default_advanced_model();
 
-			// Check if gpt-4o can handle the token requirements.
+			// Check if the advanced model can handle the token requirements.
 			$fallback = self::check_tpm_and_suggest_fallback( $messages, $model, $options );
 			if ( $fallback !== $model ) {
 				WP_MCP_AI_Logger::log_event(
@@ -124,7 +124,7 @@ class WP_MCP_AI_Model_Selector {
 
 			WP_MCP_AI_Logger::log_event(
 				'model_routing_complex',
-				'Routing to gpt-4o for complex/long-form task.',
+				'Routing to advanced model for complex/long-form task.',
 				array(
 					'reason' => self::get_complexity_reason( $messages, $options ),
 				)
@@ -150,7 +150,7 @@ class WP_MCP_AI_Model_Selector {
 
 		WP_MCP_AI_Logger::log_event(
 			'model_routing_light',
-			'Routing to gpt-4o-mini for light task.',
+			'Routing to light model for task.',
 			array()
 		);
 
@@ -251,11 +251,11 @@ class WP_MCP_AI_Model_Selector {
 		// Determine the provider and suggest an appropriate fallback.
 		$model_lower = strtolower( $model );
 
-		// OpenAI models - try gpt-4o if currently on gpt-4o-mini, or high-capacity Gemini for very large requests.
+		// OpenAI models - try gpt-4.1 if currently on a mini/nano model, or high-capacity Gemini for very large requests.
 		if ( false !== strpos( $model_lower, 'gpt' ) || false !== strpos( $model_lower, 'o1' ) ) {
-			// If on gpt-4o-mini and request is too large, try gpt-4o.
+			// If on a mini/nano model and request is too large, try gpt-4.1.
 			if ( false !== strpos( $model_lower, 'mini' ) && $total_tokens <= 30000 ) {
-				return 'gpt-4o';
+				return 'gpt-4.1';
 			}
 
 			// For very large requests (> 30k tokens), fallback to configured high-capacity model or Gemini.
@@ -263,8 +263,8 @@ class WP_MCP_AI_Model_Selector {
 				return self::get_high_capacity_fallback_model( $model );
 			}
 
-			// Otherwise, fallback to gpt-4o.
-			return 'gpt-4o';
+			// Otherwise, fallback to gpt-4.1.
+			return 'gpt-4.1';
 		}
 
 		// Gemini models already have high TPM limits (1M), unlikely to hit this.
@@ -437,7 +437,7 @@ class WP_MCP_AI_Model_Selector {
 	}
 
 	/**
-	 * Determine if a task is complex and requires gpt-4o.
+	 * Determine if a task is complex and requires the advanced model.
 	 *
 	 * @param array $messages Messages array.
 	 * @param array $options  Request options.
@@ -445,7 +445,7 @@ class WP_MCP_AI_Model_Selector {
 	 * @return bool True if task is complex.
 	 */
 	protected static function is_complex_task( array $messages, array $options ) {
-		// Check token count - long-form content needs gpt-4o.
+		// Check token count - long-form content needs the advanced model.
 		$token_count = WP_MCP_AI_Token_Budget_Manager::estimate_tokens(
 			wp_json_encode( $messages )
 		);

@@ -249,6 +249,9 @@ class WP_MCP_AI_Project_Research_Page {
 								'create_event',
 								'list_events',
 								'get_calendar_view',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// Research tools.
 								'web_search',
 								'search_content',

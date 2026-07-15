@@ -1040,6 +1040,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$assistant_id = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( $assistant_id );
 			}
 
+			// When SSE streaming is requested, send headers and a keepalive
+			// frame immediately so Cloudflare and other proxies do not time
+			// out waiting for the first byte while we gather the initial
+			// snapshot data (which can be expensive on sites with large
+			// options tables or many async jobs).
+			$wants_sse = $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request );
+
+			if ( $wants_sse ) {
+				// Send SSE headers and an immediate keepalive frame. The
+				// send_sse_headers() method also extends execution time
+				// and flushes output, which prevents Cloudflare 524
+				// timeouts during the data-gathering phase below.
+				$this->sse_handler->send_sse_headers();
+				$this->sse_handler->send_sse_comment( 'keepalive' );
+			}
+
 			// Get status summary and counts with optional assistant filter.
 			$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id );
 			$counts = $service->get_status_counts( $user_id, $assistant_id );
@@ -1056,11 +1072,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Check if SSE streaming was requested.
-			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
+			if ( $wants_sse ) {
 				// Phase 2 slice 2b: real polling loop emitting typed `job:*`
 				// diff frames with monotonic `id:` lines + `Last-Event-ID`
 				// resume. See docs/features/chat/cron-status-tasks-drawer-plan.md.
-				return $this->stream_status_summary_updates( $request, $response, $service, $user_id, $limit, $assistant_id );
+				//
+				// Headers were already sent above; pass the gathered data
+				// directly into the polling loop with headers_sent=true.
+				return $this->stream_status_summary_updates( $request, $response, $service, $user_id, $limit, $assistant_id, true );
 			}
 
 			/**
@@ -1166,9 +1185,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param int                           $user_id      Authenticated user ID.
 		 * @param int                           $limit        Snapshot limit.
 		 * @param int|null                      $assistant_id Optional assistant filter.
+		 * @param bool                          $headers_sent Whether SSE headers were already sent by the caller.
 		 * @return void Streams SSE updates and exits.
 		 */
-		protected function stream_status_summary_updates( WP_REST_Request $request, array $initial, $service, $user_id, $limit, $assistant_id ) {
+		protected function stream_status_summary_updates( WP_REST_Request $request, array $initial, $service, $user_id, $limit, $assistant_id, $headers_sent = false ) {
 			$stream_started_micros = (int) round( microtime( true ) * 1e6 );
 
 			/**
@@ -1181,7 +1201,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 */
 			do_action( 'wp_mcp_ai_before_chat_jobs_stream', $user_id, $assistant_id );
 
-			$this->sse_handler->send_sse_headers();
+			if ( ! $headers_sent ) {
+				$this->sse_handler->send_sse_headers();
+			}
 
 			// Parse `Last-Event-ID` so reconnecting clients resume the
 			// monotonic counter from where they left off. The header is
@@ -1222,9 +1244,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$poll_interval = self::SSE_JOB_POLL_INTERVAL;
 			$poll_count    = 0;
 
-			$required_time = ( $max_polls * $poll_interval ) + 60;
-			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort timeout extension.
+			if ( ! $headers_sent ) {
+				$required_time = ( $max_polls * $poll_interval ) + 60;
+				if ( function_exists( 'set_time_limit' ) ) {
+					@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort timeout extension.
+				}
 			}
 
 			while ( $poll_count < $max_polls ) {
@@ -5870,6 +5894,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			foreach ( $candidates as $candidate ) {
 				if ( isset( $allowed_lookup[ $candidate ] ) ) {
 					return $allowed_lookup[ $candidate ];
+				}
+			}
+
+			// If a candidate ends with `_validated`, also try its base slug.
+			// This handles the registry auto-upgrade where get_tool( 'web_search' )
+			// transparently returns the web_search_validated instance, and the MCP
+			// tools/list endpoint reports the validated slug while the assistant
+			// config stores the base slug.
+			foreach ( $candidates as $candidate ) {
+				if ( substr( $candidate, -10 ) === '_validated' ) {
+					$base = substr( $candidate, 0, -10 );
+					if ( '' !== $base && isset( $allowed_lookup[ $base ] ) ) {
+						return $allowed_lookup[ $base ];
+					}
 				}
 			}
 

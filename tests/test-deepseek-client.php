@@ -432,4 +432,43 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		// the class identity convention by checking the class name.
 		$this->assertStringContainsString( 'DeepSeek', get_class( $this->client ) );
 	}
+
+	// -------------------------------------------------------------------------
+	// set_api_key / api_key_override.
+	// -------------------------------------------------------------------------
+
+	public function test_set_api_key_overrides_persisted_key() {
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-persisted' ) );
+		$this->client->set_api_key( 'sk-override' );
+		$this->assertEquals( 'sk-override', $this->client->get_api_key() );
+	}
+
+	// -------------------------------------------------------------------------
+	// build_payload — clamping.
+	// -------------------------------------------------------------------------
+
+	public function test_build_payload_clamps_temperature() {
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_payload' );
+		$method->setAccessible( true );
+		$messages = array( array( 'role' => 'user', 'content' => 'Hi' ) );
+		$payload  = $method->invoke( $this->client, $messages, array( 'temperature' => 5.0 ), 'deepseek-chat' );
+		$this->assertEquals( 2.0, $payload['temperature'] );
+	}
+
+	public function test_build_payload_supports_max_completion_tokens() {
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_payload' );
+		$method->setAccessible( true );
+		$messages = array( array( 'role' => 'user', 'content' => 'Hi' ) );
+		$payload  = $method->invoke( $this->client, $messages, array( 'max_completion_tokens' => 200 ), 'deepseek-chat' );
+		$this->assertEquals( 200, $payload['max_tokens'] );
+	}
+
+	public function test_model_supports_tools_public() {
+		$this->assertTrue( $this->client->model_supports_tools( 'deepseek-chat' ) );
+		$this->assertFalse( $this->client->model_supports_tools( 'deepseek-reasoner' ) );
+	}
 }

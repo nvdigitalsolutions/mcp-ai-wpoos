@@ -1,6 +1,8 @@
 # Keeping the Model Catalog Up to Date
 
-> Last reviewed: April 2026
+> Last reviewed: July 2026
+>
+> **See also**: [`model-update-process-2026-07.md`](model-update-process-2026-07.md) — complete step-by-step checklist covering all files that need updating when model lineups change.
 
 NV oOS ships with a JSON-driven catalog of every AI model it knows about — provider, lineup, rate limits, pricing, lifecycle status, and fallback. This page describes how the catalog is structured and how to keep it current.
 

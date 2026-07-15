@@ -242,10 +242,9 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 
 			// Prepare content for embedding.
 			$title   = get_the_title();
-			$content = get_the_content();
 
 			// Combine title and content for embedding.
-			$text_to_embed = $title . "\n\n" . wp_strip_all_tags( $content );
+			$text_to_embed = $title . "\n\n" . WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post_id );
 
 			// Limit text length (approximate token limit).
 			$text_to_embed = mb_substr( $text_to_embed, 0, self::MAX_TEXT_LENGTH );
@@ -384,10 +383,9 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 
 			// Prepare content for embedding.
 			$title   = get_the_title();
-			$content = get_the_content();
 
 			// Combine title and content for embedding.
-			$text_to_embed = $title . "\n\n" . wp_strip_all_tags( $content );
+			$text_to_embed = $title . "\n\n" . WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post_id );
 
 			// Limit text length (approximate token limit).
 			$text_to_embed = mb_substr( $text_to_embed, 0, self::MAX_TEXT_LENGTH );

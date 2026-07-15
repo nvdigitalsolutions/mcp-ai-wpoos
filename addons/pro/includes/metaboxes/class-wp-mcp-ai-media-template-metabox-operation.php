@@ -191,13 +191,13 @@ class WP_MCP_AI_Media_Template_Metabox_Operation extends WP_MCP_AI_Media_Templat
 				<h4><?php esc_html_e( 'AI Operations (Enhance, Style, Background, Retouch)', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul style="list-style: disc; margin-left: 20px;">
 					<li><code>prompt</code> (string): Instructions for AI transformation (required)</li>
-					<li><code>model</code> (string): Gemini model (default: gemini-2.0-flash-exp)</li>
+					<li><code>model</code> (string): Gemini model (default: gemini-3.1-flash-image)</li>
 					<li><code>aspect_ratio</code> (string): 1:1, 16:9, 4:3, 3:2, 9:16 (default: 1:1)</li>
 				</ul>
 				<p><strong><?php esc_html_e( 'Example:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
 				<pre style="background: #fff; padding: 10px; border: 1px solid #ddd; overflow-x: auto;"><code>{
 	"prompt": "enhance brightness and contrast, improve colors",
-	"model": "gemini-2.0-flash-exp",
+	"model": "gemini-3.1-flash-image",
 	"aspect_ratio": "16:9"
 }</code></pre>
 			</div>

@@ -27,6 +27,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
 		const MASKED_SECRET_PLACEHOLDER      = '**************';
 		const OPTION_NAME                    = 'wp_mcp_ai_settings';
+		const CREDENTIALS_OPTION_NAME        = 'wp_mcp_ai_credentials';
 		const SETTINGS_GROUP                 = 'wp_mcp_ai_settings_group';
 		const PAGE_SLUG                      = 'wp-mcp-ai-settings';
 		const SIMPLE_JWT_LOGIN_PLUGIN        = 'simple-jwt-login/simple-jwt-login.php';
@@ -238,11 +239,24 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				return self::$settings_cache;
 			}
 
-			$defaults = self::get_default_settings();
-			$saved    = get_option( self::OPTION_NAME, array() );
+			$defaults    = self::get_default_settings();
+			$saved       = get_option( self::OPTION_NAME, array() );
+			$credentials = get_option( self::CREDENTIALS_OPTION_NAME, array() );
 
 			if ( ! is_array( $saved ) ) {
 				$saved = array();
+			}
+			if ( ! is_array( $credentials ) ) {
+				$credentials = array();
+			}
+
+			// Merge credentials from the separate non-autoload option.
+			// Credentials take precedence for keys present in both — they are
+			// the canonical source for secrets. This single merge point means
+			// every consumer (save, export, import, credential resolver) gets
+			// the complete merged settings without knowing about the split.
+			if ( count( $credentials ) > 0 ) {
+				$saved = array_merge( $saved, $credentials );
 			}
 
 			$settings = wp_parse_args( $saved, $defaults );
@@ -437,7 +451,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'enable_logging'                        => false,
 				'markup_enabled'                        => true,
 				'default_model'                         => 'gpt-4.1',
-				'default_gemini_model'                  => 'gemini-2.5-flash',
+				'default_gemini_model'                  => 'gemini-3.5-flash',
 				'default_provider'                      => 'openai',
 				'provider_priority_list'                => $provider_list,
 				'web_search_provider'                   => 'duckduckgo',
@@ -490,7 +504,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'enable_nvidia'                         => false,
 				'nvidia_api_key'                        => '',
 				'nvidia_endpoint_url'                   => 'https://integrate.api.nvidia.com/v1',
-				'nvidia_model'                          => 'meta/llama-3.1-8b-instruct',
+				'nvidia_model'                          => 'nvidia/nemotron-3-nano-30b-a3b',
 				// RabbitMQ settings (Cloudways integration).
 				'rabbitmq_enabled'                      => false,
 				'rabbitmq_host'                         => 'localhost',
@@ -685,7 +699,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'realtime_translate_output_lang'        => 'es',
 				'realtime_whisper_latency_delay'        => 1.0,
 				'realtime_safety_identifier_enabled'    => false,
-				'gemini_live_model'                     => 'gemini-2.5-flash-live',
+				'gemini_live_model'                     => 'gemini-3.1-flash-live-preview',
 				'gemini_live_voice'                     => 'Puck',
 				'chat_enable_voice_chat_button'         => true,
 

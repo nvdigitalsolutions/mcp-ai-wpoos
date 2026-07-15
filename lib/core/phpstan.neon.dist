@@ -1,8 +1,13 @@
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
 parameters:
     level: 5
     paths:
         - src/
     tmpDir: .phpstan-cache
+    treatPhpDocTypesAsCertain: false
 
     # Level 8 is the long-term target (ADR recommends it for the core package).
     # Currently blocked by ~251 "no value type specified in iterable type array"

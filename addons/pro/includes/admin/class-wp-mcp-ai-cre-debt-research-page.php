@@ -140,7 +140,7 @@ class WP_MCP_AI_CRE_Debt_Research_Page {
 				<?php if ( $assistant_id ) : ?>
 					<?php
 					// The shortcode renders a complete chat UI with necessary HTML attributes.
-					echo do_shortcode( '[mcp_ai_chat assistant_id="' . absint( $assistant_id ) . '" height="500px"]' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode handles its own escaping.
+					echo do_shortcode( '[mcp_ai_chat assistant_id="' . absint( $assistant_id ) . '" height="500px" additional_tools="generate_research_report,create_post_from_research"]' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode handles its own escaping.
 					?>
 				<?php else : ?>
 					<div class="notice notice-warning">

@@ -1,0 +1,27 @@
+# Narration: Schedule Manager
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~75 seconds
+
+Welcome to NV oOS Pro. In this video, we will set up recurring AI tasks using the Schedule Manager.
+
+Open the Schedule Manager from the Pro admin menu.
+
+Click Create Schedule to define a new recurring AI task.
+
+Give your schedule a descriptive name. This helps you identify it later in the list.
+
+Select the AI assistant that will execute the task.
+
+Define the prompt or instruction that the AI will process each time the schedule runs.
+
+Choose the recurrence pattern. You can schedule tasks hourly, daily, weekly, or with custom cron expressions.
+
+Optionally, configure what the AI should do with the results. Results can be saved as posts, sent via email, or logged for review.
+
+Set the timezone for accurate scheduling across your team.
+
+Activate the schedule. The AI will now run at the specified intervals automatically.
+
+View the execution history to confirm that tasks are running as expected.
+
+That's it. The Schedule Manager automates recurring AI work so your site stays up to date without manual intervention.

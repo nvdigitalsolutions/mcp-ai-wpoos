@@ -1,6 +1,8 @@
 # OOS Engine — Feature Flag Guide
 
-**The framework-agnostic extraction of the oOS AI orchestration engine is operational behind a feature flag.** This guide explains how to enable it, what changes, and how to migrate from the legacy engine.
+**The framework-agnostic extraction of the AI orchestration engine (`nvoos/core`) is operational behind a feature flag.** This guide explains how to enable it, what changes, and how to migrate from the legacy engine.
+
+> **Current status (2026-07-13):** 82 of ~195 base tools (42%) run through the OOS engine. The full Hexagonal Architecture is complete — 9 domain contracts, 10 entities, 5 error classes, 8 domain events, 4 application services, 15 provider clients, SSE streaming, cost calculation, and token-budget management. See the [gap analysis](../project/proposals/cross-platform-extraction-gap-analysis.md) for the latest tool inventory.
 
 ## Quick Start
 
@@ -42,11 +44,11 @@ REST Controller                       REST Controller
 
 ### Tools
 
-43 of ~195 base tools run through the OOS engine. The remaining tools fall back to the legacy execution path. See [`docs/project/proposals/cross-platform-extraction-gap-analysis.md`](../project/proposals/cross-platform-extraction-gap-analysis.md) for the full list.
+**82 of ~195 base tools (42%)** run through the OOS engine. These include all content CRUD tools, external API tools, HuggingFace datasets, client-side AI, cache/queue/settings/file utilities, skills, and site admin tools. The remaining ~113 tools fall back to the legacy execution path. See the [gap analysis](../project/proposals/cross-platform-extraction-gap-analysis.md) for the full inventory.
 
 ### Providers
 
-All 12 AI providers work identically — the provider clients in `lib/core/src/Infrastructure/Provider/` are used by both paths.
+All 15 AI providers work identically — the provider clients in `lib/core/src/Infrastructure/Provider/` are used by both paths. Providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Kimi (Moonshot), Ollama, LM Studio, DigitalOcean, NVIDIA NIM, Cloudflare, HuggingFace, Baseten, OpenAiCompatible (base), and a shared AbstractProviderClient.
 
 ### Events
 

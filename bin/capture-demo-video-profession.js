@@ -102,18 +102,10 @@ async function tryFill(page, selectors, text) {
 		await page.waitForTimeout(PAUSE.MEDIUM);
 
 		// ═══════════════════════════════════════════════════════
-		// 3. Click "Add New" or navigate directly
+		// 3. Navigate to "Add New" profession
 		// ═══════════════════════════════════════════════════════
-		console.log('  ▶ Open Add New Profession');
-		const clicked = await tryClick(page, [
-			'a.page-title-action',
-			'.wrap a[href*="post-new"]',
-			'a[href*="post-new.php?post_type=mcp_ai_profession"]',
-		]);
-
-		if (!clicked) {
-			await admin.goToPostTypeNew('mcp_ai_profession');
-		}
+		console.log('  ▶ Navigate to Add New profession');
+		await admin.goToPostTypeNew('mcp_ai_profession');
 		await page.waitForTimeout(PAUSE.LONG);
 
 		// ═══════════════════════════════════════════════════════

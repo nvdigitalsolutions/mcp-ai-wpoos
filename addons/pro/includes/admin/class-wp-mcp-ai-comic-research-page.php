@@ -273,6 +273,9 @@ class WP_MCP_AI_Comic_Research_Page {
 								'apply_comic_style',
 								// Image generation.
 								'generate_image_ai',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// Research tools.
 								'web_search',
 								'search_content',

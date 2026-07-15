@@ -192,6 +192,9 @@ class WP_MCP_AI_Deal_Research_Page {
 			'list_crm_activities',
 			'complete_crm_activity',
 			'crm_capture_interaction',
+			// Research → Paper Store pipeline.
+			'generate_research_report',
+			'create_post_from_research',
 			// Web research.
 			'web_search',
 			'search_content',

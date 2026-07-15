@@ -404,6 +404,9 @@ class WP_MCP_AI_Registration_Research_Page {
 								// Authority integrations.
 								'sync_with_mohap',
 								'sync_with_nmra',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// General research tools.
 								'web_search',
 								'search_content',

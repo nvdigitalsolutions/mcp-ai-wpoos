@@ -374,7 +374,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		try {
 			// Determine the encoding to use based on model.
-			$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'gpt-4o';
+			$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'gpt-4.1';
 
 			// Get the appropriate encoder for the model.
 			$encoder = $this->get_tiktoken_encoder_for_model( $model );
@@ -457,7 +457,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		// Most modern models use cl100k_base encoding.
 		$encoding_map = array(
 			'gpt-4'         => 'cl100k_base',
-			'gpt-4o'        => 'o200k_base',
+			'gpt-4.1'        => 'o200k_base',
 			'gpt-4o-mini'   => 'o200k_base',
 			'gpt-3.5-turbo' => 'cl100k_base',
 			'text-davinci'  => 'p50k_base',

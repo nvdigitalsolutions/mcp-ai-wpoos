@@ -1,0 +1,21 @@
+# Narration: Configure AI Provider
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~60 seconds
+
+Welcome to NV oOS. In this video, we will connect your AI provider so the plugin can generate intelligent responses.
+
+Navigate to the plugin settings and open the AI Providers tab. This is where you manage all your AI service connections.
+
+Enter your OpenAI API key. You can generate one from the OpenAI platform dashboard.
+
+If you use Google Gemini, you can also add your Gemini API key here for multi-provider support.
+
+Select your default AI provider. This determines which service handles your chat requests.
+
+Choose your preferred model. GPT-4o is recommended for most use cases.
+
+Click the Test Connection button to verify your API key is valid. You should see a green success indicator.
+
+Save your settings. Your AI provider is now connected and ready to power your assistants.
+
+That's it. The plugin is now configured to generate AI responses using your chosen provider.

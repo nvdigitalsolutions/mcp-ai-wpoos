@@ -46,7 +46,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * AI-powered DICOM study interpretation tool.
  *
  * Requires the `view_medical_imaging` capability.  Pixel-preview mode
- * additionally requires a vision-capable AI provider (OpenAI gpt-4o /
+ * additionally requires a vision-capable AI provider (OpenAI gpt-4.1 /
  * Gemini 1.5 Pro or later).
  */
 class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 				),
 				'include_pixel_preview' => array(
 					'type'        => 'boolean',
-					'description' => __( 'When true, extract a single representative grayscale frame from the DICOM file and include it in the AI vision request. Requires a vision-capable model (e.g. gpt-4o, gemini-1.5-pro). Default: false.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'When true, extract a single representative grayscale frame from the DICOM file and include it in the AI vision request. Requires a vision-capable model (e.g. gpt-4.1, gemini-2.5-flash). Default: false.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 				'instance_uid'          => array(
@@ -344,7 +344,7 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	 * @return string|WP_Error Provider slug or error.
 	 */
 	private function get_provider( array $settings, $require_vision ) {
-		// For vision, prefer OpenAI (gpt-4o) then Gemini.
+		// For vision, prefer OpenAI (gpt-4.1) then Gemini.
 		if ( $require_vision ) {
 			if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'openai' ) ) {
 				return 'openai';
@@ -385,21 +385,21 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 	private function get_model( $provider, array $settings, $require_vision ) {
 		switch ( $provider ) {
 			case 'openai':
-				// Always use a vision-capable model; gpt-4o works for both cases.
+				// Always use a vision-capable model; gpt-4.1 works for both cases.
 				if ( ! empty( $settings['openai_default_model'] ) ) {
 					return $settings['openai_default_model'];
 				}
-				return 'gpt-4o';
+				return 'gpt-4.1';
 
 			case 'gemini':
 				if ( ! empty( $settings['gemini_default_model'] ) ) {
 					return $settings['gemini_default_model'];
 				}
-				// gemini-1.5-pro supports vision; flash is fine for metadata-only.
-				return $require_vision ? 'gemini-1.5-pro' : 'gemini-2.5-flash';
+				// gemini-2.5-flash supports vision; flash is fine for metadata-only.
+				return $require_vision ? 'gemini-2.5-flash' : 'gemini-2.5-flash';
 
 			case 'anthropic':
-				return 'claude-sonnet-4-5-20250929';
+				return 'claude-sonnet-5';
 
 			default:
 				return new WP_Error(

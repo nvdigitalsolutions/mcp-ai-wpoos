@@ -1,7 +1,7 @@
 {
   "$schema": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/schemas/model-catalog.schema.json",
-  "version": "2026.06.05",
-  "updated_at": "2026-06-05",
+  "version": "2026.07.14",
+  "updated_at": "2026-07-14",
   "description": "NV oOS model catalog - canonical source of truth for provider model lineups, rate limits, costs, and status. Override at runtime via the wp_mcp_ai_model_catalog filter or by pointing wp_mcp_ai_model_catalog_source_path at an alternate JSON file.",
   "models": [
     {
@@ -125,6 +125,46 @@
       "notes": "Claude Opus 4.7 - hybrid reasoning, 1M context. $5/$25 per 1M. Best coding + agent model."
     },
     {
+      "model_name": "claude-sonnet-5",
+      "provider": "anthropic",
+      "tpm_limit": 100000,
+      "rpm_limit": 150,
+      "tpd_limit": 0,
+      "rpd_limit": 0,
+      "context_window": 200000,
+      "max_output_tokens": 128000,
+      "tier": "tier-1",
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_vision": true,
+      "cost_per_1k_input_tokens": 0.002,
+      "cost_per_1k_output_tokens": 0.01,
+      "fallback_model": "claude-sonnet-4-6",
+      "status": "active",
+      "sunset_date": "",
+      "notes": "Claude Sonnet 5 (June 2026). Now the default Claude model. $2/$10 per 1M intro through Aug 31, 2026, then $3/$15."
+    },
+    {
+      "model_name": "claude-fable-5",
+      "provider": "anthropic",
+      "tpm_limit": 50000,
+      "rpm_limit": 50,
+      "tpd_limit": 0,
+      "rpd_limit": 0,
+      "context_window": 200000,
+      "max_output_tokens": 128000,
+      "tier": "tier-2",
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_vision": true,
+      "cost_per_1k_input_tokens": 0.01,
+      "cost_per_1k_output_tokens": 0.05,
+      "fallback_model": "claude-opus-4-8",
+      "status": "active",
+      "sunset_date": "",
+      "notes": "Claude Fable 5 (June 2026). Top-tier above Opus. $10/$50 per 1M tokens. Highest reasoning quality."
+    },
+    {
       "model_name": "claude-opus-4-8",
       "provider": "anthropic",
       "tpm_limit": 200000,
@@ -178,11 +218,11 @@
       "cost_per_1k_input_tokens": 0.003,
       "cost_per_1k_output_tokens": 0.015,
       "notes": "Claude Sonnet 4.6 - hybrid reasoning, 1M context (beta). $3/$15 per 1M. Superior agents + coding.",
-      "status": "active",
+      "status": "deprecated",
       "tpd_limit": 0,
       "rpd_limit": 0,
-      "fallback_model": "",
-      "sunset_date": ""
+      "fallback_model": "claude-sonnet-5",
+      "sunset_date": "2026-09-30"
     },
     {
       "model_name": "gpt-4o",
@@ -2902,7 +2942,7 @@
       "fallback_model": "gemma4",
       "status": "active",
       "sunset_date": "",
-      "notes": "Gemma 4 31B \u2601 (Cloud) - Cloud-hosted via Ollama. 1M context, multimodal."
+      "notes": "Gemma 4 31B ☁ (Cloud) - Cloud-hosted via Ollama. 1M context, multimodal."
     },
     {
       "model_name": "qwen3.5:397b-cloud",
@@ -2922,7 +2962,7 @@
       "fallback_model": "qwen3",
       "status": "active",
       "sunset_date": "",
-      "notes": "Qwen 3.5 397B \u2601 (Cloud) - Cloud-hosted via Ollama."
+      "notes": "Qwen 3.5 397B ☁ (Cloud) - Cloud-hosted via Ollama."
     },
     {
       "model_name": "kimi-k2.5:cloud",
@@ -2942,7 +2982,7 @@
       "fallback_model": "",
       "status": "active",
       "sunset_date": "",
-      "notes": "Kimi K2.5 \u2601 (Cloud) - Cloud-hosted via Ollama."
+      "notes": "Kimi K2.5 ☁ (Cloud) - Cloud-hosted via Ollama."
     },
     {
       "model_name": "kimi-k2.6:cloud",
@@ -2962,7 +3002,7 @@
       "fallback_model": "kimi-k2.5:cloud",
       "status": "active",
       "sunset_date": "",
-      "notes": "Kimi K2.6 \u2601 (Cloud) - Cloud-hosted via Ollama. 256K context, improved agentic capabilities over K2.5."
+      "notes": "Kimi K2.6 ☁ (Cloud) - Cloud-hosted via Ollama. 256K context, improved agentic capabilities over K2.5."
     },
     {
       "model_name": "kimi-k2.6",
@@ -2982,7 +3022,7 @@
       "fallback_model": "kimi-k2.5",
       "status": "active",
       "sunset_date": "",
-      "notes": "Kimi K2.6 \u2014 Moonshot AI latest agentic model, 256K context, tool calling. $0.95/M input, $4.00/M output. Recommended."
+      "notes": "Kimi K2.6 — Moonshot AI latest agentic model, 256K context, tool calling. $0.95/M input, $4.00/M output. Recommended."
     },
     {
       "model_name": "kimi-k2.5",
@@ -3002,7 +3042,7 @@
       "fallback_model": "kimi-k2",
       "status": "active",
       "sunset_date": "",
-      "notes": "Kimi K2.5 \u2014 Moonshot AI agentic model, 256K context, tool calling. $0.60/M input, $3.00/M output."
+      "notes": "Kimi K2.5 — Moonshot AI agentic model, 256K context, tool calling. $0.60/M input, $3.00/M output."
     },
     {
       "model_name": "kimi-k2",
@@ -3022,7 +3062,7 @@
       "fallback_model": "moonshot-v1-128k",
       "status": "active",
       "sunset_date": "",
-      "notes": "Kimi K2 \u2014 Moonshot AI base agentic model, 256K context, tool calling. $0.60/M input, $2.50/M output."
+      "notes": "Kimi K2 — Moonshot AI base agentic model, 256K context, tool calling. $0.60/M input, $2.50/M output."
     },
     {
       "model_name": "kimi-k2-thinking",
@@ -3042,7 +3082,7 @@
       "fallback_model": "kimi-k2.6",
       "status": "active",
       "sunset_date": "",
-      "notes": "Kimi K2 Thinking \u2014 Moonshot AI chain-of-thought reasoning model, 256K context. $0.60/M input, $2.50/M output. No tool calling."
+      "notes": "Kimi K2 Thinking — Moonshot AI chain-of-thought reasoning model, 256K context. $0.60/M input, $2.50/M output. No tool calling."
     },
     {
       "model_name": "moonshot-v1-8k",
@@ -3062,7 +3102,7 @@
       "fallback_model": "",
       "status": "active",
       "sunset_date": "",
-      "notes": "Moonshot V1 8K \u2014 Kimi standard chat model, 8K context, tool calling."
+      "notes": "Moonshot V1 8K — Kimi standard chat model, 8K context, tool calling."
     },
     {
       "model_name": "moonshot-v1-32k",
@@ -3082,7 +3122,7 @@
       "fallback_model": "moonshot-v1-8k",
       "status": "active",
       "sunset_date": "",
-      "notes": "Moonshot V1 32K \u2014 Kimi standard chat model, 32K context, tool calling."
+      "notes": "Moonshot V1 32K — Kimi standard chat model, 32K context, tool calling."
     },
     {
       "model_name": "moonshot-v1-128k",
@@ -3102,7 +3142,7 @@
       "fallback_model": "moonshot-v1-32k",
       "status": "active",
       "sunset_date": "",
-      "notes": "Moonshot V1 128K \u2014 Kimi standard chat model, 128K context, tool calling."
+      "notes": "Moonshot V1 128K — Kimi standard chat model, 128K context, tool calling."
     },
     {
       "model_name": "glm-5:cloud",
@@ -3122,7 +3162,7 @@
       "fallback_model": "",
       "status": "active",
       "sunset_date": "",
-      "notes": "GLM-5 \u2601 (Cloud) - Cloud-hosted via Ollama."
+      "notes": "GLM-5 ☁ (Cloud) - Cloud-hosted via Ollama."
     },
     {
       "model_name": "minimax-m2.7:cloud",
@@ -3142,7 +3182,7 @@
       "fallback_model": "",
       "status": "active",
       "sunset_date": "",
-      "notes": "MiniMax M2.7 \u2601 (Cloud) - Cloud-hosted via Ollama. 1M context, multimodal."
+      "notes": "MiniMax M2.7 ☁ (Cloud) - Cloud-hosted via Ollama. 1M context, multimodal."
     },
     {
       "model_name": "gpt-oss:120b-cloud",
@@ -3162,7 +3202,7 @@
       "fallback_model": "gpt-oss:20b-cloud",
       "status": "active",
       "sunset_date": "",
-      "notes": "GPT-OSS 120B \u2601 (Cloud) - Cloud-hosted via Ollama."
+      "notes": "GPT-OSS 120B ☁ (Cloud) - Cloud-hosted via Ollama."
     },
     {
       "model_name": "gpt-oss:20b-cloud",
@@ -3182,7 +3222,7 @@
       "fallback_model": "",
       "status": "active",
       "sunset_date": "",
-      "notes": "GPT-OSS 20B \u2601 (Cloud) - Cloud-hosted via Ollama."
+      "notes": "GPT-OSS 20B ☁ (Cloud) - Cloud-hosted via Ollama."
     },
     {
       "model_name": "gpt-4.1",
@@ -3263,6 +3303,26 @@
       "sunset_date": "2026-12-31",
       "tpd_limit": 0,
       "rpd_limit": 0
+    },
+    {
+      "model_name": "gpt-4o",
+      "provider": "openai",
+      "tpm_limit": 450000,
+      "rpm_limit": 1000,
+      "tpd_limit": 0,
+      "rpd_limit": 0,
+      "context_window": 128000,
+      "max_output_tokens": 16384,
+      "tier": "tier-1",
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_vision": true,
+      "cost_per_1k_input_tokens": 0.0025,
+      "cost_per_1k_output_tokens": 0.01,
+      "fallback_model": "gpt-4.1",
+      "status": "deprecated",
+      "sunset_date": "2026-06-30",
+      "notes": "GPT-4o - DEPRECATED. Superseded by gpt-4.1. Still available via Azure OpenAI."
     },
     {
       "model_name": "gpt-4o-mini",
@@ -3685,6 +3745,26 @@
       "notes": "GPT-5.5 Pro - Enterprise-grade GPT-5.5 variant (April 2026). 1M+ context, highest-stakes reasoning. $30/$180 per 1M tokens. No prompt caching."
     },
     {
+      "model_name": "gpt-5.6",
+      "provider": "openai",
+      "tpm_limit": 400000,
+      "rpm_limit": 4000,
+      "tpd_limit": 0,
+      "rpd_limit": 0,
+      "context_window": 1050000,
+      "max_output_tokens": 128000,
+      "tier": "tier-1",
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_vision": true,
+      "cost_per_1k_input_tokens": 0.005,
+      "cost_per_1k_output_tokens": 0.03,
+      "fallback_model": "gpt-5.5",
+      "status": "active",
+      "sunset_date": "",
+      "notes": "GPT-5.6 Sol (July 2026). Latest OpenAI flagship. 1.05M context, 128K max output, multimodal agentic. $5/$30 per 1M tokens."
+    },
+    {
       "model_name": "Llama-3.1-8B-Instruct-q4f32_1-MLC",
       "provider": "webllm",
       "tpm_limit": 0,
@@ -3797,7 +3877,7 @@
       "supports_vision": false,
       "cost_per_1k_input_tokens": 1.4e-05,
       "cost_per_1k_output_tokens": 0.00028,
-      "notes": "DeepSeek-V4-Flash \u2014 fast, economical flagship. 1M context, 384K max output. Supports both non-thinking and thinking modes (use thinking.type parameter). Tool/function calling, JSON mode, FIM completion, Chat Prefix Completion. Cache-hit pricing: $0.0028/1M input (cache miss: $0.14/1M). Replaces deepseek-chat (non-thinking) and deepseek-reasoner (thinking).",
+      "notes": "DeepSeek-V4-Flash — fast, economical flagship. 1M context, 384K max output. Supports both non-thinking and thinking modes (use thinking.type parameter). Tool/function calling, JSON mode, FIM completion, Chat Prefix Completion. Cache-hit pricing: $0.0028/1M input (cache miss: $0.14/1M). Replaces deepseek-chat (non-thinking) and deepseek-reasoner (thinking).",
       "status": "active",
       "tpd_limit": 0,
       "rpd_limit": 0,
@@ -3817,7 +3897,7 @@
       "supports_vision": false,
       "cost_per_1k_input_tokens": 0.000435,
       "cost_per_1k_output_tokens": 0.00087,
-      "notes": "DeepSeek-V4-Pro \u2014 high-value reasoning, coding, long-context, and agentic workflows. 1M context, 384K max output. Supports both non-thinking and thinking modes. Tool/function calling, JSON mode, FIM completion. 75% promotional discount through 2026-05-31 (regular pricing: $0.0145/$1.74/$3.48 per 1M cache-hit/miss/output).",
+      "notes": "DeepSeek-V4-Pro — high-value reasoning, coding, long-context, and agentic workflows. 1M context, 384K max output. Supports both non-thinking and thinking modes. Tool/function calling, JSON mode, FIM completion. 75% promotional discount through 2026-05-31 (regular pricing: $0.0145/$1.74/$3.48 per 1M cache-hit/miss/output).",
       "status": "active",
       "tpd_limit": 0,
       "rpd_limit": 0,

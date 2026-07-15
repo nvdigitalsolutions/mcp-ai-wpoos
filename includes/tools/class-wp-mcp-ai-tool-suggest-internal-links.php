@@ -298,7 +298,7 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 			return array(
 				'post_id' => $post->ID,
 				'title'   => $post->post_title,
-				'content' => wp_strip_all_tags( $post->post_content ),
+				'content' => WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post->ID ),
 				'excerpt' => $post->post_excerpt,
 			);
 		}
@@ -342,7 +342,7 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 			$candidates[] = array(
 				'id'      => $post->ID,
 				'title'   => $post->post_title,
-				'content' => wp_strip_all_tags( $post->post_content ),
+				'content' => WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post->ID ),
 				'excerpt' => $post->post_excerpt,
 				'url'     => get_permalink( $post->ID ),
 			);

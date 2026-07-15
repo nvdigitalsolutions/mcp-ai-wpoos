@@ -240,6 +240,9 @@ class WP_MCP_AI_Policy_Research_Page {
 								'get_policy',
 								'list_policies',
 								'update_policy',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// Research tools.
 								'web_search',
 								'deep_research',

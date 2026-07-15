@@ -1,0 +1,25 @@
+# Narration: Run Security Audit
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~90 seconds
+
+Welcome to NV oOS Pro. In this video, we will run a comprehensive security audit of your WordPress site.
+
+Navigate to the Security Audit page in the Pro dashboard.
+
+Click the Start Audit button to begin scanning your site for security vulnerabilities.
+
+The audit engine checks multiple security dimensions including plugin vulnerabilities, file permissions, user roles, and API exposure.
+
+Watch as the scan progresses through each security category. Results appear in real time as findings are discovered.
+
+The audit highlights issues by severity level. Critical issues appear at the top and require immediate attention.
+
+Click on any finding to see a detailed explanation and recommended fix.
+
+Many issues can be resolved directly from the audit page. Click Apply Fix to automatically patch common vulnerabilities.
+
+Review the full audit report, which includes a security score and prioritized action items.
+
+You can schedule recurring audits to ensure your site stays secure over time.
+
+That's it. The security audit gives you peace of mind by continuously monitoring your WordPress installation.

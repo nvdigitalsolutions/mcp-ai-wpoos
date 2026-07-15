@@ -93,7 +93,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input implements WP_MCP_AI_Ext_Cog_
 					),
 					'model'           => array(
 						'type'        => 'string',
-						'enum'        => array( 'auto', 'gpt-4o', 'gpt-4-vision-preview', 'gemini-pro-vision', 'gemini-1.5-pro' ),
+						'enum'        => array( 'auto', 'gpt-4.1', 'gpt-4.1-mini', 'gemini-3.1-flash', 'gemini-2.5-flash' ),
 						'description' => 'Vision/analysis model to use. "auto" uses the assistant\'s configured provider. Default: auto.',
 						'default'     => 'auto',
 					),

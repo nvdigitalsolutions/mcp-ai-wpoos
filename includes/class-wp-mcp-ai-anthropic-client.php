@@ -375,7 +375,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			$result = $this->create_chat_completion(
 				$test_messages,
 				array(
-					'model'      => $this->get_model() ? $this->get_model() : 'claude-3-haiku-20240307',
+					'model'      => $this->get_model() ? $this->get_model() : 'claude-haiku-4-5',
 					'max_tokens' => 10,
 				)
 			);
@@ -409,17 +409,17 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					'context_window' => 1000000,
 				),
 				array(
-					'id'             => 'claude-3-haiku-20240307',
+					'id'             => 'claude-haiku-4-5',
 					'name'           => __( 'Claude 3 Haiku (fastest)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
-					'id'             => 'claude-3-5-sonnet-20241022',
+					'id'             => 'claude-sonnet-5',
 					'name'           => __( 'Claude 3.5 Sonnet', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
-					'id'             => 'claude-3-opus-20240229',
+					'id'             => 'claude-opus-4-8',
 					'name'           => __( 'Claude 3 Opus', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
@@ -615,7 +615,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				return $model;
 			}
 
-			return 'claude-3-5-sonnet-20241022';
+			return 'claude-sonnet-5';
 		}
 
 		/**

@@ -53,6 +53,12 @@ class WP_MCP_AI_SSE_Handler {
 	 * @since 1.0.0
 	 */
 	public function send_sse_headers() {
+		// Release session lock so concurrent SSE requests don't block
+		// each other waiting for the same session file.
+		if ( function_exists( 'session_status' ) && PHP_SESSION_ACTIVE === session_status() ) {
+			session_write_close();
+		}
+
 		// Disable PHP-level output compression before anything is sent.
 		// zlib.output_compression (and ob_gzhandler) buffer all output until the
 		// script ends, which prevents SSE events from reaching the browser in
@@ -62,12 +68,28 @@ class WP_MCP_AI_SSE_Handler {
 		@ini_set( 'output_buffering', 'Off' );
 		// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
 
-		// Discard any existing output buffers (including the one started by
-		// clean_output_buffer() at init) so their contents do not corrupt the
-		// SSE stream before the headers are sent.
-		while ( ob_get_level() > 0 ) {
-			ob_end_clean();
+		// Clean (do NOT flush) pre-existing output buffer content so it
+		// does not appear before the SSE Content-Type header and corrupt
+		// the HTTP/2 response.  Keep the outermost buffer alive — if it
+		// is destroyed, WordPress shutdown hooks attempt to write to a
+		// closed buffer and produce HTTP/2 protocol errors.
+		//
+		// ob_end_flush() is avoided here: it sends buffered content to
+		// the client BEFORE the SSE headers, which causes the browser to
+		// see a mixed-content response and fail with
+		// ERR_HTTP2_PROTOCOL_ERROR.
+			// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: clean/end may fail on restricted hosts; non-critical.
+		$level = ob_get_level();
+		if ( $level > 0 ) {
+			// End (and discard) all buffers except the outermost.
+			for ( $i = 1; $i < $level; $i++ ) {
+				@ob_end_clean();
+			}
+			// Keep the outermost buffer alive for WP shutdown hooks
+			// but discard its content so nothing leaks into the SSE stream.
+			@ob_clean();
 		}
+			// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
 
 		if ( ! headers_sent() ) {
 			header( 'Content-Type: text/event-stream; charset=UTF-8' );
@@ -75,14 +97,13 @@ class WP_MCP_AI_SSE_Handler {
 			header( 'Pragma: no-cache' );
 			header( 'X-Accel-Buffering: no' );
 
-			// Do NOT send the Connection header. It is a hop-by-hop header that:
-			// - Is forbidden by RFC 7540 §8.1.2.2 in HTTP/2, causing ERR_HTTP2_PROTOCOL_ERROR
-			// in browsers. PHP runs behind a reverse proxy (Nginx, Apache, Cloudways, etc.)
-			// so SERVER_PROTOCOL always reflects the backend HTTP/1.1 connection, not the
-			// actual client protocol. We cannot reliably detect HTTP/2 from PHP.
-			// - Is redundant in HTTP/1.1 (persistent connections are the default since RFC 2616).
+			// Hop-by-hop headers are forbidden on HTTP/2 (RFC 7540 §8.1.2.2)
+			// and cause ERR_HTTP2_PROTOCOL_ERROR in browsers.  Remove them
+			// even though they may be re-added by the web server — this is
+			// a best-effort mitigation.
 			header_remove( 'Connection' );
 			header_remove( 'Transfer-Encoding' );
+			header_remove( 'Keep-Alive' );
 
 			/**
 			 * Filter the Access-Control-Allow-Origin value for SSE streaming responses.
@@ -106,10 +127,23 @@ class WP_MCP_AI_SSE_Handler {
 			header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
 		}
 
+		// Extend PHP execution time for long-running SSE connections.
+		// The default max_execution_time (often 30 s) is too short for
+		// SSE polling loops and LLM streaming responses.
+		if ( function_exists( 'set_time_limit' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may be restricted; non-critical.
+			@set_time_limit( 300 );
+		}
+		if ( function_exists( 'ignore_user_abort' ) ) {
+			ignore_user_abort( true );
+		}
+
 		// Send retry directive to help clients reconnect if connection drops.
 		echo 'retry: ' . esc_html( absint( self::RETRY_INTERVAL_MS ) ) . "\n\n";
 
-		// Force initial flush to establish connection.
+		// Force initial flush to establish connection before any
+		// expensive processing begins.  This is critical for avoiding
+		// Cloudflare 524 timeouts on the first SSE frame.
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
@@ -271,6 +305,31 @@ class WP_MCP_AI_SSE_Handler {
 	}
 
 	/**
+	 * Send an SSE comment (keepalive / no-op frame).
+	 *
+	 * SSE comments (lines starting with `:`) are ignored by EventSource
+	 * clients but flush the output buffer through proxies like Cloudflare
+	 * and nginx. Use this to establish the connection before expensive
+	 * data gathering begins, preventing 524 timeout errors.
+	 *
+	 * @since 1.9.5
+	 *
+	 * @param string $text Optional comment text (not sent to clients).
+	 */
+	public function send_sse_comment( $text = '' ) {
+		// SSE comment line — starts with ':', ignored by EventSource clients.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- SSE comment; no HTML/JS context.
+		echo ': ' . ( '' !== $text ? esc_html( $text ) : 'keepalive' ) . "\n\n";
+
+		if ( ob_get_level() > 0 && function_exists( 'ob_flush' ) ) {
+			ob_flush();
+		}
+		if ( function_exists( 'flush' ) ) {
+			flush();
+		}
+	}
+
+	/**
 	 * Determine whether the current request prefers an event stream response.
 	 *
 	 * Checks ONLY for explicit stream parameter.
@@ -322,148 +381,24 @@ class WP_MCP_AI_SSE_Handler {
 	}
 
 	/**
-	 * Stream a response payload as Server-Sent Events.
+	 * Stream a complete event-stream payload constructed from an array.
 	 *
-	 * Implements Server-Sent Events (SSE) with modern best practices (2024-2025):
-	 * - Proper Content-Type: text/event-stream with UTF-8
-	 * - Cache-Control: no-cache to prevent proxy/browser caching
-	 * - Connection: keep-alive for persistent streaming
-	 * - Retry directive for automatic client reconnection
-	 * - Event IDs for reconnection state tracking
-	 * - HTTP/2 compatibility (removes Connection header when appropriate)
-	 * - CORS headers for cross-origin access
+	 * This is a convenience method for non-polling SSE responses (e.g.
+	 * assistant directory listing). It sends headers, emits one named
+	 * event, sends [DONE], and finishes the connection — all in one
+	 * blocking call. Do NOT use this for long-polling loops; use
+	 * send_sse_headers() + send_sse_event() / send_sse_event_with_id()
+	 * + send_sse_done() + finish() manually for those.
 	 *
-	 * @since 1.0.0
+	 * @since 1.1.0
 	 *
-	 * @param array  $payload Response payload to emit.
-	 * @param string $event   Event name used for the SSE frame. Default 'message'.
-	 * @return WP_REST_Response Response object with SSE streaming configured.
+	 * @param array  $payload     Data to send as the event payload.
+	 * @param string $event_name  SSE event name (default 'message').
 	 */
-	public function stream_event_stream_payload( array $payload, $event = 'message' ) {
-		$encoded_payload = wp_json_encode( $payload );
-
-		if ( false === $encoded_payload ) {
-			return rest_ensure_response( $payload );
-		}
-
-		$event_name = (string) $event;
-		if ( '' === $event_name ) {
-			$event_name = 'message';
-		}
-
-		// Add retry directive for automatic reconnection (3 seconds).
-		$frames  = "retry: 3000\n\n";
-		$frames .= $this->build_event_stream_chunk( $event_name, $encoded_payload, (string) time() );
-		$frames .= $this->build_event_stream_chunk( '', '[DONE]' );
-
-		/** This filter is documented in includes/rest/class-wp-mcp-ai-sse-handler.php */
-		$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
-		// Sanitize to prevent HTTP header injection.
-		$allow_origin = sanitize_text_field( str_replace( array( "\r", "\n" ), '', $allow_origin ) );
-
-		$headers = array(
-			'Content-Type'                 => 'text/event-stream; charset=UTF-8',
-			'Cache-Control'                => 'no-cache, no-store, must-revalidate, no-transform',
-			'Pragma'                       => 'no-cache',
-			'Vary'                         => 'Accept, Authorization',
-			'Access-Control-Allow-Origin'  => $allow_origin,
-			'Access-Control-Allow-Headers' => 'Authorization, Content-Type, X-WP-Nonce',
-			'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
-			'X-Accel-Buffering'            => 'no',
-			'X-Content-Type-Options'       => 'nosniff',
-		);
-
-		// Do NOT include the Connection header. It is forbidden in HTTP/2
-		// (RFC 7540 §8.1.2.2) and causes ERR_HTTP2_PROTOCOL_ERROR. Since PHP
-		// runs behind a reverse proxy, SERVER_PROTOCOL always reflects the
-		// backend HTTP/1.1 connection — we cannot reliably detect the client
-		// protocol from PHP. Connection is also redundant in HTTP/1.1 where
-		// persistent connections are the default.
-
-		$callback = null;
-		$callback = static function ( $served, $response, $request, $server ) use ( $headers, $frames, &$callback ) {
-			if ( $served ) {
-				return $served;
-			}
-
-			if ( method_exists( $server, 'remove_header' ) ) {
-				$server->remove_header( 'Content-Type' );
-			} else {
-				header_remove( 'Content-Type' );
-			}
-
-			foreach ( $headers as $name => $value ) {
-				if ( '' === $name || null === $value ) {
-					continue;
-				}
-
-				$server->send_header( $name, $value );
-			}
-
-			echo $frames; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $frames contains Server-Sent Event protocol data sent with text/event-stream headers; HTML escaping would corrupt the SSE stream.
-
-			if ( function_exists( 'ob_get_level' ) && function_exists( 'ob_end_flush' ) ) {
-				while ( ob_get_level() > 0 ) {
-					if ( false === ob_end_flush() ) {
-						break;
-					}
-				}
-			} elseif ( function_exists( 'ob_flush' ) ) {
-				ob_flush();
-			}
-
-			if ( function_exists( 'flush' ) ) {
-				flush();
-			}
-
-			remove_filter( 'rest_pre_serve_request', $callback, 999 );
-
-			return true;
-		};
-
-		add_filter( 'rest_pre_serve_request', $callback, 999, 4 );
-
-		$response = new WP_REST_Response( null, 200 );
-		$response->set_headers( $headers );
-		$response->header( 'Content-Type', 'text/event-stream; charset=UTF-8' );
-
-		return $response;
-	}
-
-	/**
-	 * Build a Server-Sent Events chunk for the provided data.
-	 *
-	 * Formats data according to SSE specification with optional event ID
-	 * for client-side reconnection tracking.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $event  Event name.
-	 * @param string $data   Event data payload.
-	 * @param string $id     Optional event ID for client-side reconnection tracking. Default empty.
-	 * @return string Formatted SSE chunk.
-	 */
-	public function build_event_stream_chunk( $event, $data, $id = '' ) {
-		$chunk = '';
-
-		$id = (string) $id;
-		if ( '' !== $id ) {
-			$chunk .= 'id: ' . $id . "\n";
-		}
-
-		$event = (string) $event;
-		if ( '' !== $event ) {
-			$chunk .= 'event: ' . $event . "\n";
-		}
-
-		$data_lines = explode( "\n", (string) $data );
-
-		foreach ( $data_lines as $line ) {
-			$chunk .= 'data: ' . $line . "\n";
-		}
-
-		$chunk .= "\n";
-
-		return $chunk;
+	public function stream_event_stream_payload( $payload, $event_name = 'message' ) {
+		$this->send_sse_headers();
+		$this->send_sse_event( $event_name, $payload );
+		$this->send_sse_done();
+		$this->finish();
 	}
 }

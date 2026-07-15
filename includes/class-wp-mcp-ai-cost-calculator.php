@@ -22,7 +22,7 @@ class WP_MCP_AI_Cost_Calculator {
 	/**
 	 * Provider pricing models (USD per 1M tokens).
 	 *
-	 * Prices updated as of April 2026.
+	 * Prices updated as of July 2026.
 	 * Source: Official provider pricing pages and Hugging Face Inference API.
 	 *
 	 * Retired ids (e.g., gpt-4, gpt-4-turbo, gpt-3.5-turbo, o1*, gemini-1.5-*,
@@ -31,13 +31,13 @@ class WP_MCP_AI_Cost_Calculator {
 	 */
 	const PRICING = array(
 		'openai'       => array(
-			// GPT-5.5 series (April 2026 flagship).
+			// GPT-5.5 series (July 2026 flagship).
 			'gpt-5.5'                      => array(
 				'input'        => 5.00,  // $5 per 1M input tokens.
 				'output'       => 30.00, // $30 per 1M output tokens.
 				'cached_input' => 0.50,  // $0.50 per 1M cached input tokens (90% off).
 			),
-			// GPT-5.4 series (April 2026).
+			// GPT-5.4 series (July 2026).
 			'gpt-5.4'                      => array(
 				'input'        => 2.50,  // $2.50 per 1M input tokens.
 				'output'       => 15.00, // $15 per 1M output tokens.
@@ -63,7 +63,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'output'       => 12.00, // $12 per 1M output tokens.
 				'cached_input' => 0.25,  // $0.25 per 1M cached input tokens (90% off).
 			),
-			// GPT-5.3 Codex (updated April 2026).
+			// GPT-5.3 Codex (updated July 2026).
 			'gpt-5.3-codex'                => array(
 				'input'        => 3.00,  // $3 per 1M input tokens.
 				'output'       => 15.00, // $15 per 1M output tokens.
@@ -115,13 +115,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'        => 1.10, // $1.10 per 1M tokens.
 				'output'       => 4.40, // $4.40 per 1M tokens.
 				'cached_input' => 0.55, // $0.55 per 1M tokens.
-			),
-			'o4-mini'                      => array(
-				'input'        => 1.10,
-				'output'       => 4.40,
-				'cached_input' => 0.275,
-			),
-			// GPT-4o Realtime models (audio/speech).
+			),			// GPT-4o Realtime models (audio/speech).
 			// December 2024 update: 60% cheaper pricing, WebRTC support.
 			'gpt-4o-realtime-preview'      => array(
 				'input'        => 100.00, // Audio input: $100 per 1M tokens.
@@ -221,10 +215,25 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'anthropic'    => array(
-			// Claude 4.7 series (May 2026 flagship).
+						// Claude Fable 5 (June 2026 - top tier above Opus).
+			'claude-fable-5'             => array(
+				'input'  => 10.00,  // $10 per 1M input tokens.
+				'output' => 50.00,  // $50 per 1M output tokens.
+			),
+			// Claude Sonnet 5 (June 2026 - now the default, intro pricing).
+			'claude-sonnet-5'            => array(
+				'input'  => 2.00,   // $2 per 1M input tokens.
+				'output' => 10.00,  // $10 per 1M output tokens.
+			),
+			// Claude Opus 4.8 (May 2026).
+			'claude-opus-4-8'            => array(
+				'input'  => 5.00,   // $5 per 1M input tokens.
+				'output' => 25.00,  // $25 per 1M output tokens.
+			),
+			// Claude Opus 4.7.
 			'claude-opus-4-7'            => array(
 				'input'  => 15.00,  // $15 per 1M input tokens.
-				'output' => 75.00,  // $75 per 1M output tokens.
+				'output' => 25.00,  // $25 per 1M output tokens.
 			),
 			// Claude 4.6 series.
 			'claude-sonnet-4-6'          => array(
@@ -233,7 +242,7 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 			'claude-opus-4-6'            => array(
 				'input'  => 15.00,  // $15 per 1M input tokens.
-				'output' => 75.00,  // $75 per 1M output tokens.
+				'output' => 25.00,  // $25 per 1M output tokens.
 			),
 			// Claude 4.5 series (deprecated alias retained for backward compatibility).
 			'claude-sonnet-4-5'          => array(
@@ -285,11 +294,11 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.14,   // $0.14 per 1M input tokens (cache miss).
 				'output' => 0.28,   // $0.28 per 1M output tokens.
 			),
-			// DeepSeek-V4-Pro — reasoning/agentic (75% promo through 2026-05-31).
-			// Promo: $0.435/$0.87 per 1M tokens. Regular: $1.74/$3.48.
+			// DeepSeek-V4-Pro — reasoning/agentic (regular pricing, promo ended 2026-05-31).
+			// Regular: $0.435/$0.87 per 1M tokens. Regular: $1.74/$3.48.
 			'deepseek-v4-pro'       => array(
-				'input'  => 0.435,  // $0.435 per 1M input tokens (promo cache miss).
-				'output' => 0.87,   // $0.87 per 1M output tokens (promo).
+				'input'  => 1.74,   // $1.74 per 1M input tokens (regular).
+				'output' => 3.48,   // $3.48 per 1M output tokens (regular).
 			),
 			// [DEPRECATED] Legacy DeepSeek-V3 general-purpose + tool-calling model.
 			'deepseek-chat'         => array(
@@ -584,7 +593,7 @@ class WP_MCP_AI_Cost_Calculator {
 	 * @return float Estimated cost in USD.
 	 */
 	private static function estimate_cost_from_tokens( $tokens ) {
-		// April 2026: blended baseline anchored to GPT-5.4-mini (input $0.75 + output $4.50,
+		// July 2026: blended baseline anchored to GPT-5.4-mini (input $0.75 + output $4.50,
 		// weighted toward input-heavy workloads). Yields a conservative ~$0.50 per 1M tokens.
 		$avg_cost_per_million = 0.50;
 

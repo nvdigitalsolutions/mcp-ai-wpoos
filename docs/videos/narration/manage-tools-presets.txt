@@ -1,0 +1,27 @@
+# Narration: Manage Tools & Presets
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~90 seconds
+
+Welcome to NV oOS. In this video, we will manage the tools available to your AI assistants and create reusable tool presets.
+
+Navigate to the Tools Manager page in the WordPress admin. This is the central hub for all tool configurations.
+
+The tools are organized by category. You can browse by WordPress posts, users, WooCommerce, media, and more.
+
+Click a category to see the tools within it. Each tool has a description explaining what it does.
+
+Use the search bar to quickly find a specific tool. Type part of the name and the list filters instantly.
+
+Toggle tools on or off with the switches. Enabled tools become available for your assistants to use.
+
+Now let's create a tool preset. Presets let you group commonly used tools together.
+
+Switch to the Presets tab and create a new preset called Support Team.
+
+Select the tools you want in this preset. Common support tools include WordPress post search, user lookup, and site health checks.
+
+Save your preset. You can now assign this preset to any assistant instead of configuring tools individually.
+
+Return to the Tools Manager to see all your configured tools. Your preset is ready to use.
+
+That's it. Tools and presets give you fine-grained control over what each assistant can do.

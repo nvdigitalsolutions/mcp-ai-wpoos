@@ -591,13 +591,13 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 	private function get_ai_model( $provider, $settings ) {
 		switch ( $provider ) {
 			case 'openai':
-				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4o';
+				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
 			case 'gemini':
 				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
 			case 'anthropic':
 				return 'claude-sonnet-4-5-20250929';
 			default:
-				return 'gpt-4o';
+				return 'gpt-4.1';
 		}
 	}
 

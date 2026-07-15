@@ -214,7 +214,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'profession_default_model'        => array(
 					'type'        => 'text',
 					'label'       => __( 'Professions Default Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default AI model for all professions (e.g., gpt-4o, claude-3-5-sonnet-20241022). Leave empty to use provider default.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI model for all professions (e.g., gpt-4.1, claude-sonnet-5). Leave empty to use provider default.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 				),
 				'profession_default_temperature'  => array(
@@ -236,7 +236,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'team_default_model'              => array(
 					'type'        => 'text',
 					'label'       => __( 'Teams Default Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default AI model for all team members (e.g., gpt-4o, claude-3-5-sonnet-20241022). Leave empty to use provider default.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI model for all team members (e.g., gpt-4.1, claude-sonnet-5). Leave empty to use provider default.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 				),
 				'team_default_temperature'        => array(

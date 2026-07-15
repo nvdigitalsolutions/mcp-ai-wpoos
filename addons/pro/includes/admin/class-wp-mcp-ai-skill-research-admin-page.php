@@ -233,7 +233,7 @@ class WP_MCP_AI_Skill_Research_Admin_Page {
 								// Render chat interface with skill-related tools.
 								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode output is already escaped.
 								echo do_shortcode(
-									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="search_content,web_search,list_tools"]'
+									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_research_report,create_post_from_research,search_content,web_search,list_tools"]'
 								);
 								?>
 							</div>

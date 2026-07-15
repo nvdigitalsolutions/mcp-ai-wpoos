@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * NV oOS Demo Video — Pro Plugin Features
+ * NV oOS Demo Video — Pro Plugin Features (Phase 2)
  *
  * Captures 8 Pro plugin feature videos in sequence. Each task maps to
- * a specific admin page. Pro pages are JS-heavy (React-rendered) and
- * receive extra wait time (networkidle + 3s).
+ * a specific admin page and includes interactive demonstrations.
+ * Pro pages are JS-heavy (React-rendered) and receive extra wait time.
  *
  * Tasks:
  *   1. Pro Dashboard Overview      (nvoos-pro-dashboard)
@@ -22,85 +22,144 @@
  */
 
 const { chromium } = require('playwright');
-const path = require('path');
 const fs = require('fs');
 const { WPAdmin } = require('./video-helpers/wp-admin');
 const { VIDEO_CONFIG, PAUSE, resolveOutputDir } = require('./video-helpers/video-utils');
+const { SELECTORS, tryClick } = require('./utils/video-selectors');
+const { injectCursor, removeCursor } = require('./video-helpers/cursor-utils');
+const { showIntroCard, showOutroCard } = require('./video-helpers/card-utils');
+const { showChapter } = require('./video-helpers/annotation-utils');
 
 // ── Configuration ─────────────────────────────────────────────
 
-const ADMIN_URL = VIDEO_CONFIG.adminUrl;
 const OUT_DIR = resolveOutputDir(__dirname, 'pro');
+const PRO_WAIT = 3000;
 
-// Pro pages are JS-heavy — use longer waits
-const PRO_WAIT = 3000; // extra wait after networkidle for React rendering
+// ── Icon mapping for intro cards ──
+const ICONS = {
+	'pro-dashboard': 'dashboard',
+	'orchestration-workflow': 'orchestration',
+	'security-audit': 'security',
+	'site-creator': 'site',
+	'federation-setup': 'federation',
+	'schedule-manager': 'schedule',
+	'workflow-builder': 'workflow',
+	'blueprints': 'blueprint',
+};
 
-// ── Task definitions ──────────────────────────────────────────
+// ── Task definitions with interactions ────────────────────────
 
 const PRO_TASKS = [
 	{
 		file: 'pro-dashboard',
 		label: 'Pro Dashboard Overview',
 		url: 'nvoos-pro-dashboard',
-		extraActions: null,
+		subtitle: 'Analytics, token usage, and monitoring at a glance',
+		extraActions: async (page) => {
+			// Try switching between dashboard tabs
+			const tabs = [SELECTORS.pro.dashboard.analyticsTab, SELECTORS.pro.dashboard.usageTab];
+			for (const tab of tabs) {
+				try {
+					const el = await page.$(tab);
+					if (el) { await el.click(); await page.waitForTimeout(PAUSE.MEDIUM); }
+				} catch { /* skip */ }
+			}
+			// Hover over chart for tooltip
+			try {
+				await page.hover(SELECTORS.pro.dashboard.chartTokenUsage).catch(() => {});
+				await page.waitForTimeout(PAUSE.MEDIUM);
+			} catch { /* skip */ }
+		},
 	},
 	{
 		file: 'orchestration-workflow',
 		label: 'Multi-Agent Orchestration',
 		url: 'wp-mcp-ai-pro-orchestration',
-		extraActions: null,
+		subtitle: 'Chain multiple AI agents for complex workflows',
+		extraActions: async (page) => {
+			await tryClick(page, [SELECTORS.pro.orchestration.createWorkflowButton]);
+			await page.waitForTimeout(PAUSE.LONG);
+		},
 	},
 	{
 		file: 'security-audit',
 		label: 'Run Security Audit',
 		url: 'nvoos-pro-dashboard-audits',
-		extraActions: null,
+		subtitle: 'Scan your site and get actionable security findings',
+		extraActions: async (page) => {
+			const clicked = await tryClick(page, [SELECTORS.pro.securityAudit.startButton]);
+			if (clicked) {
+				console.log('    Audit started, waiting for results...');
+				try {
+					await page.waitForSelector(SELECTORS.pro.securityAudit.resultsPanel, { timeout: 60000 });
+				} catch { /* audit may take longer or element name differs */ }
+			}
+			await page.waitForTimeout(PAUSE.LONG);
+		},
 	},
 	{
 		file: 'site-creator',
 		label: 'Site Creator',
 		url: 'wp-mcp-ai-site-creator',
-		extraActions: null,
+		subtitle: 'Generate a complete WordPress site from a template',
+		extraActions: async (page) => {
+			await page.waitForTimeout(PRO_WAIT);
+			// Show template selection and deploy button if visible
+			try {
+				await page.waitForSelector('select, .template-card, [data-testid="template-select"]', { timeout: 5000 });
+			} catch { /* page may load differently */ }
+		},
 	},
 	{
 		file: 'federation-setup',
 		label: 'Federation / Mesh Setup',
 		url: 'wp-mcp-ai-mesh-settings',
-		extraActions: null,
+		subtitle: 'Connect remote sites for cross-site AI tool access',
+		extraActions: async (page) => {
+			await tryClick(page, [SELECTORS.pro.federation.addRemoteButton]);
+			await page.waitForTimeout(PAUSE.LONG);
+		},
 	},
 	{
 		file: 'schedule-manager',
 		label: 'Schedule Manager',
 		url: 'wp-mcp-ai-schedule-manager',
-		extraActions: null,
+		subtitle: 'Schedule recurring AI tasks automatically',
+		extraActions: async (page) => {
+			await tryClick(page, [SELECTORS.pro.scheduleManager.createScheduleButton]);
+			await page.waitForTimeout(PAUSE.LONG);
+		},
 	},
 	{
 		file: 'workflow-builder',
 		label: 'Workflow Builder',
 		url: 'wp-mcp-ai-pro-workflow-builder',
-		extraActions: null,
+		subtitle: 'Visually design multi-step AI pipelines',
+		extraActions: async (page) => {
+			await page.waitForTimeout(PRO_WAIT);
+			// Scroll to show canvas area
+			await page.evaluate(async () => {
+				const scrollHeight = document.body.scrollHeight;
+				for (let i = 0; i <= scrollHeight * 0.7; i += 200) {
+					window.scrollTo(0, i);
+					await new Promise((r) => setTimeout(r, 80));
+				}
+			});
+		},
 	},
 	{
 		file: 'blueprints',
 		label: 'Blueprint System',
 		url: 'wp-mcp-ai-blueprints',
-		extraActions: null,
+		subtitle: 'Export and import complete assistant configurations',
+		extraActions: async (page) => {
+			await tryClick(page, [SELECTORS.pro.blueprints.exportButton, SELECTORS.pro.blueprints.importButton]);
+			await page.waitForTimeout(PAUSE.LONG);
+		},
 	},
 ];
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
-
-// ── Helpers ───────────────────────────────────────────────────
-
-async function tryClick(page, selectors) {
-	for (const sel of selectors) {
-		const el = await page.$(sel);
-		if (el) {
-			try { await el.click(); return true; } catch {}
-		}
-	}
-	return false;
-}
 
 // ── Main ──────────────────────────────────────────────────────
 
@@ -109,17 +168,12 @@ async function tryClick(page, selectors) {
 
 	const browser = await chromium.launch({ headless: true });
 
-	// Use a single browser instance, create a fresh context per task
-	// This way each task gets its own .webm file
-
-	const adminSetupContext = await browser.newContext({
-		viewport: VIDEO_CONFIG.viewport,
-	});
+	// ── Login once ──
+	const adminSetupContext = await browser.newContext({ viewport: VIDEO_CONFIG.viewport });
 	const setupPage = await adminSetupContext.newPage();
 	const admin = new WPAdmin(setupPage);
 
 	try {
-		// ── Login once ──
 		console.log('  ▶ Login');
 		await admin.login();
 		await setupPage.waitForTimeout(PAUSE.SHORT);
@@ -137,36 +191,51 @@ async function tryClick(page, selectors) {
 		const taskContext = await browser.newContext({
 			viewport: VIDEO_CONFIG.viewport,
 			recordVideo: { dir: OUT_DIR, size: VIDEO_CONFIG.size },
-			// Reuse auth state by copying cookies from the setup context
-			storageState: undefined,
 		});
 
 		const page = await taskContext.newPage();
 		const taskAdmin = new WPAdmin(page);
 
 		try {
-			// Re-login in this context (fast — cookies from shared storage)
+			// ── Login (fast — cookies from shared browser) ──
 			await taskAdmin.login();
+			await injectCursor(page);
 			await page.waitForTimeout(PAUSE.SHORT);
 
-			// Handle both full admin.php paths and page-slug-only paths
+			// ── Intro card ──
+			await showIntroCard(page, {
+				title: task.label,
+				subtitle: task.subtitle || '',
+				icon: ICONS[task.file] || 'default',
+				isPro: true,
+				duration: 2500,
+			});
+
+			// ── Chapter: Feature Overview ──
+			await showChapter(page, {
+				title: task.label,
+				description: task.subtitle || '',
+				duration: 2000,
+			});
+
+			// ── Navigate to page ──
 			let pageUrl;
 			if (task.url.startsWith('admin.php')) {
-				pageUrl = `${ADMIN_URL}/${task.url}`;
+				pageUrl = `${VIDEO_CONFIG.adminUrl}/${task.url}`;
 			} else {
-				pageUrl = `${ADMIN_URL}/admin.php?page=${task.url}`;
+				pageUrl = `${VIDEO_CONFIG.adminUrl}/admin.php?page=${task.url}`;
 			}
 
 			console.log(`    Navigating to ${pageUrl}`);
 			await page.goto(pageUrl, { waitUntil: 'networkidle', timeout: 45000 });
-			await page.waitForTimeout(PRO_WAIT); // extra time for React rendering
+			await page.waitForTimeout(PRO_WAIT);
 
-			// Run extra actions if defined
+			// ── Run interactions ──
 			if (task.extraActions) {
 				await task.extraActions(page);
 			}
 
-			// Scroll through the page to show all content
+			// ── Scroll through the page ──
 			await page.evaluate(async () => {
 				const scrollHeight = document.body.scrollHeight;
 				const step = Math.max(1, Math.floor(scrollHeight / 10));
@@ -179,14 +248,18 @@ async function tryClick(page, selectors) {
 
 			// Scroll back to top for clean ending
 			await page.evaluate(() => window.scrollTo(0, 0));
-			await page.waitForTimeout(PAUSE.LONG);
+			await page.waitForTimeout(PAUSE.SHORT);
+
+			// ── Outro card ──
+			await showOutroCard(page);
 
 			console.log(`    ✅ ${task.file}.webm`);
 			succeeded++;
 		} catch (error) {
-			console.warn(`    ⚠️  ${task.file} failed: ${error.message.slice(0, 100)}`);
+			console.warn(`    ⚠️  ${task.file} failed: ${error.message.slice(0, 120)}`);
 			failed++;
 		} finally {
+			await removeCursor(page);
 			await taskContext.close(); // writes the .webm
 		}
 	}
@@ -195,5 +268,4 @@ async function tryClick(page, selectors) {
 
 	console.log(`\n✅ Pro videos complete: ${succeeded} succeeded, ${failed} failed`);
 	console.log(`📁 Output: ${OUT_DIR}\n`);
-
 })();

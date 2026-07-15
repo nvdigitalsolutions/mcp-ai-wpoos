@@ -38,14 +38,15 @@ lib/core/src/
 │   └── Event/             # 8 PSR-14 domain events
 ├── Application/
 │   ├── Chat/ChatOrchestrator.php    # Agentic loop
-│   ├── Provider/ProviderRouter.php  # 12-provider routing
+│   ├── Provider/ProviderRouter.php  # 15-provider routing
 │   ├── Tool/ToolRegistry.php        # Tool lifecycle
 │   └── Skill/SkillRegistry.php      # SKILL.md discovery
 ├── Infrastructure/
-│   ├── Provider/          # 12 AI provider clients
+│   ├── Provider/          # 15 AI provider clients
 │   ├── Streaming/SseHandler.php     # RFC 6202 SSE
-│   └── Cost/CostCalculator.php      # Per-model pricing
-└── Tool/                  # 43 framework-agnostic tools
+│   ├── Cost/CostCalculator.php      # Per-model pricing
+│   └── Token/TokenBudgetManager.php # Context-window validation
+└── Tool/                  # 82 framework-agnostic tools (42% of base)
 
 lib/wordpress-adapter/src/Adapter/   # 8 WordPress adapters
 ├── ContentStore.php       # Wraps get_post / WP_Query / wp_insert_post
@@ -95,21 +96,22 @@ When the flag is off, the legacy `handle_chat_request()` path is completely unch
 - **`lib/wordpress-adapter/`** targets **PHP 7.4+** (uses traditional getters/setters, no readonly)
 - **`includes/bootstrap/oos-bridge.php`** returns early on PHP < 8.1
 
-## Current State (2026-07-01)
+## Current State (2026-07-13)
 
-- **9/9 contracts** — complete
+- **9/9 contracts** — complete (fully domain-owned, zero PSR/Symfony inheritance)
 - **10/10 entities** — complete
 - **5/5 error classes** — complete
 - **8/8 domain events** — complete
 - **4/4 application services** — complete
-- **12/12 provider clients** — complete
+- **15/15 provider clients** — complete (12 concrete + OpenAiCompatibleClient + AbstractProviderClient + Baseten)
 - **8/8 WordPress adapters** — complete
 - **8/8 Laravel adapters** — complete
 - **8/8 Craft CMS adapters** — complete
-- **43/~195 tools migrated** — 22% (Tier 1 + select Tier 2)
-- **Tests for lib/core** — in progress
+- **82/~195 tools migrated** — 42% (verified via `grep -c` on bridge registrations)
+- **Tests: 29 files, 227 tests, 772 assertions** — entities (10/10), errors (5/5), providers (5/15 with tests), tools (11 tool test files), integration (12 tests via ToolRegistryIntegrationTest)
+- **PHPStan: level 5** (target 8, blocked by ~251 bare array type errors)
 - **4 new domain contracts** proposed for Laravel orchestrator: VectorStoreInterface, FederationClientInterface, MeshRouterInterface, StreamingInterface
-- **Monorepo sync workflows** — all 4 packages synced (core + 3 adapters)
+- **Autoloader: regenerated** — namespace corrected from Oos\Core → Nvoos\Core after rename
 
 ## Monorepo Sync
 

@@ -105,7 +105,12 @@ if ( ! class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) :
 		 * @return string|null
 		 */
 		private static function from_nvoos_settings( string $provider ): ?string {
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			// Use get_settings() which merges wp_mcp_ai_credentials into
+			// wp_mcp_ai_settings at read time. This ensures API keys stored
+			// in the separate non-autoload credentials option are visible.
+			$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+				? WP_MCP_AI_Admin_Settings_Base::get_settings()
+				: get_option( 'wp_mcp_ai_settings', array() );
 			$key      = $settings[ "{$provider}_api_key" ] ?? '';
 
 			return '' !== $key ? $key : null;

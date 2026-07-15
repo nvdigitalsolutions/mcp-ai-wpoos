@@ -1,0 +1,27 @@
+# Narration: Multi-Agent Orchestration
+# One line = one spoken segment. Blank lines and # comments are ignored.
+# Target: ~100 seconds
+
+Welcome to NV oOS Pro. In this video, we will set up multi-agent orchestration to chain multiple AI assistants together.
+
+Open the Orchestration page. This is where you design workflows that coordinate multiple AI agents.
+
+Click Create Workflow to start building a new orchestration pipeline.
+
+Give your workflow a name and description. Good names describe what the workflow accomplishes.
+
+Add your first agent to the workflow. Select an assistant that will handle the initial request.
+
+Add a second agent that receives the output from the first agent. This allows specialized processing at each stage.
+
+Define the trigger conditions that control when each agent activates.
+
+Configure the data flow between agents. You can pass the full conversation context or specific extracted fields.
+
+Add a final agent to format the results for the end user.
+
+Save and test your workflow. The orchestration engine will route requests through each agent in sequence.
+
+Monitor the execution in real time as data flows between agents.
+
+That's it. Multi-agent orchestration lets you build sophisticated AI pipelines tailored to complex business processes.

@@ -138,7 +138,7 @@ async function ensureChatPage(admin, page) {
 	// Search existing pages
 	const nonce = await admin.getRestNonce();
 	const searchResp = await page.request.get(
-		`/wp-json/wp/v2/pages?slug=${CHAT_PAGE_SLUG}&per_page=1`,
+		`${BASE_URL}/wp-json/wp/v2/pages?slug=${CHAT_PAGE_SLUG}&per_page=1`,
 		{ headers: { 'X-WP-Nonce': nonce } }
 	);
 
@@ -149,7 +149,7 @@ async function ensureChatPage(admin, page) {
 
 	// Create a new page
 	console.log('    Creating chat demo page via REST API...');
-	const createResp = await page.request.post('/wp-json/wp/v2/pages', {
+	const createResp = await page.request.post(`${BASE_URL}/wp-json/wp/v2/pages`, {
 		headers: {
 			'X-WP-Nonce': nonce,
 			'Content-Type': 'application/json',

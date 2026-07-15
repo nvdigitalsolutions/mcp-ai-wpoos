@@ -219,9 +219,27 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 				);
 			}
 
-			// If this is not the subtab being submitted, return empty array to avoid.
+			// If this is not the subtab being submitted, return empty array to avoid
 			// processing fields from inactive subtabs and preserve their existing values.
 			if ( ! $is_form_submit ) {
+				// Distinguish between "import" (no form submission at all) and
+				// "save from a different subtab". During import, sanitize ALL
+				// fields so that exported settings re-import without data loss.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only check; nonce verified by the AJAX handler.
+				if ( ! isset( $_POST['wp_mcp_ai_settings'] ) && ! empty( $input ) ) {
+					if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						error_log(
+							sprintf(
+								'[NV oOS Subtab Sanitize] Import mode for section %s - sanitizing ALL fields (%d total)',
+								$this->get_id(),
+								count( $all_fields )
+							)
+						);
+					}
+					return $this->sanitize_fields( $input, $all_fields, true );
+				}
+
 				if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 					error_log(
@@ -363,6 +381,38 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							);
 						}
 						$sanitized[ $key ] = $sanitized_peers;
+					} elseif ( is_string( $peer_sites ) ) {
+						// JSON string from textarea or import — decode it.
+						$trimmed = trim( $peer_sites );
+						if ( '' === $trimmed ) {
+							$sanitized[ $key ] = array();
+						} else {
+							$decoded = json_decode( $trimmed, true );
+							if ( is_array( $decoded ) ) {
+								// Recurse: sanitize the decoded array via the same peer-loop logic.
+								$sanitized_peers = array();
+								foreach ( $decoded as $peer ) {
+									if ( ! is_array( $peer ) ) {
+										continue;
+									}
+									$name    = isset( $peer['name'] ) ? trim( sanitize_text_field( $peer['name'] ) ) : '';
+									$url     = isset( $peer['url'] ) ? trim( esc_url_raw( $peer['url'] ) ) : '';
+									$api_key = isset( $peer['api_key'] ) ? trim( sanitize_text_field( $peer['api_key'] ) ) : '';
+									if ( '' === $name && '' === $url && '' === $api_key ) {
+										continue;
+									}
+									$sanitized_peers[] = array(
+										'name'    => $name,
+										'url'     => $url,
+										'api_key' => $api_key,
+									);
+								}
+								$sanitized[ $key ] = $sanitized_peers;
+							} else {
+								// Invalid JSON — default to empty array.
+								$sanitized[ $key ] = array();
+							}
+						}
 					} else {
 						$sanitized[ $key ] = array();
 					}

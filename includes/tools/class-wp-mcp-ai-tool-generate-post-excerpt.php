@@ -282,7 +282,7 @@ class WP_MCP_AI_Tool_Generate_Post_Excerpt implements WP_MCP_AI_Tool_Interface, 
 			return array(
 				'post_id' => $post->ID,
 				'title'   => $post->post_title,
-				'content' => wp_strip_all_tags( $post->post_content ),
+				'content' => WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post->ID ),
 			);
 		}
 

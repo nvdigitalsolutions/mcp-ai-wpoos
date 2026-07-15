@@ -127,10 +127,44 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 						'description' => 'Include citations section (default: true)',
 						'default'     => true,
 					),
-					'citations'         => array(
+					'citations'             => array(
 						'type'        => 'array',
 						'description' => 'Pre-provided citations (for formatting mode)',
 						'items'       => array( 'type' => 'string' ),
+					),
+					'save_to_paper_store'   => array(
+						'type'        => 'boolean',
+						'description' => __( 'Whether to save the generated report to the Paper Store as a temporary record for later review, export, or post creation.', 'mcp-ai-wpoos-pro' ),
+						'default'     => false,
+					),
+					'paper_store_collection' => array(
+						'type'        => 'string',
+						'description' => __( 'Paper Store collection name for saving the report. Default: "research-reports". Only used when save_to_paper_store is true.', 'mcp-ai-wpoos-pro' ),
+					),
+					'create_draft_post'     => array(
+						'type'        => 'boolean',
+						'description' => __( 'Whether to automatically create a WordPress draft post from the research report content.', 'mcp-ai-wpoos-pro' ),
+						'default'     => false,
+					),
+					'draft_post_type'       => array(
+						'type'        => 'string',
+						'description' => __( 'WordPress post type for the draft. Default: "post".', 'mcp-ai-wpoos-pro' ),
+						'default'     => 'post',
+					),
+					'draft_post_status'     => array(
+						'type'        => 'string',
+						'description' => __( 'WordPress post status for the draft. Use "draft" for private review or "pending" for editorial workflow.', 'mcp-ai-wpoos-pro' ),
+						'enum'        => array( 'draft', 'pending' ),
+						'default'     => 'draft',
+					),
+					'draft_post_category'   => array(
+						'type'        => 'integer',
+						'description' => __( 'Category term ID to assign to the draft post.', 'mcp-ai-wpoos-pro' ),
+					),
+					'draft_post_tags'       => array(
+						'type'        => 'array',
+						'items'       => array( 'type' => 'string' ),
+						'description' => __( 'Tags to assign to the draft post.', 'mcp-ai-wpoos-pro' ),
 					),
 				),
 				'required'   => array(),
@@ -264,6 +298,56 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 				'sources_count' => count( $search_results['sources'] ?? array() ),
 			)
 		);
+
+		// Optionally save report to Paper Store as temp storage.
+		if ( ! empty( $arguments['save_to_paper_store'] ) ) {
+			$paper_save_result = $this->save_report_to_paper_store( $report_data, $arguments, $context );
+			if ( ! is_wp_error( $paper_save_result ) ) {
+				$report_data['paper_store_id']         = $paper_save_result;
+				$report_data['paper_store_collection'] = isset( $arguments['paper_store_collection'] ) && ! empty( $arguments['paper_store_collection'] )
+					? sanitize_key( $arguments['paper_store_collection'] )
+					: 'research-reports';
+
+				/**
+				 * Fires when research results are saved to the Paper Store.
+				 *
+				 * Unified hook for all research tools that persist to Paper Store.
+				 *
+				 * @since 1.4.0
+				 *
+				 * @param string $record_id  The Paper Store record ID.
+				 * @param string $collection The Paper Store collection name.
+				 * @param array  $data       The research report data that was saved.
+				 * @param string $tool_slug  The tool that performed the save.
+				 * @param array  $arguments  Original tool arguments.
+				 * @param array  $context    Execution context.
+				 */
+				do_action( 'wp_mcp_ai_research_saved_to_paper_store', $paper_save_result, $report_data['paper_store_collection'], $report_data, 'generate_research_report', $arguments, $context );
+			}
+		}
+
+		// Optionally create a WordPress draft post from the report.
+		if ( ! empty( $arguments['create_draft_post'] ) ) {
+			$draft_result = $this->create_draft_post_from_report( $report_data, $arguments, $context );
+			if ( ! is_wp_error( $draft_result ) ) {
+				$report_data['draft_post'] = $draft_result;
+
+				/**
+				 * Fires when a draft WordPress post is created from research data.
+				 *
+				 * @since 1.4.0
+				 *
+				 * @param int    $post_id    The WordPress post ID.
+				 * @param string $post_type  The post type.
+				 * @param string $post_status The post status.
+				 * @param array  $data       The research data used.
+				 * @param string $tool_slug  The tool that created the post.
+				 * @param array  $arguments  Original tool arguments.
+				 * @param array  $context    Execution context.
+				 */
+				do_action( 'wp_mcp_ai_research_draft_post_created', $draft_result['post_id'], $draft_result['post_type'], $draft_result['post_status'], $report_data, 'generate_research_report', $arguments, $context );
+			}
+		}
 
 		return $report_data;
 	}
@@ -681,12 +765,12 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		// Get a suitable AI model for research.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$provider = $this->get_research_provider( $settings );
-		$model    = $this->get_research_model( $provider, $settings );
 
 		if ( is_wp_error( $provider ) ) {
 			return $provider;
 		}
 
+		$model = $this->get_research_model( $provider, $settings );
 		if ( is_wp_error( $model ) ) {
 			return $model;
 		}
@@ -761,10 +845,48 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'anthropic' ) ) {
 			return 'anthropic';
 		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'deepseek' ) ) {
+			return 'deepseek';
+		}
+
+		// Providers requiring multi-field or non-standard credential checks.
+		$settings_raw = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings_raw['cloudflare_api_token'] ) && ! empty( $settings_raw['cloudflare_account_id'] ) && class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+			return 'cloudflare';
+		}
+		if ( ! empty( $settings_raw['huggingface_api_key'] ) && ! empty( $settings_raw['huggingface_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+			return 'huggingface';
+		}
+		if ( ! empty( $settings_raw['ollama_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
+			return 'ollama';
+		}
+		if ( ! empty( $settings_raw['lm_studio_endpoint_url'] ) && class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
+			return 'lm_studio';
+		}
+
+		// Standard API-key providers.
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'openrouter' ) ) {
+			return 'openrouter';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'nvidia' ) ) {
+			return 'nvidia';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'digitalocean' ) ) {
+			return 'digitalocean';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'kimi' ) ) {
+			return 'kimi';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'baseten' ) ) {
+			return 'baseten';
+		}
+		if ( WP_MCP_AI_Credential_Resolver::has_credentials( 'zai' ) ) {
+			return 'zai';
+		}
 
 		return new WP_Error(
 			'wp_mcp_ai_no_provider',
-			__( 'No AI provider configured. Please configure OpenAI, Gemini, or Anthropic API keys in plugin settings.', 'mcp-ai-wpoos-pro' )
+			__( 'No AI provider configured. Please configure an AI provider (OpenAI, Gemini, Anthropic, DeepSeek, Cloudflare, HuggingFace, Ollama, OpenRouter, NVIDIA, LM Studio, DigitalOcean, Kimi, Baseten, or Z.AI) in plugin settings.', 'mcp-ai-wpoos-pro' )
 		);
 	}
 
@@ -779,13 +901,46 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		switch ( $provider ) {
 			case 'openai':
 				// Prefer GPT-4 for research if available.
-				return isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-4o';
+				return isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-4.1';
 
 			case 'gemini':
-				return isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-1.5-pro';
+				return isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.5-flash';
 
 			case 'anthropic':
-				return isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-3-5-sonnet-20241022';
+				return isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5';
+
+			case 'deepseek':
+				return ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-chat';
+
+			case 'cloudflare':
+				return ! empty( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : '@cf/meta/llama-4-scout-17b-16e-instruct';
+
+			case 'huggingface':
+				return ! empty( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : 'meta-llama/Llama-3.3-70B-Instruct';
+
+			case 'ollama':
+				return ! empty( $settings['ollama_model'] ) ? $settings['ollama_model'] : 'llama3.3';
+
+			case 'openrouter':
+				return ! empty( $settings['openrouter_model'] ) ? $settings['openrouter_model'] : 'openrouter/auto';
+
+			case 'nvidia':
+				return ! empty( $settings['nvidia_model'] ) ? $settings['nvidia_model'] : 'meta/llama-3.1-8b-instruct';
+
+			case 'lm_studio':
+				return ! empty( $settings['lm_studio_model'] ) ? $settings['lm_studio_model'] : '';
+
+			case 'digitalocean':
+				return ! empty( $settings['digitalocean_model'] ) ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct';
+
+			case 'kimi':
+				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k2.7-code';
+
+			case 'baseten':
+				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';
+
+			case 'zai':
+				return ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-4';
 
 			default:
 				return new WP_Error(
@@ -833,6 +988,105 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 					);
 				}
 				return new WP_MCP_AI_Anthropic_Client( WP_MCP_AI_Credential_Resolver::get_api_key( 'anthropic' ) );
+
+			case 'deepseek':
+				if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'DeepSeek client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_DeepSeek_Client( WP_MCP_AI_Credential_Resolver::get_api_key( 'deepseek' ) );
+
+			case 'cloudflare':
+				if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Cloudflare client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Cloudflare_Client();
+
+			case 'huggingface':
+				if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'HuggingFace client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Huggingface_Client();
+
+			case 'ollama':
+				if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Ollama client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Ollama_Client();
+
+			case 'openrouter':
+				if ( ! class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'OpenRouter client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_OpenRouter_Client();
+
+			case 'nvidia':
+				if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'NVIDIA client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Nvidia_Client();
+
+			case 'lm_studio':
+				if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'LM Studio client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_LM_Studio_Client();
+
+			case 'digitalocean':
+				if ( ! class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'DigitalOcean client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_DigitalOcean_Client();
+
+			case 'kimi':
+				if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Kimi client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Kimi_Client();
+
+			case 'baseten':
+				if ( ! class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Baseten client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Baseten_Client();
+
+			case 'zai':
+				if ( ! class_exists( 'WP_MCP_AI_ZAI_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Z.AI client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_ZAI_Client();
 
 			default:
 				return new WP_Error(
@@ -952,6 +1206,176 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			'section_count' => count( $sections ),
 			'sources'       => $search_results['sources'],
 			'report_type'   => $report_type,
+		);
+	}
+
+	/**
+	 * Save a research report to the Paper Store.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $report_data The formatted report data from parse_and_format_research().
+	 * @param array $arguments   Tool arguments.
+	 * @param array $context     Execution context.
+	 * @return string|WP_Error   Record ID on success, WP_Error on failure.
+	 */
+	private function save_report_to_paper_store( $report_data, $arguments, $context ) {
+		// Gate 1 — Sanitize at entry.
+		$collection = isset( $arguments['paper_store_collection'] ) && ! empty( $arguments['paper_store_collection'] )
+			? sanitize_key( $arguments['paper_store_collection'] )
+			: 'research-reports';
+
+		$title  = isset( $report_data['title'] ) ? sanitize_text_field( $report_data['title'] ) : __( 'Research Report', 'mcp-ai-wpoos-pro' );
+		$report = isset( $report_data['report'] ) ? $report_data['report'] : '';
+
+		// Generate unique record ID.
+		$slug = sanitize_title( $title );
+		if ( strlen( $slug ) > 40 ) {
+			$slug = substr( $slug, 0, 40 );
+		}
+		$record_id = $slug . '-' . substr( md5( $title . time() ), 0, 8 );
+
+		// Build tags from report metadata.
+		$tags = array( 'research-report' );
+		if ( isset( $report_data['report_type'] ) ) {
+			$tags[] = sanitize_key( $report_data['report_type'] );
+		}
+
+		// Build record.
+		$record = array(
+			'id'          => $record_id,
+			'type'        => $collection,
+			'title'       => $title,
+			'description' => sprintf(
+				/* translators: 1: title, 2: word count, 3: section count */
+				__( 'Research report "%1$s" — %2$d words across %3$d sections.', 'mcp-ai-wpoos-pro' ),
+				$title,
+				isset( $report_data['word_count'] ) ? (int) $report_data['word_count'] : str_word_count( $report ),
+				isset( $report_data['section_count'] ) ? (int) $report_data['section_count'] : 0
+			),
+			'tags'        => $tags,
+			'status'      => 'draft',
+			'meta'        => array(
+				'report_type'   => isset( $report_data['report_type'] ) ? $report_data['report_type'] : 'general',
+				'word_count'    => isset( $report_data['word_count'] ) ? (int) $report_data['word_count'] : str_word_count( $report ),
+				'section_count' => isset( $report_data['section_count'] ) ? (int) $report_data['section_count'] : 0,
+				'user_id'       => isset( $context['user_id'] ) ? (int) $context['user_id'] : get_current_user_id(),
+				'topic'         => isset( $arguments['topic'] ) ? sanitize_text_field( $arguments['topic'] ) : '',
+			),
+			'body'        => array(
+				'markdown' => $report,
+				'sources'  => isset( $report_data['sources'] ) ? $report_data['sources'] : array(),
+			),
+		);
+
+		// Save to Paper Store.
+		$manager = WP_MCP_AI_Paper_Store_Manager::get_instance();
+		$repo    = $manager->get_repository( $collection );
+
+		$saved = $repo->save( $record );
+
+		if ( is_wp_error( $saved ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Failed to save research report to Paper Store: ' . $saved->get_error_message(),
+				array(
+					'title'      => $title,
+					'collection' => $collection,
+					'record_id'  => $record_id,
+				)
+			);
+			return $saved;
+		}
+
+		return $record_id;
+	}
+
+	/**
+	 * Create a WordPress draft post from a research report.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $report_data The formatted report data.
+	 * @param array $arguments   Tool arguments.
+	 * @param array $context     Execution context.
+	 * @return array|WP_Error    Array with post_id, post_type, post_status, edit_url on success.
+	 */
+	private function create_draft_post_from_report( $report_data, $arguments, $context ) {
+		// Gate 1 — Sanitize at entry.
+		$post_type   = isset( $arguments['draft_post_type'] ) ? sanitize_key( $arguments['draft_post_type'] ) : 'post';
+		$post_status = isset( $arguments['draft_post_status'] ) ? sanitize_key( $arguments['draft_post_status'] ) : 'draft';
+		$category_id = isset( $arguments['draft_post_category'] ) ? absint( $arguments['draft_post_category'] ) : 0;
+
+		// Validate post type.
+		if ( ! post_type_exists( $post_type ) ) {
+			$post_type = 'post';
+		}
+
+		// Validate post status.
+		$allowed_statuses = array( 'draft', 'pending' );
+		if ( ! in_array( $post_status, $allowed_statuses, true ) ) {
+			$post_status = 'draft';
+		}
+
+		// Check publish capability.
+		$user_id = isset( $context['user_id'] ) ? (int) $context['user_id'] : get_current_user_id();
+		$post_type_object = get_post_type_object( $post_type );
+		if ( $post_type_object && ! user_can( $user_id, $post_type_object->cap->publish_posts ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				sprintf(
+					/* translators: %s: post type */
+					__( 'You do not have permission to create %s posts.', 'mcp-ai-wpoos-pro' ),
+					$post_type
+				)
+			);
+		}
+
+		$title   = isset( $report_data['title'] ) ? sanitize_text_field( $report_data['title'] ) : __( 'Research Report', 'mcp-ai-wpoos-pro' );
+		$content = isset( $report_data['report'] ) ? wp_kses_post( $report_data['report'] ) : '';
+
+		// Build post data.
+		$post_data = array(
+			'post_type'    => $post_type,
+			'post_status'  => $post_status,
+			'post_title'   => $title,
+			'post_content' => $content,
+			'post_author'  => $user_id,
+		);
+
+		// Add category if provided and post type supports it.
+		if ( $category_id > 0 && is_object_in_taxonomy( $post_type, 'category' ) ) {
+			$post_data['post_category'] = array( $category_id );
+		}
+
+		$post_id = wp_insert_post( $post_data, true );
+
+		if ( is_wp_error( $post_id ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Failed to create draft post from research report: ' . $post_id->get_error_message(),
+				array(
+					'title'     => $title,
+					'post_type' => $post_type,
+				)
+			);
+			return $post_id;
+		}
+
+		// Set tags if provided and post type supports it.
+		if ( isset( $arguments['draft_post_tags'] ) && is_array( $arguments['draft_post_tags'] ) && is_object_in_taxonomy( $post_type, 'post_tag' ) ) {
+			$tag_names = array_map( 'sanitize_text_field', $arguments['draft_post_tags'] );
+			$tag_names = array_filter( $tag_names );
+			if ( ! empty( $tag_names ) ) {
+				wp_set_post_tags( $post_id, $tag_names, false );
+			}
+		}
+
+		// Gate 2 — Escape at exit.
+		return array(
+			'post_id'    => $post_id,
+			'post_type'  => esc_html( $post_type ),
+			'post_status' => esc_html( $post_status ),
+			'edit_url'   => esc_url( get_edit_post_link( $post_id, 'raw' ) ),
+			'permalink'  => esc_url( get_permalink( $post_id ) ),
 		);
 	}
 }
