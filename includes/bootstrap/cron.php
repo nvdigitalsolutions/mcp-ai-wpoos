@@ -386,7 +386,7 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 				'temp_file_cleanup_cron',
 				sprintf(
 					/* translators: %d: number of files deleted */
-					__( 'Temp file cleanup: removed %d stale file(s).', 'mcp-ai-wpoos' ),
+					_n( 'Temp file cleanup: removed %d stale file.', 'Temp file cleanup: removed %d stale files.', $deleted, 'mcp-ai-wpoos' ),
 					$deleted
 				),
 				array(

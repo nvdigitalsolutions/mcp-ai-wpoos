@@ -183,6 +183,104 @@ class WP_MCP_AI_HTTP_Helper {
 			}
 		}
 
+		// If the host is not a known loopback hostname or literal IP,
+		// resolve it via DNS and check whether all resolved IPs are
+		// private or loopback. This prevents SSRF bypasses where an
+		// attacker-controlled hostname resolves to a private address
+		// (e.g. 127.0.0.1, 169.254.169.254 cloud metadata).
+		if ( ! filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			$resolved = self::resolve_host_to_ips( $host );
+			if ( null !== $resolved && count( $resolved ) > 0 ) {
+				foreach ( $resolved as $ip ) {
+					if ( ! self::is_private_or_loopback_ip( $ip ) ) {
+						// At least one resolved IP is public — do not treat as loopback.
+						return false;
+					}
+				}
+				// All resolved IPs are private/loopback.
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Resolve a hostname to its IPv4 and IPv6 addresses.
+	 *
+	 * Returns null on resolution failure. Uses gethostbyname() as a
+	 * fallback when dns_get_record() is unavailable (e.g. disabled by host).
+	 *
+	 * @since 1.1.40
+	 *
+	 * @param string $host Hostname to resolve.
+	 * @return string[]|null Array of IP addresses, or null on failure.
+	 */
+	private static function resolve_host_to_ips( $host ) {
+		$ips = array();
+
+		if ( function_exists( 'dns_get_record' ) ) {
+			// Resolve A (IPv4) records.
+			$a_records = @dns_get_record( $host, DNS_A );
+			if ( is_array( $a_records ) ) {
+				foreach ( $a_records as $record ) {
+					if ( ! empty( $record['ip'] ) ) {
+						$ips[] = $record['ip'];
+					}
+				}
+			}
+
+			// Resolve AAAA (IPv6) records.
+			$aaaa_records = @dns_get_record( $host, DNS_AAAA );
+			if ( is_array( $aaaa_records ) ) {
+				foreach ( $aaaa_records as $record ) {
+					if ( ! empty( $record['ipv6'] ) ) {
+						$ips[] = $record['ipv6'];
+					}
+				}
+			}
+
+			if ( count( $ips ) > 0 ) {
+				return $ips;
+			}
+		}
+
+		// Fallback: gethostbyname() returns a single IPv4 address.
+		$ip = @gethostbyname( $host );
+		if ( $ip !== $host && filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+			return array( $ip );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Check if an IP address is a private, loopback, or link-local address.
+	 *
+	 * Delegates to is_private_ipv4_address() and is_private_ipv6_address()
+	 * after normalisation. Intended for use on DNS-resolved IPs (post-resolution).
+	 *
+	 * @since 1.1.40
+	 *
+	 * @param string $ip IP address string.
+	 * @return bool True if the IP is private/loopback/link-local.
+	 */
+	private static function is_private_or_loopback_ip( $ip ) {
+		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			return self::is_private_ipv4_address( $ip );
+		}
+
+		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			$normalized = inet_pton( $ip );
+			if ( false !== $normalized ) {
+				// Check IPv6 loopback.
+				if ( inet_pton( '::1' ) === $normalized ) {
+					return true;
+				}
+				return self::is_private_ipv6_address( $normalized );
+			}
+		}
+
 		return false;
 	}
 
