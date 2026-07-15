@@ -598,24 +598,48 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// 4. Clear all related caches (object cache, transients)
 				// ========================================================================
 
-				// Step 1: Clear ALL caches before reading existing settings.
+				// ========================================================================
+				// STEP 1: Suspend object cache additions during critical section.
+				// ========================================================================
+				// Suspending cache addition prevents stale data from being written
+				// back to the persistent object cache (Redis/Memcached) while we're
+				// performing the read-merge-write cycle. This eliminates the most
+				// common source of intermittent key wipes in production.
+				$was_cache_suspended = function_exists( 'wp_suspend_cache_addition' )
+					? wp_suspend_cache_addition( true )
+					: false;
+
+				// Step 2: Clear ALL caches before reading existing settings.
 				// This prevents race conditions and ensures we have the latest database values.
 				WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
-				// Also clear any object cache entries for this option.
+				// Also clear any object cache entries for both options.
 				wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+				wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
 
 				// Clear any transients that might cache settings.
 				delete_transient( 'wp_mcp_ai_settings_cache' );
 
-				// Step 2: Read current settings from database (bypassing all caches).
+				// Step 3: Read current settings from database (bypassing all caches).
 				// Use get_option() directly to ensure we get fresh data.
-				$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				// With cache addition suspended, get_option still reads from DB
+				// if the cache is empty (which we just cleared).
+				$existing_settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				$existing_credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
 
-				// Step 3: Create a backup of current settings for potential rollback.
-				// Store with timestamp for auditing purposes.
-				$backup_key = 'wp_mcp_ai_settings_backup_' . time();
-				update_option( $backup_key, $existing_settings, false ); // No autoload for backups.
+				if ( ! is_array( $existing_settings ) ) {
+					$existing_settings = array();
+				}
+				if ( ! is_array( $existing_credentials ) ) {
+					$existing_credentials = array();
+				}
+
+				// Step 4: Create a backup of current settings for potential rollback.
+				// Store with timestamp for auditing purposes. Include credentials
+				// in the backup so a complete restore is possible.
+				$backup_key  = 'wp_mcp_ai_settings_backup_' . time();
+				$full_backup = array_merge( $existing_settings, $existing_credentials );
+				update_option( $backup_key, $full_backup, false ); // No autoload for backups.
 
 				// Clean up old backups (keep last 5).
 				$this->cleanup_old_setting_backups( 5 );
@@ -625,16 +649,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					$provider_keys       = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
 					$existing_providers  = array();
 					$sanitized_providers = array();
-					foreach ( $provider_keys as $key ) {
-						if ( isset( $existing_settings[ $key ] ) && ! empty( $existing_settings[ $key ] ) ) {
-							$existing_providers[ $key ] = '(exists)';
+					foreach ( $provider_keys as $pkey ) {
+						$found_in_settings    = isset( $existing_settings[ $pkey ] ) && ! empty( $existing_settings[ $pkey ] );
+						$found_in_credentials = isset( $existing_credentials[ $pkey ] ) && ! empty( $existing_credentials[ $pkey ] );
+						if ( $found_in_settings || $found_in_credentials ) {
+							$existing_providers[ $pkey ] = $found_in_credentials ? '(in credentials)' : '(in settings)';
 						}
-						if ( isset( $sanitized_new[ $key ] ) ) {
-							$sanitized_providers[ $key ] = empty( $sanitized_new[ $key ] ) ? '(EMPTY!)' : '(has value)';
+						if ( isset( $sanitized_new[ $pkey ] ) ) {
+							$sanitized_providers[ $pkey ] = empty( $sanitized_new[ $pkey ] ) ? '(EMPTY!)' : '(has value)';
 						}
 					}
 					if ( ! empty( $existing_providers ) || ! empty( $sanitized_providers ) ) {
-						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- user-enabled diagnostic logging.
 						error_log(
 							sprintf(
 								'[NV oOS Settings] Provider keys - Existing: %s, Sanitized: %s',
@@ -648,47 +674,60 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// ========================================================================
 				// STEP 4: Enhanced Sensitive Key Protection
 				// ========================================================================
-				// Filter out empty provider keys from sanitized data to prevent accidental deletion.
-				// This protects against bugs where subtab sanitization might incorrectly include empty provider fields.
-				// Provider keys should only come from the Providers tab sections, never from General or other tabs.
-				$sensitive_keys = array(
-					'openai_api_key',
-					'gemini_api_key',
-					'anthropic_api_key',
-					'huggingface_api_key',
-					'kimi_api_key',
+				// Filter out sensitive keys from sanitized data to prevent accidental
+				// deletion. A sensitive key value is accepted ONLY when the user has
+				// explicitly typed a new non-empty, non-placeholder value. In all other
+				// cases (absent from POST, empty, masked placeholder), the key is
+				// removed from $sanitized_new so array_merge preserves the existing
+				// stored value.
+				//
+				// This is a defense-in-depth measure that works together with the
+				// two-option split: even if a sensitive key leaks into $sanitized_new
+				// from a non-provider tab, the merge won't overwrite the stored value
+				// unless the user explicitly provided a new one.
+				$sensitive_keys = WP_MCP_AI_Admin_Settings_Base::get_sensitive_fields();
+
+				// Also protect any key matching the sensitive pattern that may not
+				// be in the explicit list (e.g., addon-provided keys).
+				$extra_sensitive_keys = array(
 					'ollama_endpoint_url',
 					'lm_studio_endpoint_url',
 					'cloudflare_account_id',
-					'cloudflare_api_token',
-					'brave_search_api_key',
-					'tavily_api_key',
-					'mubert_api_key',
 					'removebg_api_key',
-					// Add more sensitive keys from integrations.
-					'gmail_client_secret',
-					'gmail_refresh_token',
-					'google_drive_refresh_token',
-					'auth0_management_client_secret',
 					'rabbitmq_password',
 					'meta_app_secret',
 					'meta_access_token',
 					'tiktok_access_token',
 					'tiktok_client_secret',
 					'yahoo_client_id',
-					'yahoo_client_secret',
 				);
+				$sensitive_keys       = array_unique( array_merge( $sensitive_keys, $extra_sensitive_keys ) );
 
 				foreach ( $sensitive_keys as $key ) {
-					// If a sensitive key is present in sanitized data but is empty/null,
-					// remove it to prevent overwriting existing values during merge.
-					if ( isset( $sanitized_new[ $key ] ) && empty( $sanitized_new[ $key ] ) ) {
+					if ( ! isset( $sanitized_new[ $key ] ) ) {
+						// Not in POST at all — existing value preserved by merge.
+						continue;
+					}
+
+					$val = $sanitized_new[ $key ];
+
+					// Accept the value ONLY if the user explicitly typed a new,
+					// non-empty, non-placeholder value.
+					$is_explicit_new_value = is_string( $val )
+						&& '' !== $val
+						&& WP_MCP_AI_Admin_Settings_Base::MASKED_SECRET_PLACEHOLDER !== $val;
+
+					if ( ! $is_explicit_new_value ) {
 						if ( $enable_logging ) {
-							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
+							$reason = ! isset( $sanitized_new[ $key ] ) ? 'not in POST' :
+								( '' === $val ? 'empty string' :
+								( '**************' === $val ? 'masked placeholder' : 'falsy value' ) );
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- user-enabled diagnostic logging.
 							error_log(
 								sprintf(
-									'[NV oOS Settings] PROTECTION: Removing empty %s from sanitized data to prevent data loss (tab=%s, save_all=%s)',
+									'[NV oOS Settings] PROTECTION: Removing %s from sanitized data (%s) (tab=%s, save_all=%s)',
 									$key,
+									$reason,
 									$active_tab,
 									$save_all_tabs ? 'YES' : 'NO'
 								)
@@ -852,24 +891,82 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					$update_result = false;
 				} else {
 					// ========================================================================
-					// STEP 6: Atomic Database Update
+					// STEP 6: Split and Save — Credentials vs Settings
 					// ========================================================================
-					// Save to database with autoload=yes for performance.
-					$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings, true );
+					// Sensitive credential fields (API keys, tokens, secrets) are stored
+					// in wp_mcp_ai_credentials with autoload=false to keep them out of
+					// the alloptions payload on every page request. Non-sensitive
+					// configuration stays in wp_mcp_ai_settings with autoload=true.
+					//
+					// CRITICAL: Never delete the credentials option. It must persist
+					// across saves from non-provider tabs. Incoming credentials are
+					// merged with existing — the incoming value takes precedence only
+					// when the user explicitly typed a new value (guaranteed by Step 4).
+					$incoming_credentials   = array();
+					$incoming_non_sensitive = array();
+
+					foreach ( $merged_settings as $key => $value ) {
+						if ( WP_MCP_AI_Admin_Settings_Base::is_sensitive_setting_key( $key ) ) {
+							$incoming_credentials[ $key ] = $value;
+						} else {
+							$incoming_non_sensitive[ $key ] = $value;
+						}
+					}
+
+					// Merge incoming credentials with existing — never wipe.
+					// Existing credentials take precedence for keys the user did NOT
+					// explicitly change (those keys were removed from $sanitized_new
+					// in Step 4, so they're absent from $incoming_credentials too).
+					$final_credentials = array_merge( $existing_credentials, $incoming_credentials );
+
+					// Save non-sensitive settings (autoload=true for performance).
+					$update_result = update_option(
+						WP_MCP_AI_Admin_Settings::OPTION_NAME,
+						$incoming_non_sensitive,
+						true
+					);
+
+					// Save credentials (autoload=false to keep out of alloptions).
+					// NEVER delete — absence of incoming credentials means "keep
+					// what was already stored", not "delete everything".
+					if ( count( $final_credentials ) > 0 ) {
+						update_option(
+							WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME,
+							$final_credentials,
+							false
+						);
+					}
+					// NOTE: No else { delete_option(...) } here. The bug in #5685
+					// was deleting the credentials option when no new credentials
+					// arrived in POST, which wiped API keys from other providers.
+
+					// Log credential save diagnostics.
+					if ( $enable_logging ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- user-enabled diagnostic logging.
+						error_log(
+							sprintf(
+								'[NV oOS Settings] Credential split - Non-sensitive: %d fields, Credentials: %d existing + %d incoming = %d final',
+								count( $incoming_non_sensitive ),
+								count( $existing_credentials ),
+								count( $incoming_credentials ),
+								count( $final_credentials )
+							)
+						);
+					}
 
 					// Log federation checkbox save result for debugging (only if logging enabled).
 					if ( $enable_logging ) {
 						$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
 						$has_fed      = false;
 						$saved_values = array();
-						foreach ( $fed_keys as $key ) {
-							if ( isset( $merged_settings[ $key ] ) ) {
-								$has_fed              = true;
-								$saved_values[ $key ] = var_export( $merged_settings[ $key ], true );
+						foreach ( $fed_keys as $fkey ) {
+							if ( isset( $merged_settings[ $fkey ] ) ) {
+								$has_fed               = true;
+								$saved_values[ $fkey ] = var_export( $merged_settings[ $fkey ], true );
 							}
 						}
 						if ( $has_fed ) {
-							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- user-enabled diagnostic logging.
 							error_log(
 								sprintf(
 									'[NV oOS FEDERATION DEBUG] SAVE: Result=%s, Values=%s',
@@ -877,43 +974,33 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 									wp_json_encode( $saved_values )
 								)
 							);
-							// Immediately read back from database to verify.
-							$verified        = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-							$verified_values = array();
-							foreach ( $fed_keys as $key ) {
-								if ( isset( $verified[ $key ] ) ) {
-									$verified_values[ $key ] = var_export( $verified[ $key ], true );
-								}
-							}
-							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
-							error_log(
-								sprintf(
-									'[NV oOS FEDERATION DEBUG] VERIFY: Read back from DB=%s',
-									wp_json_encode( $verified_values )
-								)
-							);
 						}
 					}
 
 					if ( $enable_logging ) {
-						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- user-enabled diagnostic logging.
 						error_log(
 							sprintf(
-								'[NV oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d, Changed keys: %s',
+								'[NV oOS Settings] Database update - Result: %s, Non-sensitive: %d fields, Credentials: %d fields',
 								$update_result ? 'SUCCESS' : 'UNCHANGED',
-								count( $existing_settings ),
-								count( $merged_settings ),
-								implode( ', ', array_keys( array_diff_assoc( $merged_settings, $existing_settings ) ) )
+								count( $incoming_non_sensitive ),
+								count( $final_credentials )
 							)
 						);
 					}
 
 					// ========================================================================
-					// STEP 7: Post-Save Cache Invalidation
+					// STEP 7: Restore Cache and Final Invalidation
 					// ========================================================================
+					// Restore the previous cache addition state.
+					if ( function_exists( 'wp_suspend_cache_addition' ) && false !== $was_cache_suspended ) {
+						wp_suspend_cache_addition( $was_cache_suspended );
+					}
+
 					// Clear all caches again after successful save.
 					WP_MCP_AI_Admin_Settings::reset_settings_cache();
 					wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+					wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
 					delete_transient( 'wp_mcp_ai_settings_cache' );
 
 					// Fire action hook for extensions to clear their own caches.
@@ -1527,9 +1614,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Clear cache before export to ensure fresh data.
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
 
 			// Use get_settings() to export merged defaults + decrypted sensitive values,
 			// consistent with what the Backup & Restore UI displays (not raw get_option).
+			// get_settings() handles the credentials merge automatically.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			// Add export metadata.
@@ -1640,9 +1729,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid settings file structure.', 'mcp-ai-wpoos' ) ) );
 			}
 
-			// Backup current settings before import.
-			$current_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			update_option( 'wp_mcp_ai_settings_backup_pre_import_' . time(), $current_settings, false );
+			// Backup current settings before import (include credentials).
+			$current_settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$current_credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+			update_option(
+				'wp_mcp_ai_settings_backup_pre_import_' . time(),
+				array_merge( $current_settings, is_array( $current_credentials ) ? $current_credentials : array() ),
+				false
+			);
 
 			// Sanitize imported settings through section-based sanitization.
 			$sanitized_settings = $this->sanitize_settings( $import_data['settings'], '' );
@@ -1659,8 +1753,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
-			// Save imported settings.
-			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $sanitized_settings, true );
+			// Save imported settings — split sensitive from non-sensitive.
+			$import_credentials   = array();
+			$import_non_sensitive = array();
+			foreach ( $sanitized_settings as $key => $value ) {
+				if ( WP_MCP_AI_Admin_Settings_Base::is_sensitive_setting_key( $key ) ) {
+					$import_credentials[ $key ] = $value;
+				} else {
+					$import_non_sensitive[ $key ] = $value;
+				}
+			}
+
+			// Save non-sensitive settings (autoload=true).
+			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $import_non_sensitive, true );
+
+			// Save credentials (autoload=false).
+			if ( count( $import_credentials ) > 0 ) {
+				update_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, $import_credentials, false );
+			}
 
 			if ( false === $update_result ) {
 				wp_send_json_error( array( 'message' => __( 'Failed to save imported settings.', 'mcp-ai-wpoos' ) ) );
@@ -1669,6 +1779,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Clear all caches.
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
 			delete_transient( 'wp_mcp_ai_settings_cache' );
 
 			wp_send_json_success(
@@ -1695,6 +1806,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Clear all settings caches.
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
 			delete_transient( 'wp_mcp_ai_settings_cache' );
 
 			// Clear any other related caches.
@@ -1721,15 +1833,37 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
 			}
 
-			// Backup current settings before reset.
-			$current_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			update_option( 'wp_mcp_ai_settings_backup_pre_reset_' . time(), $current_settings, false );
+			// Backup current settings before reset (include credentials).
+			$current_settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$current_credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+			update_option(
+				'wp_mcp_ai_settings_backup_pre_reset_' . time(),
+				array_merge( $current_settings, is_array( $current_credentials ) ? $current_credentials : array() ),
+				false
+			);
 
-			// Get default settings.
+			// Get default settings and split into sensitive/non-sensitive.
 			$default_settings = WP_MCP_AI_Admin_Settings_Base::get_default_settings();
 
-			// Save default settings.
-			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $default_settings, true );
+			$reset_credentials   = array();
+			$reset_non_sensitive = array();
+			foreach ( $default_settings as $key => $value ) {
+				if ( WP_MCP_AI_Admin_Settings_Base::is_sensitive_setting_key( $key ) ) {
+					$reset_credentials[ $key ] = $value;
+				} else {
+					$reset_non_sensitive[ $key ] = $value;
+				}
+			}
+
+			// Save non-sensitive settings (autoload=true).
+			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $reset_non_sensitive, true );
+
+			// Save default credential values (autoload=false).
+			// Default credential values are empty strings, but we still save them
+			// so the option structure is consistent.
+			if ( count( $reset_credentials ) > 0 ) {
+				update_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, $reset_credentials, false );
+			}
 
 			if ( false === $update_result ) {
 				wp_send_json_error( array( 'message' => __( 'Failed to reset settings.', 'mcp-ai-wpoos' ) ) );
@@ -1738,6 +1872,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Clear all caches.
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
 			delete_transient( 'wp_mcp_ai_settings_cache' );
 
 			wp_send_json_success(
