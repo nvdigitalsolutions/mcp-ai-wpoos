@@ -330,9 +330,14 @@ class WP_MCP_AI_Asset_Inventory {
 		$latest = filemtime( $path );
 
 		try {
+			// CATCH_GET_CHILD was introduced in PHP 8.2.0; guard for older versions.
+			$catch_flags = PHP_VERSION_ID >= 80200
+				? RecursiveIteratorIterator::CATCH_GET_CHILD
+				: 0;
 			$iterator = new RecursiveIteratorIterator(
 				new RecursiveDirectoryIterator( $path, RecursiveDirectoryIterator::SKIP_DOTS ),
-				RecursiveIteratorIterator::CATCH_GET_CHILD // Handle permission errors.
+				RecursiveIteratorIterator::SELF_FIRST,
+				$catch_flags
 			);
 
 			foreach ( $iterator as $file ) {
