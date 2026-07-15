@@ -1528,7 +1528,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
 
-			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			// Use get_settings() to export merged defaults + decrypted sensitive values,
+			// consistent with what the Backup & Restore UI displays (not raw get_option).
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			// Add export metadata.
 			$export_data = array(
