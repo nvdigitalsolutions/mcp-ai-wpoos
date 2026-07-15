@@ -145,6 +145,20 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
+### ✨ What's New at a Glance (v1.1.40)
+
+- 📝 **Content Format Awareness.** New `WP_MCP_AI_Content_Format_Helper` detects and preserves Markdown, HTML, and plain text formats across post-modifying and analysis tools — AI-generated content retains its intended structure through the full create/update pipeline.
+- 🔗 **Research → Paper Store → WordPress Draft Pipeline.** All research tools now support `save_to_paper_store` for staging results in the flat-file Paper Store. New `create_post_from_research` Pro tool bridges staged research to WordPress drafts. Human-in-the-loop review before publishing.
+- 🎬 **Demo Video Pipeline Complete (Phases 0–5).** Scripted scene recording with AI voiceover narration. GitHub Actions CI workflow automates video assembly. 14 narration scripts and video catalog.
+- 🔐 **Settings Credential Split.** Sensitive API keys moved from `wp_mcp_ai_settings` (autoload) to separate non-autoload `wp_mcp_ai_credentials` option with transparent merge. One-time migration. `wp_suspend_cache_addition` and dual cache clearing for defense-in-depth.
+- 🤖 **Kimi & DeepSeek Client Parity.** Both providers now match all first-class providers: streaming, tool use, token tracking, and error handling. Plus DeepSeek and 9 missing providers added to all research tools.
+- 📊 **Model Catalog Update (July 2026).** 24 files updated across base + pro. Default bumps: Gemini `gemini-2.5-flash` → `gemini-3.5-flash`, NVIDIA `meta/llama-3.1-8b` → `nvidia/nemotron-3-nano-30b-a3b`, Gemini Live `gemini-2.5-flash-live` → `gemini-3.1-flash-live-preview`.
+- 🏗️ **OOS Engine: SchemaStoreInterface + Tests.** New domain contract, PostTypeSchema/TaxonomySchema entities, GetPostTypeSchemaTool, WordPress adapter. 45 new tests.
+- ⚡ **SSE HTTP/2 Fixes.** `ob_clean()` replaces `ob_flush()` to prevent protocol errors. 524 timeout resolved in Pro SPA v2.
+- 🔍 **Vector Store Sync — No Polling.** Status now checked only on assistant change and page load, reducing API load.
+- 🔧 **Settings Import/Export Batch (4 fixes).** Credential merge, save key wipe, subtab sanitization, export consistency — all resolved.
+- 🛡️ **Validated Tool Slug Allowlist.** Tool slug matching fixed for validated variants.
+
 ### ✨ What's New at a Glance (v1.1.39)
 
 - 🤖 **Page Agent Addon v0.1.0.** New addon (`addons/page-agent/`) — AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Give any WordPress page its own AI agent that can click, type, and navigate via natural language, running entirely client-side with no headless browser required. Includes shortcode, Elementor widget, REST endpoints, and MCP tool bridge.
@@ -385,7 +399,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
-- **14 language-model providers** — OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, Flowhub
+- **15 language-model providers** — OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, Flowhub
 - **~990 tool classes** (~195 base + ~795 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **36 REST controllers** (16 base + 20 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
@@ -520,9 +534,25 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **Workflow Blueprint & Schedule Improvements.** Existing-content awareness in Content Publisher and Keyword Pipeline blueprints. Blog schedule presets now check for duplicate content before publishing. Readable response generation for workflow schedule result delivery.
 - ✅ **SPA Accessibility.** Annotation pills made clickable with meaningful labels for screen readers.
 - ✅ **Security.** OWASP ZAP DAST medium findings triaged as false positives.
-- 📦 **Versioning** — bumped to **1.1.39** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **26**.
+- 📦 **Versioning** — bumped to **1.1.38** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **26**.
 
-## 🆕 Latest Updates (v1.1.39 — July 2026)
+## 🆕 Latest Updates (v1.1.40 — July 2026)
+
+### July 12–15, 2026 — Content Format Awareness, Research Pipeline, Settings Credential Split, Model Catalog, Provider Parity, SSE Fixes
+
+- ✅ **Content Format Awareness.** New `WP_MCP_AI_Content_Format_Helper` class (585 lines) detects and preserves Markdown, HTML, and plain text formats across post-modifying and analysis tools. Full 582-line test suite.
+- ✅ **Research → Paper Store → WordPress Draft Pipeline.** All research tools support `save_to_paper_store` parameter. New `create_post_from_research` Pro tool. New action hooks. Backward-compatible.
+- ✅ **Settings Credential Split.** Sensitive API keys moved to separate non-autoload `wp_mcp_ai_credentials` option with transparent merge via `get_settings()`. One-time migration. Defense-in-depth with `wp_suspend_cache_addition`. Settings import/export batch fixes (4 PRs).
+- ✅ **Demo Video Pipeline Complete (Phases 0–5).** Scripted scene recording with AI voiceover. GitHub Actions CI workflow. 14 narration scripts.
+- ✅ **Kimi & DeepSeek Client Parity.** Full streaming, tool use, and token tracking parity. DeepSeek and 9 missing providers added to all research tools.
+- ✅ **Model Catalog Update (July 2026).** 24 files across base + pro. Default bumps: Gemini `gemini-2.5-flash` → `gemini-3.5-flash`, NVIDIA `meta/llama-3.1-8b` → `nvidia/nemotron-3-nano-30b-a3b`, Gemini Live `gemini-2.5-flash-live` → `gemini-3.1-flash-live-preview`.
+- ✅ **OOS Engine: SchemaStoreInterface + Tests.** New domain contract, entities, tool, and WordPress adapter. 45 new unit and integration tests.
+- ✅ **SSE HTTP/2 Fixes.** `ob_clean()` replaces `ob_flush()`. 524 timeout resolved in Pro SPA v2.
+- ✅ **Vector Store Sync No Polling.** Status checked only on assistant change and page load.
+- ✅ **Validated Tool Slug Allowlist** fix (PR #5680).
+- 📦 **Versioning** — bumped to **1.1.40** across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **26**.
+
+## 🆕 Previous Updates (v1.1.39 — July 2026)
 
 ### July 10–13, 2026 — Meta-Harness Auto-Optimization, Agent Delegation Rework, Pro SPA v2 Polish, Tool Presets Refactor, CRM Enhancements 🧠🔄💬🎛️📊
 
