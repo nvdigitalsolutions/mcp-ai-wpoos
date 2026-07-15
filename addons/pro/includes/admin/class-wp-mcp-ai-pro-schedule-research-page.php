@@ -353,6 +353,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 				'delete_pro_schedule',
 				'get_schedule_run_history',
 				'list_assistants',
+				// Research → Paper Store pipeline.
+				'generate_research_report',
+				'create_post_from_research',
 				'web_search',
 			);
 

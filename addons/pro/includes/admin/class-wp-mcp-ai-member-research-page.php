@@ -99,6 +99,9 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 			'analyze_loop_health',
 			// Vital signs (logs directly to JetEngine CCT when available).
 			'log_vital_signs',
+			// Research → Paper Store pipeline.
+			'generate_research_report',
+			'create_post_from_research',
 			// General research tools.
 			'web_search',
 			'search_content',

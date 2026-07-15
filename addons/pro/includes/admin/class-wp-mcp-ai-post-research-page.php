@@ -246,6 +246,9 @@ class WP_MCP_AI_Post_Research_Page {
 								'generate_image_caption',
 								'generate_image_alt_text',
 								'generate_openai_image',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// Research tools.
 								'web_search',
 								'deep_research',

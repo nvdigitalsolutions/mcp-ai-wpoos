@@ -264,6 +264,9 @@ class WP_MCP_AI_ECA_Research_Page {
 								'enroll_student_eca',
 								// Calendar and scheduling.
 								'get_calendar_view',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// Research tools.
 								'web_search',
 								'search_content',

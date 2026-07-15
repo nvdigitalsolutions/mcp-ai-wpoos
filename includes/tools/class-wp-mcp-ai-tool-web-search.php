@@ -153,6 +153,20 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'description' => __( 'Filter results by recency: "pd" = past day, "pw" = past week, "pm" = past month, "py" = past year. Supported by Brave.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'pd', 'pw', 'pm', 'py' ),
 				),
+				'save_to_paper_store' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to automatically save search results to the Paper Store as a temporary record for later review or post creation.', 'mcp-ai-wpoos' ),
+					'default'     => false,
+				),
+				'paper_store_collection' => array(
+					'type'        => 'string',
+					'description' => __( 'Paper Store collection name for saving results. Default: "web-search-results". Only used when save_to_paper_store is true.', 'mcp-ai-wpoos' ),
+				),
+				'paper_store_tags' => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Optional tags to apply to the Paper Store record for categorization.', 'mcp-ai-wpoos' ),
+				),
 			),
 			'required'             => array( 'query' ),
 			'additionalProperties' => false,
@@ -255,6 +269,17 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		// This ensures consistent structure and prevents corrupted data from being cached.
 		if ( ! is_wp_error( $result ) ) {
 			$result = $this->validate_and_normalize_result( $result, $query, $provider );
+		}
+
+		// Optionally save results to Paper Store as temp storage.
+		if ( ! is_wp_error( $result ) && ! empty( $arguments['save_to_paper_store'] ) ) {
+			$paper_save_result = $this->save_search_to_paper_store( $result, $arguments, $context );
+			if ( ! is_wp_error( $paper_save_result ) ) {
+				$result['paper_store_id']         = $paper_save_result;
+				$result['paper_store_collection'] = isset( $arguments['paper_store_collection'] ) && ! empty( $arguments['paper_store_collection'] )
+					? sanitize_key( $arguments['paper_store_collection'] )
+					: 'web-search-results';
+			}
 		}
 
 		// Cache successful results to reduce redundant API calls.
@@ -1517,6 +1542,106 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Save search results to the Paper Store.
+	 *
+	 * Creates a temporary record in the specified Paper Store collection
+	 * containing the full search result set, metadata, and source information.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $result    The validated search results.
+	 * @param array $arguments Original tool arguments.
+	 * @param array $context   Execution context.
+	 * @return string|WP_Error Record ID on success, WP_Error on failure.
+	 */
+	private function save_search_to_paper_store( $result, $arguments, $context ) {
+		// Gate 1 — Sanitize at entry.
+		$collection = isset( $arguments['paper_store_collection'] ) && ! empty( $arguments['paper_store_collection'] )
+			? sanitize_key( $arguments['paper_store_collection'] )
+			: 'web-search-results';
+
+		$query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+
+		// Sanitize tags.
+		$tags = array();
+		if ( isset( $arguments['paper_store_tags'] ) && is_array( $arguments['paper_store_tags'] ) ) {
+			foreach ( $arguments['paper_store_tags'] as $tag ) {
+				$tag = sanitize_text_field( $tag );
+				if ( ! empty( $tag ) ) {
+					$tags[] = $tag;
+				}
+			}
+		}
+
+		// Generate unique record ID.
+		$record_id = 'wp_mcp_ai_ws_' . substr( md5( $query . time() . wp_rand() ), 0, 12 );
+
+		// Build record.
+		$record = array(
+			'id'          => $record_id,
+			'type'        => $collection,
+			'title'       => ! empty( $query ) ? $query : __( 'Web Search Results', 'mcp-ai-wpoos' ),
+			'description' => sprintf(
+				/* translators: 1: query, 2: result count, 3: provider */
+				__( 'Web search for "%1$s" — %2$d results via %3$s.', 'mcp-ai-wpoos' ),
+				$query,
+				isset( $result['result_count'] ) ? (int) $result['result_count'] : 0,
+				isset( $result['provider'] ) ? $result['provider'] : 'unknown'
+			),
+			'tags'        => $tags,
+			'status'      => 'draft',
+			'meta'        => array(
+				'query'          => $query,
+				'provider'       => isset( $result['provider'] ) ? $result['provider'] : 'unknown',
+				'result_count'   => isset( $result['result_count'] ) ? (int) $result['result_count'] : 0,
+				'user_id'        => isset( $context['user_id'] ) ? (int) $context['user_id'] : get_current_user_id(),
+				'cached'         => isset( $result['cached'] ) ? (bool) $result['cached'] : false,
+				'search_options' => array(
+					'country'   => isset( $arguments['country'] ) ? sanitize_text_field( $arguments['country'] ) : '',
+					'language'  => isset( $arguments['language'] ) ? sanitize_text_field( $arguments['language'] ) : '',
+					'freshness' => isset( $arguments['freshness'] ) ? sanitize_text_field( $arguments['freshness'] ) : '',
+				),
+			),
+			'body'        => array(
+				'results' => isset( $result['results'] ) ? $result['results'] : array(),
+			),
+		);
+
+		// Save to Paper Store.
+		$manager = WP_MCP_AI_Paper_Store_Manager::get_instance();
+		$repo    = $manager->get_repository( $collection );
+
+		$saved = $repo->save( $record );
+
+		if ( is_wp_error( $saved ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Failed to save web search results to Paper Store: ' . $saved->get_error_message(),
+				array(
+					'query'      => $query,
+					'collection' => $collection,
+					'record_id'  => $record_id,
+				)
+			);
+			return $saved;
+		}
+
+		/**
+		 * Fires when web search results are saved to the Paper Store.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param string $record_id  The Paper Store record ID.
+		 * @param string $collection The Paper Store collection name.
+		 * @param array  $result     The search results that were saved.
+		 * @param array  $arguments  Original tool arguments.
+		 * @param array  $context    Execution context.
+		 */
+		do_action( 'wp_mcp_ai_web_search_saved_to_paper_store', $record_id, $collection, $result, $arguments, $context );
+
+		return $record_id;
+	}
+
+	/**
 	 * Get extended tool definition including toolkit metadata.
 	 *
 	 * @since 1.1.0
@@ -1597,11 +1722,13 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		// Keep only essential fields for the LLM.
 		$keep_fields = array(
-			'query',        // The search query (essential context).
-			'result_count', // How many results were found.
-			'note',         // Any notes (e.g., "no results found").
-			'provider',     // Which search provider was used.
-			'cached',       // Whether results were cached.
+			'query',                   // The search query (essential context).
+			'result_count',            // How many results were found.
+			'note',                    // Any notes (e.g., "no results found").
+			'provider',                // Which search provider was used.
+			'cached',                  // Whether results were cached.
+			'paper_store_id',          // Paper Store record ID if saved.
+			'paper_store_collection',  // Paper Store collection name if saved.
 		);
 
 		$sanitized = array();

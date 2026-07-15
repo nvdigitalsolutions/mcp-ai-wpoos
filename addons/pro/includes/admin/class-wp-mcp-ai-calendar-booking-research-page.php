@@ -262,7 +262,7 @@ class WP_MCP_AI_Calendar_Booking_Research_Page {
 							</div>
 							<?php
 						} else {
-							echo do_shortcode( '[wp_mcp_ai_chat assistant="' . esc_attr( $assistant_id ) . '"]' );
+							echo do_shortcode( '[wp_mcp_ai_chat assistant="' . esc_attr( $assistant_id ) . '" additional_tools="generate_research_report,create_post_from_research"]' );
 						}
 						?>
 					</div>
