@@ -3,7 +3,7 @@
 **Status:** Stable — v2.1.0  
 **Category:** Pro Feature — Chat UI  
 **Addon:** `addons/pro-spa-v2/`  
-**Last Updated:** July 13, 2026 (v1.1.39)
+**Last Updated:** July 15, 2026 (v1.1.40)
 
 ## Overview
 

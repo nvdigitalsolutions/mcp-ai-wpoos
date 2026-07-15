@@ -487,6 +487,23 @@ This document provides a comprehensive index of all documentation available for 
 
 ---
 
+## 🆕 July 2026 — Content Format Awareness, Research Pipeline, Settings Credential Split, Model Catalog, Provider Parity, SSE Fixes
+
+### New and updated documents (July 15, 2026)
+
+- **[docs/features/content-format-awareness.md](features/content-format-awareness.md)** ⭐ **NEW** — Content format detection and preservation across post-modifying tools.
+- **[docs/features/research-paper-store-pipeline.md](features/research-paper-store-pipeline.md)** ⭐ **NEW** — Research → Paper Store → WordPress Draft pipeline architecture.
+- **[docs/features/demo-video-pipeline.md](features/demo-video-pipeline.md)** ⭐ **NEW** — Automated demo video pipeline with AI narration.
+- **[docs/features/settings-credential-split.md](features/settings-credential-split.md)** ⭐ **NEW** — Two-option credential isolation architecture.
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.40 entries expanded with all post-release changes.
+- **[docs/ROADMAP.md](ROADMAP.md)** ⭐ **UPDATED** — v1.1.40 released section with full delivery list.
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.40 section with full PR-level detail across 8 categories.
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.40 latest updates section, provider count fixes, consolidated sections.
+- **[CLAUDE.md](../CLAUDE.md)** ⭐ **UPDATED** — version bump, settings credential split guidance.
+- **[⁠.context/settings-storage.md](../.context/settings-storage.md)** ⭐ **NEW** — Agent context for settings storage architecture.
+
+---
+
 ## 🆕 July 2026 — Meta-Harness Auto-Optimization, Agent Delegation Rework, Pro SPA v2 Polish, Tool Presets Refactor, CRM Enhancements
 
 ### New and updated documents (July 10–13, 2026)
