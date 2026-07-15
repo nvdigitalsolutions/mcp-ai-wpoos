@@ -612,10 +612,25 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// Use get_option() directly to ensure we get fresh data.
 				$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
+				// Merge existing credentials from the separate non-autoload option
+				// (wp_mcp_ai_credentials) so they survive this save cycle. Without
+				// this, saving from a tab that does not include credential fields
+				// (e.g. General) causes the credentials option to be deleted.
+				$existing_credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+				if ( is_array( $existing_credentials ) && count( $existing_credentials ) > 0 ) {
+					$existing_settings = array_merge( $existing_settings, $existing_credentials );
+				}
+
 				// Step 3: Create a backup of current settings for potential rollback.
-				// Store with timestamp for auditing purposes.
-				$backup_key = 'wp_mcp_ai_settings_backup_' . time();
-				update_option( $backup_key, $existing_settings, false ); // No autoload for backups.
+				// Store with timestamp for auditing purposes. Include credentials
+				// in the backup so a complete restore is possible.
+				$backup_key        = 'wp_mcp_ai_settings_backup_' . time();
+				$full_backup       = $existing_settings;
+				$backup_credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+				if ( is_array( $backup_credentials ) && count( $backup_credentials ) > 0 ) {
+					$full_backup = array_merge( $full_backup, $backup_credentials );
+				}
+				update_option( $backup_key, $full_backup, false ); // No autoload for backups.
 
 				// Clean up old backups (keep last 5).
 				$this->cleanup_old_setting_backups( 5 );
@@ -1550,8 +1565,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Clear cache before export to ensure fresh data.
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
 
-			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			// Read non-sensitive settings and credentials, then merge for a
+			// complete export. Credentials are stored in a separate non-autoload
+			// option (wp_mcp_ai_credentials) to keep API keys out of alloptions.
+			$settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+			if ( is_array( $credentials ) && count( $credentials ) > 0 ) {
+				$settings = array_merge( $settings, $credentials );
+			}
 
 			// Add export metadata.
 			$export_data = array(
@@ -1689,6 +1712,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				} else {
 					$import_non_sensitive[ $key ] = $value;
 				}
+			}
+
+			// Merge existing credentials for any sensitive keys NOT present in the
+			// import file. This prevents an import from wiping API keys for providers
+			// that are configured on this site but not represented in the import.
+			$existing_creds = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+			if ( is_array( $existing_creds ) && count( $existing_creds ) > 0 ) {
+				$import_credentials = array_merge( $existing_creds, $import_credentials );
 			}
 
 			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $import_non_sensitive, true );
