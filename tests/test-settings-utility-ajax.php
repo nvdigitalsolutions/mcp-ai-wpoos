@@ -35,6 +35,11 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	const OPTION = 'wp_mcp_ai_settings';
 
 	/**
+	 * Credentials option name.
+	 */
+	const CRED_OPTION = 'wp_mcp_ai_credentials';
+
+	/**
 	 * Persist a known settings array before each test.
 	 */
 	public function setUp(): void {
@@ -47,6 +52,7 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	 */
 	public function tearDown(): void {
 		delete_option( self::OPTION );
+		delete_option( self::CRED_OPTION );
 		parent::tearDown();
 	}
 
@@ -359,5 +365,211 @@ class Test_Settings_Utility_AJAX extends WP_MCP_AI_Ajax_TestCase {
 			$saved = get_option( self::OPTION, array() );
 			$this->assertArrayHasKey( 'imported_key', $saved );
 		}
+	}
+
+	// --------------------------------------------------------------------
+	// Import credential-merge: existing API keys not in the import file
+	// must survive the import (regression test for PR #5696).
+	// --------------------------------------------------------------------
+
+	/**
+	 * Import preserves credentials that exist in the database but are
+	 * absent from the import file.
+	 */
+	public function test_import_preserves_existing_credentials_not_in_import() {
+		$this->as_admin();
+
+		// Seed non-sensitive settings with two registered keys.
+		// The import file will only touch one of them.
+		update_option(
+			self::OPTION,
+			array(
+				'default_provider'  => 'openai',
+				'default_assistant' => 99,
+			),
+			false
+		);
+
+		// Seed credentials with two provider keys.
+		update_option(
+			self::CRED_OPTION,
+			array(
+				'openai_api_key' => 'sk-existing-openai',
+				'gemini_api_key' => 'gem-existing-gemini',
+			),
+			false
+		);
+
+		// Import file contains only ONE of the two credential keys
+		// plus a non-sensitive setting change.
+		$export_data = array(
+			'version'  => '1.0',
+			'settings' => array(
+				'default_provider' => 'gemini',
+				'openai_api_key'   => 'sk-updated-from-import',
+			),
+		);
+		$json        = wp_json_encode( $export_data );
+		$tmp         = tempnam( sys_get_temp_dir(), 'ajax_cred_test_' );
+		file_put_contents( $tmp, $json );
+
+		$_FILES = array(
+			'settings_file' => array(
+				'name'     => 'settings.json',
+				'type'     => 'application/json',
+				'size'     => strlen( $json ),
+				'tmp_name' => $tmp,
+				'error'    => UPLOAD_ERR_OK,
+			),
+		);
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_import_settings',
+			array( 'nonce' => wp_create_nonce( self::NONCE ) )
+		);
+
+		$_FILES = array();
+		unlink( $tmp );
+
+		if ( ! $this->isAjaxSuccess( $response ) ) {
+			$this->markTestSkipped(
+				'Import rejected (possibly by MIME detection): ' .
+				wp_json_encode( $response )
+			);
+		}
+
+		$this->assertAjaxSuccess( $response );
+
+		// Credential explicitly in the import file should be updated.
+		$creds = get_option( self::CRED_OPTION, array() );
+		$this->assertArrayHasKey( 'openai_api_key', $creds );
+		$this->assertEquals( 'sk-updated-from-import', $creds['openai_api_key'] );
+
+		// Credential NOT in the import file must survive.
+		$this->assertArrayHasKey( 'gemini_api_key', $creds );
+		$this->assertEquals( 'gem-existing-gemini', $creds['gemini_api_key'] );
+
+		// Non-sensitive setting should be updated.
+		$non_sensitive = get_option( self::OPTION, array() );
+		$this->assertArrayHasKey( 'default_provider', $non_sensitive );
+		$this->assertEquals( 'gemini', $non_sensitive['default_provider'] );
+
+		// Non-sensitive setting NOT in the import file must survive.
+		$this->assertArrayHasKey( 'default_assistant', $non_sensitive );
+		$this->assertEquals( 99, $non_sensitive['default_assistant'] );
+	}
+
+	/**
+	 * Importing the same file twice must succeed both times — the
+	 * handler must not treat update_option's "no change" false return
+	 * as a hard failure (regression test for PR #5696).
+	 *
+	 * Also verifies that non-sensitive settings absent from the import
+	 * file are preserved across the import (the merge-with-existing
+	 * behaviour introduced alongside the credential-merge fix).
+	 */
+	public function test_import_twice_same_file_succeeds() {
+		$this->as_admin();
+
+		// Seed a known starting state with TWO non-sensitive settings.
+		// The import file only touches one of them — the other should
+		// survive across both import passes.
+		update_option(
+			self::OPTION,
+			array(
+				'default_provider'  => 'openai',
+				'default_assistant' => 42,
+			),
+			false
+		);
+
+		// Import file changes default_provider but does NOT mention
+		// default_assistant.
+		$export_data = array(
+			'version'  => '1.0',
+			'settings' => array(
+				'default_provider' => 'gemini',
+			),
+		);
+		$json        = wp_json_encode( $export_data );
+
+		// --- First import ---
+		$tmp1 = tempnam( sys_get_temp_dir(), 'ajax_double_1_' );
+		file_put_contents( $tmp1, $json );
+
+		$_FILES = array(
+			'settings_file' => array(
+				'name'     => 'settings.json',
+				'type'     => 'application/json',
+				'size'     => strlen( $json ),
+				'tmp_name' => $tmp1,
+				'error'    => UPLOAD_ERR_OK,
+			),
+		);
+
+		$response1 = $this->dispatch(
+			'wp_mcp_ai_import_settings',
+			array( 'nonce' => wp_create_nonce( self::NONCE ) )
+		);
+
+		$_FILES = array();
+		unlink( $tmp1 );
+
+		if ( ! $this->isAjaxSuccess( $response1 ) ) {
+			$this->markTestSkipped(
+				'First import rejected (possibly by MIME detection): ' .
+				wp_json_encode( $response1 )
+			);
+		}
+
+		$this->assertAjaxSuccess( $response1, 'First import should succeed.' );
+
+		// Verify the setting was actually changed AND the untouched
+		// setting survived.
+		$after_first = get_option( self::OPTION, array() );
+		$this->assertEquals( 'gemini', $after_first['default_provider'] );
+		$this->assertEquals(
+			42,
+			$after_first['default_assistant'],
+			'Non-sensitive settings absent from import file must survive.'
+		);
+
+		// --- Second import (identical file — no actual change) ---
+		$tmp2 = tempnam( sys_get_temp_dir(), 'ajax_double_2_' );
+		file_put_contents( $tmp2, $json );
+
+		$_FILES = array(
+			'settings_file' => array(
+				'name'     => 'settings.json',
+				'type'     => 'application/json',
+				'size'     => strlen( $json ),
+				'tmp_name' => $tmp2,
+				'error'    => UPLOAD_ERR_OK,
+			),
+		);
+
+		$response2 = $this->dispatch(
+			'wp_mcp_ai_import_settings',
+			array( 'nonce' => wp_create_nonce( self::NONCE ) )
+		);
+
+		$_FILES = array();
+		unlink( $tmp2 );
+
+		// The key assertion: the second import must also succeed, even
+		// though update_option() returns false because nothing changed.
+		$this->assertAjaxSuccess(
+			$response2,
+			'Second import of the identical file must succeed (update_option false on no-change is not an error).'
+		);
+
+		// After the second import, both settings should still be correct.
+		$after_second = get_option( self::OPTION, array() );
+		$this->assertEquals( 'gemini', $after_second['default_provider'] );
+		$this->assertEquals(
+			42,
+			$after_second['default_assistant'],
+			'default_assistant must survive across both imports.'
+		);
 	}
 }

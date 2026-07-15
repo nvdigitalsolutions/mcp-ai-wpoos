@@ -1764,16 +1764,41 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				}
 			}
 
+			// Merge incoming credentials with existing — never wipe.
+			// Existing credentials take precedence for keys the user did NOT
+			// explicitly include in the import file.
+			if ( ! is_array( $current_credentials ) ) {
+				$current_credentials = array();
+			}
+			$final_credentials = array_merge( $current_credentials, $import_credentials );
+
+			// Merge non-sensitive settings with existing — never wipe settings
+			// that are absent from the import file. This mirrors the merge
+			// pattern used by handle_save_settings() for form-based saves.
+			if ( ! is_array( $current_settings ) ) {
+				$current_settings = array();
+			}
+			$final_non_sensitive = array_merge( $current_settings, $import_non_sensitive );
+
 			// Save non-sensitive settings (autoload=true).
-			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $import_non_sensitive, true );
+			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $final_non_sensitive, true );
 
 			// Save credentials (autoload=false).
-			if ( count( $import_credentials ) > 0 ) {
-				update_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, $import_credentials, false );
+			if ( count( $final_credentials ) > 0 ) {
+				update_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, $final_credentials, false );
 			}
 
+			// update_option() returns false when the new value is the same as the
+			// existing value. This is not an error — it means the import didn't
+			// change anything (e.g., importing the same file twice). Only treat
+			// it as a failure when the incoming data genuinely differs from what
+			// is already stored.
 			if ( false === $update_result ) {
-				wp_send_json_error( array( 'message' => __( 'Failed to save imported settings.', 'mcp-ai-wpoos' ) ) );
+				$existing_non_sensitive = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				// phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual -- Loose comparison handles type coercion between DB-stored strings and import-supplied ints/bools.
+				if ( $final_non_sensitive != $existing_non_sensitive ) {
+					wp_send_json_error( array( 'message' => __( 'Failed to save imported settings.', 'mcp-ai-wpoos' ) ) );
+				}
 			}
 
 			// Clear all caches.
