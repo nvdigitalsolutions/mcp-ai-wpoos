@@ -471,6 +471,14 @@
 		handleFormSubmit: function(e) {
 			const $form = $(e.target);
 			const $submit = $form.find('input[type="submit"]');
+
+			// Prevent double-submit from rapid clicks.
+			if ( $form.data('submitting') ) {
+				e.preventDefault();
+				console.warn('[NV oOS Settings] Double-submit prevented');
+				return;
+			}
+			$form.data('submitting', true);
 			
 			// CRITICAL FIX: Ensure subtab hidden fields are set correctly before submission.
 			// This fixes the issue where subtab settings (like enable_federation_directory) don't persist.

@@ -188,6 +188,72 @@ function wp_mcp_ai_run_deferred_activation_security_check() {
 add_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' );
 
 /**
+ * Run deferred credentials migration on admin_init.
+ *
+ * Migrates credential fields from wp_mcp_ai_settings into the separate
+ * non-autoload wp_mcp_ai_credentials option. Runs once per site and is
+ * guarded by a flag option so it never repeats. The migration is additive
+ * (creates the new option without deleting from the old) — a verify step
+ * confirms success before removing the migrated keys from wp_mcp_ai_settings.
+ *
+ * @since 1.2.0
+ * @return void
+ */
+function wp_mcp_ai_migrate_credentials_to_split() {
+	if ( get_option( 'wp_mcp_ai_credentials_migrated' ) ) {
+		return;
+	}
+
+	if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
+		return;
+	}
+
+	$settings    = get_option( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME, array() );
+	$credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+
+	if ( ! is_array( $settings ) ) {
+		$settings = array();
+	}
+	if ( ! is_array( $credentials ) ) {
+		$credentials = array();
+	}
+
+	$migrated_count = 0;
+	foreach ( $settings as $key => $value ) {
+		if ( WP_MCP_AI_Admin_Settings_Base::is_sensitive_setting_key( $key ) ) {
+			$credentials[ $key ] = $value;
+			unset( $settings[ $key ] );
+			++$migrated_count;
+		}
+	}
+
+	if ( $migrated_count > 0 ) {
+		// Save credentials first (non-autoload).
+		update_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, $credentials, false );
+
+		// Clear cache to ensure read-back is fresh.
+		wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
+
+		// Verify credentials were saved correctly.
+		$verified = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+		if ( is_array( $verified ) && count( $verified ) >= $migrated_count ) {
+			// Success — now remove migrated keys from the main settings option.
+			update_option( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME, $settings, true );
+
+			// Clear settings cache.
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+				WP_MCP_AI_Admin_Settings::reset_settings_cache();
+			}
+			wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME, 'options' );
+		}
+	}
+
+	// Mark migration as complete regardless of count (zero keys = no-op).
+	update_option( 'wp_mcp_ai_credentials_migrated', true, false );
+}
+add_action( 'admin_init', 'wp_mcp_ai_migrate_credentials_to_split' );
+
+/**
  * Register activation security notice on admin_notices.
  *
  * WordPress 6.7.0+ requires translations to be loaded at init or later.
