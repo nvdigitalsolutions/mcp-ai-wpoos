@@ -320,6 +320,20 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 	public function get_descriptor() {
 		$native  = $this->effective_ingestion_surfaces();
 		$mounted = $this->effective_mounted_surfaces();
+		$limits  = $this->effective_limits();
+		$defaults = $this->get_default_limits();
+
+		// Merge configured limits with defaults so the descriptor always
+		// surfaces explicit values (never 0 = unlimited).
+		if ( empty( $limits['requests_per_minute'] ) && ! empty( $defaults['requests_per_minute'] ) ) {
+			$limits['requests_per_minute'] = $defaults['requests_per_minute'];
+		}
+		if ( empty( $limits['max_payload_bytes'] ) && ! empty( $defaults['max_payload_bytes'] ) ) {
+			$limits['max_payload_bytes'] = $defaults['max_payload_bytes'];
+		}
+		if ( empty( $limits['max_iterations'] ) && ! empty( $defaults['max_iterations'] ) ) {
+			$limits['max_iterations'] = $defaults['max_iterations'];
+		}
 
 		return array(
 			'slug'             => $this->get_slug(),
@@ -339,7 +353,10 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 			'native_surfaces'  => array_values( $native ),
 			'mounted_surfaces' => array_values( $mounted ),
 			'tool_count'       => count( $this->effective_tool_slugs() ),
-			'limits'           => $this->effective_limits(),
+			'limits'           => $limits,
+			'annotations'      => array(
+				'tool_scopes' => $this->compute_tool_scopes(),
+			),
 			'endpoints'        => array(
 				'jsonrpc' => rest_url( WP_MCP_AI_Toolkit_MCP_REST_Controller::REST_NAMESPACE . '/mcp/' . $this->get_slug() ),
 			),
@@ -516,6 +533,44 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 		return array(
 			'type'       => 'object',
 			'properties' => new \stdClass(),
+		);
+	}
+
+	/**
+	 * Compute per-tool scope annotations (read_only vs read_write).
+	 *
+	 * Default implementation marks every tool as 'read_only'.  Subclasses
+	 * and traits (e.g. ScheduledToolkitServerTrait) may override to provide
+	 * domain-specific scoping.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @return array<string, string> Map of tool slug => 'read_only' | 'read_write'.
+	 */
+	public function compute_tool_scopes() {
+		$scopes = array();
+		foreach ( $this->candidate_tool_slugs() as $slug ) {
+			$scopes[ $slug ] = 'read_only';
+		}
+		return $scopes;
+	}
+
+	/**
+	 * Default limits for this server category.
+	 *
+	 * Subclasses override to provide sensible domain-specific defaults
+	 * that appear in the MCP descriptor even when the admin has not
+	 * configured explicit overrides.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @return array{requests_per_minute: int, max_payload_bytes: int, max_iterations: int}
+	 */
+	public function get_default_limits() {
+		return array(
+			'requests_per_minute' => 30,
+			'max_payload_bytes'   => 65536, // 64 KB.
+			'max_iterations'      => 5,
 		);
 	}
 }
