@@ -146,7 +146,26 @@ class WP_MCP_AI_Asset_Inventory_REST {
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
 	public function trigger_discovery( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
-		$assets = WP_MCP_AI_Asset_Inventory::get_instance()->discover_assets();
+		try {
+			$assets = WP_MCP_AI_Asset_Inventory::get_instance()->discover_assets();
+		} catch ( \Throwable $e ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'error',
+					'Asset discovery failed with fatal error',
+					array(
+						'error' => $e->getMessage(),
+						'trace' => $e->getTraceAsString(),
+					)
+				);
+			}
+			return new WP_Error(
+				'wp_mcp_ai_discovery_failed',
+				/* translators: %s: error message */
+				sprintf( __( 'Asset discovery failed: %s', 'mcp-ai-wpoos' ), $e->getMessage() ),
+				array( 'status' => 500 )
+			);
+		}
 
 		return new WP_REST_Response(
 			array(
