@@ -6,6 +6,7 @@
  * Version: 1.1.39
  * Requires at least: 6.0
  * Requires PHP: 7.4
+ * Requires Plugins:
  * Tested up to: 6.10
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
@@ -57,7 +58,8 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	 */
 	function wp_mcp_ai_php_version_notice() {
 		$message = sprintf(
-			'<strong>Open Operator System</strong> requires PHP version %2$s or higher. You are running PHP version %1$s. Please contact your hosting provider to upgrade PHP.',
+			/* translators: 1: current PHP version, 2: required PHP version */
+			__( '<strong>Open Operator System</strong> requires PHP version %2$s or higher. You are running PHP version %1$s. Please contact your hosting provider to upgrade PHP.', 'mcp-ai-wpoos' ),
 			PHP_VERSION,
 			'7.4.0'
 		);
@@ -93,10 +95,12 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 // When real .mo files are loaded later on 'init' by WordPress's automatic
 // locale machinery, load_textdomain() merges them into the existing object.
 // ---------------------------------------------------------------------------
+// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- Intentional: pre-populate $l10n to prevent WP 6.7+ _doing_it_wrong warnings during bootstrap. NOOP_Translations is a no-op; real .mo files merge in later on 'init'.
 global $l10n;
 if ( ! isset( $l10n['mcp-ai-wpoos'] ) && class_exists( 'NOOP_Translations' ) ) {
 	$l10n['mcp-ai-wpoos'] = new NOOP_Translations();
 }
+// phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
 
 // Load bootstrap files in dependency order.
 require_once __DIR__ . '/includes/bootstrap/constants.php';
@@ -121,6 +125,18 @@ if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap' ) ) {
 
 // Load plugin textdomain for bundled translations.
 add_action( 'init', 'wp_mcp_ai_load_textdomain' );
+
+/**
+ * Load the plugin textdomain for bundled translations.
+ *
+ * Hooked on 'init' (WordPress 6.7+ requirement) so the just-in-time
+ * translation loader can function correctly. On WP 6.5+ the textdomain
+ * registry auto-discovers .mo files; this call registers the custom
+ * language path for self-hosted .mo bundles.
+ *
+ * @since 1.2.0
+ * @return void
+ */
 function wp_mcp_ai_load_textdomain() {
 	load_plugin_textdomain(
 		'mcp-ai-wpoos',

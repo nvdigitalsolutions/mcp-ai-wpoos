@@ -852,10 +852,32 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					$update_result = false;
 				} else {
 					// ========================================================================
-					// STEP 6: Atomic Database Update
+					// STEP 6: Split and Save — Credentials vs Settings
 					// ========================================================================
-					// Save to database with autoload=yes for performance.
-					$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings, true );
+					// Sensitive credential fields (API keys, tokens, secrets) are stored
+					// in wp_mcp_ai_credentials with autoload=false to keep them out of
+					// the alloptions payload on every page request. Non-sensitive
+					// configuration stays in wp_mcp_ai_settings with autoload=true.
+					$credentials = array();
+					$non_sensitive = array();
+					foreach ( $merged_settings as $key => $value ) {
+						if ( WP_MCP_AI_Admin_Settings::is_sensitive_setting_key( $key ) ) {
+							$credentials[ $key ] = $value;
+						} else {
+							$non_sensitive[ $key ] = $value;
+						}
+					}
+
+					// Save non-sensitive settings (autoload=true for performance).
+					$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $non_sensitive, true );
+
+					// Save credentials separately (autoload=false to keep them out
+					// of the alloptions payload on every page request).
+					if ( count( $credentials ) > 0 ) {
+						update_option( WP_MCP_AI_Admin_Settings::CREDENTIALS_OPTION_NAME, $credentials, false );
+					} else {
+						delete_option( WP_MCP_AI_Admin_Settings::CREDENTIALS_OPTION_NAME );
+					}
 
 					// Log federation checkbox save result for debugging (only if logging enabled).
 					if ( $enable_logging ) {
@@ -914,6 +936,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					// Clear all caches again after successful save.
 					WP_MCP_AI_Admin_Settings::reset_settings_cache();
 					wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+					wp_cache_delete( WP_MCP_AI_Admin_Settings::CREDENTIALS_OPTION_NAME, 'options' );
 					delete_transient( 'wp_mcp_ai_settings_cache' );
 
 					// Fire action hook for extensions to clear their own caches.
@@ -1657,8 +1680,23 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
-			// Save imported settings.
-			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $sanitized_settings, true );
+			// Split and save imported settings — credentials to non-autoload option.
+			$import_credentials = array();
+			$import_non_sensitive = array();
+			foreach ( $sanitized_settings as $key => $value ) {
+				if ( WP_MCP_AI_Admin_Settings::is_sensitive_setting_key( $key ) ) {
+					$import_credentials[ $key ] = $value;
+				} else {
+					$import_non_sensitive[ $key ] = $value;
+				}
+			}
+
+			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $import_non_sensitive, true );
+			if ( count( $import_credentials ) > 0 ) {
+				update_option( WP_MCP_AI_Admin_Settings::CREDENTIALS_OPTION_NAME, $import_credentials, false );
+			} else {
+				delete_option( WP_MCP_AI_Admin_Settings::CREDENTIALS_OPTION_NAME );
+			}
 
 			if ( false === $update_result ) {
 				wp_send_json_error( array( 'message' => __( 'Failed to save imported settings.', 'mcp-ai-wpoos' ) ) );
@@ -1667,6 +1705,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Clear all caches.
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::CREDENTIALS_OPTION_NAME, 'options' );
 			delete_transient( 'wp_mcp_ai_settings_cache' );
 
 			wp_send_json_success(
@@ -1693,6 +1732,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Clear all settings caches.
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::CREDENTIALS_OPTION_NAME, 'options' );
 			delete_transient( 'wp_mcp_ai_settings_cache' );
 
 			// Clear any other related caches.
@@ -1726,8 +1766,21 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Get default settings.
 			$default_settings = WP_MCP_AI_Admin_Settings_Base::get_default_settings();
 
-			// Save default settings.
-			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $default_settings, true );
+			// Split defaults into sensitive and non-sensitive, save separately.
+			$reset_credentials = array();
+			$reset_non_sensitive = array();
+			foreach ( $default_settings as $key => $value ) {
+				if ( WP_MCP_AI_Admin_Settings::is_sensitive_setting_key( $key ) ) {
+					$reset_credentials[ $key ] = $value;
+				} else {
+					$reset_non_sensitive[ $key ] = $value;
+				}
+			}
+
+			// Save non-sensitive settings (autoload=true).
+			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $reset_non_sensitive, true );
+			// Delete credentials option on reset (default credential values are empty strings).
+			delete_option( WP_MCP_AI_Admin_Settings::CREDENTIALS_OPTION_NAME );
 
 			if ( false === $update_result ) {
 				wp_send_json_error( array( 'message' => __( 'Failed to reset settings.', 'mcp-ai-wpoos' ) ) );
@@ -1736,6 +1789,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Clear all caches.
 			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::CREDENTIALS_OPTION_NAME, 'options' );
 			delete_transient( 'wp_mcp_ai_settings_cache' );
 
 			wp_send_json_success(

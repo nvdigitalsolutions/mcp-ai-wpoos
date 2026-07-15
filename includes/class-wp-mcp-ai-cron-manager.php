@@ -327,7 +327,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			$existing = get_option( self::OPTION_NAME, null );
 
 			if ( null === $existing ) {
-				add_option( self::OPTION_NAME, $jobs, '', 'no' );
+				add_option( self::OPTION_NAME, $jobs, '', false );
 			} else {
 				update_option( self::OPTION_NAME, $jobs );
 			}

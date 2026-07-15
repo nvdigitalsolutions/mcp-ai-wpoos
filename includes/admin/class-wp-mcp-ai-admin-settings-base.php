@@ -27,6 +27,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
 		const MASKED_SECRET_PLACEHOLDER      = '**************';
 		const OPTION_NAME                    = 'wp_mcp_ai_settings';
+		const CREDENTIALS_OPTION_NAME        = 'wp_mcp_ai_credentials';
 		const SETTINGS_GROUP                 = 'wp_mcp_ai_settings_group';
 		const PAGE_SLUG                      = 'wp-mcp-ai-settings';
 		const SIMPLE_JWT_LOGIN_PLUGIN        = 'simple-jwt-login/simple-jwt-login.php';
@@ -61,6 +62,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			$sanitized = array();
 			$defaults  = self::get_default_settings();
 			$current   = get_option( self::OPTION_NAME, array() );
+
+			// Merge credentials from the separate non-autoload option.
+			$credentials = get_option( self::CREDENTIALS_OPTION_NAME, null );
+			if ( is_array( $credentials ) && count( $credentials ) > 0 ) {
+				$current = array_merge( $current, $credentials );
+			}
 
 			foreach ( $defaults as $key => $default_value ) {
 				// If key is not present in submitted settings, preserve existing value or use default.
@@ -243,6 +250,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 			if ( ! is_array( $saved ) ) {
 				$saved = array();
+			}
+
+			// Merge credentials from the separate non-autoload option when present.
+			// Credentials are stored in wp_mcp_ai_credentials (autoload=false) to
+			// keep API keys out of the alloptions payload on every page request.
+			// Fall back to reading from wp_mcp_ai_settings for backward compatibility
+			// with installs that haven't been migrated yet.
+			$credentials = get_option( self::CREDENTIALS_OPTION_NAME, null );
+			if ( is_array( $credentials ) && count( $credentials ) > 0 ) {
+				$saved = array_merge( $saved, $credentials );
 			}
 
 			$settings = wp_parse_args( $saved, $defaults );
@@ -565,7 +582,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'end_window_size'                       => 10,
 				'summary_trigger_count'                 => 30,
 				'summary_trigger_tokens'                => 0, // 0 = use count-based trigger; >0 = use token-based trigger
-				'summary_model'                         => '', // Empty = use assistant model; otherwise model slug
+				'summary_model'                         => '', // Empty = use assistant model; otherwise model slug.
 				'summary_max_tokens'                    => 500,
 				'tool_result_summarize_threshold'       => 2000,
 				'chat_colors'                           => self::get_default_chat_colors(),
