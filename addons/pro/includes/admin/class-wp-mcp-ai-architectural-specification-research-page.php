@@ -302,6 +302,8 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 								'calculate_sustainability_metrics',
 								// Report generation.
 								'generate_research_report',
+								// Research → Paper Store pipeline.
+								'create_post_from_research',
 								// Research tools.
 								'web_search',
 								'search_content',

@@ -284,6 +284,9 @@ class WP_MCP_AI_Image_Template_Research_Page {
 								'list_media_templates',
 								'apply_media_template',
 								'apply_collection_template',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// Research tools.
 								'web_search',
 								'search_content',

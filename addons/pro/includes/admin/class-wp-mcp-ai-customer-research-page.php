@@ -194,6 +194,9 @@ class WP_MCP_AI_Customer_Research_Page {
 			// Activities and interactions.
 			'create_crm_activity',
 			'list_crm_activities',
+			// Research → Paper Store pipeline.
+			'generate_research_report',
+			'create_post_from_research',
 			// Web research.
 			'web_search',
 			'search_content',

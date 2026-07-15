@@ -283,6 +283,9 @@ class WP_MCP_AI_Quiz_Research_Page {
 								'get_quiz_submissions',
 								'grade_quiz',
 								'submit_quiz_answer',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// General research tools.
 								'web_search',
 								'search_content',

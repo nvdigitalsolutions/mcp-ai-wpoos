@@ -253,6 +253,9 @@ class WP_MCP_AI_Task_Research_Page {
 								'create_template',
 								'list_templates',
 								'instantiate_template',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// Research tools.
 								'web_search',
 								'search_content',

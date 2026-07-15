@@ -248,6 +248,9 @@ class WP_MCP_AI_Reg_Document_Research_Page {
 								// Registration access.
 								'list_registrations',
 								'get_registration',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// Research tools.
 								'web_search',
 								'search_content',

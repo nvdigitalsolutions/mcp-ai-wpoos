@@ -282,6 +282,9 @@ class WP_MCP_AI_Fantasy_Football_Research_Page {
 								'ff_generate_team_logo',
 								'ff_create_league_report',
 								'ff_player_research',
+								// Research → Paper Store pipeline.
+								'generate_research_report',
+								'create_post_from_research',
 								// General research tools.
 								'web_search',
 								'deep_research',
