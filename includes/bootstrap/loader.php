@@ -676,8 +676,8 @@ if ( is_admin() ) {
 		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
-			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . __( 'Settings', 'mcp-ai-wpoos' ) . '</a>',
-			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">' . __( 'Diagnostic', 'mcp-ai-wpoos' ) . '</a>',
+			'settings'   => '<a href="' . esc_url( $settings_link ) . '">Settings</a>',
+			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">Diagnostic</a>',
 		);
 
 		return array_merge( $plugin_links, $links );

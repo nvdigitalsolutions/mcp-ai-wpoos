@@ -362,16 +362,44 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 		}
 		WP_MCP_AI_Activation_Tracker::track_deactivation( $plugin_variant );
 
-		// Unschedule all cron hooks registered during activation and runtime.
-		// wp_unschedule_hook() (WP 4.9+) clears all events for a hook regardless
-		// of its $args, which is more robust than wp_unschedule_event() that
-		// requires an exact timestamp match (timestamp drift can orphan events).
-		$deactivation_hooks = array(
-			'wp_mcp_ai_cleanup_gemini_files',
-			'wp_mcp_ai_cleanup_openai_files',
-			'wp_mcp_ai_cleanup_temp_files',
-			'wp_mcp_ai_model_catalog_discovery',
-			'wp_mcp_ai_delegation_watchdog',
+		// Unschedule file cleanup cron jobs.
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_gemini_files' );
+		}
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_openai_files' );
+		}
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_temp_files' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_temp_files' );
+		}
+		// Unschedule the model catalog discovery cron.
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_model_catalog_discovery' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_model_catalog_discovery' );
+		}
+
+		// Unschedule the measurement retention cron. Table + data are
+		// left in place — uninstall is where destructive cleanup lives.
+		if ( class_exists( 'WP_MCP_AI_Metric_Retention' ) ) {
+			WP_MCP_AI_Metric_Retention::unschedule();
+		}
+
+		/*
+		 * Unschedule cron hooks registered by individual service classes.
+		 *
+		 * The following hooks are scheduled by their respective class init
+		 * methods but do not register their own deactivation callbacks.
+		 * We clear them here so scheduled events do not persist after
+		 * deactivation on hosts that keep the plugin files but disable it.
+		 *
+		 * When a class provides its own unschedule() / on_deactivation()
+		 * method, we prefer that — the hooks below are only for classes
+		 * that lack a dedicated cleanup path.
+		 */
+		$cleanup_hooks = array(
 			'wp_mcp_ai_check_license',
 			'wp_mcp_ai_audit_trail_prune',
 			'wp_mcp_ai_approval_cleanup',
@@ -390,14 +418,11 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 			'wp_mcp_ai_hourly_forecast_check',
 		);
 
-		foreach ( $deactivation_hooks as $hook ) {
-			wp_unschedule_hook( $hook );
-		}
-
-		// Unschedule the measurement retention cron. Table + data are
-		// left in place — uninstall is where destructive cleanup lives.
-		if ( class_exists( 'WP_MCP_AI_Metric_Retention' ) ) {
-			WP_MCP_AI_Metric_Retention::unschedule();
+		foreach ( $cleanup_hooks as $hook ) {
+			$timestamp = wp_next_scheduled( $hook );
+			if ( $timestamp ) {
+				wp_unschedule_event( $timestamp, $hook );
+			}
 		}
 
 		flush_rewrite_rules();
