@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
-> **GSD Context File** — Load this when working on tool implementations.
-> Last reviewed: July 2026.
+> **GSD Context File** — Load this when working on tool implementations, toolkits, or MCP servers.
+> Last reviewed: July 16, 2026.
 
 ---
 
@@ -15,6 +15,26 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
 **Total tools:** ~1,025+ (~195 base + ~830+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+---
+
+## Per-Toolkit MCP Servers (v1.1.40 — 33 servers)
+
+Each Pro toolkit can expose its tools as an independent MCP JSON-RPC endpoint. **33 servers** are registered (up from 29), including 4 new Phase 8 servers:
+
+| Server | Slug | Tools | Backend |
+|--------|------|-------|---------|
+| Pro Scheduler | `pro-scheduler` | 14 | WP-Cron + Schedule Manager |
+| FlowHub Sync | `flowhub` | 6 | Action Scheduler + CCT cache |
+| Shopify Sync | `shopify-sync` | 5 | Action Scheduler + CCT cache |
+| EZuite ERP Sync | `ezuite` | 6 | Action Scheduler + CCT cache |
+
+Shared infrastructure:
+- **`ScheduledToolkitServerTrait`** — sync-interval, sync-status, connection-health, limit annotations.
+- **OAuth 2.0** — PKCE flow, hierarchical scopes (`mcp:read`/`mcp:write`), browser-based login, token management UI.
+- **Per-tool scope annotations** — `compute_tool_scopes()` marks each tool as `read_only` or `read_write`.
+
+Reference: `addons/pro/includes/mcp-servers/README.md`, `docs/project/proposals/pro-toolkit-mcp-servers-expansion-plan.md`.
 
 ---
 
@@ -39,6 +59,7 @@ Reference: `docs/features/tool-presets-system.md`.
 | Base tools | `includes/tools/class-wp-mcp-ai-tool-{name}.php` | `includes/tools-init.php` |
 | Pro tools | `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-{name}.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
 | Pro categorized | `addons/pro/includes/tools/{category}/class-wp-mcp-ai-tool-{name}.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
+| MCP servers | `addons/pro/includes/mcp-servers/servers/class-wp-mcp-ai-{name}-mcp-server.php` | `addons/pro/includes/mcp-servers/mcp-servers-init.php` |
 
 ---
 

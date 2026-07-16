@@ -24,7 +24,7 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # ~830 total built-in tool implementations (~195 base + ~635 pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+│   ├── tools/            # ~1,025+ total built-in tool implementations (~195 base + ~830+ pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 │   ├── elementor/        # Elementor widget integrations
 │   ├── integrations/     # Third-party plugin integrations
 │   └── crawler/          # Crawl4AI integration
