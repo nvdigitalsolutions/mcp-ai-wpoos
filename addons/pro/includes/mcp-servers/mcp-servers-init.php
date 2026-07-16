@@ -70,6 +70,10 @@ require_once __DIR__ . '/servers/class-wp-mcp-ai-ezuite-mcp-server.php';
 // Phase 6 — /.well-known/mcp discovery endpoint.
 require_once __DIR__ . '/class-wp-mcp-ai-pro-well-known-mcp.php';
 
+// OAuth 2.0 Authorization Server for MCP.
+require_once __DIR__ . '/class-wp-mcp-ai-oauth-server.php';
+require_once __DIR__ . '/class-wp-mcp-ai-oauth-rest.php';
+
 /**
  * Wire the registry to fire its registration action at init priority 12 — after
  * toolkit initialization completes (which happens at priority 10/11 across the
@@ -157,7 +161,14 @@ if ( is_admin() ) {
 /**
  * Phase 6 — register the /.well-known/mcp discovery endpoint.
  */
-new WP_MCP_AI_Pro_Well_Known_MCP();
+	new WP_MCP_AI_Pro_Well_Known_MCP();
+
+/**
+ * Initialize the OAuth 2.0 REST controller for MCP authentication.
+ * Registers /.well-known/oauth-authorization-server, /oauth/authorize,
+ * /oauth/token, and /oauth/register endpoints.
+ */
+WP_MCP_AI_OAuth_REST::get_instance()->init();
 
 /**
  * Admin-post handler — persists per-toolkit MCP server configuration.

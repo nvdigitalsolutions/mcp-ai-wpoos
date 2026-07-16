@@ -400,15 +400,24 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$include_tools = apply_filters( 'wp_mcp_ai_initialize_include_tools', true, $params, $request );
 
 		if ( $include_tools ) {
-			// Get tools using the same logic as tools/list for consistency.
-			$tools_result = $this->mcp_tools_list( $params, $request );
+				// Get tools using the same logic as tools/list for consistency.
+				$tools_result = $this->mcp_tools_list( $params, $request );
 
 			if ( ! is_wp_error( $tools_result ) && isset( $tools_result['tools'] ) ) {
 				$response['tools'] = $tools_result['tools'];
 			}
 		}
 
-		return $response;
+			// OAuth 2.0 discovery (MCP Authorization Specification 2025-06-18).
+			// Advertise OAuth metadata so clients like Codex and Claude Desktop
+			// can offer a browser-based login flow.
+		if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+			$response['_meta'] = array(
+				'oauth' => WP_MCP_AI_OAuth_Server::get_instance()->get_protected_resource_metadata(),
+			);
+		}
+
+			return $response;
 	}
 
 	/**
@@ -427,6 +436,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @return string Complete MCP system prompt for the initialize handshake.
 	 */
 	protected function build_assistant_instructions( array $assistant_config, $assistant_id ) {
+		unset( $assistant_id ); // Reserved for future use (per-assistant instruction customisation).
 		$instructions = '';
 
 		// 1. System prompt — the canonical personality definition.
@@ -486,7 +496,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array|WP_Error
 	 */
-	protected function mcp_tools_list( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
+	protected function mcp_tools_list( $params, WP_REST_Request $request ) {
+		unset( $request ); // Required by MCP protocol method signature.
 		$assistant_id = 0;
 
 		// Check if assistant_id is provided in params.
@@ -852,7 +863,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array|WP_Error
 	 */
-	protected function mcp_resources_list( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
+	protected function mcp_resources_list( $params, WP_REST_Request $request ) {
+		unset( $request ); // Required by MCP protocol method signature.
 		$assistant_id = 0;
 
 		if ( isset( $params['assistant_id'] ) ) {
@@ -1102,10 +1114,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				);
 			}
 
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Required by MCP protocol for binary resource content.
 			$contents[] = array(
 				'uri'      => $uri,
 				'mimeType' => $mime_type,
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Required by MCP protocol for binary resource content.
 				'blob'     => base64_encode( $file_contents ),
 			);
 		}
@@ -1132,7 +1144,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array
 	 */
-	protected function mcp_prompts_list( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
+	protected function mcp_prompts_list( $params, WP_REST_Request $request ) {
+		unset( $params, $request ); // Required by MCP protocol method signature.
 		$prompts = array();
 
 		// Get all assistants as prompts.
@@ -1307,7 +1320,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array|WP_Error Completion result with values array.
 	 */
-	protected function mcp_completion_complete( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
+	protected function mcp_completion_complete( $params, WP_REST_Request $request ) {
+		unset( $request ); // Required by MCP protocol method signature.
 		if ( ! isset( $params['ref'] ) || ! is_array( $params['ref'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_params',
