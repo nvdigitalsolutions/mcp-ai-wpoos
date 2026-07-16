@@ -597,38 +597,38 @@ class WP_MCP_AI_OAuth_REST {
 			// After wp-login.php redirects back to this REST endpoint, the cookie
 			// is present but get_current_user_id() may return 0 because the REST
 			// API cookie-auth path requires a nonce that isn't available here.
-			if ( $user_id <= 0 && ! empty( $_COOKIE ) ) {
-				foreach ( $_COOKIE as $name => $value ) {
-					if ( 0 === strpos( $name, 'wordpress_logged_in_' ) ) {
-						$cookie_user_id = wp_validate_auth_cookie( $value, 'logged_in' );
-						if ( $cookie_user_id ) {
-							wp_set_current_user( $cookie_user_id );
-							$user_id = $cookie_user_id;
-							break;
-						}
+		if ( $user_id <= 0 && ! empty( $_COOKIE ) ) {
+			foreach ( $_COOKIE as $name => $value ) {
+				if ( 0 === strpos( $name, 'wordpress_logged_in_' ) ) {
+					$cookie_user_id = wp_validate_auth_cookie( $value, 'logged_in' );
+					if ( $cookie_user_id ) {
+						wp_set_current_user( $cookie_user_id );
+						$user_id = $cookie_user_id;
+						break;
 					}
 				}
 			}
+		}
 
-			if ( $user_id > 0 ) {
-				return true;
-			}
+		if ( $user_id > 0 ) {
+			return true;
+		}
 
 			// If this is a browser request, redirect to login.
 			// For non-browser clients, return an error.
 			$accept = isset( $_SERVER['HTTP_ACCEPT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT'] ) ) : '';
 
-			if ( false !== strpos( $accept, 'text/html' ) ) {
-				// This is a browser request. Redirect to WordPress login.
-				$current_url  = rest_url( 'mcp-ai/v1/oauth/authorize' );
-				$query_params = $request->get_params();
-				if ( ! empty( $query_params ) ) {
-					$current_url = add_query_arg( $query_params, $current_url );
-				}
-				$login_url = wp_login_url( $current_url );
-				wp_safe_redirect( $login_url );
-				exit;
+		if ( false !== strpos( $accept, 'text/html' ) ) {
+			// This is a browser request. Redirect to WordPress login.
+			$current_url  = rest_url( 'mcp-ai/v1/oauth/authorize' );
+			$query_params = $request->get_params();
+			if ( ! empty( $query_params ) ) {
+				$current_url = add_query_arg( $query_params, $current_url );
 			}
+			$login_url = wp_login_url( $current_url );
+			wp_safe_redirect( $login_url );
+			exit;
+		}
 
 		return new WP_Error(
 			'rest_not_authenticated',

@@ -2641,7 +2641,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function validate_bearer_token( $token, WP_REST_Request $request ) {
 				return $this->authenticator->validate_bearer_token( $token, $request );
-			}
+		}
 
 			/**
 			 * Validate an MCP OAuth 2.0 access token.
@@ -2653,9 +2653,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 * @param string          $audience Expected audience (MCP server URL).
 			 * @return true|WP_Error|null
 			 */
-			protected function validate_oauth_token( $token, WP_REST_Request $request, $audience = '' ) {
-				return $this->authenticator->validate_oauth_token( $token, $request, $audience );
-			}
+		protected function validate_oauth_token( $token, WP_REST_Request $request, $audience = '' ) {
+			return $this->authenticator->validate_oauth_token( $token, $request, $audience );
+		}
 
 			/**
 			 * Validate authentication via WordPress Application Passwords (Basic auth).
@@ -2666,16 +2666,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 * @param string          $required_cap WordPress capability the user must hold.
 			 * @return true|WP_Error|null
 			 */
-			protected function validate_wp_basic_auth( WP_REST_Request $request, $required_cap = 'read' ) {
-				return $this->authenticator->validate_wp_basic_auth( $request, $required_cap );
-			}
+		protected function validate_wp_basic_auth( WP_REST_Request $request, $required_cap = 'read' ) {
+			return $this->authenticator->validate_wp_basic_auth( $request, $required_cap );
+		}
 
 			/**
 			 * Check if rate limiting is enabled and enforce limits.
-		 *
-		 * @param int $user_id User ID making the request (0 for guests).
-		 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
-		 */
+			 *
+			 * @param int $user_id User ID making the request (0 for guests).
+			 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
+			 */
 		protected function check_rate_limit( $user_id ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
