@@ -241,22 +241,15 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 				);
 			}
 
-			// OAuth 2.0 access token (mcp_at_…) — validate with audience check.
-			if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
-				$oauth  = WP_MCP_AI_OAuth_Server::get_instance();
-				$result = $oauth->validate_token( $raw_token, $mcp_url );
-				if ( null !== $result ) {
-					if ( $result['user_id'] > 0 ) {
-						wp_set_current_user( $result['user_id'] );
-					}
+			// OAuth 2.0 access token (mcp_at_…) — route through authenticator.
+			if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) && class_exists( 'WP_MCP_AI_REST_Authenticator' ) ) {
+				$auth   = $this->get_auth();
+				$result = $auth->validate_oauth_token( $raw_token, $request, $mcp_url );
+				if ( true === $result ) {
 					return true;
 				}
-				if ( 0 === strpos( $raw_token, 'mcp_at_' ) ) {
-					return new WP_Error(
-						'rest_forbidden',
-						__( 'Invalid or expired OAuth token.', 'mcp-ai-wpoos-pro' ),
-						array( 'status' => 401 )
-					);
+				if ( is_wp_error( $result ) ) {
+					return $result;
 				}
 			}
 		}
