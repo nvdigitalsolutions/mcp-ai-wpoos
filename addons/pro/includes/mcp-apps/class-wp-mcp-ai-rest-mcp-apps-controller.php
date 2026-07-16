@@ -524,11 +524,21 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url );
 
 		// Check if OAuth is supported.
-		if ( ! $oauth_client->supports_oauth() ) {
+		$discovery = $oauth_client->discover_metadata();
+		if ( is_wp_error( $discovery ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mcp_app_oauth_not_supported',
-				__( 'The remote MCP server does not support OAuth 2.0 authentication.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 400 )
+				sprintf(
+					/* translators: 1: Server URL, 2: Error message. */
+					__( 'OAuth 2.0 discovery failed for %1$s: %2$s', 'mcp-ai-wpoos-pro' ),
+					$server_url,
+					$discovery->get_error_message()
+				),
+				array(
+					'status'     => 400,
+					'error_code' => $discovery->get_error_code(),
+					'message'    => $discovery->get_error_message(),
+				)
 			);
 		}
 
