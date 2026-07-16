@@ -179,7 +179,13 @@ class WP_MCP_AI_MCP_App_Tool_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			}
 		}
 
-		$client = new WP_MCP_AI_MCP_App_Client( $this->app_config );
+		// Use the registry's client factory to support OAuth auto-refresh.
+		if ( class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
+			$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+			$client   = $registry->create_client( $this->app_config );
+		} else {
+			$client = new WP_MCP_AI_MCP_App_Client( $this->app_config );
+		}
 
 		// Initialize session.
 		$init_result = $client->initialize();
