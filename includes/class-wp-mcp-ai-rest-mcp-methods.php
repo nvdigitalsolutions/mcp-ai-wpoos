@@ -222,6 +222,12 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @return mixed|WP_Error Result or error.
 	 */
 	protected function route_mcp_method( $method, $params, WP_REST_Request $request ) {
+			// OAuth scope enforcement (skip for probe/no-auth methods).
+			$scope_error = $this->check_main_mcp_scope( $method );
+		if ( null !== $scope_error ) {
+			return $scope_error;
+		}
+
 		switch ( $method ) {
 			case 'initialize':
 				return $this->mcp_initialize( $params, $request );
@@ -263,7 +269,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				return new WP_Error(
 					'wp_mcp_ai_method_not_found',
 					sprintf(
-						/* translators: %s: method name */
+					/* translators: %s: method name */
 						__( 'MCP method not found: %s', 'mcp-ai-wpoos' ),
 						$method
 					),
@@ -276,6 +282,65 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					)
 				);
 		}
+	}
+
+	/**
+	 * Check OAuth scope for methods on the main MCP endpoint.
+	 *
+	 * Mirrors check_scope_for_method() in the per-toolkit controller.
+	 * Read methods require `mcp:read`, write methods require `mcp:write`.
+	 * Returns a WP_Error when scope is insufficient, null otherwise.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param string $method JSON-RPC method name.
+	 * @return WP_Error|null
+	 */
+	protected function check_main_mcp_scope( $method ) {
+		// Skip for probe, notification, and unscoped methods.
+		$unscoped = array( 'initialize', 'ping', 'notifications/cancelled', 'notifications/initialized', 'logging/setLevel' );
+		if ( in_array( $method, $unscoped, true ) ) {
+			return null;
+		}
+
+		// Map methods to required scopes.
+		$read_methods  = array( 'tools/list', 'resources/list', 'resources/read', 'prompts/list', 'prompts/get', 'completion/complete' );
+		$write_methods = array( 'tools/call' );
+
+		$required = null;
+		if ( in_array( $method, $read_methods, true ) ) {
+			$required = 'mcp:read';
+		} elseif ( in_array( $method, $write_methods, true ) ) {
+			$required = 'mcp:write';
+		} else {
+			return null;
+		}
+
+		// Check scope via the authenticator.
+		if ( ! property_exists( $this, 'authenticator' ) || ! $this->authenticator instanceof WP_MCP_AI_REST_Authenticator ) {
+			return null;
+		}
+
+		if ( $this->authenticator->oauth_scope_sufficient( $required ) ) {
+			return null;
+		}
+
+		// Scope insufficient.
+		$mcp_url = rest_url( 'mcp-ai/v1/mcp' );
+		return new WP_Error(
+			'wp_mcp_ai_insufficient_scope',
+			sprintf(
+				/* translators: 1: required scope, 2: method name */
+				__( 'Insufficient scope: %1$s is required for %2$s.', 'mcp-ai-wpoos' ),
+				$required,
+				$method
+			),
+			array(
+				'status'           => 403,
+				'required_scope'   => $required,
+				'www_authenticate' => WP_MCP_AI_OAuth_Server::build_insufficient_scope_www_authenticate( $required, $mcp_url ),
+			)
+		);
 	}
 
 	/**
