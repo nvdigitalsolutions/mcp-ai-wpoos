@@ -2388,13 +2388,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return bool|WP_Error
 		 */
 		public function permissions_check_mcp( WP_REST_Request $request ) {
-			$this->reset_auth_context();
+				$this->reset_auth_context();
 
-			// Check for mesh API key authentication.
-			$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+				$mcp_url = rest_url( 'mcp-ai/v1/mcp' );
+
+				// Check for mesh API key authentication.
+				$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
 			if ( ! empty( $mesh_key ) ) {
 				$mesh_validated = $this->validate_mesh_key( $mesh_key );
-
 				if ( true === $mesh_validated ) {
 					$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
 					return true;
@@ -2403,8 +2404,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			// Check for bearer token authentication.
-			$bearer = $request->get_header( 'Authorization' );
+				// Check for bearer token authentication.
+				$bearer = $request->get_header( 'Authorization' );
 			if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
 				$token = trim( $matches[1] );
 
@@ -2416,6 +2417,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return $local;
 				}
 
+				// Validate OAuth 2.0 access token with audience check.
+				$oauth = $this->validate_oauth_token( $token, $request, $mcp_url );
+				if ( true === $oauth ) {
+					return true;
+				} elseif ( is_wp_error( $oauth ) ) {
+					return $oauth;
+				}
+
 				// Validate Auth0 or other bearer token.
 				$validated = $this->validate_bearer_token( $token, $request );
 				if ( is_wp_error( $validated ) ) {
@@ -2425,41 +2434,53 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
-			// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
-				// This enables the diagnostic page to test MCP endpoint connectivity without requiring
-				// bearer tokens for internal REST API calls made via rest_do_request().
+				// Check for WordPress Basic auth (Application Passwords).
+			if ( ! empty( $bearer ) && 0 === stripos( $bearer, 'Basic ' ) ) {
+				$basic_result = $this->validate_wp_basic_auth( $request );
+				if ( true === $basic_result ) {
+					return true;
+				} elseif ( is_wp_error( $basic_result ) ) {
+					return $basic_result;
+				}
+			}
+
+				// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
 			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
-				// Require a custom internal-diagnostic header to prevent CSRF-style attacks
-				// where an admin's session cookie could be used cross-origin.
-				// The Origin header check alone is insecure — most programmatic HTTP
-				// clients (curl, Postman, fetch without CORS) do not send an Origin
-				// header by default, making empty( $_SERVER['HTTP_ORIGIN'] ) trivially
-				// exploitable. Use a custom header that cannot be sent cross-origin.
 				$internal_header = $request->get_header( 'X-WP-MCP-AI-Internal-Diagnostic' );
 				$is_local_origin = isset( $_SERVER['HTTP_ORIGIN'] )
 					&& wp_parse_url( home_url(), PHP_URL_HOST ) === wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ), PHP_URL_HOST );
-
-				$is_internal = ( '1' === $internal_header ) || $is_local_origin;
-
+				$is_internal     = ( '1' === $internal_header ) || $is_local_origin;
 				if ( $is_internal ) {
 					$this->mark_token_authenticated( 'nonce_admin', array( 'admin_user' => get_current_user_id() ) );
 					return true;
 				}
 			}
 
-			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted for remote access.
-			return new WP_Error(
-				'wp_mcp_ai_mcp_bearer_required',
-				__( 'The MCP endpoint requires bearer token authentication. WordPress nonce authentication is not permitted for remote MCP access.', 'mcp-ai-wpoos' ),
-				array(
-					'status'  => 401,
-					'actions' => array(
-						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
-						'supply_mesh_key'     => __( 'Alternatively, use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'mcp-ai-wpoos' ),
-						'issue_credential'    => __( 'To obtain a bearer token, issue an assistant credential via the WordPress admin.', 'mcp-ai-wpoos' ),
-					),
-				)
-			);
+				// 401 — return WWW-Authenticate header per MCP Authorization spec.
+				$error = new WP_Error(
+					'wp_mcp_ai_mcp_auth_required',
+					__( 'Authentication required. Use a Bearer token, OAuth 2.0, Application Password (Basic auth), or Mesh Key.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 401,
+						'actions' => array(
+							'supply_bearer_token' => __( 'Add an Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
+							'connect_via_oauth'   => __( 'Connect via OAuth 2.0 using an MCP client that supports it (Codex, Claude Desktop).', 'mcp-ai-wpoos' ),
+							'use_app_password'    => __( 'Use Authorization: Basic with a WordPress Application Password.', 'mcp-ai-wpoos' ),
+							'supply_mesh_key'     => __( 'Use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+
+				// Per MCP spec: include WWW-Authenticate header with resource_metadata URL.
+			if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+				$error->add_data(
+					array(
+						'www_authenticate' => WP_MCP_AI_OAuth_Server::build_www_authenticate( $mcp_url ),
+					)
+				);
+			}
+
+				return $error;
 		}
 
 		/**
@@ -2619,15 +2640,42 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return true|WP_Error
 		 */
 		protected function validate_bearer_token( $token, WP_REST_Request $request ) {
-			return $this->authenticator->validate_bearer_token( $token, $request );
+				return $this->authenticator->validate_bearer_token( $token, $request );
 		}
 
-		/**
-		 * Check if rate limiting is enabled and enforce limits.
-		 *
-		 * @param int $user_id User ID making the request (0 for guests).
-		 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
-		 */
+			/**
+			 * Validate an MCP OAuth 2.0 access token.
+			 *
+			 * @since 1.7.0
+			 *
+			 * @param string          $token    Raw bearer token string.
+			 * @param WP_REST_Request $request  Current REST request.
+			 * @param string          $audience Expected audience (MCP server URL).
+			 * @return true|WP_Error|null
+			 */
+		protected function validate_oauth_token( $token, WP_REST_Request $request, $audience = '' ) {
+			return $this->authenticator->validate_oauth_token( $token, $request, $audience );
+		}
+
+			/**
+			 * Validate authentication via WordPress Application Passwords (Basic auth).
+			 *
+			 * @since 1.7.0
+			 *
+			 * @param WP_REST_Request $request      Current REST request.
+			 * @param string          $required_cap WordPress capability the user must hold.
+			 * @return true|WP_Error|null
+			 */
+		protected function validate_wp_basic_auth( WP_REST_Request $request, $required_cap = 'read' ) {
+			return $this->authenticator->validate_wp_basic_auth( $request, $required_cap );
+		}
+
+			/**
+			 * Check if rate limiting is enabled and enforce limits.
+			 *
+			 * @param int $user_id User ID making the request (0 for guests).
+			 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
+			 */
 		protected function check_rate_limit( $user_id ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 

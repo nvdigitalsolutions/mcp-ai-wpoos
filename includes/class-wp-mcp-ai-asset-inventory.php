@@ -232,6 +232,12 @@ class WP_MCP_AI_Asset_Inventory {
 
 		$assets = array();
 
+		// Bail early if $wpdb is not available (should never happen in normal
+		// WordPress requests, but guards against edge-case bootstrap issues).
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+			return $assets;
+		}
+
 		// Custom Post Types.
 		$cpts = array(
 			'mcp_ai_assistant'  => array( 'AI Assistants', 'confidential' ),
@@ -323,16 +329,21 @@ class WP_MCP_AI_Asset_Inventory {
 	 * @return string Last modified time.
 	 */
 	protected function get_directory_last_modified( $path ) {
-		if ( ! file_exists( $path ) ) {
+		if ( ! file_exists( $path ) || ! is_dir( $path ) ) {
 			return gmdate( 'Y-m-d H:i:s' );
 		}
 
 		$latest = filemtime( $path );
 
 		try {
+			// CATCH_GET_CHILD was introduced in PHP 8.2.0; guard for older versions.
+			$catch_flags = PHP_VERSION_ID >= 80200
+				? RecursiveIteratorIterator::CATCH_GET_CHILD
+				: 0;
 			$iterator = new RecursiveIteratorIterator(
 				new RecursiveDirectoryIterator( $path, RecursiveDirectoryIterator::SKIP_DOTS ),
-				RecursiveIteratorIterator::CATCH_GET_CHILD // Handle permission errors.
+				RecursiveIteratorIterator::SELF_FIRST,
+				$catch_flags
 			);
 
 			foreach ( $iterator as $file ) {
@@ -343,8 +354,12 @@ class WP_MCP_AI_Asset_Inventory {
 					}
 				}
 			}
-		} catch ( Exception $e ) {
+		} catch ( \Throwable $e ) {
 			// Log error but continue with directory mtime.
+			// Catch \Throwable (not just \Exception) because PHP 7+
+			// separates \Error (TypeError, ValueError, etc.) from
+			// \Exception; SPL iterators can throw either on permission
+			// errors, broken symlinks, or type/value violations.
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'warning',

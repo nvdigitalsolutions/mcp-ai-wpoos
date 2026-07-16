@@ -46,6 +46,13 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 	private static $instance = null;
 
 	/**
+	 * Authenticator instance for scope checking (lazy-loaded).
+	 *
+	 * @var WP_MCP_AI_REST_Authenticator|null
+	 */
+	private $authenticator = null;
+
+	/**
 	 * Get singleton.
 	 *
 	 * @return WP_MCP_AI_Toolkit_MCP_REST_Controller
@@ -55,6 +62,20 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 			self::$instance = new self();
 		}
 		return self::$instance;
+	}
+
+	/**
+	 * Get the authenticator instance (lazy-loaded).
+	 *
+	 * @since 1.7.0
+	 *
+	 * @return WP_MCP_AI_REST_Authenticator
+	 */
+	private function get_auth() {
+		if ( null === $this->authenticator ) {
+			$this->authenticator = new WP_MCP_AI_REST_Authenticator();
+		}
+		return $this->authenticator;
 	}
 
 	/**
@@ -195,36 +216,65 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function permission_jsonrpc( WP_REST_Request $request ) {
-		// Phase 3d — per-server bearer token check.
-		$auth_header = $request->get_header( 'Authorization' );
+				$auth_header = $request->get_header( 'Authorization' );
+				$slug        = sanitize_key( (string) $request->get_param( 'slug' ) );
+
+				// Build the canonical MCP server URL for audience validation.
+				$mcp_url = rest_url( self::REST_NAMESPACE . '/mcp/' . $slug );
+
+				// Bearer token authentication.
 		if ( $auth_header && 0 === strpos( $auth_header, 'Bearer ' ) ) {
 			$raw_token = substr( $auth_header, 7 );
+
+			// Phase 3d — per-server bearer token check (mcptk_…).
 			if (
 				class_exists( 'WP_MCP_AI_Pro_Toolkit_Server_Token' ) &&
 				0 === strpos( $raw_token, WP_MCP_AI_Pro_Toolkit_Server_Token::TOKEN_PREFIX )
 			) {
-				$slug = sanitize_key( (string) $request->get_param( 'slug' ) );
 				if ( WP_MCP_AI_Pro_Toolkit_Server_Token::validate( $slug, $raw_token ) ) {
 					return true;
 				}
-				// Token format was correct but validation failed — reject outright
-				// rather than falling through to session auth.
 				return new WP_Error(
 					'rest_forbidden',
 					__( 'Invalid server token.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 401 )
 				);
 			}
+
+			// OAuth 2.0 access token (mcp_at_…) — route through authenticator.
+			if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) && class_exists( 'WP_MCP_AI_REST_Authenticator' ) ) {
+				$auth   = $this->get_auth();
+				$result = $auth->validate_oauth_token( $raw_token, $request, $mcp_url );
+				if ( true === $result ) {
+					return true;
+				}
+				if ( is_wp_error( $result ) ) {
+					return $result;
+				}
+			}
 		}
 
-		// Fall back to standard user-session check.
+				// WordPress Basic auth / session / nonce.
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_forbidden', __( 'Authentication required for MCP JSON-RPC.', 'mcp-ai-wpoos-pro' ), array( 'status' => 401 ) );
+			$error = new WP_Error(
+				'rest_forbidden',
+				__( 'Authentication required. Provide a Bearer token, use OAuth 2.0, or authenticate with a WordPress Application Password (Basic auth).', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 401 )
+			);
+			// Per MCP spec: include WWW-Authenticate header.
+			if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+				$error->add_data(
+					array(
+						'www_authenticate' => WP_MCP_AI_OAuth_Server::build_www_authenticate( $mcp_url ),
+					)
+				);
+			}
+			return $error;
 		}
 		if ( ! current_user_can( 'read' ) ) {
 			return new WP_Error( 'rest_forbidden', __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
-		return true;
+				return true;
 	}
 
 	/**
@@ -415,6 +465,18 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 					)
 				);
 			}
+
+			// OAuth scope enforcement (mcp:read for reads, mcp:write for writes).
+			$scope_error = $this->check_scope_for_method( $method, $slug );
+			if ( null !== $scope_error ) {
+				return rest_ensure_response(
+					array(
+						'jsonrpc' => '2.0',
+						'id'      => $id,
+						'error'   => $scope_error,
+					)
+				);
+			}
 		}
 
 		switch ( $method ) {
@@ -477,7 +539,7 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 					if ( class_exists( 'WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers' ) ) {
 						$allowed_servers = WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::get_allowed_servers( $assistant_id );
 						if ( ! empty( $allowed_servers ) ) {
-							$registry = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+							$registry     = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
 							$toolkit_meta = array();
 							foreach ( $allowed_servers as $server_slug ) {
 								$linked = $registry->get( $server_slug );
@@ -492,10 +554,19 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 								);
 							}
 							if ( ! empty( $toolkit_meta ) ) {
-								$result['toolkitServers'] = $toolkit_meta;
+												$result['toolkitServers'] = $toolkit_meta;
 							}
 						}
 					}
+				}
+
+								// OAuth 2.0 discovery metadata (MCP Authorization Specification 2025-06-18).
+								// Advertise the authorization server so MCP clients can offer a
+								// browser-based "Connect" flow instead of requiring manual token entry.
+				if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+					$result['_meta'] = array(
+						'oauth' => WP_MCP_AI_OAuth_Server::get_instance()->get_toolkit_metadata( $server->get_slug() ),
+					);
 				}
 
 				return rest_ensure_response(
@@ -569,6 +640,67 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 					)
 				);
 		}
+	}
+
+	/**
+	 * Check OAuth scope for a JSON-RPC method.
+	 *
+	 * Read methods (tools/list, resources/*, prompts/*) require `mcp:read`.
+	 * Write methods (tools/call) require `mcp:write`.
+	 *
+	 * Returns null when scope is sufficient or the request is not OAuth.
+	 * Returns a JSON-RPC error array when scope is insufficient.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param string $method JSON-RPC method name.
+	 * @param string $slug   Server slug.
+	 * @return array{code:int, message:string, data:array}|null
+	 */
+	protected function check_scope_for_method( $method, $slug ) {
+		// Map methods to required scopes.
+		$read_methods  = array( 'tools/list', 'resources/list', 'resources/read', 'prompts/list', 'prompts/get' );
+		$write_methods = array( 'tools/call' );
+
+		$required = null;
+		if ( in_array( $method, $read_methods, true ) ) {
+			$required = 'mcp:read';
+		} elseif ( in_array( $method, $write_methods, true ) ) {
+			$required = 'mcp:write';
+		}
+
+		if ( null === $required ) {
+			return null;
+		}
+
+		// Use the authenticator instance.
+		if ( ! class_exists( 'WP_MCP_AI_REST_Authenticator' ) ) {
+			return null;
+		}
+
+			$auth    = $this->get_auth();
+			$granted = $auth->get_oauth_scope();
+
+		// Scope check.
+		if ( ! class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+			return null;
+		}
+
+		if ( WP_MCP_AI_OAuth_Server::scope_satisfies( $granted, $required ) ) {
+			return null;
+		}
+
+		// Scope insufficient — return JSON-RPC error per MCP spec.
+		$mcp_url = rest_url( self::REST_NAMESPACE . '/mcp/' . $slug );
+		return array(
+			'code'    => -32001,
+			'message' => 'Insufficient scope: ' . $required . ' is required for ' . $method,
+			'data'    => array(
+				'required_scope'   => $required,
+				'granted_scope'    => $granted,
+				'www_authenticate' => WP_MCP_AI_OAuth_Server::build_insufficient_scope_www_authenticate( $required, $mcp_url ),
+			),
+		);
 	}
 
 	/**

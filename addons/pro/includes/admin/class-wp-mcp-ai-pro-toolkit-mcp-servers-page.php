@@ -98,8 +98,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 			add_action( 'admin_menu', array( $this, 'register_page' ), 26 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 			add_action( 'admin_post_wp_mcp_ai_toggle_toolkit_mcp_server', array( $this, 'handle_toggle' ) );
-			add_action( 'admin_post_wp_mcp_ai_save_toolkit_mcp_limits', array( $this, 'handle_limits_save' ) );
-			add_action( 'admin_post_wp_mcp_ai_clear_toolkit_mcp_audit', array( $this, 'handle_clear_audit' ) );
+					add_action( 'admin_post_wp_mcp_ai_save_toolkit_mcp_limits', array( $this, 'handle_limits_save' ) );
+					add_action( 'admin_post_wp_mcp_ai_clear_toolkit_mcp_audit', array( $this, 'handle_clear_audit' ) );
+					add_action( 'admin_post_wp_mcp_ai_revoke_oauth_token', array( $this, 'handle_revoke_oauth_token' ) );
 		}
 
 		// ------------------------------------------------------------------ //
@@ -302,11 +303,44 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 				admin_url( 'admin.php' )
 			);
 			wp_safe_redirect( $redirect );
+					exit;
+		}
+
+				/**
+				 * Handle OAuth token revocation.
+				 *
+				 * @since 1.7.0
+				 * @return void
+				 */
+		public function handle_revoke_oauth_token() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ), 403 );
+			}
+
+			check_admin_referer( 'wp_mcp_ai_revoke_oauth_token' );
+
+			$token_key   = isset( $_POST['token_key'] ) ? sanitize_text_field( wp_unslash( $_POST['token_key'] ) ) : '';
+			$server_slug = isset( $_POST['server_slug'] ) ? sanitize_key( wp_unslash( $_POST['server_slug'] ) ) : '';
+
+			if ( '' !== $token_key && class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+				WP_MCP_AI_OAuth_Server::get_instance()->revoke_token( $token_key );
+			}
+
+			$redirect = add_query_arg(
+				array(
+					'page'          => self::PAGE_SLUG,
+					'tab'           => 'detail',
+					'server'        => rawurlencode( $server_slug ),
+					'oauth_revoked' => '1',
+				),
+				admin_url( 'admin.php' )
+			);
+			wp_safe_redirect( $redirect );
 			exit;
 		}
 
-		// ------------------------------------------------------------------ //
-		// Page render
+				// ------------------------------------------------------------------ //
+				// Page render
 		// ------------------------------------------------------------------ //
 
 		/**
@@ -814,14 +848,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 			</details>
 
 			<!-- ACCORDION 3: Credentials -->
-			<details class="wp-mcp-ai-accordion" id="wp-mcp-ai-creds-accordion">
-				<summary class="wp-mcp-ai-accordion-header"><?php esc_html_e( 'Credentials', 'mcp-ai-wpoos-pro' ); ?></summary>
-				<div class="wp-mcp-ai-accordion-body">
-					<?php $this->render_credentials_panel( $slug ); ?>
-				</div>
-			</details>
+				<details class="wp-mcp-ai-accordion" id="wp-mcp-ai-creds-accordion">
+					<summary class="wp-mcp-ai-accordion-header"><?php esc_html_e( 'Credentials', 'mcp-ai-wpoos-pro' ); ?></summary>
+					<div class="wp-mcp-ai-accordion-body">
+						<?php $this->render_credentials_panel( $slug ); ?>
+					</div>
+				</details>
 
-			<!-- ACCORDION 4: Limits -->
+				<!-- ACCORDION: OAuth Tokens -->
+				<details class="wp-mcp-ai-accordion">
+					<summary class="wp-mcp-ai-accordion-header">
+						<?php esc_html_e( 'OAuth Tokens', 'mcp-ai-wpoos-pro' ); ?>
+						<?php $this->render_oauth_token_count_badge( $slug ); ?>
+					</summary>
+					<div class="wp-mcp-ai-accordion-body">
+						<?php $this->render_oauth_tokens_panel( $slug ); ?>
+					</div>
+				</details>
+
+				<!-- ACCORDION 4: Limits -->
 			<details class="wp-mcp-ai-accordion">
 				<summary class="wp-mcp-ai-accordion-header"><?php esc_html_e( 'Limits', 'mcp-ai-wpoos-pro' ); ?></summary>
 				<div class="wp-mcp-ai-accordion-body">
@@ -981,6 +1026,182 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page' ) ) {
 				</div>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Render OAuth token count badge for accordion summary.
+		 *
+		 * @since 1.7.0
+		 *
+		 * @param string $slug Server slug.
+		 * @return void
+		 */
+		private function render_oauth_token_count_badge( $slug ) {
+			$count = $this->count_oauth_tokens_for_audience( $slug );
+			if ( $count > 0 ) {
+				printf(
+					' <span class="count" style="background:#2271b1;color:#fff;border-radius:10px;padding:0 6px;font-size:11px;">%d</span>',
+					(int) $count
+				);
+			}
+		}
+
+		/**
+		 * Render the OAuth tokens panel with active tokens and revoke button.
+		 *
+		 * @since 1.7.0
+		 *
+		 * @param string $slug Server slug.
+		 * @return void
+		 */
+		private function render_oauth_tokens_panel( $slug ) {
+			$slug = sanitize_key( $slug );
+
+			// Build the expected audience for this server.
+			$expected_audience = rest_url( 'mcp-ai-pro/v1/mcp/' . $slug );
+
+			// Load OAuth tokens from the option store.
+			$option_key = 'wp_mcp_ai_oauth_tokens';
+			$all_tokens = get_option( $option_key, array() );
+			if ( ! is_array( $all_tokens ) ) {
+				$all_tokens = array();
+			}
+
+			$now             = time();
+			$matching_tokens = array();
+
+			foreach ( $all_tokens as $token_key => $entry ) {
+				if ( ! empty( $entry['is_refresh'] ) ) {
+					continue;
+				}
+				if ( ! isset( $entry['audience'] ) ) {
+					continue;
+				}
+				if ( $entry['expires_at'] <= $now ) {
+					continue;
+				}
+
+				// Match audience for this server.
+				$token_aud = (string) $entry['audience'];
+				if ( $token_aud !== $expected_audience ) {
+					continue;
+				}
+
+				$prefix = '';
+				if ( 0 === strpos( $token_key, 'mcp_at_' ) ) {
+					$suffix = substr( $token_key, 7 );
+					$prefix = substr( $suffix, 0, 16 );
+				}
+
+				$matching_tokens[] = array(
+					'key'        => $token_key,
+					'prefix'     => $prefix,
+					'user_id'    => (int) ( $entry['user_id'] ?? 0 ),
+					'user_login' => '',
+					'scope'      => isset( $entry['scope'] ) ? (string) $entry['scope'] : '',
+					'issued_at'  => (int) ( $entry['issued_at'] ?? 0 ),
+					'expires_at' => (int) ( $entry['expires_at'] ?? 0 ),
+				);
+			}
+
+			// Resolve usernames.
+			foreach ( $matching_tokens as &$t ) {
+				$user            = get_userdata( $t['user_id'] );
+				$t['user_login'] = $user ? $user->user_login : '#' . $t['user_id'];
+			}
+			unset( $t );
+
+			if ( empty( $matching_tokens ) ) {
+				echo '<p>' . esc_html__( 'No active OAuth tokens for this server.', 'mcp-ai-wpoos-pro' ) . '</p>';
+				echo '<p class="description">' . esc_html__( 'Tokens are issued when a user authenticates via OAuth 2.0 (e.g., using Codex or Claude Desktop with browser-based login).', 'mcp-ai-wpoos-pro' ) . '</p>';
+				return;
+			}
+
+			$nonce = wp_create_nonce( 'wp_mcp_ai_revoke_oauth_token' );
+			?>
+			<p class="description">
+				<?php esc_html_e( 'Active OAuth 2.0 access tokens issued for this server. Tokens are created when users authenticate via browser-based login.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			<table class="widefat fixed striped" style="margin-bottom:12px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Token', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'User', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Scope', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Issued', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Expires', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $matching_tokens as $token ) : ?>
+						<tr>
+							<td><code style="font-size:11px;">mcp_at_<?php echo esc_html( $token['prefix'] ); ?>…</code></td>
+							<td><?php echo esc_html( $token['user_login'] ); ?></td>
+							<td><code><?php echo esc_html( $token['scope'] ); ?></code></td>
+							<td><?php echo esc_html( gmdate( 'Y-m-d H:i', $token['issued_at'] ) ); ?></td>
+							<td>
+								<?php
+								$remaining = $token['expires_at'] - time();
+								if ( $remaining < 300 ) {
+									echo '<span style="color:#d63638;">';
+									echo esc_html( gmdate( 'Y-m-d H:i', $token['expires_at'] ) );
+									echo ' (' . esc_html( human_time_diff( $token['expires_at'] ) ) . ')</span>';
+								} else {
+									echo esc_html( gmdate( 'Y-m-d H:i', $token['expires_at'] ) );
+								}
+								?>
+							</td>
+							<td>
+								<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;">
+									<input type="hidden" name="action" value="wp_mcp_ai_revoke_oauth_token">
+									<input type="hidden" name="token_key" value="<?php echo esc_attr( $token['key'] ); ?>">
+									<input type="hidden" name="server_slug" value="<?php echo esc_attr( $slug ); ?>">
+									<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( $nonce ); ?>">
+									<button type="submit" class="button button-small"
+										onclick="return confirm('<?php echo esc_js( __( 'Revoke this token? The user will need to re-authenticate.', 'mcp-ai-wpoos-pro' ) ); ?>')">
+										<?php esc_html_e( 'Revoke', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+								</form>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<?php
+		}
+
+		/**
+		 * Count OAuth tokens matching a server slug.
+		 *
+		 * @since 1.7.0
+		 *
+		 * @param string $slug Server slug.
+		 * @return int
+		 */
+		private function count_oauth_tokens_for_audience( $slug ) {
+			$expected = rest_url( 'mcp-ai-pro/v1/mcp/' . sanitize_key( $slug ) );
+			$tokens   = get_option( 'wp_mcp_ai_oauth_tokens', array() );
+			if ( ! is_array( $tokens ) ) {
+				return 0;
+			}
+			$now   = time();
+			$count = 0;
+			foreach ( $tokens as $entry ) {
+				if ( ! empty( $entry['is_refresh'] ) ) {
+					continue;
+				}
+				if ( ! isset( $entry['audience'] ) ) {
+					continue;
+				}
+				if ( $entry['expires_at'] <= $now ) {
+					continue;
+				}
+				if ( (string) $entry['audience'] === $expected ) {
+					++$count;
+				}
+			}
+			return $count;
 		}
 
 		/**

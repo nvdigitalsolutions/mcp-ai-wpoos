@@ -78,6 +78,27 @@ class WP_MCP_AI_Pro_Schedule_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 	}
 
 	/**
+	 * Resolve the per-toolkit MCP server.
+	 *
+	 * Overrides the base lookup because the toolkit slug 'pro_schedule'
+	 * does not directly map to the server slug 'pro-scheduler'
+	 * ('pro_schedule' → 'pro-schedule' ≠ 'pro-scheduler').
+	 *
+	 * @return WP_MCP_AI_Toolkit_Server_Interface|null
+	 */
+	protected function get_mcp_server() {
+		if ( ! class_exists( 'WP_MCP_AI_Toolkit_Server_Registry' ) ) {
+			return null;
+		}
+		$registry = WP_MCP_AI_Toolkit_Server_Registry::get_instance();
+		$server   = $registry->get( 'pro-scheduler' );
+		if ( null === $server ) {
+			$server = parent::get_mcp_server();
+		}
+		return $server;
+	}
+
+	/**
 	 * Toolkit name accessor.
 	 *
 	 * @return string

@@ -131,6 +131,49 @@ class WP_MCP_AI_REST_Authenticator {
 	}
 
 	/**
+	 * Retrieve the OAuth scope from the current auth context, if any.
+	 *
+	 * Returns the space-separated scope string when the current request
+	 * was authenticated via an OAuth 2.0 token. Returns null for
+	 * non-OAuth authentication methods.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @return string|null Scope string or null.
+	 */
+	public function get_oauth_scope() {
+		$ctx = $this->get_auth_context();
+		if ( 'oauth' !== ( $ctx['token_type'] ?? '' ) ) {
+			return null;
+		}
+		return isset( $ctx['token_context']['scope'] )
+			? (string) $ctx['token_context']['scope']
+			: null;
+	}
+
+	/**
+	 * Check if the current OAuth token has sufficient scope.
+	 *
+	 * For non-OAuth requests (local tokens, Auth0, Basic auth, mesh keys),
+	 * returns true immediately — scope enforcement is OAuth-only.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param string $required Required scope (e.g. 'mcp:read', 'mcp:write').
+	 * @return bool True if scope is sufficient or not applicable.
+	 */
+	public function oauth_scope_sufficient( $required ) {
+		$granted = $this->get_oauth_scope();
+		if ( null === $granted ) {
+			return true;
+		}
+		if ( ! class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+			return true;
+		}
+		return WP_MCP_AI_OAuth_Server::scope_satisfies( $granted, $required );
+	}
+
+	/**
 	 * Validate a local assistant credential token.
 	 *
 	 * @param string          $token   Bearer token.
@@ -223,6 +266,141 @@ class WP_MCP_AI_REST_Authenticator {
 				array( 'status' => 403 )
 			);
 		}
+
+		return true;
+	}
+
+	/**
+	 * Validate an MCP OAuth 2.0 access token.
+	 *
+	 * Tokens issued by WP_MCP_AI_OAuth_Server carry the `mcp_at_` prefix.
+	 * This method checks the token store, confirms the token hasn't expired,
+	 * and maps it to a WordPress user.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param string          $token    Raw bearer token string.
+	 * @param WP_REST_Request $request  Current REST request.
+	 * @param string          $audience Expected audience (MCP server URL). Empty to skip audience check.
+	 * @return true|WP_Error|null True when valid, WP_Error when invalid,
+	 *                            null when this isn't an OAuth token.
+	 */
+	public function validate_oauth_token( $token, WP_REST_Request $request, $audience = '' ) {
+			// Quick prefix check — skip if this isn't our OAuth token.
+		if ( 0 !== strpos( $token, 'mcp_at_' ) ) {
+			return null;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_oauth_unavailable',
+				__( 'OAuth token validation is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
+			);
+		}
+
+			$oauth  = WP_MCP_AI_OAuth_Server::get_instance();
+			$result = $oauth->validate_token( $token, $audience );
+
+		if ( null === $result ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_oauth_token',
+				__( 'Invalid or expired OAuth access token.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 401,
+					'actions' => array(
+						'reauthenticate' => __( 'Re-authenticate with your MCP client to obtain a fresh access token.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+			$user_id = $result['user_id'];
+			$this->mark_token_authenticated(
+				'oauth',
+				array(
+					'user_id'  => $user_id,
+					'audience' => $result['audience'],
+					'scope'    => $result['scope'],
+				)
+			);
+
+			return true;
+	}
+
+		/**
+		 * Validate authentication via WordPress Application Passwords (Basic auth).
+		 *
+		 * WordPress 5.6+ natively supports Application Passwords for the REST API.
+		 * When a request carries an `Authorization: Basic …` header with a valid
+		 * username + application password, WordPress core authenticates the user
+		 * before our permission callbacks run.  This method checks whether that
+		 * has already happened and optionally verifies the user possesses a
+		 * minimum capability.
+		 *
+		 * @since 1.7.0
+		 *
+		 * @param WP_REST_Request $request         Current REST request.
+		 * @param string          $required_cap    WordPress capability the user must hold (default: 'read').
+		 * @return true|WP_Error|null True when a user was authenticated via Basic auth,
+		 *                            WP_Error when authenticated but insufficient capability,
+		 *                            null when no Basic-auth-authenticated user is present.
+		 */
+	public function validate_wp_basic_auth( WP_REST_Request $request, $required_cap = 'read' ) {
+		// Check if WordPress has already authenticated a user via Basic auth
+		// (Application Passwords).  Basic auth parsing happens in WP core's
+		// rest_cookie_check_errors() / wp_authenticate_application_password(),
+		// which runs before our permission callback.
+		$auth_header = $request->get_header( 'Authorization' );
+		if ( ! $auth_header || 0 !== stripos( $auth_header, 'Basic ' ) ) {
+			return null;
+		}
+
+		$user_id = get_current_user_id();
+		if ( $user_id <= 0 ) {
+			// Basic header present but auth failed (bad credentials).
+			return new WP_Error(
+				'wp_mcp_ai_invalid_basic_credentials',
+				__( 'Invalid WordPress username or application password.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 401,
+					'actions' => array(
+						'create_app_password' => __( 'Create an application password in your WordPress user profile (Users → Profile → Application Passwords).', 'mcp-ai-wpoos' ),
+						'use_oauth'           => __( 'Or connect via OAuth 2.0 using an MCP client that supports it (Codex, Claude Desktop, etc.).', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		if ( ! user_can( $user_id, $required_cap ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_insufficient_permissions',
+				sprintf(
+					/* translators: %s: required WordPress capability */
+					__( 'Your user account is authenticated but lacks the required capability (%s).', 'mcp-ai-wpoos' ),
+					esc_html( $required_cap )
+				),
+				array( 'status' => 403 )
+			);
+		}
+
+		$this->mark_token_authenticated(
+			'wp_basic',
+			array(
+				'user_id'     => $user_id,
+				'auth_method' => 'application_password',
+			)
+		);
+
+		/**
+		 * Fires when a request authenticates via a WordPress Application Password.
+		 *
+		 * @since 1.7.0
+		 *
+		 * @param int             $user_id Authenticated WordPress user ID.
+		 * @param WP_REST_Request $request Current REST request.
+		 */
+		do_action( 'wp_mcp_ai_authenticated_with_app_password', $user_id, $request );
 
 		return true;
 	}
@@ -683,8 +861,16 @@ class WP_MCP_AI_REST_Authenticator {
 			}
 			// If $mesh_result is null, mesh auth is not applicable - continue to Auth0.
 
-			// Try Auth0 bearer token.
-			$bearer_result = $this->validate_bearer_token( $token, $request );
+			// Try OAuth 2.0 access token (mcp_at_ prefix).
+				$oauth_result = $this->validate_oauth_token( $token, $request );
+			if ( true === $oauth_result ) {
+				return $this->get_auth_context();
+			} elseif ( is_wp_error( $oauth_result ) ) {
+				return $oauth_result;
+			}
+
+				// Try Auth0 bearer token.
+				$bearer_result = $this->validate_bearer_token( $token, $request );
 			if ( true === $bearer_result ) {
 				return $this->get_auth_context();
 			} elseif ( is_wp_error( $bearer_result ) ) {
@@ -692,8 +878,18 @@ class WP_MCP_AI_REST_Authenticator {
 			}
 		}
 
-		// Check for guest token.
-		$guest_token = $this->extract_guest_token( $request );
+			// Check for WordPress Basic auth (Application Passwords, WP 5.6+).
+			// The `validate_wp_basic_auth` method checks if WP core already
+			// authenticated a user via the Basic header.
+			$basic_result = $this->validate_wp_basic_auth( $request );
+		if ( true === $basic_result ) {
+			return $this->get_auth_context();
+		} elseif ( is_wp_error( $basic_result ) ) {
+			return $basic_result;
+		}
+
+			// Check for guest token.
+			$guest_token = $this->extract_guest_token( $request );
 		if ( ! empty( $guest_token ) ) {
 			// Guest tokens are valid but have limited access.
 			$this->auth_context['is_guest']    = true;
@@ -740,7 +936,7 @@ class WP_MCP_AI_REST_Authenticator {
 		$rsa_oid    = "\x30\x0d\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01\x05\x00";
 		$public_key = $this->encode_asn1_sequence( $rsa_oid . $bitstring );
 
-		return "-----BEGIN PUBLIC KEY-----\n" . chunk_split( base64_encode( $public_key ), 64, "\n" ) . "-----END PUBLIC KEY-----\n";
+		return "-----BEGIN PUBLIC KEY-----\n" . chunk_split( base64_encode( $public_key ), 64, "\n" ) . "-----END PUBLIC KEY-----\n"; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 	}
 
 	/**
@@ -810,7 +1006,7 @@ class WP_MCP_AI_REST_Authenticator {
 
 		$input = strtr( $input, '-_', '+/' );
 
-		return base64_decode( $input );
+		return base64_decode( $input ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 	}
 
 	/**
