@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **June 29, 2026** · Version: **1.7**
+> Last reviewed: **July 16, 2026** · Version: **1.8**
 
 ### Related Files
 

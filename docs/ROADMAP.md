@@ -1,6 +1,6 @@
 # NV oOS Roadmap
 
-**Last Updated:** July 13, 2026
+**Last Updated:** July 16, 2026
 **Version:** 1.1.40
 
 ---
@@ -58,6 +58,9 @@
 - ✅ **Settings Import/Export Batch (4 PRs).** Credential merge, save key wipe, subtab sanitization, export consistency — all fixed.
 - ✅ **Credential Fixes (2 PRs).** Credential wipe on save. Fatal error for undefined `is_sensitive_setting_key` method.
 - ✅ **Validated Tool Slug Allowlist.** Tool slug matching fixed.
+- ✅ **Phase 8 Pro Toolkit MCP Servers.** 4 new per-toolkit MCP JSON-RPC servers promoted from toolkits (33 total, up from 29): Pro Scheduler (14 tools), FlowHub Inventory Sync (6 tools), Shopify Sync (5 tools), EZuite ERP Sync (6 tools). Shared `ScheduledToolkitServerTrait` for Action Scheduler-backed sync servers. Per-tool scope annotations and default limits in MCP descriptors.
+- ✅ **OAuth 2.0 for MCP Servers.** Full OAuth 2.0 Authorization Server compliant with MCP Authorization Specification 2025-06-18. PKCE flow, hierarchical scopes (`mcp:read`/`mcp:write`), browser-based login, dynamic client registration, and OAuth token management UI. Enables MCP clients (Codex, Claude Desktop, Zed) to authenticate without manual token copying.
+- ✅ **Per-Toolkit MCP Server Settings Fix.** Pro Scheduler MCP tab slug mapping fixed (`pro_schedule`→`pro-scheduler` resolution).
 - 📦 **Versioning** — bumped to **1.1.40** across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative). Provider count: **15** first-class. Addon count: 26.
 
 ---

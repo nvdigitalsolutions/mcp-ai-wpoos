@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **July 13, 2026** · Version: **2.9**
+> Last reviewed: **July 16, 2026** · Version: **2.10**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,005+ tools (~195 base + ~810+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,025+ tools (~195 base + ~830+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -70,6 +70,11 @@ addons/pro/
 │   │   ├── crm/                        ← CRM Toolkit (70+ tools, 5 phases)
 │   │   ├── dietpi/                     ← DietPi Pro Toolkit (19+ tools, 3 phases)
 │   │   └── ...
+│   ├── mcp-servers/                    ← Per-toolkit MCP JSON-RPC servers (33 total)
+│   │   ├── servers/                    ← Server implementations (Pro Scheduler, FlowHub, Shopify, EZuite, etc.)
+│   │   ├── class-wp-mcp-ai-oauth-server.php  ← OAuth 2.0 Authorization Server (MCP Auth Spec)
+│   │   ├── class-wp-mcp-ai-oauth-rest.php    ← OAuth REST endpoints
+│   │   └── trait-wp-mcp-ai-scheduled-toolkit-server.php
 │   ├── cloudways/                      ← Cloudways API v2 OAuth client + helpers
 │   └── ...                             ← Pro admin, REST, services
 addons/

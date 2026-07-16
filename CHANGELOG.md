@@ -19,6 +19,32 @@
 - GitHub Actions workflow (`.github/workflows/demo-videos.yml`), bin scripts, video helpers, and 14 narration scripts.
 - Video catalog at `docs/videos/CATALOG.md`.
 
+### Added — Phase 8 Pro Toolkit MCP Servers (Pro Scheduler, FlowHub, Shopify Sync, EZuite)
+
+- **4 new per-toolkit MCP JSON-RPC servers** promoted from toolkits to dedicated MCP endpoints (**33 total**, up from 29):
+  - **Pro Scheduler** (`pro-scheduler`) — 14 orchestration tools for schedule CRUD, dry-run validation, run history, and channel broadcast scheduling.
+  - **FlowHub Inventory Sync** (`flowhub`) — 6 cannabis dispensary tools (inventory, products, locations, sync, analytics) with Action Scheduler + CCT cache.
+  - **Shopify Sync** (`shopify-sync`) — 5 e-commerce tools (products, orders, inventory, analytics, settings) with zero GraphQL API cost per query.
+  - **EZuite ERP Sync** (`ezuite`) — 6 ERP tools (inventory, products, orders, sync, alerts) with CCT-cached queries.
+- **Shared `ScheduledToolkitServerTrait`** — common sync-interval, sync-status, connection-health, and limit-annotation logic for Action Scheduler-backed servers.
+- **Per-tool scope annotations** — `compute_tool_scopes()` marks each tool as `read_only` or `read_write` for MCP scope enforcement.
+- **Default limits surfaced in descriptors** — `get_default_limits()` provides sensible per-server defaults (requests/min, payload bytes, max iterations).
+
+### Added — OAuth 2.0 for MCP Servers
+
+- **Full OAuth 2.0 Authorization Server** compliant with MCP Authorization Specification 2025-06-18:
+  - Authorization endpoint with PKCE (RFC 7636) for browser-based login.
+  - Token endpoint supporting `authorization_code` and `refresh_token` grants.
+  - Revocation endpoint for client-initiated token invalidation.
+  - Dynamic Client Registration (RFC 7591).
+  - OAuth 2.0 Authorization Server Metadata (RFC 8414).
+  - OAuth 2.0 Protected Resource Metadata (RFC 9728).
+  - Hierarchical scope system: `mcp` → `mcp:read` + `mcp:write`, least-privilege defaults.
+- **OAuth Token Management UI** — admin panel for viewing and revoking active OAuth access tokens per toolkit server, with count badges and expiry indicators.
+- **Bearer token audience validation** (RFC 8707) — tokens validated against the canonical MCP server URL they were issued for.
+- **WWW-Authenticate headers** — per-spec headers on 401/403 responses with `resource_metadata` and `scope` for MCP clients.
+- **REST-based OAuth endpoints** at `mcp-ai/v1/oauth/*` and `/.well-known/oauth-authorization-server`.
+
 ### Added — Settings Credential Split
 
 - **Two-option credential isolation** — sensitive API keys moved from `wp_mcp_ai_settings` (autoload) to separate non-autoload `wp_mcp_ai_credentials` option with transparent merge via `get_settings()`.
@@ -74,6 +100,10 @@
 
 - Credential wipe on save fixed via merge of `wp_mcp_ai_credentials` before save/export/resolve (PR #5689).
 - Fatal error fixed: undefined method `WP_MCP_AI_Admin_Settings::is_sensitive_setting_key` (PR #5688).
+
+### Fixed — Per-Toolkit MCP Server Settings
+
+- **Pro Scheduler MCP tab slug mapping** — fixed `pro_schedule`→`pro-schedule`→`pro-scheduler` resolution so the MCP tab correctly finds its server (PR #5708).
 
 ### Fixed — Validated Tool Slug Allowlist
 
