@@ -346,10 +346,10 @@ class WP_MCP_AI_MCP_App_Registry {
 			}
 		}
 
-		return array(
+		$sanitized = array(
 			'label'       => isset( $app['label'] ) ? sanitize_text_field( $app['label'] ) : '',
 			'server_url'  => $server_url,
-			'auth_type'   => isset( $app['auth_type'] ) && in_array( $app['auth_type'], array( 'none', 'bearer', 'header' ), true )
+			'auth_type'   => isset( $app['auth_type'] ) && in_array( $app['auth_type'], array( 'none', 'bearer', 'header', 'oauth' ), true )
 				? $app['auth_type']
 				: 'none',
 			'token'       => isset( $app['token'] ) ? sanitize_text_field( $app['token'] ) : '',
@@ -358,17 +358,56 @@ class WP_MCP_AI_MCP_App_Registry {
 			'timeout'     => isset( $app['timeout'] ) ? max( 1, min( 120, absint( $app['timeout'] ) ) ) : 30,
 			'verify_ssl'  => isset( $app['verify_ssl'] ) ? (bool) $app['verify_ssl'] : true,
 		);
+
+		// Store OAuth token data when using OAuth auth_type.
+		if ( 'oauth' === $sanitized['auth_type'] && ! empty( $app['oauth_data'] ) && is_array( $app['oauth_data'] ) ) {
+			$sanitized['oauth_data'] = array(
+				'access_token'  => isset( $app['oauth_data']['access_token'] ) ? sanitize_text_field( $app['oauth_data']['access_token'] ) : '',
+				'refresh_token' => isset( $app['oauth_data']['refresh_token'] ) ? sanitize_text_field( $app['oauth_data']['refresh_token'] ) : '',
+				'token_type'    => isset( $app['oauth_data']['token_type'] ) ? sanitize_text_field( $app['oauth_data']['token_type'] ) : 'Bearer',
+				'expires_in'    => isset( $app['oauth_data']['expires_in'] ) ? absint( $app['oauth_data']['expires_in'] ) : 3600,
+				'scope'         => isset( $app['oauth_data']['scope'] ) ? sanitize_text_field( $app['oauth_data']['scope'] ) : '',
+				'issued_at'     => isset( $app['oauth_data']['issued_at'] ) ? absint( $app['oauth_data']['issued_at'] ) : time(),
+			);
+		} elseif ( 'oauth' === $sanitized['auth_type'] ) {
+			// Preserve existing oauth_data from previous config if not being updated.
+			$sanitized['oauth_data'] = isset( $app['oauth_data'] ) && is_array( $app['oauth_data'] ) ? $app['oauth_data'] : array();
+		}
+
+		return $sanitized;
 	}
 
 	/**
 	 * Create an MCP App Client from a configuration.
+	 *
+	 * When the config uses auth_type 'oauth', attaches an OAuth client
+	 * for automatic token management and refresh.
 	 *
 	 * @since 1.8.0
 	 * @param array $app_config MCP App configuration.
 	 * @return WP_MCP_AI_MCP_App_Client
 	 */
 	public function create_client( array $app_config ) {
-		return new WP_MCP_AI_MCP_App_Client( $app_config );
+		$config = $app_config;
+
+		// For OAuth apps, ensure the token is populated from oauth_data.
+		if ( 'oauth' === ( $config['auth_type'] ?? 'none' ) ) {
+			if ( empty( $config['token'] ) && ! empty( $config['oauth_data']['access_token'] ) ) {
+				$config['token'] = $config['oauth_data']['access_token'];
+			}
+
+			// Attach OAuth client for auto-refresh.
+			if ( class_exists( 'WP_MCP_AI_MCP_App_OAuth_Client' ) ) {
+				$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $config['server_url'] );
+				if ( ! empty( $config['oauth_data'] ) && is_array( $config['oauth_data'] ) ) {
+					$oauth_client->set_token_data( $config['oauth_data'] );
+				}
+				$config['oauth_client'] = $oauth_client;
+				$config['oauth_data']   = isset( $config['oauth_data'] ) ? $config['oauth_data'] : array();
+			}
+		}
+
+		return new WP_MCP_AI_MCP_App_Client( $config );
 	}
 
 	/**

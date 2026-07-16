@@ -20,7 +20,8 @@ Houses the Pro-only "MCP Apps" subsystem that lets each assistant connect to up 
 | `WP_MCP_AI_MCP_App_Client` | `class-wp-mcp-ai-mcp-app-client.php` | `MCP_App_Registry`, `MCP_App_Tool_Bridge`, the REST controller, CLI/slash-command surfaces |
 | `WP_MCP_AI_MCP_App_Registry` (singleton) | `class-wp-mcp-ai-mcp-app-registry.php` | `mcp-apps-init.php` (tool registration), assistant metaboxes, REST controller |
 | `WP_MCP_AI_MCP_App_Tool_Bridge` | `class-wp-mcp-ai-mcp-app-tool-bridge.php` | `MCP_App_Registry::register_remote_tools()` — wraps each discovered remote tool as a local `WP_MCP_AI_Tool_Interface` |
-| `WP_MCP_AI_REST_MCP_Apps_Controller` | `class-wp-mcp-ai-rest-mcp-apps-controller.php` | self-registers under namespace `mcp-ai/v1` on `rest_api_init` |
+| `WP_MCP_AI_MCP_App_OAuth_Client` | `class-wp-mcp-ai-mcp-app-oauth-client.php` | OAuth 2.0 client for MCP Apps — handles metadata discovery, DCR, PKCE flow, token exchange/refresh/revocation |
+| `WP_MCP_AI_REST_MCP_Apps_Controller` | `class-wp-mcp-ai-rest-mcp-apps-controller.php` | self-registers under namespace `mcp-ai/v1` on `rest_api_init`; includes OAuth endpoints (`/oauth/probe`, `/oauth/init`, `/oauth/callback`, `/oauth/refresh`, `/oauth/revoke`) |
 | `wp_mcp_ai_mcp_apps_register_tools()` | `mcp-apps-init.php` | hooked at priority 50 on `wp_mcp_ai_register_tools` |
 
 Storage / protocol constants (stable contract): `WP_MCP_AI_MCP_App_Registry::META_KEY = '_wp_mcp_ai_mcp_apps'`, `MAX_APPS_PER_ASSISTANT = 10`, `CACHE_TTL = 300`, `WP_MCP_AI_MCP_App_Client::PROTOCOL_VERSION = '2025-03-26'`, `MAX_RESPONSE_SIZE = 2 MB`.

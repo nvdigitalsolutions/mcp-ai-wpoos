@@ -24,6 +24,7 @@ $mcp_apps_dir = __DIR__ . '/';
 require_once $mcp_apps_dir . 'class-wp-mcp-ai-mcp-app-client.php';
 require_once $mcp_apps_dir . 'class-wp-mcp-ai-mcp-app-registry.php';
 require_once $mcp_apps_dir . 'class-wp-mcp-ai-mcp-app-tool-bridge.php';
+require_once $mcp_apps_dir . 'class-wp-mcp-ai-mcp-app-oauth-client.php';
 require_once $mcp_apps_dir . 'class-wp-mcp-ai-rest-mcp-apps-controller.php';
 
 /**
