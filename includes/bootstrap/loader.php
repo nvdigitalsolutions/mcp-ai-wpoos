@@ -422,6 +422,21 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 // ISO 27001 REST APIs
 // ---------------------------------------------------------------------------
 
+// The asset inventory class must load outside is_admin() because the REST
+// endpoint at /assets/discover runs in non-admin context (is_admin() returns
+// false for /wp-json/* requests).  The admin UI wrapper stays inside the
+// is_admin() guard below.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
+WP_MCP_AI_Asset_Inventory::get_instance();
+
+// Same for security-training and supplier-security: their REST endpoints also
+// resolve get_instance() outside of admin context.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-training.php';
+WP_MCP_AI_Security_Training::get_instance();
+
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-supplier-security.php';
+WP_MCP_AI_Supplier_Security::get_instance();
+
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-asset-inventory-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
