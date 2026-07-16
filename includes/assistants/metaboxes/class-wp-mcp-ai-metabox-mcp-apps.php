@@ -243,6 +243,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 				'enabled'     => true,
 				'timeout'     => 30,
 				'verify_ssl'  => true,
+				'oauth_data'  => array(),
 			)
 		);
 
@@ -285,23 +286,74 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 							<option value="none" <?php selected( $app['auth_type'], 'none' ); ?>><?php esc_html_e( 'None', 'mcp-ai-wpoos' ); ?></option>
 							<option value="bearer" <?php selected( $app['auth_type'], 'bearer' ); ?>><?php esc_html_e( 'Bearer Token', 'mcp-ai-wpoos' ); ?></option>
 							<option value="header" <?php selected( $app['auth_type'], 'header' ); ?>><?php esc_html_e( 'Custom Header', 'mcp-ai-wpoos' ); ?></option>
+							<option value="oauth" <?php selected( $app['auth_type'], 'oauth' ); ?>><?php esc_html_e( 'OAuth 2.0 Web Login', 'mcp-ai-wpoos' ); ?></option>
 						</select>
 					</td>
 				</tr>
-				<tr class="wp-mcp-ai-mcp-app-token-row" <?php echo 'none' === $app['auth_type'] ? 'style="display:none;"' : ''; ?>>
-					<th scope="row"><label><?php esc_html_e( 'Token / API Key', 'mcp-ai-wpoos' ); ?></label></th>
-					<td>
-						<input type="password" name="<?php echo esc_attr( $prefix ); ?>[token]" value="<?php echo esc_attr( $app['token'] ); ?>" class="regular-text" autocomplete="off" />
-					</td>
-				</tr>
-				<tr class="wp-mcp-ai-mcp-app-header-row" <?php echo 'header' !== $app['auth_type'] ? 'style="display:none;"' : ''; ?>>
-					<th scope="row"><label><?php esc_html_e( 'Header Name', 'mcp-ai-wpoos' ); ?></label></th>
-					<td>
-						<input type="text" name="<?php echo esc_attr( $prefix ); ?>[header_name]" value="<?php echo esc_attr( $app['header_name'] ); ?>" class="regular-text" placeholder="X-API-Key" />
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label><?php esc_html_e( 'Timeout', 'mcp-ai-wpoos' ); ?></label></th>
+				<tr class="wp-mcp-ai-mcp-app-token-row" <?php echo in_array( $app['auth_type'], array( 'none', 'oauth' ), true ) ? 'style="display:none;"' : ''; ?>>
+						<th scope="row"><label><?php esc_html_e( 'Token / API Key', 'mcp-ai-wpoos' ); ?></label></th>
+						<td>
+							<input type="password" name="<?php echo esc_attr( $prefix ); ?>[token]" value="<?php echo esc_attr( $app['token'] ); ?>" class="regular-text" autocomplete="off" />
+						</td>
+					</tr>
+					<tr class="wp-mcp-ai-mcp-app-header-row" <?php echo 'header' !== $app['auth_type'] ? 'style="display:none;"' : ''; ?>>
+						<th scope="row"><label><?php esc_html_e( 'Header Name', 'mcp-ai-wpoos' ); ?></label></th>
+						<td>
+							<input type="text" name="<?php echo esc_attr( $prefix ); ?>[header_name]" value="<?php echo esc_attr( $app['header_name'] ); ?>" class="regular-text" placeholder="X-API-Key" />
+						</td>
+					</tr>
+					<tr class="wp-mcp-ai-mcp-app-oauth-row" <?php echo 'oauth' !== $app['auth_type'] ? 'style="display:none;"' : ''; ?>>
+						<th scope="row"><label><?php esc_html_e( 'OAuth Login', 'mcp-ai-wpoos' ); ?></label></th>
+						<td>
+							<?php
+							$has_oauth = ! empty( $app['oauth_data']['access_token'] );
+							if ( $has_oauth ) :
+								$scope      = ! empty( $app['oauth_data']['scope'] ) ? $app['oauth_data']['scope'] : __( 'default', 'mcp-ai-wpoos' );
+								$issued_at  = ! empty( $app['oauth_data']['issued_at'] ) ? (int) $app['oauth_data']['issued_at'] : 0;
+								$expires_in = ! empty( $app['oauth_data']['expires_in'] ) ? (int) $app['oauth_data']['expires_in'] : 3600;
+								$expires_at = $issued_at + $expires_in;
+								?>
+								<p>
+									<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span>
+									<?php esc_html_e( 'Authenticated via OAuth 2.0.', 'mcp-ai-wpoos' ); ?>
+									<?php if ( $scope ) : ?>
+										(<?php esc_html_e( 'Scope', 'mcp-ai-wpoos' ); ?>: <?php echo esc_html( $scope ); ?>)
+									<?php endif; ?>
+								</p>
+								<p class="description">
+									<?php esc_html_e( 'Tokens are stored securely and automatically refreshed.', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<?php
+							else :
+								?>
+								<p class="description">
+									<?php esc_html_e( 'Click the button below to connect via browser-based OAuth 2.0 login.', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<?php
+							endif;
+							?>
+							<button type="button" class="button wp-mcp-ai-connect-oauth"
+								data-server-url="<?php echo esc_url( $app['server_url'] ); ?>"
+								<?php echo $has_oauth ? 'style="display:none;"' : ''; ?>>
+								<?php esc_html_e( 'Connect via Web Login', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<button type="button" class="button wp-mcp-ai-reconnect-oauth"
+								data-server-url="<?php echo esc_url( $app['server_url'] ); ?>"
+								<?php echo ! $has_oauth ? 'style="display:none;"' : ''; ?>>
+								<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<?php
+							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at' ) as $field ) {
+								$value = isset( $app['oauth_data'][ $field ] ) ? $app['oauth_data'][ $field ] : '';
+								?>
+								<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[oauth_data][<?php echo esc_attr( $field ); ?>]" value="<?php echo esc_attr( (string) $value ); ?>" />
+								<?php
+							}
+							?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label><?php esc_html_e( 'Timeout', 'mcp-ai-wpoos' ); ?></label></th>
 					<td>
 						<input type="number" name="<?php echo esc_attr( $prefix ); ?>[timeout]" value="<?php echo esc_attr( $app['timeout'] ); ?>" min="1" max="120" style="width: 80px;" />
 						<span class="description"><?php esc_html_e( 'seconds', 'mcp-ai-wpoos' ); ?></span>
@@ -366,6 +418,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								<option value="none"><?php esc_html_e( 'None', 'mcp-ai-wpoos' ); ?></option>
 								<option value="bearer"><?php esc_html_e( 'Bearer Token', 'mcp-ai-wpoos' ); ?></option>
 								<option value="header"><?php esc_html_e( 'Custom Header', 'mcp-ai-wpoos' ); ?></option>
+								<option value="oauth"><?php esc_html_e( 'OAuth 2.0 Web Login', 'mcp-ai-wpoos' ); ?></option>
 							</select>
 						</td>
 					</tr>
@@ -379,6 +432,27 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 						<th scope="row"><label><?php esc_html_e( 'Header Name', 'mcp-ai-wpoos' ); ?></label></th>
 						<td>
 							<input type="text" name="wp_mcp_ai_mcp_apps[{{data.index}}][header_name]" value="" class="regular-text" placeholder="X-API-Key" />
+						</td>
+					</tr>
+					<tr class="wp-mcp-ai-mcp-app-oauth-row" style="display:none;">
+						<th scope="row"><label><?php esc_html_e( 'OAuth Login', 'mcp-ai-wpoos' ); ?></label></th>
+						<td>
+							<p class="description">
+								<?php esc_html_e( 'Click the button below to connect via browser-based OAuth 2.0 login.', 'mcp-ai-wpoos' ); ?>
+							</p>
+							<button type="button" class="button wp-mcp-ai-connect-oauth">
+								<?php esc_html_e( 'Connect via Web Login', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<button type="button" class="button wp-mcp-ai-reconnect-oauth" style="display:none;">
+								<?php esc_html_e( 'Re-authenticate', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<?php
+							foreach ( array( 'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope', 'issued_at' ) as $field ) {
+								?>
+								<input type="hidden" name="wp_mcp_ai_mcp_apps[{{data.index}}][oauth_data][<?php echo esc_attr( $field ); ?>]" value="" />
+								<?php
+							}
+							?>
 						</td>
 					</tr>
 					<tr>
@@ -456,20 +530,76 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 					} );
 
 					listEl.addEventListener( 'click', function( event ) {
-						if ( event.target.classList.contains( 'wp-mcp-ai-remove-mcp-app' ) ) {
-							if ( window.confirm( <?php echo wp_json_encode( $confirm_message ); ?> ) ) {
-								var row = event.target.closest( '.wp-mcp-ai-mcp-app-row' );
-								if ( row ) {
-									row.remove();
-								}
+							if ( event.target.classList.contains( 'wp-mcp-ai-remove-mcp-app' ) ) {
+								if ( window.confirm( <?php echo wp_json_encode( $confirm_message ); ?> ) ) {
+									var row = event.target.closest( '.wp-mcp-ai-mcp-app-row' );
+									if ( row ) {
+										row.remove();
+									}
 
-								var remaining = listEl.querySelectorAll( '.wp-mcp-ai-mcp-app-row' );
-								if ( remaining.length === 0 && emptyEl ) {
-									emptyEl.style.display = '';
+									var remaining = listEl.querySelectorAll( '.wp-mcp-ai-mcp-app-row' );
+									if ( remaining.length === 0 && emptyEl ) {
+										emptyEl.style.display = '';
+									}
 								}
 							}
-						}
-					} );
+
+							if ( event.target.classList.contains( 'wp-mcp-ai-connect-oauth' ) || event.target.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ) {
+								event.preventDefault();
+								var btn = event.target;
+								var serverUrl = btn.getAttribute( 'data-server-url' ) || '';
+								var row = btn.closest( '.wp-mcp-ai-mcp-app-row' );
+
+								// Read the server URL from the row's input field if data attribute is empty (new rows).
+								if ( ! serverUrl && row ) {
+									var urlInput = row.querySelector( 'input[type="url"]' );
+									if ( urlInput ) {
+										serverUrl = urlInput.value.trim();
+									}
+								}
+
+								if ( ! serverUrl ) {
+									window.alert( 'Please enter a Server URL first.' );
+									return;
+								}
+
+								// Extract assistant ID from the URL (e.g., post.php?post=123).
+								var urlParams = new URLSearchParams( window.location.search );
+								var assistantId = urlParams.get( 'post' ) || '0';
+
+								// Disable button while requesting.
+								btn.disabled = true;
+								btn.textContent = 'Connecting…';
+
+								// Call the OAuth init REST endpoint.
+								var xhr = new XMLHttpRequest();
+								xhr.open( 'POST', '<?php echo esc_url_raw( rest_url( 'mcp-ai/v1/mcp-apps/oauth/init' ) ); ?>' );
+								xhr.setRequestHeader( 'Content-Type', 'application/json' );
+								xhr.setRequestHeader( 'X-WP-Nonce', '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>' );
+								xhr.onload = function() {
+									if ( xhr.status === 200 ) {
+										var data = JSON.parse( xhr.responseText );
+										if ( data.authorization_url ) {
+											window.location.href = data.authorization_url;
+										} else {
+											window.alert( 'Failed to start OAuth flow.' );
+											btn.disabled = false;
+											btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
+										}
+									} else {
+										window.alert( 'OAuth initiation failed. Check the server URL and try again.' );
+										btn.disabled = false;
+										btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
+									}
+								};
+								xhr.onerror = function() {
+									window.alert( 'Network error. Please check the server URL and try again.' );
+									btn.disabled = false;
+									btn.textContent = btn.classList.contains( 'wp-mcp-ai-reconnect-oauth' ) ? 'Re-authenticate' : 'Connect via Web Login';
+								};
+								xhr.send( JSON.stringify( { server_url: serverUrl, assistant_id: parseInt( assistantId, 10 ) } ) );
+							}
+						} );
 
 					listEl.addEventListener( 'change', function( event ) {
 						if ( event.target.classList.contains( 'wp-mcp-ai-mcp-app-auth-type' ) ) {
@@ -480,13 +610,17 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 
 							var tokenRow = row.querySelector( '.wp-mcp-ai-mcp-app-token-row' );
 							var headerRow = row.querySelector( '.wp-mcp-ai-mcp-app-header-row' );
+							var oauthRow = row.querySelector( '.wp-mcp-ai-mcp-app-oauth-row' );
 							var value = event.target.value;
 
 							if ( tokenRow ) {
-								tokenRow.style.display = ( value === 'none' ) ? 'none' : '';
+								tokenRow.style.display = ( value === 'none' || value === 'oauth' ) ? 'none' : '';
 							}
 							if ( headerRow ) {
 								headerRow.style.display = ( value === 'header' ) ? '' : 'none';
+							}
+							if ( oauthRow ) {
+								oauthRow.style.display = ( value === 'oauth' ) ? '' : 'none';
 							}
 						}
 					} );
