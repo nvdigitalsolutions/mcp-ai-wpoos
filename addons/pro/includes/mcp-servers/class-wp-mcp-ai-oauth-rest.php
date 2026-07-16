@@ -593,10 +593,22 @@ class WP_MCP_AI_OAuth_REST {
 			// application password in Authorization header, or nonce).
 			$user_id = get_current_user_id();
 
-			// Fallback: manually check the WordPress auth cookie.
-			// After wp-login.php redirects back to this REST endpoint, the cookie
-			// is present but get_current_user_id() may return 0 because the REST
-			// API cookie-auth path requires a nonce that isn't available here.
+			// Use WordPress's built-in cookie validation.
+			// wp_validate_logged_in_cookie() reads the COOKIEPATH-scoped
+			// auth cookie and returns the user ID. This is more reliable
+			// than manually iterating $_COOKIE which may not be populated
+			// for REST API requests.
+		if ( $user_id <= 0 ) {
+			$cookie_user_id = wp_validate_logged_in_cookie( 0 );
+			if ( $cookie_user_id ) {
+				wp_set_current_user( $cookie_user_id );
+				$user_id = $cookie_user_id;
+			}
+		}
+
+		// Additional fallback: manually scan $_COOKIE for cases where
+		// the built-in function can't find the cookie (e.g. different
+		// COOKIEPATH or COOKIE_DOMAIN settings).
 		if ( $user_id <= 0 && ! empty( $_COOKIE ) ) {
 			foreach ( $_COOKIE as $name => $value ) {
 				if ( 0 === strpos( $name, 'wordpress_logged_in_' ) ) {
