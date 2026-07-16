@@ -166,6 +166,33 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			}
 		}
 
+		// Fallback: try the REST endpoint directly.
+		// WordPress sites may expose metadata at /wp-json/mcp-ai/v1/oauth/metadata
+		// without the .well-known rewrite rule being active.
+		$rest_metadata_url = $this->build_rest_metadata_url();
+		if ( '' !== $rest_metadata_url && $rest_metadata_url !== $well_known_url ) {
+			$rest_response = wp_remote_get(
+				$rest_metadata_url,
+				array(
+					'timeout'   => $this->timeout,
+					'sslverify' => $this->verify_ssl,
+					'headers'   => array(
+						'Accept' => 'application/json',
+					),
+				)
+			);
+
+			if ( ! is_wp_error( $rest_response ) && 200 === wp_remote_retrieve_response_code( $rest_response ) ) {
+				$body = wp_remote_retrieve_body( $rest_response );
+				$data = json_decode( $body, true );
+
+				if ( is_array( $data ) && ! empty( $data['authorization_endpoint'] ) ) {
+					$this->metadata = $data;
+					return $this->metadata;
+				}
+			}
+		}
+
 		// Fallback: probe the MCP endpoint and check WWW-Authenticate header.
 		$mcp_response = wp_remote_post(
 			$this->server_url,
@@ -193,6 +220,16 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 			if ( 401 === $status_code || 403 === $status_code ) {
 				$www_auth = wp_remote_retrieve_header( $mcp_response, 'www-authenticate' );
 
+				// Fallback: if no WWW-Authenticate header, check JSON error body.
+				// Some servers embed OAuth metadata in the error response JSON.
+				if ( empty( $www_auth ) ) {
+					$resp_body = wp_remote_retrieve_body( $mcp_response );
+					$json_data = json_decode( $resp_body, true );
+					if ( is_array( $json_data ) && ! empty( $json_data['data']['www_authenticate'] ) ) {
+						$www_auth = $json_data['data']['www_authenticate'];
+					}
+				}
+
 				if ( ! empty( $www_auth ) ) {
 					$parsed = $this->parse_www_authenticate( $www_auth );
 
@@ -217,24 +254,37 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 									: $meta_data['authorization_servers'];
 
 								// Fetch authorization server metadata.
-								$auth_meta_url = rtrim( $auth_server, '/' ) . '/.well-known/oauth-authorization-server';
-								$auth_response = wp_remote_get(
-									$auth_meta_url,
-									array(
-										'timeout'   => $this->timeout,
-										'sslverify' => $this->verify_ssl,
-										'headers'   => array( 'Accept' => 'application/json' ),
-									)
+								// Try well-known URL first, then REST API fallback.
+								$metadata_fetched = false;
+								$auth_meta_urls   = array(
+									rtrim( $auth_server, '/' ) . '/.well-known/oauth-authorization-server',
+									rtrim( $auth_server, '/' ) . '/wp-json/mcp-ai/v1/oauth/metadata',
 								);
 
-								if ( ! is_wp_error( $auth_response ) && 200 === wp_remote_retrieve_response_code( $auth_response ) ) {
-									$auth_body = wp_remote_retrieve_body( $auth_response );
-									$auth_data = json_decode( $auth_body, true );
+								foreach ( $auth_meta_urls as $auth_meta_url ) {
+									$auth_response = wp_remote_get(
+										$auth_meta_url,
+										array(
+											'timeout'   => $this->timeout,
+											'sslverify' => $this->verify_ssl,
+											'headers'   => array( 'Accept' => 'application/json' ),
+										)
+									);
 
-									if ( is_array( $auth_data ) && ! empty( $auth_data['authorization_endpoint'] ) ) {
-										$this->metadata = $auth_data;
-										return $this->metadata;
+									if ( ! is_wp_error( $auth_response ) && 200 === wp_remote_retrieve_response_code( $auth_response ) ) {
+										$auth_body = wp_remote_retrieve_body( $auth_response );
+										$auth_data = json_decode( $auth_body, true );
+
+										if ( is_array( $auth_data ) && ! empty( $auth_data['authorization_endpoint'] ) ) {
+											$this->metadata   = $auth_data;
+											$metadata_fetched = true;
+											break;
+										}
 									}
+								}
+
+								if ( $metadata_fetched ) {
+									return $this->metadata;
 								}
 							}
 						}
@@ -826,5 +876,32 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		$port   = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
 
 		return $scheme . '://' . $host . $port . '/.well-known/oauth-authorization-server';
+	}
+
+	/**
+	 * Build the REST API OAuth metadata URL from the server URL.
+	 *
+	 * For WordPress sites, the metadata is also available at:
+	 * /wp-json/mcp-ai/v1/oauth/metadata
+	 *
+	 * @since 1.9.0
+	 * @return string
+	 */
+	protected function build_rest_metadata_url() {
+		$parts = wp_parse_url( $this->server_url );
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+			return '';
+		}
+
+		$scheme = isset( $parts['scheme'] ) ? $parts['scheme'] : 'https';
+		$host   = $parts['host'];
+		$port   = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
+		$path   = isset( $parts['path'] ) ? $parts['path'] : '';
+
+		// Extract the WP REST prefix from the MCP URL.
+		// e.g. /wp-json/mcp-ai/v1/mcp → /wp-json/mcp-ai/v1/oauth/metadata.
+		$rest_prefix = preg_replace( '#/mcp$#', '', $path );
+
+		return $scheme . '://' . $host . $port . $rest_prefix . '/oauth/metadata';
 	}
 }
