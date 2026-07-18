@@ -180,7 +180,8 @@
     "tar-fs": ">=3.1.1",
     "@babel/core": "^7.29.6",
     "@opentelemetry/core": ">=2.8.0",
-    "joi": ">=18.2.1"
+    "joi": ">=18.2.1",
+    "adm-zip": ">=0.6.0"
   },
   "engines": {
     "node": ">=18.17.0",
