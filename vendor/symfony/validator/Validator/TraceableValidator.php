@@ -11,11 +11,7 @@
 
 namespace Symfony\Component\Validator\Validator;
 
-use Symfony\Component\Validator\Constraint;
-use Symfony\Component\Validator\Constraints\GroupSequence;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
-use Symfony\Component\Validator\Mapping\MetadataInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
 /**
@@ -25,38 +21,47 @@ use Symfony\Contracts\Service\ResetInterface;
  */
 class TraceableValidator implements ValidatorInterface, ResetInterface
 {
-    private ValidatorInterface $validator;
-    private array $collectedData = [];
+    private $validator;
+    private $collectedData = [];
 
     public function __construct(ValidatorInterface $validator)
     {
         $this->validator = $validator;
     }
 
-    public function getCollectedData(): array
+    /**
+     * @return array
+     */
+    public function getCollectedData()
     {
         return $this->collectedData;
     }
 
-    /**
-     * @return void
-     */
     public function reset()
     {
         $this->collectedData = [];
     }
 
-    public function getMetadataFor(mixed $value): MetadataInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function getMetadataFor($value)
     {
         return $this->validator->getMetadataFor($value);
     }
 
-    public function hasMetadataFor(mixed $value): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function hasMetadataFor($value)
     {
         return $this->validator->hasMetadataFor($value);
     }
 
-    public function validate(mixed $value, Constraint|array|null $constraints = null, string|GroupSequence|array|null $groups = null): ConstraintViolationListInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function validate($value, $constraints = null, $groups = null)
     {
         $violations = $this->validator->validate($value, $constraints, $groups);
 
@@ -97,22 +102,34 @@ class TraceableValidator implements ValidatorInterface, ResetInterface
         return $violations;
     }
 
-    public function validateProperty(object $object, string $propertyName, string|GroupSequence|array|null $groups = null): ConstraintViolationListInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function validateProperty(object $object, string $propertyName, $groups = null)
     {
         return $this->validator->validateProperty($object, $propertyName, $groups);
     }
 
-    public function validatePropertyValue(object|string $objectOrClass, string $propertyName, mixed $value, string|GroupSequence|array|null $groups = null): ConstraintViolationListInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function validatePropertyValue($objectOrClass, string $propertyName, $value, $groups = null)
     {
         return $this->validator->validatePropertyValue($objectOrClass, $propertyName, $value, $groups);
     }
 
-    public function startContext(): ContextualValidatorInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function startContext()
     {
         return $this->validator->startContext();
     }
 
-    public function inContext(ExecutionContextInterface $context): ContextualValidatorInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function inContext(ExecutionContextInterface $context)
     {
         return $this->validator->inContext($context);
     }

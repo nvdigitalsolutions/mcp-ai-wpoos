@@ -24,12 +24,20 @@ interface MetadataFactoryInterface
     /**
      * Returns the metadata for the given value.
      *
+     * @param mixed $value Some value
+     *
+     * @return MetadataInterface
+     *
      * @throws NoSuchMetadataException If no metadata exists for the given value
      */
-    public function getMetadataFor(mixed $value): MetadataInterface;
+    public function getMetadataFor($value);
 
     /**
      * Returns whether the class is able to return metadata for the given value.
+     *
+     * @param mixed $value Some value
+     *
+     * @return bool
      */
-    public function hasMetadataFor(mixed $value): bool;
+    public function hasMetadataFor($value);
 }
