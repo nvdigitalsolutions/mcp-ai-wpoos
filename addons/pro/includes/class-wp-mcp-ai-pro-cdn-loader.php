@@ -37,7 +37,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 			'handle'       => 'chartjs-pro',
 			'dependencies' => array(),
 			'in_footer'    => true,
-			'sri'          => 'sha384-', // Optional: Add SRI hash for security.
+			'sri'          => 'sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC',
 		),
 		'katex'    => array(
 			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js',
@@ -48,6 +48,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 			'handle'       => 'katex',
 			'dependencies' => array(),
 			'in_footer'    => true,
+			'sri'          => 'sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg',
 		),
 		'd3'       => array(
 			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js',
@@ -56,6 +57,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 			'handle'       => 'd3',
 			'dependencies' => array(),
 			'in_footer'    => true,
+			'sri'          => 'sha384-su5kReKyYlIFrI62mbQRKXHzFobMa7BHp1cK6julLPbnYcCW9NIZKJiTODjLPeDh',
 		),
 		'axios'    => array(
 			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/axios@1.6.5/dist/axios.min.js',
@@ -64,6 +66,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 			'handle'       => 'axios',
 			'dependencies' => array(),
 			'in_footer'    => true,
+			'sri'          => 'sha384-FJRdIAsgR2MYwYL0h2EFW4mafJe48IRnaL0OuRmColRwwvr4nFhW13m/HbjmD3v8',
 		),
 		'mathjs'   => array(
 			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/mathjs@15.2.0/lib/browser/math.js',
@@ -72,6 +75,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 			'handle'       => 'mathjs',
 			'dependencies' => array(),
 			'in_footer'    => true,
+			'sri'          => 'sha384-LpGn2lk7TOLDOAQyf9Cu2w4SbGlD90sKeqiB5fOIRGdb46dR4SDki4prCSrx5OUl',
 		),
 		'prettier' => array(
 			'cdn_url'      => 'https://cdn.jsdelivr.net/npm/prettier@3.4.2/standalone.js',
@@ -80,6 +84,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 			'handle'       => 'prettier',
 			'dependencies' => array(),
 			'in_footer'    => true,
+			'sri'          => 'sha384-hb5DWKecOAg0ukd5iUwRJVUPqkDHBeDzS/L4garXPfbieX+awGMQZT+l0y3fGVbg',
 		),
 	);
 
@@ -157,6 +162,22 @@ class WP_MCP_AI_Pro_CDN_Loader {
 				10,
 				2
 			);
+
+			// Also apply SRI to CSS if the library has a stylesheet.
+			if ( isset( $config['cdn_css'] ) ) {
+				add_filter(
+					'style_loader_tag',
+					function ( $tag, $handle ) use ( $config ) {
+						$css_handle = $config['handle'] . '-css';
+						if ( $css_handle === $handle ) {
+							$tag = str_replace( '<link ', '<link integrity="' . esc_attr( $config['sri'] ) . '" crossorigin="anonymous" ', $tag );
+						}
+						return $tag;
+					},
+					10,
+					2
+				);
+			}
 		}
 	}
 
