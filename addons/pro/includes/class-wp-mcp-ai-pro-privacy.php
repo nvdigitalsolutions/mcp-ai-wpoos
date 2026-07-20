@@ -381,7 +381,21 @@ class WP_MCP_AI_Pro_Privacy {
 			// Delete DICOM files from disk first.
 			$storage_path = get_post_meta( $post->ID, '_imaging_storage_path', true );
 			if ( $storage_path && is_dir( $storage_path ) ) {
-				self::delete_directory_recursively( $storage_path );
+				$real_storage = realpath( $storage_path );
+				$upload_dir   = wp_upload_dir();
+				$real_uploads = isset( $upload_dir['basedir'] ) ? realpath( $upload_dir['basedir'] ) : false;
+
+				// Only delete if the resolved path is within the uploads directory.
+				// This prevents path traversal attacks via manipulated post meta.
+				if ( $real_storage && $real_uploads && 0 === strpos( $real_storage, $real_uploads ) ) {
+					self::delete_directory_recursively( $real_storage );
+				} else {
+					$messages[] = sprintf(
+						/* translators: %d: post ID */
+						__( 'Skipped imaging study #%d due to invalid storage path.', 'mcp-ai-wpoos-pro' ),
+						$post->ID
+					);
+				}
 			}
 
 			// Hard-delete the CPT record.

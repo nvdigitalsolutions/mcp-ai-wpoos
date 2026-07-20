@@ -22,9 +22,9 @@ use Symfony\Component\Validator\Exception\UnexpectedValueException;
 class AllValidator extends ConstraintValidator
 {
     /**
-     * @return void
+     * {@inheritdoc}
      */
-    public function validate(mixed $value, Constraint $constraint)
+    public function validate($value, Constraint $constraint)
     {
         if (!$constraint instanceof All) {
             throw new UnexpectedTypeException($constraint, All::class);

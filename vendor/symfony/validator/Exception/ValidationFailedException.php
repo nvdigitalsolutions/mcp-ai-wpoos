@@ -18,19 +18,16 @@ use Symfony\Component\Validator\ConstraintViolationListInterface;
  */
 class ValidationFailedException extends RuntimeException
 {
-    private ConstraintViolationListInterface $violations;
-    private mixed $value;
+    private $violations;
+    private $value;
 
-    public function __construct(mixed $value, ConstraintViolationListInterface $violations)
+    public function __construct($value, ConstraintViolationListInterface $violations)
     {
         $this->violations = $violations;
         $this->value = $value;
         parent::__construct($violations);
     }
 
-    /**
-     * @return mixed
-     */
     public function getValue()
     {
         return $this->value;

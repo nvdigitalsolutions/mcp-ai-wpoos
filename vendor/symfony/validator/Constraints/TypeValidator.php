@@ -29,9 +29,6 @@ class TypeValidator extends ConstraintValidator
         'float' => 'is_float',
         'double' => 'is_float',
         'real' => 'is_float',
-        'number' => 'is_int || is_float && !is_nan',
-        'finite-float' => 'is_float && is_finite',
-        'finite-number' => 'is_int || is_float && is_finite',
         'numeric' => 'is_numeric',
         'string' => 'is_string',
         'scalar' => 'is_scalar',
@@ -56,9 +53,9 @@ class TypeValidator extends ConstraintValidator
     ];
 
     /**
-     * @return void
+     * {@inheritdoc}
      */
-    public function validate(mixed $value, Constraint $constraint)
+    public function validate($value, Constraint $constraint)
     {
         if (!$constraint instanceof Type) {
             throw new UnexpectedTypeException($constraint, Type::class);
@@ -72,12 +69,7 @@ class TypeValidator extends ConstraintValidator
 
         foreach ($types as $type) {
             $type = strtolower($type);
-            if (isset(self::VALIDATION_FUNCTIONS[$type]) && match ($type) {
-                'finite-float' => \is_float($value) && is_finite($value),
-                'finite-number' => \is_int($value) || \is_float($value) && is_finite($value),
-                'number' => \is_int($value) || \is_float($value) && !is_nan($value),
-                default => self::VALIDATION_FUNCTIONS[$type]($value),
-            }) {
+            if (isset(self::VALIDATION_FUNCTIONS[$type]) && self::VALIDATION_FUNCTIONS[$type]($value)) {
                 return;
             }
 

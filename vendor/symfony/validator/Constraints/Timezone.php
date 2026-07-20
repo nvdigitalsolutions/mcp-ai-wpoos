@@ -34,7 +34,7 @@ class Timezone extends Constraint
     public $intlCompatible = false;
     public $message = 'This value is not a valid timezone.';
 
-    protected const ERROR_NAMES = [
+    protected static $errorNames = [
         self::TIMEZONE_IDENTIFIER_ERROR => 'TIMEZONE_IDENTIFIER_ERROR',
         self::TIMEZONE_IDENTIFIER_IN_ZONE_ERROR => 'TIMEZONE_IDENTIFIER_IN_ZONE_ERROR',
         self::TIMEZONE_IDENTIFIER_IN_COUNTRY_ERROR => 'TIMEZONE_IDENTIFIER_IN_COUNTRY_ERROR',
@@ -42,18 +42,18 @@ class Timezone extends Constraint
     ];
 
     /**
-     * @deprecated since Symfony 6.1, use const ERROR_NAMES instead
+     * {@inheritdoc}
+     *
+     * @param int|array|null $zone A combination of {@see \DateTimeZone} class constants or a set of options
      */
-    protected static $errorNames = self::ERROR_NAMES;
-
     public function __construct(
-        int|array|null $zone = null,
+        $zone = null,
         ?string $message = null,
         ?string $countryCode = null,
         ?bool $intlCompatible = null,
         ?array $groups = null,
-        mixed $payload = null,
-        array $options = [],
+        $payload = null,
+        array $options = []
     ) {
         if (\is_array($zone)) {
             $options = array_merge($zone, $options);
@@ -79,7 +79,10 @@ class Timezone extends Constraint
         }
     }
 
-    public function getDefaultOption(): ?string
+    /**
+     * {@inheritdoc}
+     */
+    public function getDefaultOption()
     {
         return 'zone';
     }

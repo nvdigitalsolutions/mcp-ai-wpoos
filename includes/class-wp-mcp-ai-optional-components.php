@@ -95,12 +95,10 @@ class WP_MCP_AI_Optional_Components {
 	 * @return void
 	 */
 	public static function download_on_activation() {
-		$status = self::get_status();
-
 		// Flag that optional components are available for download (opt-in notice).
 		// Do NOT auto-schedule downloads — the admin must explicitly consent first
 		// via the admin notice or the AJAX manual download handler.
-		if ( empty( $status['vectorizer']['downloaded'] ) || empty( $status['knowledge_base']['downloaded'] ) ) {
+		if ( ! self::is_knowledge_base_complete() ) {
 			update_option( 'wp_mcp_ai_optional_components_available', true );
 		}
 	}
@@ -111,11 +109,6 @@ class WP_MCP_AI_Optional_Components {
 	 * @return void
 	 */
 	public static function background_download() {
-		// Download vectorizer if not present.
-		if ( ! self::is_vectorizer_installed() ) {
-			self::download_vectorizer();
-		}
-
 		// Download knowledge base if not present.
 		if ( ! self::is_knowledge_base_complete() ) {
 			self::download_knowledge_base();
@@ -123,16 +116,6 @@ class WP_MCP_AI_Optional_Components {
 
 		// Clear the in-progress flag.
 		delete_transient( self::DOWNLOAD_IN_PROGRESS );
-	}
-
-	/**
-	 * Check if vectorizer is installed.
-	 *
-	 * @return bool True if vectorizer is installed.
-	 */
-	public static function is_vectorizer_installed() {
-		$vectorizer_path = WP_MCP_AI_PATH . 'assets/js/vendor/neplex-vectorizer';
-		return file_exists( $vectorizer_path ) && is_dir( $vectorizer_path );
 	}
 
 	/**
@@ -149,54 +132,6 @@ class WP_MCP_AI_Optional_Components {
 		$files = glob( $playbooks_dir . '*.txt' );
 		// Expected 218 profession playbooks.
 		return count( $files ) >= 200;
-	}
-
-	/**
-	 * Download vectorizer library from GitHub.
-	 *
-	 * @return bool|WP_Error True on success, WP_Error on failure.
-	 */
-	public static function download_vectorizer() {
-		$base_url     = self::get_download_base_url();
-		$download_url = $base_url . '/neplex-vectorizer.zip';
-
-		// Use uploads directory instead of plugin directory.
-		$upload_dir = wp_upload_dir();
-
-		// Check for upload directory errors.
-		if ( ! empty( $upload_dir['error'] ) ) {
-			$error_msg = $upload_dir['error'];
-			self::update_status( 'vectorizer', 'error', $error_msg );
-			return new WP_Error( 'upload_dir_error', $error_msg );
-		}
-
-		$target_dir = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/vendor/';
-
-		// Create directory if it doesn't exist.
-		if ( ! wp_mkdir_p( $target_dir ) ) {
-			$error_msg = __( 'Failed to create vendor directory in uploads folder.', 'mcp-ai-wpoos' );
-			self::update_status( 'vectorizer', 'error', $error_msg );
-			return new WP_Error( 'mkdir_failed', $error_msg );
-		}
-
-		$temp_file = download_url( $download_url );
-
-		if ( is_wp_error( $temp_file ) ) {
-			self::update_status( 'vectorizer', 'error', $temp_file->get_error_message() );
-			return $temp_file;
-		}
-
-		// Extract ZIP file.
-		$result = unzip_file( $temp_file, $target_dir );
-		unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
-
-		if ( is_wp_error( $result ) ) {
-			self::update_status( 'vectorizer', 'error', $result->get_error_message() );
-			return $result;
-		}
-
-		self::update_status( 'vectorizer', 'downloaded', '' );
-		return true;
 	}
 
 	/**
@@ -239,11 +174,21 @@ class WP_MCP_AI_Optional_Components {
 		unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( is_wp_error( $result ) ) {
-			self::update_status( 'knowledge_base', 'error', $result->get_error_message() );
-			return $result;
+				self::update_status( 'knowledge_base', 'error', $result->get_error_message() );
+				return $result;
 		}
 
-		self::update_status( 'knowledge_base', 'downloaded', '' );
+			// Validate the extracted archive to prevent path traversal and ensure
+			// only expected file types are present.
+			$validation = self::validate_knowledge_base_archive( $target_dir );
+		if ( is_wp_error( $validation ) ) {
+			// Clean up the extracted files that failed validation.
+			self::delete_extracted_dir( $target_dir );
+			self::update_status( 'knowledge_base', 'error', $validation->get_error_message() );
+			return $validation;
+		}
+
+			self::update_status( 'knowledge_base', 'downloaded', '' );
 		return true;
 	}
 
@@ -254,11 +199,6 @@ class WP_MCP_AI_Optional_Components {
 	 */
 	public static function get_status() {
 		$default = array(
-			'vectorizer'     => array(
-				'downloaded' => false,
-				'status'     => 'not_downloaded',
-				'error'      => '',
-			),
 			'knowledge_base' => array(
 				'downloaded' => false,
 				'status'     => 'not_downloaded',
@@ -269,7 +209,6 @@ class WP_MCP_AI_Optional_Components {
 		$status = get_option( self::OPTION_NAME, $default );
 
 		// Check actual file existence.
-		$status['vectorizer']['downloaded']     = self::is_vectorizer_installed();
 		$status['knowledge_base']['downloaded'] = self::is_knowledge_base_complete();
 
 		return $status;
@@ -317,7 +256,7 @@ class WP_MCP_AI_Optional_Components {
 			<div class="notice notice-info is-dismissible">
 				<p>
 					<strong><?php esc_html_e( 'Open Operator System:', 'mcp-ai-wpoos' ); ?></strong>
-					<?php esc_html_e( 'Downloading optional components in the background (vectorizer library and complete knowledge base). This may take a few minutes.', 'mcp-ai-wpoos' ); ?>
+								<?php esc_html_e( 'Downloading optional components in the background (complete knowledge base). This may take a few minutes.', 'mcp-ai-wpoos' ); ?>
 				</p>
 			</div>
 			<?php
@@ -326,31 +265,30 @@ class WP_MCP_AI_Optional_Components {
 
 		// Show opt-in notice for optional component downloads (WordPress.org Guidelines 7 & 9).
 		$components_available = get_option( 'wp_mcp_ai_optional_components_available', false );
-		$needs_vectorizer     = ! $status['vectorizer']['downloaded'];
 		$needs_knowledge_base = ! $status['knowledge_base']['downloaded'];
 
-		if ( $components_available && ( $needs_vectorizer || $needs_knowledge_base ) ) {
+		if ( $components_available && $needs_knowledge_base ) {
 			$nonce = wp_create_nonce( 'wp_mcp_ai_download_component' );
 			?>
 			<div class="notice notice-info is-dismissible" id="wp-mcp-ai-optional-components-notice">
 				<p>
 					<strong><?php esc_html_e( 'Open Operator System:', 'mcp-ai-wpoos' ); ?></strong>
-					<?php esc_html_e( 'Optional components are available for download to enhance your experience (vectorizer library and complete knowledge base with 218 profession playbooks). These are downloaded from the plugin\'s GitHub releases.', 'mcp-ai-wpoos' ); ?>
+				<?php esc_html_e( 'Optional components are available for download to enhance your experience (complete knowledge base with 218 profession playbooks). These are downloaded from the plugin\'s GitHub releases.', 'mcp-ai-wpoos' ); ?>
 				</p>
 				<p style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
 					<button type="button" class="button button-primary" id="wp-mcp-ai-download-components-btn" data-nonce="<?php echo esc_attr( $nonce ); ?>">
-						<?php esc_html_e( 'Download Optional Components', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Download Optional Components', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<button type="button" class="button" id="wp-mcp-ai-dismiss-components-btn">
-						<?php esc_html_e( 'No Thanks', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'No Thanks', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=data_management' ) ); ?>" class="button">
-						<?php esc_html_e( 'Go to Data Management', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Go to Data Management', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</p>
 			</div>
 			<?php
-				ob_start();
+			ob_start();
 			?>
 					(function() {
 						var downloadBtn = document.getElementById('wp-mcp-ai-download-components-btn');
@@ -399,36 +337,16 @@ class WP_MCP_AI_Optional_Components {
 							});
 						}
 					})();
-					<?php
-					$js = ob_get_clean();
-					wp_print_inline_script_tag( $js );
-					?>
+				<?php
+				$js = ob_get_clean();
+				wp_print_inline_script_tag( $js );
+				?>
 			<?php
 			return;
 		}
 
 		// Show error notices if any.
 		$has_error = false;
-
-		if ( ! empty( $status['vectorizer']['error'] ) ) {
-			?>
-			<div class="notice notice-warning is-dismissible">
-				<p>
-					<strong><?php esc_html_e( 'Open Operator System:', 'mcp-ai-wpoos' ); ?></strong>
-					<?php
-					echo esc_html(
-						sprintf(
-							/* translators: %s: Error message */
-							__( 'Could not download vectorizer library: %s. The vectorize_image tool will not be available.', 'mcp-ai-wpoos' ),
-							$status['vectorizer']['error']
-						)
-					);
-					?>
-				</p>
-			</div>
-			<?php
-			$has_error = true;
-		}
 
 		if ( ! empty( $status['knowledge_base']['error'] ) ) {
 			?>
@@ -453,7 +371,7 @@ class WP_MCP_AI_Optional_Components {
 		// Show success notice after download completes (once).
 		if ( ! $downloading && ! $has_error ) {
 			$shown = get_transient( 'wp_mcp_ai_download_success_notice_shown' );
-			if ( ! $shown && ( $status['vectorizer']['downloaded'] || $status['knowledge_base']['downloaded'] ) ) {
+			if ( ! $shown && $status['knowledge_base']['downloaded'] ) {
 				?>
 				<div class="notice notice-success is-dismissible">
 					<p>
@@ -481,14 +399,12 @@ class WP_MCP_AI_Optional_Components {
 
 		$component = isset( $_POST['component'] ) ? sanitize_key( wp_unslash( $_POST['component'] ) ) : '';
 
-		if ( ! in_array( $component, array( 'vectorizer', 'knowledge_base' ), true ) ) {
+		if ( ! in_array( $component, array( 'knowledge_base' ), true ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid component' ) );
 		}
 
 		$result = false;
-		if ( 'vectorizer' === $component ) {
-			$result = self::download_vectorizer();
-		} elseif ( 'knowledge_base' === $component ) {
+		if ( 'knowledge_base' === $component ) {
 			$result = self::download_knowledge_base();
 		}
 
@@ -534,14 +450,164 @@ class WP_MCP_AI_Optional_Components {
 	 * @return void
 	 */
 	public static function ajax_dismiss_optional_components() {
-		check_ajax_referer( 'wp_mcp_ai_dismiss_components' );
+			check_ajax_referer( 'wp_mcp_ai_dismiss_components' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
 		}
 
-		delete_option( 'wp_mcp_ai_optional_components_available' );
-		wp_send_json_success();
+			delete_option( 'wp_mcp_ai_optional_components_available' );
+			wp_send_json_success();
+	}
+
+		/**
+		 * Validate extracted knowledge base archive for security.
+		 *
+		 * Performs three checks:
+		 * 1. Path traversal — every file's realpath must be within the target dir.
+		 * 2. Extension allowlist — only .txt files are permitted.
+		 * 3. Minimum playbook count — at least 200 .txt files must exist.
+		 *
+		 * @since 1.1.41
+		 *
+		 * @param string $target_dir Absolute path to extracted directory.
+		 * @return true|WP_Error True if valid, WP_Error with details on failure.
+		 */
+	private static function validate_knowledge_base_archive( $target_dir ) {
+		$target_dir = trailingslashit( $target_dir );
+
+		if ( ! is_dir( $target_dir ) ) {
+			return new WP_Error(
+				'kb_validation_failed',
+				__( 'Knowledge base directory does not exist after extraction.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$real_target = realpath( $target_dir );
+		if ( false === $real_target ) {
+			return new WP_Error(
+				'kb_validation_failed',
+				__( 'Cannot resolve knowledge base directory path.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$real_target = trailingslashit( $real_target );
+		$count       = 0;
+
+		try {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $target_dir, RecursiveDirectoryIterator::SKIP_DOTS )
+			);
+
+			foreach ( $iterator as $file ) {
+				if ( ! $file->isFile() ) {
+					continue;
+				}
+
+				$file_path = $file->getPathname();
+				$real_file = realpath( $file_path );
+
+				// Check 1: Path traversal — file must be within target dir.
+				if ( false === $real_file || 0 !== strpos( $real_file, $real_target ) ) {
+					return new WP_Error(
+						'kb_path_traversal',
+						sprintf(
+							/* translators: %s: filename */
+							__( 'Knowledge base archive contains a path traversal entry: %s', 'mcp-ai-wpoos' ),
+							basename( $file_path )
+						)
+					);
+				}
+
+				// Check 2: Extension allowlist.
+				$ext = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+				if ( 'txt' !== $ext ) {
+					return new WP_Error(
+						'kb_invalid_extension',
+						sprintf(
+							/* translators: 1: filename, 2: extension */
+							__( 'Knowledge base archive contains a disallowed file type (%2$s): %1$s', 'mcp-ai-wpoos' ),
+							basename( $file_path ),
+							$ext
+						)
+					);
+				}
+
+				++$count;
+			}
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'kb_validation_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Knowledge base validation error: %s', 'mcp-ai-wpoos' ),
+					$e->getMessage()
+				)
+			);
+		}
+
+		// Check 3: Minimum playbook count.
+		if ( $count < 200 ) {
+			return new WP_Error(
+				'kb_insufficient_playbooks',
+				sprintf(
+					/* translators: %d: number of playbook files found */
+					__( 'Knowledge base archive contains only %d playbook files. At least 200 are expected.', 'mcp-ai-wpoos' ),
+					$count
+				)
+			);
+		}
+
+		return true;
+	}
+
+		/**
+		 * Recursively delete a directory that failed validation.
+		 *
+		 * Used to clean up extracted archives that did not pass the security
+		 * validation check. Only performs deletion if the directory is within
+		 * the expected uploads base path.
+		 *
+		 * @since 1.1.41
+		 *
+		 * @param string $dir Absolute path to directory.
+		 * @return void
+		 */
+	private static function delete_extracted_dir( $dir ) {
+		if ( ! is_string( $dir ) || '' === $dir || ! is_dir( $dir ) ) {
+			return;
+		}
+
+		// Verify containment within uploads directory.
+		$upload_dir = wp_upload_dir();
+		$real_dir   = realpath( $dir );
+		$real_base  = realpath( $upload_dir['basedir'] );
+
+		if ( ! $real_dir || ! $real_base || 0 !== strpos( $real_dir, $real_base ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$items = @scandir( $dir );
+		if ( ! is_array( $items ) ) {
+			return;
+		}
+
+		foreach ( $items as $item ) {
+			if ( '.' === $item || '..' === $item ) {
+				continue;
+			}
+			$path = $dir . DIRECTORY_SEPARATOR . $item;
+			if ( is_dir( $path ) ) {
+				self::delete_extracted_dir( $path );
+			} else {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				@unlink( $path );
+			}
+		}
+
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		@rmdir( $dir );
 	}
 }
 

@@ -26,17 +26,23 @@ class ConstraintValidatorFactory implements ConstraintValidatorFactoryInterface
 {
     protected $validators = [];
 
-    public function __construct(array $validators = [])
+    public function __construct()
     {
-        $this->validators = $validators;
     }
 
-    public function getInstance(Constraint $constraint): ConstraintValidatorInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function getInstance(Constraint $constraint)
     {
-        if ('validator.expression' === $name = $class = $constraint->validatedBy()) {
-            $class = ExpressionValidator::class;
+        $className = $constraint->validatedBy();
+
+        if (!isset($this->validators[$className])) {
+            $this->validators[$className] = 'validator.expression' === $className
+                ? new ExpressionValidator()
+                : new $className();
         }
 
-        return $this->validators[$name] ??= new $class();
+        return $this->validators[$className];
     }
 }

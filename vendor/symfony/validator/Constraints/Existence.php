@@ -18,12 +18,12 @@ abstract class Existence extends Composite
 {
     public $constraints = [];
 
-    public function getDefaultOption(): ?string
+    public function getDefaultOption()
     {
         return 'constraints';
     }
 
-    protected function getCompositeOption(): string
+    protected function getCompositeOption()
     {
         return 'constraints';
     }

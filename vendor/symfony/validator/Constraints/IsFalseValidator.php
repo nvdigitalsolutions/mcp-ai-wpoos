@@ -21,9 +21,9 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 class IsFalseValidator extends ConstraintValidator
 {
     /**
-     * @return void
+     * {@inheritdoc}
      */
-    public function validate(mixed $value, Constraint $constraint)
+    public function validate($value, Constraint $constraint)
     {
         if (!$constraint instanceof IsFalse) {
             throw new UnexpectedTypeException($constraint, IsFalse::class);
