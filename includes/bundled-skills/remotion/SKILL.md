@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: remotion
 description: Create programmatic videos using React and Remotion. Translate natural language descriptions into working Remotion components for product demos, release announcements, explainer videos, and animated content.
 license: MIT

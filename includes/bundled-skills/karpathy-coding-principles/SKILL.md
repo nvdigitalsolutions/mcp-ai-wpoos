@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: karpathy-coding-principles
 description: Apply Karpathy-inspired coding behavior guidelines — think before coding, prefer simplicity, make surgical changes, and execute toward verifiable goals. Reduces wrong assumptions, overengineering, and unintended side-effects.
 license: MIT
