@@ -585,11 +585,6 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			return;
 		}
 
-		// Read the professional ID from the request (user-chosen value, not policy).
-		$professional_id = isset( $_POST['professional_id'] )
-			? absint( wp_unslash( $_POST['professional_id'] ) )
-			: 0;
-
 		// Reconstruct shortcode attributes from the verified policy.
 		$shortcode_atts = 'assistant="' . esc_attr( $policy['assistant'] ) . '"';
 
@@ -611,12 +606,6 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 		if ( ! empty( $policy['template'] ) && 'classic' !== $policy['template'] ) {
 			$shortcode_atts .= ' template="' . esc_attr( $policy['template'] ) . '"';
-		}
-
-		// Include the user-selected profession so the chat shortcode can
-		// build and inject the professional role prompt into the conversation.
-		if ( $professional_id > 0 ) {
-			$shortcode_atts .= ' profession="' . absint( $professional_id ) . '"';
 		}
 
 		// Build the complete shortcode string.

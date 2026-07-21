@@ -88,7 +88,7 @@ if ( $has_dev_deps && ! $putenv_available ) {
 				'Symfony\\Contracts\\Translation\\' => 'vendor/symfony/translation-contracts/',
 				'Symfony\\Component\\Cache\\'       => 'vendor/symfony/cache/',
 				'Nyholm\\Psr7\\'                    => 'vendor/nyholm/psr7/src/',
-				'Psr\\Log\\'                        => 'vendor/psr/log/Psr/Log/',
+				'Psr\\Log\\'                        => 'vendor/psr/log/src/',
 				'Psr\\Http\\Message\\'              => 'vendor/psr/http-message/src/',
 				'Psr\\Http\\Client\\'               => 'vendor/psr/http-client/src/',
 				'Psr\\Container\\'                  => 'vendor/psr/container/src/',
