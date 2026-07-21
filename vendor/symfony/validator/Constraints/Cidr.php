@@ -29,7 +29,7 @@ class Cidr extends Constraint
     public const INVALID_CIDR_ERROR = '5649e53a-5afb-47c5-a360-ffbab3be8567';
     public const OUT_OF_RANGE_ERROR = 'b9f14a51-acbd-401a-a078-8c6b204ab32f';
 
-    protected static $errorNames = [
+    protected const ERROR_NAMES = [
         self::INVALID_CIDR_ERROR => 'INVALID_CIDR_ERROR',
         self::OUT_OF_RANGE_ERROR => 'OUT_OF_RANGE_VIOLATION',
     ];
@@ -39,6 +39,11 @@ class Cidr extends Constraint
         Ip::V4 => 32,
         Ip::V6 => 128,
     ];
+
+    /**
+     * @deprecated since Symfony 6.1, use const ERROR_NAMES instead
+     */
+    protected static $errorNames = self::ERROR_NAMES;
 
     public $version = Ip::ALL;
 
@@ -57,12 +62,12 @@ class Cidr extends Constraint
         ?int $netmaskMax = null,
         ?string $message = null,
         ?array $groups = null,
-        $payload = null
+        $payload = null,
     ) {
         $this->version = $version ?? $options['version'] ?? $this->version;
 
-        if (!\in_array($this->version, array_keys(self::NET_MAXES))) {
-            throw new ConstraintDefinitionException(sprintf('The option "version" must be one of "%s".', implode('", "', array_keys(self::NET_MAXES))));
+        if (!\array_key_exists($this->version, self::NET_MAXES)) {
+            throw new ConstraintDefinitionException(\sprintf('The option "version" must be one of "%s".', implode('", "', array_keys(self::NET_MAXES))));
         }
 
         $this->netmaskMin = $netmaskMin ?? $options['netmaskMin'] ?? $this->netmaskMin;
@@ -72,7 +77,7 @@ class Cidr extends Constraint
         unset($options['netmaskMin'], $options['netmaskMax'], $options['version']);
 
         if ($this->netmaskMin < 0 || $this->netmaskMax > self::NET_MAXES[$this->version] || $this->netmaskMin > $this->netmaskMax) {
-            throw new ConstraintDefinitionException(sprintf('The netmask range must be between 0 and %d.', self::NET_MAXES[$this->version]));
+            throw new ConstraintDefinitionException(\sprintf('The netmask range must be between 0 and %d.', self::NET_MAXES[$this->version]));
         }
 
         parent::__construct($options, $groups, $payload);

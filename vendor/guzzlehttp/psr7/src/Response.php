@@ -99,7 +99,6 @@ class Response implements ResponseInterface
         ?string $reason = null
     ) {
         $this->assertStatusCodeRange($status);
-        $this->assertProtocolVersion($version);
 
         $this->statusCode = $status;
 
@@ -109,13 +108,10 @@ class Response implements ResponseInterface
 
         $this->setHeaders($headers);
         if ($reason == '' && isset(self::PHRASES[$this->statusCode])) {
-            $reasonPhrase = self::PHRASES[$this->statusCode];
+            $this->reasonPhrase = self::PHRASES[$this->statusCode];
         } else {
-            $reasonPhrase = (string) $reason;
+            $this->reasonPhrase = (string) $reason;
         }
-
-        $this->assertNoLineSeparators($reasonPhrase, 'Reason phrase');
-        $this->reasonPhrase = $reasonPhrase;
 
         $this->protocol = $version;
     }
@@ -159,9 +155,7 @@ class Response implements ResponseInterface
         if ($reasonPhrase == '' && isset(self::PHRASES[$new->statusCode])) {
             $reasonPhrase = self::PHRASES[$new->statusCode];
         }
-        $reasonPhrase = (string) $reasonPhrase;
-        $this->assertNoLineSeparators($reasonPhrase, 'Reason phrase');
-        $new->reasonPhrase = $reasonPhrase;
+        $new->reasonPhrase = (string) $reasonPhrase;
 
         return $new;
     }

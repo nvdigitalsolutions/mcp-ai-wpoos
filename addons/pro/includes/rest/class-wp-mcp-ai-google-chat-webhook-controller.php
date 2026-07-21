@@ -391,61 +391,19 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$connection            = $this->get_active_google_chat_connection( $space_name_for_lookup );
 		}
 
-		// When OIDC verification is disabled for this connection, require a
-		// shared-secret verification token (mirrors Telegram's bot token model).
-		// Without this, an attacker who knows the webhook URL can inject
-		// messages. The verification token must be configured in the connection
-		// settings and passed via ?token= URL parameter or X-Google-Chat-Token
-		// header.
-		//
-		// If no verification token is configured AND OIDC is disabled, the
-		// request is rejected — a completely unauthenticated endpoint is never
-		// acceptable in production.
+		// When OIDC verification is disabled for this connection, accept any POST
+		// request without token validation. This is useful for environments where
+		// the Authorization header is stripped by a server, proxy, or WAF. However,
+		// it means any caller who knows the webhook URL can inject messages.
+		// Only enable this setting in controlled environments with network-level access
+		// restrictions in place (e.g. IP allowlisting at the firewall/WAF layer).
 		if ( $connection && ! empty( $connection['disable_oidc_verification'] ) ) {
-			$verification_token = isset( $connection['verification_token'] )
-				? trim( (string) $connection['verification_token'] )
-				: '';
-
-			if ( '' === $verification_token ) {
-				WP_MCP_AI_Logger::log_error(
-					'google_chat_webhook_oidc_bypass_no_token',
-					'Google Chat webhook: OIDC verification is disabled but no verification token is configured. Request rejected. Configure a verification token in the connection settings.'
-				);
-				$this->store_webhook_log_entry(
-					array(
-						'status' => 'rejected',
-						'reason' => 'OIDC verification disabled but no verification token configured.',
-					)
-				);
-				return false;
-			}
-
-			// Check for the verification token in the URL query or a custom header.
-			$provided_token = $request->get_param( 'token' );
-			if ( empty( $provided_token ) ) {
-				$provided_token = $request->get_header( 'X-Google-Chat-Token' );
-			}
-
-			if ( ! empty( $provided_token ) && hash_equals( $verification_token, (string) $provided_token ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'google_chat_webhook_oidc_bypass_token',
-					'Google Chat webhook: OIDC verification disabled, request authenticated via verification token.',
-					array()
-				);
-				return true;
-			}
-
-			WP_MCP_AI_Logger::log_error(
-				'google_chat_webhook_oidc_bypass_bad_token',
-				'Google Chat webhook: OIDC verification disabled but verification token missing or mismatched.'
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_webhook_oidc_skipped',
+				'SECURITY WARNING: Google Chat webhook OIDC verification is DISABLED for this connection. The endpoint will accept requests from any caller. This setting should only be used with additional network-level controls (e.g. IP allowlisting). Enable OIDC verification for production environments.',
+				array()
 			);
-			$this->store_webhook_log_entry(
-				array(
-					'status' => 'rejected',
-					'reason' => 'OIDC verification disabled — verification token missing or mismatched.',
-				)
-			);
-			return false;
+			return true;
 		}
 
 		// Accept WordPress nonce authentication for administrator users.

@@ -46,6 +46,13 @@ abstract class Constraint
 
     /**
      * Maps error codes to the names of their constants.
+     *
+     * @var array<string, string>
+     */
+    protected const ERROR_NAMES = [];
+
+    /**
+     * @deprecated since Symfony 6.1, use protected const ERROR_NAMES instead
      */
     protected static $errorNames = [];
 
@@ -66,15 +73,19 @@ abstract class Constraint
     /**
      * Returns the name of the given error code.
      *
-     * @return string
-     *
      * @throws InvalidArgumentException If the error code does not exist
      */
-    public static function getErrorName(string $errorCode)
+    public static function getErrorName(string $errorCode): string
     {
-        if (!isset(static::$errorNames[$errorCode])) {
-            throw new InvalidArgumentException(sprintf('The error code "%s" does not exist for constraint of type "%s".', $errorCode, static::class));
+        if (isset(static::ERROR_NAMES[$errorCode])) {
+            return static::ERROR_NAMES[$errorCode];
         }
+
+        if (!isset(static::$errorNames[$errorCode])) {
+            throw new InvalidArgumentException(\sprintf('The error code "%s" does not exist for constraint of type "%s".', $errorCode, static::class));
+        }
+
+        trigger_deprecation('symfony/validator', '6.1', 'The "%s::$errorNames" property is deprecated, use protected const ERROR_NAMES instead.', static::class);
 
         return static::$errorNames[$errorCode];
     }
@@ -108,7 +119,7 @@ abstract class Constraint
      *                                       array, but getDefaultOption() returns
      *                                       null
      */
-    public function __construct($options = null, ?array $groups = null, $payload = null)
+    public function __construct(mixed $options = null, ?array $groups = null, mixed $payload = null)
     {
         unset($this->groups); // enable lazy initialization
 
@@ -123,7 +134,7 @@ abstract class Constraint
         }
     }
 
-    protected function normalizeOptions($options): array
+    protected function normalizeOptions(mixed $options): array
     {
         $normalizedOptions = [];
         $defaultOption = $this->getDefaultOption();
@@ -133,7 +144,7 @@ abstract class Constraint
 
         if (\is_array($options) && isset($options['value']) && !property_exists($this, 'value')) {
             if (null === $defaultOption) {
-                throw new ConstraintDefinitionException(sprintf('No default option is configured for constraint "%s".', static::class));
+                throw new ConstraintDefinitionException(\sprintf('No default option is configured for constraint "%s".', static::class));
             }
 
             $options[$defaultOption] = $options['value'];
@@ -154,7 +165,7 @@ abstract class Constraint
             }
         } elseif (null !== $options && !(\is_array($options) && 0 === \count($options))) {
             if (null === $defaultOption) {
-                throw new ConstraintDefinitionException(sprintf('No default option is configured for constraint "%s".', static::class));
+                throw new ConstraintDefinitionException(\sprintf('No default option is configured for constraint "%s".', static::class));
             }
 
             if (\array_key_exists($defaultOption, $knownOptions)) {
@@ -166,11 +177,11 @@ abstract class Constraint
         }
 
         if (\count($invalidOptions) > 0) {
-            throw new InvalidOptionsException(sprintf('The options "%s" do not exist in constraint "%s".', implode('", "', $invalidOptions), static::class), $invalidOptions);
+            throw new InvalidOptionsException(\sprintf('The options "%s" do not exist in constraint "%s".', implode('", "', $invalidOptions), static::class), $invalidOptions);
         }
 
         if (\count($missingOptions) > 0) {
-            throw new MissingOptionsException(sprintf('The options "%s" must be set for constraint "%s".', implode('", "', array_keys($missingOptions)), static::class), array_keys($missingOptions));
+            throw new MissingOptionsException(\sprintf('The options "%s" must be set for constraint "%s".', implode('", "', array_keys($missingOptions)), static::class), array_keys($missingOptions));
         }
 
         return $normalizedOptions;
@@ -183,11 +194,11 @@ abstract class Constraint
      * this method will be called at most once per constraint instance and
      * option name.
      *
-     * @param mixed $value The value to set
+     * @return void
      *
      * @throws InvalidOptionsException If an invalid option name is given
      */
-    public function __set(string $option, $value)
+    public function __set(string $option, mixed $value)
     {
         if ('groups' === $option) {
             $this->groups = (array) $value;
@@ -195,7 +206,7 @@ abstract class Constraint
             return;
         }
 
-        throw new InvalidOptionsException(sprintf('The option "%s" does not exist in constraint "%s".', $option, static::class), [$option]);
+        throw new InvalidOptionsException(\sprintf('The option "%s" does not exist in constraint "%s".', $option, static::class), [$option]);
     }
 
     /**
@@ -205,11 +216,9 @@ abstract class Constraint
      * this method will be called at most once per constraint instance and
      * option name.
      *
-     * @return mixed
-     *
      * @throws InvalidOptionsException If an invalid option name is given
      */
-    public function __get(string $option)
+    public function __get(string $option): mixed
     {
         if ('groups' === $option) {
             $this->groups = [self::DEFAULT_GROUP];
@@ -217,24 +226,23 @@ abstract class Constraint
             return $this->groups;
         }
 
-        throw new InvalidOptionsException(sprintf('The option "%s" does not exist in constraint "%s".', $option, static::class), [$option]);
+        throw new InvalidOptionsException(\sprintf('The option "%s" does not exist in constraint "%s".', $option, static::class), [$option]);
     }
 
-    /**
-     * @return bool
-     */
-    public function __isset(string $option)
+    public function __isset(string $option): bool
     {
         return 'groups' === $option;
     }
 
     /**
      * Adds the given group if this constraint is in the Default group.
+     *
+     * @return void
      */
     public function addImplicitGroupName(string $group)
     {
         if (null === $this->groups && \array_key_exists('groups', (array) $this)) {
-            throw new \LogicException(sprintf('"%s::$groups" is set to null. Did you forget to call "%s::__construct()"?', static::class, self::class));
+            throw new \LogicException(\sprintf('"%s::$groups" is set to null. Did you forget to call "%s::__construct()"?', static::class, self::class));
         }
 
         if (\in_array(self::DEFAULT_GROUP, $this->groups) && !\in_array($group, $this->groups)) {

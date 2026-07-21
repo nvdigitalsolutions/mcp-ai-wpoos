@@ -112,7 +112,7 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				$s_skip   = isset( $_GET['sync_skip'] ) ? absint( $_GET['sync_skip'] ) : 0;
 				$s_err    = isset( $_GET['sync_errors'] ) ? absint( $_GET['sync_errors'] ) : 0;
 				$s_dur    = isset( $_GET['sync_dur'] ) ? floatval( $_GET['sync_dur'] ) : 0;
-				$s_warn   = isset( $_GET['sync_warn'] ) ? sanitize_text_field( rawurldecode( sanitize_text_field( wp_unslash( $_GET['sync_warn'] ) ) ) ) : '';
+				$s_warn   = isset( $_GET['sync_warn'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['sync_warn'] ) ) ) : '';
 				?>
 				<div class="notice <?php echo '' !== $s_warn ? 'notice-warning' : 'notice-success'; ?> is-dismissible">
 					<p><strong><?php esc_html_e( 'Sync Complete', 'mcp-ai-wpoos-pro' ); ?></strong></p>
@@ -142,7 +142,7 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 				$dr_update = isset( $_GET['dry_run_update'] ) ? absint( $_GET['dry_run_update'] ) : 0;
 				$dr_skip   = isset( $_GET['dry_run_skip'] ) ? absint( $_GET['dry_run_skip'] ) : 0;
 				$dr_dur    = isset( $_GET['dry_run_dur'] ) ? floatval( $_GET['dry_run_dur'] ) : 0;
-				$dr_warn   = isset( $_GET['dry_run_warn'] ) ? sanitize_text_field( rawurldecode( sanitize_text_field( wp_unslash( $_GET['dry_run_warn'] ) ) ) ) : '';
+				$dr_warn   = isset( $_GET['dry_run_warn'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['dry_run_warn'] ) ) ) : '';
 				?>
 				<div class="notice <?php echo '' !== $dr_warn ? 'notice-warning' : 'notice-success'; ?> is-dismissible">
 					<p><strong><?php esc_html_e( 'Dry Run Complete', 'mcp-ai-wpoos-pro' ); ?></strong></p>
@@ -319,8 +319,8 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 
 		<script>
 		( function() {
-			var syncNowUrl = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_shopify_sync_now&_wpnonce=' . wp_create_nonce( 'wp_mcp_ai_shopify_sync' ) ) ); ?> + '&connection_id=';
-			var dryRunUrl  = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_shopify_sync_dry_run&_wpnonce=' . wp_create_nonce( 'wp_mcp_ai_shopify_sync' ) ) ); ?> + '&connection_id=';
+			var syncNowUrl = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_shopify_sync_now' ) ); ?> + '&connection_id=';
+			var dryRunUrl  = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_shopify_sync_dry_run' ) ); ?> + '&connection_id=';
 
 			document.querySelectorAll( '.wp-mcp-ai-sync-now' ).forEach( function( btn ) {
 				btn.addEventListener( 'click', function() {
@@ -803,16 +803,13 @@ class WP_MCP_AI_Shopify_Sync_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Set
 	 * @param bool $dry_run Whether this is a dry-run.
 	 */
 	private function handle_sync_action( $dry_run ) {
-			// Capability check.
+		// Capability check.
 		if ( ! current_user_can( 'manage_woocommerce' ) ) { // phpcs:ignore WordPress.WP.Capabilities.Unknown
 					wp_die(
 						esc_html__( 'You do not have sufficient permissions to perform this action.', 'mcp-ai-wpoos-pro' ),
 						403
 					);
 		}
-
-			// Nonce verification to prevent CSRF attacks.
-			check_admin_referer( 'wp_mcp_ai_shopify_sync' );
 
 				// Validate connection ID.
 		$connection_id = isset( $_GET['connection_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended

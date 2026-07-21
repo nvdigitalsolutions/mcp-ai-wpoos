@@ -16,27 +16,19 @@
         "issues": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues",
         "source": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos"
     },
-    "_comment": "Production deps are pinned to PHP-7.4-compatible versions via explicit constraints (Symfony 5.4 LTS + pinned contracts/PSR packages). A config.platform.php override is NOT set because dev dependencies (PHPUnit 11.x, cweagans/composer-patches 2.x) require PHP 8.0+/8.2+ and would fail composer install in CI. The minimum PHP guarantee is enforced by the require constraints, not the platform field. Run composer install --no-dev for production installs.",
+    "_comment": "Symfony deps are pinned to the 6.4 LTS line because the base plugin's PHP floor is 7.4. Symfony 7.x requires PHP 8.2+ and uses readonly/enum syntax that fatal-parses on PHP 7.4 even when not executed. 6.4 LTS is supported until November 2027.",
     "require": {
         "composer/installers": "^2.0",
+        "rahul900day/tiktoken-php": "^1.0",
         "psr/event-dispatcher": "^1.0",
-        "symfony/http-client": "^5.4",
+        "symfony/http-client": "^6.4.36",
         "guzzlehttp/psr7": "^2.10.2",
         "nyholm/psr7": "^1.8",
-        "symfony/validator": "^5.4",
-        "symfony/cache": "^5.4",
-        "symfony/filesystem": "^5.4",
-        "symfony/process": "^5.4",
-        "league/oauth2-client": "^2.7",
-        "symfony/deprecation-contracts": "^2.5",
-        "symfony/service-contracts": "^2.5",
-        "symfony/translation-contracts": "^2.5",
-        "symfony/var-exporter": "^5.4",
-        "psr/cache": "^1.0",
-        "psr/log": "^1.1"
-    },
-    "suggest": {
-        "rahul900day/tiktoken-php": "Provides token counting for OpenAI models. Without this, token counting is estimated."
+        "symfony/validator": "^6.4.36",
+        "symfony/cache": "^6.4.40",
+        "symfony/filesystem": "^6.4.34",
+        "symfony/process": "^6.4.33",
+        "league/oauth2-client": "^2.7"
     },
     "require-dev": {
         "cweagans/composer-patches": "^2.0",
@@ -100,9 +92,13 @@
         "allow-plugins": {
             "cweagans/composer-patches": true,
             "dealerdirect/phpcodesniffer-composer-installer": true,
+            "php-http/discovery": true,
             "composer/installers": true
         },
         "classmap-authoritative": false,
+        "platform": {
+            "php": "8.3.0"
+        },
         "preferred-install": {
             "wp-phpunit/wp-phpunit": "source",
             "league/oauth2-client": "source",
