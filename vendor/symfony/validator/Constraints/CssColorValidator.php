@@ -52,6 +52,9 @@ class CssColorValidator extends ConstraintValidator
         CssColor::HSLA => self::PATTERN_HSLA,
     ];
 
+    /**
+     * {@inheritdoc}
+     */
     public function validate($value, Constraint $constraint): void
     {
         if (!$constraint instanceof CssColor) {

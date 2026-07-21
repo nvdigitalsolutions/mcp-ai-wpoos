@@ -36,14 +36,17 @@ class LoaderChain implements LoaderInterface
     {
         foreach ($loaders as $loader) {
             if (!$loader instanceof LoaderInterface) {
-                throw new MappingException(\sprintf('Class "%s" is expected to implement LoaderInterface.', get_debug_type($loader)));
+                throw new MappingException(sprintf('Class "%s" is expected to implement LoaderInterface.', get_debug_type($loader)));
             }
         }
 
         $this->loaders = $loaders;
     }
 
-    public function loadClassMetadata(ClassMetadata $metadata): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function loadClassMetadata(ClassMetadata $metadata)
     {
         $success = false;
 
@@ -57,7 +60,7 @@ class LoaderChain implements LoaderInterface
     /**
      * @return LoaderInterface[]
      */
-    public function getLoaders(): array
+    public function getLoaders()
     {
         return $this->loaders;
     }

@@ -17,7 +17,6 @@ use Symfony\Component\Cache\CacheItem;
 use Symfony\Component\Cache\Exception\InvalidArgumentException;
 use Symfony\Component\Cache\PruneableInterface;
 use Symfony\Component\Cache\ResettableInterface;
-use Symfony\Component\Cache\Traits\CachedValueInterface;
 use Symfony\Component\Cache\Traits\ContractsTrait;
 use Symfony\Component\Cache\Traits\ProxyTrait;
 use Symfony\Component\VarExporter\VarExporter;
@@ -35,12 +34,12 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     use ContractsTrait;
     use ProxyTrait;
 
-    private string $file;
-    private array $keys;
-    private array $values;
+    private $file;
+    private $keys;
+    private $values;
 
-    private static \Closure $createCacheItem;
-    private static array $valuesCache = [];
+    private static $createCacheItem;
+    private static $valuesCache = [];
 
     /**
      * @param string           $file         The PHP file were values are cached
@@ -50,7 +49,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     {
         $this->file = $file;
         $this->pool = $fallbackPool;
-        self::$createCacheItem ??= \Closure::bind(
+        self::$createCacheItem ?? self::$createCacheItem = \Closure::bind(
             static function ($key, $value, $isHit) {
                 $item = new CacheItem();
                 $item->key = $key;
@@ -69,8 +68,10 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
      *
      * @param string                 $file         The PHP file were values are cached
      * @param CacheItemPoolInterface $fallbackPool A pool to fallback on when an item is not hit
+     *
+     * @return CacheItemPoolInterface
      */
-    public static function create(string $file, CacheItemPoolInterface $fallbackPool): CacheItemPoolInterface
+    public static function create(string $file, CacheItemPoolInterface $fallbackPool)
     {
         if (!$fallbackPool instanceof AdapterInterface) {
             $fallbackPool = new ProxyAdapter($fallbackPool);
@@ -79,9 +80,12 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
         return new static($file, $fallbackPool);
     }
 
-    public function get(string $key, callable $callback, ?float $beta = null, ?array &$metadata = null): mixed
+    /**
+     * {@inheritdoc}
+     */
+    public function get(string $key, callable $callback, ?float $beta = null, ?array &$metadata = null)
     {
-        if (!isset($this->values)) {
+        if (null === $this->values) {
             $this->initialize();
         }
         if (!isset($this->keys[$key])) {
@@ -97,23 +101,27 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
         if ('N;' === $value) {
             return null;
         }
-        if (!$value instanceof CachedValueInterface) {
-            return $value;
-        }
         try {
-            return $value->getValue();
-        } catch (\Throwable) {
+            if ($value instanceof \Closure) {
+                return $value();
+            }
+        } catch (\Throwable $e) {
             unset($this->keys[$key]);
             goto get_from_pool;
         }
+
+        return $value;
     }
 
-    public function getItem(mixed $key): CacheItem
+    /**
+     * {@inheritdoc}
+     */
+    public function getItem($key)
     {
         if (!\is_string($key)) {
-            throw new InvalidArgumentException(\sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
+            throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
         }
-        if (!isset($this->values)) {
+        if (null === $this->values) {
             $this->initialize();
         }
         if (!isset($this->keys[$key])) {
@@ -125,10 +133,10 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
 
         if ('N;' === $value) {
             $value = null;
-        } elseif ($value instanceof CachedValueInterface) {
+        } elseif ($value instanceof \Closure) {
             try {
-                $value = $value->getValue();
-            } catch (\Throwable) {
+                $value = $value();
+            } catch (\Throwable $e) {
                 $value = null;
                 $isHit = false;
             }
@@ -137,52 +145,70 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
         return (self::$createCacheItem)($key, $value, $isHit);
     }
 
-    public function getItems(array $keys = []): iterable
+    /**
+     * {@inheritdoc}
+     */
+    public function getItems(array $keys = [])
     {
         foreach ($keys as $key) {
             if (!\is_string($key)) {
-                throw new InvalidArgumentException(\sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
+                throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
             }
         }
-        if (!isset($this->values)) {
+        if (null === $this->values) {
             $this->initialize();
         }
 
         return $this->generateItems($keys);
     }
 
-    public function hasItem(mixed $key): bool
+    /**
+     * {@inheritdoc}
+     *
+     * @return bool
+     */
+    public function hasItem($key)
     {
         if (!\is_string($key)) {
-            throw new InvalidArgumentException(\sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
+            throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
         }
-        if (!isset($this->values)) {
+        if (null === $this->values) {
             $this->initialize();
         }
 
         return isset($this->keys[$key]) || $this->pool->hasItem($key);
     }
 
-    public function deleteItem(mixed $key): bool
+    /**
+     * {@inheritdoc}
+     *
+     * @return bool
+     */
+    public function deleteItem($key)
     {
         if (!\is_string($key)) {
-            throw new InvalidArgumentException(\sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
+            throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
         }
-        if (!isset($this->values)) {
+        if (null === $this->values) {
             $this->initialize();
         }
 
         return !isset($this->keys[$key]) && $this->pool->deleteItem($key);
     }
 
-    public function deleteItems(array $keys): bool
+    /**
+     * {@inheritdoc}
+     *
+     * @return bool
+     */
+    public function deleteItems(array $keys)
     {
         $deleted = true;
         $fallbackKeys = [];
 
         foreach ($keys as $key) {
             if (!\is_string($key)) {
-                throw new InvalidArgumentException(\sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
+                throw new InvalidArgumentException(sprintf('Cache key must be string, "%s" given.', get_debug_type($key)));
             }
 
             if (isset($this->keys[$key])) {
@@ -191,7 +217,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
                 $fallbackKeys[] = $key;
             }
         }
-        if (!isset($this->values)) {
+        if (null === $this->values) {
             $this->initialize();
         }
 
@@ -202,30 +228,50 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
         return $deleted;
     }
 
-    public function save(CacheItemInterface $item): bool
+    /**
+     * {@inheritdoc}
+     *
+     * @return bool
+     */
+    public function save(CacheItemInterface $item)
     {
-        if (!isset($this->values)) {
+        if (null === $this->values) {
             $this->initialize();
         }
 
         return !isset($this->keys[$item->getKey()]) && $this->pool->save($item);
     }
 
-    public function saveDeferred(CacheItemInterface $item): bool
+    /**
+     * {@inheritdoc}
+     *
+     * @return bool
+     */
+    public function saveDeferred(CacheItemInterface $item)
     {
-        if (!isset($this->values)) {
+        if (null === $this->values) {
             $this->initialize();
         }
 
         return !isset($this->keys[$item->getKey()]) && $this->pool->saveDeferred($item);
     }
 
-    public function commit(): bool
+    /**
+     * {@inheritdoc}
+     *
+     * @return bool
+     */
+    public function commit()
     {
         return $this->pool->commit();
     }
 
-    public function clear(string $prefix = ''): bool
+    /**
+     * {@inheritdoc}
+     *
+     * @return bool
+     */
+    public function clear(string $prefix = '')
     {
         $this->keys = $this->values = [];
 
@@ -246,25 +292,25 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
      *
      * @return string[] A list of classes to preload on PHP 7.4+
      */
-    public function warmUp(array $values): array
+    public function warmUp(array $values)
     {
         if (file_exists($this->file)) {
             if (!is_file($this->file)) {
-                throw new InvalidArgumentException(\sprintf('Cache path exists and is not a file: "%s".', $this->file));
+                throw new InvalidArgumentException(sprintf('Cache path exists and is not a file: "%s".', $this->file));
             }
 
             if (!is_writable($this->file)) {
-                throw new InvalidArgumentException(\sprintf('Cache file is not writable: "%s".', $this->file));
+                throw new InvalidArgumentException(sprintf('Cache file is not writable: "%s".', $this->file));
             }
         } else {
             $directory = \dirname($this->file);
 
-            if (!is_dir($directory) && !@mkdir($directory, 0o777, true)) {
-                throw new InvalidArgumentException(\sprintf('Cache directory does not exist and cannot be created: "%s".', $directory));
+            if (!is_dir($directory) && !@mkdir($directory, 0777, true)) {
+                throw new InvalidArgumentException(sprintf('Cache directory does not exist and cannot be created: "%s".', $directory));
             }
 
             if (!is_writable($directory)) {
-                throw new InvalidArgumentException(\sprintf('Cache directory is not writable: "%s".', $directory));
+                throw new InvalidArgumentException(sprintf('Cache directory is not writable: "%s".', $directory));
             }
         }
 
@@ -272,14 +318,14 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
         $dumpedValues = '';
         $dumpedMap = [];
         $dump = <<<'EOF'
-            <?php
+<?php
 
-            // This file has been auto-generated by the Symfony Cache Component.
+// This file has been auto-generated by the Symfony Cache Component.
 
-            return [[
+return [[
 
 
-            EOF;
+EOF;
 
         foreach ($values as $key => $value) {
             CacheItem::validateKey(\is_int($key) ? (string) $key : $key);
@@ -291,7 +337,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
                 try {
                     $value = VarExporter::export($value, $isStaticValue, $preload);
                 } catch (\Exception $e) {
-                    throw new InvalidArgumentException(\sprintf('Cache key "%s" has non-serializable "%s" value.', $key, get_debug_type($value)), 0, $e);
+                    throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable "%s" value.', $key, get_debug_type($value)), 0, $e);
                 }
             } elseif (\is_string($value)) {
                 // Wrap "N;" in a closure to not confuse it with an encoded `null`
@@ -300,15 +346,16 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
                 }
                 $value = var_export($value, true);
             } elseif (!\is_scalar($value)) {
-                throw new InvalidArgumentException(\sprintf('Cache key "%s" has non-serializable "%s" value.', $key, get_debug_type($value)));
+                throw new InvalidArgumentException(sprintf('Cache key "%s" has non-serializable "%s" value.', $key, get_debug_type($value)));
             } else {
                 $value = var_export($value, true);
             }
 
             if (!$isStaticValue) {
-                $value = 'new class() implements \\'.CachedValueInterface::class." { public function getValue(): mixed { return {$value}; } }";
+                $value = str_replace("\n", "\n    ", $value);
+                $value = "static function () {\n    return {$value};\n}";
             }
-            $hash = hash('xxh128', $value);
+            $hash = hash('md5', $value);
 
             if (null === $id = $dumpedMap[$hash] ?? null) {
                 $id = $dumpedMap[$hash] = \count($dumpedMap);
@@ -323,7 +370,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
         $tmpFile = uniqid($this->file, true);
 
         file_put_contents($tmpFile, $dump);
-        @chmod($tmpFile, 0o666 & ~umask());
+        @chmod($tmpFile, 0666 & ~umask());
         unset($serialized, $value, $dump);
 
         @rename($tmpFile, $this->file);
@@ -337,7 +384,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     /**
      * Load the cache file.
      */
-    private function initialize(): void
+    private function initialize()
     {
         if (isset(self::$valuesCache[$this->file])) {
             $values = self::$valuesCache[$this->file];
@@ -367,10 +414,10 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
 
                 if ('N;' === $value) {
                     yield $key => $f($key, null, true);
-                } elseif ($value instanceof CachedValueInterface) {
+                } elseif ($value instanceof \Closure) {
                     try {
-                        yield $key => $f($key, $value->getValue(), true);
-                    } catch (\Throwable) {
+                        yield $key => $f($key, $value(), true);
+                    } catch (\Throwable $e) {
                         yield $key => $f($key, null, false);
                     }
                 } else {

@@ -22,18 +22,17 @@ use Symfony\Component\Process\Exception\RuntimeException;
  */
 class InputStream implements \IteratorAggregate
 {
-    private ?\Closure $onEmpty = null;
-    private array $input = [];
-    private bool $open = true;
+    /** @var callable|null */
+    private $onEmpty = null;
+    private $input = [];
+    private $open = true;
 
     /**
      * Sets a callback that is called when the write buffer becomes empty.
-     *
-     * @return void
      */
     public function onEmpty(?callable $onEmpty = null)
     {
-        $this->onEmpty = null !== $onEmpty ? $onEmpty(...) : null;
+        $this->onEmpty = $onEmpty;
     }
 
     /**
@@ -41,24 +40,20 @@ class InputStream implements \IteratorAggregate
      *
      * @param resource|string|int|float|bool|\Traversable|null $input The input to append as scalar,
      *                                                                stream resource or \Traversable
-     *
-     * @return void
      */
-    public function write(mixed $input)
+    public function write($input)
     {
         if (null === $input) {
             return;
         }
         if ($this->isClosed()) {
-            throw new RuntimeException(\sprintf('"%s" is closed.', static::class));
+            throw new RuntimeException(sprintf('"%s" is closed.', static::class));
         }
         $this->input[] = ProcessUtils::validateInput(__METHOD__, $input);
     }
 
     /**
      * Closes the write buffer.
-     *
-     * @return void
      */
     public function close()
     {
@@ -67,15 +62,17 @@ class InputStream implements \IteratorAggregate
 
     /**
      * Tells whether the write buffer is closed or not.
-     *
-     * @return bool
      */
     public function isClosed()
     {
         return !$this->open;
     }
 
-    public function getIterator(): \Traversable
+    /**
+     * @return \Traversable<int, string>
+     */
+    #[\ReturnTypeWillChange]
+    public function getIterator()
     {
         $this->open = true;
 
