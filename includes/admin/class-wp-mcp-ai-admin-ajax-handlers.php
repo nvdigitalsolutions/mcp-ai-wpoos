@@ -4021,12 +4021,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_get_models_for_provider() {
 			// Verify nonce for security.
 			// Accept nonce from either admin model selector or professional selector widget.
-			$nonce_actions = array( 'wp-mcp-ai-model-selector', 'wp-mcp-ai-professional-selector' );
-			$nonce_valid   = false;
+			$nonce_actions    = array( 'wp-mcp-ai-model-selector', 'wp-mcp-ai-professional-selector' );
+			$nonce_valid      = false;
+			$matched_nonce    = '';
 
 			foreach ( $nonce_actions as $nonce_action ) {
 				if ( check_ajax_referer( $nonce_action, 'nonce', false ) ) {
-					$nonce_valid = true;
+					$nonce_valid   = true;
+					$matched_nonce = $nonce_action;
 					break;
 				}
 			}
@@ -4035,8 +4037,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
-			// Check user capabilities.
-			if ( ! current_user_can( 'edit_posts' ) ) {
+
+			// Check user capabilities only for admin model selector requests.
+			// Professional selector requests may come from frontend users who
+			// don't have edit_posts (e.g., subscribers). The professional
+			// selector nonce is already scoped to the widget render and doesn't
+			// expose sensitive operations.
+			if ( 'wp-mcp-ai-model-selector' === $matched_nonce && ! current_user_can( 'edit_posts' ) ) {
 				wp_send_json_error(
 					array(
 						'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ),

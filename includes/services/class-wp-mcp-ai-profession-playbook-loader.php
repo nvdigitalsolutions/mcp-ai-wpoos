@@ -144,6 +144,15 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 	 * @return string Complete playbook content in plain text (UTF-8).
 	 */
 	public function build_playbook( $profession_post_id ) {
+		// Ensure the CPT class with its meta constants is available.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			if ( file_exists( WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+			} else {
+				return '';
+			}
+		}
+
 		// Get profession data.
 		$profession = get_post( $profession_post_id );
 

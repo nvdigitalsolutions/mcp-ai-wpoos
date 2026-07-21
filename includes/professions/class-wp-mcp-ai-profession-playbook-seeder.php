@@ -624,11 +624,30 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 				break;
 			}
 
+			// Prime post meta cache for the batch so build_playbook()
+			// and find_existing_playbook_attachment() don't incur
+			// individual DB queries per meta key per profession.
+			$batch_ids = wp_list_pluck( $professions, 'ID' );
+			update_meta_cache( 'post', $batch_ids );
+
 			foreach ( $professions as $profession ) {
-				self::sync_profession_playbook( $profession, $loader, $force );
+				try {
+					self::sync_profession_playbook( $profession, $loader, $force );
+				} catch ( \Throwable $e ) {
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger.
+						error_log(
+							'WP_MCP_AI: Playbook sync failed for profession ' .
+							( $profession->post_name ?? 'unknown' ) . ': ' . $e->getMessage()
+						);
+					}
+				}
 			}
 
 			$offset += $batch_size;
+
+			// Free memory after each batch.
+			unset( $professions, $batch_ids );
 
 			// Prevent PHP timeout on very large profession sets.
 			if ( $batch > 0 && 0 === $batch % 10 ) {
