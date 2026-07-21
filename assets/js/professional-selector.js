@@ -315,12 +315,30 @@
 		createChatInterface: function($container, state, $chatWrapper) {
 			const config = $container.data('selector-config');
 
-			// Use the HMAC-signed policy token from server-side config
-			// instead of constructing shortcode attributes client-side.
-			// This prevents injection of unauthorized attributes.
-			const policyToken = config.policyToken || '';
+			// Build shortcode attributes.
+			let shortcodeAtts = 'assistant="' + state.assistant + '" profession="' + state.professional + '"';
+			
+			if (config.allowGuests) {
+				shortcodeAtts += ' allow_guests="true"';
+			}
+			
+			if (!config.saveTranscript) {
+				shortcodeAtts += ' save_transcript="false"';
+			}
+			
+			if (config.enableStreaming) {
+				shortcodeAtts += ' enable_streaming="true"';
+			}
+			
+			if (config.allowSensitiveTools) {
+				shortcodeAtts += ' allow_sensitive_tools="true"';
+			}
+			
+			if (config.template && config.template !== 'classic') {
+				shortcodeAtts += ' template="' + config.template + '"';
+			}
 
-				// Store provider, model, and temperature overrides in window for the session
+			// Store provider, model, and temperature overrides in window for the session
 			window.wpMcpAiProfessionalOverrides = window.wpMcpAiProfessionalOverrides || {};
 			window.wpMcpAiProfessionalOverrides[state.professional] = {
 				provider: state.provider,
@@ -339,7 +357,7 @@
 					provider: state.provider,
 					model: state.model,
 					temperature: state.temperature,
-					policy_token: policyToken
+					shortcode_atts: shortcodeAtts
 				},
 				success: function(response) {
 					if (response.success && response.data.html) {
@@ -382,13 +400,19 @@
 						// Initialize event handlers for the dynamically inserted chat interface
 						ProfessionalSelector.initializeChatInterface($chatWrapper);
 					} else {
-							// Fallback: Show error message since we can't render the chat.
-							ProfessionalSelector.showError($container, wpMcpAiProfessionalSelector.strings.errorLoading);
-						}
-					},
-					error: function() {
-						// Fallback: Show error message.
-						ProfessionalSelector.showError($container, wpMcpAiProfessionalSelector.strings.errorLoading);
+						// Fallback: Use the shortcode directly
+						const shortcode = '[mcp_ai_chat ' + shortcodeAtts + ']';
+						const $placeholder = $('<div class="wp-mcp-ai-professional-selector__chat-placeholder"></div>');
+						$placeholder.text( shortcode );
+						$chatWrapper.empty().append( $placeholder );
+					}
+				},
+				error: function() {
+					// Fallback: Use the shortcode directly
+					const shortcode = '[mcp_ai_chat ' + shortcodeAtts + ']';
+					const $placeholder = $('<div class="wp-mcp-ai-professional-selector__chat-placeholder"></div>');
+					$placeholder.text( shortcode );
+					$chatWrapper.empty().append( $placeholder );
 				}
 			});
 		},

@@ -64,16 +64,10 @@ class WP_MCP_AI_Validator_Service {
 	 * Constructor.
 	 */
 	private function __construct() {
-		$builder = Validation::createValidatorBuilder()
-			->setTranslator( new WP_MCP_AI_Identity_Translator() );
-
-		// enableAttributeMapping() was added in Symfony 6.1.
-		// Symfony 5.4 does not have this method, so guard with method_exists.
-		if ( method_exists( $builder, 'enableAttributeMapping' ) ) {
-			$builder->enableAttributeMapping();
-		}
-
-		$this->validator = $builder->getValidator();
+		$this->validator = Validation::createValidatorBuilder()
+			->enableAttributeMapping()
+			->setTranslator( new WP_MCP_AI_Identity_Translator() )
+			->getValidator();
 	}
 
 	/**
@@ -101,14 +95,10 @@ class WP_MCP_AI_Validator_Service {
 	 * @return void
 	 */
 	public function __wakeup() {
-		$builder = Validation::createValidatorBuilder()
-			->setTranslator( new WP_MCP_AI_Identity_Translator() );
-
-		if ( method_exists( $builder, 'enableAttributeMapping' ) ) {
-			$builder->enableAttributeMapping();
-		}
-
-		$this->validator = $builder->getValidator();
+		$this->validator = Validation::createValidatorBuilder()
+			->enableAttributeMapping()
+			->setTranslator( new WP_MCP_AI_Identity_Translator() )
+			->getValidator();
 	}
 
 	/**

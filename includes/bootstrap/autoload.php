@@ -76,16 +76,13 @@ if ( $has_dev_deps && ! $putenv_available ) {
 		function ( $class_name ) {
 			// Map of production class prefixes to their paths (from composer's autoload_psr4.php).
 			$prefix_map = array(
-
+				'Rahul900day\\Tiktoken\\'           => 'vendor/rahul900day/tiktoken-php/src/',
 				'Symfony\\Contracts\\Service\\'     => 'vendor/symfony/service-contracts/',
 				'Symfony\\Contracts\\HttpClient\\'  => 'vendor/symfony/http-client-contracts/',
 				'Symfony\\Contracts\\Cache\\'       => 'vendor/symfony/cache-contracts/',
 				'Symfony\\Component\\VarExporter\\' => 'vendor/symfony/var-exporter/',
 				'Symfony\\Component\\HttpClient\\'  => 'vendor/symfony/http-client/',
 				'Symfony\\Component\\Filesystem\\'  => 'vendor/symfony/filesystem/',
-				'Symfony\\Component\\Process\\'     => 'vendor/symfony/process/',
-				'Symfony\\Component\\Validator\\'   => 'vendor/symfony/validator/',
-				'Symfony\\Contracts\\Translation\\' => 'vendor/symfony/translation-contracts/',
 				'Symfony\\Component\\Cache\\'       => 'vendor/symfony/cache/',
 				'Nyholm\\Psr7\\'                    => 'vendor/nyholm/psr7/src/',
 				'Psr\\Log\\'                        => 'vendor/psr/log/src/',
@@ -93,7 +90,7 @@ if ( $has_dev_deps && ! $putenv_available ) {
 				'Psr\\Http\\Client\\'               => 'vendor/psr/http-client/src/',
 				'Psr\\Container\\'                  => 'vendor/psr/container/src/',
 				'Psr\\Cache\\'                      => 'vendor/psr/cache/src/',
-
+				'Http\\Discovery\\'                 => 'vendor/php-http/discovery/src/',
 			);
 
 			foreach ( $prefix_map as $prefix => $base_dir ) {

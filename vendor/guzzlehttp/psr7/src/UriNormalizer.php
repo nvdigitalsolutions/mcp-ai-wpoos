@@ -150,13 +150,7 @@ final class UriNormalizer
         }
 
         if ($flags & self::REMOVE_DUPLICATE_SLASHES) {
-            $path = preg_replace('#//++#', '/', $uri->getPath());
-
-            if ($path === null) {
-                throw new \RuntimeException('Unable to remove duplicate slashes from URI path: '.preg_last_error_msg());
-            }
-
-            $uri = $uri->withPath($path);
+            $uri = $uri->withPath(preg_replace('#//++#', '/', $uri->getPath()));
         }
 
         if ($flags & self::SORT_QUERY_PARAMETERS && $uri->getQuery() !== '') {
@@ -192,7 +186,7 @@ final class UriNormalizer
         $regex = '/(?:%[A-Fa-f0-9]{2})++/';
 
         $callback = function (array $match): string {
-            return Utils::asciiToUpper($match[0]);
+            return strtoupper($match[0]);
         };
 
         return $uri
@@ -223,7 +217,7 @@ final class UriNormalizer
         $normalized = preg_replace_callback($regex, $callback, $component);
 
         if ($normalized === null) {
-            throw new \RuntimeException('Unable to normalize URI component percent-encoding: '.preg_last_error_msg());
+            throw new \RuntimeException('Unable to normalize URI component percent-encoding');
         }
 
         return $normalized;

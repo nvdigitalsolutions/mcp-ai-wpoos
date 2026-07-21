@@ -40,14 +40,12 @@ class Request implements RequestInterface
         string $version = '1.1'
     ) {
         $this->assertMethod($method);
-        $this->assertProtocolVersion($version);
-
         if (!$uri instanceof UriInterface) {
             $uri = new Uri($uri);
         }
 
         self::warnOnMethodCasingChange($method);
-        $this->method = Utils::asciiToUpper($method);
+        $this->method = strtoupper($method);
         $this->uri = $uri;
         $this->setHeaders($headers);
         $this->protocol = $version;
@@ -80,13 +78,7 @@ class Request implements RequestInterface
 
     public function withRequestTarget($requestTarget): RequestInterface
     {
-        $hasWhitespace = preg_match('#\s#', $requestTarget);
-
-        if ($hasWhitespace === false) {
-            throw new \RuntimeException('Unable to validate request target: '.preg_last_error_msg());
-        }
-
-        if ($hasWhitespace === 1) {
+        if (preg_match('#\s#', $requestTarget)) {
             throw new InvalidArgumentException(
                 'Invalid request target provided; cannot contain whitespace'
             );
@@ -108,7 +100,7 @@ class Request implements RequestInterface
         $this->assertMethod($method);
         self::warnOnMethodCasingChange($method);
         $new = clone $this;
-        $new->method = Utils::asciiToUpper($method);
+        $new->method = strtoupper($method);
 
         return $new;
     }
@@ -178,13 +170,11 @@ class Request implements RequestInterface
         if (!is_string($method) || $method === '') {
             throw new InvalidArgumentException('Method must be a non-empty string.');
         }
-
-        $this->assertNoLineSeparators($method, 'Method');
     }
 
     private static function warnOnMethodCasingChange(string $method): void
     {
-        if ($method !== Utils::asciiToUpper($method)) {
+        if ($method !== strtoupper($method)) {
             \trigger_deprecation(
                 'guzzlehttp/psr7',
                 '2.11',

@@ -149,7 +149,7 @@ jobs:
           sed -i "s/Version: .*/Version: ${VERSION}/" mcp-ai-wpoos.php
           
           # Update version constant
-          sed -i "s/define( 'WP_MCP_AI_VERSION', '.*' );/define( 'WP_MCP_AI_VERSION', '\${VERSION}' );/" includes/bootstrap/constants.php
+          sed -i "s/define( 'WP_MCP_AI_VERSION', '.*' );/define( 'WP_MCP_AI_VERSION', '${VERSION}' );/" mcp-ai-wpoos.php
           
           # Update version in readme.txt
           sed -i "s/Stable tag: .*/Stable tag: ${VERSION}/" readme.txt
@@ -158,7 +158,7 @@ jobs:
           
           # Verify updates
           grep "Version:" mcp-ai-wpoos.php
-          grep "WP_MCP_AI_VERSION" includes/bootstrap/constants.php
+          grep "WP_MCP_AI_VERSION" mcp-ai-wpoos.php
           grep "Stable tag:" readme.txt
 
       - name: Create plugin directory structures (base-only + full)

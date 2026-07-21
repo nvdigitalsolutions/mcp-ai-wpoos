@@ -307,20 +307,6 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		?>
 		<script type="application/json" data-selector-config="<?php echo esc_attr( $instance_id ); ?>">
 		<?php
-		// Build an HMAC-signed policy token so the AJAX endpoint can verify
-		// that shortcode attributes haven't been tampered with by the client.
-		$policy = array(
-			'assistant'             => $assistant,
-			'allow_guests'          => wp_validate_boolean( $atts['allow_guests'] ),
-			'save_transcript'       => wp_validate_boolean( $atts['save_transcript'] ),
-			'enable_streaming'      => wp_validate_boolean( $atts['enable_streaming'] ),
-			'allow_sensitive_tools' => wp_validate_boolean( $atts['allow_sensitive_tools'] ),
-			'template'              => sanitize_key( $atts['template'] ),
-			'exp'                   => time() + HOUR_IN_SECONDS,
-		);
-		$policy_json  = wp_json_encode( $policy );
-		$policy_token = base64_encode( $policy_json . '|' . wp_hash( $policy_json ) );
-
 		echo wp_json_encode(
 			array(
 				'instanceId'          => $instance_id,
@@ -330,7 +316,6 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 				'allowSensitiveTools' => wp_validate_boolean( $atts['allow_sensitive_tools'] ),
 				'template'            => sanitize_key( $atts['template'] ),
 				'showTemperature'     => $show_temperature,
-				'policyToken'         => $policy_token,
 			)
 		);
 		?>
@@ -528,84 +513,26 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	/**
 	 * AJAX handler to render the professional chat shortcode.
 	 *
-	 * Accepts an HMAC-signed policy token (generated server-side during
-	 * shortcode render) instead of raw client-controlled shortcode attributes.
-	 * This prevents attackers from injecting arbitrary shortcode attributes
-	 * such as allow_sensitive_tools="true" or allow_guests="true".
-	 *
-	 * The policy token is verified against wp_hash(), checked for expiry,
-	 * and then used to reconstruct the shortcode attributes server-side.
-	 * Provider, model, and temperature are accepted from the client since
-	 * those are user-selected values, not server-controlled policy.
+	 * This handler processes the [mcp_ai_chat] shortcode with the selected
+	 * professional configuration and returns the rendered HTML along with
+	 * the JavaScript configuration object needed for initialization.
 	 */
 	public function handle_render_professional_chat() {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
 		wp_mcp_ai_check_ajax_rate_limit( 'prof_render', 10 );
 
-		// Read the HMAC-signed policy token (replaces raw shortcode_atts).
-		$policy_token = isset( $_POST['policy_token'] )
-			? sanitize_text_field( wp_unslash( $_POST['policy_token'] ) )
-			: '';
+		// Get the shortcode attributes from the request.
+		// The attributes are pre-constructed in JavaScript with controlled values,.
+		// so we just need to remove any potential HTML/JS injection attempts.
+		$shortcode_atts = isset( $_POST['shortcode_atts'] ) ? sanitize_text_field( wp_unslash( $_POST['shortcode_atts'] ) ) : '';
 
-		if ( empty( $policy_token ) ) {
+		if ( empty( $shortcode_atts ) ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'Missing policy token.', 'mcp-ai-wpoos' ),
+					'message' => __( 'Invalid shortcode attributes.', 'mcp-ai-wpoos' ),
 				)
 			);
 			return;
-		}
-
-		// Decode and verify the HMAC-signed policy.
-		$decoded  = base64_decode( $policy_token, true );
-		$policy   = null;
-
-		if ( false !== $decoded ) {
-			$parts = explode( '|', $decoded, 2 );
-			if ( 2 === count( $parts ) ) {
-				$payload_json  = $parts[0];
-				$hash_received = $parts[1];
-				$hash_expected = wp_hash( $payload_json );
-
-				if ( hash_equals( $hash_expected, $hash_received ) ) {
-					$payload = json_decode( $payload_json, true );
-					if ( is_array( $payload ) && isset( $payload['exp'] ) && $payload['exp'] > time() ) {
-						$policy = $payload;
-					}
-				}
-			}
-		}
-
-		if ( null === $policy ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'Invalid or expired policy token.', 'mcp-ai-wpoos' ),
-				)
-			);
-			return;
-		}
-
-		// Reconstruct shortcode attributes from the verified policy.
-		$shortcode_atts = 'assistant="' . esc_attr( $policy['assistant'] ) . '"';
-
-		if ( ! empty( $policy['allow_guests'] ) ) {
-			$shortcode_atts .= ' allow_guests="true"';
-		}
-
-		if ( empty( $policy['save_transcript'] ) ) {
-			$shortcode_atts .= ' save_transcript="false"';
-		}
-
-		if ( ! empty( $policy['enable_streaming'] ) ) {
-			$shortcode_atts .= ' enable_streaming="true"';
-		}
-
-		if ( ! empty( $policy['allow_sensitive_tools'] ) ) {
-			$shortcode_atts .= ' allow_sensitive_tools="true"';
-		}
-
-		if ( ! empty( $policy['template'] ) && 'classic' !== $policy['template'] ) {
-			$shortcode_atts .= ' template="' . esc_attr( $policy['template'] ) . '"';
 		}
 
 		// Build the complete shortcode string.

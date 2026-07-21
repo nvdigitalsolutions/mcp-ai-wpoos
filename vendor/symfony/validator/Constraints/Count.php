@@ -28,12 +28,17 @@ class Count extends Constraint
     public const NOT_EQUAL_COUNT_ERROR = '9fe5d43f-3784-4ece-a0e1-473fc02dadbc';
     public const NOT_DIVISIBLE_BY_ERROR = DivisibleBy::NOT_DIVISIBLE_BY;
 
-    protected static $errorNames = [
+    protected const ERROR_NAMES = [
         self::TOO_FEW_ERROR => 'TOO_FEW_ERROR',
         self::TOO_MANY_ERROR => 'TOO_MANY_ERROR',
         self::NOT_EQUAL_COUNT_ERROR => 'NOT_EQUAL_COUNT_ERROR',
         self::NOT_DIVISIBLE_BY_ERROR => 'NOT_DIVISIBLE_BY_ERROR',
     ];
+
+    /**
+     * @deprecated since Symfony 6.1, use const ERROR_NAMES instead
+     */
+    protected static $errorNames = self::ERROR_NAMES;
 
     public $minMessage = 'This collection should contain {{ limit }} element or more.|This collection should contain {{ limit }} elements or more.';
     public $maxMessage = 'This collection should contain {{ limit }} element or less.|This collection should contain {{ limit }} elements or less.';
@@ -43,13 +48,8 @@ class Count extends Constraint
     public $max;
     public $divisibleBy;
 
-    /**
-     * {@inheritdoc}
-     *
-     * @param int|array|null $exactly The expected exact count or a set of options
-     */
     public function __construct(
-        $exactly = null,
+        int|array|null $exactly = null,
         ?int $min = null,
         ?int $max = null,
         ?int $divisibleBy = null,
@@ -58,16 +58,16 @@ class Count extends Constraint
         ?string $maxMessage = null,
         ?string $divisibleByMessage = null,
         ?array $groups = null,
-        $payload = null,
-        array $options = []
+        mixed $payload = null,
+        array $options = [],
     ) {
         if (\is_array($exactly)) {
             $options = array_merge($exactly, $options);
             $exactly = $options['value'] ?? null;
         }
 
-        $min = $min ?? $options['min'] ?? null;
-        $max = $max ?? $options['max'] ?? null;
+        $min ??= $options['min'] ?? null;
+        $max ??= $options['max'] ?? null;
 
         unset($options['value'], $options['min'], $options['max']);
 
@@ -86,7 +86,7 @@ class Count extends Constraint
         $this->divisibleByMessage = $divisibleByMessage ?? $this->divisibleByMessage;
 
         if (null === $this->min && null === $this->max && null === $this->divisibleBy) {
-            throw new MissingOptionsException(sprintf('Either option "min", "max" or "divisibleBy" must be given for constraint "%s".', __CLASS__), ['min', 'max', 'divisibleBy']);
+            throw new MissingOptionsException(\sprintf('Either option "min", "max" or "divisibleBy" must be given for constraint "%s".', __CLASS__), ['min', 'max', 'divisibleBy']);
         }
     }
 }

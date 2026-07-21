@@ -68,13 +68,7 @@ final class Rfc7230
 
     private static function isValidHostHeaderHost(string $host): bool
     {
-        $invalidHost = preg_match('/[\x00-\x20\x7F\/\?#@\\\\]/', $host);
-
-        if ($invalidHost === false) {
-            return false;
-        }
-
-        if ($invalidHost === 1) {
+        if (preg_match('/[\x00-\x20\x7F\/\?#@\\\\]/', $host)) {
             return false;
         }
 
