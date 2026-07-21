@@ -46,11 +46,30 @@ class WP_MCP_AI_REST_Health {
 	/**
 	 * Health check callback.
 	 *
-	 * Returns a JSON response with the status of critical subsystems.
+	 * Unauthenticated requests receive a lightweight liveness probe only
+	 * ('status' => 'ok'/'degraded'). Detailed subsystem checks require a
+	 * valid WordPress nonce or application password. This prevents information
+	 * leakage about the server environment to unauthenticated callers.
 	 *
+	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response
 	 */
-	public static function health_check() {
+	public static function health_check( $request = null ) {
+		$is_authenticated = is_user_logged_in() && current_user_can( 'manage_options' );
+
+		if ( ! $is_authenticated ) {
+			// Lightweight liveness check — no server details exposed.
+			global $wpdb;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$db_ok = ( '1' === (string) $wpdb->get_var( 'SELECT 1' ) );
+
+			return new WP_REST_Response(
+				array( 'status' => $db_ok ? 'ok' : 'degraded' ),
+				$db_ok ? 200 : 503
+			);
+		}
+
 		$checks = array(
 			'database' => self::check_database(),
 			'php'      => self::check_php(),

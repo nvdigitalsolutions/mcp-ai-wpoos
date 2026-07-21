@@ -26,14 +26,9 @@ class Language extends Constraint
 {
     public const NO_SUCH_LANGUAGE_ERROR = 'ee65fec4-9a20-4202-9f39-ca558cd7bdf7';
 
-    protected const ERROR_NAMES = [
+    protected static $errorNames = [
         self::NO_SUCH_LANGUAGE_ERROR => 'NO_SUCH_LANGUAGE_ERROR',
     ];
-
-    /**
-     * @deprecated since Symfony 6.1, use const ERROR_NAMES instead
-     */
-    protected static $errorNames = self::ERROR_NAMES;
 
     public $message = 'This value is not a valid language.';
     public $alpha3 = false;
@@ -43,7 +38,7 @@ class Language extends Constraint
         ?string $message = null,
         ?bool $alpha3 = null,
         ?array $groups = null,
-        mixed $payload = null,
+        $payload = null
     ) {
         if (!class_exists(Languages::class)) {
             throw new LogicException('The Intl component is required to use the Language constraint. Try running "composer require symfony/intl".');

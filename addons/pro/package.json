@@ -1,7 +1,7 @@
 {
 	"name": "mcp-ai-wpoos-pro",
-	"version": "1.1.9",
-	"description": "Pro Add-on for NV Digital Open Operator System (oOS) - Enhanced Toolkits with Document Generation, Image Processing, Math Rendering, Calendar Export, Data Visualization, Code Formatting, Email Templates, CRM & Email Marketing, Contact Management, Geospatial Analysis, Video Processing, E-commerce, Social Media, Analytics, Multilingual Content, and Video Production",
+		"version": "1.1.25",
+		"description": "Pro Add-on for NV Digital Open Operator System (oOS) - Enhanced Toolkits with Document Generation, Image Processing, Math Rendering, Calendar Export, Data Visualization, Code Formatting, Email Templates, CRM & Email Marketing, Contact Management, Geospatial Analysis, Video Processing, E-commerce, Social Media, Analytics, Multilingual Content, and Video Production",
 	"private": true,
 	"scripts": {
 		"postinstall": "node scripts/copy-dependencies.js || echo 'Warning: Dependency copy failed but continuing...'",

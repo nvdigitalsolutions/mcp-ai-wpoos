@@ -24,18 +24,13 @@ class IsFalse extends Constraint
 {
     public const NOT_FALSE_ERROR = 'd53a91b0-def3-426a-83d7-269da7ab4200';
 
-    protected const ERROR_NAMES = [
+    protected static $errorNames = [
         self::NOT_FALSE_ERROR => 'NOT_FALSE_ERROR',
     ];
 
-    /**
-     * @deprecated since Symfony 6.1, use const ERROR_NAMES instead
-     */
-    protected static $errorNames = self::ERROR_NAMES;
-
     public $message = 'This value should be false.';
 
-    public function __construct(?array $options = null, ?string $message = null, ?array $groups = null, mixed $payload = null)
+    public function __construct(?array $options = null, ?string $message = null, ?array $groups = null, $payload = null)
     {
         parent::__construct($options ?? [], $groups, $payload);
 
