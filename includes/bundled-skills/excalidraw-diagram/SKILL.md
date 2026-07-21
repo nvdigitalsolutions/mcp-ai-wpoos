@@ -1,5 +1,4 @@
 ---
-type: Skill
 name: excalidraw-diagram
 description: Generate production-quality Excalidraw architecture diagrams from natural language. Visual structure maps to conceptual structure — fan-out for one-to-many, timelines for sequences, convergence for aggregation. Includes self-validation via Playwright render review.
 license: MIT

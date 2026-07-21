@@ -1,5 +1,4 @@
 ---
-type: Skill
 name: wp-plugin-rewrite-rules
 description: Design and review custom WordPress URL rewrites: add_rewrite_rule, add_rewrite_tag, query_vars, CPT/taxonomy rewrite slugs, add_rewrite_endpoint, soft vs hard flushes, rewrite_rules cache behavior, and the rule that flush_rewrite_rules() must not run on every request. Use for custom pretty URLs, CPT permalink 404s, endpoint rewrites, and code containing flush_rewrite_rules or add_rewrite_rule.
 author: Soczó Kristóf

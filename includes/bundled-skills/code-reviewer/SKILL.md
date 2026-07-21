@@ -1,5 +1,4 @@
 ---
-type: Skill
 name: code-reviewer
 description: Review code for quality, simplicity, and maintainability. Identifies unnecessary abstractions, duplicated logic, oversized functions, missing error handling, and naming issues — then fixes them automatically before presenting the result.
 license: MIT

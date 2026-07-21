@@ -1,5 +1,4 @@
 ---
-type: Skill
 name: ui-ux-pro-max
 description: AI-powered design intelligence with 67 UI styles, 161 color palettes, 57 font pairings, 99 UX guidelines, and 25 chart types across 15+ tech stacks. Generates complete design systems for any product type with industry-specific reasoning rules.
 source: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill

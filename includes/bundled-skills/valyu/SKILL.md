@@ -1,5 +1,4 @@
 ---
-type: Skill
 name: valyu
 description: Search the live web and 36+ specialised data sources including SEC filings, PubMed, ChEMBL, clinical trials, FRED economic indicators, and patent databases. Use when current, authoritative, or paywalled data is required.
 license: MIT

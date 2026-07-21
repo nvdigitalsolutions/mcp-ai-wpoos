@@ -1,5 +1,4 @@
 ---
-type: Skill
 name: wp-action-scheduler
 description: Design and review Action Scheduler jobs in WordPress plugins using Action Scheduler 3.9.x public APIs - async, single, recurring, and cron-expression actions; action_scheduler_init load timing; hook/args/group naming; unique and priority parameters; idempotent callbacks; chunked workloads; activation/deactivation cleanup; WooCommerce-bundled or standalone dependency usage; admin and WP-CLI debugging; queue runner limits; and safe operational troubleshooting. Use when a plugin schedules background jobs with as_enqueue_async_action, as_schedule_single_action, as_schedule_recurring_action, as_schedule_cron_action, as_get_scheduled_actions, or integrates with WooCommerce background queues.
 author: Soczo Kristof

@@ -1,5 +1,4 @@
 ---
-type: Skill
 name: browser-use
 description: Control a headless browser to navigate URLs, click elements, fill forms, extract content from JavaScript-rendered pages, take screenshots, and automate end-to-end web workflows.
 license: MIT

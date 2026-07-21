@@ -1,5 +1,4 @@
 ---
-type: Skill
 name: planetscale
 description: Design schemas and write queries for PlanetScale serverless MySQL using branch-based workflows. Ensures index coverage, avoids foreign key anti-patterns, and treats every schema change as a reviewable, reversible deploy request.
 license: MIT
