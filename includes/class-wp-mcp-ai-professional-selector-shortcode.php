@@ -45,8 +45,10 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		add_action( 'wp_ajax_wp_mcp_ai_get_professional_config', array( $this, 'handle_get_professional_config' ) );
 		add_action( 'wp_ajax_nopriv_wp_mcp_ai_get_professional_config', array( $this, 'handle_get_professional_config' ) );
 
-		// Add hooks for model selector (both logged-in and frontend access).
-		add_action( 'wp_ajax_wp_mcp_ai_get_models_for_provider', array( $this, 'handle_get_models_for_provider' ) );
+		// Model selector: only hook nopriv (frontend/guest). The wp_ajax_ variant
+		// is handled by WP_MCP_AI_Admin_AJAX_Handlers which accepts both the admin
+		// model selector nonce and the professional selector nonce. Hooking both
+		// here and in the admin handler creates a duplicate-handler race condition.
 		add_action( 'wp_ajax_nopriv_wp_mcp_ai_get_models_for_provider', array( $this, 'handle_get_models_for_provider' ) );
 
 		// Add hooks for rendering professional chat shortcode.
@@ -482,6 +484,13 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 	/**
 	 * AJAX handler to get models for a provider (nopriv version for frontend).
+	 *
+	 * NOTE: This handler is intentionally registered here for nopriv (frontend/guest)
+	 * requests. The admin (logged-in) variant of wp_ajax_wp_mcp_ai_get_models_for_provider
+	 * is handled by WP_MCP_AI_Admin_AJAX_Handlers which accepts both the admin model
+	 * selector nonce and the professional selector nonce and checks edit_posts capability.
+	 * To avoid duplicate handlers running on the same hook, this class only hooks
+	 * wp_ajax_nopriv_*, leaving wp_ajax_* to the admin handler.
 	 */
 	public function handle_get_models_for_provider() {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
