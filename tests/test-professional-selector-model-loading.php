@@ -79,9 +79,14 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
-	 * Test that both hooks point to the same handler in the shortcode class.
-	 */
-	public function test_both_hooks_use_shortcode_handler() {
+		 * Test that the wp_ajax hook has a valid handler (admin handler) and
+		 * the wp_ajax_nopriv hook uses the shortcode handler.
+		 *
+		 * After PR #5731, the wp_ajax_ variant is handled by
+		 * WP_MCP_AI_Admin_AJAX_Handlers (which accepts both nonces),
+		 * while wp_ajax_nopriv_ remains with the professional selector shortcode.
+		 */
+	public function test_both_hooks_have_valid_handlers() {
 		global $wp_filter;
 
 		$ajax_hook        = 'wp_ajax_wp_mcp_ai_get_models_for_provider';
@@ -99,39 +104,22 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		$this->assertNotEmpty( $ajax_callbacks );
 		$this->assertNotEmpty( $ajax_nopriv_callbacks );
 
-		// Find the professional selector shortcode handler in each.
-		$found_ajax        = false;
-		$found_ajax_nopriv = false;
-
-		foreach ( $ajax_callbacks as $priority => $callbacks ) {
-			foreach ( $callbacks as $callback ) {
-				if ( is_array( $callback['function'] ) &&
-					$callback['function'][0] instanceof WP_MCP_AI_Professional_Selector_Shortcode &&
-					'handle_get_models_for_provider' === $callback['function'][1] ) {
-					$found_ajax = true;
-					break 2;
-				}
-			}
-		}
-
+		// wp_ajax_nopriv_ must still use the shortcode handler.
+		$found_nopriv = false;
 		foreach ( $ajax_nopriv_callbacks as $priority => $callbacks ) {
 			foreach ( $callbacks as $callback ) {
 				if ( is_array( $callback['function'] ) &&
 					$callback['function'][0] instanceof WP_MCP_AI_Professional_Selector_Shortcode &&
 					'handle_get_models_for_provider' === $callback['function'][1] ) {
-					$found_ajax_nopriv = true;
+					$found_nopriv = true;
 					break 2;
 				}
 			}
 		}
 
 		$this->assertTrue(
-			$found_ajax,
-			'Professional selector shortcode handler should be registered for logged-in users'
-		);
-		$this->assertTrue(
-			$found_ajax_nopriv,
-			'Professional selector shortcode handler should be registered for guests'
+			$found_nopriv,
+			'Professional selector shortcode handler should be registered for guests (nopriv)'
 		);
 	}
 

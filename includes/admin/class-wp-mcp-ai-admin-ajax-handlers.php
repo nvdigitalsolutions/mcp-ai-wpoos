@@ -3622,7 +3622,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 						),
 					)
 				);
-			} catch ( Exception $e ) {
+			} catch ( \Throwable $e ) {
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -3662,10 +3662,40 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$force = isset( $_POST['force'] ) && 'true' === sanitize_key( wp_unslash( $_POST['force'] ) );
 
 			// Sync all playbooks.
-			WP_MCP_AI_Profession_Playbook_Seeder::sync_all( $force );
+			$result = WP_MCP_AI_Profession_Playbook_Seeder::sync_all( $force );
 
 			// Update last sync timestamp.
 			update_option( 'wp_mcp_ai_playbooks_last_sync', time() );
+
+			$synced = isset( $result['synced'] ) ? absint( $result['synced'] ) : 0;
+			$errors = isset( $result['errors'] ) ? (array) $result['errors'] : array();
+
+			if ( ! empty( $errors ) ) {
+				$message = sprintf(
+					/* translators: 1: Number of professions synced, 2: Number of errors */
+					__( 'Sync completed with errors. Synced: %1$d, Failed: %2$d.', 'mcp-ai-wpoos' ),
+					$synced,
+					count( $errors )
+				);
+				// Limit error details to first 10 to avoid huge responses.
+				$error_details = array_slice( $errors, 0, 10 );
+				if ( count( $errors ) > 10 ) {
+					$error_details[] = sprintf(
+						/* translators: %d: Number of additional errors not shown */
+						__( '... and %d more errors.', 'mcp-ai-wpoos' ),
+						count( $errors ) - 10
+					);
+				}
+
+				wp_send_json_error(
+					array(
+						'message' => $message,
+						'synced'  => $synced,
+						'errors'  => $error_details,
+					)
+				);
+				return;
+			}
 
 			$message = $force
 				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'mcp-ai-wpoos' )
@@ -3674,6 +3704,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => $message,
+					'synced'  => $synced,
 				)
 			);
 		}

@@ -50,6 +50,18 @@ class WP_MCP_AI_Model_Service {
 		);
 
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		// Resolve API key from all available sources (settings, credentials,
+		// environment variables, PHP constants) via the Credential_Resolver.
+		// This prevents "No models available" when the key is stored outside
+		// the main settings option (e.g., wp_mcp_ai_credentials, env var, constant).
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			$resolved_key = WP_MCP_AI_Credential_Resolver::get_api_key( $provider );
+			if ( null !== $resolved_key && empty( $settings[ "{$provider}_api_key" ] ) ) {
+				$settings[ "{$provider}_api_key" ] = $resolved_key;
+			}
+		}
+
 		$models   = array();
 
 		// Extract capability requirements.
