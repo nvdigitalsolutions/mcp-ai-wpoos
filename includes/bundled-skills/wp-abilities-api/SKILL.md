@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-abilities-api
 description: Register WordPress Abilities: machine-readable plugin operations with JSON Schema contracts, required permission callbacks, optional REST exposure, and AI/MCP-friendly discovery. Covers categories, wp_register_ability, WP_Ability::execute, REST run endpoints, meta.show_in_rest, annotations, and Ability vs REST route vs custom hook decisions. Use when exposing plugin functionality to agents, admin JS, external tools, or reviewing AI integration code.
 author: Soczó Kristóf

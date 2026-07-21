@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-plugin-dto
 description: Design and review native DTOs in WordPress plugins without requiring better-data - immutable data carriers, explicit from_array hydration, strict coercion instead of unchecked casts, WP_Error validation failures, sensitive-field discipline, nested DTO arrays, and clear separation from repositories, WP models, presenters, REST controllers, and HTML views. Use when a plugin introduces FooDto, request DTOs, settings DTOs, value objects, admin-row data shapes, REST response source objects, or when reviewing code that passes raw arrays, stdClass, WP_Post, WC_Order, $_POST, post meta, or option arrays through multiple layers. Mentions better-data only as an optional higher-level library; this skill is for native implementations.
 author: Soczo Kristof
