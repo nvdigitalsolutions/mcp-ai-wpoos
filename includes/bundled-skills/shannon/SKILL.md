@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: shannon
 description: Autonomous AI security pen testing. Executes real exploits against web applications to find SQL injection, XSS, SSRF, authentication flaws, and IDOR vulnerabilities. Reports only confirmed, reproducible findings — no false positives.
 license: MIT

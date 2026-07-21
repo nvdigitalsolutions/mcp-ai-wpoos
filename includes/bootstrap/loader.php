@@ -337,6 +337,7 @@ require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-otel-span-expor
 WP_MCP_AI_Otel_Span_Exporter::register();
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
 require_once WP_MCP_AI_PATH . 'includes/paper-store/paper-store-init.php';
+require_once WP_MCP_AI_PATH . 'includes/okf/okf-init.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/professions-init.php';
 require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
 

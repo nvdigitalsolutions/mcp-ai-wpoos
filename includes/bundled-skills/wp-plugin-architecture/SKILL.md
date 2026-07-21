@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-plugin-architecture
 description: Designs and reviews the internal architecture of a WordPress plugin — folder layout, PSR-4 one-class-per-file discipline, Schema/Constants placement, composition-root vs singleton decisions, conditional asset enqueueing, script config via wp_add_inline_script, and prefixed custom-hook naming. Use when scaffolding includes/src, reviewing class organization, asset enqueue code, repeated strings, or "should I make this a singleton" decisions.
 author: Soczó Kristóf
