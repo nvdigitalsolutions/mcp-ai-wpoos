@@ -1,5 +1,4 @@
 ---
-type: Skill
 name: wp-html-api
 description: Use WordPress' HTML API for safe server-side HTML inspection and mutation instead of regex, fragile string replacement, or DOMDocument. Covers WP_HTML_Tag_Processor, WP_HTML_Processor, set_attribute, remove_attribute, add_class, remove_class, set_modifiable_text, serialize_token, custom data attribute name mapping, and WP 6.9 behavior where attribute/text setters escape character references. Use when plugin code modifies rendered HTML, block output, shortcodes, content filters, widget markup, email fragments, or user-provided HTML.
 author: Soczó Kristóf
