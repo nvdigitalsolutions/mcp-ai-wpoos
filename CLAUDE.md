@@ -364,11 +364,13 @@ Delegation subsystem underwent a major rework for reliability and performance:
 
 Reference: `docs/features/agent-delegation-system.md`.
 
-### Tool Presets System (v1.1.40)
+### Tool Presets System (v1.1.41)
 
 Curated tool groupings organized in a layered hierarchy:
 
 - **Essentials layers** — Base → Essentials → Extended → Specialist. Additive; assigning essentials auto-includes base.
+- **Essentials Internal (v1.1.41)** — now includes 7 read-only knowledge access tools: paper_store_read, paper_store_list, paper_store_search (Paper Store) and okf_read_concept, okf_browse, okf_traverse, okf_search (OKF). All base-tier, no external API deps.
+- **Files & Documents (v1.1.41)** — now includes all 6 OKF tools alongside the 6 Paper Store tools (full CRUD for curated + structured flat-file knowledge).
 - **Deduplication** — within-layer, cross-layer, and assistant-level dedup.
 - **Auto-upgrade** — validated tool variants automatically replace non-validated versions (no duplicate names).
 - **Chips Bar UI** — selected tools shown as clickable chips with +N overflow toggle.

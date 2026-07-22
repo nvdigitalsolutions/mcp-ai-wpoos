@@ -132,6 +132,10 @@ and proper capability checks.
 | `okf_write_concept` | Create or update a concept | `edit_posts` |
 | `okf_delete_concept` | Archive a concept (moves to `.archive/`) | `delete_posts` |
 
+> **Tool Presets:** OKF tools are available in two presets:
+> - **Essentials Internal** — the 4 read tools (okf_read_concept, okf_browse, okf_traverse, okf_search)
+> - **Files & Documents** — all 6 tools (read + write/delete) alongside Paper Store tools
+
 ### Example: Reading a Concept
 
 ```
