@@ -81,7 +81,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'essentials_internal'       => array(
 				'name'        => __( '📦 Essentials — Internal', 'mcp-ai-wpoos' ),
-				'description' => __( 'Core WordPress tools that work without external API keys: content, users, email, agent memory, tasks, projects, events, forms, and charts', 'mcp-ai-wpoos' ),
+				'description' => __( 'Core WordPress tools that work without external API keys: content, users, email, agent memory, knowledge access, tasks, projects, events, forms, and charts', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Content management.
 					'search_content',
@@ -89,6 +89,14 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_recent_posts',
 					'save_post',
 					'create_post',
+					// Knowledge access (Paper Store + OKF — flat-file, no API keys).
+					'paper_store_read',
+					'paper_store_list',
+					'paper_store_search',
+					'okf_read_concept',
+					'okf_browse',
+					'okf_traverse',
+					'okf_search',
 					// Users & system.
 					'get_user_info',
 					// Communication.
