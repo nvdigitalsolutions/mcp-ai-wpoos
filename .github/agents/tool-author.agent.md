@@ -30,6 +30,7 @@ Subsystem-specific (load only when authoring tools):
 **In scope**
 
 - `includes/tools/class-wp-mcp-ai-tool-*.php` — Base tool classes (PHP 7.4+ compatible).
+- `includes/tools/**/class-wp-mcp-ai-tool-*.php` — Base categorized tool classes (e.g. `includes/tools/okf/` for OKF knowledge tools).
 - `addons/pro/includes/tools/**/class-wp-mcp-ai-tool-*.php` — Pro tool classes (PHP 8.1+ allowed).
 - `includes/tools-init.php` — Base tool registration entry, edited only to add a `require_once` for a new Base tool.
 - `addons/pro/includes/tools-init.php` (or equivalent Pro loader) — same, for Pro tools.
@@ -47,7 +48,7 @@ Subsystem-specific (load only when authoring tools):
 
 Invoke this agent when:
 
-- A user asks for a new tool that fits into `includes/tools/` or `addons/pro/includes/tools/`.
+- A user asks for a new tool that fits into `includes/tools/`, `includes/tools/{category}/` (e.g. `includes/tools/okf/`), or `addons/pro/includes/tools/`.
 - A user asks to modify a single existing tool class's behavior, schema, or capability requirements.
 - A user asks to add the missing test file for an existing tool.
 

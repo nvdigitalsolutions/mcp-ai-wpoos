@@ -11,8 +11,8 @@ NV oOS has two distribution modes:
 
 | Mode | Constant | Tools | Description |
 |------|---------|-------|-------------|
-| **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~195 core tools | Open-source, WordPress.org compatible |
-| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,025+ tools (~195 base + ~830+ Pro) | Premium addon with third-party integrations |
+| **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~201 core tools | Open-source, WordPress.org compatible |
+| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,031+ tools (~201 base + ~830+ Pro) | Premium addon with third-party integrations |
 
 ---
 
@@ -95,7 +95,7 @@ if ( class_exists( 'RankMath' ) ) {
 mcp-ai-wpoos.php                    # Main plugin file
 mcp-ai-wpoos-base.php               # Base-only entry point
 includes/
-├── tools/class-wp-mcp-ai-tool-*.php    # ~195 core tools
+├── tools/class-wp-mcp-ai-tool-*.php    # ~201 core tools
 ├── class-wp-mcp-ai-transcript-retention.php  # Transcript retention (base)
 ├── class-wp-mcp-ai-rest.php            # Core REST API
 ├── class-wp-mcp-ai-admin.php           # Core admin

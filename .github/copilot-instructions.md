@@ -24,8 +24,9 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # ~1,025+ total built-in tool implementations (~195 base + ~830+ pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+│   ├── tools/            # ~1,031+ total built-in tool implementations (~201 base + ~830+ pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 │   ├── elementor/        # Elementor widget integrations
+│   ├── okf/              # OKF v0.1 engine (parser, reader, writer)
 │   ├── integrations/     # Third-party plugin integrations
 │   └── crawler/          # Crawl4AI integration
 ├── assets/
@@ -43,6 +44,7 @@ mcp-ai-wpoos/
 - **AI Providers**: OpenAI, Google Gemini, Ollama (local AI)
 - **MCP Protocol**: Server-Sent Events, REST API
 - **Optional Integrations**: JetEngine, WooCommerce, Elementor, Rank Math, WPCode
+- **OKF (Open Knowledge Format)**: Google's v0.1 vendor-neutral knowledge format for curated, deterministic knowledge with 6 MCP tools
 - **Architecture**: Custom Post Types, REST API, Server-Sent Events
 
 ## Development Workflow
@@ -272,8 +274,8 @@ class Test_Feature extends WP_UnitTestCase {
 ### Base Version vs Full Version
 
 The plugin has two modes:
-- **Base Version** (default): ~195 core tools, no third-party dependencies
-- **Full Version**: ~830 tools (~195 base + ~635 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
+- **Base Version** (default): ~201 core tools, no third-party dependencies
+- **Full Version**: ~1,031+ tools (~201 base + ~830+ pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
 
 Control with: `define( 'WP_MCP_AI_BASE_VERSION', true/false );`
 

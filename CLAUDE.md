@@ -50,15 +50,17 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,000+ tools total)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,031+ tools total)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
-├── tools/                              ← base tool implementations (~195 classes; live count is authoritative)
+├── tools/                              ← base tool implementations (~201 classes; live count is authoritative)
+│   ├── okf/                            ← OKF knowledge tools (6 tools)
 ├── services/                           ← 30+ service classes
 ├── admin/                              ← WordPress admin UI
 ├── blueprints/                         ← Unified blueprint installer + import tools
 ├── slash-commands/                     ← /help, /ship, /compact, /context, etc.
 ├── integrations/                       ← JetEngine, Elementor, Auth0
 ├── a2a/                                ← Agent-to-Agent protocol
+├── okf/                                ← OKF engine (parser, reader, writer)
 ├── harness/                            ← LLM Harnessing subsystem (Layers A–H)
 └── interfaces/                         ← PHP interfaces
 addons/pro/
@@ -93,6 +95,9 @@ Every code change must:
 - **Verify nonces**: `check_ajax_referer()` or `wp_verify_nonce()` for state changes
 - **ABSPATH guard**: Every non-root PHP file starts with `if ( ! defined( 'ABSPATH' ) ) { exit; }`
 - **Prepared queries**: Always `$wpdb->prepare()` — never string-concatenate SQL
+- **HMAC-signed policy tokens**: When server-controlled config crosses a client boundary (e.g. shortcode attrs via JS AJAX), sign it with `wp_hash()` + short expiry. Client sends opaque token; server verifies HMAC and expiry. Canonical impl in `class-wp-mcp-ai-professional-selector-shortcode.php`.
+- **Path traversal prevention**: Before recursive filesystem ops, `realpath()` the target and validate containment within the allowed base directory via `strpos()`. Abort + log security event if containment fails.
+- **Admin-post CSRF**: `admin-post.php` endpoints must call `check_admin_referer()` at entry with a per-toolkit nonce action.
 
 ## Third-Party Attribution
 
@@ -171,7 +176,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~195 base tool classes) or `false` (~1,000+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~201 base tool classes) or `false` (~1,031+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -261,6 +266,20 @@ Located in `includes/slash-commands/commands/`.
 ### Paper Store
 
 Flat-file storage layer (`includes/paper-store/`) for structured content management with Markdown+YAML drivers. Provides a lightweight, Git-friendly alternative to CPT-based storage for documentation, knowledge bases, and configuration artifacts. Pro addon (`addons/pro/includes/paper-store/`) adds a Markdown+YAML driver (via `symfony/yaml`), Git sync (`WP_MCP_AI_Pro_Paper_Store_Git_Sync`), admin UI, and import/export tools.
+
+### OKF Engine (Open Knowledge Format v0.1)
+
+Google's vendor-neutral, Apache 2.0-licensed knowledge format (`includes/okf/`) for curated, authoritative knowledge with deterministic link-based navigation. Complementary to the vector store (RAG for unstructured data) and Paper Store (JSON flat-file).
+
+- **Parser** (`WP_MCP_AI_OKF_Parser`) — pure-PHP YAML frontmatter parser for OKF's minimal subset (scalars, lists, kv-pairs). No external YAML dependency.
+- **Reader** (`WP_MCP_AI_OKF_Reader`) — bundle navigation, concept reading, cross-link traversal (up to N hops), and search by type/tag.
+- **Writer** (`WP_MCP_AI_OKF_Writer`) — atomic concept creation/deletion via `WP_MCP_AI_Filesystem_Service`, index.md regeneration, conformance validation per spec §9.
+- **6 MCP tools** in `includes/tools/okf/`: `okf_read_concept`, `okf_browse`, `okf_traverse`, `okf_search`, `okf_write_concept` (`edit_posts`), `okf_delete_concept` (`delete_posts`). Follow the two-gate sanitisation rule and canonical return envelope.
+- **Skill conformance:** All 41 bundled skills (`includes/bundled-skills/`) include `type: Skill` in YAML frontmatter — the single required field for OKF v0.1 conformance.
+- **Bootstrap:** `includes/bootstrap/loader.php` loads `okf-init.php` at priority 32 (after Paper Store at 30).
+- **Bundle root:** `wp-content/uploads/mcp-ai-wpoos/knowledge/` (skill-knowledge, site-knowledge, external-bundles).
+- **Events:** `wp_mcp_ai_okf_bundle_initialized`, `wp_mcp_ai_okf_concept_saved`, `wp_mcp_ai_okf_concept_deleted`.
+- **Reference:** `docs/features/okf-integration.md`.
 
 ### Agent Client Protocol (ACP)
 

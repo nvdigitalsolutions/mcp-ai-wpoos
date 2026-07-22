@@ -58,10 +58,22 @@
 - ✅ **Settings Import/Export Batch (4 PRs).** Credential merge, save key wipe, subtab sanitization, export consistency — all fixed.
 - ✅ **Credential Fixes (2 PRs).** Credential wipe on save. Fatal error for undefined `is_sensitive_setting_key` method.
 - ✅ **Validated Tool Slug Allowlist.** Tool slug matching fixed.
-- ✅ **Phase 8 Pro Toolkit MCP Servers.** 4 new per-toolkit MCP JSON-RPC servers promoted from toolkits (33 total, up from 29): Pro Scheduler (14 tools), FlowHub Inventory Sync (6 tools), Shopify Sync (5 tools), EZuite ERP Sync (6 tools). Shared `ScheduledToolkitServerTrait` for Action Scheduler-backed sync servers. Per-tool scope annotations and default limits in MCP descriptors.
-- ✅ **OAuth 2.0 for MCP Servers.** Full OAuth 2.0 Authorization Server compliant with MCP Authorization Specification 2025-06-18. PKCE flow, hierarchical scopes (`mcp:read`/`mcp:write`), browser-based login, dynamic client registration, and OAuth token management UI. Enables MCP clients (Codex, Claude Desktop, Zed) to authenticate without manual token copying.
-- ✅ **Per-Toolkit MCP Server Settings Fix.** Pro Scheduler MCP tab slug mapping fixed (`pro_schedule`→`pro-scheduler` resolution).
 - 📦 **Versioning** — bumped to **1.1.40** across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative). Provider count: **15** first-class. Addon count: 26.
+
+
+## Released: v1.1.41 — July 2026 ✅
+
+**Release Date:** July 22, 2026
+
+### What was delivered in v1.1.41
+
+- ✅ **OKF Integration (Open Knowledge Format v0.1).** Google vendor-neutral knowledge format. Pure-PHP YAML parser, bundle reader with cross-link traversal, writer with conformance validation. 6 MCP tools: okf_read_concept, okf_browse, okf_traverse, okf_search, okf_write_concept, okf_delete_concept. All 41 bundled skills now OKF v0.1-conformant (type: Skill frontmatter). Bootstrap at priority 32. Zero new Composer dependencies. Proposal 014 implemented. (PR #5719)
+- ✅ **Security Compliance Fixes (11 HIGH/P0).** HMAC-signed policy tokens replace client-controlled shortcode attributes. Health endpoint detailed response gated behind manage_options. ZIP path traversal validation with .txt-only extension allowlist. CSRF nonces on Shopify/EZuite/FlowHub sync admin-post endpoints. Real sha384 SRI hashes for all 6 CDN libraries. Google Chat OIDC bypass replaced with shared-secret token. Autoload fallback map cleanup + version alignment. (PR #5718)
+- ✅ **Playbook Sync Fixes.** Duplicate AJAX handler conflict resolved between professional selector and admin handlers. CPT class guard in playbook chain. Silent sync failure detection with error reporting to admin UI. (PR #5731, #5732)
+- ✅ **Model Provider Credential Resolution.** Model_Service::get_models_for_provider() now uses Credential_Resolver for all 4 key sources (settings, wp_mcp_ai_credentials, env vars, PHP constants). Fixes Test Model page showing No models available when keys live outside main settings. (PR #5732)
+- ✅ **Profession Prompt Regression Fix.** professional_id correctly flows from JS to AJAX to shortcode after HMAC refactor. (PR #5721)
+- ✅ **Dependency Security Bumps.** adm-zip >=0.6.0 (CVE-2026-39244), axios >=1.18.0 (6 CVEs), brace-expansion patches across 5 package.json files (CVE-2026-13149). npm audit: 0 vulnerabilities. composer audit: 0 advisories. (PR #5720, #5733)
+- 📦 **Versioning** — bumped to **1.1.41** across all version-bearing files. Tool count: ~201 base + ~830+ Pro (~1,031+ total; live registry authoritative). Provider count: **15** first-class. Addon count: 26.
 
 ---
 
