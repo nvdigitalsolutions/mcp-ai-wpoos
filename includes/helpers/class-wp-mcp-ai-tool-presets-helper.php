@@ -908,6 +908,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'paper_store_delete',
 					'paper_store_list',
 					'paper_store_search',
+					// OKF knowledge format (curated concepts with cross-links).
+					'okf_read_concept',
+					'okf_browse',
+					'okf_traverse',
+					'okf_search',
+					'okf_write_concept',
+					'okf_delete_concept',
 				),
 			),
 
