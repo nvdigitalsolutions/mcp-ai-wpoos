@@ -52,13 +52,14 @@ Subsystem-specific:
 
 ## Success criteria
 
-- [ ] Every privileged path verifies `current_user_can()` *before* any write/state change.
-- [ ] Every state-changing AJAX/REST handler verifies a nonce or bearer/Auth0/guest token per `.context/rest-api.md`.
-- [ ] Every input sourced from `$_GET` / `$_POST` / `WP_REST_Request` is sanitized with the helper from `.context/security-checklist.md`.
+- [ ] Every privileged path verifies `current_user_can()` *before* any write/state change. For frontend AJAX handlers shared with admin, verify that capability checks are nonce-aware (admin-nonce → enforce cap; widget-nonce → skip cap).
+- [ ] Every state-changing AJAX/REST handler verifies a nonce or bearer/Auth0/guest token per `.context/rest-api.md`. `admin-post.php` endpoints specifically must call `check_admin_referer()`.
+- [ ] Every input sourced from `$_GET` / `$_POST` / `WP_REST_Request` is sanitized with the helper from `.context/security-checklist.md`. When server-controlled configuration crosses a client boundary (e.g. shortcode attrs via JS AJAX), verify it uses an HMAC-signed policy token (`wp_hash()` + expiry) — never raw client-controlled values.
 - [ ] Every output rendered to HTML/attributes/URLs is escaped at the boundary.
 - [ ] Every SQL query goes through `$wpdb->prepare()` — no string concatenation.
 - [ ] Outbound HTTP uses HTTPS-only allowlists and reuses the existing decompression-bomb cap (matches the SSRF-safe fetcher pattern in `addons/pro/includes/services/`).
 - [ ] No secrets, API keys, or tokens appear in source, fixtures, or logs.
+- [ ] Any recursive filesystem operation (ZIP extraction, directory deletion) validates the target path with `realpath()` + containment check (`strpos($resolved, $base) === 0`) before proceeding.
 - [ ] Findings are reported with file + line + severity + a one-sentence rationale that links to the relevant `.context/security-checklist.md` line — rules are not restated.
 
 ## Invocation example

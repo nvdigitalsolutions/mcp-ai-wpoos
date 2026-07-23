@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
-> **GSD Context File** — Load this when working on tool implementations, toolkits, or MCP servers.
-> Last reviewed: July 16, 2026.
+> **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
+> Last reviewed: July 22, 2026.
 
 ---
 
@@ -14,7 +14,9 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,025+ (~195 base + ~830+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,031+ (~201 base + ~830+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in July 2026:** 6 OKF tools (`includes/tools/okf/`) — `okf_read_concept`, `okf_browse`, `okf_traverse`, `okf_search`, `okf_write_concept`, `okf_delete_concept`. All read/read/write/delete capabilities, following the two-gate sanitisation rule and canonical return envelope. See [`docs/features/okf-integration.md`](../docs/features/okf-integration.md).
 
 ---
 
@@ -57,6 +59,7 @@ Reference: `docs/features/tool-presets-system.md`.
 | Type | Directory | Registration File |
 |------|-----------|------------------|
 | Base tools | `includes/tools/class-wp-mcp-ai-tool-{name}.php` | `includes/tools-init.php` |
+| Base categorized | `includes/tools/{category}/class-wp-mcp-ai-tool-{name}.php` | `includes/{category}-init.php` or `includes/okf/okf-init.php` |
 | Pro tools | `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-{name}.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
 | Pro categorized | `addons/pro/includes/tools/{category}/class-wp-mcp-ai-tool-{name}.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
 | MCP servers | `addons/pro/includes/mcp-servers/servers/class-wp-mcp-ai-{name}-mcp-server.php` | `addons/pro/includes/mcp-servers/mcp-servers-init.php` |

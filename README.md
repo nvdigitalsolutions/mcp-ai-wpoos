@@ -159,6 +159,15 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - 🔧 **Settings Import/Export Batch (4 fixes).** Credential merge, save key wipe, subtab sanitization, export consistency — all resolved.
 - 🛡️ **Validated Tool Slug Allowlist.** Tool slug matching fixed for validated variants.
 
+### ✨ What's New at a Glance (v1.1.41)
+
+- 📚 **OKF Integration (Open Knowledge Format v0.1).** Google vendor-neutral knowledge format engine with 6 MCP tools for curated, deterministic knowledge management. All 41 bundled skills are now OKF v0.1-conformant.
+- 🔒 **Security Compliance Fixes (11 HIGH/P0).** HMAC-signed policy tokens for professional selector, health endpoint auth-gating, ZIP path traversal prevention, CSRF nonces on sync endpoints, SRI integrity hashes for all 6 CDN libraries, Google Chat OIDC hardening.
+- 🔧 **Playbook Sync Fixes.** Duplicate AJAX handler conflict resolved. Silent sync failures now report errors to admin UI. CPT class loading guards prevent fatal errors during bulk reseed.
+- 🔑 **Model Provider Credential Resolution.** Model picker now resolves API keys from all 4 sources — settings, credentials option, environment variables, and PHP constants.
+- 🛡️ **Dependency Security.** adm-zip, axios, and brace-expansion bumped to resolve 18 Dependabot alerts across 5 package.json files. npm audit: 0 vulnerabilities.
+
+
 ### ✨ What's New at a Glance (v1.1.39)
 
 - 🤖 **Page Agent Addon v0.1.0.** New addon (`addons/page-agent/`) — AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Give any WordPress page its own AI agent that can click, type, and navigate via natural language, running entirely client-side with no headless browser required. Includes shortcode, Elementor widget, REST endpoints, and MCP tool bridge.
@@ -792,6 +801,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - 🔁 Route conversations through OpenAI or Gemini using a provider-aware language model router
 - 🎯 Enhanced Gemini API integration: list models dynamically, count tokens for budget management, create embeddings for RAG/semantic search, and streaming support for real-time responses【F:docs/reference/api/gemini/gemini-api-enhancements.md†L1-L100】
 - 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
+- 📚 **OKF (Open Knowledge Format v0.1)** engine with 6 MCP tools for curated, deterministic knowledge with cross-link navigation — complementary to vector/RAG stores
 - 🔎 Perform lightweight web searches (DuckDuckGo or Brave) without leaving the assistant conversation
 - 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
 
@@ -1338,7 +1348,7 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 **What works WITHOUT JetEngine:**
 - ✅ All core AI assistant features
 - ✅ Chat interface and conversations
-- ✅ ~195 base tools (more with optional third-party plugins)
+- ✅ ~201 base tools (more with optional third-party plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
 - ✅ OpenAI/Gemini/Anthropic/Ollama/Hugging Face/Cloudflare integrations
@@ -1370,7 +1380,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
 - `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
 
-**✅ Still Works:** All core features, MCP server, ~195 base tools, AI conversations
+**✅ Still Works:** All core features, MCP server, ~201 base tools, AI conversations
 
 [Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 

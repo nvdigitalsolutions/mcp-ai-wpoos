@@ -8,6 +8,8 @@
 
 The Tool Presets system manages curated groupings of AI tools that can be assigned to assistants. In v1.1.39, the system was refactored with an essentials-layer architecture, deduplication, and auto-upgrade for validated variants.
 
+**v1.1.41:** The Essentials Internal preset gained 7 read-only knowledge access tools (3 Paper Store read + 4 OKF read), and the Files & Documents preset gained all 6 OKF tools alongside the existing 6 Paper Store tools. Write tools remain only in Files & Documents.
+
 ## Architecture
 
 ### Essentials Layers
@@ -47,6 +49,7 @@ Tools that have been "validated" (passed safety and capability checks) are autom
 | Media | Media Studio Essentials, Image Generation | Base + Essentials |
 | Commerce | WooCommerce Essentials, Shopify Management | Extended |
 | CRM | Lead Manager Essentials, Deal Pipeline | Extended + Specialist |
+| Knowledge | Paper Store Essentials, OKF Knowledge Access | Base + Essentials |
 | Development | Developer Copilot, Code Analysis | Base + Essentials |
 
 ### Tool Payload Cap

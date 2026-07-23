@@ -111,10 +111,51 @@
 
 ### Versioning
 
-- Bumped to **1.1.40** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, `DOCUMENTATION_INDEX.md`, `CLAUDE.md`, and `.context/tool-registry.md`.
-- Tool count: ~195 base + ~830+ Pro (~1,025+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
-- Provider count: **15** first-class language-model providers.
-- Addon count: **26**.
+- Bumped to **1.1.40** across all version-bearing files.
+- Tool count: ~195 base + ~830+ Pro (~1,025+ total).
+- Provider count: **15** first-class. Addon count: **26**.
+
+## [1.1.41] - 2026-07-22
+
+### Added — OKF Integration (Open Knowledge Format v0.1)
+
+- **OKF engine** (includes/okf/) — pure-PHP YAML frontmatter parser, bundle reader with cross-link traversal, writer with atomic concept CRUD + conformance validation. Bootstrap at priority 32. Zero new Composer dependencies. (PR #5719)
+- **6 MCP tools** (includes/tools/okf/) — okf_read_concept, okf_browse, okf_traverse, okf_search, okf_write_concept (edit_posts), okf_delete_concept (delete_posts). Two-gate sanitisation, canonical return envelope.
+- **Skill conformance** — all 41 bundled skills now include type: Skill YAML frontmatter (OKF v0.1-conformant).
+
+### Security — Compliance Review Fixes (11 HIGH/P0)
+
+- **HMAC-signed policy tokens** replace client-controlled shortcode_atts in professional selector — wp_hash() + 1h expiry. (PR #5718)
+- **Health endpoint auth-gating** — public response reduced to status:ok/degraded; detailed checks gated behind manage_options. (PR #5718)
+- **ZIP path traversal prevention** — validate_knowledge_base_archive() with realpath() containment + .txt-only allowlist. (PR #5718)
+- **CSRF nonces on sync endpoints** — check_admin_referer() on Shopify/EZuite/FlowHub admin-post handlers. (PR #5718)
+- **CDN SRI integrity hashes** — real sha384 hashes for all 6 CDN libraries. (PR #5718)
+- **Google Chat OIDC hardening** — disable_oidc_verification bypass replaced with shared-secret token. (PR #5718)
+- **Privacy imaging path traversal fix** — realpath() containment check before recursive dir deletion. (PR #5718)
+- **Autoload fallback cleanup** — removed tiktoken-php/php-http/discovery; added Symfony contracts. (PR #5718)
+- **Version alignment** — package.json files bumped to match WP_MCP_AI_VERSION / WP_MCP_AI_PRO_VERSION. (PR #5718)
+- **Release workflow fix** — WP_MCP_AI_VERSION sed target corrected. (PR #5718)
+
+### Fixed — Playbook Sync and Model Provider
+
+- **Duplicate AJAX handler conflict** — removed conflicting handler from professional selector; nonce-aware cap bypass for frontend subscribers. (PR #5731)
+- **CPT class guard** — remove_duplicate_playbooks() loads CPT class before referencing constants. (PR #5731)
+- **Silent sync failure detection** — sync_all() returns {synced, errors} surfaced to admin UI. (PR #5732)
+- **Model provider credential resolution** — Model_Service now uses Credential_Resolver for all 4 key sources. (PR #5732)
+- **Profession prompt regression** — professional_id flows JS->AJAX->shortcode after HMAC refactor. (PR #5721)
+
+### Security — Dependency Bumps
+
+- **adm-zip** >=0.6.0 — fixes crafted ZIP memory allocation CVE. (PR #5720)
+- **axios** >=1.18.0 — fixes 6 CVEs. (PR #5720)
+- **brace-expansion** 1.1.16 / 2.1.2 / 5.0.7 across 5 package.json files — fixes CVE-2026-13149. (PR #5733)
+- **npm audit** 0 vulnerabilities; **composer audit** 0 advisories. (PR #5733)
+
+### Versioning
+
+- Bumped to **1.1.41** across all version-bearing files.
+- Tool count: ~201 base + ~830+ Pro (~1,031+ total; live registry authoritative).
+- Provider count: **15** first-class. Addon count: **26**.
 
 ## [1.1.39] - 2026-07-13
 

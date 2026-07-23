@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
 **Last Updated:** July 16, 2026  
-**Plugin Version:** 1.1.40  
+**Plugin Version:** 1.1.41  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -488,6 +488,26 @@ This document provides a comprehensive index of all documentation available for 
 - **[docs/features/slash-commands-guide.md](features/slash-commands-guide.md)** ⭐ **NEW** — Complete reference for all 24 base + 8 Pro slash commands with capability, aliases, and description. Replaces the dated Phase 1 guide for day-to-day reference.
 
 ---
+
+## 🆕 July 2026 — OKF Integration, Security Compliance, Playbook Sync, Dependency Bumps
+
+### New and updated documents (July 20–22, 2026)
+
+- **[docs/features/okf-integration.md](features/okf-integration.md)** ⭐ **NEW** — OKF v0.1 engine, 6 MCP tools, skill conformance. (July 20, 2026)
+- **[docs/features/compliance-security-fixes-2026-07.md](features/compliance-security-fixes-2026-07.md)** ⭐ **NEW** — 11 HIGH/P0 security fixes from compliance review: HMAC policy tokens, health endpoint auth-gating, ZIP validation, CSRF nonces, SRI hashes. (July 20, 2026)
+- **[docs/project/proposals/OKF_INTEGRATION_PROPOSAL.md](project/proposals/OKF_INTEGRATION_PROPOSAL.md)** ⭐ **NEW** — Open Knowledge Format integration proposal (Phases 1–8). (July 20, 2026)
+- **[docs/project/proposals/compliance-security-fixes-2026-07-19.md](project/proposals/compliance-security-fixes-2026-07-19.md)** ⭐ **NEW** — Compliance security implementation plan with 15 issues. (July 19, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.41 entries for OKF, security, playbook sync, dependency bumps.
+- **[docs/ROADMAP.md](ROADMAP.md)** ⭐ **UPDATED** — v1.1.41 released section with full delivery list.
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.41 section with full PR-level detail.
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.41 latest updates section.
+- **[CLAUDE.md](../CLAUDE.md)** ⭐ **UPDATED** — OKF engine section, security patterns, tool count bump.
+- **[AGENTS.md](../AGENTS.md)** ⭐ **UPDATED** — OKF skill conformance, cross-references.
+- **[.context/tool-registry.md](../.context/tool-registry.md)** ⭐ **UPDATED** — OKF tools, count bump.
+- **[.context/security-checklist.md](../.context/security-checklist.md)** ⭐ **UPDATED** — HMAC tokens, realpath containment, admin-post CSRF patterns.
+- **[.context/conventions.md](../.context/conventions.md)** ⭐ **UPDATED** — directory tree, tool counts.
+- **[.github/copilot-instructions.md](../.github/copilot-instructions.md)** ⭐ **UPDATED** — OKF architecture, tool counts.
+
 
 ## 🆕 July 2026 — Content Format Awareness, Research Pipeline, Settings Credential Split, Model Catalog, Provider Parity, SSE Fixes
 

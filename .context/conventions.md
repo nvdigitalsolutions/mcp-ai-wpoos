@@ -48,8 +48,9 @@ includes/
 │                                        → cron → hooks → loader → activation
 ├── class-wp-mcp-ai-plugin.php         ← Main singleton + DI container wiring
 ├── class-wp-mcp-ai-container.php      ← Service locator / DI
-├── tools/                             ← 217 tool files; 165 enabled in base mode
+├── tools/                             ← ~201 tool files; ~201 enabled in base mode
 │   ├── class-wp-mcp-ai-tool-{name}.php
+│   ├── okf/                            ← OKF knowledge tools (6 tools)
 │   └── orchestration/                 ← Multi-tool orchestration
 ├── admin/                             ← All wp-admin UI + AJAX handlers
 │   ├── class-wp-mcp-ai-admin-settings.php
@@ -61,6 +62,7 @@ includes/
 ├── repositories/                      ← Data access layer
 ├── integrations/                      ← JetEngine, Elementor, Auth0, ChatKit
 ├── infrastructure/                    ← HTTP client, options-store, provider adapters
+├── okf/                                ← OKF engine (parser, reader, writer)
 ├── interfaces/                        ← PHP interfaces (OptionsStore, HttpClient…)
 ├── knowledge-base/                    ← KB documents, professions, playbooks
 ├── blocks/                            ← WordPress blocks (chat, tools-grid…)
@@ -88,7 +90,7 @@ packages/                              ← 9 standalone NPM packages
 
 | Constant | Default | Effect |
 |---|---|---|
-| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = 165-tool base only; `false` = all 519 tools |
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = ~201 base tools; `false` = ~1,031+ total |
 | `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks — do not redefine |
 | `WP_MCP_AI_PRO_VERSION` | set by Pro at boot | Prevents double-loading of Pro addon |
 | `WP_DEBUG` | WordPress default | Enables extra error logging throughout |
@@ -128,7 +130,7 @@ npm test                      # Jest unit tests
 | | Base plugin | Pro addon |
 |---|---|---|
 | **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
-| **Tools** | 165 core tools | +354 Pro tools = **519 total** |
+| **Tools** | ~201 core tools | +~830 Pro tools = **~1,031+ total** |
 | **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
 | **PHP minimum** | 7.4 | 8.1 |
 | **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (phpspreadsheet etc.) |
