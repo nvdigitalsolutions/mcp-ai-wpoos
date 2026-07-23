@@ -11,8 +11,8 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.40
-**Release Date:** 2026-07-15
+**Version:** 1.1.41
+**Release Date:** 2026-07-22
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
@@ -145,6 +145,14 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
+### ✨ What's New at a Glance (v1.1.41)
+
+- 📚 **OKF Integration (Open Knowledge Format v0.1).** Google vendor-neutral knowledge format engine with 6 MCP tools for curated, deterministic knowledge management. All 41 bundled skills are now OKF v0.1-conformant.
+- 🔒 **Security Compliance Fixes (11 HIGH/P0).** HMAC-signed policy tokens for professional selector, health endpoint auth-gating, ZIP path traversal prevention, CSRF nonces on sync endpoints, SRI integrity hashes for all 6 CDN libraries, Google Chat OIDC hardening.
+- 🔧 **Playbook Sync Fixes.** Duplicate AJAX handler conflict resolved. Silent sync failures now report errors to admin UI. CPT class loading guards prevent fatal errors during bulk reseed.
+- 🔑 **Model Provider Credential Resolution.** Model picker now resolves API keys from all 4 sources — settings, credentials option, environment variables, and PHP constants.
+- 🛡️ **Dependency Security.** adm-zip, axios, and brace-expansion bumped to resolve 18 Dependabot alerts across 5 package.json files. npm audit: 0 vulnerabilities.
+
 ### ✨ What's New at a Glance (v1.1.40)
 
 - 📝 **Content Format Awareness.** New `WP_MCP_AI_Content_Format_Helper` detects and preserves Markdown, HTML, and plain text formats across post-modifying and analysis tools — AI-generated content retains its intended structure through the full create/update pipeline.
@@ -158,14 +166,6 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - 🔍 **Vector Store Sync — No Polling.** Status now checked only on assistant change and page load, reducing API load.
 - 🔧 **Settings Import/Export Batch (4 fixes).** Credential merge, save key wipe, subtab sanitization, export consistency — all resolved.
 - 🛡️ **Validated Tool Slug Allowlist.** Tool slug matching fixed for validated variants.
-
-### ✨ What's New at a Glance (v1.1.41)
-
-- 📚 **OKF Integration (Open Knowledge Format v0.1).** Google vendor-neutral knowledge format engine with 6 MCP tools for curated, deterministic knowledge management. All 41 bundled skills are now OKF v0.1-conformant.
-- 🔒 **Security Compliance Fixes (11 HIGH/P0).** HMAC-signed policy tokens for professional selector, health endpoint auth-gating, ZIP path traversal prevention, CSRF nonces on sync endpoints, SRI integrity hashes for all 6 CDN libraries, Google Chat OIDC hardening.
-- 🔧 **Playbook Sync Fixes.** Duplicate AJAX handler conflict resolved. Silent sync failures now report errors to admin UI. CPT class loading guards prevent fatal errors during bulk reseed.
-- 🔑 **Model Provider Credential Resolution.** Model picker now resolves API keys from all 4 sources — settings, credentials option, environment variables, and PHP constants.
-- 🛡️ **Dependency Security.** adm-zip, axios, and brace-expansion bumped to resolve 18 Dependabot alerts across 5 package.json files. npm audit: 0 vulnerabilities.
 
 
 ### ✨ What's New at a Glance (v1.1.39)
@@ -531,7 +531,18 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.40 — July 2026)
+## 🆕 Latest Updates (v1.1.41 — July 2026)
+
+### July 20–22, 2026 — OKF Integration, Security Compliance, Playbook Sync, Model Credentials, Dependency Bumps 📚🔒🔧🔑🛡️
+
+- ✅ **OKF Integration (Open Knowledge Format v0.1).** Pure-PHP YAML frontmatter parser and bundle reader/writer with atomic concept CRUD and conformance validation. 6 new MCP tools: okf_read_concept, okf_browse, okf_traverse, okf_search, okf_write_concept, okf_delete_concept. All 41 bundled skills now OKF v0.1-conformant. Zero new Composer dependencies.
+- ✅ **Security Compliance (11 HIGH/P0 Fixes).** HMAC-signed policy tokens for professional selector with 1h expiry. Health endpoint auth-gating (public response reduced to status only). ZIP path traversal prevention with realpath() containment. CSRF nonces on Shopify/EZuite/FlowHub sync endpoints. CDN SRI integrity hashes for all 6 libraries. Google Chat OIDC hardening with shared-secret token. Privacy imaging path traversal fix. Autoload fallback cleanup. Version alignment across all package.json files.
+- ✅ **Playbook Sync Fixes.** Duplicate AJAX handler conflict resolved with nonce-aware cap bypass. CPT class loading guard in remove_duplicate_playbooks(). Silent sync failure detection — sync_all() now returns {synced, errors} surfaced to admin UI. Profession prompt regression fixed after HMAC refactor.
+- ✅ **Model Provider Credential Resolution.** Model_Service now resolves API keys from all 4 sources — settings, credentials option, environment variables, and PHP constants — via Credential_Resolver.
+- ✅ **Dependency Security Bumps.** adm-zip ≥0.6.0 (ZIP CVE), axios ≥1.18.0 (6 CVEs), brace-expansion 1.1.16/2.1.2/5.0.7 across 5 package.json files (CVE-2026-13149). npm audit: 0 vulnerabilities. composer audit: 0 advisories.
+- 📦 **Versioning** — bumped to **1.1.41** across all version-bearing files. Tool count: ~201 base + ~830+ Pro (~1,031+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **26**.
+
+## 🆕 Previous Updates (v1.1.40 — July 2026)
 
 ### July 12–15, 2026 — Content Format Awareness, Research Pipeline, Settings Credential Split, Model Catalog, Provider Parity, SSE Fixes
 
