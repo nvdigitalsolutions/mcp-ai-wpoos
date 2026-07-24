@@ -386,9 +386,6 @@ function wp_mcp_ai_oos_data_budget_tracker( string $request_id = '' ): Nvoos\Cor
 	};
 }
 
-	};
-}
-
 /**
  * Get the Erlang C calculator.
  *
