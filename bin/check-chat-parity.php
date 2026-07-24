@@ -152,16 +152,15 @@ $features = array(
     array(
         'feature'  => 'Rate limiting',
         'legacy'   => 'WP_MCP_AI_Rate_Limit_Manager',
-        'libcore'  => 'RateLimiterInterface + adapter (contract layer complete)',
-        'status'   => 'partial',
-        'severity' => 'medium',
+        'libcore'  => 'RateLimiterInterface — ChatOrchestrator::handleChat/handleChatStreaming',
+        'status'   => 'parity',
+        'note'     => 'Integrated via setRateLimiter(); gates initial LLM call in both paths',
     ),
     array(
         'feature'  => 'Semantic message compression',
         'legacy'   => 'WP_MCP_AI_Chat_Service::maybe_compress_messages',
-        'libcore'  => 'SemanticCompressorInterface + adapter (contract layer complete)',
-        'status'   => 'partial',
-        'severity' => 'low',
+        'libcore'  => 'SemanticCompressorInterface — handleChat/handleChatStreaming auto-compress at 80% token limit',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Prompt caching injection',

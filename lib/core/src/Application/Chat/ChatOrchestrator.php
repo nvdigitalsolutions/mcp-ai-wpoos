@@ -34,6 +34,10 @@ use Nvoos\Core\Domain\Event\AgenticLoopCompleted;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
+use Nvoos\Core\Domain\Contract\RateLimiterInterface;
+use Nvoos\Core\Domain\Contract\SemanticCompressorInterface;
+use Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface;
+use Nvoos\Core\Domain\Contract\ContextCompressionInterface;
 
 class ChatOrchestrator {
 
@@ -52,6 +56,26 @@ class ChatOrchestrator {
 	 */
 	private ?TokenBudgetManager $tokenBudget = null;
 
+	/**
+	 * Optional rate limiter for API call gating.
+	 */
+	private ?RateLimiterInterface $rateLimiter = null;
+
+	/**
+	 * Optional semantic compressor for message reduction.
+	 */
+	private ?SemanticCompressorInterface $compressor = null;
+
+	/**
+	 * Optional byte-budget tracker for tool output.
+	 */
+	private ?DataBudgetTrackerInterface $budgetTracker = null;
+
+	/**
+	 * Optional context compressor for token-aware truncation.
+	 */
+	private ?ContextCompressionInterface $contextCompressor = null;
+
 	public function __construct(
 		private readonly ToolRegistry $tools,
 		private readonly ProviderRouter $providers,
@@ -66,6 +90,34 @@ class ChatOrchestrator {
 	 */
 	public function setTokenBudgetManager( TokenBudgetManager $budget ): void {
 		$this->tokenBudget = $budget;
+	}
+
+	/**
+	 * Wire the rate limiter for API call gating.
+	 */
+	public function setRateLimiter( RateLimiterInterface $rateLimiter ): void {
+		$this->rateLimiter = $rateLimiter;
+	}
+
+	/**
+	 * Wire the semantic compressor for message reduction.
+	 */
+	public function setSemanticCompressor( SemanticCompressorInterface $compressor ): void {
+		$this->compressor = $compressor;
+	}
+
+	/**
+	 * Wire the byte-budget tracker for tool output accounting.
+	 */
+	public function setDataBudgetTracker( DataBudgetTrackerInterface $tracker ): void {
+		$this->budgetTracker = $tracker;
+	}
+
+	/**
+	 * Wire the context compressor for token-aware truncation.
+	 */
+	public function setContextCompressor( ContextCompressionInterface $compressor ): void {
+		$this->contextCompressor = $compressor;
 	}
 
 	/**
@@ -123,6 +175,51 @@ class ChatOrchestrator {
 				authContext: array( 'user_id' => $userId ),
 			)
 		);
+
+		// Rate limit check — reject if user/exceeded quota.
+		if ( null !== $this->rateLimiter ) {
+			$rateLimitKey = 'chat:' . $userId . ':' . $assistantId;
+			if ( ! $this->rateLimiter->isAllowed( $rateLimitKey, 60, 60 ) ) {
+				return array(
+					'response'     => $this->errors->rateLimited( 'Too many requests. Please wait before sending another message.' ),
+					'tool_results' => array(),
+					'iterations'   => 0,
+					'cost'         => null,
+				);
+			}
+			$this->rateLimiter->record( $rateLimitKey, 60 );
+		}
+
+		// Semantic compression — reduce message size when near token limits.
+		if ( null !== $this->compressor ) {
+			$modelId = $options['model'] ?? '';
+			$tokenLimit = null !== $this->tokenBudget
+				? $this->tokenBudget->getModelLimit( $modelId )
+				: 128000;
+
+			// Estimate total message tokens.
+			$estimatedTokens = 0;
+			foreach ( $messages as $msg ) {
+				$content = \is_array( $msg['content'] ?? null )
+					? \json_encode( $msg['content'] )
+					: (string) ( $msg['content'] ?? '' );
+				$estimatedTokens += $this->compressor->estimateTokens( $content );
+			}
+
+			// Compress if over 80% of limit.
+			if ( $estimatedTokens > (int) ( $tokenLimit * 0.8 ) ) {
+				$result = $this->compressor->compress(
+					\json_encode( $messages ),
+					[ 'target_ratio' => 0.7, 'preserve_facts' => true ]
+				);
+				if ( $result['success'] ?? false ) {
+					$decoded = \json_decode( $result['compressed'], true );
+					if ( \is_array( $decoded ) ) {
+						$messages = $decoded;
+					}
+				}
+			}
+		}
 
 		// Initial LLM call.
 		$response = $this->providers->chat( $messages, $options, $assistantConfig );
@@ -336,6 +433,17 @@ class ChatOrchestrator {
 				)
 			);
 		};
+
+		// Rate limit + compression before streaming call.
+		if ( null !== $this->rateLimiter ) {
+			$key = 'chat:' . $userId . ':' . $assistantId;
+			if ( ! $this->rateLimiter->isAllowed( $key, 60, 60 ) ) {
+				$this->sse->sendEvent( 'error', [ 'code' => 'rate_limited', 'message' => 'Too many requests.' ] );
+				$this->sse->sendDone();
+				return [ 'response' => $this->errors->rateLimited( 'Rate limited' ), 'tool_results' => [], 'iterations' => 0, 'cost' => null ];
+			}
+			$this->rateLimiter->record( $key, 60 );
+		}
 
 		$response = $this->providers->stream(
 			$messages,
