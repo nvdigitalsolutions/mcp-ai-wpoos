@@ -3326,14 +3326,22 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$persisted_flags  = isset( $tool_role_rules_by_slug[ $slug ]['flags'] ) ? (array) $tool_role_rules_by_slug[ $slug ]['flags'] : array();
 					$select_size      = ! empty( $role_options ) ? min( max( count( $role_options ), 4 ), 8 ) : 4;
 
+					// Collect capability flags for chip color coding.
+					$tool_flags = array();
+					if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+						$tool_flags = $tool->get_capability_flags();
+					}
+					$tool_flags_json = wp_json_encode( $tool_flags );
+
 					echo '<li class="wp-mcp-ai-tools__item" data-tool-selected="' . esc_attr( $is_selected ? 'true' : 'false' ) . '">';
 					echo '<div class="wp-mcp-ai-tools__header">';
 					printf(
-						'<input type="checkbox" class="wp-mcp-ai-tools__checkbox" id="%1$s" name="wp_mcp_ai_tools[]" value="%2$s" %3$s aria-describedby="%4$s" />',
+						'<input type="checkbox" class="wp-mcp-ai-tools__checkbox" id="%1$s" name="wp_mcp_ai_tools[]" value="%2$s" %3$s aria-describedby="%4$s" data-tool-flags="%5$s" />',
 						esc_attr( $checkbox_id ),
 						esc_attr( $slug ),
 						checked( $is_selected, true, false ),
-						esc_attr( $description_id )
+						esc_attr( $description_id ),
+						esc_attr( $tool_flags_json )
 					);
 					echo '<label for="' . esc_attr( $checkbox_id ) . '">';
 					echo '<span class="wp-mcp-ai-tools__name">' . esc_html( $tool->get_name() ) . '</span>';

@@ -3073,6 +3073,38 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					return checked;
 				}
 
+				// Determine the severity colour for a tool based on its capability flags.
+				function getChipColours( flags ) {
+					if ( ! flags || ! flags.length ) {
+						// Default neutral indigo.
+						return { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', removeBtn: '#6366f1' };
+					}
+					// Red / Danger: data-destruction, irreversible, financial-impact, access-control-change.
+					var redFlags = [ 'data-destruction', 'irreversible', 'financial-impact', 'access-control-change' ];
+					for ( var i = 0; i < redFlags.length; i++ ) {
+						if ( flags.indexOf( redFlags[ i ] ) !== -1 ) {
+							return { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', removeBtn: '#dc2626' };
+						}
+					}
+					// Orange / Warning: state-changing, write.
+					var orangeFlags = [ 'state-changing', 'write' ];
+					for ( var j = 0; j < orangeFlags.length; j++ ) {
+						if ( flags.indexOf( orangeFlags[ j ] ) !== -1 ) {
+							return { bg: '#ffedd5', text: '#9a3412', border: '#fed7aa', removeBtn: '#ea580c' };
+						}
+					}
+					// Yellow / Caution: external-communication.
+					if ( flags.indexOf( 'external-communication' ) !== -1 ) {
+						return { bg: '#fef9c3', text: '#854d0e', border: '#fef08a', removeBtn: '#ca8a04' };
+					}
+					// Green / Safe: read-only.
+					if ( flags.indexOf( 'read-only' ) !== -1 ) {
+						return { bg: '#dcfce7', text: '#166534', border: '#bbf7d0', removeBtn: '#16a34a' };
+					}
+					// Default neutral indigo.
+					return { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', removeBtn: '#6366f1' };
+				}
+
 				// Refresh the selected tools chips bar.
 				function refreshSelectedChips() {
 					if ( ! showSelectedBar ) {
@@ -3091,23 +3123,33 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					var shown = 0;
 					checked.forEach( function( slug ) {
 						var isOverflow = shown >= maxShow;
-						var labelEl = document.querySelector( checkboxSelector + '[value=\"' + slug + '\"]' );
+						var checkboxEl = document.querySelector( checkboxSelector + '[value=\"' + slug + '\"]' );
 						var label = slug;
-						if ( labelEl ) {
+						var flags = [];
+						if ( checkboxEl ) {
+							// Read capability flags for colour coding.
+							var flagsAttr = checkboxEl.getAttribute( 'data-tool-flags' );
+							if ( flagsAttr ) {
+								try {
+									flags = JSON.parse( flagsAttr );
+								} catch ( e ) {
+									flags = [];
+								}
+							}
 							// Try to get the human-readable label from the nearby label element.
-							var parentLabel = labelEl.closest( 'label' );
+							var parentLabel = checkboxEl.closest( 'label' );
 							if ( parentLabel ) {
 								var text = parentLabel.textContent || '';
-								// Remove the checkbox text content to get just the label.
-								var clean = text.replace( /^\\\\s*/, '' ).replace( /\\\\s*$/, '' );
+								var clean = text.replace( /^\\s*/, '' ).replace( /\\s*$/, '' );
 								if ( clean.length > 0 && clean.length < 80 ) {
 									label = clean;
 								}
 							}
 						}
-						html += '<span class=\"wp-mcp-ai-tool-chip' + ( isOverflow ? ' wp-mcp-ai-tool-chip--overflow' : '' ) + '\" data-slug=\"' + slug + '\" style=\"display: ' + ( isOverflow ? 'none' : 'inline-flex' ) + '; align-items: center; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-size: 12px; border: 1px solid #c7d2fe; cursor: default; margin: 4px;\">';
+						var cols = getChipColours( flags );
+						html += '<span class=\"wp-mcp-ai-tool-chip' + ( isOverflow ? ' wp-mcp-ai-tool-chip--overflow' : '' ) + '\" data-slug=\"' + slug + '\" style=\"display: ' + ( isOverflow ? 'none' : 'inline-flex' ) + '; align-items: center; background: ' + cols.bg + '; color: ' + cols.text + '; padding: 2px 8px; border-radius: 12px; font-size: 12px; border: 1px solid ' + cols.border + '; cursor: default; margin: 4px;\">';
 						html += '<span class=\"wp-mcp-ai-tool-chip-label\" style=\"max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\">' + label + '</span>';
-						html += '<button type=\"button\" class=\"wp-mcp-ai-tool-chip-remove\" data-slug=\"' + slug + '\" style=\"margin-left: 4px; border: none; background: none; color: #6366f1; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;\" title=\"Remove \"' + slug + '\"\">&times;</button>';
+						html += '<button type=\"button\" class=\"wp-mcp-ai-tool-chip-remove\" data-slug=\"' + slug + '\" style=\"margin-left: 4px; border: none; background: none; color: ' + cols.removeBtn + '; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;\" title=\"Remove \"' + slug + '\"\">&times;</button>';
 						html += '</span>';
 						shown++;
 					} );
