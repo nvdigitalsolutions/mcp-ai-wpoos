@@ -221,6 +221,11 @@ class ChatOrchestrator {
 			}
 		}
 
+		// Prompt caching — pass cache key if configured.
+		if ( ! empty( $assistantConfig['prompt_cache_key'] ) ) {
+			$options['prompt_cache_key'] = $assistantConfig['prompt_cache_key'];
+		}
+
 		// Initial LLM call.
 		$response = $this->providers->chat( $messages, $options, $assistantConfig );
 
@@ -239,6 +244,16 @@ class ChatOrchestrator {
 			$toolCalls = $this->extractToolCalls( $response );
 
 			if ( array() === $toolCalls ) {
+				break;
+			}
+
+			// finish_reason-aware exit.
+			$finishReason = $response['choices'][0]['finish_reason'] ?? null;
+			if ( 'stop' === $finishReason ) {
+				$response = $this->stripOrphanedToolCalls( $response );
+				break;
+			}
+			if ( 'length' === $finishReason ) {
 				break;
 			}
 
@@ -277,10 +292,14 @@ class ChatOrchestrator {
 						? $result['message']
 						: \json_encode( $result );
 				} else {
-					$resultContent = \json_encode( $result );
+					// Sanitize: strip base64 to save tokens in LLM context.
+					$resultContent = \json_encode( $this->sanitizeToolResult( $result ) );
 				}
 
-				// Store for frontend display.
+				// Extract images for vision models.
+				$imageMessages = $this->extractImagesFromToolResult( $result, $toolName );
+
+				// Track byte budget if wired.
 				$toolResultMessages[] = array(
 					'role'         => 'tool',
 					'content'      => $resultContent,
@@ -730,5 +749,76 @@ class ChatOrchestrator {
 		) {
 			$response['choices'][0]['finish_reason'] = 'stop';
 		}
+	}
+
+	/**
+	 * Sanitize a tool result for LLM consumption.
+	 *
+	 * Strips base64 data and truncates very long string values
+	 * to prevent token waste from inline binary content.
+	 *
+	 * @param mixed $result Raw tool result.
+	 * @return mixed Sanitized result.
+	 */
+	private function sanitizeToolResult( $result ) {
+		if ( ! \is_array( $result ) ) {
+			return $result;
+		}
+
+		$stripKeys = array( 'b64_json', 'b64_image', 'base64', 'data', 'inline_data', 'inlineData' );
+		foreach ( $stripKeys as $key ) {
+			if ( isset( $result[ $key ] ) ) {
+				unset( $result[ $key ] );
+			}
+		}
+
+		foreach ( $result as $key => $value ) {
+			if ( \is_string( $value ) && \strlen( $value ) > 10000 ) {
+				$result[ $key ] = \substr( $value, 0, 200 ) . '…[truncated ' . \strlen( $value ) . ' bytes]';
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Extract image URLs from a tool result for vision-model injection.
+	 *
+	 * When a tool returns image URLs, these are injected as user-content
+	 * images for vision-capable models on the next LLM turn.
+	 *
+	 * @param mixed  $result   Raw tool result.
+	 * @param string $toolName Tool slug for context.
+	 * @return array<int, array> Image messages in OpenAI vision format.
+	 */
+	private function extractImagesFromToolResult( $result, string $toolName ): array {
+		if ( ! \is_array( $result ) ) {
+			return array();
+		}
+
+		$images    = array();
+		$imageKeys = array( 'image_url', 'url', 'download_url', 'image' );
+
+		foreach ( $imageKeys as $key ) {
+			if ( ! isset( $result[ $key ] ) || ! \is_string( $result[ $key ] ) ) {
+				continue;
+			}
+
+			$url = $result[ $key ];
+
+			if ( \preg_match( '/\.(png|jpg|jpeg|gif|webp)(\?|$)/i', $url )
+				|| \str_starts_with( $url, 'data:image/' )
+			) {
+				$images[] = array(
+					'role'    => 'user',
+					'content' => array(
+						array( 'type' => 'text', 'text' => "Tool {$toolName} returned an image:" ),
+						array( 'type' => 'image_url', 'image_url' => array( 'url' => $url ) ),
+					),
+				);
+			}
+		}
+
+		return $images;
 	}
 }

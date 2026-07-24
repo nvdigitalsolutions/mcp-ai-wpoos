@@ -50,9 +50,8 @@ $features = array(
     array(
         'feature'  => 'finish_reason-aware loop exit',
         'legacy'   => 'WP_MCP_AI_Chat_Service::process_chat_request',
-        'libcore'  => 'NOT PRESENT - exits only on empty tool_calls',
-        'status'   => 'gap',
-        'severity' => 'medium',
+        'libcore'  => 'ChatOrchestrator — checks finish_reason (stop/length) before breaking',
+        'status'   => 'parity',
     ),
     array(
         'feature' => 'Strip orphaned tool calls on max_iterations',
@@ -165,23 +164,20 @@ $features = array(
     array(
         'feature'  => 'Prompt caching injection',
         'legacy'   => 'WP_MCP_AI_Chat_Service - prompt_cache_key in options',
-        'libcore'  => 'NOT PRESENT',
-        'status'   => 'gap',
-        'severity' => 'medium',
+        'libcore'  => 'ChatOrchestrator — passes prompt_cache_key from assistantConfig to provider',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Tool result sanitization for LLM (strips base64)',
         'legacy'   => 'WP_MCP_AI_Chat_Service::sanitize_tool_result_for_llm',
-        'libcore'  => 'NOT PRESENT',
-        'status'   => 'gap',
-        'severity' => 'medium',
+        'libcore'  => 'ChatOrchestrator::sanitizeToolResult — strips b64_json, base64, inlineData; truncates >10KB',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Vision-model image injection from tool results',
         'legacy'   => 'WP_MCP_AI_Chat_Service::extract_images_from_tool_results',
-        'libcore'  => 'NOT PRESENT',
-        'status'   => 'gap',
-        'severity' => 'low',
+        'libcore'  => 'ChatOrchestrator::extractImagesFromToolResult — extracts image URLs for vision models',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Transcript recording',
