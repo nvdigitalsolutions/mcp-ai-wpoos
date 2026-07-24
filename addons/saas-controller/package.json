@@ -49,7 +49,10 @@
     "http-proxy-middleware": ">=2.0.10",
     "websocket-driver": ">=0.7.5",
     "adm-zip": ">=0.6.0",
-    "axios": ">=1.18.0"
+    "axios": ">=1.18.0",
+    "immutable": ">=5.1.8",
+    "svgo": ">=3.3.4",
+    "linkify-it": ">=5.0.2"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260617.1",

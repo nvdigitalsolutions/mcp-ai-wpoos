@@ -14,7 +14,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "hono": "^4.12.25",
+    "hono": "^4.12.27",
     "stripe": "^17.4.0"
   },
   "overrides": {
