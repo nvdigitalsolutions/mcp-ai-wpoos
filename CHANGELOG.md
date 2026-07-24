@@ -149,7 +149,11 @@
 - **adm-zip** >=0.6.0 — fixes crafted ZIP memory allocation CVE. (PR #5720)
 - **axios** >=1.18.0 — fixes 6 CVEs. (PR #5720)
 - **brace-expansion** 1.1.16 / 2.1.2 / 5.0.7 across 5 package.json files — fixes CVE-2026-13149. (PR #5733)
-- **npm audit** 0 vulnerabilities; **composer audit** 0 advisories. (PR #5733)
+- **hono** ^4.12.27 in cloud-worker + tenant-router — fixes CVE-2026-59895 (cx() XSS bypass), CVE-2026-59896 (JSX context isolation), CVE-2026-59897 (API Gateway header de-duplication). (PR #5736)
+- **immutable** >=5.1.8 override in saas-controller — fixes CVE-2026-59879 (List 32-bit trie overflow), CVE-2026-59880 (Map/Set hash-collision DoS). (PR #5736)
+- **svgo** >=4.0.2 in pro, >=3.3.4 in saas-controller — fixes removeScripts bypass leaving executable scripts intact. (PR #5736)
+- **linkify-it** >=5.0.2 in pro, saas-controller, pro/assets/spa — fixes CVE-2026-59887 (quadratic-complexity DoS via mailto validator). (PR #5736)
+- **markdown-it** >=14.2.0 override in pro/assets/spa — aligns with root override, enables linkify-it 6.x. (PR #5736)
 
 ### Versioning
 
