@@ -300,6 +300,174 @@ function wp_mcp_ai_oos_engine_enabled(): bool {
 	return false;
 }
 
+// ─── Wave 1 Service Bridges ────────────────────────────────────────────
+
+/**
+ * Get the Semantic Compressor — framework-agnostic when engine=oos, legacy otherwise.
+ *
+ * @since 2.0.0
+ *
+ * @return Nvoos\Core\Domain\Contract\SemanticCompressorInterface
+ */
+function wp_mcp_ai_oos_semantic_compressor(): Nvoos\Core\Domain\Contract\SemanticCompressorInterface {
+	static $instance = null;
+
+	if ( null !== $instance ) {
+		return $instance;
+	}
+
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\WordPress\Adapter\SemanticCompressor();
+	} else {
+		// Legacy fallback — wraps the old class in the new interface.
+		$instance = new class implements Nvoos\Core\Domain\Contract\SemanticCompressorInterface {
+			public function compress( string $text, int $aggressiveness = 2, int $maxTokens = 0 ): array {
+				$legacy = \WP_MCP_AI_Semantic_Compressor::get_instance();
+				$compressed = $legacy->compress( $text, [
+					'aggressiveness'     => max( 1, min( 3, $aggressiveness ) ),
+					'skip_code_blocks'   => true,
+					'preserve_specifics' => true,
+				] );
+				$originalBytes = strlen( $text );
+				$compressedBytes = strlen( (string) $compressed );
+				return [
+					'compressed'        => (string) $compressed,
+					'original_bytes'    => $originalBytes,
+					'compressed_bytes'  => $compressedBytes,
+					'compression_ratio' => $originalBytes > 0 ? round( $compressedBytes / $originalBytes, 4 ) : 1.0,
+					'tokens_estimate'   => $this->estimateTokens( (string) $compressed ),
+				];
+			}
+
+			public function estimateTokens( string $text ): int {
+				return \WP_MCP_AI_Semantic_Compressor::get_instance()->estimate_tokens( $text );
+			}
+
+			public function isValidAggressiveness( int $level ): bool {
+				return $level >= 1 && $level <= 3;
+			}
+		};
+	}
+
+	return $instance;
+}
+
+/**
+ * Get the Data Budget Tracker — framework-agnostic when engine=oos, legacy otherwise.
+ *
+ * @since 2.0.0
+ *
+ * @param string $request_id Optional request identifier.
+ * @return Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface
+ */
+function wp_mcp_ai_oos_data_budget_tracker( string $request_id = '' ): Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface {
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\WordPress\Adapter\DataBudgetTracker( $request_id );
+	}
+
+	// Legacy fallback — wraps the old class in the new interface.
+	return new class( $request_id ) implements Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface {
+		private \WP_MCP_AI_Data_Budget_Tracker $legacy;
+
+		public function __construct( string $request_id ) {
+			$this->legacy = new \WP_MCP_AI_Data_Budget_Tracker( $request_id );
+		}
+
+		public function getRequestBudget(): int { return $this->legacy->get_request_budget(); }
+		public function getPerMessageBudget(): int { return $this->legacy->get_per_message_budget(); }
+		public function record( int $bytes ): void { $this->legacy->record( $bytes ); }
+		public function consumed(): int { return $this->legacy->consumed(); }
+		public function remaining(): int { return $this->legacy->remaining(); }
+		public function isExhausted(): bool { return $this->legacy->is_exhausted(); }
+		public function shouldSpill( int $bytes ): bool { return $this->legacy->should_spill( $bytes ); }
+		public function noteSpill(): void { $this->legacy->note_spill(); }
+		public function spillCount(): int { return $this->legacy->spill_count(); }
+		public function reset( string $requestId = '' ): void { $this->legacy->reset( $requestId ); }
+	};
+}
+
+/**
+ * Get the Erlang C calculator.
+ *
+ * @since 2.0.0
+ * @return Nvoos\Core\Domain\Contract\ErlangCInterface
+ */
+function wp_mcp_ai_oos_erlang_c(): Nvoos\Core\Domain\Contract\ErlangCInterface {
+	static $instance = null;
+	if ( null !== $instance ) { return $instance; }
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\Core\Domain\Service\Optimization\ErlangC();
+	} else {
+		$instance = new class implements Nvoos\Core\Domain\Contract\ErlangCInterface {
+			public function probabilityWait( float $ti, int $n ): float { return \WP_MCP_AI_Erlang_C::probability_wait( $ti, $n ); }
+			public function serviceLevel( float $ti, int $n, float $aht, float $t ): float { return \WP_MCP_AI_Erlang_C::service_level( $ti, $n, $aht, $t ); }
+			public function averageWaitTime( float $ti, int $n, float $aht ): float { return \WP_MCP_AI_Erlang_C::avg_wait_time( $ti, $n, $aht ); }
+			public function minAgentsForServiceLevel( float $ti, float $aht, float $sl, float $t ): int { return \WP_MCP_AI_Erlang_C::min_agents_for_sl( $ti, $aht, $sl, $t ); }
+			public function toErlangs( float $rate, float $aht ): float { return \WP_MCP_AI_Erlang_C::to_erlangs( $rate, $aht ); }
+			public function utilisation( float $ti, int $n ): float { return \WP_MCP_AI_Erlang_C::utilisation( $ti, $n ); }
+		};
+	}
+	return $instance;
+}
+
+/**
+ * Get the Error Tracking Service.
+ *
+ * @since 2.0.0
+ * @return Nvoos\Core\Domain\Contract\ErrorTrackingServiceInterface
+ */
+function wp_mcp_ai_oos_error_tracking(): Nvoos\Core\Domain\Contract\ErrorTrackingServiceInterface {
+	static $instance = null;
+	if ( null !== $instance ) { return $instance; }
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\WordPress\Adapter\ErrorTrackingService();
+	} else {
+		$instance = new class implements Nvoos\Core\Domain\Contract\ErrorTrackingServiceInterface {
+			public function track( string $c, string $m, array $ctx = [] ): string {
+				return (string) \WP_MCP_AI_Error_Tracking_Service::get_instance()->track_error( $c, $m, $ctx );
+			}
+			public function getRecent( int $limit = 50 ): array { return []; }
+			public function getRate( string $c = '', int $w = 3600 ): float { return 0.0; }
+			public function clear(): void {}
+			public function isEnabled(): bool { return \class_exists( 'WP_MCP_AI_Error_Tracking_Service' ); }
+		};
+	}
+	return $instance;
+}
+
+/**
+ * Get the Cost Tracking Service.
+ *
+ * @since 2.0.0
+ * @return Nvoos\Core\Domain\Contract\CostTrackingServiceInterface
+ */
+function wp_mcp_ai_oos_cost_tracking(): Nvoos\Core\Domain\Contract\CostTrackingServiceInterface {
+	static $instance = null;
+	if ( null !== $instance ) { return $instance; }
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\WordPress\Adapter\CostTrackingService();
+	} else {
+		$instance = new class implements Nvoos\Core\Domain\Contract\CostTrackingServiceInterface {
+			public function getUserCostBreakdown( int $uid, string $s, string $e ): array {
+				return \class_exists( 'WP_MCP_AI_Cost_Tracking_Service' )
+					? \WP_MCP_AI_Cost_Tracking_Service::get_user_cost_breakdown( $uid, $s, $e )
+					: [ 'total_cost' => 0.0, 'total_tokens' => 0, 'by_provider' => [], 'by_model' => [], 'by_tool' => [], 'by_date' => [] ];
+			}
+			public function getSiteCostBreakdown( string $s, string $e ): array {
+				return \class_exists( 'WP_MCP_AI_Cost_Tracking_Service' )
+					? \WP_MCP_AI_Cost_Tracking_Service::get_site_cost_breakdown( $s, $e )
+					: [ 'total_cost' => 0.0, 'total_tokens' => 0, 'by_provider' => [], 'by_model' => [], 'by_tool' => [], 'by_date' => [], 'by_user' => [] ];
+			}
+		};
+	}
+	return $instance;
+}
+
+// Load Wave 2+ service bridges (separate file for maintainability).
+$wave2_bridge = WP_MCP_AI_PATH . 'includes/bootstrap/oos-bridge-wave2.php';
+if ( file_exists( $wave2_bridge ) ) {
+	require_once $wave2_bridge;
+}
 // ─── Bootstrap Hook ───────────────────────────────────────────────────
 
 add_action(
