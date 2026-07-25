@@ -1,7 +1,7 @@
 {
 	"name": "mcp-ai-wpoos-pro",
-		"version": "1.1.25",
-		"description": "Pro Add-on for NV Digital Open Operator System (oOS) - Enhanced Toolkits with Document Generation, Image Processing, Math Rendering, Calendar Export, Data Visualization, Code Formatting, Email Templates, CRM & Email Marketing, Contact Management, Geospatial Analysis, Video Processing, E-commerce, Social Media, Analytics, Multilingual Content, and Video Production",
+	"version": "1.1.25",
+	"description": "Pro Add-on for NV Digital Open Operator System (oOS) - Enhanced Toolkits with Document Generation, Image Processing, Math Rendering, Calendar Export, Data Visualization, Code Formatting, Email Templates, CRM & Email Marketing, Contact Management, Geospatial Analysis, Video Processing, E-commerce, Social Media, Analytics, Multilingual Content, and Video Production",
 	"private": true,
 	"scripts": {
 		"postinstall": "node scripts/copy-dependencies.js || echo 'Warning: Dependency copy failed but continuing...'",
@@ -15,7 +15,7 @@
 		"@turf/turf": "^7.3.2",
 		"@types/pdfkit": "^0.17.4",
 		"@woocommerce/woocommerce-rest-api": "^1.0.1",
-		    "axios": "^1.18.0",
+		"axios": "^1.18.0",
 		"chart.js": "^4.4.7",
 		"cheerio": "^1.0.0",
 		"csv-parse": "^5.6.0",
@@ -51,7 +51,7 @@
 		"qrcode": "^1.5.4",
 		"regression": "^2.0.1",
 		"remotion": "^4.0.459",
-		"sharp": "^0.33.5",
+		"sharp": "^0.35.3",
 		"stripe": "^14.0.0",
 		"subtitle": "^3.0.0",
 		"tesseract.js": "^5.1.1",
@@ -70,6 +70,10 @@
 	},
 	"overrides": {
 		"esbuild": "^0.28.1",
+		"postcss": ">=8.5.18",
+		"cross-spawn": ">=6.0.6",
+		"serialize-javascript": ">=7.0.5",
+		"brace-expansion@^5": ">=5.0.8",
 		"qs": ">=6.15.2",
 		"yauzl": ">=3.2.1",
 		"shelljs": "~0.8.5",
@@ -90,15 +94,15 @@
 		"lodash": ">=4.18.1",
 		"lodash-es": ">=4.18.1",
 		"uuid": ">=14.0.0",
-		"fast-uri": ">=3.1.2",
+		"fast-uri": ">=4.1.1",
 		"@babel/plugin-transform-modules-systemjs": ">=7.29.4",
 		"js-yaml": "^4.3.0",
-		      "svgo": ">=4.0.2",
-		      "linkify-it": ">=5.0.2",
-		      "mailparser": {
-		        "nodemailer": ">=9.0.1"
-		      }
-		    },
+		"svgo": ">=4.0.2",
+		"linkify-it": ">=5.0.2",
+		"mailparser": {
+			"nodemailer": ">=9.0.1"
+		}
+	},
 	"keywords": [
 		"wordpress",
 		"ai",
@@ -132,7 +136,7 @@
 	"author": "NV Digital Solutions",
 	"license": "SEE LICENSE IN LICENSE",
 	"engines": {
-		"node": ">=18.17.0",
-		"npm": ">=9.0.0"
+		"node": ">=20.9.0",
+		"npm": ">=10.0.0"
 	}
 }
