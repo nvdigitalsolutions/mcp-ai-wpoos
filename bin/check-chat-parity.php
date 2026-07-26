@@ -182,31 +182,29 @@ $features = array(
     array(
         'feature'  => 'Transcript recording',
         'legacy'   => 'WP_MCP_AI_Chat_Service::save_chat_transcript',
-        'libcore'  => 'NOT PRESENT',
-        'status'   => 'gap',
-        'severity' => 'medium',
+        'libcore'  => 'TranscriptStoreInterface + TranscriptStore adapter (contract + adapter complete)',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Voice/realtime providers (OpenAI Realtime, Gemini Live)',
         'legacy'   => 'WP_MCP_AI_OpenAI_Realtime_Client, WP_MCP_AI_Gemini_Live_Client',
-        'libcore'  => 'NOT PRESENT',
-        'status'   => 'gap',
+        'libcore'  => 'StreamingProviderInterface + provider skeletons (contract complete, WebSocket pending)',
+        'status'   => 'partial',
         'severity' => 'medium',
+        'note'     => 'Skeletons exist; platform-specific WebSocket implementation needed',
     ),
     array(
-        'feature'  => 'Tool migration: ~152 base tools still legacy-only',
-        'legacy'   => 'includes/tools/class-wp-mcp-ai-tool-*.php (~152 files)',
-        'libcore'  => '43 tools migrated; ~152 remain',
-        'status'   => 'gap',
-        'severity' => 'high',
-        'note'     => 'Separate migration track; ~152 tools remain in legacy. Contract layer for orchestrator is complete (35 contracts).',
+        'feature'  => 'Tool migration: base tools',
+        'legacy'   => 'includes/tools/class-wp-mcp-ai-tool-*.php (~234 files)',
+        'libcore'  => '190 core tools + 14 wp-adapter tools migrated; ~30 intentionally plugin-dependent',
+        'status'   => 'parity',
+        'note'     => '204 tools registered in oos-bridge.php. Remaining ~30 are plugin-dependent (Elementor, JetEngine, WooCommerce, etc.)',
     ),
     array(
         'feature'  => 'Chat transcript persistence (localStorage + CCT)',
         'legacy'   => 'WP_MCP_AI_Chat_Transcript_Recorder',
-        'libcore'  => 'NOT PRESENT',
-        'status'   => 'gap',
-        'severity' => 'medium',
+        'libcore'  => 'TranscriptStoreInterface + TranscriptStore adapter (contract + adapter complete)',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Async tool waiting in agentic loop',
@@ -221,6 +219,38 @@ $features = array(
         'libcore'  => 'TokenBudgetManager uses chars/4 only (tiktoken opt-in via adapter)',
         'status'   => 'partial',
         'severity' => 'low',
+    ),
+
+    // ── NEW: Service Contracts Extracted ──────────────────────────
+    array(
+        'feature'  => 'Chat service abstraction',
+        'legacy'   => 'WP_MCP_AI_Chat_Service',
+        'libcore'  => 'ChatServiceInterface + ChatService adapter',
+        'status'   => 'parity',
+        'note'     => 'processChatRequest, checkRateLimits, checkTokenBudget abstracted',
+    ),
+    array(
+        'feature'  => 'Tool load balancing abstraction',
+        'legacy'   => 'WP_MCP_AI_Tool_Load_Balancer',
+        'libcore'  => 'ToolLoadBalancerInterface + ToolLoadBalancer adapter',
+        'status'   => 'parity',
+        'note'     => 'routeToolExecution, trackToolMetrics, getToolRecommendations abstracted',
+    ),
+    array(
+        'feature'  => 'Async tool execution abstraction',
+        'legacy'   => 'WP_MCP_AI_Tool_Async_Executor',
+        'libcore'  => 'ToolAsyncExecutorInterface + ToolAsyncExecutor adapter',
+        'status'   => 'parity',
+        'note'     => 'queueTool, cancelJob, retryJob, getResult, cleanupExpiredResults abstracted',
+    ),
+
+    // ── NEW: WordPress-Native Tools Extracted ──────────────────────
+    array(
+        'feature'  => 'WP-native tools migrated to adapter',
+        'legacy'   => '14 tools in includes/tools/ (probe_chat, create_assistant, etc.)',
+        'libcore'  => '14 tools in lib/wordpress-adapter/src/Tool/ (same slugs, AbstractTool pattern)',
+        'status'   => 'parity',
+        'note'     => 'All deeply WP-native tools now in adapter; 204 total registrations in bridge',
     ),
 );
 
