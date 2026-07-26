@@ -97,6 +97,7 @@ function wp_mcp_ai_oos_orchestrator() {
 	$schema        = new Nvoos\WordPress\Adapter\SchemaStore();
 	$image_proc    = new Nvoos\WordPress\Adapter\ImageProcessing();
 	$memory        = new Nvoos\WordPress\Adapter\MemoryStore();
+	$transcripts   = new Nvoos\WordPress\Adapter\TranscriptStore();
 
 	// Map existing wp_mcp_ai_* hooks to the event dispatcher for backward compat.
 	$events->mapEventToHook(
@@ -138,6 +139,11 @@ function wp_mcp_ai_oos_orchestrator() {
 	$router->register( new Nvoos\Core\Infrastructure\Provider\NvidiaNimClient( $settings, $http_client, $error_factory ) );
 	$router->register( new Nvoos\Core\Infrastructure\Provider\CloudflareClient( $settings, $http_client, $error_factory ) );
 	$router->register( new Nvoos\Core\Infrastructure\Provider\HuggingFaceClient( $settings, $http_client, $error_factory ) );
+
+	// Streaming/realtime providers (separate interface — not registered with text router).
+	// Available for direct instantiation:
+	//   new Nvoos\Core\Infrastructure\Provider\OpenAIRealtimeProvider($settings, $http_client, $error_factory)
+	//   new Nvoos\Core\Infrastructure\Provider\GeminiLiveProvider($settings, $http_client, $error_factory)
 
 	// ─── Core Services ─────────────────────────────────────────────
 
