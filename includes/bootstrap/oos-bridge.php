@@ -407,6 +407,23 @@ function wp_mcp_ai_oos_orchestrator() {
 	// Schema tools (use WordPress SchemaStore adapter).
 	$tool_registry->register( new Nvoos\Core\Tool\GetPostTypeSchemaTool( $error_factory, $schema ) );
 
+	// ─── WordPress adapter tools (platform-specific, call WP APIs directly) ───
+
+	$tool_registry->register( new Nvoos\WordPress\Tool\ProbeChatTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\QueryMeshIntelligentTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\AggregateAgentResultsTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\VisualizeWorkflowMetricsTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\DelegateToA2aAgentTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\RunGeminiManagedAgentTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\ImageAltTextOptimizerTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\ImageFormatBatchConverterTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\MediaLibraryOptimizerTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\EvolveHarnessTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\VectorizeImageTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\CreateAssistantTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\CreateAssistantValidatedTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\PerformanceOptimizerAssistantTool( $error_factory ) );
+
 	$tool_registry->notifyRegistered();
 
 	$sse   = new Nvoos\Core\Infrastructure\Streaming\SseHandler();

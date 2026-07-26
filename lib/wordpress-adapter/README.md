@@ -28,6 +28,16 @@ All domain contracts are fully domain-owned — none extend PSR or Symfony inter
 | `QueueClient` | `QueueClientInterface` | Action Scheduler (primary), WP-Cron (fallback) |
 | `AuthProvider` | `AuthProviderInterface` | `get_current_user_id`, `user_can`, `wp_verify_nonce` |
 | `ContentStore` | `ContentStoreInterface` | `get_post`, `wp_insert_post`, `WP_Query`, `get_post_meta`, `wp_get_post_terms` |
+| `ImageProcessing` | `ImageProcessingInterface` | `wp_get_image_editor` (GD/Imagick) |
+| `MemoryStore` | `MemoryStoreInterface` | WordPress options, transients |
+| `TranscriptStore` | `TranscriptStoreInterface` | WordPress options + JetEngine CCT |
+| `AgentOrchestration` | `AgentOrchestrationInterface` | Agent team/workflow APIs |
+| `EmailService` | `EmailServiceInterface` | `wp_mail` |
+| `ProfessionRepository` | `ProfessionRepositoryInterface` | Profession CPT data |
+| `ChatService` | `ChatServiceInterface` | `WP_MCP_AI_Chat_Service` (legacy wrapper) |
+| `ToolLoadBalancer` | `ToolLoadBalancerInterface` | `WP_MCP_AI_Tool_Load_Balancer` (legacy wrapper) |
+| `ToolAsyncExecutor` | `ToolAsyncExecutorInterface` | `WP_MCP_AI_Tool_Async_Executor` (legacy wrapper) |
+| **SchemaStore** | `SchemaStoreInterface` | `get_post_type_object`, `get_taxonomy` |
 
 ## Conventions
 
