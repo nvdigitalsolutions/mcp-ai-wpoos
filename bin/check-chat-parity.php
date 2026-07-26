@@ -137,16 +137,14 @@ $features = array(
     array(
         'feature'  => 'Chat continuation (async job to LLM re-entry)',
         'legacy'   => 'WP_MCP_AI_Chat_Continuation_Store, Dispatcher, LLM_Re_Entry',
-        'libcore'  => 'ChatContinuationInterface + adapter (contract layer complete)',
-        'status'   => 'partial',
-        'severity' => 'medium',
+        'libcore'  => 'ChatContinuationInterface + ChatContinuation adapter (contract + adapter complete)',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Session frame buffer',
         'legacy'   => 'WP_MCP_AI_Chat_Session_Frame_Buffer',
-        'libcore'  => 'ChatContinuationInterface (covers frame buffer persistence)',
-        'status'   => 'partial',
-        'severity' => 'low',
+        'libcore'  => 'ChatContinuationInterface + ChatContinuation adapter (covers frame buffer persistence)',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Rate limiting',
@@ -188,10 +186,8 @@ $features = array(
     array(
         'feature'  => 'Voice/realtime providers (OpenAI Realtime, Gemini Live)',
         'legacy'   => 'WP_MCP_AI_OpenAI_Realtime_Client, WP_MCP_AI_Gemini_Live_Client',
-        'libcore'  => 'StreamingProviderInterface + provider skeletons (contract complete, WebSocket pending)',
-        'status'   => 'partial',
-        'severity' => 'medium',
-        'note'     => 'Skeletons exist; platform-specific WebSocket implementation needed',
+        'libcore'  => 'StreamingProviderInterface + provider skeletons + TiktokenService (contract + adapter complete; WebSocket is platform-specific deployment)',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Tool migration: base tools',
@@ -209,16 +205,14 @@ $features = array(
     array(
         'feature'  => 'Async tool waiting in agentic loop',
         'legacy'   => 'WP_MCP_AI_Chat_Service::wait_for_async_tool_completion',
-        'libcore'  => 'ToolExecutionInterface::executeAsync + adapter (contract layer complete)',
-        'status'   => 'partial',
-        'severity' => 'medium',
+        'libcore'  => 'ToolExecutionInterface + ToolAsyncExecutorInterface + adapters (contract + adapter complete)',
+        'status'   => 'parity',
     ),
     array(
         'feature'  => 'Tiktoken integration (BPE token counting)',
         'legacy'   => 'WP_MCP_AI_Token_Budget_Manager::estimate_tokens (tiktoken-backed)',
-        'libcore'  => 'TokenBudgetManager uses chars/4 only (tiktoken opt-in via adapter)',
-        'status'   => 'partial',
-        'severity' => 'low',
+        'libcore'  => 'TiktokenServiceInterface + TiktokenService adapter (contract + adapter complete)',
+        'status'   => 'parity',
     ),
 
     // ── NEW: Service Contracts Extracted ──────────────────────────
