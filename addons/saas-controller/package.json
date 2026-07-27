@@ -37,7 +37,7 @@
     "serialize-javascript": ">=7.0.5",
     "uuid": "^9.0.0",
     "webpack-dev-server": ">=5.2.5",
-    "shell-quote": ">=1.8.4",
+    "shell-quote": ">=1.9.0",
     "markdown-it": ">=14.2.0",
     "launch-editor": ">=2.14.1",
     "ws": ">=8.21.0",
