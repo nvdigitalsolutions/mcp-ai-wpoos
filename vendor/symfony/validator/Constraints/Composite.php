@@ -29,6 +29,8 @@ use Symfony\Component\Validator\Exception\ConstraintDefinitionException;
 abstract class Composite extends Constraint
 {
     /**
+     * {@inheritdoc}
+     *
      * The groups of the composite and its nested constraints are made
      * consistent using the following strategy:
      *
@@ -49,13 +51,13 @@ abstract class Composite extends Constraint
      * cached. When constraints are loaded from the cache, no more group
      * checks need to be done.
      */
-    public function __construct(mixed $options = null, ?array $groups = null, mixed $payload = null)
+    public function __construct($options = null, ?array $groups = null, $payload = null)
     {
         parent::__construct($options, $groups, $payload);
 
         $this->initializeNestedConstraints();
 
-        /** @var Constraint[] $nestedConstraints */
+        /* @var Constraint[] $nestedConstraints */
         $compositeOption = $this->getCompositeOption();
         $nestedConstraints = $this->$compositeOption;
 
@@ -66,14 +68,14 @@ abstract class Composite extends Constraint
         foreach ($nestedConstraints as $constraint) {
             if (!$constraint instanceof Constraint) {
                 if (\is_object($constraint)) {
-                    $constraint = $constraint::class;
+                    $constraint = \get_class($constraint);
                 }
 
-                throw new ConstraintDefinitionException(\sprintf('The value "%s" is not an instance of Constraint in constraint "%s".', $constraint, static::class));
+                throw new ConstraintDefinitionException(sprintf('The value "%s" is not an instance of Constraint in constraint "%s".', $constraint, static::class));
             }
 
             if ($constraint instanceof Valid) {
-                throw new ConstraintDefinitionException(\sprintf('The constraint Valid cannot be nested inside constraint "%s". You can only declare the Valid constraint directly on a field or method.', static::class));
+                throw new ConstraintDefinitionException(sprintf('The constraint Valid cannot be nested inside constraint "%s". You can only declare the Valid constraint directly on a field or method.', static::class));
             }
         }
 
@@ -98,7 +100,7 @@ abstract class Composite extends Constraint
                 $excessGroups = array_diff($constraint->groups, $this->groups);
 
                 if (\count($excessGroups) > 0) {
-                    throw new ConstraintDefinitionException(\sprintf('The group(s) "%s" passed to the constraint "%s" should also be passed to its containing constraint "%s".', implode('", "', $excessGroups), get_debug_type($constraint), static::class));
+                    throw new ConstraintDefinitionException(sprintf('The group(s) "%s" passed to the constraint "%s" should also be passed to its containing constraint "%s".', implode('", "', $excessGroups), get_debug_type($constraint), static::class));
                 }
             } else {
                 $constraint->groups = $this->groups;
@@ -109,9 +111,9 @@ abstract class Composite extends Constraint
     }
 
     /**
-     * Implicit group names are forwarded to nested constraints.
+     * {@inheritdoc}
      *
-     * @return void
+     * Implicit group names are forwarded to nested constraints.
      */
     public function addImplicitGroupName(string $group)
     {
@@ -127,17 +129,19 @@ abstract class Composite extends Constraint
 
     /**
      * Returns the name of the property that contains the nested constraints.
+     *
+     * @return string
      */
-    abstract protected function getCompositeOption(): string;
+    abstract protected function getCompositeOption();
 
     /**
      * @internal Used by metadata
      *
      * @return Constraint[]
      */
-    public function getNestedConstraints(): array
+    public function getNestedConstraints()
     {
-        /** @var Constraint[] $nestedConstraints */
+        /* @var Constraint[] $nestedConstraints */
         return $this->{$this->getCompositeOption()};
     }
 
@@ -148,8 +152,6 @@ abstract class Composite extends Constraint
      * constraints passed to the constructor.
      *
      * @see Collection::initializeNestedConstraints()
-     *
-     * @return void
      */
     protected function initializeNestedConstraints()
     {

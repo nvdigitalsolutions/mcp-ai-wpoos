@@ -89,7 +89,7 @@ class SettingsStore implements SettingsStoreInterface {
 	public function getApiKey( string $provider ): ?string {
 		$keyMap = array(
 			'openai'             => 'openai_api_key',
-			'openai_huggingface' => 'huggingface_api_key', // HuggingFace uses OpenAI-compatible endpoint
+			'openai_huggingface' => 'huggingface_api_key',
 			'gemini'             => 'gemini_api_key',
 			'anthropic'          => 'anthropic_api_key',
 			'deepseek'           => 'deepseek_api_key',
@@ -100,6 +100,8 @@ class SettingsStore implements SettingsStoreInterface {
 			'digitalocean'       => 'digitalocean_api_key',
 			'nvidia_nim'         => 'nvidia_nim_api_key',
 			'cloudflare'         => 'cloudflare_api_key',
+			'mubert'             => 'mubert_api_key',
+			'brave'              => 'brave_search_api_key',
 		);
 
 		$optionKey = $keyMap[ $provider ] ?? "{$provider}_api_key";

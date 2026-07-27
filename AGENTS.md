@@ -54,13 +54,13 @@ Independent of the coding-time agents above, the plugin also exposes **Agent Ski
 
 | Aspect | Details |
 |--------|---------|
-| **Format** | A single `SKILL.md` per skill — Markdown body with a small YAML frontmatter (`name`, `description`, optional metadata). Stored on disk under `wp-content/uploads/mcp-ai-skills/{slug}/SKILL.md` after install. |
+| **Format** | A single `SKILL.md` per skill — Markdown body with a small YAML frontmatter (`name`, `description`, optional metadata). Stored on disk under `wp-content/uploads/mcp-ai-skills/{slug}/SKILL.md` after install. All bundled skills are **OKF v0.1-conformant** — they include `type: Skill` in frontmatter, making them navigable as Open Knowledge Format concepts (see [`docs/features/okf-integration.md`](docs/features/okf-integration.md)).
 | **Bundled with base** | `includes/bundled-skills/` — 45 general-purpose Anthropic-authored skills (document handling, design, testing) + WordPress-developer skills (security, APIs, plugin patterns) + the new `ui-ux-pro-max` design system skill. |
 | **Bundled with Pro** | `addons/pro/includes/bundled-skills/` — 28+ WordPress-developer skills curated from [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) (WooCommerce, JetEngine, JetFormBuilder, WP Rocket, etc.) plus a `THIRD_PARTY_NOTICES.md`. |
 | **Remote catalogues (Pro)** | [`WP_MCP_AI_Skill_Catalogue_Service`](addons/pro/includes/services/class-wp-mcp-ai-skill-catalogue-service.php) and [`WP_MCP_AI_Skill_Catalogue_REST_Controller`](addons/pro/includes/rest/class-wp-mcp-ai-skill-catalogue-rest-controller.php) (`mcp-ai-pro/v1/catalogues/*`) install skills directly from registered public GitHub repos. SSRF-safe HTTPS-only fetcher. Pre-seeded with `Lonsdale201/wp-agent-skills` and `anthropics/skills`. |
 | **Progressive disclosure** | Each assistant has a "Use progressive disclosure" checkbox; when on, the system prompt sees only `# Available Skills` (name + description) and the model calls the base-plugin `load_skill({ name })` tool to retrieve the full SKILL.md only when needed. |
 | **Skill packs** | Curated, named bundles of related skills (e.g. "WordPress Developer") addressable as a single install unit via the Skill Manager admin UI. |
-| **Reference** | [`docs/features/agent-skills.md`](docs/features/agent-skills.md) (full Phases 1–4 narrative). |
+| **Reference** | [`docs/features/agent-skills.md`](docs/features/agent-skills.md) (full Phases 1–4 narrative) and [`docs/features/okf-integration.md`](docs/features/okf-integration.md) (OKF skill conformance).
 
 When extending Agent Skills, see §6 ("Updating Agent Configuration") below for the file-update checklist.
 

@@ -30,23 +30,47 @@ use Symfony\Contracts\Service\ResetInterface;
  */
 final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwareInterface, ResetInterface
 {
-    use AsyncDecoratorTrait;
     use HttpClientTrait;
+    use AsyncDecoratorTrait;
 
-    private array $defaultOptions = self::OPTIONS_DEFAULTS;
-    private HttpClientInterface $client;
-    private ?array $subnets;
-    private int $ipFlags;
-    private \ArrayObject $dnsCache;
+    private const PRIVATE_SUBNETS = [
+        '127.0.0.0/8',
+        '10.0.0.0/8',
+        '192.168.0.0/16',
+        '172.16.0.0/12',
+        '169.254.0.0/16',
+        '0.0.0.0/8',
+        '240.0.0.0/4',
+        '::1/128',
+        'fc00::/7',
+        'fe80::/10',
+        '::ffff:0:0/96',
+        '::/128',
+        '::/96',
+        '2002::/16',
+        '2001::/32',
+        '64:ff9b::/96',
+        '64:ff9b:1::/48',
+    ];
+
+    private $defaultOptions = self::OPTIONS_DEFAULTS;
+    private $client;
+    private $subnets;
+    private $ipFlags;
+    private $dnsCache;
 
     /**
      * @param string|array|null $subnets String or array of subnets using CIDR notation that should be considered private.
      *                                   If null is passed, the standard private subnets will be used.
      */
-    public function __construct(HttpClientInterface $client, string|array|null $subnets = null)
+    public function __construct(HttpClientInterface $client, $subnets = null)
     {
+        if (!(\is_array($subnets) || \is_string($subnets) || null === $subnets)) {
+            throw new \TypeError(sprintf('Argument 2 passed to "%s()" must be of the type array, string or null. "%s" given.', __METHOD__, get_debug_type($subnets)));
+        }
+
         if (!class_exists(IpUtils::class)) {
-            throw new \LogicException(\sprintf('You cannot use "%s" if the HttpFoundation component is not installed. Try running "composer require symfony/http-foundation".', __CLASS__));
+            throw new \LogicException(sprintf('You cannot use "%s" if the HttpFoundation component is not installed. Try running "composer require symfony/http-foundation".', __CLASS__));
         }
 
         if (null === $subnets) {
@@ -68,6 +92,9 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
         $this->dnsCache = new \ArrayObject();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
         [$url, $options] = self::prepareRequest($method, $url, $options, $this->defaultOptions, true);
@@ -83,10 +110,9 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
         $onProgress = $options['on_progress'] ?? null;
         $subnets = $this->subnets;
         $ipFlags = $this->ipFlags;
+        $lastPrimaryIp = '';
 
-        $options['on_progress'] = static function (int $dlNow, int $dlSize, array $info) use ($onProgress, $subnets, $ipFlags): void {
-            static $lastPrimaryIp = '';
-
+        $options['on_progress'] = static function (int $dlNow, int $dlSize, array $info) use ($onProgress, $subnets, $ipFlags, &$lastPrimaryIp): void {
             if (!\in_array($info['primary_ip'] ?? '', ['', $lastPrimaryIp], true)) {
                 self::ipCheck($info['primary_ip'], $subnets, $ipFlags, null, $info['url']);
                 $lastPrimaryIp = $info['primary_ip'];
@@ -103,7 +129,9 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
         $redirectHeaders['with_auth'] = $redirectHeaders['no_auth'] = $options['headers'];
 
         if (isset($options['normalized_headers']['host']) || isset($options['normalized_headers']['authorization']) || isset($options['normalized_headers']['cookie'])) {
-            $redirectHeaders['no_auth'] = array_filter($redirectHeaders['no_auth'], static fn ($h) => 0 !== stripos($h, 'Host:') && 0 !== stripos($h, 'Authorization:') && 0 !== stripos($h, 'Cookie:'));
+            $redirectHeaders['no_auth'] = array_filter($redirectHeaders['no_auth'], static function ($h) {
+                return 0 !== stripos($h, 'Host:') && 0 !== stripos($h, 'Authorization:') && 0 !== stripos($h, 'Cookie:');
+            });
         }
 
         return new AsyncResponse($this->client, $method, $url, $options, static function (ChunkInterface $chunk, AsyncContext $context) use (&$method, &$options, $maxRedirects, &$redirectHeaders, $subnets, $ipFlags, $dnsCache): \Generator {
@@ -133,16 +161,17 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
                 unset($options['body'], $options['json']);
 
                 if (isset($options['normalized_headers']['content-length']) || isset($options['normalized_headers']['content-type']) || isset($options['normalized_headers']['transfer-encoding'])) {
-                    $filterContentHeaders = static fn ($h) => 0 !== stripos($h, 'Content-Length:') && 0 !== stripos($h, 'Content-Type:') && 0 !== stripos($h, 'Transfer-Encoding:');
-                    $options['headers'] = array_filter($options['headers'], $filterContentHeaders);
+                    $filterContentHeaders = static function ($h) {
+                        return 0 !== stripos($h, 'Content-Length:') && 0 !== stripos($h, 'Content-Type:') && 0 !== stripos($h, 'Transfer-Encoding:');
+                    };
+                    $options['header'] = array_filter($options['header'], $filterContentHeaders);
                     $redirectHeaders['no_auth'] = array_filter($redirectHeaders['no_auth'], $filterContentHeaders);
                     $redirectHeaders['with_auth'] = array_filter($redirectHeaders['with_auth'], $filterContentHeaders);
                 }
             }
 
             // Authorization and Cookie headers MUST NOT follow except for the initial host name
-            $port = parse_url($url, \PHP_URL_PORT);
-            $options['headers'] = $redirectHeaders['host'] === $host && ($redirectHeaders['port'] ?? null) === $port ? $redirectHeaders['with_auth'] : $redirectHeaders['no_auth'];
+            $options['headers'] = $redirectHeaders['host'] === $host ? $redirectHeaders['with_auth'] : $redirectHeaders['no_auth'];
 
             static $redirectCount = 0;
             $context->setInfo('redirect_count', ++$redirectCount);
@@ -155,6 +184,9 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
         });
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function setLogger(LoggerInterface $logger): void
     {
         if ($this->client instanceof LoggerAwareInterface) {
@@ -162,7 +194,10 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
         }
     }
 
-    public function withOptions(array $options): static
+    /**
+     * {@inheritdoc}
+     */
+    public function withOptions(array $options): self
     {
         $clone = clone $this;
         $clone->client = $this->client->withOptions($options);
@@ -171,7 +206,7 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
         return $clone;
     }
 
-    public function reset(): void
+    public function reset()
     {
         $this->dnsCache->exchangeArray([]);
 
@@ -200,7 +235,7 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
 
         if ($ip = dns_get_record($host, \DNS_AAAA)) {
             $ip = $ip[0]['ipv6'];
-        } elseif (\extension_loaded('sockets')) {
+        } elseif (extension_loaded('sockets')) {
             if (!$info = socket_addrinfo_lookup($host, 0, ['ai_socktype' => \SOCK_STREAM, 'ai_family' => \AF_INET6])) {
                 return $host;
             }
@@ -222,7 +257,7 @@ final class NoPrivateNetworkHttpClient implements HttpClientInterface, LoggerAwa
             $ipFlags |= \FILTER_FLAG_NO_PRIV_RANGE | \FILTER_FLAG_NO_RES_RANGE;
         }
 
-        if (false !== filter_var($ip, \FILTER_VALIDATE_IP, $ipFlags) && !IpUtils::checkIp($ip, $subnets ?? IpUtils::PRIVATE_SUBNETS)) {
+        if (false !== filter_var($ip, \FILTER_VALIDATE_IP, $ipFlags) && !IpUtils::checkIp($ip, $subnets ?? self::PRIVATE_SUBNETS)) {
             return;
         }
 

@@ -10,6 +10,7 @@
  * @since   1.8.0
  * @see     https://modelcontextprotocol.io/specification/2025-03-26
  * @see     https://modelcontextprotocol.io/extensions/apps/overview
+ * @see     https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
@@ -59,6 +60,13 @@ class WP_MCP_AI_MCP_App_Client {
 	protected $auth;
 
 	/**
+	 * OAuth client instance for automatic token management.
+	 *
+	 * @var WP_MCP_AI_MCP_App_OAuth_Client|null
+	 */
+	protected $oauth_client = null;
+
+	/**
 	 * Request timeout in seconds.
 	 *
 	 * @var int
@@ -94,9 +102,11 @@ class WP_MCP_AI_MCP_App_Client {
 	 *     Connection configuration.
 	 *
 	 *     @type string $server_url  Required. Remote MCP server endpoint URL.
-	 *     @type string $auth_type   Authentication type: 'bearer', 'header', or 'none'. Default 'none'.
-	 *     @type string $token       Bearer token or header value for authentication.
+	 *     @type string $auth_type   Authentication type: 'bearer', 'header', 'oauth', or 'none'. Default 'none'.
+	 *     @type string $token       Bearer token, header value, or OAuth access token for authentication.
 	 *     @type string $header_name Custom header name when auth_type is 'header'.
+	 *     @type array  $oauth_data  OAuth token data (access_token, refresh_token, expires_in, issued_at) when auth_type is 'oauth'.
+	 *     @type WP_MCP_AI_MCP_App_OAuth_Client $oauth_client Pre-configured OAuth client instance (optional, used for auto-refresh).
 	 *     @type int    $timeout     Request timeout in seconds. Default 30.
 	 *     @type bool   $verify_ssl  Whether to verify SSL. Default true.
 	 * }
@@ -122,6 +132,14 @@ class WP_MCP_AI_MCP_App_Client {
 		);
 		$this->timeout    = max( 1, min( 120, absint( $config['timeout'] ) ) );
 		$this->verify_ssl = (bool) $config['verify_ssl'];
+
+		// Attach OAuth client if provided.
+		if ( isset( $config['oauth_client'] ) && $config['oauth_client'] instanceof WP_MCP_AI_MCP_App_OAuth_Client ) {
+			$this->oauth_client = $config['oauth_client'];
+			if ( ! empty( $config['oauth_data'] ) && is_array( $config['oauth_data'] ) ) {
+				$this->oauth_client->set_token_data( $config['oauth_data'] );
+			}
+		}
 	}
 
 	/**
@@ -465,6 +483,21 @@ class WP_MCP_AI_MCP_App_Client {
 				$headers['Authorization'] = 'Bearer ' . $this->auth['token'];
 				break;
 
+			case 'oauth':
+				// OAuth 2.0 bearer token — resolve via OAuth client if available.
+				$token = $this->resolve_oauth_token();
+				if ( is_wp_error( $token ) ) {
+					return $token;
+				}
+				if ( empty( $token ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_mcp_app_missing_oauth_token',
+						__( 'OAuth access token is required. Please complete the web login flow.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				$headers['Authorization'] = 'Bearer ' . $token;
+				break;
+
 			case 'header':
 				if ( empty( $this->auth['header_name'] ) || empty( $this->auth['token'] ) ) {
 					return new WP_Error(
@@ -487,6 +520,54 @@ class WP_MCP_AI_MCP_App_Client {
 		}
 
 		return $headers;
+	}
+
+	/**
+	 * Resolve the OAuth access token, refreshing if needed.
+	 *
+	 * When an oauth_client is attached, automatically refreshes expired tokens.
+	 * Falls back to the static token from the auth config.
+	 *
+	 * @since 1.9.0
+	 * @return string|WP_Error Access token or error.
+	 */
+	protected function resolve_oauth_token() {
+		// If we have an OAuth client with auto-refresh capability, use it.
+		if ( null !== $this->oauth_client ) {
+			return $this->oauth_client->get_access_token();
+		}
+
+		// Fallback: use static token from config.
+		return $this->auth['token'];
+	}
+
+	/**
+	 * Handle an OAuth token refresh event.
+	 *
+	 * After a successful refresh, updates the stored auth token so subsequent
+	 * requests use the new token immediately.
+	 *
+	 * @since 1.9.0
+	 * @param array $new_token_data New token data from the OAuth client.
+	 * @return void
+	 */
+	public function update_oauth_token( array $new_token_data ) {
+		if ( ! empty( $new_token_data['access_token'] ) ) {
+			$this->auth['token'] = $new_token_data['access_token'];
+		}
+		if ( null !== $this->oauth_client ) {
+			$this->oauth_client->set_token_data( $new_token_data );
+		}
+	}
+
+	/**
+	 * Get the OAuth client instance if attached.
+	 *
+	 * @since 1.9.0
+	 * @return WP_MCP_AI_MCP_App_OAuth_Client|null
+	 */
+	public function get_oauth_client() {
+		return $this->oauth_client;
 	}
 
 	/**

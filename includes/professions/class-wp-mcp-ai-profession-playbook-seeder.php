@@ -104,7 +104,17 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$loader = new WP_MCP_AI_Profession_Playbook_Loader();
 
 		foreach ( $professions as $profession ) {
-			self::sync_profession_playbook( $profession, $loader, false );
+			try {
+				self::sync_profession_playbook( $profession, $loader, false );
+			} catch ( \Throwable $e ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger.
+					error_log(
+						'WP_MCP_AI: Incremental playbook sync failed for profession ' .
+						( $profession->post_name ?? 'unknown' ) . ': ' . $e->getMessage()
+					);
+				}
+			}
 		}
 
 		// Update offset for next batch.
@@ -124,6 +134,25 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	 */
 	protected static function sync_profession_playbook( $profession, $loader, $force = false ) {
 		$slug = $profession->post_name;
+
+		// Ensure the CPT class with its meta constants is available before
+		// any method that references WP_MCP_AI_Profession_CPT constants
+		// (remove_duplicate_playbooks calls remove_attachment_from_memory_files
+		// and ensure_attachment_in_memory_files, which both use META_MEMORY_FILES).
+		//
+		// build_playbook() has its own guard, but it runs AFTER this point.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			if ( file_exists( WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+			} else {
+				// Cannot proceed without CPT constants — log and skip.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger.
+					error_log( 'WP_MCP_AI: CPT class file missing; cannot sync playbook for profession ' . $slug );
+				}
+				return;
+			}
+		}
 
 		// First, remove any duplicate playbook attachments for this profession.
 		self::remove_duplicate_playbooks( $profession->ID );
@@ -593,6 +622,8 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	 * created by content changes or force regeneration.
 	 *
 	 * @param bool $force Force regeneration even if content hash matches.
+	 * @return array{synced: int, errors: string[]} Sync results, including
+	 *                                              per-profession error messages.
 	 */
 	public static function sync_all( $force = false ) {
 		// Load repository if not already loaded.
@@ -611,6 +642,8 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$batch_size  = 100;
 		$offset      = 0;
 		$max_batches = 200; // Safety cap: max 20,000 professions per sync.
+		$errors      = array();
+		$synced      = 0;
 
 		for ( $batch = 0; $batch < $max_batches; $batch++ ) {
 			$professions = $repository->find_all(
@@ -624,11 +657,37 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 				break;
 			}
 
+			// Prime post meta cache for the batch so build_playbook()
+			// and find_existing_playbook_attachment() don't incur
+			// individual DB queries per meta key per profession.
+			$batch_ids = wp_list_pluck( $professions, 'ID' );
+			update_meta_cache( 'post', $batch_ids );
+
 			foreach ( $professions as $profession ) {
-				self::sync_profession_playbook( $profession, $loader, $force );
+				try {
+					self::sync_profession_playbook( $profession, $loader, $force );
+					++$synced;
+				} catch ( \Throwable $e ) {
+					$slug = $profession->post_name ?? 'unknown';
+					$errors[] = sprintf(
+						'%s: %s',
+						$slug,
+						$e->getMessage()
+					);
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger.
+						error_log(
+							'WP_MCP_AI: Playbook sync failed for profession ' .
+							$slug . ': ' . $e->getMessage()
+						);
+					}
+				}
 			}
 
 			$offset += $batch_size;
+
+			// Free memory after each batch.
+			unset( $professions, $batch_ids );
 
 			// Prevent PHP timeout on very large profession sets.
 			if ( $batch > 0 && 0 === $batch % 10 ) {
@@ -641,6 +700,11 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 
 		// Clean up orphaned playbook attachments created by content changes or force regeneration.
 		self::delete_orphaned_system_playbooks( 500 );
+
+		return array(
+			'synced' => $synced,
+			'errors' => $errors,
+		);
 	}
 
 	/**

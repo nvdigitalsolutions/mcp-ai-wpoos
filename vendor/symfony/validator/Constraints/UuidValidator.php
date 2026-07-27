@@ -35,7 +35,7 @@ class UuidValidator extends ConstraintValidator
 
     // Roughly speaking:
     // x = any hexadecimal character
-    // M = any allowed version {1..8}
+    // M = any allowed version {1..6}
     // N = any allowed variant {8, 9, a, b}
 
     public const STRICT_LENGTH = 36;
@@ -60,9 +60,9 @@ class UuidValidator extends ConstraintValidator
     public const LOOSE_FIRST_HYPHEN_POSITION = 4;
 
     /**
-     * @return void
+     * {@inheritdoc}
      */
-    public function validate(mixed $value, Constraint $constraint)
+    public function validate($value, Constraint $constraint)
     {
         if (!$constraint instanceof Uuid) {
             throw new UnexpectedTypeException($constraint, Uuid::class);
@@ -72,7 +72,7 @@ class UuidValidator extends ConstraintValidator
             return;
         }
 
-        if (!\is_scalar($value) && !$value instanceof \Stringable) {
+        if (!\is_scalar($value) && !(\is_object($value) && method_exists($value, '__toString'))) {
             throw new UnexpectedValueException($value, 'string');
         }
 
@@ -91,7 +91,7 @@ class UuidValidator extends ConstraintValidator
         $this->validateLoose($value, $constraint);
     }
 
-    private function validateLoose(string $value, Uuid $constraint): void
+    private function validateLoose(string $value, Uuid $constraint)
     {
         // Error priority:
         // 1. ERROR_INVALID_CHARACTERS
@@ -162,7 +162,7 @@ class UuidValidator extends ConstraintValidator
         }
     }
 
-    private function validateStrict(string $value, Uuid $constraint): void
+    private function validateStrict(string $value, Uuid $constraint)
     {
         // Error priority:
         // 1. ERROR_INVALID_CHARACTERS
@@ -238,11 +238,9 @@ class UuidValidator extends ConstraintValidator
 
         // Check version
         if (!\in_array($value[self::STRICT_VERSION_POSITION], $constraint->versions)) {
-            $code = Uuid::TIME_BASED_VERSIONS === $constraint->versions ? Uuid::INVALID_TIME_BASED_VERSION_ERROR : Uuid::INVALID_VERSION_ERROR;
-
             $this->context->buildViolation($constraint->message)
                 ->setParameter('{{ value }}', $this->formatValue($value))
-                ->setCode($code)
+                ->setCode(Uuid::INVALID_VERSION_ERROR)
                 ->addViolation();
         }
 

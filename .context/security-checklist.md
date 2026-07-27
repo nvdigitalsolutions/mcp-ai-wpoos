@@ -2,7 +2,7 @@
 
 > **GSD Context File** — Load this at the start of every AI development session.
 > This checklist must be applied to **every code change** without exception.
-> Last reviewed: March 2026.
+> Last reviewed: July 2026.
 
 ---
 
@@ -210,6 +210,66 @@ if ( is_wp_error( $response ) ) {
 $body = wp_remote_retrieve_body( $response );
 $data = json_decode( $body, true );
 ```
+
+---
+
+## Advanced Patterns (Added July 2026)
+
+### HMAC-Signed Policy Tokens
+
+When server-controlled configuration crosses a client boundary (e.g. shortcode attrs → JS → AJAX handler), use an HMAC-signed policy token instead of sending raw config values:
+
+```php
+// Server — generate token:
+$payload = wp_json_encode( array(
+    'assistant'          => $assistant_id,
+    'allow_sensitive'    => false,
+    'exp'                => time() + HOUR_IN_SECONDS,
+) );
+$policy_token = base64_encode( $payload . '|' . wp_hash( $payload ) );
+
+// Client — send token (never reconstruct raw attrs)
+// Server — verify token:
+list( $json, $hmac ) = explode( '|', base64_decode( $policy_token ), 2 );
+if ( ! hash_equals( wp_hash( $json ), $hmac ) ) {
+    return new WP_Error( 'invalid_token' );
+}
+$data = json_decode( $json, true );
+if ( $data['exp'] < time() ) {
+    return new WP_Error( 'expired_token' );
+}
+```
+
+Reference: `class-wp-mcp-ai-professional-selector-shortcode.php`.
+
+### Path Traversal Prevention (realpath Containment)
+
+Before any recursive filesystem operation:
+
+```php
+$resolved = realpath( $target_path );
+$base     = realpath( wp_upload_dir()['basedir'] );
+if ( false === $resolved || 0 !== strpos( $resolved, $base ) ) {
+    // Log security event, abort operation
+    return new WP_Error( 'path_traversal' );
+}
+```
+
+Reference: `class-wp-mcp-ai-optional-components.php` (ZIP validation), `class-wp-mcp-ai-pro-privacy.php` (directory deletion).
+
+### Admin-Post CSRF Protection
+
+`admin-post.php` endpoints must verify a nonce:
+
+```php
+// In the handler at entry:
+check_admin_referer( 'wp_mcp_ai_{toolkit}_sync' );
+
+// In the inline JS that builds the URL:
+url += '&_wpnonce=' + '<?php echo wp_create_nonce( 'wp_mcp_ai_{toolkit}_sync' ); ?>';
+```
+
+Reference: `class-wp-mcp-ai-shopify-sync-toolkit-settings-page.php`, `class-wp-mcp-ai-ezuite-toolkit-settings-page.php`, `class-wp-mcp-ai-flowhub-toolkit-settings-page.php`.
 
 ---
 

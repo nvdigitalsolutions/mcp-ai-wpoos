@@ -25,19 +25,13 @@ class Url extends Constraint
 {
     public const INVALID_URL_ERROR = '57c2f299-1154-4870-89bb-ef3b1f5ad229';
 
-    protected const ERROR_NAMES = [
+    protected static $errorNames = [
         self::INVALID_URL_ERROR => 'INVALID_URL_ERROR',
     ];
-
-    /**
-     * @deprecated since Symfony 6.1, use const ERROR_NAMES instead
-     */
-    protected static $errorNames = self::ERROR_NAMES;
 
     public $message = 'This value is not a valid URL.';
     public $protocols = ['http', 'https'];
     public $relativeProtocol = false;
-    /** @var callable|null */
     public $normalizer;
 
     public function __construct(
@@ -47,7 +41,7 @@ class Url extends Constraint
         ?bool $relativeProtocol = null,
         ?callable $normalizer = null,
         ?array $groups = null,
-        mixed $payload = null,
+        $payload = null
     ) {
         parent::__construct($options, $groups, $payload);
 
@@ -57,7 +51,7 @@ class Url extends Constraint
         $this->normalizer = $normalizer ?? $this->normalizer;
 
         if (null !== $this->normalizer && !\is_callable($this->normalizer)) {
-            throw new InvalidArgumentException(\sprintf('The "normalizer" option must be a valid callable ("%s" given).', get_debug_type($this->normalizer)));
+            throw new InvalidArgumentException(sprintf('The "normalizer" option must be a valid callable ("%s" given).', get_debug_type($this->normalizer)));
         }
     }
 }

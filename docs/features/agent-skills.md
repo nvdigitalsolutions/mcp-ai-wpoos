@@ -6,6 +6,8 @@
 
 Agent Skills are portable, reusable behaviour packages that teach an assistant how to handle a specific class of task. Each skill is a single `SKILL.md` file — standard Markdown with a small YAML frontmatter block — stored under `wp-content/uploads/mcp-ai-skills/{skill-name}/SKILL.md`. When an assistant runs, any skills assigned to it are automatically injected into the system prompt so the model knows exactly when and how to use them.
 
+> **OKF v0.1 Conformance (July 2026):** All bundled skills now include `type: Skill` in their YAML frontmatter, making them fully conformant with Google's [Open Knowledge Format v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) specification. This means skills are navigable as OKF concepts via the 6 OKF MCP tools (`okf_read_concept`, `okf_browse`, `okf_traverse`, `okf_search`, `okf_write_concept`, `okf_delete_concept`). See [`docs/features/okf-integration.md`](okf-integration.md) for details.
+
 ---
 
 ## Pre-Built Skills (Base Plugin)

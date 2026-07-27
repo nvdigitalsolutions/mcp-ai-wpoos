@@ -391,8 +391,8 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 
 		<script>
 		( function() {
-			var syncNowUrl = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_flowhub_sync_now' ) ); ?> + '&connection_id=';
-			var dryRunUrl  = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_flowhub_sync_dry_run' ) ); ?> + '&connection_id=';
+			var syncNowUrl = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_flowhub_sync_now&_wpnonce=' . wp_create_nonce( 'wp_mcp_ai_flowhub_sync' ) ) ); ?> + '&connection_id=';
+			var dryRunUrl  = <?php echo wp_json_encode( admin_url( 'admin-post.php?action=wp_mcp_ai_flowhub_sync_dry_run&_wpnonce=' . wp_create_nonce( 'wp_mcp_ai_flowhub_sync' ) ) ); ?> + '&connection_id=';
 
 			document.querySelectorAll( '.wp-mcp-ai-sync-now' ).forEach( function( btn ) {
 				btn.addEventListener( 'click', function() {
@@ -795,13 +795,16 @@ class WP_MCP_AI_FlowHub_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 	 * @param bool $dry_run Whether this is a dry-run.
 	 */
 	private function handle_sync_action( $dry_run ) {
-		// Capability check.
+			// Capability check.
 		if ( ! current_user_can( 'manage_woocommerce' ) ) { // phpcs:ignore WordPress.WP.Capabilities.Unknown
 					wp_die(
 						esc_html__( 'You do not have sufficient permissions to perform this action.', 'mcp-ai-wpoos-pro' ),
 						403
 					);
 		}
+
+			// Nonce verification to prevent CSRF attacks.
+			check_admin_referer( 'wp_mcp_ai_flowhub_sync' );
 
 				// Validate connection ID.
 		$connection_id = isset( $_GET['connection_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended

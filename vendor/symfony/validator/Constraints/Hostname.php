@@ -24,14 +24,9 @@ class Hostname extends Constraint
 {
     public const INVALID_HOSTNAME_ERROR = '7057ffdb-0af4-4f7e-bd5e-e9acfa6d7a2d';
 
-    protected const ERROR_NAMES = [
+    protected static $errorNames = [
         self::INVALID_HOSTNAME_ERROR => 'INVALID_HOSTNAME_ERROR',
     ];
-
-    /**
-     * @deprecated since Symfony 6.1, use const ERROR_NAMES instead
-     */
-    protected static $errorNames = self::ERROR_NAMES;
 
     public $message = 'This value is not a valid hostname.';
     public $requireTld = true;
@@ -41,7 +36,7 @@ class Hostname extends Constraint
         ?string $message = null,
         ?bool $requireTld = null,
         ?array $groups = null,
-        mixed $payload = null,
+        $payload = null
     ) {
         parent::__construct($options, $groups, $payload);
 

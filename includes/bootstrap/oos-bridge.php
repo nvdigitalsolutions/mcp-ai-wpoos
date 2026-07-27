@@ -95,6 +95,9 @@ function wp_mcp_ai_oos_orchestrator() {
 	$queue         = new Nvoos\WordPress\Adapter\QueueClient();
 	$events        = new Nvoos\WordPress\Adapter\EventDispatcher();
 	$schema        = new Nvoos\WordPress\Adapter\SchemaStore();
+	$image_proc    = new Nvoos\WordPress\Adapter\ImageProcessing();
+	$memory        = new Nvoos\WordPress\Adapter\MemoryStore();
+	$transcripts   = new Nvoos\WordPress\Adapter\TranscriptStore();
 
 	// Map existing wp_mcp_ai_* hooks to the event dispatcher for backward compat.
 	$events->mapEventToHook(
@@ -136,6 +139,11 @@ function wp_mcp_ai_oos_orchestrator() {
 	$router->register( new Nvoos\Core\Infrastructure\Provider\NvidiaNimClient( $settings, $http_client, $error_factory ) );
 	$router->register( new Nvoos\Core\Infrastructure\Provider\CloudflareClient( $settings, $http_client, $error_factory ) );
 	$router->register( new Nvoos\Core\Infrastructure\Provider\HuggingFaceClient( $settings, $http_client, $error_factory ) );
+
+	// Streaming/realtime providers (separate interface — not registered with text router).
+	// Available for direct instantiation:
+	//   new Nvoos\Core\Infrastructure\Provider\OpenAIRealtimeProvider($settings, $http_client, $error_factory)
+	//   new Nvoos\Core\Infrastructure\Provider\GeminiLiveProvider($settings, $http_client, $error_factory)
 
 	// ─── Core Services ─────────────────────────────────────────────
 
@@ -187,6 +195,13 @@ function wp_mcp_ai_oos_orchestrator() {
 	$tool_registry->register( new Nvoos\Core\Tool\ScheduleJobTool( $error_factory, $queue ) );
 	$tool_registry->register( new Nvoos\Core\Tool\UnscheduleJobTool( $error_factory, $queue ) );
 	$tool_registry->register( new Nvoos\Core\Tool\ListJobsTool( $error_factory, $queue ) );
+
+	// Cron job management tools.
+	$tool_registry->register( new Nvoos\Core\Tool\CreateCronJobTool( $error_factory, $queue ) );
+	$tool_registry->register( new Nvoos\Core\Tool\CreateCronJobValidatedTool( $error_factory, $queue ) );
+	$tool_registry->register( new Nvoos\Core\Tool\DeleteCronJobTool( $error_factory, $queue ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ListCronJobsTool( $error_factory, $queue ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GetCronJobTool( $error_factory, $queue ) );
 	$tool_registry->register( new Nvoos\Core\Tool\GetPostMetaTool( $error_factory, $content ) );
 	$tool_registry->register( new Nvoos\Core\Tool\FormatDateTool( $error_factory ) );
 	$tool_registry->register( new Nvoos\Core\Tool\TimeAgoTool( $error_factory ) );
@@ -226,6 +241,13 @@ function wp_mcp_ai_oos_orchestrator() {
 	$tool_registry->register( new Nvoos\Core\Tool\UpdatePostTool( $error_factory, $content ) );
 	$tool_registry->register( new Nvoos\Core\Tool\DeletePostTool( $error_factory, $content ) );
 
+	// Content variant tools (validated / upsert).
+	$tool_registry->register( new Nvoos\Core\Tool\CreatePostValidatedTool( $error_factory, $content ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GetRecentPostsValidatedTool( $error_factory, $content ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SavePostTool( $error_factory, $content ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SavePostValidatedTool( $error_factory, $content ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SearchContentValidatedTool( $error_factory, $content ) );
+
 	// User tools (use WordPress AuthProvider adapter).
 	$tool_registry->register( new Nvoos\Core\Tool\GetUserInfoTool( $error_factory, $auth ) );
 
@@ -240,11 +262,167 @@ function wp_mcp_ai_oos_orchestrator() {
 	// Geo tools.
 	$tool_registry->register( new Nvoos\Core\Tool\GeocodeAddressTool( $error_factory, $settings, $http_client ) );
 
+	// Audio generation and transcription tools.
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateOpenAISpeechTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateOpenAISpeechValidatedTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateMusicTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateMusicValidatedTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\TranscribeOpenAIAudioTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\TranscribeOpenAIAudioValidatedTool( $error_factory, $settings, $http_client ) );
+
+	// Video generation and analysis tools.
+	$tool_registry->register( new Nvoos\Core\Tool\CheckVideoStatusTool( $error_factory, $queue ) );
+	$tool_registry->register( new Nvoos\Core\Tool\AnalyzeVideoTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateVideoCaptionTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateSoraVideoTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateVeoVideoTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateOmniVideoTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\EditOmniVideoTool( $error_factory, $settings, $http_client ) );
+
+	// Image generation and analysis tools.
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateOpenAIImageTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateOpenAIImageValidatedTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateGeminiImageTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateGeminiImageValidatedTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\EditOpenAIImageTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\EditGeminiImageTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\CreateImageVariationTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\AnalyzeImageTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateImageAltTextTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateImageCaptionTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ExtractImageTextTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\VisionObjectLocalizationTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\VisionProductSearchTool( $error_factory ) );
+
+	// Batch processing tools (OpenAI Batch API).
+	$tool_registry->register( new Nvoos\Core\Tool\CreateBatchTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ListBatchesTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GetBatchStatusTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\MonitorBatchTool( $error_factory, $settings, $http_client ) );
+
+	// Chart, diagram, and misc visualization tools.
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateChartTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\CreateChartTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\CreateChartValidatedTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateMermaidTool( $error_factory ) );
+
+	// Cloudflare AI image generation.
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateCloudflareAIImageTool( $error_factory, $settings, $http_client ) );
+
+	// Validated wrappers.
+	$tool_registry->register( new Nvoos\Core\Tool\WebSearchValidatedTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateImageAltTextValidatedTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateImageCaptionValidatedTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\EditGeminiImageValidatedTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateSoraVideoValidatedTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateVeoVideoValidatedTool( $error_factory, $settings, $http_client ) );
+
+	// Image manipulation tools (use WordPress ImageProcessing adapter).
+	$tool_registry->register( new Nvoos\Core\Tool\ConvertImageFormatTool( $error_factory, $image_proc ) );
+	$tool_registry->register( new Nvoos\Core\Tool\CropImageTool( $error_factory, $image_proc ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ResizeImageTool( $error_factory, $image_proc ) );
+	$tool_registry->register( new Nvoos\Core\Tool\RotateImageTool( $error_factory, $image_proc ) );
+
+	// Content analysis and prompt-builder tools.
+	$tool_registry->register( new Nvoos\Core\Tool\GeneratePostExcerptTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\AutoCategorizeContentTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ContentFreshnessCheckerTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SuggestInternalLinksTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\AnalyzeCodeSequenceTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\AnalyzeCommentContentTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\AnalyzeFileSuitabilityTool( $error_factory ) );
+
+	// External search and API tools.
+	$tool_registry->register( new Nvoos\Core\Tool\SearchDriveTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SearchGmailTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SearchPlacesTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GeminiGeospatialQueryTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\QueryRemoteSiteTool( $error_factory, $settings, $http_client ) );
+
+	// Memory and context tools (use WordPress MemoryStore adapter).
+	$tool_registry->register( new Nvoos\Core\Tool\RecallMemoryTool( $error_factory, $memory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\StoreAgentContextTool( $error_factory, $memory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\RetrieveAgentMemoryTool( $error_factory, $memory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\MineAgentMemoryTool( $error_factory, $memory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ManageContextLifecycleTool( $error_factory, $memory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SemanticContextSearchTool( $error_factory, $memory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SemanticContentSearchTool( $error_factory, $memory ) );
+
+	// Agent orchestration tools.
+	$orchestration = new Nvoos\WordPress\Adapter\AgentOrchestration();
+	$tool_registry->register( new Nvoos\Core\Tool\CreateAgentTeamTool( $error_factory, $orchestration ) );
+	$tool_registry->register( new Nvoos\Core\Tool\DelegateToAgentTool( $error_factory, $orchestration ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ExecuteWorkflowTool( $error_factory, $orchestration ) );
+	$tool_registry->register( new Nvoos\Core\Tool\CheckWorkflowHealthTool( $error_factory, $orchestration ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ValidateWorkflowTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ValidateReasoningChainTool( $error_factory ) );
+
+	// Specialized tools.
+	$tool_registry->register( new Nvoos\Core\Tool\WaitForUserTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\OpenOpenAILogsTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ListOpenAIFilesTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GetOpenAIFileDetailsTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\RunOpenAIExternalActionTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateAuth0TokenTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GenerateSimpleJWTTokenTool( $error_factory ) );
+
+	// Profession tools.
+	$professions = new Nvoos\WordPress\Adapter\ProfessionRepository();
+	$tool_registry->register( new Nvoos\Core\Tool\GetProfessionTool( $error_factory, $professions ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ListProfessionsTool( $error_factory, $professions ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ProfessionStatsTool( $error_factory, $professions ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SaveProfessionTool( $error_factory, $professions ) );
+
+	// Email tools.
+	$email = new Nvoos\WordPress\Adapter\EmailService();
+	$tool_registry->register( new Nvoos\Core\Tool\SendGroupEmailTool( $error_factory, $email ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SendGroupEmailValidatedTool( $error_factory, $email ) );
+
+	// Content recommendation and SEO tools.
+	$tool_registry->register( new Nvoos\Core\Tool\ContentRecommendationEngineTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\BatchEmbedContentTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SEOMetaOptimizerTool( $error_factory ) );
+
+	// OpenAI Vector Store tools.
+	$tool_registry->register( new Nvoos\Core\Tool\CreateVectorStoreTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\GetVectorStoreTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ListVectorStoresTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ManageVectorStoreFilesTool( $error_factory, $settings, $http_client ) );
+
+	// Cache purge tools.
+	$tool_registry->register( new Nvoos\Core\Tool\PurgeCacheTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\PurgeCloudflareCacheTool( $error_factory, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\PurgeVarnishCacheTool( $error_factory, $settings, $http_client ) );
+
+	// Erlang-C queuing theory tools.
+	$erlang = wp_mcp_ai_oos_erlang_c();
+	$tool_registry->register( new Nvoos\Core\Tool\CalculateErlangCTool( $error_factory, $erlang ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ErlangCConcurrencyAdvisorTool( $error_factory, $erlang, $settings ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ErlangCQueueHealthTool( $error_factory, $erlang, $settings, $http_client ) );
+	$tool_registry->register( new Nvoos\Core\Tool\ErlangCStaffingAdvisorTool( $error_factory, $erlang, $settings, $http_client ) );
+
 	// Site admin tools.
 	$tool_registry->register( new Nvoos\Core\Tool\GetSiteSummaryTool( $error_factory, $settings ) );
 
 	// Schema tools (use WordPress SchemaStore adapter).
 	$tool_registry->register( new Nvoos\Core\Tool\GetPostTypeSchemaTool( $error_factory, $schema ) );
+
+	// ─── WordPress adapter tools (platform-specific, call WP APIs directly) ───
+
+	$tool_registry->register( new Nvoos\WordPress\Tool\ProbeChatTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\QueryMeshIntelligentTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\AggregateAgentResultsTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\VisualizeWorkflowMetricsTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\DelegateToA2aAgentTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\RunGeminiManagedAgentTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\ImageAltTextOptimizerTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\ImageFormatBatchConverterTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\MediaLibraryOptimizerTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\EvolveHarnessTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\VectorizeImageTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\CreateAssistantTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\CreateAssistantValidatedTool( $error_factory ) );
+	$tool_registry->register( new Nvoos\WordPress\Tool\PerformanceOptimizerAssistantTool( $error_factory ) );
 
 	$tool_registry->notifyRegistered();
 
@@ -300,6 +478,174 @@ function wp_mcp_ai_oos_engine_enabled(): bool {
 	return false;
 }
 
+// ─── Wave 1 Service Bridges ────────────────────────────────────────────
+
+/**
+ * Get the Semantic Compressor — framework-agnostic when engine=oos, legacy otherwise.
+ *
+ * @since 2.0.0
+ *
+ * @return Nvoos\Core\Domain\Contract\SemanticCompressorInterface
+ */
+function wp_mcp_ai_oos_semantic_compressor(): Nvoos\Core\Domain\Contract\SemanticCompressorInterface {
+	static $instance = null;
+
+	if ( null !== $instance ) {
+		return $instance;
+	}
+
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\WordPress\Adapter\SemanticCompressor();
+	} else {
+		// Legacy fallback — wraps the old class in the new interface.
+		$instance = new class implements Nvoos\Core\Domain\Contract\SemanticCompressorInterface {
+			public function compress( string $text, int $aggressiveness = 2, int $maxTokens = 0 ): array {
+				$legacy = \WP_MCP_AI_Semantic_Compressor::get_instance();
+				$compressed = $legacy->compress( $text, [
+					'aggressiveness'     => max( 1, min( 3, $aggressiveness ) ),
+					'skip_code_blocks'   => true,
+					'preserve_specifics' => true,
+				] );
+				$originalBytes = strlen( $text );
+				$compressedBytes = strlen( (string) $compressed );
+				return [
+					'compressed'        => (string) $compressed,
+					'original_bytes'    => $originalBytes,
+					'compressed_bytes'  => $compressedBytes,
+					'compression_ratio' => $originalBytes > 0 ? round( $compressedBytes / $originalBytes, 4 ) : 1.0,
+					'tokens_estimate'   => $this->estimateTokens( (string) $compressed ),
+				];
+			}
+
+			public function estimateTokens( string $text ): int {
+				return \WP_MCP_AI_Semantic_Compressor::get_instance()->estimate_tokens( $text );
+			}
+
+			public function isValidAggressiveness( int $level ): bool {
+				return $level >= 1 && $level <= 3;
+			}
+		};
+	}
+
+	return $instance;
+}
+
+/**
+ * Get the Data Budget Tracker — framework-agnostic when engine=oos, legacy otherwise.
+ *
+ * @since 2.0.0
+ *
+ * @param string $request_id Optional request identifier.
+ * @return Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface
+ */
+function wp_mcp_ai_oos_data_budget_tracker( string $request_id = '' ): Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface {
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\WordPress\Adapter\DataBudgetTracker( $request_id );
+	}
+
+	// Legacy fallback — wraps the old class in the new interface.
+	return new class( $request_id ) implements Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface {
+		private \WP_MCP_AI_Data_Budget_Tracker $legacy;
+
+		public function __construct( string $request_id ) {
+			$this->legacy = new \WP_MCP_AI_Data_Budget_Tracker( $request_id );
+		}
+
+		public function getRequestBudget(): int { return $this->legacy->get_request_budget(); }
+		public function getPerMessageBudget(): int { return $this->legacy->get_per_message_budget(); }
+		public function record( int $bytes ): void { $this->legacy->record( $bytes ); }
+		public function consumed(): int { return $this->legacy->consumed(); }
+		public function remaining(): int { return $this->legacy->remaining(); }
+		public function isExhausted(): bool { return $this->legacy->is_exhausted(); }
+		public function shouldSpill( int $bytes ): bool { return $this->legacy->should_spill( $bytes ); }
+		public function noteSpill(): void { $this->legacy->note_spill(); }
+		public function spillCount(): int { return $this->legacy->spill_count(); }
+		public function reset( string $requestId = '' ): void { $this->legacy->reset( $requestId ); }
+	};
+}
+
+/**
+ * Get the Erlang C calculator.
+ *
+ * @since 2.0.0
+ * @return Nvoos\Core\Domain\Contract\ErlangCInterface
+ */
+function wp_mcp_ai_oos_erlang_c(): Nvoos\Core\Domain\Contract\ErlangCInterface {
+	static $instance = null;
+	if ( null !== $instance ) { return $instance; }
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\Core\Domain\Service\Optimization\ErlangC();
+	} else {
+		$instance = new class implements Nvoos\Core\Domain\Contract\ErlangCInterface {
+			public function probabilityWait( float $ti, int $n ): float { return \WP_MCP_AI_Erlang_C::probability_wait( $ti, $n ); }
+			public function serviceLevel( float $ti, int $n, float $aht, float $t ): float { return \WP_MCP_AI_Erlang_C::service_level( $ti, $n, $aht, $t ); }
+			public function averageWaitTime( float $ti, int $n, float $aht ): float { return \WP_MCP_AI_Erlang_C::avg_wait_time( $ti, $n, $aht ); }
+			public function minAgentsForServiceLevel( float $ti, float $aht, float $sl, float $t ): int { return \WP_MCP_AI_Erlang_C::min_agents_for_sl( $ti, $aht, $sl, $t ); }
+			public function toErlangs( float $rate, float $aht ): float { return \WP_MCP_AI_Erlang_C::to_erlangs( $rate, $aht ); }
+			public function utilisation( float $ti, int $n ): float { return \WP_MCP_AI_Erlang_C::utilisation( $ti, $n ); }
+		};
+	}
+	return $instance;
+}
+
+/**
+ * Get the Error Tracking Service.
+ *
+ * @since 2.0.0
+ * @return Nvoos\Core\Domain\Contract\ErrorTrackingServiceInterface
+ */
+function wp_mcp_ai_oos_error_tracking(): Nvoos\Core\Domain\Contract\ErrorTrackingServiceInterface {
+	static $instance = null;
+	if ( null !== $instance ) { return $instance; }
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\WordPress\Adapter\ErrorTrackingService();
+	} else {
+		$instance = new class implements Nvoos\Core\Domain\Contract\ErrorTrackingServiceInterface {
+			public function track( string $c, string $m, array $ctx = [] ): string {
+				return (string) \WP_MCP_AI_Error_Tracking_Service::get_instance()->track_error( $c, $m, $ctx );
+			}
+			public function getRecent( int $limit = 50 ): array { return []; }
+			public function getRate( string $c = '', int $w = 3600 ): float { return 0.0; }
+			public function clear(): void {}
+			public function isEnabled(): bool { return \class_exists( 'WP_MCP_AI_Error_Tracking_Service' ); }
+		};
+	}
+	return $instance;
+}
+
+/**
+ * Get the Cost Tracking Service.
+ *
+ * @since 2.0.0
+ * @return Nvoos\Core\Domain\Contract\CostTrackingServiceInterface
+ */
+function wp_mcp_ai_oos_cost_tracking(): Nvoos\Core\Domain\Contract\CostTrackingServiceInterface {
+	static $instance = null;
+	if ( null !== $instance ) { return $instance; }
+	if ( wp_mcp_ai_oos_engine_enabled() ) {
+		$instance = new Nvoos\WordPress\Adapter\CostTrackingService();
+	} else {
+		$instance = new class implements Nvoos\Core\Domain\Contract\CostTrackingServiceInterface {
+			public function getUserCostBreakdown( int $uid, string $s, string $e ): array {
+				return \class_exists( 'WP_MCP_AI_Cost_Tracking_Service' )
+					? \WP_MCP_AI_Cost_Tracking_Service::get_user_cost_breakdown( $uid, $s, $e )
+					: [ 'total_cost' => 0.0, 'total_tokens' => 0, 'by_provider' => [], 'by_model' => [], 'by_tool' => [], 'by_date' => [] ];
+			}
+			public function getSiteCostBreakdown( string $s, string $e ): array {
+				return \class_exists( 'WP_MCP_AI_Cost_Tracking_Service' )
+					? \WP_MCP_AI_Cost_Tracking_Service::get_site_cost_breakdown( $s, $e )
+					: [ 'total_cost' => 0.0, 'total_tokens' => 0, 'by_provider' => [], 'by_model' => [], 'by_tool' => [], 'by_date' => [], 'by_user' => [] ];
+			}
+		};
+	}
+	return $instance;
+}
+
+// Load Wave 2+ service bridges (separate file for maintainability).
+$wave2_bridge = WP_MCP_AI_PATH . 'includes/bootstrap/oos-bridge-wave2.php';
+if ( file_exists( $wave2_bridge ) ) {
+	require_once $wave2_bridge;
+}
 // ─── Bootstrap Hook ───────────────────────────────────────────────────
 
 add_action(

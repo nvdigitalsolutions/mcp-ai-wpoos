@@ -20,8 +20,6 @@ namespace Symfony\Component\Validator\Violation;
  * execution context.
  *
  * @author Bernhard Schussek <bschussek@gmail.com>
- *
- * @method $this disableTranslation()
  */
 interface ConstraintViolationBuilderInterface
 {
@@ -35,7 +33,7 @@ interface ConstraintViolationBuilderInterface
      *
      * @return $this
      */
-    public function atPath(string $path): static;
+    public function atPath(string $path);
 
     /**
      * Sets a parameter to be inserted into the violation message.
@@ -45,7 +43,7 @@ interface ConstraintViolationBuilderInterface
      *
      * @return $this
      */
-    public function setParameter(string $key, string $value): static;
+    public function setParameter(string $key, string $value);
 
     /**
      * Sets all parameters to be inserted into the violation message.
@@ -56,7 +54,7 @@ interface ConstraintViolationBuilderInterface
      *
      * @return $this
      */
-    public function setParameters(array $parameters): static;
+    public function setParameters(array $parameters);
 
     /**
      * Sets the translation domain which should be used for translating the
@@ -68,14 +66,16 @@ interface ConstraintViolationBuilderInterface
      *
      * @see \Symfony\Contracts\Translation\TranslatorInterface
      */
-    public function setTranslationDomain(string $translationDomain): static;
+    public function setTranslationDomain(string $translationDomain);
 
     /**
      * Sets the invalid value that caused this violation.
      *
+     * @param mixed $invalidValue The invalid value
+     *
      * @return $this
      */
-    public function setInvalidValue(mixed $invalidValue): static;
+    public function setInvalidValue($invalidValue);
 
     /**
      * Sets the number which determines how the plural form of the violation
@@ -87,7 +87,7 @@ interface ConstraintViolationBuilderInterface
      *
      * @see \Symfony\Contracts\Translation\TranslatorInterface::trans()
      */
-    public function setPlural(int $number): static;
+    public function setPlural(int $number);
 
     /**
      * Sets the violation code.
@@ -96,7 +96,7 @@ interface ConstraintViolationBuilderInterface
      *
      * @return $this
      */
-    public function setCode(?string $code): static;
+    public function setCode(?string $code);
 
     /**
      * Sets the cause of the violation.
@@ -105,12 +105,10 @@ interface ConstraintViolationBuilderInterface
      *
      * @return $this
      */
-    public function setCause(mixed $cause): static;
+    public function setCause($cause);
 
     /**
      * Adds the violation to the current execution context.
-     *
-     * @return void
      */
     public function addViolation();
 }

@@ -3622,7 +3622,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 						),
 					)
 				);
-			} catch ( Exception $e ) {
+			} catch ( \Throwable $e ) {
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -3662,10 +3662,40 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$force = isset( $_POST['force'] ) && 'true' === sanitize_key( wp_unslash( $_POST['force'] ) );
 
 			// Sync all playbooks.
-			WP_MCP_AI_Profession_Playbook_Seeder::sync_all( $force );
+			$result = WP_MCP_AI_Profession_Playbook_Seeder::sync_all( $force );
 
 			// Update last sync timestamp.
 			update_option( 'wp_mcp_ai_playbooks_last_sync', time() );
+
+			$synced = isset( $result['synced'] ) ? absint( $result['synced'] ) : 0;
+			$errors = isset( $result['errors'] ) ? (array) $result['errors'] : array();
+
+			if ( ! empty( $errors ) ) {
+				$message = sprintf(
+					/* translators: 1: Number of professions synced, 2: Number of errors */
+					__( 'Sync completed with errors. Synced: %1$d, Failed: %2$d.', 'mcp-ai-wpoos' ),
+					$synced,
+					count( $errors )
+				);
+				// Limit error details to first 10 to avoid huge responses.
+				$error_details = array_slice( $errors, 0, 10 );
+				if ( count( $errors ) > 10 ) {
+					$error_details[] = sprintf(
+						/* translators: %d: Number of additional errors not shown */
+						__( '... and %d more errors.', 'mcp-ai-wpoos' ),
+						count( $errors ) - 10
+					);
+				}
+
+				wp_send_json_error(
+					array(
+						'message' => $message,
+						'synced'  => $synced,
+						'errors'  => $error_details,
+					)
+				);
+				return;
+			}
 
 			$message = $force
 				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'mcp-ai-wpoos' )
@@ -3674,6 +3704,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => $message,
+					'synced'  => $synced,
 				)
 			);
 		}
@@ -4021,12 +4052,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_get_models_for_provider() {
 			// Verify nonce for security.
 			// Accept nonce from either admin model selector or professional selector widget.
-			$nonce_actions = array( 'wp-mcp-ai-model-selector', 'wp-mcp-ai-professional-selector' );
-			$nonce_valid   = false;
+			$nonce_actions    = array( 'wp-mcp-ai-model-selector', 'wp-mcp-ai-professional-selector' );
+			$nonce_valid      = false;
+			$matched_nonce    = '';
 
 			foreach ( $nonce_actions as $nonce_action ) {
 				if ( check_ajax_referer( $nonce_action, 'nonce', false ) ) {
-					$nonce_valid = true;
+					$nonce_valid   = true;
+					$matched_nonce = $nonce_action;
 					break;
 				}
 			}
@@ -4035,8 +4068,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
-			// Check user capabilities.
-			if ( ! current_user_can( 'edit_posts' ) ) {
+
+			// Check user capabilities only for admin model selector requests.
+			// Professional selector requests may come from frontend users who
+			// don't have edit_posts (e.g., subscribers). The professional
+			// selector nonce is already scoped to the widget render and doesn't
+			// expose sensitive operations.
+			if ( 'wp-mcp-ai-model-selector' === $matched_nonce && ! current_user_can( 'edit_posts' ) ) {
 				wp_send_json_error(
 					array(
 						'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ),

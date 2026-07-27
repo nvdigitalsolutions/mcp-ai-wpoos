@@ -37,19 +37,14 @@ class CssColor extends Constraint
     public const HSLA = 'hsla';
     public const INVALID_FORMAT_ERROR = '454ab47b-aacf-4059-8f26-184b2dc9d48d';
 
-    protected const ERROR_NAMES = [
+    protected static $errorNames = [
         self::INVALID_FORMAT_ERROR => 'INVALID_FORMAT_ERROR',
     ];
 
     /**
-     * @deprecated since Symfony 6.1, use const ERROR_NAMES instead
-     */
-    protected static $errorNames = self::ERROR_NAMES;
-
-    /**
      * @var string[]
      */
-    private static array $validationModes = [
+    private static $validationModes = [
         self::HEX_LONG,
         self::HEX_LONG_WITH_ALPHA,
         self::HEX_SHORT,
@@ -80,13 +75,13 @@ class CssColor extends Constraint
             $options = array_merge($formats, $options ?? []);
         } elseif (\is_array($formats)) {
             if ([] === array_intersect(self::$validationModes, $formats)) {
-                throw new InvalidArgumentException(\sprintf('The "formats" parameter value is not valid. It must contain one or more of the following values: "%s".', $validationModesAsString));
+                throw new InvalidArgumentException(sprintf('The "formats" parameter value is not valid. It must contain one or more of the following values: "%s".', $validationModesAsString));
             }
 
             $options['value'] = $formats;
         } elseif (\is_string($formats)) {
             if (!\in_array($formats, self::$validationModes)) {
-                throw new InvalidArgumentException(\sprintf('The "formats" parameter value is not valid. It must contain one or more of the following values: "%s".', $validationModesAsString));
+                throw new InvalidArgumentException(sprintf('The "formats" parameter value is not valid. It must contain one or more of the following values: "%s".', $validationModesAsString));
             }
 
             $options['value'] = [$formats];

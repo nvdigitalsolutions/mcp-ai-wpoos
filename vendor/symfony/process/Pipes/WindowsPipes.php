@@ -26,16 +26,16 @@ use Symfony\Component\Process\Process;
  */
 class WindowsPipes extends AbstractPipes
 {
-    private array $files = [];
-    private array $fileHandles = [];
-    private array $lockHandles = [];
-    private array $readBytes = [
+    private $files = [];
+    private $fileHandles = [];
+    private $lockHandles = [];
+    private $readBytes = [
         Process::STDOUT => 0,
         Process::STDERR => 0,
     ];
-    private bool $haveReadSupport;
+    private $haveReadSupport;
 
-    public function __construct(mixed $input, bool $haveReadSupport)
+    public function __construct($input, bool $haveReadSupport)
     {
         $this->haveReadSupport = $haveReadSupport;
 
@@ -53,7 +53,7 @@ class WindowsPipes extends AbstractPipes
             set_error_handler(function ($type, $msg) use (&$lastError) { $lastError = $msg; });
             for ($i = 0;; ++$i) {
                 foreach ($pipes as $pipe => $name) {
-                    $file = \sprintf('%s\\sf_proc_%02X.%s', $tmpDir, $i, $name);
+                    $file = sprintf('%s\\sf_proc_%02X.%s', $tmpDir, $i, $name);
 
                     if (!$h = fopen($file.'.lock', 'w')) {
                         if (file_exists($file.'.lock')) {
@@ -88,12 +88,12 @@ class WindowsPipes extends AbstractPipes
         parent::__construct($input);
     }
 
-    public function __serialize(): array
+    public function __sleep(): array
     {
         throw new \BadMethodCallException('Cannot serialize '.__CLASS__);
     }
 
-    public function __unserialize(array $data): void
+    public function __wakeup()
     {
         throw new \BadMethodCallException('Cannot unserialize '.__CLASS__);
     }
@@ -103,6 +103,9 @@ class WindowsPipes extends AbstractPipes
         $this->close();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getDescriptors(): array
     {
         if (!$this->haveReadSupport) {
@@ -125,11 +128,17 @@ class WindowsPipes extends AbstractPipes
         ];
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getFiles(): array
     {
         return $this->files;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function readAndWrite(bool $blocking, bool $close = false): array
     {
         $this->unblock();
@@ -162,17 +171,26 @@ class WindowsPipes extends AbstractPipes
         return $read;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function haveReadSupport(): bool
     {
         return $this->haveReadSupport;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function areOpen(): bool
     {
         return $this->pipes && $this->fileHandles;
     }
 
-    public function close(): void
+    /**
+     * {@inheritdoc}
+     */
+    public function close()
     {
         parent::close();
         foreach ($this->fileHandles as $type => $handle) {
