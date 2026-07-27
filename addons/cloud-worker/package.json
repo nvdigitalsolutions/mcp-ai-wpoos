@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "hono": "^4.12.27",
-    "stripe": "^17.4.0"
+    "stripe": "^22.3.2"
   },
   "overrides": {
     "qs": ">=6.15.2",
