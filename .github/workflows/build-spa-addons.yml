@@ -179,7 +179,19 @@ jobs:
 
       - name: Install dependencies
         working-directory: addons/${{ matrix.addon.slug }}
-        run: npm ci --no-audit --no-fund
+        run: |
+          # Retry up to 3 times to handle transient network errors (ECONNRESET)
+          for i in 1 2 3; do
+            echo "📦 npm ci attempt $i/3..."
+            if npm ci --no-audit --no-fund --ignore-engines; then
+              echo "✅ npm ci succeeded on attempt $i"
+              exit 0
+            fi
+            echo "⚠️  npm ci attempt $i failed — retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ npm ci failed after 3 attempts"
+          exit 1
 
       - name: Build assets (esbuild)
         working-directory: addons/${{ matrix.addon.slug }}
