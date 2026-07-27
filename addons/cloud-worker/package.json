@@ -21,7 +21,9 @@
     "qs": ">=6.15.2",
     "esbuild": "^0.28.1",
     "ws": ">=8.21.0",
-    "undici": ">=7.28.0"
+    "undici": ">=7.28.0",
+    "sharp": ">=0.35.3",
+    "postcss": ">=8.5.18"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.3",

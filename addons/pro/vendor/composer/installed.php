@@ -3,11 +3,11 @@
         'name' => 'mcp-ai-wpoos/pro-addon',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '38b1a27d24f136952e0254a469c80872507aa35a',
+        'reference' => 'ed26f607c0baad5dfadbde109fd4c69905b14965',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => false,
+        'dev' => true,
     ),
     'versions' => array(
         'composer/pcre' => array(
@@ -20,9 +20,9 @@
             'dev_requirement' => false,
         ),
         'dompdf/dompdf' => array(
-            'pretty_version' => 'v3.1.5',
-            'version' => '3.1.5.0',
-            'reference' => 'f11ead23a8a76d0ff9bbc6c7c8fd7e05ca328496',
+            'pretty_version' => 'v3.1.6',
+            'version' => '3.1.6.0',
+            'reference' => '6d4b4eb8500f7a786da8868ba463a71b725a4005',
             'type' => 'library',
             'install_path' => __DIR__ . '/../dompdf/dompdf',
             'aliases' => array(),
@@ -94,7 +94,7 @@
         'mcp-ai-wpoos/pro-addon' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '38b1a27d24f136952e0254a469c80872507aa35a',
+            'reference' => 'ed26f607c0baad5dfadbde109fd4c69905b14965',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -110,9 +110,9 @@
             'dev_requirement' => false,
         ),
         'phpoffice/phpspreadsheet' => array(
-            'pretty_version' => '5.8.0',
-            'version' => '5.8.0.0',
-            'reference' => '01964d92536edf1a3a874b9580a52824bebf6fbb',
+            'pretty_version' => '5.8.1',
+            'version' => '5.8.1.0',
+            'reference' => 'd368eec97b371589068255c5b1e0edf0e4403bed',
             'type' => 'library',
             'install_path' => __DIR__ . '/../phpoffice/phpspreadsheet',
             'aliases' => array(),
