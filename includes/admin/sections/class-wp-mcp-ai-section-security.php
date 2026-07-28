@@ -156,6 +156,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'rate_limit_requests',
 						'rate_limit_window',
 						'rate_limit_by',
+						// Webhook secret status (1.2.0).
+						'_webhook_secret_status',
 						// Auth brute-force rate limiting (1.2.0).
 						'enable_auth_rate_limiting',
 						'auth_rate_limit_threshold',
@@ -483,6 +485,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'both'    => __( 'Both User ID and IP', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'user_id',
+				),
+
+				// Webhook secret status indicator (1.2.0).
+				'_webhook_secret_status'                   => array(
+					'type'    => 'html',
+					'label'   => __( 'Webhook HMAC Secret', 'mcp-ai-wpoos' ),
+					'content' => array( __CLASS__, 'render_webhook_secret_status' ),
 				),
 
 				// ========================================
@@ -1910,6 +1919,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Render the webhook HMAC secret status indicator.
+		 *
+		 * Callback for the _webhook_secret_status HTML field.
+		 *
+		 * @since 1.2.0
+		 * @return void
+		 */
+		public static function render_webhook_secret_status() {
+			$secret = '';
+			if ( function_exists( 'wp_mcp_ai_get_api_key' ) ) {
+				$secret = wp_mcp_ai_get_api_key( 'webhook_secret', '' );
+			}
+			if ( empty( $secret ) ) {
+				$secret = get_option( 'wp_mcp_ai_webhook_secret', '' );
+			}
+
+			if ( ! empty( $secret ) ) {
+				echo '<span style="display:inline-block;padding:4px 12px;background:#d4edda;color:#155724;border-radius:4px;font-weight:600;">' .
+					esc_html__( '✓ Configured', 'mcp-ai-wpoos' ) .
+					'</span>';
+				echo '<p class="description" style="margin-top:6px;">' .
+					esc_html__( 'The webhook HMAC secret is configured. Outbound webhook calls are signed with this secret.', 'mcp-ai-wpoos' ) .
+					'</p>';
+			} else {
+				echo '<span style="display:inline-block;padding:4px 12px;background:#fff3cd;color:#856404;border-radius:4px;font-weight:600;">' .
+					esc_html__( '⚠ Not configured', 'mcp-ai-wpoos' ) .
+					'</span>';
+				echo '<p class="description" style="margin-top:6px;">' .
+					esc_html__( 'No webhook HMAC secret is configured. The secret is auto-generated on first webhook use, but you can pre-configure it for additional security. Outbound webhooks will not be signed until a secret exists.', 'mcp-ai-wpoos' ) .
+					'</p>';
+			}
 		}
 	}
 }
