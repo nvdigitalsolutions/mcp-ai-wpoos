@@ -244,6 +244,34 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $agent_command_center;
 			// Note: Class instantiates itself at the bottom of the file.
 		}
+
+		// Load Pro Status Dashboard page.
+		$status_dashboard = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-status-dashboard-page.php';
+		if ( file_exists( $status_dashboard ) ) {
+			require_once $status_dashboard;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
+
+		// Load Pro Status AJAX handlers.
+		$status_ajax = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-status-ajax.php';
+		if ( file_exists( $status_ajax ) ) {
+			require_once $status_ajax;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
+
+		// Load Pro Maintenance admin page.
+		$maintenance_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-maintenance-page.php';
+		if ( file_exists( $maintenance_page ) ) {
+			require_once $maintenance_page;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
+
+		// Load Pro Incidents admin page.
+		$incidents_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-incidents-page.php';
+		if ( file_exists( $incidents_page ) ) {
+			require_once $incidents_page;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
 	}
 }
 
@@ -363,6 +391,56 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Register Privacy API exporters/erasers for Pro health & imaging CPT data (F-PRIV-01).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-privacy.php';
 		WP_MCP_AI_Pro_Privacy::init();
+
+		// Load Maintenance Window CPT, REST API, banner, and notifier.
+		$maintenance_cpt = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-maintenance-cpt.php';
+		if ( file_exists( $maintenance_cpt ) ) {
+			require_once $maintenance_cpt;
+			// Class self-bootstraps via init().
+		}
+
+		$maintenance_rest = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-maintenance-rest.php';
+		if ( file_exists( $maintenance_rest ) ) {
+			require_once $maintenance_rest;
+			// Class self-bootstraps REST routes.
+		}
+
+		$maintenance_banner = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-maintenance-banner.php';
+		if ( file_exists( $maintenance_banner ) ) {
+			require_once $maintenance_banner;
+			// Class self-bootstraps via init().
+		}
+
+		$maintenance_notifier = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-maintenance-notifier.php';
+		if ( file_exists( $maintenance_notifier ) ) {
+			require_once $maintenance_notifier;
+			// Class self-bootstraps via init().
+		}
+
+		// Load Incident CPT, REST API, notifier, and lesson bridge.
+		$incident_cpt = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-incident-cpt.php';
+		if ( file_exists( $incident_cpt ) ) {
+			require_once $incident_cpt;
+			// Class self-bootstraps via init().
+		}
+
+		$incident_rest = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-incident-rest.php';
+		if ( file_exists( $incident_rest ) ) {
+			require_once $incident_rest;
+			// Class self-bootstraps REST routes.
+		}
+
+		$incident_notifier = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-incident-notifier.php';
+		if ( file_exists( $incident_notifier ) ) {
+			require_once $incident_notifier;
+			// Class self-bootstraps via init().
+		}
+
+		$incident_lesson = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-incident-lesson-bridge.php';
+		if ( file_exists( $incident_lesson ) ) {
+			require_once $incident_lesson;
+			// Class self-bootstraps via init().
+		}
 
 		// Load utility classes for enhanced features (Phase 2 enhancements - Jan 2026).
 		// Product Type Helper: Handles all WooCommerce product types (simple, variable, grouped, external, subscription, bundle, etc.).
@@ -962,14 +1040,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// This includes: create/update/get task plan, manage sessions, detect completion, check exit conditions,
 			// analyze loop health, get session status, calculate capacity (Little's Law).
 			// Research Enhancement tools (Ralph pattern - Phase 2 - Pro only).
-							'WP_MCP_AI_Pro_Tool_Aggregate_Research_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-aggregate-research-data.php',
-							'WP_MCP_AI_Pro_Tool_Extract_Structured_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-extract-structured-data.php',
-							'WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-convert-html-to-markdown.php',
-							'WP_MCP_AI_Pro_Tool_Generate_Research_Report'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-generate-research-report.php',
-							'WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns'     => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-analyze-data-patterns.php',
-							'WP_MCP_AI_Pro_Tool_Verify_Information'        => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-verify-information.php',
-							// Research → Paper Store pipeline (Phase 3 - Post creation).
-							'WP_MCP_AI_Pro_Tool_Create_Post_From_Research' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-post-from-research.php',
+							'WP_MCP_AI_Pro_Tool_Aggregate_Research_Data' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-aggregate-research-data.php',
+			'WP_MCP_AI_Pro_Tool_Extract_Structured_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-extract-structured-data.php',
+			'WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-convert-html-to-markdown.php',
+			'WP_MCP_AI_Pro_Tool_Generate_Research_Report'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-generate-research-report.php',
+			'WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns'     => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-analyze-data-patterns.php',
+			'WP_MCP_AI_Pro_Tool_Verify_Information'        => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-verify-information.php',
+			// Research → Paper Store pipeline (Phase 3 - Post creation).
+			'WP_MCP_AI_Pro_Tool_Create_Post_From_Research' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-post-from-research.php',
 			// Template Management tools (Ralph pattern - Phase 3).
 			'WP_MCP_AI_Pro_Tool_Create_Template'           => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-template.php',
 			'WP_MCP_AI_Pro_Tool_Instantiate_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-instantiate-template.php',
@@ -1369,21 +1447,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add places management tools if enabled.
 		if ( ! empty( $settings['enable_places_management'] ) ) {
 			$places_tools = array(
-				'WP_MCP_AI_Tool_Create_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-create-place.php',
-				'WP_MCP_AI_Tool_List_Places'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-list-places.php',
-				'WP_MCP_AI_Tool_Update_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-update-place.php',
-				'WP_MCP_AI_Tool_Delete_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-delete-place.php',
-				'WP_MCP_AI_Tool_Get_Place'               => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-get-place.php',
-				'WP_MCP_AI_Tool_Search_And_Save_Places'  => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-search-and-save-places.php',
-				'WP_MCP_AI_Tool_Research_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-research-place.php',
+				'WP_MCP_AI_Tool_Create_Place'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-create-place.php',
+				'WP_MCP_AI_Tool_List_Places'              => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-list-places.php',
+				'WP_MCP_AI_Tool_Update_Place'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-update-place.php',
+				'WP_MCP_AI_Tool_Delete_Place'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-delete-place.php',
+				'WP_MCP_AI_Tool_Get_Place'                => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-get-place.php',
+				'WP_MCP_AI_Tool_Search_And_Save_Places'   => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-search-and-save-places.php',
+				'WP_MCP_AI_Tool_Research_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-research-place.php',
 				// Turf.js geospatial analysis tool (enhanced with NPM package).
-				'WP_MCP_AI_Tool_Analyze_Geospatial'      => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-analyze-geospatial.php',
+				'WP_MCP_AI_Tool_Analyze_Geospatial'       => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-analyze-geospatial.php',
 				// Bulk import tools (v1.4.0).
-				'WP_MCP_AI_Tool_Import_Places'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places.php',
-				'WP_MCP_AI_Tool_Import_Places_From_Html' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places-from-html.php',
+				'WP_MCP_AI_Tool_Import_Places'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places.php',
+				'WP_MCP_AI_Tool_Import_Places_From_Html'  => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places-from-html.php',
 				// Enrichment tools (v1.4.2).
 				'WP_MCP_AI_Tool_Enrich_Place_Coordinates' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-coordinates.php',
-				'WP_MCP_AI_Tool_Enrich_Place_Details'    => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-details.php',
+				'WP_MCP_AI_Tool_Enrich_Place_Details'     => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-details.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}

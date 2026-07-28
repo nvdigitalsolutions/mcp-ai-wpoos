@@ -72,6 +72,8 @@
 	<exclude-pattern>*/addons/*</exclude-pattern>
 	<!-- Test files that intentionally contain multiple stub/test classes -->
 	<exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
+	<!-- Default service status sources groups multiple classes in one file -->
+	<exclude-pattern>class-wp-mcp-ai-service-status-default-sources\.php$</exclude-pattern>
 </rule>
 
 <rule ref="PEAR.NamingConventions.ValidClassName">

@@ -1,0 +1,88 @@
+/**
+ * Pro Incidents Admin Styles
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 1.4.0
+ */
+
+.wp-mcp-ai-pro-incidents-page {
+	max-width: 1100px;
+}
+
+.wp-mcp-ai-incident-detail {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 6px;
+	padding: 20px;
+	margin-top: 16px;
+}
+
+.wp-mcp-ai-incident-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin: 16px 0;
+	padding: 12px;
+	background: #f8f9fa;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-incident-meta-item {
+	font-size: 13px;
+}
+
+.wp-mcp-ai-incident-actions {
+	margin: 16px 0;
+	padding: 12px;
+	background: #fff8e1;
+	border: 1px solid #ffe082;
+	border-radius: 4px;
+}
+
+/* Timeline */
+.wp-mcp-ai-incident-timeline {
+	margin-top: 24px;
+}
+
+.wp-mcp-ai-incident-timeline-entry {
+	display: flex;
+	gap: 16px;
+	padding: 10px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.wp-mcp-ai-incident-timeline-time {
+	font-size: 12px;
+	color: #6c757d;
+	min-width: 140px;
+	font-family: monospace;
+}
+
+.wp-mcp-ai-incident-timeline-phase {
+	min-width: 100px;
+}
+
+.wp-mcp-ai-incident-timeline-message {
+	flex: 1;
+	font-size: 13px;
+}
+
+/* Severity indicators */
+.nvoos-severity {
+	font-weight: 600;
+}
+
+.nvoos-severity--minor { color: #856404; }
+.nvoos-severity--major { color: #fd7e14; }
+.nvoos-severity--critical { color: #dc3545; }
+
+/* Phase badges for incidents */
+.nvoos-badge--error {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+.nvoos-badge--warning {
+	background: #fff3cd;
+	color: #856404;
+}
