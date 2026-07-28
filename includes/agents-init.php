@@ -42,6 +42,11 @@ WP_MCP_AI_Agent_Audit_Trail::init();
 // Register CoSAI gate hooks on the existing tool execution actions.
 WP_MCP_AI_Agent_Capability_Boundary_Hooks::register();
 
+// Register destructive operations confirmation gate (1.2.0).
+// Runs at priority 0 on wp_mcp_ai_before_tool_execution — before the
+// capability boundary so it applies even without an active boundary.
+WP_MCP_AI_Destructive_Ops_Gate::register();
+
 /**
  * Get all available agent roles
  *
