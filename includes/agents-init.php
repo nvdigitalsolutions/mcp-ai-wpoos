@@ -47,6 +47,10 @@ WP_MCP_AI_Agent_Capability_Boundary_Hooks::register();
 // capability boundary so it applies even without an active boundary.
 WP_MCP_AI_Destructive_Ops_Gate::register();
 
+// Register request guard (1.2.0) — SSE connection limits, JSON depth,
+// and request body size enforcement via rest_pre_dispatch filter.
+WP_MCP_AI_Request_Guard::register();
+
 /**
  * Get all available agent roles
  *
