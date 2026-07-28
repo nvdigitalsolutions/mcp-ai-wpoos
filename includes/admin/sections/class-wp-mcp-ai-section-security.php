@@ -161,6 +161,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'enable_hsts',
 						'hsts_max_age',
 						'csp_frame_ancestors',
+						'cors_allow_origin',
 					),
 				),
 				'ai_safety' => array(
@@ -445,9 +446,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				'rate_limit_requests'                      => array(
 					'type'        => 'number',
 					'label'       => __( 'Rate Limit (requests per window)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Maximum number of requests allowed per time window per user/IP. Recommended: 100-1000 for normal usage.', 'mcp-ai-wpoos' ),
-					'default'     => 100,
-					'placeholder' => '100',
+					'description' => __( 'Maximum number of requests allowed per time window per user/IP. Recommended: 300-1000 for normal usage with AI agents.', 'mcp-ai-wpoos' ),
+					'default'     => 300,
+					'placeholder' => '300',
 				),
 				'rate_limit_window'                        => array(
 					'type'        => 'number',
@@ -542,6 +543,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						''     => __( 'Disabled', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'none',
+				),
+				'cors_allow_origin'                        => array(
+					'type'           => 'select',
+					'label'          => __( 'CORS Allow-Origin (Cross-Origin API Access)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Controls which external domains can call the plugin REST API from browser-based clients. &quot;Same Origin&quot; (recommended) blocks cross-origin access. Use &quot;Allow All&quot; only if MCP clients or AI services on other domains need access.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'site' => __( 'Same Origin — only this site (recommended)', 'mcp-ai-wpoos' ),
+						'star' => __( 'Allow All — any domain can call the API', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'site',
 				),
 
 				// ========================================

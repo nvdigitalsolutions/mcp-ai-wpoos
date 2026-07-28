@@ -316,12 +316,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		private function clean_all_output_buffers() {
 			$max_iterations = 100; // Safety limit.
 			$iterations     = 0;
+			$cleaned        = '';
 
 			while ( ob_get_level() > 0 && $iterations < $max_iterations ) {
+				$contents = ob_get_contents();
+				if ( is_string( $contents ) && '' !== $contents ) {
+					$cleaned .= $contents;
+				}
 				if ( ! ob_end_clean() ) {
 					break; // If ob_end_clean fails, stop trying.
 				}
 				++$iterations;
+			}
+
+			// When WP_DEBUG is on, log cleaned output so developers can see
+			// suppressed errors (PHP warnings, notices, etc.) that would
+			// otherwise corrupt JSON responses.
+			if ( '' !== $cleaned && defined( 'WP_DEBUG' ) && WP_DEBUG && class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_warning(
+					'Output buffer contained content that was cleaned before serving REST response.',
+					array( 'cleaned_output' => substr( $cleaned, 0, 2000 ) )
+				);
 			}
 		}
 
@@ -400,11 +415,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$status = isset( $data['status'] ) ? (int) $data['status'] : 500;
 
+			// Strip internal-only keys before exposing to the client.
+			$safe_data = array_intersect_key(
+				$data,
+				array_flip( array( 'status', 'actions', 'field', 'user_message', 'suggestions', 'retry_after' ) )
+			);
+
 			$payload = array(
 				'code'    => $response->get_error_code(),
 				'message' => $response->get_error_message(),
 				'actions' => $data['actions'],
-				'data'    => $data,
+				'data'    => $safe_data,
 			);
 
 			return new WP_REST_Response( $payload, $status );
@@ -11892,13 +11913,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 *
 			 * @see 'wp_mcp_ai_cors_allow_origin' filter in MCP methods trait.
 			 */
-			$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+			$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+			$cors_setting   = isset( $settings['cors_allow_origin'] ) ? $settings['cors_allow_origin'] : 'site';
+			$default_origin = ( 'star' === $cors_setting ) ? '*' : get_site_url();
+			$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 
 			$response = new WP_REST_Response( null, 204 );
 			$response->header( 'Access-Control-Allow-Origin', $allow_origin );
 			$response->header( 'Access-Control-Allow-Methods', 'POST, OPTIONS' );
 			$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest' );
 			$response->header( 'Access-Control-Max-Age', '3600' );
+
+			// Apply the centrally-managed security headers (gated behind Settings → Security → Network → "Enable Security Headers").
+			$security         = new WP_MCP_AI_Security_Manager();
+			$security_headers = $security->get_security_headers();
+			foreach ( $security_headers as $name => $value ) {
+				$response->header( $name, $value );
+			}
 			return $response;
 		}
 
