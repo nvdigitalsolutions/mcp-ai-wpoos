@@ -79,7 +79,7 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 		);
 
 		// Check if paid method (remove.bg API) is configured.
-		$api_key = get_option( 'wp_mcp_ai_removebg_api_key', '' );
+		$api_key = wp_mcp_ai_get_api_key( 'removebg_api_key', '' );
 		if ( empty( $api_key ) ) {
 			// If no API key, it's local-only (using rembg Python library).
 			$flags[] = 'local-only';        // Works locally without external APIs.

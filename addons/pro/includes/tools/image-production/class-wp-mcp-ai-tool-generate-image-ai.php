@@ -189,12 +189,12 @@ class WP_MCP_AI_Tool_Generate_Image_AI extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	protected function select_best_provider() {
 		// Check for OpenAI API key.
-		if ( get_option( 'wp_mcp_ai_openai_api_key' ) ) {
+		if ( wp_mcp_ai_get_api_key( 'openai_api_key' ) ) {
 			return 'openai';
 		}
 
 		// Check for Stability AI API key.
-		if ( get_option( 'wp_mcp_ai_stability_api_key' ) ) {
+		if ( wp_mcp_ai_get_api_key( 'stability_api_key' ) ) {
 			return 'stability';
 		}
 
@@ -243,7 +243,7 @@ class WP_MCP_AI_Tool_Generate_Image_AI extends WP_MCP_AI_Tool_Image_Base {
 	 * @return array|WP_Error Generation results or error.
 	 */
 	protected function generate_with_stability( $prompt, $arguments, $context ) {
-		$api_key = get_option( 'wp_mcp_ai_stability_api_key' );
+		$api_key = wp_mcp_ai_get_api_key( 'stability_api_key' );
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_credentials',

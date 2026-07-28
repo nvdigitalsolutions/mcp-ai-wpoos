@@ -971,11 +971,11 @@ class WP_MCP_AI_Job_Notifier {
 	 * @return string Webhook signing secret.
 	 */
 	protected static function get_webhook_secret() {
-		$secret = get_option( 'wp_mcp_ai_webhook_secret', '' );
+		$secret = wp_mcp_ai_get_api_key( 'webhook_secret', '' );
 
 		if ( empty( $secret ) ) {
 			$secret = wp_generate_password( 64, true, true );
-			update_option( 'wp_mcp_ai_webhook_secret', $secret, false );
+			wp_mcp_ai_set_api_key( 'webhook_secret', $secret );
 		}
 
 		return $secret;

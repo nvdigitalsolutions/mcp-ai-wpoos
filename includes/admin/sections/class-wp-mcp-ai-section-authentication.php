@@ -191,6 +191,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'description'    => __( 'SSE (Server-Sent Events) standard only uses GET. Enable POST only if you have LM Studio or client bugs requiring it. Leave disabled for standard SSE compliance.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// ========================================
+				// OAUTH & DESTRUCTIVE OPS (1.2.0)
+				// ========================================
+				'_heading_oauth_dcr'                        => array(
+					'type'  => 'heading',
+					'label' => __( 'OAuth & Client Registration', 'mcp-ai-wpoos' ),
+				),
+				'oauth_disable_open_registration'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Disable Open OAuth Client Registration', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Require admin approval for new OAuth client registrations', 'mcp-ai-wpoos' ),
+					'description'    => __( 'By default, the OAuth Dynamic Client Registration endpoint (RFC 7591) allows any client to register. Enable this to require manual admin approval for new OAuth clients, preventing unauthorized client registration and phishing via malicious redirect URIs.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+
+				'_heading_destructive_ops'                 => array(
+					'type'  => 'heading',
+					'label' => __( 'Destructive Operations', 'mcp-ai-wpoos' ),
+				),
+				'require_confirm_destructive_ops'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Require Confirmation for Destructive Tools', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Require explicit confirmation before executing destructive operations', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, tools flagged as <code>destructive</code> or <code>state-changing</code> will require the AI client to pass <code>confirm_destructive=true</code> as an explicit confirmation parameter. Without this confirmation, the tool returns a preview of affected items instead of executing. Guards against accidental bulk deletion, user modification, and mass-email dispatch by AI agents.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 			);
 		}
 
@@ -235,7 +262,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'id'     => 'rest_api',
 					'label'  => __( 'REST API Capabilities', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-rest-api',
-					'fields' => array( 'rest_enable_assistant_list', 'rest_enable_assistant_create', 'rest_enable_assistant_delete', 'sse_enable_post_method' ),
+					'fields' => array(
+						'rest_enable_assistant_list',
+						'rest_enable_assistant_create',
+						'rest_enable_assistant_delete',
+						'sse_enable_post_method',
+						// OAuth & destructive ops (1.2.0).
+						'oauth_disable_open_registration',
+						'require_confirm_destructive_ops',
+					),
 				),
 			);
 		}

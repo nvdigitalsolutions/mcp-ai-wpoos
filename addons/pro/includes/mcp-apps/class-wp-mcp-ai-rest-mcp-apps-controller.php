@@ -316,6 +316,12 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	public function test_connection( WP_REST_Request $request ) {
 		$server_url = $request->get_param( 'server_url' );
 
+		// SSRF protection: validate URL before any outbound HTTP.
+		$url_check = wp_mcp_ai_validate_url( $server_url );
+		if ( is_wp_error( $url_check ) ) {
+			return $url_check;
+		}
+
 		// Validate URL against the allowlist before issuing any outbound HTTP.
 		$allowed = WP_MCP_AI_MCP_App_Registry::is_url_allowed( $server_url );
 		if ( is_wp_error( $allowed ) ) {
@@ -349,8 +355,16 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function discover_tools( WP_REST_Request $request ) {
+		$server_url = $request->get_param( 'server_url' );
+
+		// SSRF protection: validate URL before any outbound HTTP.
+		$url_check = wp_mcp_ai_validate_url( $server_url );
+		if ( is_wp_error( $url_check ) ) {
+			return $url_check;
+		}
+
 		$config = array(
-			'server_url'  => $request->get_param( 'server_url' ),
+			'server_url'  => $server_url,
 			'auth_type'   => $request->get_param( 'auth_type' ),
 			'token'       => $request->get_param( 'token' ),
 			'header_name' => $request->get_param( 'header_name' ),

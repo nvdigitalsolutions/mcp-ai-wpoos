@@ -166,6 +166,17 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rate-limit-manager.php';
 
 // ---------------------------------------------------------------------------
+// Security hardening (1.2.0) — encrypted key store, SSRF guard, helpers
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-api-key-store.php';
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-url-guard.php';
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-concurrency-guard.php';
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-cost-tracker.php';
+require_once WP_MCP_AI_PATH . 'includes/helpers/api-key-helpers.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-validated-upload.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-object-access.php';
+
+// ---------------------------------------------------------------------------
 // Dependency injection container and service layer
 // ---------------------------------------------------------------------------
 

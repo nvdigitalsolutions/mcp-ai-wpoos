@@ -214,7 +214,7 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$client_id_set = ! empty( get_option( 'wp_mcp_ai_yahoo_client_id' ) );
 		}
 		if ( ! $client_secret_set ) {
-			$client_secret_set = ! empty( get_option( 'wp_mcp_ai_yahoo_client_secret' ) );
+			$client_secret_set = ! empty( wp_mcp_ai_get_api_key( 'yahoo_client_secret' ) );
 		}
 
 		// Get research page URL.
