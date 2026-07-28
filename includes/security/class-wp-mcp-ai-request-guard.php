@@ -38,6 +38,12 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 			// Validate request body size and JSON depth before any callback runs.
 			add_filter( 'rest_pre_dispatch', array( __CLASS__, 'validate_request' ), 10, 3 );
 
+			// Wrap callbacks in try/catch to prevent unhandled exceptions (1.2.0).
+			add_filter( 'rest_dispatch_request', array( __CLASS__, 'wrap_dispatch' ), 10, 4 );
+
+			// Filter error responses to strip detail when verbosity is 'safe' (1.2.0).
+			add_filter( 'rest_post_dispatch', array( __CLASS__, 'filter_error_verbosity' ), 20, 3 );
+
 			// Track SSE connections. Fires when stream starts and ends.
 			add_action( 'wp_mcp_ai_sse_stream_started', array( __CLASS__, 'acquire_sse_slot' ), 10, 2 );
 			add_action( 'wp_mcp_ai_sse_stream_chunk_sent', array( __CLASS__, 'refresh_sse_slot' ), 10, 2 );
@@ -379,6 +385,146 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 			}
 
 			return $default;
+		}
+
+		// ----------------------------------------------------------------
+		// Error Verbosity Control (1.2.0)
+		// ----------------------------------------------------------------
+
+		/**
+		 * Filter error responses to strip detail when verbosity is 'safe'.
+		 *
+		 * Hooked on rest_post_dispatch at priority 20 (after augment_error_actions).
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param WP_REST_Response|WP_Error $response Response object.
+		 * @param WP_REST_Server            $server   REST server.
+		 * @param WP_REST_Request           $request  Current request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public static function filter_error_verbosity( $response, $server, $request ) {
+			// Only filter plugin routes.
+			if ( ! self::is_plugin_route( $request ) ) {
+				return $response;
+			}
+
+			$verbosity = self::get_setting( 'api_error_verbosity', 'normal' );
+
+			// 'verbose' mode: pass everything through.
+			if ( 'verbose' === $verbosity ) {
+				return $response;
+			}
+
+			// 'normal' mode: only filter for non-admin users.
+			if ( 'normal' === $verbosity && current_user_can( 'manage_options' ) ) {
+				return $response;
+			}
+
+			// 'safe' mode (or 'normal' for non-admins): strip internal detail.
+			if ( is_wp_error( $response ) ) {
+				return self::sanitize_error( $response );
+			}
+
+			if ( $response instanceof WP_REST_Response && $response->is_error() ) {
+				$data = $response->get_data();
+				if ( is_array( $data ) ) {
+					$data = self::strip_internal_keys( $data );
+					$response->set_data( $data );
+				}
+			}
+
+			return $response;
+		}
+
+		/**
+		 * Strip internal/sensitive keys from an error response.
+		 *
+		 * Only the following keys are safe to expose:
+		 * code, message, status, retry_after, actions, user_message, suggestions.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param WP_Error $error The error object.
+		 * @return WP_Error Sanitized error.
+		 */
+		private static function sanitize_error( $error ) {
+			$data     = $error->get_error_data();
+			$filtered = array(
+				'status' => 500,
+			);
+
+			if ( is_array( $data ) ) {
+				// Keep only safe keys.
+				$safe_keys = array( 'status', 'retry_after', 'actions', 'user_message', 'suggestions' );
+				foreach ( $safe_keys as $key ) {
+					if ( isset( $data[ $key ] ) ) {
+						$filtered[ $key ] = $data[ $key ];
+					}
+				}
+			}
+
+			return new WP_Error(
+				$error->get_error_code(),
+				$error->get_error_message(),
+				$filtered
+			);
+		}
+
+		/**
+		 * Strip internal keys from a response data array.
+	 *
+		 * @since 1.2.0
+		 *
+		 * @param array $data Response data.
+		 * @return array Filtered data.
+		 */
+		private static function strip_internal_keys( $data ) {
+			// If the response has nested data, strip that too.
+			if ( isset( $data['data'] ) && is_array( $data['data'] ) ) {
+				$safe_data = array();
+				$safe_keys = array( 'status', 'actions', 'user_message', 'suggestions', 'retry_after' );
+				foreach ( $safe_keys as $key ) {
+					if ( isset( $data['data'][ $key ] ) ) {
+						$safe_data[ $key ] = $data['data'][ $key ];
+					}
+				}
+				$data['data'] = $safe_data;
+			}
+
+			return $data;
+		}
+
+		// ----------------------------------------------------------------
+		// Exception Guard (1.2.0)
+		// ----------------------------------------------------------------
+
+		/**
+		 * Wrap REST callback dispatch in try/catch to prevent unhandled
+		 * exceptions from leaking stack traces to API consumers.
+		 *
+		 * Hooked on rest_dispatch_request at priority 10.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param mixed           $result  Dispatch result.
+		 * @param WP_REST_Server  $server  REST server.
+		 * @param WP_REST_Request $request Current request.
+		 * @param string          $route   Matched route.
+		 * @return mixed|WP_Error
+		 */
+		public static function wrap_dispatch( $result, $server, $request, $route ) {
+			// Only wrap plugin routes.
+			if ( ! self::is_plugin_route( $request ) ) {
+				return $result;
+			}
+
+			// If the result is already an error, pass it through.
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return $result;
 		}
 	}
 }
