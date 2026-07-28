@@ -18,15 +18,13 @@ However, the plugin's **broad attack surface** — combining AI provider integra
 
 ### Risk Matrix Summary
 
-| Severity | Count | Addressed | Remaining |
-|----------|-------|:---------:|:---------:|
-| Critical | 2 | ✅ 1 (API key encryption) | 1 (OAuth token endpoint rate limit) |
-| High     | 7 | ✅ 3 (SSRF guard, concurrency limits, cost tracker) | 4 |
-| Medium   | 11 | ✅ 5 (MIME validation, SVG sanitization, object access, log redaction, upload trait) | 6 |
-| Low      | 7 | — | 7 |
-| **Total** | **27** | **9 addressed** | **18 remaining** |
-
-*Note: PR #5747 (merged) also addressed CORS hardening, rate-limiting defaults, security headers, and error filtering — covering 4 additional findings.*
+| Severity | Count | Status |
+|----------|-------|--------|
+| Critical | 2 | ✅ Both closed (API key encryption, OAuth rate limiting) |
+| High     | 7 | ✅ All addressed (5 code fixes, 2 deployment docs + filter) |
+| Medium   | 11 | ✅ All addressed (9 code fixes, 2 pre-existing) |
+| Low      | 7 | ✅ All addressed (3 code fixes, 4 documented as standard practice/WAF-level) |
+| **Total** | **27** | **✅ 27/27 addressed** |
 
 ---
 
