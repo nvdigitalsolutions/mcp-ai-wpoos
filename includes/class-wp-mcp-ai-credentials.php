@@ -30,6 +30,23 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 		const DEFAULT_LIFETIME = 7776000; // 90 days.
 
 		/**
+		 * Calculate credential expiry from the admin setting.
+		 *
+		 * @since 1.2.0
+		 * @return string Expiry date in MySQL format, or empty string for no expiry.
+		 */
+		private static function calculate_expiry() {
+			$days = 90;
+			if ( function_exists( 'wp_mcp_ai_get_settings_repository' ) ) {
+				$days = absint( wp_mcp_ai_get_settings_repository()->get( 'credential_lifetime_days', 90 ) );
+			}
+			if ( $days <= 0 ) {
+				return '';
+			}
+			return gmdate( 'Y-m-d H:i:s', time() + ( $days * DAY_IN_SECONDS ) );
+		}
+
+		/**
 		 * Determine whether a token string matches the expected credential format.
 		 *
 		 * @param string $token Raw token string.
@@ -124,7 +141,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 				'created_by' => $user_id,
 				'revoked_at' => '',
 				'revoked_by' => 0,
-				'expires_at' => gmdate( 'Y-m-d H:i:s', time() + self::DEFAULT_LIFETIME ),
+				'expires_at' => self::calculate_expiry(),
 			);
 
 			$credentials[] = $record;

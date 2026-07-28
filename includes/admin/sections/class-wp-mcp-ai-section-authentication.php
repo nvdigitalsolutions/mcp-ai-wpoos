@@ -162,6 +162,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'placeholder' => '86400',
 				),
 
+				// Credential & Token Management (1.2.0).
+				'credential_lifetime_days'             => array(
+					'type'        => 'number',
+					'label'       => __( 'Assistant Credential Lifetime (days)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long issued assistant credentials (identifier.secret tokens) remain valid before expiry. Set 0 for no expiry. Default: 90 days. Existing credentials without expiry are grandfathered.', 'mcp-ai-wpoos' ),
+					'default'     => 90,
+					'min'         => 0,
+					'max'         => 3650,
+					'placeholder' => '90',
+				),
+
+				// Guest token scope description (1.2.0).
+				'_guest_scope_info'                    => array(
+					'type'        => 'html',
+					'label'       => __( 'Guest Token Scope', 'mcp-ai-wpoos' ),
+					'html'        => '<div class="notice notice-info inline"><p>' .
+						esc_html__( 'Guest tokens have read-only access to public assistants and chat endpoints. They cannot execute write-capable tools, access transcripts, manage assistants, or perform administrative operations. Each tool enforces its own capability check independent of guest status.', 'mcp-ai-wpoos' ) .
+						'</p></div>',
+				),
+
 				// REST API Capabilities.
 				'rest_enable_assistant_list'           => array(
 					'type'           => 'checkbox',
@@ -256,7 +276,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'id'     => 'guest',
 					'label'  => __( 'Guest Access', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-groups',
-					'fields' => array( 'guest_token_lifetime' ),
+					'fields' => array(
+						'guest_token_lifetime',
+						// Credential & token lifetime (1.2.0).
+						'credential_lifetime_days',
+					),
 				),
 				'rest_api'       => array(
 					'id'     => 'rest_api',
