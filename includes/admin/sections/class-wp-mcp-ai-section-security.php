@@ -170,6 +170,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'max_json_depth',
 						// Error disclosure (1.2.0).
 						'api_error_verbosity',
+						// Asset version stripping (1.2.0).
+						'strip_asset_versions',
 						// Security headers.
 						'enable_security_headers',
 						'enable_hsts',
@@ -893,6 +895,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'verbose' => __( 'Verbose — full details (development only)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'normal',
+				),
+
+				// Asset version stripping (1.2.0).
+				'strip_asset_versions'                     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Strip Plugin Version from Asset URLs', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Remove version query strings from plugin CSS/JS URLs', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Hides the plugin version number from enqueued stylesheet and script URLs. This prevents attackers from fingerprinting your plugin version via page source inspection. Does not affect WordPress core assets or other plugins. Enabling this may reduce cache-busting effectiveness during plugin updates.', 'mcp-ai-wpoos' ),
+					'default'        => false,
 				),
 			);
 

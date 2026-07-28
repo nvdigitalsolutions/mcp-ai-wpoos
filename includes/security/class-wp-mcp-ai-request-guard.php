@@ -48,6 +48,12 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 			add_action( 'wp_mcp_ai_sse_stream_started', array( __CLASS__, 'acquire_sse_slot' ), 10, 2 );
 			add_action( 'wp_mcp_ai_sse_stream_chunk_sent', array( __CLASS__, 'refresh_sse_slot' ), 10, 2 );
 			add_action( 'wp_mcp_ai_sse_stream_ended', array( __CLASS__, 'release_sse_slot' ), 10, 2 );
+
+			// Strip asset version strings when enabled (1.2.0).
+			if ( self::is_asset_version_stripping_enabled() ) {
+				add_filter( 'script_loader_src', array( __CLASS__, 'strip_asset_version' ), 10, 2 );
+				add_filter( 'style_loader_src', array( __CLASS__, 'strip_asset_version' ), 10, 2 );
+			}
 		}
 
 		// ----------------------------------------------------------------
@@ -525,6 +531,42 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 			}
 
 			return $result;
+		}
+
+		// ----------------------------------------------------------------
+		// Asset Version Stripping (1.2.0)
+		// ----------------------------------------------------------------
+
+		/**
+		 * Check if asset version stripping is enabled.
+		 *
+		 * @since 1.2.0
+		 * @return bool
+		 */
+		private static function is_asset_version_stripping_enabled() {
+			return (bool) self::get_setting( 'strip_asset_versions', false );
+		}
+
+		/**
+		 * Strip the version query parameter from asset URLs.
+		 *
+		 * Hooked on script_loader_src and style_loader_src.
+		 * Only strips versions from plugin assets (URLs containing 'mcp-ai' or 'nvoos-').
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $src    Asset URL.
+		 * @param string $handle Asset handle.
+		 * @return string Filtered URL.
+		 */
+		public static function strip_asset_version( $src, $handle ) {
+			// Only affect plugin assets.
+			if ( false === strpos( $src, 'mcp-ai' ) && false === strpos( $src, 'nvoos-' ) ) {
+				return $src;
+			}
+
+			// Remove the ver query parameter.
+			return remove_query_arg( 'ver', $src );
 		}
 	}
 }
