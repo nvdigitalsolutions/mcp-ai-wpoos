@@ -56,14 +56,23 @@ class WP_MCP_AI_SSE_Stream {
 		$poll_interval = max( 1, min( 30, absint( $poll_interval ) ) );
 
 		// Prepare SSE headers.
+		$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+		$cors_setting   = isset( $settings['cors_allow_origin'] ) ? $settings['cors_allow_origin'] : 'site';
+		$default_origin = ( 'star' === $cors_setting ) ? '*' : get_site_url();
+		$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 		$headers = array(
 			'Content-Type'                 => 'text/event-stream; charset=UTF-8',
 			'Cache-Control'                => 'no-cache, no-store, must-revalidate, no-transform',
 			'X-Accel-Buffering'            => 'no',
-			'Access-Control-Allow-Origin'  => '*',
+			'Access-Control-Allow-Origin'  => $allow_origin,
 			'Access-Control-Allow-Methods' => 'GET, OPTIONS',
 			'Access-Control-Allow-Headers' => 'Authorization, Content-Type, X-WP-Nonce',
 		);
+
+		// Apply the centrally-managed security headers (gated behind Settings → Security → Network → "Enable Security Headers").
+		$security                      = new WP_MCP_AI_Security_Manager();
+		$security_headers              = $security->get_security_headers();
+		$headers                       = array_merge( $headers, $security_headers );
 
 		// Build SSE response body.
 		$body = self::build_sse_stream( $job_id, $max_duration, $poll_interval );

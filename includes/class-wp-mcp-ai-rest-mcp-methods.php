@@ -1812,30 +1812,40 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		/**
 		 * Filter the Access-Control-Allow-Origin header value.
 		 *
-		 * By default set to '*' for maximum compatibility with external AI services.
-		 * For production, consider restricting to specific trusted domains.
+		 * By default restricts to the site's own origin for security.
+		 * You can change the default on the Security → Network settings page
+		 * or use this filter for programmatic control.
 		 *
-		 * @param string $origin The origin value to allow. Default '*'.
+		 * @param string $origin The origin value to allow. Default: from
+		 *                       Security settings or get_site_url().
 		 *
 		 * @example
-		 * // Restrict to specific domain:
-		 * add_filter( 'wp_mcp_ai_cors_allow_origin', function() {
-		 *     return 'https://api.openai.com';
-		 * } );
+		 * // Allow all origins:
+		 * add_filter( 'wp_mcp_ai_cors_allow_origin', function() { return '*'; } );
 		 *
-		 * // Allow multiple domains (requires additional logic):
-		 * add_filter( 'wp_mcp_ai_cors_allow_origin', function() {
-		 *     $allowed = array( 'https://api.openai.com', 'https://api.anthropic.com' );
+		 * // Allow specific domains:
+		 * add_filter( 'wp_mcp_ai_cors_allow_origin', function( $default ) {
+		 *     $allowed = array( 'https://api.openai.com' );
 		 *     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-		 *     return in_array( $origin, $allowed, true ) ? $origin : '';
+		 *     return in_array( $origin, $allowed, true ) ? $origin : $default;
 		 * } );
 		 */
-		$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+		$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+		$cors_setting  = isset( $settings['cors_allow_origin'] ) ? $settings['cors_allow_origin'] : 'site';
+		$default_origin = ( 'star' === $cors_setting ) ? '*' : get_site_url();
+		$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 
 		$response->header( 'Access-Control-Allow-Origin', $allow_origin );
 		$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
 		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest, Accept, Mcp-Session-Id' );
 		$response->header( 'Access-Control-Expose-Headers', 'Mcp-Session-Id' );
 		$response->header( 'Access-Control-Max-Age', '3600' );
+
+		// Apply the centrally-managed security headers (gated behind Settings → Security → Network → "Enable Security Headers").
+		$security         = new WP_MCP_AI_Security_Manager();
+		$security_headers = $security->get_security_headers();
+		foreach ( $security_headers as $name => $value ) {
+			$response->header( $name, $value );
+		}
 	}
 }

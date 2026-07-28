@@ -644,6 +644,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 			'enable_hsts',
 			'hsts_max_age',
 			'csp_frame_ancestors',
+			'cors_allow_origin',
 			'enable_root_security_key',
 			'enable_2fa_requirement',
 			'enable_loopback_ssl_bypass',
