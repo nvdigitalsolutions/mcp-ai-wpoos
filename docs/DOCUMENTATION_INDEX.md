@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** July 16, 2026  
-**Plugin Version:** 1.1.41  
+**Last Updated:** July 29, 2026  
+**Plugin Version:** 1.1.42  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -486,6 +486,30 @@ This document provides a comprehensive index of all documentation available for 
 - **[docs/features/memory/transcript-mining.md](features/memory/transcript-mining.md)** ⭐ **NEW** — Retroactive Transcript Mining: background job, REST API (3 endpoints), `mine_agent_memory` `transcripts` source, provenance metadata, de-duplication, filters, admin UI, PHPUnit coverage.
 - **[docs/features/memory/chat-client-integration.md](features/memory/chat-client-integration.md)** ⭐ **UPDATED** — G-series completion (G2 audit tab, G3 badge, G6 pagehide, G8 SSE frame, G11 export); two-gates section (`wp_mcp_ai_chat_memory_enabled` filter + per-user meta).
 - **[docs/features/slash-commands-guide.md](features/slash-commands-guide.md)** ⭐ **NEW** — Complete reference for all 24 base + 8 Pro slash commands with capability, aliases, and description. Replaces the dated Phase 1 guide for day-to-day reference.
+
+---
+
+## 🆕 July 2026 — Security Infrastructure, Framework-Agnostic Core, Status Page, Agent Skills, Algorave
+
+### New and updated documents (July 23–29, 2026)
+
+- **[docs/operations/production-hardening-guide.md](operations/production-hardening-guide.md)** ⭐ **NEW** — Step-by-step production hardening checklist: WAF, OAuth lockdown, DICOM requirements. (July 28, 2026)
+- **[docs/developer/api-key-encryption.md](developer/api-key-encryption.md)** ⭐ **NEW** — API key encrypted-at-rest storage with key rotation. (July 28, 2026)
+- **[docs/developer/dicom-phi-handling.md](developer/dicom-phi-handling.md)** ⭐ **NEW** — DICOM/healthcare PHI auto-detection and redaction. (July 28, 2026)
+- **[docs/reference/admin/security-settings.md](reference/admin/security-settings.md)** ⭐ **NEW** — Security admin settings reference. (July 28, 2026)
+- **[docs/project/proposals/014-status-page-maintenance-incident-communication-implementation-plan.md](project/proposals/014-status-page-maintenance-incident-communication-implementation-plan.md)** ⭐ **NEW** — Status page, maintenance announcements, and incident communication workflow plan. (July 27, 2026)
+- **[SECURITY.md](../SECURITY.md)** ⭐ **UPDATED** — Production hardening guide link, security documentation index. (July 28, 2026)
+- **[SECURITY_AUDIT_REPORT.md](../SECURITY_AUDIT_REPORT.md)** ⭐ **UPDATED** — 13-layer security audit findings (27 issues: 2 Critical, 7 High, 11 Medium, 7 Low). (July 28, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.42 latest updates section, repository map updated.
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.42 section with full PR-level detail.
+- **[CLAUDE.md](../CLAUDE.md)** ⭐ **UPDATED** — Security infrastructure section, framework-agnostic core section, context files, troubleshooting.
+- **[AGENTS.md](../AGENTS.md)** ⭐ **UPDATED** — Zed agent skills, coding-time vs runtime skills distinction, context-loading updates.
+- **[.github/copilot-instructions.md](../.github/copilot-instructions.md)** ⭐ **UPDATED** — Repository structure, key technologies, documentation count.
+- **[.context/security-checklist.md](../.context/security-checklist.md)** ⭐ **UPDATED** — New security infrastructure class references.
+- **[.context/conventions.md](../.context/conventions.md)** ⭐ **UPDATED** — lib/core naming patterns.
+- **[MAINTAINER_MAP.md](../MAINTAINER_MAP.md)** ⭐ **UPDATED** — New directories, security docs, lib/core section.
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.42 entry.
+- **[docs/ROADMAP.md](ROADMAP.md)** ⭐ **UPDATED** — v1.1.42 released section.
 
 ---
 

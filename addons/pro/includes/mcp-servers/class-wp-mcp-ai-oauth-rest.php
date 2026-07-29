@@ -390,7 +390,24 @@ class WP_MCP_AI_OAuth_REST {
 		$result = WP_MCP_AI_OAuth_Server::get_instance()->register_client( $metadata );
 
 		if ( is_wp_error( $result ) ) {
+			// Log failed registration attempts (SEC-4-002 audit).
+			if ( function_exists( 'wp_mcp_ai_log' ) ) {
+				wp_mcp_ai_log( 'warning', sprintf(
+					'OAuth client registration failed: %s (IP: %s)',
+					$result->get_error_message(), self::get_client_ip()
+				) );
+			}
 			return $result;
+		}
+
+		// Log successful registrations for audit trail.
+		if ( function_exists( 'wp_mcp_ai_log' ) ) {
+			$client_name = isset( $metadata['client_name'] ) ? $metadata['client_name'] : 'Unknown';
+			$new_client_id = isset( $result['client_id'] ) ? $result['client_id'] : '';
+			wp_mcp_ai_log( 'info', sprintf(
+				'OAuth client registered: %s (%s, IP: %s)',
+				$client_name, $new_client_id, self::get_client_ip()
+			) );
 		}
 
 		$response = new WP_REST_Response( $result, 201 );
@@ -522,6 +539,13 @@ class WP_MCP_AI_OAuth_REST {
 
 			$entry = $oauth->exchange_code( $code, $code_verifier );
 			if ( is_wp_error( $entry ) ) {
+				// Log failed token exchanges for audit (SEC-4-001).
+				if ( function_exists( 'wp_mcp_ai_log' ) ) {
+					wp_mcp_ai_log( 'warning', sprintf(
+						'OAuth token exchange failed (%s): %s (IP: %s)',
+						$grant_type, $entry->get_error_message(), self::get_client_ip()
+					) );
+				}
 				return $entry;
 			}
 
@@ -558,6 +582,13 @@ class WP_MCP_AI_OAuth_REST {
 
 			$result = $oauth->refresh_access_token( $refresh_token );
 			if ( is_wp_error( $result ) ) {
+				// Log failed refresh attempts for audit (SEC-4-001).
+				if ( function_exists( 'wp_mcp_ai_log' ) ) {
+					wp_mcp_ai_log( 'warning', sprintf(
+						'OAuth token refresh failed: %s (IP: %s)',
+						$result->get_error_message(), self::get_client_ip()
+					) );
+				}
 				return $result;
 			}
 
@@ -751,6 +782,14 @@ class WP_MCP_AI_OAuth_REST {
 		if ( $count >= 10 ) {
 			set_transient( $lock_key, 1, 900 ); // 15-minute lockout.
 			delete_transient( $count_key );
+
+			// Log lockout initiation for audit trail.
+			if ( function_exists( 'wp_mcp_ai_log' ) ) {
+				wp_mcp_ai_log( 'warning', sprintf(
+					'OAuth token rate limit: IP locked out for 15 min (%d failures)',
+					$count
+				) );
+			}
 
 			return new WP_Error(
 				'rate_limited',

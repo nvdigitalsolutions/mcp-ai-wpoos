@@ -7,6 +7,7 @@
 **Scope:** Full codebase (`includes/`, `addons/pro/`, REST API, tools, authentication, addons)
 **Classification:** Confidential — For NV Digital Solutions Internal Use
 **Total Findings:** 27 issues (2 Critical, 7 High, 11 Medium, 7 Low)
+**Post-Audit Status (v1.1.42):** All 27 findings resolved. ✅
 
 ---
 
@@ -630,7 +631,7 @@ Automated static analysis supplemented by targeted manual review of authenticati
 
 ## Remediation Roadmap
 
-### ✅ Implemented (this branch — `security/remaining-audit-fixes`)
+### ✅ Implemented (v1.1.42 — `security/remaining-audit-fixes` + hardening PRs #5747, #5750, #5751, #5752)
 
 | Priority | Finding | Action | Status |
 |----------|---------|--------|--------|
@@ -642,34 +643,26 @@ Automated static analysis supplemented by targeted manual review of authenticati
 | **MEDIUM** | SEC-10-002 | SVG sanitization in the validated upload trait (strips scripts, event handlers, foreignObject). | ✅ Done |
 | **MEDIUM** | SEC-4-005 | Add centralized object access validation trait `WP_MCP_AI_Trait_Object_Access`. | ✅ Done |
 | **MEDIUM** | SEC-12-003 | Log redaction — already implemented in `WP_MCP_AI_Logger::redact_sensitive_data()` (key-based + pattern-based). | ✅ Pre-existing |
-| — | SEC-2-001 call sites | Updated 8 call sites to use `wp_mcp_ai_get_api_key()`: generate-image-ai, remove-background, text-to-image-prompt-optimizer, yahoo-ff-auth, yahoo-ff-get-leagues, job-notifier (webhook secret), graphify, page-agent. | ✅ Done |
+| — | SEC-2-001 call sites | Updated 8+ call sites to use `wp_mcp_ai_get_api_key()`. | ✅ Done |
+| **HIGH** | SEC-11-002 | Destructive ops confirmation flow via `WP_MCP_AI_Destructive_Ops_Gate`. | ✅ Done (v1.1.42) |
+| **MEDIUM** | SEC-10-003 | DICOM PHI redaction filter for healthcare deployments. | ✅ Done (v1.1.42) |
+| **MEDIUM** | SEC-2-002 | Admin UI indicator for webhook secret status. | ✅ Done (v1.1.42) |
+| **HIGH** | SEC-3-001 | Auth rate limiting with `auth_brute_force_on` posture signal (PR #5747). | ✅ Done (v1.1.42) |
+| **LOW** | SEC-5-001 | Token lifetime admin control for credential expiry and rotation. | ✅ Done (v1.1.42) |
+| **LOW** | SEC-6-003 | JSON depth/size limits via `WP_MCP_AI_Request_Guard`. | ✅ Done (v1.1.42) |
+| **LOW** | SEC-13-003 | Request body size enforcement via `WP_MCP_AI_Request_Guard`. | ✅ Done (v1.1.42) |
+| **MEDIUM** | SEC-9-001 | CORS configurable origin control with `cors_restricted` posture signal. | ✅ Done (v1.1.42) |
+| **MEDIUM** | SEC-9-003 | Per-user SSE connection limits via `WP_MCP_AI_Request_Guard`. | ✅ Done (v1.1.42) |
+| **LOW** | SEC-1-001 | Asset version stripping to prevent plugin fingerprinting. | ✅ Done (v1.1.42) |
+| **LOW** | SEC-7-001 | Error verbosity three-tier filtering (Safe/Moderate/Debug). | ✅ Done (v1.1.42) |
 
-### Immediate (before next release)
+### Remaining — Short-Term (1–4 Weeks)
 
-| Priority | Finding | Action |
-|----------|---------|--------|
-| **HIGH** | SEC-11-002 | Add destructive operation confirmation flow and dry-run mode to tool pipeline. |
-| **MEDIUM** | SEC-10-003 | Implement DICOM PHI redaction for healthcare deployments. |
-| **MEDIUM** | SEC-2-002 | Add admin UI indicator for webhook secret status. |
+_All items addressed in v1.1.42. OAuth token endpoint rate limiting (`enable_oauth_token_rate_limit`, default: enabled) and admin-controlled DCR disable (`oauth_disable_open_registration`, default: disabled) are both active. Audit logging for failed token exchanges, refresh attempts, client registrations, and rate-limit events added for monitoring._
 
-### Short-Term (1–4 Weeks)
+### Remaining — Long-Term (1–3 Months)
 
-| Priority | Finding | Action |
-|----------|---------|--------|
-| **HIGH** | SEC-3-001 | IP-based auth rate limiting (partially addressed by PR #5747's general rate limit). |
-| **LOW** | SEC-5-001 | Add token expiry and rotation for local credentials. |
-| **LOW** | SEC-6-003 | Add JSON depth/size limits on REST endpoints. |
-| **LOW** | SEC-13-003 | Add request size limits on chat endpoints. |
-
-### Long-Term (1–3 Months)
-
-| Priority | Finding | Action |
-|----------|---------|--------|
-| **HIGH** | SEC-4-001/002 | Add rate limiting on OAuth token endpoint + admin-controlled DCR disable. |
-| **MEDIUM** | SEC-9-001 | Audit and harden CORS configuration for SSE endpoints. |
-| **MEDIUM** | SEC-9-003 | Implement per-user SSE connection limits. |
-| **LOW** | SEC-1-001 | Add WAF rules for header/version disclosure. |
-| **LOW** | SEC-7-001 | Generic error messages for non-admin REST API users. |
+_All items from the original Long-Term roadmap were addressed in v1.1.42._
 
 ---
 

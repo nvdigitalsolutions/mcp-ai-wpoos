@@ -107,6 +107,8 @@ mcp-ai-wpoos/
 │   │
 │   ├─ assistants/             ← Assistant CPT registration and metaboxes
 │   ├─ blueprints/             ← Unified blueprint installer + import tools
+│   ├─ security/               ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
+│   ├─ bridge/                 ← WordPress adapters for nvoos/core domain contracts (21 adapters)
 │   ├─ services/               ← Business logic (30+ service classes)
 │   │   ├─ class-wp-mcp-ai-dspark-hooks.php ← DSpark efficiency data collectors
 │   │   ├─ class-wp-mcp-ai-speculative-tool-executor.php ← DSpark speculative execution
@@ -161,6 +163,16 @@ mcp-ai-wpoos/
 │   │   ├─ admin-settings.js   ← Settings page JS
 │   │   └─ vendor/             ← Vendored third-party JS (chart.js, vectorizer…)
 │   └─ css/                    ← Styles; *.min.css served
+│
+├─ lib/core/                   ← Framework-agnostic AI engine (nvoos/core, PHP 8.1+, MIT)
+│   ├─ src/Domain/Contract/    ← 32 domain interfaces (ports)
+│   ├─ src/Application/        ← ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry
+│   ├─ src/Infrastructure/     ← 12 AI provider clients, SSE handler, cost calculator
+│   └─ src/Tool/               ← 109 framework-agnostic tool classes
+│
+├─ .agents/skills/             ← 21 coding-time agent skills for Zed editor (wp-* patterns)
+├─ .bmad/                      ← 6 BMAD workflow agent YAML definitions + team composition
+├─ .context/                   ← Subsystem context files (8 topics + 5 templates + active/archive)
 │
 └─ packages/                   ← 17 standalone NPM packages (published separately)
     ├─ nvoos-storage/          ← Storage utilities
@@ -331,6 +343,10 @@ The `docs/` directory contains **570+ files** (including implementation history,
 | `docs/features/agent-skills.md` | Agent Skills end-to-end reference (Phases 1–4: bundled skills, remote catalogues, progressive disclosure, skill packs) |
 | `docs/reference/` | REST API, hooks, settings reference |
 | `docs/developer/` | How-to guides for specific workflows |
+| `docs/operations/production-hardening-guide.md` | Production security hardening checklist (WAF, OAuth, DICOM) |
+| `docs/developer/api-key-encryption.md` | API key encrypted-at-rest storage |
+| `docs/reference/admin/security-settings.md` | Security admin settings reference |
+| `lib/core/README.md` | Framework-agnostic nvoos/core engine overview |
 | `docs/project/architecture-decisions/ADR_001_module_boundaries.md` | Architecture Decision Record #1 — module boundaries |
 
 ### Docs to skip (unless debugging history)
@@ -353,6 +369,7 @@ This repository is developed with multiple AI coding agents. Each agent has a de
 | **GitHub Copilot** | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | Repo-level instructions for Copilot chat and completions |
 | **OpenAI Codex** | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox bootstrap script |
 | **BMAD Agents** | [`.bmad/agents/*.yaml`](.bmad/agents/) | Six specialized roles for the GSD × BMAD workflow |
+| **Zed Agent Skills** | [`.agents/skills/*.md`](.agents/skills/) | 21 coding-time WordPress development skills auto-discovered by Zed |
 
 The full agent inventory, capabilities, and context-loading strategy are documented in [`AGENTS.md`](AGENTS.md).
 
