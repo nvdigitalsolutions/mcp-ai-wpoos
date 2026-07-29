@@ -2,7 +2,7 @@
 /**
  * Security Posture Service
  *
- * Computes a weighted 0-100 security score from ~20 site-specific signals
+ * Computes a weighted 0-100 security score from 20+ site-specific signals
  * and surfaces it on the Security Center Overview sub-tab, the dashboard
  * widget, and via the `mcp-ai/v1/security/posture` REST endpoint.
  *
@@ -125,13 +125,13 @@ class WP_MCP_AI_Security_Posture {
 	/**
 	 * Helper: get a single setting value.
 	 *
-	 * @param string $key     Setting key.
-	 * @param mixed  $default Default value.
+	 * @param string $key      Setting key.
+	 * @param mixed  $fallback Fallback value when key is missing.
 	 * @return mixed
 	 */
-	private function get( $key, $default = false ) {
+	private function get( $key, $fallback = false ) {
 		$s = $this->settings();
-		return isset( $s[ $key ] ) ? $s[ $key ] : $default;
+		return isset( $s[ $key ] ) ? $s[ $key ] : $fallback;
 	}
 
 	/**
@@ -358,6 +358,54 @@ class WP_MCP_AI_Security_Posture {
 					: __( '"Loopback SSL Bypass" is enabled on an HTTPS site — disable it unless local AI services require it.', 'mcp-ai-wpoos' ),
 				'subtab' => 'access',
 				'anchor' => 'enable_loopback_ssl_bypass',
+			),
+			// ── CORS (added after PR #5747 default hardening) ──────────
+			array(
+				'id'     => 'cors_restricted',
+				'label'  => __( 'CORS restricted to same-origin (not open to all domains)', 'mcp-ai-wpoos' ),
+				'weight' => 5,
+				'passed' => 'star' !== ( $s['cors_allow_origin'] ?? '' ),
+				'detail' => 'star' !== ( $s['cors_allow_origin'] ?? '' )
+					? __( 'CORS is restricted to same-origin.', 'mcp-ai-wpoos' )
+					: __( 'CORS is set to Allow All. Restrict to Same Origin under Network → Security Headers.', 'mcp-ai-wpoos' ),
+				'subtab' => 'network',
+				'anchor' => 'cors_allow_origin',
+			),
+			// ── Error verbosity (1.2.0) ──────────────────────────────────
+			array(
+				'id'     => 'error_verbosity_safe',
+				'label'  => __( 'API error verbosity set to Safe (production-ready)', 'mcp-ai-wpoos' ),
+				'weight' => 4,
+				'passed' => 'safe' === ( $s['api_error_verbosity'] ?? 'normal' ),
+				'detail' => 'safe' === ( $s['api_error_verbosity'] ?? 'normal' )
+					? __( 'API error detail is set to Safe.', 'mcp-ai-wpoos' )
+					: __( 'API error verbosity is not Safe. Change to Safe under Network → API Error Disclosure to prevent information leakage.', 'mcp-ai-wpoos' ),
+				'subtab' => 'network',
+				'anchor' => 'api_error_verbosity',
+			),
+			// ── Auth brute-force protection (1.2.0) ──────────────────────
+			array(
+				'id'     => 'auth_brute_force_on',
+				'label'  => __( 'Authentication brute-force protection enabled', 'mcp-ai-wpoos' ),
+				'weight' => 4,
+				'passed' => ! empty( $s['enable_auth_rate_limiting'] ),
+				'detail' => ! empty( $s['enable_auth_rate_limiting'] )
+					? __( 'Auth brute-force protection is active.', 'mcp-ai-wpoos' )
+					: __( 'Enable Auth Rate Limiting under Network → Authentication Brute-Force Protection.', 'mcp-ai-wpoos' ),
+				'subtab' => 'network',
+				'anchor' => 'enable_auth_rate_limiting',
+			),
+			// ── Request body size limit (1.2.0) ──────────────────────────
+			array(
+				'id'     => 'body_size_limited',
+				'label'  => __( 'Request body size limit configured', 'mcp-ai-wpoos' ),
+				'weight' => 3,
+				'passed' => (int) ( $s['max_request_body_size_kb'] ?? 1024 ) > 0,
+				'detail' => (int) ( $s['max_request_body_size_kb'] ?? 1024 ) > 0
+					? __( 'Request body size limit is active.', 'mcp-ai-wpoos' )
+					: __( 'Request body size is unlimited. Set a limit under Network → Connection & Payload Limits to prevent resource exhaustion.', 'mcp-ai-wpoos' ),
+				'subtab' => 'network',
+				'anchor' => 'max_request_body_size_kb',
 			),
 		);
 

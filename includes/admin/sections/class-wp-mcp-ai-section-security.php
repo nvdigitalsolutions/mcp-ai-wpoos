@@ -572,9 +572,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'default'     => 'none',
 				),
 				'cors_allow_origin'                        => array(
-					'type'           => 'select',
-					'label'          => __( 'CORS Allow-Origin (Cross-Origin API Access)', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Controls which external domains can call the plugin REST API from browser-based clients. &quot;Same Origin&quot; (recommended) blocks cross-origin access. Use &quot;Allow All&quot; only if MCP clients or AI services on other domains need access.', 'mcp-ai-wpoos' ),
+					'type'        => 'select',
+					'label'       => __( 'CORS Allow-Origin (Cross-Origin API Access)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls which external domains can call the plugin REST API from browser-based clients. &quot;Same Origin&quot; (recommended) blocks cross-origin access. Use &quot;Allow All&quot; only if MCP clients or AI services on other domains need access.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'site' => __( 'Same Origin — only this site (recommended)', 'mcp-ai-wpoos' ),
 						'star' => __( 'Allow All — any domain can call the API', 'mcp-ai-wpoos' ),
@@ -809,7 +809,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				// ========================================
 				// CONNECTION & PAYLOAD LIMITS (1.2.0 — Network subtab)
 				// ========================================
-				'_heading_connection_limits'                => array(
+				'_heading_connection_limits'               => array(
 					'type'  => 'heading',
 					'label' => __( 'Connection & Payload Limits', 'mcp-ai-wpoos' ),
 				),
@@ -843,7 +843,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				// ========================================
 				// AUTH BRUTE-FORCE PROTECTION (1.2.0 — Network subtab)
 				// ========================================
-				'_heading_auth_brute_force'                 => array(
+				'_heading_auth_brute_force'                => array(
 					'type'  => 'heading',
 					'label' => __( 'Authentication Brute-Force Protection', 'mcp-ai-wpoos' ),
 				),
@@ -881,7 +881,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				// ========================================
 				// ERROR VERBOSITY (1.2.0 — Network subtab)
 				// ========================================
-				'_heading_error_verbosity'                  => array(
+				'_heading_error_verbosity'                 => array(
 					'type'  => 'heading',
 					'label' => __( 'API Error Disclosure', 'mcp-ai-wpoos' ),
 				),
@@ -1089,7 +1089,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		<div>
 			<?php /* translators: %d: security posture score (0-100) */ ?>
 			<h3 style="margin:0 0 4px;"><?php echo esc_html( sprintf( __( 'Security Posture: %d / 100', 'mcp-ai-wpoos' ), $score ) ); ?></h3>
-			<p style="margin:0;color:#646970;"><?php esc_html_e( 'Computed from 17 weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ); ?></p>
+			<p style="margin:0;color:#646970;"><?php echo esc_html( sprintf( /* translators: %d: number of weighted security signals */ __( 'Computed from %d weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ), count( $signals ) ) ); ?></p>
 			<button type="button" class="button button-small wp-mcp-ai-refresh-posture" style="margin-top:8px;">
 				<span class="dashicons dashicons-update" style="vertical-align:middle;"></span>
 				<?php esc_html_e( 'Refresh Now', 'mcp-ai-wpoos' ); ?>
@@ -1162,7 +1162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 	<div class="wp-mcp-ai-recent-events" style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;margin-bottom:24px;">
 		<h4 style="margin-top:0;"><?php esc_html_e( 'Recent Security Events (last 10)', 'mcp-ai-wpoos' ); ?></h4>
 			<?php if ( empty( $recent_events ) ) : ?>
-			<p style="color:#646970;margin:0;"><?php esc_html_e( 'No security events logged yet. Enable the audit log under Audit & Compliance to start recording events.', 'mcp-ai-wpoos' ); ?></p>
+			<p style="color:#646970;margin:0;"><?php esc_html_e( 'No security events recorded yet. Events will appear here as they are detected by the security audit system.', 'mcp-ai-wpoos' ); ?></p>
 		<?php else : ?>
 			<table class="widefat striped" style="margin:0;">
 				<thead>
