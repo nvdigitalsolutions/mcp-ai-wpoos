@@ -313,6 +313,12 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 			$headers['Strict-Transport-Security'] = 'max-age=' . $max_age . '; includeSubDomains';
 		}
 
+		// CORS Allow-Origin (from Security → Network → Security Headers).
+		$cors_setting                           = $settings['cors_allow_origin'] ?? 'site';
+		$headers['Access-Control-Allow-Origin'] = ( 'star' === $cors_setting )
+			? '* (any domain — less secure)'
+			: get_site_url() . ' (same-origin — recommended)';
+
 		// Escape all header values.
 		$safe_headers = array();
 		foreach ( $headers as $name => $value ) {
