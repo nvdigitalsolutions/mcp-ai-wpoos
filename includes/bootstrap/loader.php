@@ -122,6 +122,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-http-clie
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-bulk-operation.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-cron-status-job-source.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-service-status-source.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-options-store.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-capability-checker.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/http/class-wp-mcp-ai-wp-http-client.php';
@@ -315,8 +316,19 @@ if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webworker-enqueue.p
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 
 // ---------------------------------------------------------------------------
-// Pro addon (must load BEFORE tools-init.php so Pro tools are registered first)
-// ---------------------------------------------------------------------------
+// Status page: service status registry, default sources, CPT, shortcode.
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-service-status-default-sources.php';
+WP_MCP_AI_Service_Status_Default_Sources_Bootstrap::register();
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-service-status-cpt.php';
+add_action( 'init', array( 'WP_MCP_AI_Service_Status_CPT', 'register' ), 11 );
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-status-rest-controller.php';
+add_action( 'rest_api_init', array( 'WP_MCP_AI_Status_REST_Controller', 'register_routes' ) );
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-status-shortcode.php';
+add_shortcode( 'nvoos_status', array( 'WP_MCP_AI_Status_Shortcode', 'render' ) );
+
+// Pro addon (must load BEFORE tools-init.php so Pro tools are registered first).
+// See above section for the Pro addon loader.
 
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 	$wp_mcp_ai_pro_addon_file = WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php';

@@ -1,0 +1,257 @@
+/**
+ * Pro Status Dashboard Styles
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 1.2.0
+ */
+
+.wp-mcp-ai-pro-status-page {
+	max-width: 1200px;
+}
+
+.wp-mcp-ai-pro-status-toolbar {
+	margin: 15px 0 20px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Overall status banner */
+.wp-mcp-ai-pro-status-overall {
+	padding: 16px 20px;
+	border-radius: 8px;
+	margin-bottom: 20px;
+	font-size: 16px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.wp-mcp-ai-pro-status-overall--operational {
+	background: #d4edda;
+	color: #155724;
+	border: 1px solid #c3e6cb;
+}
+
+.wp-mcp-ai-pro-status-overall--under_maintenance {
+	background: #cce5ff;
+	color: #004085;
+	border: 1px solid #b8daff;
+}
+
+.wp-mcp-ai-pro-status-overall--degraded_performance {
+	background: #fff3cd;
+	color: #856404;
+	border: 1px solid #ffeaa7;
+}
+
+.wp-mcp-ai-pro-status-overall--partial_outage {
+	background: #ffeaa7;
+	color: #b45309;
+	border: 1px solid #ffd666;
+}
+
+.wp-mcp-ai-pro-status-overall--major_outage {
+	background: #f8d7da;
+	color: #721c24;
+	border: 1px solid #f5c6cb;
+}
+
+/* Status indicator dot */
+.wp-mcp-ai-pro-status-indicator {
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-pro-status-indicator--operational { background: #28a745; }
+.wp-mcp-ai-pro-status-indicator--under_maintenance { background: #007bff; }
+.wp-mcp-ai-pro-status-indicator--degraded_performance { background: #ffc107; }
+.wp-mcp-ai-pro-status-indicator--partial_outage { background: #fd7e14; }
+.wp-mcp-ai-pro-status-indicator--major_outage { background: #dc3545; }
+.wp-mcp-ai-pro-status-indicator--unknown { background: #adb5bd; }
+
+/* Component grid */
+.wp-mcp-ai-pro-status-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-pro-status-card {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 8px;
+	padding: 16px;
+	transition: box-shadow 0.2s ease;
+}
+
+.wp-mcp-ai-pro-status-card:hover {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wp-mcp-ai-pro-status-card--major_outage {
+	border-color: #dc3545;
+	background: #fff5f5;
+}
+
+.wp-mcp-ai-pro-status-card--partial_outage {
+	border-color: #fd7e14;
+	background: #fff8f0;
+}
+
+.wp-mcp-ai-pro-status-card--degraded_performance {
+	border-color: #ffc107;
+	background: #fffef5;
+}
+
+.wp-mcp-ai-pro-status-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.wp-mcp-ai-pro-status-card-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-pro-status-card-group {
+	font-size: 11px;
+	color: #6c757d;
+	text-transform: uppercase;
+	margin-bottom: 4px;
+}
+
+/* Health badge */
+.wp-mcp-ai-pro-status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 10px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.wp-mcp-ai-pro-status-badge--operational { background: #d4edda; color: #155724; }
+.wp-mcp-ai-pro-status-badge--under_maintenance { background: #cce5ff; color: #004085; }
+.wp-mcp-ai-pro-status-badge--degraded_performance { background: #fff3cd; color: #856404; }
+.wp-mcp-ai-pro-status-badge--partial_outage { background: #ffeaa7; color: #b45309; }
+.wp-mcp-ai-pro-status-badge--major_outage { background: #f8d7da; color: #721c24; }
+.wp-mcp-ai-pro-status-badge--unknown { background: #e9ecef; color: #6c757d; }
+
+.wp-mcp-ai-pro-status-card-message {
+	font-size: 13px;
+	color: #50575e;
+	margin: 8px 0;
+	line-height: 1.4;
+}
+
+.wp-mcp-ai-pro-status-card-meta {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 12px;
+	color: #adb5bd;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.wp-mcp-ai-pro-status-card-actions {
+	display: flex;
+	gap: 6px;
+}
+
+.wp-mcp-ai-pro-status-card-actions .button {
+	font-size: 11px;
+	line-height: 1.6;
+	min-height: 24px;
+	padding: 0 8px;
+}
+
+/* Toggle switch */
+.wp-mcp-ai-pro-status-toggle {
+	position: relative;
+	display: inline-block;
+	width: 40px;
+	height: 20px;
+}
+
+.wp-mcp-ai-pro-status-toggle input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.wp-mcp-ai-pro-status-toggle-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	transition: 0.2s;
+	border-radius: 20px;
+}
+
+.wp-mcp-ai-pro-status-toggle-slider::before {
+	position: absolute;
+	content: "";
+	height: 14px;
+	width: 14px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	transition: 0.2s;
+	border-radius: 50%;
+}
+
+.wp-mcp-ai-pro-status-toggle input:checked + .wp-mcp-ai-pro-status-toggle-slider {
+	background-color: #2271b1;
+}
+
+.wp-mcp-ai-pro-status-toggle input:checked + .wp-mcp-ai-pro-status-toggle-slider::before {
+	transform: translateX(20px);
+}
+
+/* Loading skeleton */
+.wp-mcp-ai-pro-status-skeleton {
+	background: linear-gradient(90deg, #f0f0f1 25%, #e0e0e0 50%, #f0f0f1 75%);
+	background-size: 200% 100%;
+	animation: wp-mcp-ai-skeleton-shimmer 1.5s infinite;
+	border-radius: 4px;
+}
+
+@keyframes wp-mcp-ai-skeleton-shimmer {
+	0% { background-position: 200% 0; }
+	100% { background-position: -200% 0; }
+}
+
+/* Uptime chart */
+.wp-mcp-ai-pro-status-chart-container {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+/* Help section */
+.wp-mcp-ai-pro-status-help code {
+	display: block;
+	padding: 10px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	font-size: 14px;
+	font-family: monospace;
+}
