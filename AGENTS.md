@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **July 16, 2026** · Version: **1.8**
+> Last reviewed: **July 29, 2026** · Version: **1.9**
 
 ### Related Files
 
@@ -29,6 +29,7 @@ These are the AI assistants that human maintainers invoke when working on the re
 | **GitHub Copilot** | GitHub / OpenAI | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | IDE completions, Copilot Chat, PR reviews | Inline suggestions, chat Q&A, PR summaries |
 | **GitHub Custom Agents** | GitHub | [`.github/agents/*.agent.md`](.github/agents/) | Auto-discovered by GitHub Copilot Coding Agent and compatible runtimes | Role-specific agents (14 in this repo — reviewers, writers per subsystem, plus `addon-maintainer`, `toolkit-spa-maintainer` parameterised per addon, and `acp` for Agent Client Protocol). See each `*.agent.md` for scope. |
 | **Zed Agent Profiles** | Zed Industries | [`.zed/settings.json`](.zed/settings.json) + [`.zed/README.md`](.zed/README.md) | Selected from the Agent Panel profile picker | Native Zed mirror of the `examples/agents/` roster (14 profiles) — same scopes, mapped to Zed's tool registry |
+| **Zed Agent Skills** | Zed Industries | [`.agents/skills/*.md`](.agents/skills/) | Auto-discovered by Zed agent panel | 21 coding-time WordPress development skills (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text) — distinct from runtime bundled skills |
 | **OpenAI Codex** | OpenAI | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox tasks | Sandbox-based code generation and testing |
 
 ### Internal BMAD Agents (GSD × BMAD Workflow)
@@ -61,6 +62,8 @@ Independent of the coding-time agents above, the plugin also exposes **Agent Ski
 | **Progressive disclosure** | Each assistant has a "Use progressive disclosure" checkbox; when on, the system prompt sees only `# Available Skills` (name + description) and the model calls the base-plugin `load_skill({ name })` tool to retrieve the full SKILL.md only when needed. |
 | **Skill packs** | Curated, named bundles of related skills (e.g. "WordPress Developer") addressable as a single install unit via the Skill Manager admin UI. |
 | **Reference** | [`docs/features/agent-skills.md`](docs/features/agent-skills.md) (full Phases 1–4 narrative) and [`docs/features/okf-integration.md`](docs/features/okf-integration.md) (OKF skill conformance).
+
+**Coding-time skills (`.agents/skills/`) vs runtime skills:** The `.agents/skills/` directory contains 21 coding-time agent skills auto-discovered by the Zed editor. These are distinct from the runtime Agent Skills (45 base + 28+ Pro bundled skills loaded by NV oOS assistants at runtime). The `.agents/skills/` files are WordPress plugin development patterns that guide coding agents, while the runtime skills (`includes/bundled-skills/`) are SKILL.md files loaded by AI assistants during conversations.
 
 When extending Agent Skills, see §6 ("Updating Agent Configuration") below for the file-update checklist.
 
@@ -97,6 +100,9 @@ Every agent session loads these two files:
 | [`docs/features/pro-toolkit-optimization.md`](docs/features/pro-toolkit-optimization.md) | Working on Pro toolkit performance optimization classes |
 | [`docs/features/dietpi-pro-toolkit.md`](docs/features/dietpi-pro-toolkit.md) | Working on DietPi server management tools |
 | [`docs/features/layer-i-guardrails.md`](docs/features/layer-i-guardrails.md) | Working on jailbreak prevention or capability boundaries |
+| [`docs/operations/production-hardening-guide.md`](docs/operations/production-hardening-guide.md) | Working on production security hardening (WAF, OAuth, DICOM, maintenance) |
+| [`docs/developer/api-key-encryption.md`](docs/developer/api-key-encryption.md) | Working on API key storage and encryption |
+| [`lib/core/README.md`](../lib/core/README.md) | Working on the framework-agnostic nvoos/core engine |
 
 ### Folder context (loaded per folder being edited)
 
@@ -252,6 +258,8 @@ If an AI agent produces code with a security vulnerability, report it through th
 | New `includes/` or `addons/pro/includes/` subdirectory | Add `README.md` per [folder README convention](docs/developer/folder-readme-convention.md); run `composer run docs:check-folder-readmes` |
 | New or changed GitHub Custom Agent | `.github/agents/*.agent.md` (per layering rule in §2), `AGENTS.md` (agent inventory in §1) — must be in the same PR. If a matching agent also exists in [`examples/agents/`](examples/agents/), update `.zed/settings.json` so the Zed profile's tool block stays in sync. |
 | New bundled skill or skill pack | Add `SKILL.md` under `includes/bundled-skills/` (base) or `addons/pro/includes/bundled-skills/` (Pro); update the corresponding `THIRD_PARTY_NOTICES.md` if curated from an upstream catalogue; document in `docs/features/agent-skills.md` |
+| New coding-time agent skill | Add `SKILL.md` under `.agents/skills/{slug}/`; update `AGENTS.md` (agent inventory in §1); verify the skill is auto-discovered by the Zed agent panel |
+| New security infrastructure class | `CLAUDE.md` (architecture section), `.context/security-checklist.md`, `README.md` (features list), `docs/features/security-infrastructure.md` |
 
 ### Review cadence
 

@@ -11,8 +11,8 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.41
-**Release Date:** 2026-07-22
+**Version:** 1.1.42
+**Release Date:** 2026-07-29
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
@@ -120,10 +120,13 @@
 
 | Directory | Purpose |
 |-----------|---------|
-| `includes/` | Core plugin classes — admin, assistants, tools, services, REST, security, providers (~15 AI backends), harness, data, markup, measurement, skills, professions, teams, slash-commands, A2A/ACP protocols, federation, elementor, blocks, crawler, integrations |
-| `addons/` | 24 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Graphify, Comic Reader, Funiq Bridge, AI Platform, Algorave, Cornerstone3D, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router, Page Agent) |
+| `includes/` | Core plugin classes — admin, assistants, tools, services, REST, security (7 infrastructure classes), providers (~15 AI backends), harness, data, markup, measurement, skills, professions, teams, slash-commands, A2A/ACP protocols, federation, elementor, blocks, crawler, integrations |
+| `lib/core/` | Framework-agnostic AI orchestration engine (nvoos/core): 32 domain contracts, 21 WordPress adapters, ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry — PHP 8.1+ |
+| `addons/` | 27 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Graphify, Comic Reader, Funiq Bridge, AI Platform, Algorave, Cornerstone3D, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router, Page Agent, Crocoblock DS, LibreChat, Status Page) |
 | `assets/` | Frontend JS/CSS, images, CSV templates, examples |
-| `lib/` | Framework-agnostic core library + WordPress/Laravel/Craft CMS adapters |
+| `.agents/skills/` | 21 coding-time agent skills for Zed editor (WordPress plugin development patterns) |
+| `.bmad/` | 6 BMAD workflow agent YAML definitions + team composition config |
+| `.context/` | Subsystem context files (8 topics + 5 templates) for agent session loading |
 | `plugins/` | Standalone plugins: NVOOS Graphify, NVOOS Graphify AI, NVOOS Graphify AI Platform |
 | `packages/` | 23 NPM packages under `@nvdigitalsolutions` scope |
 | `src/` | TMA (Telegram Mini App) builders + workflow builder source |
@@ -144,6 +147,15 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.42)
+
+- 🛡️ **Security Infrastructure Hardening.** 7 new security infrastructure classes (Request Guard, Security Posture with 21 signals A-F grading, Destructive Ops Gate, URL Guard, Concurrency Guard, Cost Tracker, API Key Store). Site Health integration. Production hardening guide. CORS, rate limiting, error verbosity, and body size enforcement with admin dashboard posture signals.
+- 🏗️ **Framework-Agnostic Core (`lib/core/`).** nvoos/core package — Hexagonal Architecture with 32 domain contracts + 21 WordPress adapters. ChatOrchestrator with RateLimiter + SemanticCompressor. 109 tools migrated to framework-agnostic format. ProviderRouter with 12-provider routing. 5 chat parity gaps closed.
+- 📡 **Status Page & Incident Communication (Pro).** Maintenance window system with frontend banner, countdown timer, and multi-channel notifications. Incident workflow with phase state machine, phase-aware dispatcher, and lesson bridge. 4 new AI tools for service status and incident management.
+- 🤖 **Agent Skills & BMAD Agents.** 21 coding-time agent skills for Zed editor covering WordPress plugin development patterns. 6 BMAD workflow agent YAML definitions with team composition config. Full `.context/` subsystem context files with 8 topics + 5 templates.
+- 🎵 **Algorave Addon.** New live coding and algorithmic music generation addon with 9 tools, pattern/session CPTs, and REST API.
+- 🔒 **Security Hardening (12 fixes).** OAuth token lifetime controls, DICOM PHI auto-redaction, asset version stripping, exception guard, auth brute-force protection, SSE CORS filter, webhook secret indicator. 13 new security unit tests.
 
 ### ✨ What's New at a Glance (v1.1.41)
 
@@ -531,7 +543,22 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.41 — July 2026)
+## 🆕 Latest Updates (v1.1.42 — July 2026)
+
+### July 23–29, 2026 — Security Infrastructure, Framework-Agnostic Core, Status Page, Agent Skills, Algorave 🛡️🏗️📡🤖🎵
+
+- ✅ **Security Infrastructure Hardening (4 PRs).** 7 new security infrastructure classes: Request Guard (SSE limits, JSON depth, body size, error verbosity, asset version stripping), Security Posture (21 signals, 0-100 weighted score, A-F grading), Destructive Ops Gate (confirmation gate), URL Guard, Concurrency Guard, Cost Tracker, API Key Store. Site Health checks for cron + security posture. 13 new security unit tests covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.
+- ✅ **Security Defaults & Headers Hardening.** CORS configurable origin control (new cors_restricted posture signal, weight 5). Auth brute-force protection with rate limiting (new auth_brute_force_on signal, weight 4). Error verbosity three-tier filtering Safe/Moderate/Debug (new error_verbosity_safe signal, weight 4). Request body size enforcement (new body_size_limited signal, weight 3). OAuth token lifetime admin control, guest scope docs, SSE CORS filter, webhook secret indicator. DICOM PHI auto-redaction filter. Asset version stripping. Centralized exception guard.
+- ✅ **Security Dashboard Posture Signals.** Dynamic signal count replaces hardcoded 17. Accurate audit-log empty-state text. CORS origin preview in header tool. Production hardening guide with WAF/OAuth/DICOM checklist.
+- ✅ **Framework-Agnostic Core (lib/core/).** nvoos/core package with Hexagonal Architecture (Ports & Adapters), PHP 8.1+, separate composer.json. 32 domain contracts covering chat, caching, content, cost tracking, cron, email, events, files, HTTP, memory, models, OCR, providers, speech, streaming. 21 WordPress adapters. ChatOrchestrator with RateLimiter + SemanticCompressor. ProviderRouter (12-provider routing). Framework-agnostic ToolRegistry + SkillRegistry. 109 tools migrated to nvoos/core format. 5 chat parity gaps closed: finish_reason handling, prompt caching, input sanitization, vision image processing, transcript store contracts.
+- ✅ **Status Page & Incident Communication (Pro).** Maintenance window CPT with REST CRUD, frontend banner + countdown timer, email/webhook/channel broadcast notifier. Incident CPT with phase state machine, phase-aware notification dispatcher, incident-to-lesson bridge. 4 new AI tools: get_service_status, create_incident, update_incident, resolve_incident.
+- ✅ **Agent Skills & BMAD Agents.** 21 coding-time agent skills (.agents/skills/) for Zed editor covering WordPress plugin development patterns — abilities API, action scheduler, HTML API, i18n audit, plugin architecture, assets loading, bootstrap, cron, DTO, hooks, lifecycle, options storage, presenter, rewrite rules, query cache, REST API, security audit (with reference doc), security deep, security secrets, UTF-8 text. 6 BMAD workflow agent YAML definitions (.bmad/agents/) — analyst, architect, developer, product-manager, qa-engineer, scrum-master — with team composition config. Full .context/ subsystem context system with 8 topic files + 5 templates + active/archive directories.
+- ✅ **Algorave Addon.** New standalone addon for live coding and algorithmic music generation. 9 tools: export-midi, generate-music-ai, generate-pattern, midi-output, modify-pattern, play-control, sample-manager, strudel-reference, visualizer. Pattern and session CPTs. REST API. Admin settings.
+- ✅ **Critical Bug Fixes.** Request Guard wrap_dispatch parameter order mismatch with WP >= 6.5 rest_dispatch_request filter (was causing fatal error). Nonce authenticator now accepts _wpnonce query parameter in addition to X-WP-Nonce header (fixes 401 on legacy chat client streams).
+- ✅ **Dependency Security Updates.** brace-expansion overrides across all addons. js-yaml and postcss security overrides. All npm lock files regenerated. undici pinned to 7.x for Node 20 compat in canvas-toolkit.
+- 📦 **Versioning** — bumped to **1.1.42** across all version-bearing files. Tool count: ~201 base + ~830+ Pro (~1,031+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27** (new: Algorave).
+
+## 🆕 Previous Updates (v1.1.41 — July 2026)
 
 ### July 20–22, 2026 — OKF Integration, Security Compliance, Playbook Sync, Model Credentials, Dependency Bumps 📚🔒🔧🔑🛡️
 
@@ -539,7 +566,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **Security Compliance (11 HIGH/P0 Fixes).** HMAC-signed policy tokens for professional selector with 1h expiry. Health endpoint auth-gating (public response reduced to status only). ZIP path traversal prevention with realpath() containment. CSRF nonces on Shopify/EZuite/FlowHub sync endpoints. CDN SRI integrity hashes for all 6 libraries. Google Chat OIDC hardening with shared-secret token. Privacy imaging path traversal fix. Autoload fallback cleanup. Version alignment across all package.json files.
 - ✅ **Playbook Sync Fixes.** Duplicate AJAX handler conflict resolved with nonce-aware cap bypass. CPT class loading guard in remove_duplicate_playbooks(). Silent sync failure detection — sync_all() now returns {synced, errors} surfaced to admin UI. Profession prompt regression fixed after HMAC refactor.
 - ✅ **Model Provider Credential Resolution.** Model_Service now resolves API keys from all 4 sources — settings, credentials option, environment variables, and PHP constants — via Credential_Resolver.
-- ✅ **Dependency Security Bumps.** adm-zip ≥0.6.0 (ZIP CVE), axios ≥1.18.0 (6 CVEs), brace-expansion 1.1.16/2.1.2/5.0.7 across 5 package.json files (CVE-2026-13149). npm audit: 0 vulnerabilities. composer audit: 0 advisories.
+- ✅ **Dependency Security Bumps.** adm-zip >=0.6.0 (ZIP CVE), axios >=1.18.0 (6 CVEs), brace-expansion 1.1.16/2.1.2/5.0.7 across 5 package.json files (CVE-2026-13149). npm audit: 0 vulnerabilities. composer audit: 0 advisories.
 - 📦 **Versioning** — bumped to **1.1.41** across all version-bearing files. Tool count: ~201 base + ~830+ Pro (~1,031+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **26**.
 
 ## 🆕 Previous Updates (v1.1.40 — July 2026)

@@ -273,6 +273,38 @@ Reference: `class-wp-mcp-ai-shopify-sync-toolkit-settings-page.php`, `class-wp-m
 
 ---
 
+## Security Infrastructure (v1.1.42+)
+
+The plugin ships 7 security infrastructure classes in `includes/security/`. When working near REST dispatching, error handling, or destructive operations, reference these classes for canonical patterns:
+
+### Request Guard
+
+`WP_MCP_AI_Request_Guard::wrap_dispatch()` hooks into `rest_dispatch_request` (WP >= 6.5 signature: 5 params: `$result, $wp_rest_server, $request, $route, $handler`). Provides:
+- SSE connection slot limiting
+- JSON depth enforcement
+- Request body size enforcement
+- Error verbosity filtering (Safe/Moderate/Debug tiers)
+- Asset version stripping (`?ver=` query string removal)
+
+### Security Posture
+
+`WP_MCP_AI_Security_Posture` computes a 0-100 weighted score from 21 signals. Cached (5-minute TTL). Filter: `wp_mcp_ai_security_posture_signals`.
+
+### Destructive Ops Gate
+
+`WP_MCP_AI_Destructive_Ops_Gate` enforces confirmation gates for irreversible operations (bulk delete, mass email, etc.).
+
+### Other Guards
+
+- `WP_MCP_AI_URL_Guard` — URL validation/sanitization before outbound requests
+- `WP_MCP_AI_Concurrency_Guard` — prevents overlapping destructive operations
+- `WP_MCP_AI_Cost_Tracker` — per-operation cost estimation and budget enforcement
+- `WP_MCP_AI_Api_Key_Store` — encrypted at-rest API key storage
+
+Reference: `includes/security/README.md`, `docs/operations/production-hardening-guide.md`.
+
+---
+
 ## ABSPATH Guard (Every Non-Root PHP File)
 
 ```php

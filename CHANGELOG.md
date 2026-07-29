@@ -1,5 +1,70 @@
 # oOS – Changelog
 
+## [1.1.42] - 2026-07-29
+
+### Added — Security Infrastructure Hardening
+
+- **7 new security infrastructure classes** in `includes/security/`: `WP_MCP_AI_Request_Guard` (SSE connection limits, JSON depth enforcement, body size limits, error verbosity filtering, asset version stripping), `WP_MCP_AI_Security_Posture` (weighted 0-100 posture score from 21 signals with A-F grading), `WP_MCP_AI_Destructive_Ops_Gate` (confirmation gate for destructive operations), `WP_MCP_AI_URL_Guard`, `WP_MCP_AI_Concurrency_Guard`, `WP_MCP_AI_Cost_Tracker`, `WP_MCP_AI_Api_Key_Store` (encrypted API key storage). (PRs #5747, #5750, #5751, #5752)
+- **Site Health checks** for cron configuration and security posture in WordPress Site Health screen.
+- **Production hardening guide** (`docs/operations/production-hardening-guide.md`) with step-by-step checklist for WAF, OAuth lockdown, DICOM requirements, and maintenance tasks.
+- **New security documentation:** API key encryption (`docs/developer/api-key-encryption.md`), DICOM PHI handling (`docs/developer/dicom-phi-handling.md`), security settings reference (`docs/reference/admin/security-settings.md`).
+
+### Security — Hardening Defaults & Headers
+
+- **CORS hardening** — configurable origin control replacing "Allow All" default. New posture signal `cors_restricted` (weight 5).
+- **Rate limiting** — auth brute-force protection with configurable thresholds. New posture signal `auth_brute_force_on` (weight 4).
+- **Error verbosity control** — three-tier filtering (Safe/Moderate/Debug) for API error responses. New posture signal `error_verbosity_safe` (weight 4).
+- **Request body size enforcement** — configurable limit with graceful rejection. New posture signal `body_size_limited` (weight 3).
+- **Security posture dashboard** — dynamic signal count (now 21 signals), accurate audit-log empty-state text, CORS origin preview in header tool.
+- **OAuth hardening** — token lifetime admin control, guest scope documentation, SSE CORS filter, webhook secret indicator.
+- **DICOM PHI filter** — automatic PHI detection and redaction in healthcare imaging workflows.
+- **Asset version stripping** — configurable removal of `?ver=` query strings to prevent plugin fingerprinting.
+- **Exception guard** — centralized exception handling preventing stack trace leakage in API responses.
+
+### Added — Framework-Agnostic Core (`lib/core/`)
+
+- **nvoos/core** package — Hexagonal Architecture (Ports & Adapters) with separate `composer.json`. PHP 8.1+.
+- **32 domain contracts** (interfaces) in `lib/core/src/Domain/Contract/` covering chat, caching, content, cost tracking, cron, email, events, files, HTTP, memory, models, OCR, providers, speech, streaming, and more.
+- **21 WordPress adapters** implementing the domain contracts via WordPress primitives.
+- **ChatOrchestrator** — framework-agnostic agentic loop with RateLimiter + SemanticCompressor integration.
+- **ProviderRouter** — 12-provider routing with automatic fallback.
+- **ToolRegistry + SkillRegistry** — framework-agnostic tool/skill registration decoupled from WordPress.
+- **109 tools migrated** to nvoos/core framework-agnostic format. (PR #5740)
+- **5 chat parity gaps closed** — finish_reason handling, prompt caching, input sanitization, vision image processing, transcript store contracts. (PR #5738)
+- **Streaming provider contracts** and voice/realtime provider abstractions. (PR #5740)
+
+### Added — Status Page & Incident Communication (Pro)
+
+- **Maintenance Window System** — CPT (`mcp_ai_maintenance`), REST CRUD, frontend banner with countdown timer, email/webhook/channel broadcast notifier. (PR #5744)
+- **Incident Communication Workflow** — CPT (`mcp_ai_incident`) with phase state machine, REST CRUD + phase transitions, phase-aware notification dispatcher, incident-to-lesson bridge.
+- **4 AI tools** — `get_service_status`, `create_incident`, `update_incident`, `resolve_incident`.
+- **Implementation plan:** `docs/project/proposals/014-status-page-maintenance-incident-communication-implementation-plan.md`.
+
+### Added — Agent Skills & BMAD Agent Definitions
+
+- **21 coding-time agent skills** (`.agents/skills/`) for Zed editor — WordPress plugin development patterns (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, wp-plugin-architecture, wp-plugin-assets-loading, wp-plugin-bootstrap, wp-plugin-cron, wp-plugin-dto, wp-plugin-hooks, wp-plugin-lifecycle, wp-plugin-options-storage, wp-plugin-presenter, wp-plugin-rewrite-rules, wp-query-cache, wp-rest-api, wp-security-audit, wp-security-deep, wp-security-secrets, wp-utf8-text) with reference docs for wp-security-audit.
+- **6 BMAD agent YAML definitions** (`.bmad/agents/`) — analyst, architect, developer, product-manager, qa-engineer, scrum-master — with team composition in `.bmad/teams/feature-development.yaml`.
+
+### Added — Algorave Addon
+
+- **New addon** (`addons/algorave/`) — live coding and algorithmic music generation. 9 tools (export-midi, generate-music-ai, generate-pattern, midi-output, modify-pattern, play-control, sample-manager, strudel-reference, visualizer), pattern/session CPTs, REST API, admin settings.
+
+### Fixed — Critical Bug Fixes
+
+- **Request guard fatal error** — `wrap_dispatch` parameter order mismatch with WP >= 6.5 `rest_dispatch_request` filter signature. (PR #5750)
+- **Nonce auth on stream** — authenticator now accepts `_wpnonce` query parameter in addition to `X-WP-Nonce` header, fixing 401 errors on legacy chat client. (PR #5751)
+
+### Security — Dependency Updates
+
+- **npm security sweep** — brace-expansion overrides across all addons, js-yaml and postcss security overrides, regenerated all npm lock files. (PR #5739, #5742)
+- **undici pinned to 7.x** for Node 20 compatibility in canvas-toolkit. (PR #5743)
+
+### Versioning
+
+- Bumped to **1.1.42** across all version-bearing files.
+- Tool count: ~201 base + ~830+ Pro (~1,031+ total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27** (new: Algorave).
+
 ## [1.1.40] - 2026-07-15
 
 ### Added — Content Format Awareness
