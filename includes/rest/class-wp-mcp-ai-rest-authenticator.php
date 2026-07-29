@@ -827,7 +827,12 @@ class WP_MCP_AI_REST_Authenticator {
 		$this->reset_auth_context();
 
 		// Check for WordPress nonce authentication (logged-in users).
+		// WP core accepts both the X-WP-Nonce header and the _wpnonce
+		// query parameter; mirror that behaviour here.
 		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce ) {
+			$nonce = $request->get_param( '_wpnonce' );
+		}
 		if ( $nonce && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 			$user_id = get_current_user_id();
 			if ( $user_id > 0 ) {
