@@ -347,6 +347,15 @@ class WP_MCP_AI_OAuth_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_register( $request ) {
+		// Gate: check if open registration is disabled (1.2.0).
+		if ( self::is_open_registration_disabled() ) {
+			return new WP_Error(
+				'registration_disabled',
+				__( 'Open OAuth client registration is disabled. Please contact the site administrator.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
 			return new WP_Error( 'server_error', __( 'OAuth server is not available.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
 		}
@@ -412,6 +421,15 @@ class WP_MCP_AI_OAuth_REST {
 
 		// Validate client.
 		if ( ! $oauth->is_client_registered( $client_id ) ) {
+			// If open registration is disabled, reject unknown clients (1.2.0).
+			if ( self::is_open_registration_disabled() ) {
+				return new WP_Error(
+					'invalid_client',
+					__( 'Unknown client. Open registration is disabled.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 401 )
+				);
+			}
+
 			// Auto-register single-use client for the redirect URI.
 			$oauth->register_client(
 				array(
@@ -475,6 +493,12 @@ class WP_MCP_AI_OAuth_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_token( $request ) {
+		// Gate: rate limit the token endpoint (1.2.0).
+		$rate_check = self::check_token_rate_limit();
+		if ( is_wp_error( $rate_check ) ) {
+			return $rate_check;
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
 			return new WP_Error( 'server_error', __( 'OAuth server is not available.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
 		}
@@ -652,5 +676,116 @@ class WP_MCP_AI_OAuth_REST {
 				),
 			)
 		);
+	}
+
+	// ---------------------------------------------------------------- //
+	// Security helpers (1.2.0)                                          //
+	// ---------------------------------------------------------------- //
+
+	/**
+	 * Check whether open OAuth client registration is disabled.
+	 *
+	 * @since 1.2.0
+	 * @return bool
+	 */
+	private static function is_open_registration_disabled() {
+		if ( function_exists( 'wp_mcp_ai_get_settings_repository' ) ) {
+			return (bool) wp_mcp_ai_get_settings_repository()->get(
+				'oauth_disable_open_registration',
+				true
+			);
+		}
+
+		return true; // Default: disabled (fail-safe).
+	}
+
+	/**
+	 * Rate-limit the OAuth token endpoint by IP.
+	 *
+	 * Tracks failed token exchanges per IP using transients.
+	 * After 10 failures in 5 minutes, the IP is locked out for 15 minutes.
+	 *
+	 * Only active when enable_oauth_token_rate_limit setting is enabled.
+	 *
+	 * @since 1.2.0
+	 * @return true|WP_Error
+	 */
+	private static function check_token_rate_limit() {
+		// Check if the rate limit setting is enabled.
+		if ( function_exists( 'wp_mcp_ai_get_settings_repository' ) ) {
+			$enabled = wp_mcp_ai_get_settings_repository()->get(
+				'enable_oauth_token_rate_limit',
+				true
+			);
+			if ( ! $enabled ) {
+				return true;
+			}
+		}
+
+		$ip = self::get_client_ip();
+		if ( empty( $ip ) ) {
+			return true; // Can't determine IP — allow (don't lock everyone out).
+		}
+
+		$ip_hash    = md5( $ip );
+		$lock_key   = 'wp_mcp_ai_oauth_token_lock_' . $ip_hash;
+		$count_key  = 'wp_mcp_ai_oauth_token_count_' . $ip_hash;
+
+		// Check if currently locked out.
+		if ( get_transient( $lock_key ) ) {
+			return new WP_Error(
+				'rate_limited',
+				__( 'Too many token requests. Please try again later.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'status'     => 429,
+					'retry_after' => 900, // 15 minutes.
+				)
+			);
+		}
+
+		// Increment failure counter.
+		$count = absint( get_transient( $count_key ) ) + 1;
+		set_transient( $count_key, $count, 300 ); // 5-minute window.
+
+		// Lock out after threshold.
+		if ( $count >= 10 ) {
+			set_transient( $lock_key, 1, 900 ); // 15-minute lockout.
+			delete_transient( $count_key );
+
+			return new WP_Error(
+				'rate_limited',
+				__( 'Too many token requests. Please try again in 15 minutes.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'status'      => 429,
+					'retry_after' => 900,
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Get the client IP address, respecting proxies.
+	 *
+	 * @since 1.2.0
+	 * @return string
+	 */
+	private static function get_client_ip() {
+		if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
+			return sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
+		}
+
+		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+			// Take the first IP in the chain.
+			$ips = explode( ',', wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
+			return sanitize_text_field( trim( $ips[0] ) );
+		}
+
+		if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
+			return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
+		}
+
+		return '';
 	}
 }

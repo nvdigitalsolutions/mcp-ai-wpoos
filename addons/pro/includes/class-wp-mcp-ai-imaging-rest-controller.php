@@ -1087,6 +1087,23 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			return $meta;
 		}
 
+		/**
+		 * Filter DICOM metadata before storage to allow PHI redaction.
+		 *
+		 * DICOM files may contain Protected Health Information (PHI) such as
+		 * patient names, IDs, birth dates, and institution details. If your
+		 * deployment handles real patient data, attach a callback to this
+		 * filter to strip or pseudonymize PHI fields before they are stored
+		 * in the WordPress database.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array  $meta    Extracted DICOM metadata (patient_id, patient_name,
+		 *                        patient_birth_date, institution_name, etc.).
+		 * @param string $tmp_path Path to the uploaded DICOM file on disk.
+		 */
+		$meta = apply_filters( 'wp_mcp_ai_dicom_strip_phi', $meta, $tmp_path );
+
 		$study_uid    = isset( $meta['study_instance_uid'] ) ? $meta['study_instance_uid'] : '';
 		$series_uid   = isset( $meta['series_instance_uid'] ) ? $meta['series_instance_uid'] : '';
 		$instance_uid = isset( $meta['sop_instance_uid'] ) ? $meta['sop_instance_uid'] : '';
