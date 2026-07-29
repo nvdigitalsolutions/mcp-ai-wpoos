@@ -104,7 +104,13 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 		 * @return bool
 		 */
 		private static function is_plugin_route( $request ) {
-			$route = $request->get_route();
+			if ( is_string( $request ) ) {
+				$route = $request;
+			} elseif ( $request instanceof WP_REST_Request ) {
+				$route = $request->get_route();
+			} else {
+				return false;
+			}
 
 			// Match mcp-ai/* and nvoos-* namespaces.
 			return 0 === strpos( $route, '/mcp-ai/' )
@@ -514,12 +520,22 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 		 * @since 1.2.0
 		 *
 		 * @param mixed           $result  Dispatch result.
-		 * @param WP_REST_Server  $server  REST server.
-		 * @param WP_REST_Request $request Current request.
+		 * @param WP_REST_Request $request Current request (WP >= 6.5).
 		 * @param string          $route   Matched route.
+		 * @param mixed           $handler Route handler (WP >= 6.5).
+		 * @param WP_REST_Server  $server  REST server (WP >= 6.5).
 		 * @return mixed|WP_Error
 		 */
-		public static function wrap_dispatch( $result, $server, $request, $route ) {
+		public static function wrap_dispatch( $result, $request, $route, $handler = null, $server = null ) {
+			// Normalise: WP < 6.5 passed ($result, $server, $request, $route).
+			// WP >= 6.5 passes ($result, $request, $route, $handler, $server).
+			if ( ! $request instanceof WP_REST_Request && $route instanceof WP_REST_Request ) {
+				// Old signature detected — swap.
+				$tmp     = $request;
+				$request = $route;
+				$route   = $handler;
+			}
+
 			// Only wrap plugin routes.
 			if ( ! self::is_plugin_route( $request ) ) {
 				return $result;
