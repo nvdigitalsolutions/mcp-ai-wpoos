@@ -103,6 +103,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'preview_headers' ),
 					'permission_callback' => $manage,
+					'args'                => array(),
 				),
 			)
 		);
@@ -134,6 +135,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'list_snapshots' ),
 					'permission_callback' => $manage,
+					'args'                => array(),
 				),
 			)
 		);
@@ -165,6 +167,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'run_self_test' ),
 					'permission_callback' => $manage,
+					'args'                => array(),
 				),
 			)
 		);

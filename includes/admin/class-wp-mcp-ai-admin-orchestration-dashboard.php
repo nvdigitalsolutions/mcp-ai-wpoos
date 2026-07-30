@@ -1640,6 +1640,15 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		global $wpdb;
 		$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+
+		// Defense-in-depth: validate the slug is a safe alphanumeric string
+		// before interpolating into a table name. The slug is currently a
+		// hardcoded class constant, but this guard protects against future
+		// changes that might introduce dynamic input.
+		if ( ! preg_match( '/^[a-z0-9_]+$/', $slug ) ) {
+			return false;
+		}
+
 		$table = $wpdb->prefix . 'jet_cct_' . $slug;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Direct read on custom plugin transient and stats tables; no WP Core API available for these schemas. ALTER TABLE on custom plugin tables only; managed by the plugin's own schema migration system.
@@ -1681,6 +1690,10 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		global $wpdb;
 		$slug = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+		// Defense-in-depth: validate slug is safe before table-name interpolation.
+		if ( ! preg_match( '/^[a-z0-9_]+$/', $slug ) ) {
+			return $default;
+		}
 		// Table name comes from the JetEngine convention `{prefix}jet_cct_{slug}`
 		// where `$slug` is a class constant.
 		$table = $wpdb->prefix . 'jet_cct_' . $slug;

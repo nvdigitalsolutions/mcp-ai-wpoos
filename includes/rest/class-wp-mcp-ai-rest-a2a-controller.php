@@ -113,7 +113,7 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_per_assistant_card' ),
-				'permission_callback' => array( $this, 'permissions_check_agent_card' ),
+				'permission_callback' => array( $this, 'permissions_check_per_assistant_card' ),
 				'args'                => array(
 					'assistant_id' => array(
 						'type'              => 'integer',
@@ -132,6 +132,19 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_webhook' ),
 				'permission_callback' => array( $this, 'permissions_check_a2a' ),
+				'args'                => array(
+					'type'       => array(
+						'description'       => __( 'Webhook event type.', 'mcp-ai-wpoos' ),
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'data'       => array(
+						'description' => __( 'Webhook payload data.', 'mcp-ai-wpoos' ),
+						'type'        => 'object',
+						'required'    => false,
+					),
+				),
 			)
 		);
 	}
@@ -196,6 +209,33 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Permission check for per-assistant Agent Card endpoint
+	 * (GET /a2a/agent-card/{id}).
+	 *
+	 * Unlike the top-level agent card which is intentionally public,
+	 * per-assistant cards expose assistant-specific metadata (model info,
+	 * tool lists, configuration) that should be gated behind A2A
+	 * authentication.
+	 *
+	 * @param WP_REST_Request $request The request.
+	 * @return true|WP_Error True if permitted, error otherwise.
+	 */
+	public function permissions_check_per_assistant_card( $request ) {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( empty( $settings['enable_a2a_server'] ) ) {
+			return new WP_Error(
+				'a2a_disabled',
+				__( 'A2A protocol is not enabled on this server.', 'mcp-ai-wpoos' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		// Require A2A authentication (nonce, bearer, or mesh key).
+		return $this->permissions_check_authenticated( $request );
 	}
 
 	/**

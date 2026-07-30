@@ -2714,8 +2714,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$max_requests = isset( $settings['rate_limit_requests'] ) ? absint( $settings['rate_limit_requests'] ) : 100;
 			$time_window  = isset( $settings['rate_limit_window'] ) ? absint( $settings['rate_limit_window'] ) : 3600;
 
-			// Create a unique key for this user.
-			$transient_key = 'wp_mcp_ai_rate_limit_' . $user_id;
+			// Create a unique key. Guests (user_id=0) get an IP-based
+			// key to prevent one attacker from exhausting the global quota.
+			if ( $user_id > 0 ) {
+				$transient_key = 'wp_mcp_ai_rate_limit_user_' . $user_id;
+			} else {
+				$client_ip = isset( $_SERVER['REMOTE_ADDR'] )
+					? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+					: 'unknown';
+				$transient_key = 'wp_mcp_ai_rate_limit_ip_' . md5( $client_ip . NONCE_SALT );
+			}
 			$current_count = get_transient( $transient_key );
 
 			if ( false === $current_count ) {

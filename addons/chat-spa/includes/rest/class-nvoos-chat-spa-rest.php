@@ -46,7 +46,7 @@ class NV_oOS_Chat_Spa_REST {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( __CLASS__, 'manifest' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( __CLASS__, 'logged_in_permission' ),
 			)
 		);
 
@@ -56,7 +56,7 @@ class NV_oOS_Chat_Spa_REST {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( __CLASS__, 'config' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( __CLASS__, 'logged_in_permission' ),
 			)
 		);
 	}
@@ -71,6 +71,26 @@ class NV_oOS_Chat_Spa_REST {
 			return true;
 		}
 		return new WP_Error( 'forbidden', __( 'You do not have permission to access this endpoint.', 'nvoos-chat-spa' ), array( 'status' => 403 ) );
+	}
+
+	/**
+	 * Logged-in user gate.
+	 *
+	 * Requires any authenticated user. Used for endpoints that serve
+	 * operational config to the chat SPA. The SPA itself handles
+	 * further authorization at the feature level.
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function logged_in_permission() {
+		if ( is_user_logged_in() ) {
+			return true;
+		}
+		return new WP_Error(
+			'rest_not_logged_in',
+			__( 'You must be logged in to access this endpoint.', 'nvoos-chat-spa' ),
+			array( 'status' => 401 )
+		);
 	}
 
 	/**

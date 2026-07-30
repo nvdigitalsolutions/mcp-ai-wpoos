@@ -111,6 +111,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Voice_Controller' ) ) {
 					'methods'             => 'GET',
 					'callback'            => array( $this, 'get_voice_config' ),
 					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => array(),
 				)
 			);
 
@@ -122,6 +123,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Voice_Controller' ) ) {
 					'methods'             => 'GET',
 					'callback'            => array( $this, 'get_voice_providers' ),
 					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => array(),
 				)
 			);
 

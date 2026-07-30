@@ -168,7 +168,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
 			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
+			$api_url = trailingslashit( $endpoint_url ) . 'api/tags';
+
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
@@ -226,7 +234,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
 			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
+			$api_url = trailingslashit( $endpoint_url ) . 'api/tags';
+
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
@@ -290,7 +306,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
 			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
+			$api_url = trailingslashit( $endpoint_url ) . 'v1/models';
+
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
@@ -348,7 +372,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
 			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
+			$api_url = trailingslashit( $endpoint_url ) . 'v1/models';
+
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
@@ -1809,6 +1841,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Ensure URL has trailing slash.
 			$api_url = trailingslashit( $api_url );
+
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
 
 			// Get timeout from settings.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
