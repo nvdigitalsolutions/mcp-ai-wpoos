@@ -9,15 +9,11 @@
 // See .zed/README.md for usage and the rationale behind the tool mapping.
 {
   // ---------------------------------------------------------------------------
-  // Language server paths — Zed on Windows may not inherit the global npm bin
-  // directory, so we pin the absolute path to the Intelephense binary.
+  // Language servers — Phpactor is the default PHP LSP. It auto-discovers
+  // the PHP runtime and project root, so no binary path is needed.
   // ---------------------------------------------------------------------------
   "lsp": {
-    "intelephense": {
-      "binary": {
-        "path": "C:/Users/rasta/AppData/Roaming/npm/intelephense.cmd"
-      }
-    }
+    "phpactor": {}
   },
 
   // ---------------------------------------------------------------------------
