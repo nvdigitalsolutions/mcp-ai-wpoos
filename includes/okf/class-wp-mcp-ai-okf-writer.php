@@ -3,10 +3,11 @@
  * OKF Writer — Create and update OKF concept documents.
  *
  * Provides atomic write operations for OKF bundles, index regeneration,
- * and conformance validation per the OKF v0.1 specification.
+ * and conformance validation per the OKF v0.2 specification.
  *
  * @package WP_MCP_AI
  * @since   2.1.0
+ * @since   2.5.0 — Updated validation for OKF v0.2 trust-signal fields.
  * @author  NV Digital Solutions
  * @copyright Copyright (c) 2026 NV Digital Solutions
  * @license  GPL-3.0-or-later
@@ -97,9 +98,9 @@ class WP_MCP_AI_OKF_Writer {
 			);
 		}
 
-		$concept_id  = ltrim( $concept_id, '/' );
-		$file_path   = $this->bundle_root . '/' . $concept_id . '.md';
-		$file_path   = wp_normalize_path( $file_path );
+		$concept_id = ltrim( $concept_id, '/' );
+		$file_path  = $this->bundle_root . '/' . $concept_id . '.md';
+		$file_path  = wp_normalize_path( $file_path );
 
 		// Security: ensure within bundle root.
 		$normalized_root = wp_normalize_path( $this->bundle_root );
@@ -113,7 +114,7 @@ class WP_MCP_AI_OKF_Writer {
 		// Ensure parent directory exists.
 		$dir = dirname( $file_path );
 		if ( ! is_dir( $dir ) ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Check-only; error will be caught by the file write.
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Check-only; error caught by file write below. OKF bundles are local filesystem only.
 			if ( ! @mkdir( $dir, 0755, true ) ) {
 				return new WP_Error(
 					'okf_mkdir_error',
@@ -123,7 +124,7 @@ class WP_MCP_AI_OKF_Writer {
 		}
 
 		// Serialize the document.
-		$yaml   = $this->parser->serialize( $frontmatter );
+		$yaml    = $this->parser->serialize( $frontmatter );
 		$content = $yaml . "\n" . trim( $body ) . "\n";
 
 		// Atomic write.
@@ -193,7 +194,7 @@ class WP_MCP_AI_OKF_Writer {
 		}
 
 		$deleted_path = $file_path . '.deleted.' . time();
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Error will be caught by the next check.
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.rename_rename -- Soft-delete via rename; OKF bundles are local filesystem only.
 		$renamed = @rename( $file_path, $deleted_path );
 		if ( ! $renamed ) {
 			return new WP_Error(
@@ -247,7 +248,7 @@ class WP_MCP_AI_OKF_Writer {
 		}
 
 		// Group entries by type (directories vs concepts).
-		$dir_entries   = array();
+		$dir_entries     = array();
 		$concept_entries = array();
 		foreach ( $entries as $entry ) {
 			if ( '/' === substr( $entry['path'], -1 ) ) {
@@ -283,7 +284,7 @@ class WP_MCP_AI_OKF_Writer {
 			}
 		}
 
-		$content = implode( "\n", $lines ) . "\n";
+		$content    = implode( "\n", $lines ) . "\n";
 		$index_path = $dir_path . '/index.md';
 
 		if ( $this->fs ) {
@@ -303,20 +304,26 @@ class WP_MCP_AI_OKF_Writer {
 	}
 
 	/**
-	 * Validate a bundle for OKF v0.1 conformance per spec §9.
+	 * Validate a bundle for OKF v0.2 conformance per spec.
 	 *
 	 * Checks:
 	 * 1. Every non-reserved .md file has parseable YAML frontmatter.
 	 * 2. Every frontmatter block contains a non-empty `type` field.
 	 * 3. Reserved filenames (index.md, log.md) follow conventions when present.
+	 * 4. (v0.2) `stale_after` is a valid date when present.
+	 * 5. (v0.2) `status` is a recognised value when present.
+	 * 6. (v0.2) Concepts past their `stale_after` date are flagged as stale.
 	 *
 	 * @since 2.1.0
+	 * @since 2.5.0 — Added OKF v0.2 trust-signal checks.
 	 *
-	 * @return array{conformant: bool, issues: string[], concept_count: int}
+	 * @return array{conformant: bool, issues: string[], concept_count: int, stale_count: int, deprecated_count: int}
 	 */
 	public function validate_bundle() {
-		$issues  = array();
-		$reader  = new WP_MCP_AI_OKF_Reader( $this->bundle_root );
+		$issues           = array();
+		$reader           = new WP_MCP_AI_OKF_Reader( $this->bundle_root );
+		$stale_count      = 0;
+		$deprecated_count = 0;
 
 		$files = $this->find_all_concept_files( $this->bundle_root );
 		foreach ( $files as $file_path ) {
@@ -352,19 +359,55 @@ class WP_MCP_AI_OKF_Writer {
 				continue;
 			}
 
-			if ( empty( $parsed['frontmatter']['type'] ) ) {
+			$fm = $parsed['frontmatter'];
+
+			if ( empty( $fm['type'] ) ) {
 				$issues[] = sprintf(
 					/* translators: %s: concept ID */
-					__( 'Concept "%s" has no "type" field in frontmatter (required by OKF v0.1).', 'mcp-ai-wpoos' ),
+					__( 'Concept "%s" has no "type" field in frontmatter (required by OKF v0.2).', 'mcp-ai-wpoos' ),
 					$concept_id
 				);
+			}
+
+			// v0.2: validate status enum.
+			if ( ! empty( $fm['status'] ) ) {
+				$valid_statuses = array( 'draft', 'stable', 'deprecated' );
+				if ( ! in_array( strtolower( $fm['status'] ), $valid_statuses, true ) ) {
+					$issues[] = sprintf(
+						/* translators: 1: concept ID, 2: invalid status value */
+						__( 'Concept "%1$s" has unrecognised status "%2$s". Valid values: draft, stable, deprecated.', 'mcp-ai-wpoos' ),
+						$concept_id,
+						esc_html( $fm['status'] )
+					);
+				}
+
+				if ( 'deprecated' === strtolower( $fm['status'] ) ) {
+					++$deprecated_count;
+				}
+			}
+
+			// v0.2: validate stale_after date.
+			if ( ! empty( $fm['stale_after'] ) ) {
+				$ts = strtotime( (string) $fm['stale_after'] );
+				if ( false === $ts ) {
+					$issues[] = sprintf(
+						/* translators: 1: concept ID, 2: stale_after value */
+						__( 'Concept "%1$s" has an unparseable stale_after date: "%2$s". Use ISO 8601 (e.g. 2026-12-31).', 'mcp-ai-wpoos' ),
+						$concept_id,
+						esc_html( (string) $fm['stale_after'] )
+					);
+				} elseif ( $ts < time() ) {
+					++$stale_count;
+				}
 			}
 		}
 
 		return array(
-			'conformant'    => empty( $issues ),
-			'issues'        => $issues,
-			'concept_count' => count( $files ),
+			'conformant'       => empty( $issues ),
+			'issues'           => $issues,
+			'concept_count'    => count( $files ),
+			'stale_count'      => $stale_count,
+			'deprecated_count' => $deprecated_count,
 		);
 	}
 
@@ -393,9 +436,9 @@ class WP_MCP_AI_OKF_Writer {
 			);
 		}
 
-		$log_path  = $dir_path . '/log.md';
-		$today     = gmdate( 'Y-m-d' );
-		$log_line  = '* **' . sanitize_text_field( $action ) . '**: ' . wp_kses_post( $entry );
+		$log_path = $dir_path . '/log.md';
+		$today    = gmdate( 'Y-m-d' );
+		$log_line = '* **' . sanitize_text_field( $action ) . '**: ' . wp_kses_post( $entry );
 
 		if ( ! file_exists( $log_path ) ) {
 			// Create new log file.
@@ -458,7 +501,7 @@ class WP_MCP_AI_OKF_Writer {
 			return true;
 		}
 
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Check-only; error will be caught by the next check.
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Check-only; error caught below. OKF bundles are local filesystem only.
 		if ( ! @mkdir( $this->bundle_root, 0755, true ) ) {
 			return new WP_Error(
 				'okf_mkdir_error',

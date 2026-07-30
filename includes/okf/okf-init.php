@@ -7,9 +7,12 @@
  *
  * @package WP_MCP_AI
  * @since   2.1.0
+ * @since   2.5.0 — OKF v0.2 support (trust signals, nested YAML, provenance).
  * @author  NV Digital Solutions
  * @copyright Copyright (c) 2026 NV Digital Solutions
  * @license  GPL-3.0-or-later
+ *
+ * @link https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -28,6 +31,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/okf/class-wp-mcp-ai-tool-okf-trave
 require_once WP_MCP_AI_PATH . 'includes/tools/okf/class-wp-mcp-ai-tool-okf-search.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/okf/class-wp-mcp-ai-tool-okf-write-concept.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/okf/class-wp-mcp-ai-tool-okf-delete-concept.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/okf/class-wp-mcp-ai-tool-okf-validate-attestation.php';
 
 /**
  * Register OKF tools with the tool registry.
@@ -48,6 +52,9 @@ add_action(
 		// Write tools.
 		$registry->register_tool( 'WP_MCP_AI_Tool_OKF_Write_Concept' );
 		$registry->register_tool( 'WP_MCP_AI_Tool_OKF_Delete_Concept' );
+
+		// Validate tools (OKF v0.2).
+		$registry->register_tool( 'WP_MCP_AI_Tool_OKF_Validate_Attestation' );
 	},
 	32
 );
