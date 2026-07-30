@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile -- Standalone manual test with WordPress stubs for offline execution.
 /**
  * Quick smoke-test for OKF v0.2 parser upgrade.
  * Run: php tests/manual/test-okf-v02-parser.php

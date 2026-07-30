@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile -- Standalone manual test with WordPress stubs for offline execution.
 define( 'ABSPATH', true );
 
 // Stubs.

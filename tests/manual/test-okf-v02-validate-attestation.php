@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile -- Standalone manual test with WordPress stubs for offline execution.
 /**
  * Smoke-test for okf_validate_attestation tool logic.
  * Tests the validation helpers in isolation.
