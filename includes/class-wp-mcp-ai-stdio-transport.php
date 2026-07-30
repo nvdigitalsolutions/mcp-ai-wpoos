@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   wp mcp-ai stdio
  *
  * The transport reads newline-delimited JSON-RPC 2.0 messages from stdin
- * and writes responses to stdout, following the MCP 2024-11-05 specification.
+ * and writes responses to stdout, following the MCP 2026-07-28 specification.
  *
  * @since 1.0.0
  */
@@ -47,7 +47,7 @@ class WP_MCP_AI_STDIO_Transport {
 	 *
 	 * @var string
 	 */
-	const PROTOCOL_VERSION = '2024-11-05';
+	const PROTOCOL_VERSION = '2026-07-28';
 
 	/**
 	 * Tool registry instance.

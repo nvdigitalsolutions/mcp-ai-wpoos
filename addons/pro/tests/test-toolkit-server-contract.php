@@ -96,7 +96,7 @@ class Test_Toolkit_Server_Contract extends WP_UnitTestCase {
 			$this->assertSame( $row[1], $descriptor['slug'] );
 			$this->assertIsArray( $descriptor['native_surfaces'] );
 			$this->assertIsArray( $descriptor['mounted_surfaces'] );
-			$this->assertSame( '2025-06-18', $descriptor['protocolVersion'] );
+			$this->assertSame( '2026-07-28', $descriptor['protocolVersion'] );
 		}
 	}
 
