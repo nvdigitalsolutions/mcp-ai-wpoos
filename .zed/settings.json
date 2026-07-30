@@ -9,6 +9,18 @@
 // See .zed/README.md for usage and the rationale behind the tool mapping.
 {
   // ---------------------------------------------------------------------------
+  // Language server paths — Zed on Windows may not inherit the global npm bin
+  // directory, so we pin the absolute path to the Intelephense binary.
+  // ---------------------------------------------------------------------------
+  "lsp": {
+    "intelephense": {
+      "binary": {
+        "path": "C:/Users/rasta/AppData/Roaming/npm/intelephense.cmd"
+      }
+    }
+  },
+
+  // ---------------------------------------------------------------------------
   // Editor defaults — kept in sync with .vscode/settings.json so contributors
   // who switch editors get the same indentation, formatter, and exclusions.
   // ---------------------------------------------------------------------------
