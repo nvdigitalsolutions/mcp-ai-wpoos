@@ -219,6 +219,43 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'handle_chat_transcripts' ),
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+					'args'                => array(
+						'user_id'      => array(
+							'description'       => __( 'User ID to filter transcripts by. Defaults to current user.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+						'session_key'  => array(
+							'description'       => __( 'Optional session key to retrieve a single transcript session.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'assistant_id' => array(
+							'description'       => __( 'Assistant ID to filter transcripts by. Can be an integer or string like "unified_team_123" or "team_123_member_456".', 'mcp-ai-wpoos' ),
+							'type'              => array( 'integer', 'string' ),
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'per_page'     => array(
+							'description'       => __( 'Number of transcripts per page.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'default'           => 20,
+							'minimum'           => 1,
+							'maximum'           => 100,
+							'sanitize_callback' => 'absint',
+						),
+						'page'         => array(
+							'description'       => __( 'Page number for pagination.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'default'           => 1,
+							'minimum'           => 1,
+							'sanitize_callback' => 'absint',
+						),
+					),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,

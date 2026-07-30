@@ -377,6 +377,37 @@ class WP_MCP_AI_REST_Threads_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// For cookie-authenticated requests, verify the REST nonce to prevent
+		// CSRF on state-changing operations. Application Password and Bearer
+		// token requests bypass this check — they carry their own CSRF
+		// protection via the Authorization header that browsers do not send
+		// cross-origin.
+		$auth_header = '';
+		if ( function_exists( 'getallheaders' ) ) {
+			$headers = getallheaders();
+			$auth_header = isset( $headers['Authorization'] ) ? (string) $headers['Authorization'] : '';
+		}
+		if ( empty( $auth_header ) && isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+			$auth_header = sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
+		}
+
+		// Only enforce nonce when no Authorization header is present
+		// (i.e., cookie-authenticated browser requests).
+		if ( empty( $auth_header ) ) {
+			$nonce = null;
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- We are verifying the nonce, not using it unsafely.
+			if ( isset( $_REQUEST['_wpnonce'] ) ) {
+				$nonce = sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) );
+			}
+			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return new WP_Error(
+					'rest_cookie_invalid_nonce',
+					__( 'Cookie nonce is invalid.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
 		if ( ! current_user_can( 'read' ) ) {
 			return new WP_Error(
 				'rest_forbidden',

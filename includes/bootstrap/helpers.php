@@ -846,7 +846,125 @@ if ( ! function_exists( 'wp_mcp_ai_log' ) ) :
 
 			default:
 				WP_MCP_AI_Logger::log_event( $level, $message );
-				break;
+					break;
+			}
 		}
-	}
-endif;
+	endif;
+
+	if ( ! function_exists( 'wp_mcp_ai_validate_ai_provider_url' ) ) :
+		/**
+		 * Validate that a URL targets an allowed AI provider host.
+		 *
+		 * Used by AJAX handlers that test connections to local AI providers
+		 * (Ollama, LM Studio, iSAMS, etc.) to prevent SSRF to internal network
+		 * services and cloud metadata endpoints.
+		 *
+		 * Allows localhost/127.0.0.1 by default (common for local AI).
+		 * Blocks RFC 1918, loopback (except 127.0.0.1), link-local IPs,
+		 * and known cloud metadata endpoints.
+		 *
+		 * @since 1.1.43
+		 *
+		 * @param string $url The URL to validate.
+		 * @return true|WP_Error True if the URL is safe, WP_Error otherwise.
+		 */
+		function wp_mcp_ai_validate_ai_provider_url( $url ) {
+			$host = wp_parse_url( $url, PHP_URL_HOST );
+			if ( ! $host ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_url',
+					__( 'Invalid URL provided.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Block known cloud metadata endpoints.
+			$blocked_patterns = array(
+				'169.254.169.254',
+				'metadata.google.internal',
+				'100.100.100.200',
+			);
+
+			foreach ( $blocked_patterns as $pattern ) {
+				if ( false !== strpos( $host, $pattern ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_blocked_host',
+						__( 'Connections to cloud metadata services are not allowed.', 'mcp-ai-wpoos' )
+					);
+				}
+			}
+
+			// Resolve hostname to IP and validate it is not a private/reserved address.
+			$ip = gethostbyname( $host );
+
+			// Allow localhost/127.0.0.1 and common Docker hostnames.
+			$allowed_hosts = apply_filters(
+				'wp_mcp_ai_allowed_ai_provider_hosts',
+				array( 'localhost', '127.0.0.1', 'host.docker.internal' )
+			);
+
+			$allowed_ips = array_map( 'gethostbyname', $allowed_hosts );
+			if ( in_array( $ip, $allowed_ips, true ) ) {
+				return true;
+			}
+
+			// Reject URLs that resolve to private, reserved, or link-local IPs.
+			if (
+				false === filter_var(
+					$ip,
+					FILTER_VALIDATE_IP,
+					FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+				)
+			) {
+				return new WP_Error(
+					'wp_mcp_ai_blocked_host',
+					sprintf(
+						/* translators: %s: hostname */
+						__( 'Connections to %s are not allowed. Use the wp_mcp_ai_allowed_ai_provider_hosts filter to whitelist this host.', 'mcp-ai-wpoos' ),
+						esc_html( $host )
+					)
+				);
+			}
+
+			return true;
+		}
+	endif;
+
+	if ( ! function_exists( 'wp_mcp_ai_safe_unserialize' ) ) :
+		/**
+		 * Safely unserialize data, restricting to allowed classes only.
+		 *
+		 * Prefer this over maybe_unserialize() when deserializing stored data
+		 * from the database (options, post meta, transients) to prevent PHP
+		 * object injection if an attacker gains write access to the database.
+		 *
+		 * Falls back gracefully: returns the original data if unserialization
+		 * fails or the data was not a serialized string.
+		 *
+		 * @since 1.1.43
+		 *
+		 * @param string|mixed $data Data that may be a serialized string.
+		 * @return mixed Unserialized value, or $data if not a serialized string.
+		 */
+		function wp_mcp_ai_safe_unserialize( $data ) {
+			if ( ! is_string( $data ) || '' === $data ) {
+				return $data;
+			}
+
+			// Quick check: only process if it looks like a serialized string.
+			if ( ! is_serialized( $data ) ) {
+				return $data;
+			}
+
+			// Unserialize with no allowed classes (prevents object instantiation).
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- Safe: allowed_classes is explicitly set to false.
+			$result = @unserialize( $data, array( 'allowed_classes' => false ) );
+
+			// If unserialize fails and the string was not literally 'b:0;' (serialized
+			// false), return the original data instead of false to avoid data loss.
+			if ( false === $result && 'b:0;' !== $data ) {
+				return $data;
+			}
+
+			return $result;
+		}
+	endif;
