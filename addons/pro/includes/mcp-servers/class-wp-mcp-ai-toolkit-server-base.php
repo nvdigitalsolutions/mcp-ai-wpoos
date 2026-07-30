@@ -318,9 +318,9 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 	 * @return array<string,mixed>
 	 */
 	public function get_descriptor() {
-		$native  = $this->effective_ingestion_surfaces();
-		$mounted = $this->effective_mounted_surfaces();
-		$limits  = $this->effective_limits();
+		$native   = $this->effective_ingestion_surfaces();
+		$mounted  = $this->effective_mounted_surfaces();
+		$limits   = $this->effective_limits();
 		$defaults = $this->get_default_limits();
 
 		// Merge configured limits with defaults so the descriptor always
@@ -341,7 +341,7 @@ abstract class WP_MCP_AI_Toolkit_Server_Base implements WP_MCP_AI_Toolkit_Server
 			'description'      => $this->get_description(),
 			'version'          => $this->get_version(),
 			'enabled'          => $this->is_enabled(),
-			'protocolVersion'  => '2025-06-18',
+			'protocolVersion'  => '2026-07-28',
 			'capabilities'     => array(
 				'tools'     => (object) array(),
 				'resources' => (object) array(

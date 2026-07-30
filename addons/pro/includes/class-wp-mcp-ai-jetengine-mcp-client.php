@@ -100,7 +100,7 @@ class WP_MCP_AI_JetEngine_MCP_Client {
 		$result = $this->send_request(
 			'initialize',
 			array(
-				'protocolVersion' => '2024-11-05',
+				'protocolVersion' => '2026-07-28',
 				'capabilities'    => new \stdClass(),
 				'clientInfo'      => array(
 					'name'    => 'NV oOS MCP AI',

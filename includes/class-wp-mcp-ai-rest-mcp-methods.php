@@ -42,42 +42,32 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			return $this->mcp_error_response( null, -32700, 'Parse error: Invalid JSON' );
 		}
 
-		// Handle session management via Mcp-Session-Id header.
-		$session_id = $request->get_header( 'Mcp-Session-Id' );
-
 		// JSON-RPC batching: if the decoded body is a sequential array, process each message.
 		if ( is_array( $message ) && isset( $message[0] ) ) {
-			return $this->handle_mcp_batch( $message, $request, $session_id );
+			return $this->handle_mcp_batch( $message, $request );
 		}
 
 		if ( ! is_array( $message ) ) {
 			return $this->mcp_error_response( null, -32700, 'Parse error: Invalid JSON' );
 		}
 
-		$response = $this->process_single_mcp_message( $message, $request );
-
-		// Attach session header to response if applicable.
-		if ( $response instanceof WP_REST_Response ) {
-			$this->attach_session_header( $response, $session_id );
-		}
-
-		return $response;
+		return $this->process_single_mcp_message( $message, $request );
 	}
 
 	/**
-	 * Handle a JSON-RPC batch request per MCP 2024-11-05 specification.
+	 * Handle a JSON-RPC batch request per MCP 2026-07-28 specification.
 	 *
 	 * Processes an array of JSON-RPC messages and returns an array of responses.
 	 * Notifications (messages without an id) are processed but produce no response element.
 	 *
 	 * @since 2.3.0
+	 * @since 2.x.0 Updated for stateless MCP 2026-07-28 (removed session parameter).
 	 *
 	 * @param array           $messages   Array of JSON-RPC message arrays.
 	 * @param WP_REST_Request $request    REST request instance.
-	 * @param string|null     $session_id Optional session identifier.
 	 * @return WP_REST_Response
 	 */
-	protected function handle_mcp_batch( array $messages, WP_REST_Request $request, $session_id ) {
+	protected function handle_mcp_batch( array $messages, WP_REST_Request $request ) {
 		if ( empty( $messages ) ) {
 			return $this->mcp_error_response( null, -32600, 'Invalid Request: Empty batch array' );
 		}
@@ -135,14 +125,12 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			$response = new WP_REST_Response( null, 202 );
 			$response->header( 'Content-Type', 'application/json; charset=utf-8' );
 			$this->add_cors_headers( $response );
-			$this->attach_session_header( $response, $session_id );
 			return $response;
 		}
 
 		$response = new WP_REST_Response( $results, 200 );
 		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
 		$this->add_cors_headers( $response );
-		$this->attach_session_header( $response, $session_id );
 		return $response;
 	}
 
@@ -179,13 +167,24 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$params = isset( $message['params'] ) ? $message['params'] : array();
 		$id     = isset( $message['id'] ) ? $message['id'] : null;
 
+		// SEP-2243: Validate Mcp-Method header against body method.
+		$header_method = $request->get_header( 'Mcp-Method' );
+		if ( ! empty( $header_method ) && $header_method !== $method ) {
+			return $this->mcp_error_response(
+				$id,
+				-32020,
+				'Header mismatch: Mcp-Method does not match body method'
+			);
+		}
+
 		// Route to appropriate handler based on method.
 		$result = $this->route_mcp_method( $method, $params, $request );
 
 		if ( is_wp_error( $result ) ) {
+			$error_code = $result->get_error_code();
 			return $this->mcp_error_response(
 				$id,
-				$result->get_error_code() === 'wp_mcp_ai_method_not_found' ? -32601 : -32603,
+				'wp_mcp_ai_method_not_found' === $error_code ? -32601 : -32603,
 				$result->get_error_message(),
 				$result->get_error_data()
 			);
@@ -199,6 +198,16 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			return $response;
 		}
 
+		// Stamp _meta with server identity per MCP 2026-07-28 (SEP-2575 / spec PR #3002).
+		if ( is_array( $result ) ) {
+			$result['_meta'] = array(
+				'io.modelcontextprotocol/serverInfo' => array(
+					'name'    => 'NV oOS',
+					'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
+				),
+			);
+		}
+
 		// Return successful JSON-RPC response.
 		$response = new WP_REST_Response(
 			array(
@@ -209,6 +218,16 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			200
 		);
 		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
+
+		// SEP-2243: Emit Mcp-Method header on every response for gateway routing.
+		$response->header( 'Mcp-Method', $method );
+
+		// SEP-2243: Emit Mcp-Name header for tools/call, resources/read, prompts/get.
+		if ( in_array( $method, array( 'tools/call', 'resources/read', 'prompts/get' ), true ) ) {
+			$name = isset( $params['name'] ) ? $params['name'] : '';
+			$response->header( 'Mcp-Name', $name );
+		}
+
 		$this->add_cors_headers( $response );
 		return $response;
 	}
@@ -230,7 +249,11 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		switch ( $method ) {
 			case 'initialize':
-				return $this->mcp_initialize( $params, $request );
+				// Legacy shim: route 2024/2025-era initialize to server/discover.
+				return $this->mcp_server_discover( $params, $request );
+
+			case 'server/discover':
+				return $this->mcp_server_discover( $params, $request );
 
 			case 'ping':
 				return $this->mcp_ping();
@@ -263,7 +286,9 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				return $this->mcp_notifications_cancelled( $params );
 
 			case 'notifications/initialized':
-				return $this->mcp_notifications_initialized( $params );
+				// No-op: retired in MCP 2026-07-28 (SEP-2575).
+				// Return empty result for legacy client compatibility.
+				return new stdClass();
 
 			default:
 				return new WP_Error(
@@ -344,15 +369,147 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	}
 
 	/**
-	 * Handle MCP initialize request.
+	 * Handle MCP server/discover RPC (2026-07-28).
 	 *
-	 * When an assistant_id is provided, the response carries the assistant's
-	 * system prompt, professional role context, model preferences, and knowledge
-	 * base references — turning every NV oOS assistant into a fully-scoped,
-	 * personality-aware MCP server.
+	 * Returns server capabilities, supported protocol version, and identity.
+	 * This replaces the initialize/initialized handshake from earlier MCP
+	 * protocol versions (SEP-2575).
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param array           $params  Discovery parameters. Accepts optional 'assistant_id'.
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return array Discover result payload.
+	 */
+	protected function mcp_server_discover( $params, WP_REST_Request $request ) {
+		// Resolve assistant identity from params, token scope, and team routing.
+		$assistant_id = 0;
+		if ( isset( $params['assistant_id'] ) ) {
+			$assistant_id = absint( $params['assistant_id'] );
+		}
+		$assistant_id = $this->resolve_assistant_id( $assistant_id );
+		$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
+
+		if ( ! is_wp_error( $scoped_id ) ) {
+			$assistant_id = $scoped_id;
+		}
+
+		// Build instructions: assistant-scoped when available, generic site-level otherwise.
+		if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			$instructions     = $this->build_assistant_instructions( $assistant_config, $assistant_id );
+		} else {
+			$site_name = get_bloginfo( 'name' );
+			$site_desc = get_bloginfo( 'description' );
+
+			if ( ! empty( $site_desc ) ) {
+				$instructions = sprintf(
+					/* translators: 1: site name, 2: site description */
+					__( 'This is a WordPress site (%1$s). %2$s. You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
+					$site_name,
+					$site_desc
+				);
+			} else {
+				$instructions = sprintf(
+					/* translators: %s: site name */
+					__( 'This is a WordPress site (%s). You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
+					$site_name
+				);
+			}
+		}
+
+		$response = array(
+			'protocolVersion' => '2026-07-28',
+			'capabilities'    => array(
+				'tools'     => array( 'listChanged' => true ),
+				'resources' => array(
+					'subscribe'   => false,
+					'listChanged' => true,
+				),
+				'prompts'   => array( 'listChanged' => true ),
+			),
+			'serverInfo'      => array(
+				'name'    => $assistant_id ? get_the_title( $assistant_id ) : 'NV oOS',
+				'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
+			),
+			'instructions'    => $instructions,
+		);
+
+		// Include model preferences when the assistant has them configured.
+		if ( $assistant_id && ! empty( $assistant_config['model'] ) ) {
+			$model_prefs = array();
+			if ( ! empty( $assistant_config['model'] ) ) {
+				$model_prefs['model'] = $assistant_config['model'];
+			}
+			if ( null !== $assistant_config['temperature'] ) {
+				$model_prefs['temperature'] = $assistant_config['temperature'];
+			}
+			if ( ! empty( $model_prefs ) ) {
+				$response['modelPreferences'] = $model_prefs;
+			}
+		}
+
+		/**
+		 * Filter the instructions returned in the MCP server/discover response.
+		 *
+		 * Allows plugins and integrators to enrich or override the system
+		 * prompt delivered to MCP clients at discovery time.
+		 *
+		 * @since 2.x.0
+		 *
+		 * @param string $instructions     The assembled instructions string.
+		 * @param int    $assistant_id     Resolved assistant post ID (0 when generic).
+		 * @param array  $assistant_config Full assistant configuration (empty when generic).
+		 */
+		$response['instructions'] = apply_filters(
+			'wp_mcp_ai_mcp_discover_instructions',
+			$response['instructions'],
+			$assistant_id,
+			$assistant_id ? $assistant_config : array()
+		);
+
+		/**
+		 * Filter to optionally include tools in the discover response.
+		 *
+		 * Some MCP clients expect to see tool information immediately after
+		 * discovery without making a separate tools/list call.
+		 *
+		 * @since 2.x.0
+		 *
+		 * @param bool            $include_tools Whether to include tools in discover response.
+		 * @param array           $params        Discover method parameters.
+		 * @param WP_REST_Request $request       REST request instance.
+		 */
+		$include_tools = apply_filters( 'wp_mcp_ai_discover_include_tools', true, $params, $request );
+
+		if ( $include_tools ) {
+			$tools_result = $this->mcp_tools_list( $params, $request );
+
+			if ( ! is_wp_error( $tools_result ) && isset( $tools_result['tools'] ) ) {
+				$response['tools'] = $tools_result['tools'];
+			}
+		}
+
+		// OAuth 2.0 discovery (MCP Authorization Specification).
+		if ( class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
+			$response['_meta'] = array(
+				'io.modelcontextprotocol/oauth' => WP_MCP_AI_OAuth_Server::get_instance()->get_protected_resource_metadata(),
+			);
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Handle MCP initialize request (legacy, pre-2026-07-28).
+	 *
+	 * Deprecated in favor of mcp_server_discover() per MCP 2026-07-28.
+	 * Kept for backward compatibility; routed via the legacy shim in
+	 * route_mcp_method() which forwards 'initialize' to mcp_server_discover().
 	 *
 	 * @since 1.0.0
 	 * @since 2.4.0 Added assistant_id resolution for scoped instructions and modelPreferences.
+	 * @deprecated 2.x.0 Use mcp_server_discover() instead.
 	 *
 	 * @param array           $params  Method parameters. Accepts optional 'assistant_id'.
 	 * @param WP_REST_Request $request REST request instance.
@@ -396,16 +553,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		$response = array(
-			'protocolVersion' => '2024-11-05',
+			'protocolVersion' => '2026-07-28',
 			'capabilities'    => array(
-				'tools'       => array( 'listChanged' => true ),
-				'resources'   => array(
+				'tools'     => array( 'listChanged' => true ),
+				'resources' => array(
 					'subscribe'   => false,
 					'listChanged' => true,
 				),
-				'prompts'     => array( 'listChanged' => true ),
-				'completions' => new stdClass(),
-				'logging'     => new stdClass(),
+				'prompts'   => array( 'listChanged' => true ),
 			),
 			'serverInfo'      => array(
 				'name'    => $assistant_id ? get_the_title( $assistant_id ) : 'NV oOS',
@@ -661,7 +816,24 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			}
 		}
 
-		return array( 'tools' => $mcp_tools );
+		/**
+		 * Filter the cache TTL (in milliseconds) for the tools/list response.
+		 *
+		 * MCP 2026-07-28 (SEP-2549) requires ttlMs and cacheScope on list endpoints.
+		 * Default 0 means no caching. Set to a positive value (e.g. 300000 for 5 minutes)
+		 * to allow clients to cache the tool list.
+		 *
+		 * @since 2.x.0
+		 *
+		 * @param int $ttl_ms Cache TTL in milliseconds. Default 0.
+		 */
+		$ttl_ms = apply_filters( 'wp_mcp_ai_tools_list_cache_ttl_ms', 0 );
+
+		return array(
+			'tools'      => $mcp_tools,
+			'ttlMs'      => $ttl_ms,
+			'cacheScope' => 'private',
+		);
 	}
 
 	/**
@@ -1644,15 +1816,17 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	}
 
 	/**
-	 * Handle MCP notifications/initialized notification.
+	 * Handle MCP notifications/initialized notification (legacy).
 	 *
-	 * Standard MCP 2024-11-05 notification sent by the client after
-	 * receiving the initialize response. Acknowledges the handshake
-	 * is complete and the server may begin sending requests.
+	 * Deprecated per MCP 2026-07-28 (SEP-2575). The initialize/initialized
+	 * handshake is retired. This handler is preserved for backward compatibility
+	 * with 2024/2025-era clients; the route_mcp_method() dispatcher returns
+	 * an empty result directly rather than calling this method.
 	 *
 	 * Per spec this is a notification (no response expected).
 	 *
-	 * @since 2.6.0
+	 * @since     2.6.0
+	 * @deprecated 2.x.0 Notifications/initialized retired in MCP 2026-07-28.
 	 *
 	 * @param array $params Notification parameters (unused).
 	 * @return stdClass Empty result.
@@ -1730,7 +1904,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * If no session ID was provided by the client, generates a new one.
 	 * Session state is stored as a WordPress transient for reconnection support.
 	 *
-	 * @since 2.3.0
+	 * @since     2.3.0
+	 * @deprecated 2.x.0 MCP 2026-07-28 removes protocol-level sessions (SEP-2567).
+	 *             No longer called internally; preserved for backward compatibility
+	 *             with any third-party code that may invoke it directly.
 	 *
 	 * @param WP_REST_Response $response   Response object.
 	 * @param string|null      $session_id Existing session ID from client, or null for new session.
@@ -1801,9 +1978,9 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * By default, allows all origins for maximum compatibility. Can be restricted
 	 * via the 'wp_mcp_ai_cors_allow_origin' filter for production environments.
 	 *
-	 * Supports MCP 2024-11-05 specification requirements including:
+	 * Supports MCP 2026-07-28 specification requirements including:
 	 * - GET requests for SSE/Streamable HTTP
-	 * - Session management via Mcp-Session-Id header
+	 * - Header-based routing via Mcp-Method and Mcp-Name
 	 * - Accept header for content negotiation
 	 *
 	 * @param WP_REST_Response $response Response object to modify.
@@ -1830,15 +2007,15 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		 *     return in_array( $origin, $allowed, true ) ? $origin : $default;
 		 * } );
 		 */
-		$settings      = WP_MCP_AI_Admin_Settings::get_settings();
-		$cors_setting  = isset( $settings['cors_allow_origin'] ) ? $settings['cors_allow_origin'] : 'site';
+		$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+		$cors_setting   = isset( $settings['cors_allow_origin'] ) ? $settings['cors_allow_origin'] : 'site';
 		$default_origin = ( 'star' === $cors_setting ) ? '*' : get_site_url();
 		$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 
 		$response->header( 'Access-Control-Allow-Origin', $allow_origin );
 		$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
-		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest, Accept, Mcp-Session-Id' );
-		$response->header( 'Access-Control-Expose-Headers', 'Mcp-Session-Id' );
+		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest, Accept, Mcp-Method, Mcp-Name, MCP-Protocol-Version' );
+		$response->header( 'Access-Control-Expose-Headers', 'Mcp-Method, Mcp-Name, MCP-Protocol-Version' );
 		$response->header( 'Access-Control-Max-Age', '3600' );
 
 		// Apply the centrally-managed security headers (gated behind Settings → Security → Network → "Enable Security Headers").

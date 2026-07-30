@@ -128,7 +128,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 						<tbody>
 							<tr>
 								<td><strong><?php esc_html_e( 'Protocol Version', 'mcp-ai-wpoos' ); ?></strong></td>
-								<td><code>2024-11-05</code></td>
+								<td><code>2026-07-28</code></td>
 							</tr>
 							<tr>
 								<td><strong><?php esc_html_e( 'Server Name', 'mcp-ai-wpoos' ); ?></strong></td>
@@ -179,7 +179,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 	"jsonrpc": "2.0",
 	"id": 1,
 	"result": {
-	"protocolVersion": "2024-11-05",
+	"protocolVersion": "2026-07-28",
 	"capabilities": { ... },
 	"serverInfo": { ... }
 	}

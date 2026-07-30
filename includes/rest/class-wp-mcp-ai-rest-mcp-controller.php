@@ -197,11 +197,11 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							),
 						),
 						'per_page' => array(
-							'description'       => __( 'Maximum number of assistants to return. Use -1 (default) to return all.', 'mcp-ai-wpoos' ),
-							'type'              => 'integer',
-							'required'          => false,
-							'minimum'           => -1,
-							'maximum'           => 100,
+							'description' => __( 'Maximum number of assistants to return. Use -1 (default) to return all.', 'mcp-ai-wpoos' ),
+							'type'        => 'integer',
+							'required'    => false,
+							'minimum'     => -1,
+							'maximum'     => 100,
 						),
 						'page'     => array(
 							'description'       => __( 'Page of results to return when per_page is a positive integer. Defaults to 1.', 'mcp-ai-wpoos' ),
@@ -734,7 +734,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$response_data = array(
 			'name'            => 'NV oOS MCP Server',
 			'version'         => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
-			'protocolVersion' => '2024-11-05',
+			'protocolVersion' => '2026-07-28',
 			'capabilities'    => array(
 				'tools'     => array( 'listChanged' => true ),
 				'resources' => array(
@@ -753,7 +753,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'endpoint' => rest_url( self::REST_NAMESPACE . '/mcp' ),
 					'methods'  => array( 'GET', 'POST' ),
 					'default'  => true,
-					'note'     => 'MCP 2024-11-05 Streamable HTTP - GET for discovery (JSON), POST for JSON-RPC 2.0',
+					'note'     => 'MCP 2026-07-28 Streamable HTTP - GET for discovery (JSON), POST for JSON-RPC 2.0',
 				),
 				'sse'             => array(
 					'endpoint' => rest_url( self::REST_NAMESPACE . '/sse' ),
