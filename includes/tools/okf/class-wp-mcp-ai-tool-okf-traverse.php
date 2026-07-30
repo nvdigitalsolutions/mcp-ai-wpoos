@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_OKF_Traverse implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Follows cross-links from an OKF concept up to a specified depth, returning the subgraph of connected concepts. Use this to explore related knowledge without guessing which concepts are relevant.', 'mcp-ai-wpoos' );
+		return __( 'Follows cross-links from an OKF concept (v0.2) up to a specified depth, returning the subgraph of connected concepts with trust-signal summaries. Use this to explore related knowledge without guessing which concepts are relevant.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -112,9 +112,9 @@ class WP_MCP_AI_Tool_OKF_Traverse implements WP_MCP_AI_Tool_Interface {
 				$depth
 			),
 			array(
-				'bundle'    => esc_html( $bundle ),
-				'depth'     => $depth,
-				'subgraph'  => $result,
+				'bundle'   => esc_html( $bundle ),
+				'depth'    => $depth,
+				'subgraph' => $result,
 			)
 		);
 	}

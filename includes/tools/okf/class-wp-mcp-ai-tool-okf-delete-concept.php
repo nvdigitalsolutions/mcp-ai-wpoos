@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_OKF_Delete_Concept implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Archives an OKF concept by renaming it with a .deleted extension (recoverable). Use this to remove outdated or incorrect knowledge from the OKF bundle.', 'mcp-ai-wpoos' );
+		return __( 'Archives an OKF concept (v0.2) by renaming it with a .deleted extension (recoverable). Prefer setting status: deprecated over deletion when the concept should remain discoverable for historical reference. Use deletion only for genuinely erroneous content.', 'mcp-ai-wpoos' );
 	}
 
 	/**

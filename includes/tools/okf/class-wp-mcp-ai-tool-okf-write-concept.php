@@ -1,13 +1,14 @@
 <?php
-/**
- * Tool: okf_write_concept — Create or update an OKF concept.
- *
- * @package WP_MCP_AI
- * @since   2.1.0
- * @author  NV Digital Solutions
- * @copyright Copyright (c) 2026 NV Digital Solutions
- * @license  GPL-3.0-or-later
- */
+	/**
+	 * Tool: okf_write_concept — Create or update an OKF concept.
+	 *
+	 * @package WP_MCP_AI
+	 * @since   2.1.0
+	 * @since   2.5.0 — Emits OKF v0.2 `generated` provenance field instead of v0.1 `timestamp`.
+	 * @author  NV Digital Solutions
+	 * @copyright Copyright (c) 2026 NV Digital Solutions
+	 * @license  GPL-3.0-or-later
+	 */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -37,7 +38,7 @@ class WP_MCP_AI_Tool_OKF_Write_Concept implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates or updates an OKF concept document in a bundle. Requires at minimum a type field in the frontmatter. Use this to curate and maintain the OKF knowledge base programmatically.', 'mcp-ai-wpoos' );
+		return __( 'Creates or updates an OKF concept document in a bundle (OKF v0.2). Requires at minimum a type field in the frontmatter. Supports optional v0.2 trust-signal fields: status (draft/stable/deprecated), stale_after (ISO 8601 date), and verification metadata. Use this to curate and maintain the OKF knowledge base programmatically.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -57,7 +58,7 @@ class WP_MCP_AI_Tool_OKF_Write_Concept implements WP_MCP_AI_Tool_Interface {
 				),
 				'type'        => array(
 					'type'        => 'string',
-					'description' => __( 'Concept type (required by OKF v0.1, e.g. "Policy", "Procedure", "Skill").', 'mcp-ai-wpoos' ),
+					'description' => __( 'Concept type (required by OKF v0.2, e.g. "Policy", "Procedure", "Skill").', 'mcp-ai-wpoos' ),
 				),
 				'title'       => array(
 					'type'        => 'string',
@@ -75,6 +76,15 @@ class WP_MCP_AI_Tool_OKF_Write_Concept implements WP_MCP_AI_Tool_Interface {
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'List of tags for categorization.', 'mcp-ai-wpoos' ),
+				),
+				'status'      => array(
+					'type'        => 'string',
+					'enum'        => array( 'draft', 'stable', 'deprecated' ),
+					'description' => __( 'Lifecycle status (OKF v0.2). Omit for stable, set to draft for work-in-progress, deprecated for retired concepts.', 'mcp-ai-wpoos' ),
+				),
+				'stale_after' => array(
+					'type'        => 'string',
+					'description' => __( 'ISO 8601 date after which the concept is considered stale (OKF v0.2, e.g. "2027-06-30").', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'   => array( 'bundle', 'concept_id', 'type', 'body' ),
@@ -103,6 +113,8 @@ class WP_MCP_AI_Tool_OKF_Write_Concept implements WP_MCP_AI_Tool_Interface {
 		$description = isset( $arguments['description'] ) ? sanitize_text_field( $arguments['description'] ) : '';
 		$body        = wp_kses_post( $arguments['body'] );
 		$tags        = isset( $arguments['tags'] ) ? array_map( 'sanitize_text_field', (array) $arguments['tags'] ) : array();
+		$status      = isset( $arguments['status'] ) ? sanitize_text_field( $arguments['status'] ) : '';
+		$stale_after = isset( $arguments['stale_after'] ) ? sanitize_text_field( $arguments['stale_after'] ) : '';
 
 		if ( empty( $bundle ) || empty( $concept_id ) || empty( $type ) ) {
 			return new WP_Error( 'missing_params', __( 'Bundle, concept_id, and type are required.', 'mcp-ai-wpoos' ) );
@@ -138,7 +150,18 @@ class WP_MCP_AI_Tool_OKF_Write_Concept implements WP_MCP_AI_Tool_Interface {
 		if ( ! empty( $tags ) ) {
 			$frontmatter['tags'] = $tags;
 		}
-		$frontmatter['timestamp'] = gmdate( 'c' );
+		if ( ! empty( $status ) ) {
+			$frontmatter['status'] = $status;
+		}
+		if ( ! empty( $stale_after ) ) {
+			$frontmatter['stale_after'] = $stale_after;
+		}
+
+		// OKF v0.2 provenance: generated replaces v0.1 timestamp.
+		$frontmatter['generated'] = array(
+			'by' => 'okf_write_concept tool',
+			'at' => gmdate( 'c' ),
+		);
 
 		$result = $writer->write_concept( $concept_id, $frontmatter, $body );
 		if ( is_wp_error( $result ) ) {

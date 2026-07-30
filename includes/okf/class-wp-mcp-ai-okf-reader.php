@@ -2,12 +2,14 @@
 /**
  * OKF Reader — Navigate and read OKF knowledge bundles.
  *
- * Provides deterministic, link-based navigation of OKF v0.1 bundles.
+ * Provides deterministic, link-based navigation of OKF v0.2 bundles.
  * Reads concepts on demand (lazy loading), resolves cross-links, and
  * supports traversal of the knowledge graph up to a configurable depth.
  *
  * @package WP_MCP_AI
  * @since   2.1.0
+ * @since   2.5.0 — Extended to support OKF v0.2 trust-signal fields
+ *                (status, stale_after, generated, verified) in search.
  * @author  NV Digital Solutions
  * @copyright Copyright (c) 2026 NV Digital Solutions
  * @license  GPL-3.0-or-later
@@ -170,7 +172,7 @@ class WP_MCP_AI_OKF_Reader {
 		if ( file_exists( $index_path ) ) {
 			$content = $this->read_file( $index_path );
 			if ( ! is_wp_error( $content ) ) {
-				return $this->parse_index_content( $content, $path );
+				return $this->parse_index_content( $content );
 			}
 		}
 
@@ -191,7 +193,7 @@ class WP_MCP_AI_OKF_Reader {
 	 * @return array|WP_Error
 	 */
 	public function traverse( $concept_id, $max_depth = 2 ) {
-		$visited  = array();
+		$visited   = array();
 		$max_depth = max( 1, min( 5, absint( $max_depth ) ) );
 
 		return $this->traverse_recursive( $concept_id, $max_depth, $visited );
@@ -239,19 +241,76 @@ class WP_MCP_AI_OKF_Reader {
 	}
 
 	/**
-	 * Search concepts by type and/or tag.
+	 * Derive a trust tier from a concept's `verified` field.
+	 *
+	 * OKF v0.2 defines three advisory tiers:
+	 * - `human-reviewed` — at least one `verified` entry with a `human:…` actor.
+	 * - `machine-confirmed` — `verified` entries exist but none are human.
+	 * - `unverified` — no `verified` key present.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param array $frontmatter Parsed frontmatter of a concept.
+	 * @return string One of 'human-reviewed', 'machine-confirmed', 'unverified'.
+	 */
+	public function get_trust_tier( array $frontmatter ) {
+		if ( ! isset( $frontmatter['verified'] ) || ! is_array( $frontmatter['verified'] ) ) {
+			return 'unverified';
+		}
+
+		foreach ( $frontmatter['verified'] as $verification ) {
+			if ( ! is_array( $verification ) ) {
+				continue;
+			}
+			$by = isset( $verification['by'] ) ? (string) $verification['by'] : '';
+			if ( 0 === strpos( $by, 'human:' ) ) {
+				return 'human-reviewed';
+			}
+		}
+
+		return 'machine-confirmed';
+	}
+
+	/**
+	 * Check whether a concept is stale (past its `stale_after` date).
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param array $frontmatter Parsed frontmatter.
+	 * @return bool True if the concept has a stale_after date in the past.
+	 */
+	public function is_stale( array $frontmatter ) {
+		if ( empty( $frontmatter['stale_after'] ) ) {
+			return false;
+		}
+
+		$deadline = strtotime( (string) $frontmatter['stale_after'] );
+		return false !== $deadline && $deadline < time();
+	}
+
+	/**
+	 * Search concepts by type, tag, status, trust tier, and staleness.
 	 *
 	 * Scans the bundle directory tree for concepts matching the criteria.
 	 *
 	 * @since 2.1.0
+	 * @since 2.5.0 — Added 'status', 'trust_tier', and 'include_stale' criteria.
 	 *
-	 * @param array $criteria Search criteria with optional 'type' and 'tag' keys.
+	 * @param array $criteria Search criteria with optional keys:
+	 *                        'type'         — concept type string.
+	 *                        'tag'          — single tag string.
+	 *                        'status'       — 'draft', 'stable', or 'deprecated' (absent = 'stable').
+	 *                        'trust_tier'   — 'unverified', 'machine-confirmed', or 'human-reviewed'.
+	 *                        'include_stale' — bool, include concepts past stale_after (default true).
 	 * @return array Array of matching concept summaries.
 	 */
 	public function search( array $criteria = array() ) {
-		$results   = array();
-		$want_type = isset( $criteria['type'] ) ? sanitize_text_field( $criteria['type'] ) : null;
-		$want_tag  = isset( $criteria['tag'] ) ? sanitize_text_field( $criteria['tag'] ) : null;
+		$results       = array();
+		$want_type     = isset( $criteria['type'] ) ? sanitize_text_field( $criteria['type'] ) : null;
+		$want_tag      = isset( $criteria['tag'] ) ? sanitize_text_field( $criteria['tag'] ) : null;
+		$want_status   = isset( $criteria['status'] ) ? sanitize_text_field( $criteria['status'] ) : null;
+		$want_tier     = isset( $criteria['trust_tier'] ) ? sanitize_text_field( $criteria['trust_tier'] ) : null;
+		$include_stale = isset( $criteria['include_stale'] ) ? (bool) $criteria['include_stale'] : true;
 
 		$files = $this->find_all_concept_files( $this->bundle_root );
 		foreach ( $files as $file_path ) {
@@ -290,12 +349,36 @@ class WP_MCP_AI_OKF_Reader {
 				}
 			}
 
+			// Filter by status (OKF v0.2).
+			if ( null !== $want_status ) {
+				$concept_status = isset( $fm['status'] ) ? $fm['status'] : 'stable';
+				if ( strtolower( $concept_status ) !== strtolower( $want_status ) ) {
+					continue;
+				}
+			}
+
+			// Filter by trust tier (OKF v0.2).
+			if ( null !== $want_tier ) {
+				$tier = $this->get_trust_tier( $fm );
+				if ( $tier !== $want_tier ) {
+					continue;
+				}
+			}
+
+			// Exclude stale concepts when requested (OKF v0.2).
+			if ( ! $include_stale && $this->is_stale( $fm ) ) {
+				continue;
+			}
+
 			$results[] = array(
 				'concept_id'  => $concept_id,
 				'type'        => isset( $fm['type'] ) ? $fm['type'] : '',
 				'title'       => isset( $fm['title'] ) ? $fm['title'] : '',
 				'description' => isset( $fm['description'] ) ? $fm['description'] : '',
 				'tags'        => isset( $fm['tags'] ) ? $fm['tags'] : array(),
+				'status'      => isset( $fm['status'] ) ? $fm['status'] : 'stable',
+				'trust_tier'  => $this->get_trust_tier( $fm ),
+				'stale'       => $this->is_stale( $fm ),
 			);
 		}
 
@@ -479,10 +562,9 @@ class WP_MCP_AI_OKF_Reader {
 	 * @since 2.1.0
 	 *
 	 * @param string $content Raw index.md content.
-	 * @param string $path    Current directory path for context.
 	 * @return array
 	 */
-	private function parse_index_content( $content, $path ) {
+	private function parse_index_content( $content ) {
 		$entries = array();
 		$lines   = explode( "\n", $content );
 
@@ -572,8 +654,8 @@ class WP_MCP_AI_OKF_Reader {
 	 * @return string[] Array of absolute file paths.
 	 */
 	private function find_all_concept_files( $dir ) {
-		$files     = array();
-		$iterator  = new RecursiveIteratorIterator(
+		$files    = array();
+		$iterator = new RecursiveIteratorIterator(
 			new RecursiveDirectoryIterator( $dir, RecursiveDirectoryIterator::SKIP_DOTS )
 		);
 

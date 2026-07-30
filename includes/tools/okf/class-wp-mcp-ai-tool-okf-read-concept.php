@@ -1,13 +1,15 @@
 <?php
-/**
- * Tool: okf_read_concept — Read a single OKF concept.
- *
- * @package WP_MCP_AI
- * @since   2.1.0
- * @author  NV Digital Solutions
- * @copyright Copyright (c) 2026 NV Digital Solutions
- * @license  GPL-3.0-or-later
- */
+	/**
+	 * Tool: okf_read_concept — Read a single OKF concept.
+	 *
+	 * @package WP_MCP_AI
+	 * @since   2.1.0
+	 * @since   2.5.0 — Surfaces OKF v0.2 trust-signal fields (status, trust_tier,
+	 *                stale, stale_after, generated, verified, sources).
+	 * @author  NV Digital Solutions
+	 * @copyright Copyright (c) 2026 NV Digital Solutions
+	 * @license  GPL-3.0-or-later
+	 */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -37,7 +39,7 @@ class WP_MCP_AI_Tool_OKF_Read_Concept implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Reads a single OKF concept by its concept ID (e.g. "policies/patient-admission"). Returns the frontmatter metadata and markdown body. Use this to retrieve curated, authoritative knowledge from the Open Knowledge Format bundle.', 'mcp-ai-wpoos' );
+		return __( 'Reads a single OKF concept by its concept ID (e.g. "policies/patient-admission"). Returns the frontmatter metadata including OKF v0.2 trust signals (status, trust tier, staleness, provenance) and the markdown body. Use this to retrieve curated, authoritative knowledge from the Open Knowledge Format bundle. Check the trust_tier to assess reliability before acting on the content.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -99,6 +101,8 @@ class WP_MCP_AI_Tool_OKF_Read_Concept implements WP_MCP_AI_Tool_Interface {
 			return $concept;
 		}
 
+		$fm = $concept['frontmatter'];
+
 		// Gate 2 — Escape at exit.
 		return $this->format_success_response(
 			sprintf(
@@ -109,10 +113,15 @@ class WP_MCP_AI_Tool_OKF_Read_Concept implements WP_MCP_AI_Tool_Interface {
 			array(
 				'bundle'      => esc_html( $bundle ),
 				'concept_id'  => esc_html( $concept['concept_id'] ),
-				'type'        => isset( $concept['frontmatter']['type'] ) ? esc_html( $concept['frontmatter']['type'] ) : '',
-				'title'       => isset( $concept['frontmatter']['title'] ) ? esc_html( $concept['frontmatter']['title'] ) : '',
-				'description' => isset( $concept['frontmatter']['description'] ) ? esc_html( $concept['frontmatter']['description'] ) : '',
-				'frontmatter' => $this->escape_frontmatter( $concept['frontmatter'] ),
+				'type'        => isset( $fm['type'] ) ? esc_html( $fm['type'] ) : '',
+				'title'       => isset( $fm['title'] ) ? esc_html( $fm['title'] ) : '',
+				'description' => isset( $fm['description'] ) ? esc_html( $fm['description'] ) : '',
+				// OKF v0.2 trust-signal fields.
+				'status'      => isset( $fm['status'] ) ? esc_html( $fm['status'] ) : 'stable',
+				'trust_tier'  => esc_html( $reader->get_trust_tier( $fm ) ),
+				'stale'       => $reader->is_stale( $fm ),
+				'stale_after' => isset( $fm['stale_after'] ) ? esc_html( $fm['stale_after'] ) : '',
+				'frontmatter' => $this->escape_frontmatter( $fm ),
 				'body'        => wp_kses_post( $concept['body'] ),
 			)
 		);
