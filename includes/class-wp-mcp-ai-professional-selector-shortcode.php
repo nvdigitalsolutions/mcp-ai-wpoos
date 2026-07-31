@@ -599,8 +599,20 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			? absint( wp_unslash( $_POST['professional_id'] ) )
 			: 0;
 
+		// Determine the assistant:
+		// - If the policy locks an assistant (non-empty), use it (prevents
+		//   users from overriding the administrator's choice).
+		// - If the policy allows any assistant (empty), use the user-selected
+		//   assistant_id from the dropdown.
+		$assistant = $policy['assistant'];
+		if ( empty( $assistant ) ) {
+			$assistant = isset( $_POST['assistant_id'] )
+				? absint( wp_unslash( $_POST['assistant_id'] ) )
+				: 0;
+		}
+
 		// Reconstruct shortcode attributes from the verified policy.
-		$shortcode_atts = 'assistant="' . esc_attr( $policy['assistant'] ) . '"';
+		$shortcode_atts = 'assistant="' . esc_attr( (string) $assistant ) . '"';
 
 		if ( ! empty( $policy['allow_guests'] ) ) {
 			$shortcode_atts .= ' allow_guests="true"';
