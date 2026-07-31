@@ -32,9 +32,22 @@ class SseHandler {
 	private const RETRY_INTERVAL_MS = 3000;
 
 	/**
+	 * Platform-specific output buffer flush implementation.
+	 */
+	private PlatformFlushInterface $platformFlush;
+
+	/**
 	 * Whether headers have already been sent.
 	 */
 	private bool $headersSent = false;
+
+	/**
+	 * @param PlatformFlushInterface $platformFlush  Platform-specific
+	 *     flush implementation (e.g., WordPress wp_ob_end_flush_all).
+	 */
+	public function __construct( PlatformFlushInterface $platformFlush ) {
+		$this->platformFlush = $platformFlush;
+	}
 
 	/**
 	 * Send SSE headers to the client.
@@ -54,10 +67,8 @@ class SseHandler {
 		@\ini_set( 'zlib.output_compression', 'off' );
 		// phpcs:enable
 
-		// Flush WordPress output buffers.
-		if ( \function_exists( 'wp_ob_end_flush_all' ) ) {
-			\wp_ob_end_flush_all();
-		}
+		// Flush platform-specific output buffers.
+		$this->platformFlush->flushPlatformBuffers();
 
 		// Clear any remaining output buffers.
 		while ( \ob_get_level() > 0 ) {
