@@ -336,6 +336,7 @@
 					action: 'wp_mcp_ai_render_professional_chat',
 					nonce: wpMcpAiProfessionalSelector.nonce,
 					professional_id: state.professional,
+					assistant_id: state.assistant,
 					provider: state.provider,
 					model: state.model,
 					temperature: state.temperature,

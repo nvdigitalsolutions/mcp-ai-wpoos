@@ -145,12 +145,13 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			if ( file_exists( WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
 			} else {
-				// Cannot proceed without CPT constants — log and skip.
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger.
-					error_log( 'WP_MCP_AI: CPT class file missing; cannot sync playbook for profession ' . $slug );
-				}
-				return;
+				// Cannot proceed without CPT constants — throw so callers can report the error.
+				throw new \RuntimeException(
+					sprintf(
+						'CPT class file missing; cannot sync playbook for profession "%s".',
+						$slug
+					)
+				);
 			}
 		}
 
@@ -161,8 +162,13 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$content = $loader->build_playbook( $profession->ID );
 
 		if ( empty( $content ) ) {
-			// No content to create attachment for.
-			return;
+			// No content to create attachment for — throw so bulk sync reports the failure.
+			throw new \RuntimeException(
+				sprintf(
+					'Playbook content is empty for profession "%s".',
+					$slug
+				)
+			);
 		}
 
 		// Calculate content hash.
@@ -207,12 +213,15 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$attachment_id = self::create_playbook_attachment( $profession, $content, $content_hash );
 
 		if ( is_wp_error( $attachment_id ) ) {
-			// Log error but don't fail the entire seeding.
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger; records attachment creation failure during seeding.
-				error_log( 'WP_MCP_AI: Failed to create playbook attachment for profession ' . $slug . ': ' . $attachment_id->get_error_message() );
-			}
-			return;
+			// Throw so bulk sync reports the failure and does not count this
+			// profession as successfully synced.
+			throw new \RuntimeException(
+				sprintf(
+					'Failed to create playbook attachment for profession "%1$s": %2$s',
+					$slug,
+					$attachment_id->get_error_message()
+				)
+			);
 		}
 
 		// Update profession META_MEMORY_FILES and MIME types.
