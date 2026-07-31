@@ -95,14 +95,14 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
 		/**
 		 * Register hooks and schedule the purge cron.
 		 *
-		 * Hooks into `init` to register the REST endpoint and schedules
-		 * the daily purge cron if not already scheduled.
+		 * Hooks into `rest_api_init` to register the REST endpoint and
+		 * schedules the daily purge cron if not already scheduled.
 		 *
 		 * @since 1.2.0
 		 * @return void
 		 */
 		public static function register() {
-			add_action( 'init', array( __CLASS__, 'register_rest_routes' ) );
+			add_action( 'rest_api_init', array( __CLASS__, 'register_rest_routes' ) );
 
 			// Schedule daily purge if not already scheduled.
 			if ( ! wp_next_scheduled( 'wp_mcp_ai_purge_security_events' ) ) {
