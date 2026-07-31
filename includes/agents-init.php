@@ -51,6 +51,14 @@ WP_MCP_AI_Destructive_Ops_Gate::register();
 // and request body size enforcement via rest_pre_dispatch filter.
 WP_MCP_AI_Request_Guard::register();
 
+// Register security audit logger (1.2.0) — records security-relevant
+// events to a custom table with REST endpoint and daily purge cron.
+WP_MCP_AI_Security_Audit_Logger::register();
+
+// Register CSP headers for admin pages (1.2.0) — restrict script,
+// style, connect, image, font, frame, and object sources.
+WP_MCP_AI_CSP_Headers::register();
+
 /**
  * Get all available agent roles
  *
