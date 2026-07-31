@@ -900,7 +900,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 
 						// Special handling for dietpi (uses dietpi-toolkit-init.php in includes root).
 						if ( 'dietpi' === $slug ) {
-							require_once $p . '../dietpi-toolkit-init.php';
+							require_once $p . 'dietpi-toolkit-init.php';
 							return;
 						}
 
@@ -960,7 +960,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				array(),
 				array(),
 				function () use ( $p ) {
-					require_once $p . '../skills-manager-init.php';
+					require_once $p . 'skills-manager-init.php';
 				}
 			);
 
@@ -970,7 +970,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				array(),
 				array(),
 				function () use ( $p ) {
-					require_once $p . '../harness-init.php';
+					require_once $p . 'harness-init.php';
 				}
 			);
 
@@ -990,7 +990,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				array(),
 				array(),
 				function () use ( $p ) {
-					$f = $p . '../nv-cloud-init.php';
+					$f = $p . 'nv-cloud-init.php';
 					if ( file_exists( $f ) ) {
 						require_once $f;
 					} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
