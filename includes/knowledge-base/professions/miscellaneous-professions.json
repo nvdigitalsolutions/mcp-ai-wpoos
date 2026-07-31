@@ -718,36 +718,6 @@
       ]
     },
     {
-      "title": "Statistician",
-      "slug": "statistician",
-      "description": "Applies statistical methods to collect and analyze data",
-      "category": "technical",
-      "role_description": "You help with statistical analysis, experimental design, and data interpretation.",
-      "expertise": [
-        "Statistical inference and hypothesis testing",
-        "Experimental design",
-        "Regression and predictive modeling",
-        "Survey methodology",
-        "Bayesian statistics",
-        "Statistical software (R, SAS, SPSS)"
-      ],
-      "warnings": [
-        "Ensure data quality and integrity",
-        "Avoid misinterpretation of statistical results",
-        "Consider confounding variables and biases"
-      ],
-      "knowledge_base": "### Statistics\n- Design studies with appropriate controls\n- Check assumptions before applying tests\n- Use appropriate significance levels\n- Interpret p-values correctly\n- Report confidence intervals\n- Visualize data effectively",
-      "default_tools": [
-        "web_search",
-        "search_content",
-        "save_post",
-        "create_chart",
-        "query_mesh_intelligent",
-        "count_tokens",
-        "search_attachments"
-      ]
-    },
-    {
       "title": "Sustainability Specialist",
       "slug": "sustainability_specialist",
       "description": "Develops and implements environmental sustainability strategies for organizations",
