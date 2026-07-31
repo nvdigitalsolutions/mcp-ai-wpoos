@@ -398,6 +398,11 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			WP_MCP_AI_Metric_Retention::schedule();
 		}
 
+		// Create security audit log table and schedule the daily purge cron.
+		if ( class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
+			WP_MCP_AI_Security_Audit_Logger::on_activation();
+		}
+
 		// Create queue infrastructure tables (v1.1.37 — migration from wp_options).
 		// The Job Queue Manager and Dead Letter Queue previously stored data in
 		// serialized wp_options arrays, which are unsafe under concurrent writes.
@@ -494,6 +499,11 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_maintenance_reminder_cron' );
 		if ( $timestamp ) {
 			wp_unschedule_event( $timestamp, 'wp_mcp_ai_maintenance_reminder_cron' );
+		}
+
+		// Clear the security audit log purge cron.
+		if ( class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
+			WP_MCP_AI_Security_Audit_Logger::on_deactivation();
 		}
 
 		// Unschedule the measurement retention cron. Table + data are

@@ -175,6 +175,8 @@ require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-concurrency-gua
 require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-cost-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-destructive-ops-gate.php';
 require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-request-guard.php';
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-csp-headers.php';
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-security-audit-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/helpers/api-key-helpers.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-validated-upload.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-object-access.php';

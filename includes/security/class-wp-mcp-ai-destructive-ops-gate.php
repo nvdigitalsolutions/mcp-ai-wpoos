@@ -46,9 +46,9 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 		 *
 		 * @since 1.2.0
 		 *
-		 * @param string                $tool_slug Tool identifier.
-		 * @param array                 $arguments Sanitised tool arguments.
-		 * @param array                 $context   Execution context.
+		 * @param string                        $tool_slug Tool identifier.
+		 * @param array                         $arguments Sanitised tool arguments.
+		 * @param array                         $context   Execution context.
 		 * @param WP_MCP_AI_Tool_Interface|null $tool Tool instance.
 		 * @return void
 		 */
@@ -168,8 +168,8 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 		 *
 		 * @since 1.2.0
 		 *
-		 * @param string                $tool_slug Tool identifier.
-		 * @param array                 $arguments Tool arguments.
+		 * @param string                   $tool_slug Tool identifier.
+		 * @param array                    $arguments Tool arguments.
 		 * @param WP_MCP_AI_Tool_Interface $tool   Tool instance.
 		 * @return void
 		 */
@@ -190,11 +190,11 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 					$tool_name
 				),
 				array(
-					'status'     => 428, // Precondition Required.
-					'tool_slug'  => $tool_slug,
-					'tool_name'  => $tool_name,
-					'flags'      => $flags,
-					'preview'    => array(
+					'status'    => 428, // Precondition Required.
+					'tool_slug' => $tool_slug,
+					'tool_name' => $tool_name,
+					'flags'     => $flags,
+					'preview'   => array(
 						'message'      => $description,
 						'arguments'    => $arguments,
 						'confirmation' => array(
@@ -204,6 +204,15 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 					),
 				)
 			);
+
+			// Log the denial before terminating.
+			if ( class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
+				WP_MCP_AI_Security_Audit_Logger::log_event(
+					WP_MCP_AI_Security_Audit_Logger::EVENT_DESTRUCTIVE_OP_DENIED,
+					get_current_user_id(),
+					array( 'tool_slug' => $tool_slug )
+				);
+			}
 
 			wp_die( $error, 428 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WP_Error is safe.
 		}
