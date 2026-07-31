@@ -179,12 +179,16 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 
 		if ( $existing_attachment ) {
 			if ( $force ) {
-				// Force regeneration - orphan the old attachment and create a new one.
-				// Remove from profession's memory files.
+				// Force regeneration — remove old attachment record from DB
+				// without deleting the physical file, since the new attachment
+				// will reuse the same deterministic file path.
 				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
 
-				// Remove the profession association meta, but keep the attachment in media library.
-				delete_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_profession_id' );
+				// Delete old attachment post (DB record only, not the file).
+				// Using $force_delete=false prevents the subsequent
+				// delete_orphaned_system_playbooks() cleanup from removing
+				// the file that the new attachment now owns.
+				wp_delete_attachment( $existing_attachment->ID, false );
 
 				// Fall through to create new attachment below.
 			} else {
@@ -198,12 +202,11 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 					return;
 				}
 
-				// Content changed - orphan the old attachment and create a new one.
-				// Remove from profession's memory files.
+				// Content changed — same pattern as force above.
 				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
 
-				// Remove the profession association meta, but keep the attachment in media library.
-				delete_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_profession_id' );
+				// Delete old attachment post (DB record only, not the file).
+				wp_delete_attachment( $existing_attachment->ID, false );
 
 				// Fall through to create new attachment below.
 			}
@@ -545,6 +548,13 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			require_once ABSPATH . 'wp-admin/includes/image.php';
 		}
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $target_file );
+
+		// Add filesize for text files (wp_generate_attachment_metadata
+		// only adds it for image/video/audio mime types).
+		if ( is_array( $attach_data ) ) {
+			$attach_data['filesize'] = $result; // Bytes written by file_put_contents.
+		}
+
 		wp_update_attachment_metadata( $attachment_id, $attach_data );
 
 		// Add playbook metadata.
