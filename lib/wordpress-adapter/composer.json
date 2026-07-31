@@ -5,7 +5,7 @@
     "license": "GPL-3.0-or-later",
     "require": {
         "php": "^8.1",
-        "nvoos/core": "dev-feat/migrate-109-tools-to-oos-core"
+        "nvoos/core": "dev-main"
     },
     "repositories": [
         {
