@@ -19,12 +19,18 @@
         "setasign/fpdi": "PDF manipulation library for merging and modifying PDFs",
         "intervention/image": "Alternative image manipulation library (fallback when Imagick extension not available)"
     },
+    "autoload": {
+        "classmap": [
+            "includes/"
+        ]
+    },
     "config": {
         "allow-plugins": {
             "php-http/discovery": true
         },
         "platform": {
             "php": "8.1.0"
-        }
+        },
+        "optimize-autoloader": true
     }
 }
