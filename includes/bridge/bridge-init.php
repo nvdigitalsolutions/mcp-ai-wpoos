@@ -31,6 +31,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 // and its flushPlatformBuffers() method has its own function_exists guard.
 // ---------------------------------------------------------------------------
 
+// The WordPress flush adapter implements PlatformFlushInterface from
+// lib/core, which may not have its Composer/PSR-4 autoloader registered
+// yet (that happens in oos-bridge.php, loaded later in mcp-ai-wpoos.php).
+// Require the interface directly so the adapter compiles.
+$platform_flush_interface = WP_MCP_AI_PATH . 'lib/core/src/Infrastructure/Streaming/PlatformFlushInterface.php';
+if ( file_exists( $platform_flush_interface ) && ! interface_exists( 'Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface' ) ) {
+	require_once $platform_flush_interface;
+}
+
 require_once __DIR__ . '/class-wp-mcp-ai-wp70-bridge.php';
 require_once __DIR__ . '/class-wp-mcp-ai-credential-resolver.php';
 require_once __DIR__ . '/class-wp-mcp-ai-wordpress-flush.php';
