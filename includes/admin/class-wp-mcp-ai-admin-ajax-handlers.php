@@ -2871,11 +2871,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Preserve preferred datasets before any updates/deletions,
-			// and build a slug-to-post lookup so we never miss an
-			// existing profession due to non-publish status or stale
-			// repository caches.
+			// and build slug-to-post and title-to-post lookups so we
+			// never miss an existing profession due to non-publish
+			// status, stale repository caches, or slug changes between
+			// knowledge-base versions.
 			$preserved_datasets = array();
 			$slug_to_post       = array();
+			$title_to_post      = array();
 			$existing_posts     = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_profession',
@@ -2886,6 +2888,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			foreach ( $existing_posts as $post ) {
 				$slug_to_post[ $post->post_name ] = $post;
+				// Build title map — only the first (oldest) post wins so
+				// that we don't pick a duplicate created by a previous
+				// buggy sync run.
+				if ( ! isset( $title_to_post[ $post->post_title ] ) ) {
+					$title_to_post[ $post->post_title ] = $post;
+				}
 				$datasets = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
 				if ( ! empty( $datasets ) && is_array( $datasets ) ) {
 					$preserved_datasets[ $post->post_name ] = $datasets;
@@ -2932,15 +2940,34 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$profession_data['preferred_datasets'] = $preserved_datasets[ $slug ];
 				}
 
-				// Match against the pre-built slug map instead of
-				// find_one() to avoid two failure modes:
-				// 1. find_one() only matches publish status — existing
-				//    draft/pending professions would be invisible.
-				// 2. find_one() caches via wp_cache which can serve
-				//    stale results from a persistent object cache.
+				/*
+				 * Match against the pre-built maps instead of
+				 * find_one() to avoid two failure modes:
+				 *
+				 * 1. find_one() only matches publish status — existing
+				 *    draft/pending professions would be invisible.
+				 * 2. find_one() caches via wp_cache which can serve
+				 *    stale results from a persistent object cache.
+				 *
+				 * Strategy: match by slug first, then fall back to
+				 * title.  Slug changes between knowledge-base versions
+				 * are the most common cause of duplicate professions
+				 * during "Update" runs.
+				 */
 				$existing = null;
 				if ( 'update' === $action && ! empty( $profession_data['slug'] ) ) {
 					$existing = isset( $slug_to_post[ $slug ] ) ? $slug_to_post[ $slug ] : null;
+
+					// Fall back to title match when the slug has changed
+					// between knowledge-base versions (the original
+					// seeding used a different slug for the same
+					// profession name).
+					if ( ! $existing && ! empty( $profession_data['title'] ) ) {
+						$title = sanitize_text_field( $profession_data['title'] );
+						if ( isset( $title_to_post[ $title ] ) ) {
+							$existing = $title_to_post[ $title ];
+						}
+					}
 				}
 
 				if ( $existing ) {
@@ -2955,6 +2982,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$result                = $repository->save( $profession_data );
 					if ( ! is_wp_error( $result ) ) {
 						++$updated;
+
+						// If we matched by title fallback (slug changed
+						// between knowledge-base versions), clean up any
+						// duplicate posts that share the same title —
+						// these are orphans from a previous buggy sync
+						// run that could not find the original by slug.
+						if ( ! empty( $profession_data['title'] ) ) {
+							$title = sanitize_text_field( $profession_data['title'] );
+							foreach ( $existing_posts as $candidate ) {
+								if ( $candidate->ID !== $existing->ID
+									&& $candidate->post_title === $title ) {
+									wp_delete_post( $candidate->ID, true );
+								}
+							}
+						}
 					} else {
 						$errors[] = $result->get_error_message();
 					}
