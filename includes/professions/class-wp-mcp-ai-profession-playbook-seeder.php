@@ -631,21 +631,25 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	 * created by content changes or force regeneration.
 	 *
 	 * @param bool $force Force regeneration even if content hash matches.
-	 * @return array{synced: int, errors: string[]} Sync results, including
-	 *                                              per-profession error messages.
+	 * @return array{synced: int, total: int, errors: string[]} Sync results,
+	 *                                              including per-profession error
+	 *                                              messages and total profession
+	 *                                              count processed.
 	 */
 	public static function sync_all( $force = false ) {
-		// Load repository if not already loaded.
-		if ( ! class_exists( 'WP_MCP_AI_Profession_Repository' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-profession-repository.php';
-		}
-
 		// Load playbook loader if not already loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Loader' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-playbook-loader.php';
 		}
 
-		$repository = new WP_MCP_AI_Profession_Repository();
+		// Ensure CPT class is available so POST_TYPE constant is defined
+		// before any queries that reference it.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			if ( file_exists( WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+			}
+		}
+
 		$loader     = new WP_MCP_AI_Profession_Playbook_Loader();
 
 		$batch_size  = 100;
@@ -653,18 +657,31 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$max_batches = 200; // Safety cap: max 20,000 professions per sync.
 		$errors      = array();
 		$synced      = 0;
+		$total       = 0;
 
 		for ( $batch = 0; $batch < $max_batches; $batch++ ) {
-			$professions = $repository->find_all(
+			// Use direct get_posts() to bypass the Repository's cached
+			// find_all() which can return stale empty results when a
+			// persistent object cache (Redis/Memcached) is in use.
+			$professions = get_posts(
 				array(
-					'posts_per_page' => $batch_size,
-					'offset'         => $offset,
+					'post_type'              => WP_MCP_AI_Profession_CPT::POST_TYPE,
+					'post_status'            => 'publish',
+					'posts_per_page'         => $batch_size,
+					'offset'                 => $offset,
+					'orderby'                => 'title',
+					'order'                  => 'ASC',
+					'no_found_rows'          => true,
+					'update_post_meta_cache' => false,
+					'suppress_filters'       => false,
 				)
 			);
 
 			if ( empty( $professions ) ) {
 				break;
 			}
+
+			$total += count( $professions );
 
 			// Prime post meta cache for the batch so build_playbook()
 			// and find_existing_playbook_attachment() don't incur
@@ -712,6 +729,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 
 		return array(
 			'synced' => $synced,
+			'total'  => $total,
 			'errors' => $errors,
 		);
 	}

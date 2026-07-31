@@ -2870,8 +2870,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
 			}
 
-			// Preserve preferred datasets before any updates/deletions.
+			// Preserve preferred datasets before any updates/deletions,
+			// and build a slug-to-post lookup so we never miss an
+			// existing profession due to non-publish status or stale
+			// repository caches.
 			$preserved_datasets = array();
+			$slug_to_post       = array();
 			$existing_posts     = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_profession',
@@ -2881,6 +2885,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			foreach ( $existing_posts as $post ) {
+				$slug_to_post[ $post->post_name ] = $post;
 				$datasets = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
 				if ( ! empty( $datasets ) && is_array( $datasets ) ) {
 					$preserved_datasets[ $post->post_name ] = $datasets;
@@ -2927,10 +2932,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$profession_data['preferred_datasets'] = $preserved_datasets[ $slug ];
 				}
 
-				// Check if profession already exists by slug.
+				// Match against the pre-built slug map instead of
+				// find_one() to avoid two failure modes:
+				// 1. find_one() only matches publish status — existing
+				//    draft/pending professions would be invisible.
+				// 2. find_one() caches via wp_cache which can serve
+				//    stale results from a persistent object cache.
 				$existing = null;
 				if ( 'update' === $action && ! empty( $profession_data['slug'] ) ) {
-					$existing = $repository->find_one( $profession_data['slug'] );
+					$existing = isset( $slug_to_post[ $slug ] ) ? $slug_to_post[ $slug ] : null;
 				}
 
 				if ( $existing ) {
@@ -3707,6 +3717,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			update_option( 'wp_mcp_ai_playbooks_last_sync', time() );
 
 			$synced = isset( $result['synced'] ) ? absint( $result['synced'] ) : 0;
+			$total  = isset( $result['total'] ) ? absint( $result['total'] ) : 0;
 			$errors = isset( $result['errors'] ) ? (array) $result['errors'] : array();
 
 			if ( ! empty( $errors ) ) {
@@ -3736,14 +3747,44 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
+			// Diagnose: no errors but also no professions found to sync.
+			if ( 0 === $total && 0 === $synced ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'No published professions were found. Make sure professions are created and published before syncing playbooks.', 'mcp-ai-wpoos' ),
+						'synced'  => 0,
+					)
+				);
+				return;
+			}
+
 			$message = $force
-				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'mcp-ai-wpoos' )
-				: __( 'Profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.', 'mcp-ai-wpoos' );
+				? sprintf(
+					/* translators: %d: Number of professions synced */
+					_n(
+						'%d profession playbook regenerated successfully! Duplicates removed.',
+						'%d profession playbooks regenerated successfully! Duplicates removed.',
+						$synced,
+						'mcp-ai-wpoos'
+					),
+					$synced
+				)
+				: sprintf(
+					/* translators: %d: Number of professions synced */
+					_n(
+						'%d profession playbook synced successfully! Only changed playbooks were updated and duplicates removed.',
+						'%d profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.',
+						$synced,
+						'mcp-ai-wpoos'
+					),
+					$synced
+				);
 
 			wp_send_json_success(
 				array(
 					'message' => $message,
 					'synced'  => $synced,
+					'total'   => $total,
 				)
 			);
 		}
