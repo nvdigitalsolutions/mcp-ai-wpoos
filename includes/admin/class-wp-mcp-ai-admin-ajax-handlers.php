@@ -3707,6 +3707,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			update_option( 'wp_mcp_ai_playbooks_last_sync', time() );
 
 			$synced = isset( $result['synced'] ) ? absint( $result['synced'] ) : 0;
+			$total  = isset( $result['total'] ) ? absint( $result['total'] ) : 0;
 			$errors = isset( $result['errors'] ) ? (array) $result['errors'] : array();
 
 			if ( ! empty( $errors ) ) {
@@ -3736,14 +3737,44 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
+			// Diagnose: no errors but also no professions found to sync.
+			if ( 0 === $total && 0 === $synced ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'No published professions were found. Make sure professions are created and published before syncing playbooks.', 'mcp-ai-wpoos' ),
+						'synced'  => 0,
+					)
+				);
+				return;
+			}
+
 			$message = $force
-				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'mcp-ai-wpoos' )
-				: __( 'Profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.', 'mcp-ai-wpoos' );
+				? sprintf(
+					/* translators: %d: Number of professions synced */
+					_n(
+						'%d profession playbook regenerated successfully! Duplicates removed.',
+						'%d profession playbooks regenerated successfully! Duplicates removed.',
+						$synced,
+						'mcp-ai-wpoos'
+					),
+					$synced
+				)
+				: sprintf(
+					/* translators: %d: Number of professions synced */
+					_n(
+						'%d profession playbook synced successfully! Only changed playbooks were updated and duplicates removed.',
+						'%d profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.',
+						$synced,
+						'mcp-ai-wpoos'
+					),
+					$synced
+				);
 
 			wp_send_json_success(
 				array(
 					'message' => $message,
 					'synced'  => $synced,
+					'total'   => $total,
 				)
 			);
 		}
