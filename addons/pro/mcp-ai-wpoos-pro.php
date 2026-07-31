@@ -2094,6 +2094,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['score_upwork_job']      = 'wordpress-core';
 			$pro_tools['draft_upwork_proposal'] = 'wordpress-core';
 
+			// ICP (Ideal Customer Profile) tools (v2.11.0).
+			$pro_tools['compute_icp_score']  = 'wordpress-core';
+			$pro_tools['manage_icp_profile'] = 'wordpress-core';
+
 			// Customer CRUD tools (v2.6.0).
 			$pro_tools['create_customer'] = 'wordpress-core';
 			$pro_tools['get_customer']    = 'wordpress-core';

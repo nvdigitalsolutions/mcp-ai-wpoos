@@ -56,6 +56,20 @@ if ( $is_enabled && ! $is_base ) {
 		require_once $_installer;
 	}
 
+	// ---- Phase G: ICP (Ideal Customer Profile) Module ----
+	// Load ICP Profile data store and scoring engine before tools.
+	$_icp_dir = $crm_engine_dir . 'icp/';
+	$_icp_files = array(
+		'class-wp-mcp-ai-icp-profile.php',
+		'class-wp-mcp-ai-icp-scorer.php',
+	);
+	foreach ( $_icp_files as $_icp_file ) {
+		$_icp_path = $_icp_dir . $_icp_file;
+		if ( file_exists( $_icp_path ) ) {
+			require_once $_icp_path;
+		}
+	}
+
 	// Load Company CPT.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-company-cpt.php';
 	WP_MCP_AI_Company_CPT::init();
@@ -152,6 +166,13 @@ if ( $is_enabled && ! $is_base ) {
 		// Load CRM Blueprints page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-crm-blueprints-page.php';
 		WP_MCP_AI_CRM_Blueprints_Page::init();
+
+		// Load ICP Profiles admin page.
+		$_icp_admin = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-icp-admin-page.php';
+		if ( file_exists( $_icp_admin ) ) {
+			require_once $_icp_admin;
+			WP_MCP_AI_ICP_Admin_Page::init();
+		}
 	}
 
 	// Load CRM REST controller for Toolkit Shell SPA.
