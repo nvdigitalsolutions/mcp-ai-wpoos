@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.42
-**Release Date:** 2026-07-29
+**Version:** 1.1.43
+**Release Date:** 2026-08-01
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**MCP Specification:** 2024-11-05 (Full Compliance)  
+**MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
 **Requires:** WordPress 6.0+, PHP 7.4+  
@@ -147,6 +147,18 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.43)
+
+- 🔒 **Security Hardening v1.1.43 (16 files).** SSRF protection across 7 provider connection handlers + A2A agent URL. SQL table-name validation against injection. A2A per-assistant agent cards now auth-gated. Chat SPA /config and /manifest endpoints require authentication (no longer public). Missing args schemas on 7 REST endpoints. Guest rate-limiting now IP-based (DoS vector closed). 3 tool capability mismatches corrected. Centralized defense-in-depth capability gate in Tool Registry. PHP object injection prevention via `safe_unserialize` helper.
+- 🆙 **MCP Protocol Upgrade (2026-07-28).** Stateless core — sessions retired, `server/discover` replaces `initialize`, `_meta` per-request capabilities, `Mcp-Method`/`Mcp-Name` headers on Streamable HTTP, TTL/cache-scope on `tools/list`. Legacy client shim for backward compatibility. 10 files changed.
+- 📚 **OKF v0.2 Trust-Signal Support.** Indentation-aware recursive descent parser with inline YAML mappings, nested object lists, and flow sequences. New trust-tier derivation (`unverified`/`machine-confirmed`/`human-reviewed`), staleness checks, `search()` extension with trust filters. New `okf_validate_attestation` tool. All 6 existing OKF tools surface trust signals. 15 files, 27 standalone smoke tests.
+- 🏗️ **Pro Module Registry.** `wp_mcp_ai_pro_init()` decomposed from ~625-line monolithic function into a PSR-4 module registry with per-module loading, dependency ordering, and graceful degradation. Fixes broken require paths in module loader.
+- 🎯 **Ideal Customer Profile (ICP) System (Pro CRM Phase G).** 7-dimension scoring engine (0–100) with fit+intent separation, behavioral decay, and negative scoring. 2 new MCP tools: `compute_icp_score`, `manage_icp_profile`. Admin UI with profile list table and 7-tab editor.
+- 🔧 **Profession & Playbook Sync Fixes (7 PRs).** Playbook bulk sync silent failures now report errors. Force-regenerated playbook files no longer deleted. Undefined array key in playbook stats fixed. Duplicate profession slugs removed from knowledge base (312→311 entries). Title fallback prevents duplicate posts on Update. Consumed-post collision fix ensures all unique KB entries create distinct posts. Test Model assistant dropdown restored.
+- 🧹 **Hexagonal Architecture Purity.** `PlatformFlushInterface` contract extracts `wp_ob_end_flush_all` from framework-agnostic `lib/core/` SSE handler into a WordPress adapter — zero WordPress references remain in nvoos/core.
+- 🛡️ **Phase 3 Operational Security.** Audit logger REST route hook corrected (`init` → `rest_api_init`). Security posture signals hardened.
+- 📦 **Dependency Updates.** WPCS bumped to 3.4.1 (CVE-2026-45293). Dev tooling: Phpactor LSP replaces Intelephense.
 
 ### ✨ What's New at a Glance (v1.1.42)
 
@@ -543,7 +555,22 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.42 — July 2026)
+## 🆕 Latest Updates (v1.1.43 — August 2026)
+
+### July 30–August 1, 2026 — MCP Protocol Upgrade, Security Hardening, OKF v0.2, ICP System, Sync Fixes 🔒🆙📚🎯🔧
+
+- ✅ **Security Hardening v1.1.43 (16 files, 427 additions).** SSRF protection across 7 provider connection handlers (blocks cloud metadata endpoints + private IPs). A2A agent URL SSRF guard with federation peer allowlist. SQL table-name regex validation for injection defense. A2A per-assistant agent cards now require authentication (was publicly exposed). Chat SPA /config and /manifest endpoints changed from `__return_true` to `logged_in_permission`. Missing args schemas on 7 REST endpoints (voice, security center, chat transcripts, A2A webhook). Guest rate-limiting changed from shared counter to IP-based hashed keys (DoS vector closed). 3 tool capability mismatches corrected (`check_site_security`, `delete_cron_job`, `purge_cache`). Centralized defense-in-depth capability gate in Tool Registry. PHP object injection prevention via `safe_unserialize` helper with `allowed_classes => false`. Post meta/term output escaping hardened.
+- ✅ **MCP Protocol Upgrade (2026-07-28).** Largest MCP revision since launch — stateless core removes sessions and `initialize`/`initialized` handshake (SEP-2567, SEP-2575). New `server/discover` RPC for capability probing. `_meta` per-request for protocol version, client identity, capabilities. `Mcp-Method`/`Mcp-Name` headers on Streamable HTTP (SEP-2243). TTL/cache-scope on `tools/list` responses (SEP-2549). Legacy client shim preserves backward compatibility. 10 files changed. SSE transport preserved (deprecated per SEP-2596, 12-month off-ramp).
+- ✅ **OKF v0.2 Trust-Signal Support.** Indentation-aware recursive descent parser replacing flat frontmatter. Inline YAML mappings, nested object lists, flow sequences. Reader: `get_trust_tier()` (unverified/machine-confirmed/human-reviewed), `is_stale()`, extended `search()` with trust filters. Writer: `validate_bundle()` checks v0.2 fields. New tool: `okf_validate_attestation`. All 6 existing OKF tools surface trust signals. 15 files, 27 standalone smoke tests. Full backward compatibility with v0.1.
+- ✅ **Pro Module Registry (Architecture).** `wp_mcp_ai_pro_init()` decomposed from ~625-line monolithic init function into a PSR-4 module registry. Per-module loading with dependency ordering. Graceful degradation when modules or their dependencies are unavailable. Fixes broken require paths that caused `class not found` fatals under certain load orders.
+- ✅ **ICP System (Pro CRM Phase G).** Data-driven Ideal Customer Profile system with 7-dimension scoring engine (Firmographic 25%, Technographic 20%, Intent 15%, Engagement 15%, Buying Triggers 10%, Economic Outcome 10%, Negative Signals 5%) — fit+intent separation, behavioral decay, negative disqualifier scoring. 2 new MCP tools: `compute_icp_score` (score Company/Lead CPTs or manual data) and `manage_icp_profile` (CRUD via AI). Admin UI with profile list table and 7-tab weighted editor.
+- ✅ **Profession & Playbook Sync Fixes (7 PRs).** Playbook: bulk sync silent failures now report `{synced, errors}` to admin UI. Force-regenerated playbook files no longer incorrectly deleted. Undefined array key `orphaned_attachments` in playbook stats fixed. Test Model page assistant dropdown restored. Profession: duplicate slug detection in knowledge base JSON files (312→311 entries). Title fallback matching prevents `Update` from creating duplicate posts when slugs change between versions. Consumed-post collision fix ensures all unique KB entries create distinct posts (resolves 310-published vs 311-KB mismatch).
+- ✅ **Hexagonal Architecture Purity (PlatformFlushInterface).** Last WordPress reference removed from `nvoos/core` library. New `PlatformFlushInterface` contract in `lib/core/`, WordPress adapter in `includes/bridge/`. SseHandler now receives flush interface via constructor injection — zero framework dependencies remain.
+- ✅ **Phase 3 Operational Security Hardening.** Audit logger REST route hook corrected from `init` to `rest_api_init`. Security posture signal coverage hardened.
+- ✅ **Dependency Updates.** `wp-coding-standards/wpcs` bumped to 3.4.1 for CVE-2026-45293. Dev tooling: replaced hardcoded Intelephense LSP with Phpactor in Zed settings.
+- 📦 **Versioning** — bumped to **1.1.43** across all version-bearing files. Tool count: ~201 base + ~830+ Pro (~1,031+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**. Knowledge base: **311 professions** (12 industry categories).
+
+## 🆕 Previous Updates (v1.1.42 — July 2026)
 
 ### July 23–29, 2026 — Security Infrastructure, Framework-Agnostic Core, Status Page, Agent Skills, Algorave 🛡️🏗️📡🤖🎵
 
@@ -557,8 +584,6 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **Critical Bug Fixes.** Request Guard wrap_dispatch parameter order mismatch with WP >= 6.5 rest_dispatch_request filter (was causing fatal error). Nonce authenticator now accepts _wpnonce query parameter in addition to X-WP-Nonce header (fixes 401 on legacy chat client streams).
 - ✅ **Dependency Security Updates.** brace-expansion overrides across all addons. js-yaml and postcss security overrides. All npm lock files regenerated. undici pinned to 7.x for Node 20 compat in canvas-toolkit.
 - 📦 **Versioning** — bumped to **1.1.42** across all version-bearing files. Tool count: ~201 base + ~830+ Pro (~1,031+ total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27** (new: Algorave).
-
-## 🆕 Previous Updates (v1.1.41 — July 2026)
 
 ### July 20–22, 2026 — OKF Integration, Security Compliance, Playbook Sync, Model Credentials, Dependency Bumps 📚🔒🔧🔑🛡️
 
@@ -787,6 +812,8 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **v1.1.43** | Aug 2026 | MCP 2026-07-28 stateless core upgrade, Security v1.1.43 hardening (SSRF/CSRF/SQL/XSS/info-disclosure across 16 files), OKF v0.2 trust-signal support, ICP System (Pro CRM Phase G, 7-dimension scoring), Pro Module Registry (PSR-4, 625-line monolithic init decomposed), Hexagonal architecture purity (PlatformFlushInterface), 7 playbook/profession sync fixes, Phase 3 operational security hardening, WPCS 3.4.1 (CVE-2026-45293) |
+| **v1.1.42** | Jul 2026 | Security Infrastructure (7 classes, 21 posture signals A-F), Framework-Agnostic Core (lib/core/, 32 contracts, 21 adapters), Status Page & Incident Communication (Pro), 21 Agent Skills + 6 BMAD Agents, Algorave addon (9 tools), Security Hardening (12 fixes, 13 unit tests) |
 | **v1.1.38** | Jul 2026 | Page Agent addon v0.1.0 (AI browser page control copilot), Pro SPA v2 major parity & polish (voice pipeline, tasks drawer, workflow tracker, file attachments, tool shortcuts, slash commands, mobile hamburger, autoscroll/viewport fixes, cache-busting, assistant preloading), Per-user chat memory toggle, create_post/save_post Markdown-to-HTML + taxonomy suggestions, Workflow blueprint existing-content awareness, SPA accessibility: annotation pills, ZAP medium findings triaged |
 | **v1.1.37** | Jul 2026 | JetEngine Meta Helper universal (25 CPTs, REST, ECA fields), Places enrichment tools, RabbitMQ + queue infrastructure (custom DB tables, health endpoint, worker), Multi-tenant DB isolation Phase 0–4, DSpark admin UI + speculative orchestration, Crocoblock Design System addon (5 phases), Test coverage: 329 tools across 28 toolkits, Docs Hub broken link engine, OWASP ZAP DAST, 30+ bug fixes |
 | **v1.1.36** | Jul 2026 | EZuite Inventory Sync Pro Toolkit, Ralph Loop CCT migration + circuit breaker, JetBooking/JetAppointment (8 tools), Moonshot/Z.AI provider parity (15 total), Unified Sync Log Manager, Tool Presets Auto-Select + Chips Bar, HTTrack Cache + Place-to-Service Bridge, Generate Default Mapping + read-only sync, 45+ bug fixes |
@@ -826,7 +853,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
-- 👔 **Professional & Team Templates** - Deploy assistants from ~190 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
+- 👔 **Professional & Team Templates** - Deploy assistants from ~311 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
 - 🚀 **Getting Started Wizard** - Guided 4-step onboarding (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`) that walks new users through provider setup and use-case selection. Selecting a preset (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, or General Purpose) seeds a fully-configured assistant with tools, system prompt, and tuned temperature — ready to use immediately.【F:includes/admin/class-wp-mcp-ai-onboarding-wizard.php†L1-L53】【F:assets/js/onboarding-wizard.js†L1-L303】
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
@@ -2685,7 +2712,7 @@ The `name` field (max 64 chars) becomes the skill's slug. The `description` fiel
 
 NV oOS includes an enterprise-grade **template system** for rapid assistant deployment through **Professions** and **Teams**. Instead of manually configuring each assistant from scratch, administrators can:
 
-1. **Select from ~190 pre-built professional templates** spanning 12 industry categories
+1. **Select from ~311 pre-built professional templates** spanning 12 industry categories
 2. **Create custom profession templates** with reusable configurations
 3. **Deploy entire teams** of specialized assistants with one click
 4. **Test everything from the backend** before exposing to end users
@@ -2699,9 +2726,9 @@ Professions are reusable assistant templates with pre-configured:
 - **AI model defaults** (provider, model, temperature)
 - **Warnings and disclaimers** for professional contexts
 
-**Available Categories (~190 professions across 12 categories):**
+**Available Categories (~311 professions across 12 categories):**
 
-Methodology note: the current sanity check counts 190 profession knowledge documents; runtime availability can vary with seeders, filters, and installed features.
+Methodology note: the current sanity check counts 311 profession knowledge documents; runtime availability can vary with seeders, filters, and installed features.
 
 - 🌾 Agriculture & Natural Resources
 - 🎨 Art, Media & Entertainment
