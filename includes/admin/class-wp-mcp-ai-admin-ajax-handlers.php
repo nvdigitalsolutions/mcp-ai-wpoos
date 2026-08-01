@@ -2933,6 +2933,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$updated    = 0;
 			$errors     = array();
 
+			// Track post IDs already consumed during this sync to
+			// prevent a title fallback from matching the same post
+			// that was already matched by slug for a different JSON
+			// entry (e.g. when a duplicate slug was fixed by giving
+			// one profession a new slug).
+			$consumed_ids = array();
+
 			foreach ( $professions as $profession_data ) {
 				// Restore preserved datasets if they exist for this profession slug.
 				$slug = sanitize_title( $profession_data['slug'] );
@@ -2958,6 +2965,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				if ( 'update' === $action && ! empty( $profession_data['slug'] ) ) {
 					$existing = isset( $slug_to_post[ $slug ] ) ? $slug_to_post[ $slug ] : null;
 
+					// If the slug-matched post was already consumed by an
+					// earlier iteration (its slug was changed by a prior
+					// update in this same sync run), don't re-use it.
+					if ( $existing && isset( $consumed_ids[ $existing->ID ] ) ) {
+						$existing = null;
+					}
+
 					// Fall back to title match when the slug has changed
 					// between knowledge-base versions (the original
 					// seeding used a different slug for the same
@@ -2965,12 +2979,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					if ( ! $existing && ! empty( $profession_data['title'] ) ) {
 						$title = sanitize_text_field( $profession_data['title'] );
 						if ( isset( $title_to_post[ $title ] ) ) {
-							$existing = $title_to_post[ $title ];
+							$candidate = $title_to_post[ $title ];
+							// Don't match a post already consumed by an
+							// earlier slug or title match in this sync.
+							if ( ! isset( $consumed_ids[ $candidate->ID ] ) ) {
+								$existing = $candidate;
+							}
 						}
 					}
 				}
 
 				if ( $existing ) {
+					// Mark post as consumed so later iterations don't
+					// re-use it via slug or title fallback.
+					$consumed_ids[ $existing->ID ] = true;
+
 					// Update existing profession - preserve datasets if not already in profession_data.
 					if ( ! isset( $profession_data['preferred_datasets'] ) ) {
 						$existing_datasets = get_post_meta( $existing->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
