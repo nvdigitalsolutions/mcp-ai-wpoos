@@ -147,7 +147,12 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				if ( '_' === $key[0] ) {
 					continue;
 				}
-				$meta[ $key ] = count( $values ) === 1 ? $values[0] : $values;
+				$value = count( $values ) === 1 ? $values[0] : $values;
+				// Escape HTML in meta values to prevent stored XSS.
+				if ( is_string( $value ) ) {
+					$value = wp_kses_post( $value );
+				}
+				$meta[ $key ] = $value;
 			}
 			$result['meta'] = $meta;
 		}
@@ -163,8 +168,8 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 							function ( $term ) {
 								return array(
 									'term_id' => $term->term_id,
-									'name'    => $term->name,
-									'slug'    => $term->slug,
+									'name'    => esc_html( $term->name ),
+									'slug'    => esc_attr( $term->slug ),
 								);
 							},
 							$terms

@@ -1,12 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.41
-**Last Updated:** July 22, 2026
+**Version:** 1.1.42
+**Last Updated:** July 29, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (July 2026)
 
+- **v1.1.42** (July 29): Security infrastructure (7 classes: Request Guard, Security Posture with 21 signals, Destructive Ops Gate, URL Guard, Concurrency Guard, Cost Tracker, API Key Store). Site Health checks. Production hardening guide. CORS/rate limiting/error verbosity/body size enforcement with dashboard posture signals. nvoos/core framework-agnostic engine (32 contracts + 21 WP adapters, 109 tools migrated, 5 parity gaps closed). Status page & incident communication (Pro) with 4 AI tools. 21 coding-time agent skills + 6 BMAD agent definitions. Algorave addon (9 tools). Critical bug fixes (request guard param order, nonce query param auth). 13 new security unit tests. Addon count: 27.
 - **v1.1.40** (July 15): Content Format Awareness helper (Markdown/HTML/plain text detection). Research to Paper Store to WordPress Draft pipeline with new `create_post_from_research` tool. Settings credential split (two-option isolation with transparent merge). Demo video pipeline complete (Phases 0-5). Kimi & DeepSeek client parity. Model catalog update (24 files, July 2026 defaults). OOS Engine SchemaStoreInterface + 45 tests. SSE HTTP/2 fixes (`ob_clean`, 524 timeout). Vector store sync no polling. Settings import/export batch fixes (4 PRs). **Phase 8 MCP servers: 33 total (4 new — Pro Scheduler, FlowHub, Shopify Sync, EZuite). OAuth 2.0 MCP authentication (PKCE, hierarchical scopes, token management UI, browser-based login). Per-toolkit MCP settings slug fix.** Validated tool slug allowlist fix.
 - **v1.1.41** (July 22): OKF Integration (Open Knowledge Format v0.1 engine + 6 MCP tools, 41 bundled skills OKF-conformant). Security compliance (11 HIGH/P0 fixes: HMAC policy tokens, health auth-gating, ZIP validation, CSRF nonces, SRI hashes). Playbook sync fixes (duplicate AJAX handler resolved, silent failures reported, CPT class guards). Model provider credential resolution (all 4 key sources). Dependency bumps (adm-zip, axios, brace-expansion — 18 alerts, 0 audit vulns).
 - **v1.1.39** (July 13): Meta-Harness auto-optimization system (all 7 phases). Agent delegation rework (inline execution, REST dispatch, cron resilience, spawn_cron, name-based resolution). Pro SPA v2 polish (20+ PRs: vector store/autocomplete fixes, cost badges, allowSensitiveTools, tool result rendering, auto-save transcripts, attachments/save/storage, tasks drawer toolbar, speech/audio, capability flags, usage badges, sidebar, media, system prompt, layout). Tool presets refactor (essentials layers, auto-upgrade, SSE fix, tool_call_id fallback). CRM fixes (cache loop, Upwork rate limiting, freelance sourcing). Infrastructure (Veo 2.0 to Gemini Omni Flash with deprecation detection, workflow auth, ZAP scan, npm rebuild).

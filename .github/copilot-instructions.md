@@ -11,6 +11,7 @@ This repo is developed by multiple AI agents. Before doing work, be aware of:
 - **`.github/agents/*.agent.md`** — GitHub Custom Agents auto-discovered by Copilot Coding Agent and compatible runtimes. Each file declares one role-specific agent (its scope, tools, triggers). Per the layering rule in [`AGENTS.md` §2](../AGENTS.md), these files are intentionally slim — they **do not** restate naming/security/PHP-compat rules, so always cross-reference `AGENTS.md` + `CLAUDE.md` + `.context/` for those.
 - **`.context/*.md`** — subsystem context files loaded on-demand by all agents (conventions, security checklist, REST API, tool registry, chat UI, testing, Pro vs Base).
 - **`.bmad/agents/*.yaml`** — internal BMAD workflow agents that run inside NV oOS assistants (not coding-time agents).
+- **`.agents/skills/*.md`** — 21 coding-time agent skills for Zed editor, covering WordPress plugin development patterns (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text).
 
 When making changes, check `git log` first — another agent may have already addressed part of the task. Do not duplicate scopes that are owned by an agent declared in `.github/agents/` or in the `AGENTS.md` inventory.
 
@@ -24,17 +25,23 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # ~1,031+ total built-in tool implementations (~201 base + ~830+ pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+│   ├── tools/            # ~1,031+ total built-in tool implementations
+│   ├── security/         # Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
 │   ├── elementor/        # Elementor widget integrations
 │   ├── okf/              # OKF v0.1 engine (parser, reader, writer)
 │   ├── integrations/     # Third-party plugin integrations
+│   ├── bridge/           # WordPress adapters for lib/core domain contracts
 │   └── crawler/          # Crawl4AI integration
+├── lib/core/              # Framework-agnostic AI engine (nvoos/core): 32 domain contracts, ChatOrchestrator, ProviderRouter, 109 tools
 ├── assets/
 │   ├── js/               # Frontend JavaScript (chat UI)
 │   └── css/              # Stylesheets
-├── tests/                # PHPUnit test suite
-├── docs/                 # Comprehensive documentation (32 files)
+├── tests/                # PHPUnit test suite (including tests/security/)
+├── docs/                 # Comprehensive documentation (~1,600 files)
 ├── bin/                  # Development scripts
+├── .agents/skills/       # 21 coding-time agent skills for Zed editor
+├── .bmad/                # 6 BMAD workflow agent YAML definitions
+├── .context/             # Subsystem context files for AI agent sessions
 └── languages/            # Translation files
 ```
 
@@ -45,7 +52,9 @@ mcp-ai-wpoos/
 - **MCP Protocol**: Server-Sent Events, REST API
 - **Optional Integrations**: JetEngine, WooCommerce, Elementor, Rank Math, WPCode
 - **OKF (Open Knowledge Format)**: Google's v0.1 vendor-neutral knowledge format for curated, deterministic knowledge with 6 MCP tools
-- **Architecture**: Custom Post Types, REST API, Server-Sent Events
+- **nvoos/core**: Framework-agnostic AI orchestration engine with Hexagonal Architecture (Ports & Adapters), 32 domain contracts, 21 WordPress adapters
+- **Security Infrastructure**: 7 security classes (request guard, posture scoring with 21 signals, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store) with Site Health integration
+- **Architecture**: Custom Post Types, REST API, Server-Sent Events, Hexagonal Architecture
 
 ## Development Workflow
 
@@ -343,7 +352,7 @@ The plugin respects `WP_DEBUG` and provides additional debug output when enabled
 
 ## Documentation
 
-The `docs/` directory contains 32 comprehensive documentation files. Key documents:
+The `docs/` directory contains ~1,600 comprehensive documentation files across 12 directories. Key documents:
 - `docs/QUICK_REFERENCE.md` - Fast reference guide
 - `docs/DOCUMENTATION_INDEX.md` - Complete documentation map
 - `docs/tool-reference.md` - Tool documentation (live registry is authoritative for the exact count)

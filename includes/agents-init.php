@@ -42,6 +42,23 @@ WP_MCP_AI_Agent_Audit_Trail::init();
 // Register CoSAI gate hooks on the existing tool execution actions.
 WP_MCP_AI_Agent_Capability_Boundary_Hooks::register();
 
+// Register destructive operations confirmation gate (1.2.0).
+// Runs at priority 0 on wp_mcp_ai_before_tool_execution — before the
+// capability boundary so it applies even without an active boundary.
+WP_MCP_AI_Destructive_Ops_Gate::register();
+
+// Register request guard (1.2.0) — SSE connection limits, JSON depth,
+// and request body size enforcement via rest_pre_dispatch filter.
+WP_MCP_AI_Request_Guard::register();
+
+// Register security audit logger (1.2.0) — records security-relevant
+// events to a custom table with REST endpoint and daily purge cron.
+WP_MCP_AI_Security_Audit_Logger::register();
+
+// Register CSP headers for admin pages (1.2.0) — restrict script,
+// style, connect, image, font, frame, and object sources.
+WP_MCP_AI_CSP_Headers::register();
+
 /**
  * Get all available agent roles
  *

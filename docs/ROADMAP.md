@@ -61,6 +61,24 @@
 - 📦 **Versioning** — bumped to **1.1.40** across all version-bearing files. Tool count: ~195 base + ~830+ Pro (~1,025+ total; live registry authoritative). Provider count: **15** first-class. Addon count: 26.
 
 
+## Released: v1.1.42 — July 2026 ✅
+
+**Release Date:** July 29, 2026
+
+### What was delivered in v1.1.42
+
+- ✅ **Security Infrastructure Hardening.** 7 new security infrastructure classes in `includes/security/`: Request Guard (SSE limits, JSON depth, body size, error verbosity, asset version stripping), Security Posture (21 signals, 0-100 weighted score, A-F grading), Destructive Ops Gate, URL Guard, Concurrency Guard, Cost Tracker, API Key Store. Site Health checks. Production hardening guide with WAF/OAuth/DICOM checklist. (PRs #5747, #5750, #5751, #5752)
+- ✅ **Security Defaults & Headers.** CORS origin control (cors_restricted signal), auth brute-force protection (auth_brute_force_on signal), error verbosity three-tier filtering (error_verbosity_safe signal), body size enforcement (body_size_limited signal). OAuth token lifetime controls, DICOM PHI auto-redaction, asset version stripping, exception guard, SSE CORS filter. 13 new security unit tests.
+- ✅ **Framework-Agnostic Core (lib/core/).** nvoos/core package with Hexagonal Architecture (PHP 8.1+). 32 domain contracts + 21 WordPress adapters. ChatOrchestrator with RateLimiter + SemanticCompressor. ProviderRouter (12 providers). 109 tools migrated. 5 chat parity gaps closed. (PRs #5738, #5740)
+- ✅ **Status Page & Incident Communication (Pro).** Maintenance CPT + REST + banner + notifier. Incident CPT with phase state machine + REST + dispatcher + lesson bridge. 4 AI tools: get_service_status, create/update/resolve_incident. (PR #5744)
+- ✅ **Agent Skills & BMAD Agents.** 21 coding-time agent skills (.agents/skills/) for Zed editor. 6 BMAD workflow agent YAML definitions (.bmad/agents/). Full .context/ subsystem context system with 8 topic files + 5 templates.
+- ✅ **Algorave Addon.** Live coding and algorithmic music generation addon with 9 tools, pattern/session CPTs, REST API.
+- ✅ **Critical Bug Fixes.** Request Guard wrap_dispatch WP >= 6.5 param order fix. Nonce authenticator _wpnonce query param support (fixes 401 on legacy chat client). (PRs #5750, #5751)
+- ✅ **Dependency Security.** npm security sweep with brace-expansion/js-yaml/postcss overrides. undici pinned to 7.x for Node 20. (PRs #5739, #5742, #5743)
+- 📦 **Versioning** — bumped to **1.1.42** across all version-bearing files. Tool count: ~201 base + ~830+ Pro (~1,031+ total; live registry authoritative). Provider count: **15** first-class. Addon count: **27** (new: Algorave).
+
+---
+
 ## Released: v1.1.41 — July 2026 ✅
 
 **Release Date:** July 22, 2026

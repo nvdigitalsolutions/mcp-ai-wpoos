@@ -242,18 +242,14 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		$new_content   = file_get_contents( $new_file_path );
 		$this->assertStringContainsString( 'Test Update Modified', $new_content, 'New content should have updated title' );
 
-		// Check that old attachment is orphaned (no profession_id meta).
-		$old_profession_id = get_post_meta( $initial_attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
-		$this->assertEmpty( $old_profession_id, 'Old attachment should be orphaned (no profession_id meta)' );
-
-		// Check that old attachment still exists in media library.
+		// Check that old attachment was properly deleted from DB (not just orphaned).
+		// The old attachment record is removed so that delete_orphaned_system_playbooks()
+		// doesn't later delete the shared file from under the new attachment.
 		$old_attachment = get_post( $initial_attachment_id );
-		$this->assertNotNull( $old_attachment, 'Old attachment should still exist in media library' );
-		$this->assertEquals( 'attachment', $old_attachment->post_type, 'Old attachment should still be an attachment' );
+		$this->assertNull( $old_attachment, 'Old attachment should be deleted from DB when content changes' );
 
-		// Clean up.
+		// Clean up (old attachment is already deleted from DB).
 		wp_delete_post( $post_id, true );
-		wp_delete_attachment( $initial_attachment_id, true );
 		wp_delete_attachment( $new_attachment_id, true );
 	}
 
@@ -634,8 +630,6 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 	 * Test that orphaned playbooks can be identified and deleted.
 	 */
 	public function test_orphaned_playbooks_can_be_deleted() {
-		global $wpdb;
-
 		// Load required classes.
 		if ( ! class_exists( 'WP_MCP_AI_Profession_Repository' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-profession-repository.php';
@@ -682,43 +676,14 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		// Verify a new attachment was created.
 		$this->assertNotEquals( $first_attachment_id, $second_attachment_id, 'Should create new attachment' );
 
-		// Verify first attachment is orphaned (no profession_id meta).
-		$first_profession_id = get_post_meta( $first_attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
-		$this->assertEmpty( $first_profession_id, 'First attachment should be orphaned' );
+		// Verify first attachment was deleted from DB (not just orphaned).
+		// The old attachment record is removed so that the orphan cleanup
+		// does not also delete the shared file from under the new attachment.
+		$this->assertNull( get_post( $first_attachment_id ), 'First attachment should be deleted from DB' );
 
 		// Verify second attachment has profession_id meta.
 		$second_profession_id = get_post_meta( $second_attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
 		$this->assertEquals( $post_id, absint( $second_profession_id ), 'Second attachment should have profession_id' );
-
-		// Query for orphaned playbook attachments (same logic as AJAX handler).
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$orphaned_attachments = $wpdb->get_col(
-			"SELECT p.ID
-			FROM {$wpdb->posts} p
-			WHERE p.post_type = 'attachment'
-			AND p.post_mime_type = 'text/plain'
-			AND p.post_title LIKE '%playbook%'
-			AND NOT EXISTS (
-				SELECT 1
-				FROM {$wpdb->postmeta} pm
-				WHERE pm.post_id = p.ID
-				AND pm.meta_key = '_wp_mcp_ai_playbook_profession_id'
-			)"
-		);
-
-		// Verify first attachment is in orphaned list.
-		$this->assertContains( $first_attachment_id, array_map( 'intval', $orphaned_attachments ), 'First attachment should be in orphaned list' );
-
-		// Verify second attachment is NOT in orphaned list.
-		$this->assertNotContains( $second_attachment_id, array_map( 'intval', $orphaned_attachments ), 'Second attachment should not be in orphaned list' );
-
-		// Delete orphaned attachments.
-		foreach ( $orphaned_attachments as $orphaned_id ) {
-			wp_delete_attachment( $orphaned_id, true );
-		}
-
-		// Verify first attachment was deleted.
-		$this->assertNull( get_post( $first_attachment_id ), 'First attachment should be deleted' );
 
 		// Verify second attachment still exists.
 		$this->assertNotNull( get_post( $second_attachment_id ), 'Second attachment should still exist' );

@@ -103,6 +103,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'preview_headers' ),
 					'permission_callback' => $manage,
+					'args'                => array(),
 				),
 			)
 		);
@@ -134,6 +135,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'list_snapshots' ),
 					'permission_callback' => $manage,
+					'args'                => array(),
 				),
 			)
 		);
@@ -165,6 +167,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'run_self_test' ),
 					'permission_callback' => $manage,
+					'args'                => array(),
 				),
 			)
 		);
@@ -312,6 +315,12 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 			$max_age                              = (int) ( $settings['hsts_max_age'] ?? 31536000 );
 			$headers['Strict-Transport-Security'] = 'max-age=' . $max_age . '; includeSubDomains';
 		}
+
+		// CORS Allow-Origin (from Security → Network → Security Headers).
+		$cors_setting                           = $settings['cors_allow_origin'] ?? 'site';
+		$headers['Access-Control-Allow-Origin'] = ( 'star' === $cors_setting )
+			? '* (any domain — less secure)'
+			: get_site_url() . ' (same-origin — recommended)';
 
 		// Escape all header values.
 		$safe_headers = array();
@@ -644,6 +653,7 @@ class WP_MCP_AI_REST_Security_Center_Controller extends WP_REST_Controller {
 			'enable_hsts',
 			'hsts_max_age',
 			'csp_frame_ancestors',
+			'cors_allow_origin',
 			'enable_root_security_key',
 			'enable_2fa_requirement',
 			'enable_loopback_ssl_bypass',

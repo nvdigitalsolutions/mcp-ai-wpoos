@@ -168,7 +168,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
 			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
+			$api_url = trailingslashit( $endpoint_url ) . 'api/tags';
+
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
@@ -226,7 +234,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
 			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
+			$api_url = trailingslashit( $endpoint_url ) . 'api/tags';
+
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
@@ -290,7 +306,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
 			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
+			$api_url = trailingslashit( $endpoint_url ) . 'v1/models';
+
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
@@ -348,7 +372,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
 			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
+			$api_url = trailingslashit( $endpoint_url ) . 'v1/models';
+
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
@@ -1810,6 +1842,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Ensure URL has trailing slash.
 			$api_url = trailingslashit( $api_url );
 
+			// Validate the target host to prevent SSRF to internal services.
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
 			// Get timeout from settings.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
@@ -2831,8 +2870,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
 			}
 
-			// Preserve preferred datasets before any updates/deletions.
+			// Preserve preferred datasets before any updates/deletions,
+			// and build slug-to-post and title-to-post lookups so we
+			// never miss an existing profession due to non-publish
+			// status, stale repository caches, or slug changes between
+			// knowledge-base versions.
 			$preserved_datasets = array();
+			$slug_to_post       = array();
+			$title_to_post      = array();
 			$existing_posts     = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_profession',
@@ -2842,6 +2887,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			foreach ( $existing_posts as $post ) {
+				$slug_to_post[ $post->post_name ] = $post;
+				// Build title map — only the first (oldest) post wins so
+				// that we don't pick a duplicate created by a previous
+				// buggy sync run.
+				if ( ! isset( $title_to_post[ $post->post_title ] ) ) {
+					$title_to_post[ $post->post_title ] = $post;
+				}
 				$datasets = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
 				if ( ! empty( $datasets ) && is_array( $datasets ) ) {
 					$preserved_datasets[ $post->post_name ] = $datasets;
@@ -2881,6 +2933,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$updated    = 0;
 			$errors     = array();
 
+			// Track post IDs already consumed during this sync to
+			// prevent a title fallback from matching the same post
+			// that was already matched by slug for a different JSON
+			// entry (e.g. when a duplicate slug was fixed by giving
+			// one profession a new slug).
+			$consumed_ids = array();
+
 			foreach ( $professions as $profession_data ) {
 				// Restore preserved datasets if they exist for this profession slug.
 				$slug = sanitize_title( $profession_data['slug'] );
@@ -2888,13 +2947,53 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$profession_data['preferred_datasets'] = $preserved_datasets[ $slug ];
 				}
 
-				// Check if profession already exists by slug.
+				/*
+				 * Match against the pre-built maps instead of
+				 * find_one() to avoid two failure modes:
+				 *
+				 * 1. find_one() only matches publish status — existing
+				 *    draft/pending professions would be invisible.
+				 * 2. find_one() caches via wp_cache which can serve
+				 *    stale results from a persistent object cache.
+				 *
+				 * Strategy: match by slug first, then fall back to
+				 * title.  Slug changes between knowledge-base versions
+				 * are the most common cause of duplicate professions
+				 * during "Update" runs.
+				 */
 				$existing = null;
 				if ( 'update' === $action && ! empty( $profession_data['slug'] ) ) {
-					$existing = $repository->find_one( $profession_data['slug'] );
+					$existing = isset( $slug_to_post[ $slug ] ) ? $slug_to_post[ $slug ] : null;
+
+					// If the slug-matched post was already consumed by an
+					// earlier iteration (its slug was changed by a prior
+					// update in this same sync run), don't re-use it.
+					if ( $existing && isset( $consumed_ids[ $existing->ID ] ) ) {
+						$existing = null;
+					}
+
+					// Fall back to title match when the slug has changed
+					// between knowledge-base versions (the original
+					// seeding used a different slug for the same
+					// profession name).
+					if ( ! $existing && ! empty( $profession_data['title'] ) ) {
+						$title = sanitize_text_field( $profession_data['title'] );
+						if ( isset( $title_to_post[ $title ] ) ) {
+							$candidate = $title_to_post[ $title ];
+							// Don't match a post already consumed by an
+							// earlier slug or title match in this sync.
+							if ( ! isset( $consumed_ids[ $candidate->ID ] ) ) {
+								$existing = $candidate;
+							}
+						}
+					}
 				}
 
 				if ( $existing ) {
+					// Mark post as consumed so later iterations don't
+					// re-use it via slug or title fallback.
+					$consumed_ids[ $existing->ID ] = true;
+
 					// Update existing profession - preserve datasets if not already in profession_data.
 					if ( ! isset( $profession_data['preferred_datasets'] ) ) {
 						$existing_datasets = get_post_meta( $existing->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
@@ -2906,6 +3005,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$result                = $repository->save( $profession_data );
 					if ( ! is_wp_error( $result ) ) {
 						++$updated;
+
+						// If we matched by title fallback (slug changed
+						// between knowledge-base versions), clean up any
+						// duplicate posts that share the same title —
+						// these are orphans from a previous buggy sync
+						// run that could not find the original by slug.
+						if ( ! empty( $profession_data['title'] ) ) {
+							$title = sanitize_text_field( $profession_data['title'] );
+							foreach ( $existing_posts as $candidate ) {
+								if ( $candidate->ID !== $existing->ID
+									&& $candidate->post_title === $title ) {
+									wp_delete_post( $candidate->ID, true );
+								}
+							}
+						}
 					} else {
 						$errors[] = $result->get_error_message();
 					}
@@ -3668,6 +3782,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			update_option( 'wp_mcp_ai_playbooks_last_sync', time() );
 
 			$synced = isset( $result['synced'] ) ? absint( $result['synced'] ) : 0;
+			$total  = isset( $result['total'] ) ? absint( $result['total'] ) : 0;
 			$errors = isset( $result['errors'] ) ? (array) $result['errors'] : array();
 
 			if ( ! empty( $errors ) ) {
@@ -3697,14 +3812,44 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
+			// Diagnose: no errors but also no professions found to sync.
+			if ( 0 === $total && 0 === $synced ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'No published professions were found. Make sure professions are created and published before syncing playbooks.', 'mcp-ai-wpoos' ),
+						'synced'  => 0,
+					)
+				);
+				return;
+			}
+
 			$message = $force
-				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'mcp-ai-wpoos' )
-				: __( 'Profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.', 'mcp-ai-wpoos' );
+				? sprintf(
+					/* translators: %d: Number of professions synced */
+					_n(
+						'%d profession playbook regenerated successfully! Duplicates removed.',
+						'%d profession playbooks regenerated successfully! Duplicates removed.',
+						$synced,
+						'mcp-ai-wpoos'
+					),
+					$synced
+				)
+				: sprintf(
+					/* translators: %d: Number of professions synced */
+					_n(
+						'%d profession playbook synced successfully! Only changed playbooks were updated and duplicates removed.',
+						'%d profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.',
+						$synced,
+						'mcp-ai-wpoos'
+					),
+					$synced
+				);
 
 			wp_send_json_success(
 				array(
 					'message' => $message,
 					'synced'  => $synced,
+					'total'   => $total,
 				)
 			);
 		}

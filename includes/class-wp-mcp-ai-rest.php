@@ -84,6 +84,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		);
 
 		/**
+		 * Tool execution rate limiting window in seconds.
+		 *
+		 * @since 1.2.0
+		 * @var int
+		 */
+		const TOOL_RATE_LIMIT_WINDOW = 60;
+
+		/**
+		 * Maximum tool executions per user/guest per rate limit window.
+		 *
+		 * @since 1.2.0
+		 * @var int
+		 */
+		const TOOL_RATE_LIMIT_MAX = 60;
+
+		/**
 		 * Tool registry instance.
 		 *
 		 * @var WP_MCP_AI_Tool_Registry
@@ -316,12 +332,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		private function clean_all_output_buffers() {
 			$max_iterations = 100; // Safety limit.
 			$iterations     = 0;
+			$cleaned        = '';
 
 			while ( ob_get_level() > 0 && $iterations < $max_iterations ) {
+				$contents = ob_get_contents();
+				if ( is_string( $contents ) && '' !== $contents ) {
+					$cleaned .= $contents;
+				}
 				if ( ! ob_end_clean() ) {
 					break; // If ob_end_clean fails, stop trying.
 				}
 				++$iterations;
+			}
+
+			// When WP_DEBUG is on, log cleaned output so developers can see
+			// suppressed errors (PHP warnings, notices, etc.) that would
+			// otherwise corrupt JSON responses.
+			if ( '' !== $cleaned && defined( 'WP_DEBUG' ) && WP_DEBUG && class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_warning(
+					'Output buffer contained content that was cleaned before serving REST response.',
+					array( 'cleaned_output' => substr( $cleaned, 0, 2000 ) )
+				);
 			}
 		}
 
@@ -400,11 +431,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$status = isset( $data['status'] ) ? (int) $data['status'] : 500;
 
+			// Strip internal-only keys before exposing to the client.
+			$safe_data = array_intersect_key(
+				$data,
+				array_flip( array( 'status', 'actions', 'field', 'user_message', 'suggestions', 'retry_after' ) )
+			);
+
 			$payload = array(
 				'code'    => $response->get_error_code(),
 				'message' => $response->get_error_message(),
 				'actions' => $data['actions'],
-				'data'    => $data,
+				'data'    => $safe_data,
 			);
 
 			return new WP_REST_Response( $payload, $status );
@@ -2693,8 +2730,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$max_requests = isset( $settings['rate_limit_requests'] ) ? absint( $settings['rate_limit_requests'] ) : 100;
 			$time_window  = isset( $settings['rate_limit_window'] ) ? absint( $settings['rate_limit_window'] ) : 3600;
 
-			// Create a unique key for this user.
-			$transient_key = 'wp_mcp_ai_rate_limit_' . $user_id;
+			// Create a unique key. Guests (user_id=0) get an IP-based
+			// key to prevent one attacker from exhausting the global quota.
+			if ( $user_id > 0 ) {
+				$transient_key = 'wp_mcp_ai_rate_limit_user_' . $user_id;
+			} else {
+				$client_ip     = isset( $_SERVER['REMOTE_ADDR'] )
+					? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+					: 'unknown';
+				$transient_key = 'wp_mcp_ai_rate_limit_ip_' . md5( $client_ip . NONCE_SALT );
+			}
 			$current_count = get_transient( $transient_key );
 
 			if ( false === $current_count ) {
@@ -2721,6 +2766,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
+				// Log to the security audit table for SIEM / dashboard visibility.
+				if ( class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
+					WP_MCP_AI_Security_Audit_Logger::log_event(
+						WP_MCP_AI_Security_Audit_Logger::EVENT_RATE_LIMIT_HIT,
+						$user_id,
+						array(
+							'max_requests'  => $max_requests,
+							'time_window'   => $time_window,
+							'current_count' => $current_count,
+						)
+					);
+				}
+
 				return new WP_Error(
 					'wp_mcp_ai_rate_limit_exceeded',
 					sprintf(
@@ -2741,6 +2799,97 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Increment the counter.
 			set_transient( $transient_key, $current_count + 1, $time_window );
+			return true;
+		}
+
+		/**
+		 * Check per-user, per-tool rate limiting for the tool execution endpoint.
+		 *
+		 * This is a separate rate limiter from check_rate_limit() which handles
+		 * chat requests. Tool execution uses a shorter, tighter window to prevent
+		 * tool abuse while allowing reasonable usage.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $user_id User ID making the request (0 for guests).
+		 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
+		 */
+		protected function check_tool_rate_limit( $user_id ) {
+			/**
+			 * Filters the tool rate limit window in seconds.
+			 *
+			 * @since 1.2.0
+			 *
+			 * @param int $window Window in seconds. Default TOOL_RATE_LIMIT_WINDOW (60).
+			 */
+			$window = apply_filters( 'wp_mcp_ai_tool_rate_limit_window', self::TOOL_RATE_LIMIT_WINDOW );
+
+			/**
+			 * Filters the maximum tool executions per window.
+			 *
+			 * @since 1.2.0
+			 *
+			 * @param int $max Maximum executions. Default TOOL_RATE_LIMIT_MAX (60).
+			 */
+			$max = apply_filters( 'wp_mcp_ai_tool_rate_limit_max', self::TOOL_RATE_LIMIT_MAX );
+
+			// Create a unique key. Guests (user_id=0) get an IP-based
+			// key to prevent one attacker from exhausting the global quota.
+			if ( $user_id > 0 ) {
+				$transient_key = 'wp_mcp_ai_tool_rl_' . $user_id;
+			} else {
+				$client_ip     = isset( $_SERVER['REMOTE_ADDR'] )
+					? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+					: 'unknown';
+				$transient_key = 'wp_mcp_ai_tool_rl_ip_' . md5( $client_ip . NONCE_SALT );
+			}
+
+			$current_count = get_transient( $transient_key );
+
+			if ( false === $current_count ) {
+				// First request in this time window, start counting.
+				set_transient( $transient_key, 1, $window );
+				return true;
+			}
+
+			if ( $current_count >= $max ) {
+				// Rate limit exceeded.
+				WP_MCP_AI_Logger::log_event(
+					'tool_rate_limit_exceeded',
+					sprintf(
+						'User %d exceeded tool rate limit of %d executions per %d seconds.',
+						$user_id,
+						$max,
+						$window
+					),
+					array(
+						'user_id'    => $user_id,
+						'max'        => $max,
+						'window'     => $window,
+						'ip_address' => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown',
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_tool_rate_limit_exceeded',
+					sprintf(
+						/* translators: 1: Maximum executions allowed, 2: Time window in seconds */
+						__( 'Tool rate limit exceeded. Maximum %1$d tool executions allowed per %2$d seconds.', 'mcp-ai-wpoos' ),
+						$max,
+						$window
+					),
+					array(
+						'status'        => 429,
+						'retry_after'   => $window,
+						'max'           => $max,
+						'window'        => $window,
+						'current_count' => $current_count,
+					)
+				);
+			}
+
+			// Increment the counter.
+			set_transient( $transient_key, $current_count + 1, $window );
 			return true;
 		}
 
@@ -5701,6 +5850,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$auth_context = $this->get_auth_context();
 			$user_id      = ! empty( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : get_current_user_id();
 			$is_guest     = ! empty( $auth_context['is_guest'] );
+
+			// Enforce per-user, per-tool rate limiting.
+			$tool_rate_limit = $this->check_tool_rate_limit( $user_id );
+			if ( is_wp_error( $tool_rate_limit ) ) {
+				return $tool_rate_limit;
+			}
 
 			$context = array(
 				'user_id'          => $user_id,
@@ -11892,13 +12047,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 *
 			 * @see 'wp_mcp_ai_cors_allow_origin' filter in MCP methods trait.
 			 */
-			$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+			$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+			$cors_setting   = isset( $settings['cors_allow_origin'] ) ? $settings['cors_allow_origin'] : 'site';
+			$default_origin = ( 'star' === $cors_setting ) ? '*' : get_site_url();
+			$allow_origin   = apply_filters( 'wp_mcp_ai_cors_allow_origin', $default_origin );
 
 			$response = new WP_REST_Response( null, 204 );
 			$response->header( 'Access-Control-Allow-Origin', $allow_origin );
 			$response->header( 'Access-Control-Allow-Methods', 'POST, OPTIONS' );
 			$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest' );
 			$response->header( 'Access-Control-Max-Age', '3600' );
+
+			// Apply the centrally-managed security headers (gated behind Settings → Security → Network → "Enable Security Headers").
+			$security         = new WP_MCP_AI_Security_Manager();
+			$security_headers = $security->get_security_headers();
+			foreach ( $security_headers as $name => $value ) {
+				$response->header( $name, $value );
+			}
 			return $response;
 		}
 

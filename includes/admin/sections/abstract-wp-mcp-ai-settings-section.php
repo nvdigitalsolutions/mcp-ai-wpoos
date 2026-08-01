@@ -830,6 +830,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							<?php
 							break;
 
+						case 'html':
+							// Display raw HTML content (for notices, status badges, etc.).
+							if ( isset( $field['html'] ) ) {
+								echo wp_kses_post( $field['html'] );
+							} elseif ( isset( $field['content'] ) && is_callable( $field['content'] ) ) {
+								call_user_func( $field['content'] );
+							}
+							break;
+
 						case 'custom':
 							// For custom field types, call the provided callback function.
 							if ( isset( $field['callback'] ) && is_callable( $field['callback'] ) ) {
@@ -838,7 +847,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							break;
 					}
 
-					if ( $description && 'custom' !== $type ) :
+					if ( $description && 'custom' !== $type && 'html' !== $type ) :
 						?>
 						<p class="description"><?php echo wp_kses_post( $description ); ?></p>
 						<?php

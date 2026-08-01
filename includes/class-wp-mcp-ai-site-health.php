@@ -84,6 +84,17 @@ class WP_MCP_AI_Site_Health {
 			'test'  => array( $this, 'test_queue_storage' ),
 		);
 
+		// Security tests (1.2.0).
+		$tests['direct']['wp_mcp_ai_cron_configuration'] = array(
+			'label' => __( 'NV oOS Cron Configuration', 'mcp-ai-wpoos' ),
+			'test'  => array( $this, 'test_cron_configuration' ),
+		);
+
+		$tests['direct']['wp_mcp_ai_security_posture'] = array(
+			'label' => __( 'NV oOS Security Posture', 'mcp-ai-wpoos' ),
+			'test'  => array( $this, 'test_security_posture' ),
+		);
+
 		return $tests;
 	}
 
@@ -760,5 +771,80 @@ class WP_MCP_AI_Site_Health {
 			),
 			'test'        => 'wp_mcp_ai_queue_storage',
 		);
+	}
+
+	/**
+	 * Test: check if DISABLE_WP_CRON is configured for production.
+	 *
+	 * @since 1.2.0
+	 * @return array Test result.
+	 */
+	public function test_cron_configuration() {
+		$result = array(
+			'label'       => __( 'Cron Configuration', 'mcp-ai-wpoos' ),
+			'status'      => 'good',
+			'badge'       => array(
+				'label' => __( 'Performance', 'mcp-ai-wpoos' ),
+				'color' => 'blue',
+			),
+			'description' => '',
+			'actions'     => '',
+			'test'        => 'wp_mcp_ai_cron_configuration',
+		);
+
+		if ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) {
+			$result['description'] = '<p>' . esc_html__( 'DISABLE_WP_CRON is enabled. Background tasks will run reliably via system cron.', 'mcp-ai-wpoos' ) . '</p>';
+		} else {
+			$result['status'] = 'recommended';
+			$result['label']  = __( 'DISABLE_WP_CRON is not set', 'mcp-ai-wpoos' );
+			$result['description'] = '<p>' . esc_html__( 'NV oOS uses WordPress cron for background AI tasks. Without a system cron, tasks rely on site traffic to trigger. Add define( DISABLE_WP_CRON, true ) to wp-config.php and set up a system cron job.', 'mcp-ai-wpoos' ) . '</p>';
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Test: check core security posture indicators.
+	 *
+	 * @since 1.2.0
+	 * @return array Test result.
+	 */
+	public function test_security_posture() {
+		$result = array(
+			'label'       => __( 'Security Posture', 'mcp-ai-wpoos' ),
+			'status'      => 'good',
+			'badge'       => array(
+				'label' => __( 'Security', 'mcp-ai-wpoos' ),
+				'color' => 'blue',
+			),
+			'description' => '',
+			'actions'     => '',
+			'test'        => 'wp_mcp_ai_security_posture',
+		);
+
+		$issues = array();
+
+		// Encryption key.
+		if ( empty( get_option( 'wp_mcp_ai_master_key', '' ) ) ) {
+			$issues[] = __( 'Encryption master key not set.', 'mcp-ai-wpoos' );
+		}
+
+		// Webhook secret.
+		$secret = function_exists( 'wp_mcp_ai_get_api_key' )
+			? wp_mcp_ai_get_api_key( 'webhook_secret', '' )
+			: get_option( 'wp_mcp_ai_webhook_secret', '' );
+		if ( empty( $secret ) ) {
+			$issues[] = __( 'Webhook HMAC secret not configured.', 'mcp-ai-wpoos' );
+		}
+
+		if ( ! empty( $issues ) ) {
+			$result['status'] = 'recommended';
+			$result['label']  = __( 'Security improvements recommended', 'mcp-ai-wpoos' );
+			$result['description'] = '<ul><li>' . implode( '</li><li>', array_map( 'esc_html', $issues ) ) . '</li></ul>';
+		} else {
+			$result['description'] = '<p>' . esc_html__( 'Core security measures are configured.', 'mcp-ai-wpoos' ) . '</p>';
+		}
+
+		return $result;
 	}
 }

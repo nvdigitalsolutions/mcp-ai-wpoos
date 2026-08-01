@@ -198,7 +198,7 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues implements WP_MCP_AI_Tool_Interface, W
 			$client_id = get_option( 'wp_mcp_ai_yahoo_client_id' );
 		}
 		if ( empty( $client_secret ) ) {
-			$client_secret = get_option( 'wp_mcp_ai_yahoo_client_secret' );
+			$client_secret = wp_mcp_ai_get_api_key( 'yahoo_client_secret' );
 		}
 
 		if ( empty( $client_id ) || empty( $client_secret ) ) {

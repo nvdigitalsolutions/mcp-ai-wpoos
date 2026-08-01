@@ -3,14 +3,15 @@
  * MCP App Client.
  *
  * Connects to remote MCP servers via Streamable HTTP transport,
- * discovers tools and UI resources per the MCP 2025-03-26 specification
+ * discovers tools and UI resources per the MCP 2026-07-28 specification
  * and MCP Apps extension (SEP-1865, 2026-01-26).
  *
  * @package WP_MCP_AI_Pro
  * @since   1.8.0
- * @see     https://modelcontextprotocol.io/specification/2025-03-26
+ * @since   1.9.0 Updated for stateless MCP 2026-07-28.
+ * @see     https://modelcontextprotocol.io/specification/2026-07-28
  * @see     https://modelcontextprotocol.io/extensions/apps/overview
- * @see     https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization
+ * @see     https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
@@ -43,7 +44,7 @@ class WP_MCP_AI_MCP_App_Client {
 	 *
 	 * @var string
 	 */
-	const PROTOCOL_VERSION = '2025-03-26';
+	const PROTOCOL_VERSION = '2026-07-28';
 
 	/**
 	 * Server endpoint URL.
@@ -79,13 +80,6 @@ class WP_MCP_AI_MCP_App_Client {
 	 * @var bool
 	 */
 	protected $verify_ssl;
-
-	/**
-	 * MCP session ID from server.
-	 *
-	 * @var string
-	 */
-	protected $session_id = '';
 
 	/**
 	 * JSON-RPC request counter.
@@ -143,23 +137,22 @@ class WP_MCP_AI_MCP_App_Client {
 	}
 
 	/**
-	 * Initialize the MCP session with the remote server.
+	 * Initialize the MCP session with the remote server (legacy, pre-2026-07-28).
 	 *
-	 * Sends the `initialize` JSON-RPC request per MCP spec to negotiate
-	 * capabilities and protocol version.
+	 * Deprecated in favor of discover() per MCP 2026-07-28 (SEP-2575).
+	 * Kept for backward compatibility with 2025-era servers.
 	 *
-	 * @since 1.8.0
+	 * @since     1.8.0
+	 * @deprecated 1.9.0 Use discover() for 2026-07-28 servers.
 	 * @return array|WP_Error Server capabilities on success, WP_Error on failure.
 	 */
 	public function initialize() {
 		$params = array(
-			'protocolVersion' => self::PROTOCOL_VERSION,
-			'capabilities'    => array(
-				'roots' => new stdClass(),
-			),
+			'protocolVersion' => '2025-03-26',
+			'capabilities'    => new stdClass(),
 			'clientInfo'      => array(
 				'name'    => 'NV oOS MCP App Client',
-				'version' => defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.8.0',
+				'version' => defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.9.0',
 			),
 		);
 
@@ -169,10 +162,65 @@ class WP_MCP_AI_MCP_App_Client {
 			return $result;
 		}
 
-		// Send initialized notification.
+		// Send initialized notification (legacy).
 		$this->send_notification( 'notifications/initialized' );
 
 		return $result;
+	}
+
+	/**
+	 * Discover server capabilities via server/discover RPC (2026-07-28).
+	 *
+	 * Sends the server/discover JSON-RPC request per MCP 2026-07-28 (SEP-2575)
+	 * to probe server capabilities. Replaces the initialize/initialized handshake.
+	 *
+	 * @since 1.9.0
+	 * @return array|WP_Error Server capabilities on success, WP_Error on failure.
+	 */
+	public function discover() {
+		$params = $this->build_request_meta();
+
+		$result = $this->send_request( 'server/discover', $params );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$server_info  = isset( $result['serverInfo'] ) ? $result['serverInfo'] : array();
+		$capabilities = isset( $result['capabilities'] ) ? $result['capabilities'] : array();
+
+		$has_tools     = ! empty( $capabilities['tools'] );
+		$has_resources = ! empty( $capabilities['resources'] );
+
+		return array(
+			'success'       => true,
+			'server_info'   => $server_info,
+			'capabilities'  => $capabilities,
+			'has_tools'     => $has_tools,
+			'has_resources' => $has_resources,
+		);
+	}
+
+	/**
+	 * Build the per-request _meta envelope for MCP 2026-07-28.
+	 *
+	 * Per SEP-2575, every request must carry protocol version, client identity,
+	 * and client capabilities in _meta.
+	 *
+	 * @since 1.9.0
+	 * @return array _meta parameters to merge into request params.
+	 */
+	protected function build_request_meta() {
+		return array(
+			'_meta' => array(
+				'io.modelcontextprotocol/protocolVersion' => self::PROTOCOL_VERSION,
+				'io.modelcontextprotocol/clientInfo'      => array(
+					'name'    => 'NV oOS MCP App Client',
+					'version' => defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.9.0',
+				),
+				'io.modelcontextprotocol/clientCapabilities' => new stdClass(),
+			),
+		);
 	}
 
 	/**
@@ -250,9 +298,10 @@ class WP_MCP_AI_MCP_App_Client {
 	/**
 	 * Test connectivity to the remote MCP server.
 	 *
-	 * Performs an initialize handshake and returns server info + capabilities.
+	 * Performs a server/discover probe with initialize() fallback.
 	 *
 	 * @since 1.8.0
+	 * @since 1.9.0 Uses discover() for 2026-07-28 servers with initialize() fallback.
 	 * @return array|WP_Error Connection test result on success, WP_Error on failure.
 	 */
 	public function test_connection() {
@@ -272,26 +321,20 @@ class WP_MCP_AI_MCP_App_Client {
 			);
 		}
 
-		$result = $this->initialize();
+		// Try discover() first; fall back to initialize() for 2025-era servers.
+		$result = $this->discover();
 
 		if ( is_wp_error( $result ) ) {
+			$error_data = $result->get_error_data();
+			$rpc_code   = is_array( $error_data ) && isset( $error_data['rpc_code'] ) ? $error_data['rpc_code'] : 0;
+			if ( -32601 === $rpc_code ) {
+				// Method not found - server is pre-2026-07-28, fall back to initialize.
+				return $this->initialize();
+			}
 			return $result;
 		}
 
-		$server_info  = isset( $result['serverInfo'] ) ? $result['serverInfo'] : array();
-		$capabilities = isset( $result['capabilities'] ) ? $result['capabilities'] : array();
-
-		$has_tools     = ! empty( $capabilities['tools'] );
-		$has_resources = ! empty( $capabilities['resources'] );
-
-		return array(
-			'success'       => true,
-			'server_info'   => $server_info,
-			'capabilities'  => $capabilities,
-			'has_tools'     => $has_tools,
-			'has_resources' => $has_resources,
-			'session_id'    => $this->session_id,
-		);
+		return $result;
 	}
 
 	/**
@@ -307,6 +350,12 @@ class WP_MCP_AI_MCP_App_Client {
 	protected function send_request( $method, $params ) {
 		++$this->request_id;
 
+		// Inject _meta for every request except initialize and server/discover.
+		if ( ! in_array( $method, array( 'initialize', 'server/discover' ), true ) ) {
+			$meta   = $this->build_request_meta();
+			$params = array_merge( $params, $meta );
+		}
+
 		$payload = array(
 			'jsonrpc' => '2.0',
 			'id'      => $this->request_id,
@@ -314,7 +363,7 @@ class WP_MCP_AI_MCP_App_Client {
 			'params'  => $params,
 		);
 
-		$headers = $this->get_request_headers();
+		$headers = $this->get_request_headers( $method, $params );
 
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -352,12 +401,6 @@ class WP_MCP_AI_MCP_App_Client {
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
-
-		// Capture session ID from response header.
-		$session_header = wp_remote_retrieve_header( $response, 'mcp-session-id' );
-		if ( ! empty( $session_header ) ) {
-			$this->session_id = sanitize_text_field( $session_header );
-		}
 
 		if ( $status_code < 200 || $status_code >= 300 ) {
 			return new WP_Error(
@@ -430,7 +473,7 @@ class WP_MCP_AI_MCP_App_Client {
 			$payload['params'] = $params;
 		}
 
-		$headers = $this->get_request_headers();
+		$headers = $this->get_request_headers( $method, $params ?? array() );
 
 		if ( is_wp_error( $headers ) ) {
 			return $headers;
@@ -454,21 +497,32 @@ class WP_MCP_AI_MCP_App_Client {
 	}
 
 	/**
-	 * Build request headers including authentication and session.
+	 * Build request headers including authentication and routing.
 	 *
 	 * @since 1.8.0
+	 * @since 1.9.0 Added $method and $params parameters for SEP-2243 routing headers.
+	 *
+	 * @param string $method JSON-RPC method name for Mcp-Method header.
+	 * @param array  $params Request parameters for Mcp-Name extraction.
 	 * @return array|WP_Error Headers array or WP_Error on invalid auth config.
 	 */
-	protected function get_request_headers() {
+	protected function get_request_headers( $method = '', $params = array() ) {
 		$headers = array(
 			'Content-Type' => 'application/json',
 			'Accept'       => 'application/json',
-			'User-Agent'   => 'NV-oOS-MCP-App-Client/' . ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.8.0' ),
+			'User-Agent'   => 'NV-oOS-MCP-App-Client/' . ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.9.0' ),
 		);
 
-		// Add session header if we have one.
-		if ( ! empty( $this->session_id ) ) {
-			$headers['Mcp-Session-Id'] = $this->session_id;
+		// MCP 2026-07-28 routing headers (SEP-2243).
+		$headers['MCP-Protocol-Version'] = self::PROTOCOL_VERSION;
+
+		if ( ! empty( $method ) ) {
+			$headers['Mcp-Method'] = $method;
+
+			// Mcp-Name required for tools/call, resources/read, prompts/get.
+			if ( in_array( $method, array( 'tools/call', 'resources/read', 'prompts/get' ), true ) ) {
+				$headers['Mcp-Name'] = isset( $params['name'] ) ? $params['name'] : '';
+			}
 		}
 
 		// Add authentication.
@@ -568,16 +622,6 @@ class WP_MCP_AI_MCP_App_Client {
 	 */
 	public function get_oauth_client() {
 		return $this->oauth_client;
-	}
-
-	/**
-	 * Get the current session ID.
-	 *
-	 * @since 1.8.0
-	 * @return string
-	 */
-	public function get_session_id() {
-		return $this->session_id;
 	}
 
 	/**

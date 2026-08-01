@@ -129,7 +129,7 @@ class WP_MCP_AI_Tool_Text_To_Image_Prompt_Optimizer implements WP_MCP_AI_Tool_In
 		$user_prompt   = $this->build_user_prompt( $prompt, $style );
 
 		// Use OpenAI API to optimize the prompt.
-		$api_key = get_option( 'wp_mcp_ai_openai_api_key' );
+		$api_key = wp_mcp_ai_get_api_key( 'openai_api_key' );
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_credentials',

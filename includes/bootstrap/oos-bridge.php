@@ -426,7 +426,7 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	$tool_registry->notifyRegistered();
 
-	$sse   = new Nvoos\Core\Infrastructure\Streaming\SseHandler();
+	$sse   = new Nvoos\Core\Infrastructure\Streaming\SseHandler( new WP_MCP_AI_WordPress_Flush() );
 	$costs = new Nvoos\Core\Infrastructure\Cost\CostCalculator();
 
 	$orchestrator = new Nvoos\Core\Application\Chat\ChatOrchestrator(

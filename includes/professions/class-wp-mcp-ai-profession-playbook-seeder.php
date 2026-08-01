@@ -145,12 +145,13 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			if ( file_exists( WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
 			} else {
-				// Cannot proceed without CPT constants — log and skip.
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger.
-					error_log( 'WP_MCP_AI: CPT class file missing; cannot sync playbook for profession ' . $slug );
-				}
-				return;
+				// Cannot proceed without CPT constants — throw so callers can report the error.
+				throw new \RuntimeException(
+					sprintf(
+						'CPT class file missing; cannot sync playbook for profession "%s".',
+						$slug
+					)
+				);
 			}
 		}
 
@@ -161,8 +162,13 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$content = $loader->build_playbook( $profession->ID );
 
 		if ( empty( $content ) ) {
-			// No content to create attachment for.
-			return;
+			// No content to create attachment for — throw so bulk sync reports the failure.
+			throw new \RuntimeException(
+				sprintf(
+					'Playbook content is empty for profession "%s".',
+					$slug
+				)
+			);
 		}
 
 		// Calculate content hash.
@@ -173,12 +179,16 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 
 		if ( $existing_attachment ) {
 			if ( $force ) {
-				// Force regeneration - orphan the old attachment and create a new one.
-				// Remove from profession's memory files.
+				// Force regeneration — remove old attachment record from DB
+				// without deleting the physical file, since the new attachment
+				// will reuse the same deterministic file path.
 				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
 
-				// Remove the profession association meta, but keep the attachment in media library.
-				delete_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_profession_id' );
+				// Delete old attachment post (DB record only, not the file).
+				// Using $force_delete=false prevents the subsequent
+				// delete_orphaned_system_playbooks() cleanup from removing
+				// the file that the new attachment now owns.
+				wp_delete_attachment( $existing_attachment->ID, false );
 
 				// Fall through to create new attachment below.
 			} else {
@@ -192,12 +202,11 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 					return;
 				}
 
-				// Content changed - orphan the old attachment and create a new one.
-				// Remove from profession's memory files.
+				// Content changed — same pattern as force above.
 				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
 
-				// Remove the profession association meta, but keep the attachment in media library.
-				delete_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_profession_id' );
+				// Delete old attachment post (DB record only, not the file).
+				wp_delete_attachment( $existing_attachment->ID, false );
 
 				// Fall through to create new attachment below.
 			}
@@ -207,12 +216,15 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$attachment_id = self::create_playbook_attachment( $profession, $content, $content_hash );
 
 		if ( is_wp_error( $attachment_id ) ) {
-			// Log error but don't fail the entire seeding.
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger; records attachment creation failure during seeding.
-				error_log( 'WP_MCP_AI: Failed to create playbook attachment for profession ' . $slug . ': ' . $attachment_id->get_error_message() );
-			}
-			return;
+			// Throw so bulk sync reports the failure and does not count this
+			// profession as successfully synced.
+			throw new \RuntimeException(
+				sprintf(
+					'Failed to create playbook attachment for profession "%1$s": %2$s',
+					$slug,
+					$attachment_id->get_error_message()
+				)
+			);
 		}
 
 		// Update profession META_MEMORY_FILES and MIME types.
@@ -536,6 +548,13 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			require_once ABSPATH . 'wp-admin/includes/image.php';
 		}
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $target_file );
+
+		// Add filesize for text files (wp_generate_attachment_metadata
+		// only adds it for image/video/audio mime types).
+		if ( is_array( $attach_data ) ) {
+			$attach_data['filesize'] = $result; // Bytes written by file_put_contents.
+		}
+
 		wp_update_attachment_metadata( $attachment_id, $attach_data );
 
 		// Add playbook metadata.
@@ -622,21 +641,25 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	 * created by content changes or force regeneration.
 	 *
 	 * @param bool $force Force regeneration even if content hash matches.
-	 * @return array{synced: int, errors: string[]} Sync results, including
-	 *                                              per-profession error messages.
+	 * @return array{synced: int, total: int, errors: string[]} Sync results,
+	 *                                              including per-profession error
+	 *                                              messages and total profession
+	 *                                              count processed.
 	 */
 	public static function sync_all( $force = false ) {
-		// Load repository if not already loaded.
-		if ( ! class_exists( 'WP_MCP_AI_Profession_Repository' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-profession-repository.php';
-		}
-
 		// Load playbook loader if not already loaded.
 		if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Loader' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-playbook-loader.php';
 		}
 
-		$repository = new WP_MCP_AI_Profession_Repository();
+		// Ensure CPT class is available so POST_TYPE constant is defined
+		// before any queries that reference it.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			if ( file_exists( WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+			}
+		}
+
 		$loader     = new WP_MCP_AI_Profession_Playbook_Loader();
 
 		$batch_size  = 100;
@@ -644,18 +667,31 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$max_batches = 200; // Safety cap: max 20,000 professions per sync.
 		$errors      = array();
 		$synced      = 0;
+		$total       = 0;
 
 		for ( $batch = 0; $batch < $max_batches; $batch++ ) {
-			$professions = $repository->find_all(
+			// Use direct get_posts() to bypass the Repository's cached
+			// find_all() which can return stale empty results when a
+			// persistent object cache (Redis/Memcached) is in use.
+			$professions = get_posts(
 				array(
-					'posts_per_page' => $batch_size,
-					'offset'         => $offset,
+					'post_type'              => WP_MCP_AI_Profession_CPT::POST_TYPE,
+					'post_status'            => 'publish',
+					'posts_per_page'         => $batch_size,
+					'offset'                 => $offset,
+					'orderby'                => 'title',
+					'order'                  => 'ASC',
+					'no_found_rows'          => true,
+					'update_post_meta_cache' => false,
+					'suppress_filters'       => false,
 				)
 			);
 
 			if ( empty( $professions ) ) {
 				break;
 			}
+
+			$total += count( $professions );
 
 			// Prime post meta cache for the batch so build_playbook()
 			// and find_existing_playbook_attachment() don't incur
@@ -703,6 +739,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 
 		return array(
 			'synced' => $synced,
+			'total'  => $total,
 			'errors' => $errors,
 		);
 	}

@@ -68,7 +68,9 @@ $stats = array(
 // ── Determine geocoding provider ────────────────────────────
 function get_geocoding_provider( $preferred ) {
 	if ( 'google' === $preferred ) {
-		$key = get_option( 'wp_mcp_ai_google_maps_api_key', '' );
+		$key = function_exists( 'wp_mcp_ai_get_api_key' )
+			? wp_mcp_ai_get_api_key( 'google_maps_api_key', '' )
+			: get_option( 'wp_mcp_ai_google_maps_api_key', '' );
 		if ( empty( $key ) && class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
 			$key = WP_MCP_AI_Credential_Resolver::get_api_key( 'google_maps' ) ?? '';
 		}

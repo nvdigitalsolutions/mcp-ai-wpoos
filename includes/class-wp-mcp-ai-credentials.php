@@ -22,6 +22,31 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 		const INDEX_OPTION        = 'wp_mcp_ai_credential_index';
 
 		/**
+		 * Default credential lifetime in seconds (90 days).
+		 *
+		 * @since 1.2.0
+		 * @var int
+		 */
+		const DEFAULT_LIFETIME = 7776000; // 90 days.
+
+		/**
+		 * Calculate credential expiry from the admin setting.
+		 *
+		 * @since 1.2.0
+		 * @return string Expiry date in MySQL format, or empty string for no expiry.
+		 */
+		private static function calculate_expiry() {
+			$days = 90;
+			if ( function_exists( 'wp_mcp_ai_get_settings_repository' ) ) {
+				$days = absint( wp_mcp_ai_get_settings_repository()->get( 'credential_lifetime_days', 90 ) );
+			}
+			if ( $days <= 0 ) {
+				return '';
+			}
+			return gmdate( 'Y-m-d H:i:s', time() + ( $days * DAY_IN_SECONDS ) );
+		}
+
+		/**
 		 * Determine whether a token string matches the expected credential format.
 		 *
 		 * @param string $token Raw token string.
@@ -116,6 +141,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 				'created_by' => $user_id,
 				'revoked_at' => '',
 				'revoked_by' => 0,
+				'expires_at' => self::calculate_expiry(),
 			);
 
 			$credentials[] = $record;
@@ -283,6 +309,19 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 
 					if ( ! empty( $credential['revoked_at'] ) ) {
 						return new WP_Error( 'wp_mcp_ai_revoked_token', __( 'This credential has been revoked.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
+					}
+
+					// Check expiry (1.2.0). Credentials issued before this field
+					// existed will have no expires_at and are treated as non-expiring.
+					if ( ! empty( $credential['expires_at'] ) ) {
+						$expires_at = strtotime( $credential['expires_at'] );
+						if ( false !== $expires_at && time() > $expires_at ) {
+							return new WP_Error(
+								'wp_mcp_ai_expired_token',
+								__( 'This credential has expired. Please generate a new credential.', 'mcp-ai-wpoos' ),
+								array( 'status' => 401 )
+							);
+						}
 					}
 
 					if ( wp_check_password( $secret, $credential['hash'] ) ) {

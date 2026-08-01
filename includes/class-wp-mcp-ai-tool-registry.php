@@ -511,6 +511,29 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				return $validation_result;
 			}
 
+			// Defense-in-depth: centrally enforce the tool's declared capability.
+			// Individual tool execute() methods also check (and must continue to),
+			// but this gate prevents a future contributor from shipping a tool
+			// that forgets its capability check.
+			$required_cap = $tool->get_required_capability();
+			if ( ! empty( $required_cap ) ) {
+				$acting_user_id = isset( $context['user_id'] )
+					? absint( $context['user_id'] )
+					: get_current_user_id();
+
+				if ( ! user_can( $acting_user_id, $required_cap ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_forbidden',
+						sprintf(
+							/* translators: 1: tool slug, 2: required capability */
+							__( 'Tool "%1$s" requires the "%2$s" capability.', 'mcp-ai-wpoos' ),
+							$slug,
+							$required_cap
+						)
+					);
+				}
+			}
+
 			// Auto-async dispatch (Phase 2): if the tool implements the
 			// bulk-operation interface and the estimated workload exceeds
 			// `wp_mcp_ai_bulk_async_threshold`, queue the call via the async

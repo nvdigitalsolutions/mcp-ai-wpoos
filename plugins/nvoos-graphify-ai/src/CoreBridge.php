@@ -75,7 +75,15 @@ final class CoreBridge {
 		$this->tools     = new CoreToolRegistry( $this->events, $this->errors );
 
 		$costs = new CostCalculator();
-		$sse   = new SseHandler();
+		$sse   = class_exists( 'WP_MCP_AI_WordPress_Flush' )
+			? new SseHandler( new \WP_MCP_AI_WordPress_Flush() )
+			: new SseHandler( new class implements \Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface {
+				public function flushPlatformBuffers(): void {
+					if ( \function_exists( 'wp_ob_end_flush_all' ) ) {
+						\wp_ob_end_flush_all();
+					}
+				}
+			} );
 
 		$this->chat = new ChatOrchestrator(
 			$this->tools,

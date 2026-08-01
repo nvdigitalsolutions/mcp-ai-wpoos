@@ -272,7 +272,7 @@ class WP_MCP_AI_Page_Agent {
 		$default = array(
 			'model'    => 'gpt-4o-mini',
 			'base_url' => 'https://api.openai.com/v1',
-			'api_key'  => get_option( 'wp_mcp_ai_openai_api_key', '' ),
+			'api_key'  => wp_mcp_ai_get_api_key( 'openai_api_key', '' ),
 		);
 
 		// Try to resolve through the base plugin's model router.

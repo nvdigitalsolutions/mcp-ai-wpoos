@@ -567,7 +567,7 @@ class NV_oOS_Graphify_Semantic_Extractor {
 		// Direct OpenAI fallback.
 		$api_key = ! empty( $settings['openai_api_key'] )
 			? sanitize_text_field( $settings['openai_api_key'] )
-			: get_option( 'wp_mcp_ai_openai_api_key', '' );
+			: wp_mcp_ai_get_api_key( 'openai_api_key', '' );
 
 		if ( $api_key ) {
 			return self::call_openai_direct( $prompt, $api_key );

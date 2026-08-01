@@ -721,14 +721,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<ul style="margin: 10px 0; padding-left: 20px;">
 							<li><strong><?php esc_html_e( 'Total Playbook Attachments:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['total_attachments'] ); ?></li>
 							<li><strong><?php esc_html_e( 'Professions with Playbooks:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['professions_with_playbooks'] ); ?> / <?php echo absint( $total_count ); ?></li>
-							<?php if ( $playbook_stats['orphaned_attachments'] > 0 ) : ?>
-								<li><strong><?php esc_html_e( 'Orphaned Playbooks:', 'mcp-ai-wpoos' ); ?></strong>
-									<span style="color: #a00;"><?php echo absint( $playbook_stats['orphaned_attachments'] ); ?></span>
-									<span class="description" style="margin-left: 5px;">
-										<?php esc_html_e( '(old attachments no longer in use — use Delete button below to clean up)', 'mcp-ai-wpoos' ); ?>
-									</span>
-								</li>
-							<?php endif; ?>
 							<li><strong><?php esc_html_e( 'Playbooks Seeded:', 'mcp-ai-wpoos' ); ?></strong>
 								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $playbook_stats['seeded'] ? 'success' : 'warning' ); ?>">
 									<?php echo esc_html( $playbook_stats['seeded'] ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' ) ); ?>

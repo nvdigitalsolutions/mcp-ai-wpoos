@@ -51,6 +51,49 @@ class WP_MCP_AI_A2A_Client {
 	public static function discover_agent( $agent_url ) {
 		$agent_url = trailingslashit( esc_url_raw( $agent_url ) );
 
+		// Validate the host before making an outbound request.
+		// Block cloud metadata endpoints and private IPs unless the
+		// host is an approved federation peer.
+		$host = wp_parse_url( $agent_url, PHP_URL_HOST );
+		if ( ! $host ) {
+			return new WP_Error(
+				'a2a_invalid_url',
+				__( 'Invalid agent URL provided.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$blocked = array( '169.254.169.254', 'metadata.google.internal', '100.100.100.200' );
+		foreach ( $blocked as $b ) {
+			if ( false !== strpos( $host, $b ) ) {
+				return new WP_Error(
+					'a2a_blocked_host',
+					__( 'Connections to cloud metadata services are not allowed.', 'mcp-ai-wpoos' )
+				);
+			}
+		}
+
+		$ip = gethostbyname( $host );
+		if (
+			false === filter_var(
+				$ip,
+				FILTER_VALIDATE_IP,
+				FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+			)
+		) {
+			// Private IP detected. Only allow if host is an approved federation peer.
+			$approved = self::get_approved_peer_hosts();
+			if ( ! in_array( $host, $approved, true ) ) {
+				return new WP_Error(
+					'a2a_blocked_host',
+					sprintf(
+						/* translators: %s: hostname */
+						__( 'A2A agent discovery to %s is not allowed. Add the host to your federation peer list.', 'mcp-ai-wpoos' ),
+						esc_html( $host )
+					)
+				);
+			}
+		}
+
 		// Check cache first.
 		$cache_key = self::CARD_CACHE_PREFIX . md5( $agent_url );
 		$cached    = get_transient( $cache_key );
@@ -338,5 +381,32 @@ class WP_MCP_AI_A2A_Client {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Get the list of approved A2A peer hostnames from the federation settings.
+	 *
+	 * Used by discover_agent() to allow private-network A2A peers that
+	 * have been explicitly added to the federation peer list.
+	 *
+	 * @since 1.1.43
+	 *
+	 * @return string[] Array of approved peer hostnames.
+	 */
+	private static function get_approved_peer_hosts() {
+		$peers = get_option( 'wp_mcp_ai_federation_peers', array() );
+		if ( ! is_array( $peers ) ) {
+			return array();
+		}
+		$hosts = array();
+		foreach ( $peers as $peer ) {
+			if ( ! empty( $peer['url'] ) ) {
+				$h = wp_parse_url( $peer['url'], PHP_URL_HOST );
+				if ( $h ) {
+					$hosts[] = $h;
+				}
+			}
+		}
+		return array_unique( $hosts );
 	}
 }

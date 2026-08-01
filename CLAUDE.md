@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **July 16, 2026** · Version: **2.10**
+> Last reviewed: **July 29, 2026** · Version: **2.11**
 
 ### Related Files
 
@@ -52,6 +52,7 @@ includes/
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
 ├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,031+ tools total)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
+├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
 ├── tools/                              ← base tool implementations (~201 classes; live count is authoritative)
 │   ├── okf/                            ← OKF knowledge tools (6 tools)
 ├── services/                           ← 30+ service classes
@@ -63,6 +64,11 @@ includes/
 ├── okf/                                ← OKF engine (parser, reader, writer)
 ├── harness/                            ← LLM Harnessing subsystem (Layers A–H)
 └── interfaces/                         ← PHP interfaces
+lib/core/                               ← Framework-agnostic AI engine (nvoos/core, PHP 8.1+)
+├── src/Domain/Contract/                ← 32 domain interfaces (ports)
+├── src/Application/                    ← ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry
+├── src/Infrastructure/                 ← 12 AI provider clients, SSE handler, cost calculator
+└── src/Tool/                           ← 109 framework-agnostic tool classes
 addons/pro/
 ├── mcp-ai-wpoos-pro.php                ← Pro entry (auto-loaded, no WP plugin header)
 ├── includes/
@@ -335,6 +341,33 @@ Stay-on-target jailbreak prevention that runs before every AI provider request:
 - **Agent capability boundary** (`WP_MCP_AI_Agent_Capability_Boundary`) — enforces per-assistant guardrails at the framework level, before the prompt reaches the provider.
 - All guardrails are opt-in per assistant and configurable in the Orchestration → Guardrails admin tab.
 
+### Security Infrastructure (v1.1.42)
+
+Seven new security infrastructure classes in `includes/security/` that operate across the full option set:
+- **Request Guard** (`WP_MCP_AI_Request_Guard`) — SSE connection slot limits, JSON depth enforcement (configurable max), request body size enforcement (configurable cap), error verbosity filtering (Safe/Moderate/Debug tiers), asset version stripping (`?ver=` query string removal). Hooks into `rest_dispatch_request` (WP >= 6.5 signature: 5 params).
+- **Security Posture** (`WP_MCP_AI_Security_Posture`) — computes a weighted 0-100 security posture score from 21 signals (HTTPS, HSTS, root key, audit log, rate limiting, security headers, CORS restricted, error verbosity safe, auth brute-force protection, body size limited, 2FA consistency, IP-whitelist consistency, prompt-injection detector, PII filter, and more). Returns A-F grade + top-3 quick wins. Cached (5-min TTL). Filter: `wp_mcp_ai_security_posture_signals`.
+- **Destructive Ops Gate** (`WP_MCP_AI_Destructive_Ops_Gate`) — confirmation gate for bulk-delete, mass-email, and other irreversible operations. Credential token expiry enforcement.
+- **URL Guard** (`WP_MCP_AI_URL_Guard`) — validates and sanitizes URLs before outbound requests.
+- **Concurrency Guard** (`WP_MCP_AI_Concurrency_Guard`) — prevents overlapping destructive operations within the same session.
+- **Cost Tracker** (`WP_MCP_AI_Cost_Tracker`) — per-operation cost estimation and budget enforcement.
+- **API Key Store** (`WP_MCP_AI_Api_Key_Store`) — encrypted at-rest storage for third-party API keys with key rotation support.
+- **Site Health integration** — WordPress Site Health checks for cron configuration and security posture.
+- **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.
+
+Reference: `docs/operations/production-hardening-guide.md`, `docs/developer/api-key-encryption.md`.
+
+### Framework-Agnostic Core — lib/core (v1.1.42)
+
+Framework-agnostic AI orchestration engine extracted as `nvoos/core` (PHP 8.1+, MIT license, separate `composer.json`):
+- **Hexagonal Architecture** — Ports & Adapters pattern with 32 domain contracts (interfaces) in `lib/core/src/Domain/Contract/`, 21 WordPress adapters in bridge layer, plus Laravel and Craft CMS adapters.
+- **ChatOrchestrator** — framework-agnostic agentic loop with integrated RateLimiter and SemanticCompressor.
+- **ProviderRouter** — 12-provider routing with automatic fallback.
+- **ToolRegistry + SkillRegistry** — tool/skill registration decoupled from WordPress.
+- **109 tools migrated** to framework-agnostic format in `lib/core/src/Tool/`.
+- **5 chat parity gaps closed** — finish_reason handling, prompt caching, input sanitization, vision image processing, transcript store contracts.
+- **Streaming provider contracts** and voice/realtime provider abstractions.
+- **WordPress bridge** (`includes/bridge/`) — adapts nvoos/core contracts to WP primitives (wpdb, options, cron, REST, etc.).
+
 ### Meta-Harness Auto-Optimization System (v1.1.40)
 
 Self-improving agent infrastructure that observes, analyzes, and self-optimizes AI agent execution across 7 phases (`includes/harness/`):
@@ -448,6 +481,10 @@ test(scope): brief description
 | `docs/features/context-window-management.md` | Working on context-window validation / tiktoken / tool capping |
 | `docs/features/pro-toolkit-optimization.md` | Working on Pro toolkit optimization classes |
 | `docs/features/dietpi-pro-toolkit.md` | Working on DietPi server management tools |
+| `docs/operations/production-hardening-guide.md` | Working on production security hardening (WAF, OAuth, DICOM) |
+| `docs/developer/api-key-encryption.md` | Working on API key storage/encryption |
+| `docs/developer/dicom-phi-handling.md` | Working on DICOM/healthcare PHI handling |
+| `docs/reference/admin/security-settings.md` | Working on security admin settings |
 
 ## OpenAI Schema Compatibility
 
@@ -571,6 +608,7 @@ Full agent inventory: [`AGENTS.md`](AGENTS.md)
 | Paths mangled on Git Bash (`C:/Program Files/Git/...`) | MSYS path conversion | Use `bash bin/run-tests-docker.sh` (auto-handles it) |
 | Pro tools missing at runtime | `WP_MCP_AI_BASE_VERSION` is `true` | Set to `false` or remove the constant |
 | Context window too large | Loading all `.context/` files | Load only the subsystem files you need (GSD 30% rule) |
+| Fatal error in `rest_dispatch_request` | `wrap_dispatch` param order mismatch with WP >= 6.5 | WP 6.5+ filter passes 5 params: `($result, $wp_rest_server, $request, $route, $handler)`. Ensure handler matches. See `includes/security/class-wp-mcp-ai-request-guard.php` for canonical pattern. |
 
 ### Useful debug commands
 

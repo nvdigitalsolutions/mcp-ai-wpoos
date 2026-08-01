@@ -60,11 +60,30 @@ When deploying NV oOS:
 
 1. Keep WordPress and PHP updated to the latest supported versions
 2. Use HTTPS for all API communications
-3. Store API keys securely using WordPress options (encrypted at rest)
+3. Store API keys securely using WordPress options (encrypted at rest since 1.2.0 — see [`docs/developer/api-key-encryption.md`](docs/developer/api-key-encryption.md))
 4. Restrict admin access to trusted users
 5. Regularly review assistant configurations and tool permissions
 6. Enable rate limiting for public-facing chat endpoints
 7. Monitor the plugin's activity logs for unusual behavior
+
+### Production Hardening
+
+See the complete [Production Hardening Guide](docs/operations/production-hardening-guide.md) for a step-by-step checklist covering:
+- Recommended security settings for production
+- WAF and server-level hardening
+- OAuth and authentication lockdown
+- DICOM/healthcare deployment requirements
+- Regular maintenance tasks
+
+### Security Documentation Index
+
+| Document | Audience |
+|----------|----------|
+| [Production Hardening Guide](docs/operations/production-hardening-guide.md) | Site admins, DevOps |
+| [API Key Encryption](docs/developer/api-key-encryption.md) | Developers |
+| [DICOM PHI Handling](docs/developer/dicom-phi-handling.md) | Healthcare deployments |
+| [Security Settings Reference](docs/reference/admin/security-settings.md) | Admins, developers |
+| [Security Audit Report](SECURITY_AUDIT_REPORT.md) | Security auditors |
 
 ## Destructive Operations and Resource Consumption
 
@@ -95,4 +114,4 @@ We appreciate the security research community's efforts in helping keep NV oOS s
 ---
 
 *This security policy is maintained by NV Digital Solutions.*  
-*Last updated: April 2026*
+*Last updated: July 2026*

@@ -1,13 +1,14 @@
 <?php
-/**
- * Tool: okf_browse — Browse an OKF bundle directory.
- *
- * @package WP_MCP_AI
- * @since   2.1.0
- * @author  NV Digital Solutions
- * @copyright Copyright (c) 2026 NV Digital Solutions
- * @license  GPL-3.0-or-later
- */
+	/**
+	 * Tool: okf_browse — Browse an OKF bundle directory.
+	 *
+	 * @package WP_MCP_AI
+	 * @since   2.1.0
+	 * @since   2.5.0 — Surfaces OKF v0.2 trust-signal fields for each concept.
+	 * @author  NV Digital Solutions
+	 * @copyright Copyright (c) 2026 NV Digital Solutions
+	 * @license  GPL-3.0-or-later
+	 */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -37,7 +38,7 @@ class WP_MCP_AI_Tool_OKF_Browse implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Browses an OKF bundle directory via its index.md, listing available concepts and subdirectories. Use this to discover what knowledge is available before reading specific concepts.', 'mcp-ai-wpoos' );
+		return __( 'Browses an OKF bundle (v0.2) directory via its index.md, listing available concepts and subdirectories with trust-signal summaries (type, status, trust tier). Use this to discover what knowledge is available before reading specific concepts.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -101,11 +102,26 @@ class WP_MCP_AI_Tool_OKF_Browse implements WP_MCP_AI_Tool_Interface {
 
 		$escaped_entries = array();
 		foreach ( $entries as $entry ) {
-			$escaped_entries[] = array(
+			$item = array(
 				'title'       => esc_html( $entry['title'] ),
 				'path'        => esc_html( $entry['path'] ),
 				'description' => esc_html( $entry['description'] ),
 			);
+
+			// Enrich with OKF v0.2 trust signals when available.
+			if ( ! empty( $entry['path'] ) && '/' !== substr( $entry['path'], -1 ) ) {
+				$concept_id = preg_replace( '/\.md$/', '', $entry['path'] );
+				$concept    = $reader->get_concept( $concept_id );
+				if ( ! is_wp_error( $concept ) ) {
+					$fm                 = $concept['frontmatter'];
+					$item['type']       = isset( $fm['type'] ) ? esc_html( $fm['type'] ) : '';
+					$item['status']     = isset( $fm['status'] ) ? esc_html( $fm['status'] ) : 'stable';
+					$item['trust_tier'] = esc_html( $reader->get_trust_tier( $fm ) );
+					$item['stale']      = $reader->is_stale( $fm );
+				}
+			}
+
+			$escaped_entries[] = $item;
 		}
 
 		return $this->format_success_response(

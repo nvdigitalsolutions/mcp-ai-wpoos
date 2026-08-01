@@ -315,6 +315,31 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, $discovery_interval, 'wp_mcp_ai_model_catalog_discovery' );
 		}
 
+		// Schedule service status health check cron (every 5 minutes).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_health_check_cron' ) ) {
+			wp_schedule_event( time(), 'five_minutes', 'wp_mcp_ai_health_check_cron' );
+		}
+
+		// Schedule uptime history rollup cron (hourly).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_uptime_rollup_cron' ) ) {
+			wp_schedule_event( time(), 'hourly', 'wp_mcp_ai_uptime_rollup_cron' );
+		}
+
+		// Schedule status history cleanup cron (daily).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_status_history_cleanup' ) ) {
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_status_history_cleanup' );
+		}
+
+		// Schedule maintenance monitor cron (runs every 5 minutes).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_maintenance_monitor_cron' ) ) {
+			wp_schedule_event( time(), 'five_minutes', 'wp_mcp_ai_maintenance_monitor_cron' );
+		}
+
+		// Schedule maintenance reminder cron (runs every 5 minutes).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_maintenance_reminder_cron' ) ) {
+			wp_schedule_event( time(), 'five_minutes', 'wp_mcp_ai_maintenance_reminder_cron' );
+		}
+
 		// Install default multi-agent orchestration system on first activation.
 		// This is deferred to init hook to ensure assistant CPT is registered.
 		// Uses transient to trigger installation on next page load.
@@ -371,6 +396,11 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		}
 		if ( class_exists( 'WP_MCP_AI_Metric_Retention' ) ) {
 			WP_MCP_AI_Metric_Retention::schedule();
+		}
+
+		// Create security audit log table and schedule the daily purge cron.
+		if ( class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
+			WP_MCP_AI_Security_Audit_Logger::on_activation();
 		}
 
 		// Create queue infrastructure tables (v1.1.37 — migration from wp_options).
@@ -447,6 +477,35 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 			wp_unschedule_event( $timestamp, 'wp_mcp_ai_model_catalog_discovery' );
 		}
 
+		// Unschedule service status cron jobs.
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_health_check_cron' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_health_check_cron' );
+		}
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_uptime_rollup_cron' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_uptime_rollup_cron' );
+		}
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_status_history_cleanup' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_status_history_cleanup' );
+		}
+
+		// Unschedule maintenance cron jobs.
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_maintenance_monitor_cron' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_maintenance_monitor_cron' );
+		}
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_maintenance_reminder_cron' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_maintenance_reminder_cron' );
+		}
+
+		// Clear the security audit log purge cron.
+		if ( class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
+			WP_MCP_AI_Security_Audit_Logger::on_deactivation();
+		}
+
 		// Unschedule the measurement retention cron. Table + data are
 		// left in place — uninstall is where destructive cleanup lives.
 		if ( class_exists( 'WP_MCP_AI_Metric_Retention' ) ) {
@@ -466,6 +525,11 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 		 * that lack a dedicated cleanup path.
 		 */
 		$cleanup_hooks = array(
+			'wp_mcp_ai_health_check_cron',
+			'wp_mcp_ai_uptime_rollup_cron',
+			'wp_mcp_ai_status_history_cleanup',
+			'wp_mcp_ai_maintenance_monitor_cron',
+			'wp_mcp_ai_maintenance_reminder_cron',
 			'wp_mcp_ai_check_license',
 			'wp_mcp_ai_audit_trail_prune',
 			'wp_mcp_ai_approval_cleanup',
@@ -562,6 +626,9 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 			'mcp_ai_profession',
 			'mcp_ai_team',
 			'mcp_ai_audit',
+			'mcp_ai_service',
+			'mcp_ai_maintenance',
+			'mcp_ai_incident',
 		);
 
 		foreach ( $post_types as $post_type ) {
@@ -636,6 +703,11 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 		 * wp_clear_scheduled_hook() removes all events for a given hook.
 		 */
 		$cron_hooks = array(
+			'wp_mcp_ai_health_check_cron',
+			'wp_mcp_ai_uptime_rollup_cron',
+			'wp_mcp_ai_status_history_cleanup',
+			'wp_mcp_ai_maintenance_monitor_cron',
+			'wp_mcp_ai_maintenance_reminder_cron',
 			'wp_mcp_ai_cleanup_gemini_files',
 			'wp_mcp_ai_cleanup_openai_files',
 			'wp_mcp_ai_cleanup_temp_files',

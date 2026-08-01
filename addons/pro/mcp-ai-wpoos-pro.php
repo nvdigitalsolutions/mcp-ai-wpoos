@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.25' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.1.26' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -244,6 +244,34 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $agent_command_center;
 			// Note: Class instantiates itself at the bottom of the file.
 		}
+
+		// Load Pro Status Dashboard page.
+		$status_dashboard = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-status-dashboard-page.php';
+		if ( file_exists( $status_dashboard ) ) {
+			require_once $status_dashboard;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
+
+		// Load Pro Status AJAX handlers.
+		$status_ajax = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-status-ajax.php';
+		if ( file_exists( $status_ajax ) ) {
+			require_once $status_ajax;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
+
+		// Load Pro Maintenance admin page.
+		$maintenance_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-maintenance-page.php';
+		if ( file_exists( $maintenance_page ) ) {
+			require_once $maintenance_page;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
+
+		// Load Pro Incidents admin page.
+		$incidents_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-incidents-page.php';
+		if ( file_exists( $incidents_page ) ) {
+			require_once $incidents_page;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
 	}
 }
 
@@ -329,8 +357,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		}
 
 		// Load Pro addon vendor autoload (for phpspreadsheet and other PHP 8.1+ dependencies).
-		// This is conditional and only loads when PHP 8.1+ is available.
-		// PHP 7.4 users will see graceful degradation in tools that require these dependencies.
 		if ( version_compare( PHP_VERSION, '8.1.0', '>=' ) ) {
 			$pro_vendor_autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
 			if ( file_exists( $pro_vendor_autoload ) ) {
@@ -339,532 +365,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		}
 
 		// Register text domain loading on init hook.
-		// This ensures translations are loaded at the correct time for WordPress 6.7+.
 		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
 
-		// Load NPM integration filter handlers.
-		// This enables Node.js microservice integration for Prettier, MJML, and fluent-ffmpeg.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/npm-integration-filters.php';
-
-		// Load CDN loader for optimized asset delivery.
-		// Reduces plugin size by loading popular libraries from CDN with automatic fallback.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cdn-loader.php';
-
-		// Embedded LLM client has been moved to the standalone NV oOS Embedded addon.
-		// The base plugin's language model router uses the wp_mcp_ai_embedded_chat_completion
-		// filter which the Embedded addon hooks into.
-
-		// Load CPT meta schema registry — exposes custom meta field definitions for all
-		// pro-managed CPTs via the wp_mcp_ai_post_type_meta_schema filter so the
-		// base get_post_type_schema tool can return complete field information.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cpt-meta-schema.php';
-		WP_MCP_AI_Pro_CPT_Meta_Schema::init();
-
-		// Register Privacy API exporters/erasers for Pro health & imaging CPT data (F-PRIV-01).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-privacy.php';
-		WP_MCP_AI_Pro_Privacy::init();
-
-		// Load utility classes for enhanced features (Phase 2 enhancements - Jan 2026).
-		// Product Type Helper: Handles all WooCommerce product types (simple, variable, grouped, external, subscription, bundle, etc.).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-type-helper.php';
-		// Remote Connection Manager: Enables REST API connections to remote WordPress/WooCommerce sites.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-remote-connection.php';
-		// ERP Connector: Provides interface for ERP integrations (EZuite ERP, custom ERPs).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/interface-wp-mcp-ai-erp-connector.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-erp-ezuite.php';
-
-		// Load Pro tool interfaces (extend Core interfaces).
-		// Pro tools can implement additional interfaces for advanced features.
-
-		// Get settings for conditional loading.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-
-		// Load the core Schedule Manager class on every request (including WP cron)
-		// so its init() method registers the central dispatcher hook and custom cron
-		// intervals. Without this, wp-cron.php silently drops scheduled events because
-		// add_action( 'wp_mcp_ai_pro_schedule_exec', ... ) is never registered.
-		$schedule_manager_core = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
-		if ( file_exists( $schedule_manager_core ) ) {
-			require_once $schedule_manager_core;
-		}
-
-		// Load the Result Delivery Service alongside the Schedule Manager so that
-		// result delivery (email, chat, SMS, Paper Store, WordPress post, webhook)
-		// is available for all schedule types on both success and failure.
-		$delivery_service = WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-result-delivery-service.php';
-		if ( file_exists( $delivery_service ) ) {
-			require_once $delivery_service;
-		}
-
-		// Load Per-Toolkit MCP Server framework early so WP_MCP_AI_Toolkit_Server_Registry
-		// is defined before the admin block below checks class_exists() to register the
-		// Phase 7 admin page.  The framework lies dormant until a toolkit registers a
-		// server, so loading it here has no side-effects on non-admin requests.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-servers/mcp-servers-init.php';
-
-		// Load Pro admin sections.
-		// Performance section is only loaded in admin context.
-		if ( is_admin() ) {
-			wp_mcp_ai_pro_load_admin_sections();
-
-			// Load Remote Sites admin interface.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php';
-
-			// Load Remote Connections metabox for assistants.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-remote-connections.php';
-
-			// Load Toolkit MCP Servers metabox for assistants (Phase 5).
-			if ( class_exists( 'WP_MCP_AI_Toolkit_Server_Registry' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-toolkit-mcp-servers.php';
-				new WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers();
-
-				// Phase 7 — dedicated admin page for Toolkit MCP Server management.
-						require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-toolkit-mcp-servers-page.php';
-						new WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page();
-			}
-
-					// Unified Blueprints Browser — browse and install curated assistants from all toolkits.
-					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-unified-blueprints-page.php';
-					WP_MCP_AI_Unified_Blueprints_Page::init();
-
-			// WebLLM settings page has been moved to the NV oOS Embedded addon.
-
-			// Embedded Model AJAX handlers have been moved to the NV oOS Embedded addon.
-
-			// Load AI CPT Management Integration if enabled.
-			if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-cpt-ai-integration.php';
-				WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
-
-				// Load Research & Add pages for Posts and Pages.
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-post-research-page.php';
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-page-research-page.php';
-
-				// Load Settings pages for Posts and Pages.
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-post-settings-page.php';
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-page-settings-page.php';
-			}
-		}
-
-		// Load Pro SPA (v1.7.0) — React Single Page Application admin interface.
-		// Registers admin page, enqueues assets, and exposes bootstrap REST endpoint.
-
-		// Bootstrap REST route must be registered on every request — REST_REQUEST
-		// is not defined yet when plugins_loaded fires, so the is_admin() gate
-		// would skip it for REST API calls, causing "No route was found" 404s.
-		$spa_bootstrap = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-spa-bootstrap-controller.php';
-		if ( file_exists( $spa_bootstrap ) ) {
-			require_once $spa_bootstrap;
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_SPA_Bootstrap_Controller', 'register_routes' ) );
-		}
-
-		// Tool Shortcuts and Slash Commands REST routes must also be registered
-		// on every request — same reason as the bootstrap controller above.
-		$tool_shortcuts_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-rest-tool-shortcuts.php';
-		if ( file_exists( $tool_shortcuts_rest ) ) {
-			require_once $tool_shortcuts_rest;
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_REST_Tool_Shortcuts', 'register_routes' ) );
-		}
-
-		$slash_commands_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-rest-slash-commands.php';
-		if ( file_exists( $slash_commands_rest ) ) {
-			require_once $slash_commands_rest;
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_REST_Slash_Commands', 'register_routes' ) );
-		}
-
-		// SPA loader (menu page + asset enqueue) is admin-only.
-		if ( is_admin() ) {
-			$spa_loader = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-spa-loader.php';
-			if ( file_exists( $spa_loader ) ) {
-				require_once $spa_loader;
-				$loader = new WP_MCP_AI_Pro_SPA_Loader();
-				$loader->register();
-			}
-		}
-
-		// Load Pro Inline Assistant (v1.7.0) — Gutenberg sidebar for AI text transformation.
-		$inline_assistant = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-inline-assistant.php';
-		if ( file_exists( $inline_assistant ) ) {
-			require_once $inline_assistant;
-			WP_MCP_AI_Pro_Inline_Assistant::init();
-		}
-
-		// Load Pro Parallel Model Dispatcher (v1.7.0) — multi-model comparison.
-		$parallel_dispatcher   = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-parallel-model-dispatcher.php';
-		$comparison_controller = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-model-comparison-controller.php';
-		if ( file_exists( $parallel_dispatcher ) ) {
-			require_once $parallel_dispatcher;
-		}
-		if ( file_exists( $comparison_controller ) ) {
-			require_once $comparison_controller;
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_Model_Comparison_Controller', 'register_routes' ) );
-		}
-
-		// Load Pro Collaborative Presence (v1.7.0) — real-time user presence for collaborative editing.
-		$collaborative_presence = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-collaborative-presence.php';
-		if ( file_exists( $collaborative_presence ) ) {
-			require_once $collaborative_presence;
-			WP_MCP_AI_Pro_Collaborative_Presence::init();
-		}
-
-		// WebChat integration has been moved to the NV oOS Embedded addon.
-		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
-
-		// JetEngine meta helper — lightweight utility that CPT toolkits call
-		// to register their meta fields in JetEngine's internal registry so
-		// they become discoverable in the Listing Builder, Dynamic Field
-		// selector, and Query Builder.  Each toolkit's init.php adds its
-		// own CPTs behind a function_exists( 'jet_engine' ) guard.
-		// MUST be loaded BEFORE any toolkit init.php that calls it.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-meta-helper.php';
-
-		// Load Media Toolkit if enabled (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/media/init.php';
-
-		// Load Content Format Templates for AI-generated blog posts.
-		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-content-format-template-cpt.php' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-content-format-template-cpt.php';
-			WP_MCP_AI_Content_Format_Template_CPT::init();
-			WP_MCP_AI_Content_Format_Template_CPT::seed_defaults();
-		}
-
-		// Load Content Template Engine (prompt builder).
-		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-content-template-engine.php' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-content-template-engine.php';
-		}
-
-		// Load MCP Apps subsystem (remote MCP server connections per assistant).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/mcp-apps-init.php';
-
-		// Load Product Research & Add page if WooCommerce tools enabled.
-		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) && is_admin() ) {
-			// Check if not in base version and WooCommerce is active.
-			$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-			if ( ! $is_base && class_exists( 'WooCommerce' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-research-page.php';
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-settings-page.php';
-			}
-		}
-
-		// Load Project Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/init.php';
-
-		// Load Ralph Orchestration CCT schemas (Pro feature).
-		if ( function_exists( 'jet_engine' ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-autonomous-sessions-cct.php';
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-plans-cct.php';
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-execution-history-cct.php';
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
-		}
-
-		// NOTE: Orchestration Dashboard moved to base plugin (includes/admin/class-wp-mcp-ai-orchestration-dashboard.php)
-		// It's accessible at NV oOS → Orchestration for all users.
-
-		// Load Pro Orchestration Dashboard (real-time monitoring with SSE).
-		if ( is_admin() ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-dashboard.php';
-			new WP_MCP_AI_Orchestration_Dashboard();
-		}
-
-		// Load Places Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/places/init.php';
-
-		// Load ECA Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/eca-management/init.php';
-
-		// Load Pro Schedule Result REST controller (Scheduled Result widget/block backend).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-schedule-result-controller.php';
-
-		// Load Pro Schedule REST CRUD controller (Schedule Anything SPA backend).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-schedule-rest-controller.php';
-		WP_MCP_AI_Pro_Schedule_REST_Controller::init();
-
-		// Load Quiz Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php';
-
-		// Load Healthcare Toolkit (unified umbrella for Medical Vitals,
-		// Health & Wellness, and Healthcare Imaging).  The unified
-		// bootstrap eagerly loads shared infrastructure (engine, codes,
-		// FHIR builders, audit ledger, capability map) and conditionally
-		// loads each sub-toolkit based on its `enable_*` setting.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/init.php';
-
-		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/calendar-booking/init.php';
-
-		// --- Booking Adapters (v1.5.0) — interface + factory always loaded; concrete adapters conditionally ---
-		$adapters_dir = WP_MCP_AI_PRO_PATH . 'includes/adapters/';
-		require_once $adapters_dir . 'interface-wp-mcp-ai-booking-adapter.php';
-		require_once $adapters_dir . 'class-wp-mcp-ai-booking-adapter-factory.php';
-
-		// JetAppointment adapter: only load if JetEngine is present.
-		if ( function_exists( 'jet_engine' ) ) {
-			require_once $adapters_dir . 'class-wp-mcp-ai-jetappointment-adapter.php';
-		}
-
-		// JetBooking adapter: only load if Jet_Booking class exists.
-		if ( class_exists( 'Jet_Booking' ) ) {
-			require_once $adapters_dir . 'class-wp-mcp-ai-jetbooking-adapter.php';
-		}
-
-		// ========================================================================
-		// NEW PRO TOOLKITS (Phase 1 - Foundation)
-		// ========================================================================
-
-		// Load E-commerce Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_ecommerce_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/init.php';
-		}
-
-		// Load FlowHub Toolkit if enabled (Pro feature — FlowHub POS inventory sync).
-		if ( ! empty( $settings['enable_flowhub_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/flowhub/init.php';
-		}
-
-		// Load EZuite Inventory Sync Toolkit if enabled (Pro feature — EZuite ERP inventory sync).
-		if ( ! empty( $settings['enable_ezuite_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/erp-ezuite/init.php';
-		}
-
-		// Load Shopify Sync Toolkit if enabled (Pro feature — Shopify↔WooCommerce inventory sync).
-		if ( ! empty( $settings['enable_shopify_sync_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/shopify-sync/init.php';
-		}
-
-		// Load Social Media Management Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_social_media_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/init.php';
-		}
-
-		// Load Advanced Analytics Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_analytics_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/init.php';
-		}
-
-		// Load Multi-language Content Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_multilingual_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/init.php';
-		}
-
-		// Load Video Production Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_video_production_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/init.php';
-		}
-
-		// Load Cloudways Pro Toolkit if enabled (Pro feature — server/application management).
-		if ( ! empty( $settings['enable_cloudways_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/cloudways/init.php';
-		}
-
-		// Load Financial Planner Toolkit if enabled (Pro feature - Phase 2.5).
-		if ( ! empty( $settings['enable_financial_planner_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/init.php';
-		}
-
-		// Load DJ Management Toolkit if enabled (Pro feature - Phase 2.7).
-		if ( ! empty( $settings['enable_dj_management_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/dj-management/init.php';
-		}
-
-		// Load Image Production Toolkit if enabled (Pro feature - Phase 2.8).
-		if ( ! empty( $settings['enable_image_production_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/init.php';
-		}
-
-		// Load Comic Creation Toolkit if enabled (Pro feature - Phase 2.11).
-		if ( ! empty( $settings['enable_comic_creation_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/comic-creation/init.php';
-		}
-
-		// Load AI Tool Builder Toolkit if enabled (Pro feature - Phase 2.9).
-		if ( ! empty( $settings['enable_ai_tool_builder_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/ai-tool-builder/init.php';
-		}
-
-		// Load Architect Agent Toolkit if enabled (Pro feature).
-		// Self-editing capabilities with GitHub Copilot CLI parity.
-		if ( ! empty( $settings['enable_architect_agent_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/architect-agent/init.php';
-		}
-
-		// Load Architectural Design Toolkit if enabled (Pro feature - Phase 2.10).
-		if ( ! empty( $settings['enable_architectural_design_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/architectural-design/init.php';
-		}
-
-		// Load Site Creator Toolkit if enabled (Pro feature).
-		// Advanced site creation with page/section/widget builders and Architect Agent integration.
-		if ( ! empty( $settings['enable_site_creator_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/site-creator-toolkit/init.php';
-		}
-
-		// Load Password Vault Manager (Pro feature - Phase 2.11).
-		// Always enabled - provides secure password storage with AES-256-GCM encryption.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/vault/init.php';
-
-		// Load Pro Skill Manager (always enabled - provides skill upload, install, and editor UI).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/skills-manager-init.php';
-
-		// Load Pro Harness Layer H — fine-tune curriculum exporter (always enabled when harness subsystem is active).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/harness-init.php';
-
-		// Load Pro Phase 6 — Vector-store adapter + per-team budgets (always enabled).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/services/services-init-phase6.php';
-
-		// Note: mcp-servers-init.php is loaded earlier in this file, before the
-		// admin block, so that WP_MCP_AI_Toolkit_Server_Registry is available when
-		// the admin page registration guard (class_exists) runs.
-
-		// Load NV oOS Cloud — hosted "Managed Tokens" service via Cloudflare AI Gateway → OpenRouter.
-		// Pro-only: paid third-party billing (Stripe merchant of record).
-		$wp_mcp_ai_nv_cloud_init = WP_MCP_AI_PRO_PATH . 'includes/nv-cloud-init.php';
-		if ( file_exists( $wp_mcp_ai_nv_cloud_init ) ) {
-			require_once $wp_mcp_ai_nv_cloud_init;
-		} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'WP MCP AI Pro: nv-cloud-init.php not found — NV oOS Cloud features will be unavailable. Path: ' . $wp_mcp_ai_nv_cloud_init );
-		}
-
-		// Load Pro Paper Store (Phase 3) — Markdown+YAML driver, Git sync, admin UI, import/export.
-		// Always enabled when Pro is active and base Paper Store is loaded.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/paper-store/paper-store-pro-init.php';
-
-		// Load Pro Workflow Builder ↔ Base Orchestration bridge (always enabled when Pro is active).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-workflow-bridge.php';
-		add_action( 'init', array( 'WP_MCP_AI_Pro_Workflow_Bridge', 'get_instance' ), 27 );
-
-		// Load Pro async-continuation multi-channel notifier (always enabled when Pro is active).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-pro-chat-continuation-notifier.php';
-		WP_MCP_AI_Pro_Chat_Continuation_Notifier::init();
-
-		// Load Document Generation Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/init.php';
-		}
-
-		// Load CRM Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_crm_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/crm/init.php';
-		}
-
-		// Load Regulatory Registration Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/init.php';
-		}
-
-		// Load CRE Debt & Securitization Toolkit if enabled (Pro feature).
-		// Provides CPTs (Loans, Properties), portfolio dashboard, and research pages.
-		if ( ! empty( $settings['enable_cre_debt_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/init.php';
-		}
-
-		// Load Law Firm Toolkit if enabled (Pro feature).
-		// Provides CPTs (Matters, Clients, Documents, Time Entries, Trust Txns),
-		// firm dashboard, and research pages.
-		if ( ! empty( $settings['enable_law_firm_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/init.php';
-		}
-
-		// Load Chat Channels Integration Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/init.php';
-
-			// Load shared Webhook Context Manager (BME-aware history trimming) used by
-			// all webhook reply job handlers. Must load before any individual controller.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webhook-context-manager.php';
-
-			// Load WhatsApp Webhook Controller for real-time message handling.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
-
-			// Load Messenger Webhook Controller for Meta Messenger Platform events.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php';
-
-			// Load Telegram Webhook Controller for Telegram Bot API events.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
-
-			// Load Telegram Login Controller for Web Login widget callback and shortcode.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-login-controller.php';
-
-			// Load Telegram Mini App Controller for BotFather Web App URL endpoint.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php';
-
-			// Load Slack Event Controller for Slack Events API payloads.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-slack-event-controller.php';
-
-			// Load Discord Interaction Controller for Discord Interactions Endpoint.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-discord-interaction-controller.php';
-
-			// Load Teams Webhook Controller for Microsoft Teams outgoing webhooks.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php';
-
-			// Load Google Chat Webhook Controller for Google Chat bot events.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
-
-			// Load Outlook Webhook Controller for Microsoft 365 / Exchange Online email events.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php';
-
-			// Load Twitter Webhook Controller for Twitter/X DM webhook events.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php';
-
-			// Load Apple Messages Webhook Controller for iMessage Business Chat events.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php';
-
-			// Load iCloud Webhook Controller for iCloud Drive file change events.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php';
-		}
-
-		// Load DietPi Pro Toolkit if enabled (Pro feature — Raspberry Pi / DietPi server and media app management).
-		if ( ! empty( $settings['enable_dietpi_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/dietpi-toolkit-init.php';
-		}
-
-		// Load Extended Cognition Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/init.php';
-
-			// Load Product Brand Taxonomy for vision recognition (1.8.0).
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-brand-taxonomy.php';
-			WP_MCP_AI_Product_Brand_Taxonomy::init();
-
-			// Load HF Vision Inference Service (1.8.0).
-			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-hf-vision-inference-service.php';
-
-			// Load Action Scheduler callbacks for video analysis (1.8.0).
-							require_once WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/as-callbacks.php';
-							add_action( 'init', 'wp_mcp_ai_ext_cog_register_as_hooks', 30 );
-		}
-
-		// ========================================================================
-		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
-		// ========================================================================
-		// Initialize toolkit shortcodes, Elementor widgets, and Gutenberg blocks.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-toolkit-integration.php';
-		WP_MCP_AI_Pro_Toolkit_Integration::get_instance();
-
-		// ========================================================================
-		// PHASE 6B: PRO MEASUREMENT TOOLKIT
-		// ========================================================================
-		// Register Pro-only verifiers, budget envelopes, and reward wrappers
-		// on the base measurement registries. Loaded here so the base
-		// measurement bootstrap (which fires the registration hooks) is
-		// already in place.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-verifier.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-presets.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-budget-guarded-reward.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-schedule-metrics.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-schedule-otel-subscriber.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-measurement-bootstrap.php';
-		WP_MCP_AI_Pro_Measurement_Bootstrap::boot();
-
-		// ========================================================================
-		// PHASE 6C: PARA + QMS METHODOLOGY SUBSYSTEMS
-		// ========================================================================
-		// PARA (Projects/Areas/Resources/Archives) for the Project Management toolkit
-		// and QMS (ISO 9001:2015 Clause 7.5 Documented Information) for the Document
-		// Generation toolkit. Both are opt-in via feature flags
-		// (`enable_para_organization`, `enable_qms_compliance`) and are no-ops when
-		// their respective toolkits are disabled.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/para/class-wp-mcp-ai-para-init.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/qms/class-wp-mcp-ai-qms-init.php';
+		// Delegate all Pro subsystem loading to the module registry.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-module-registry.php';
+		WP_MCP_AI_Pro_Module_Registry::get_instance()->boot();
 
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
@@ -962,14 +467,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// This includes: create/update/get task plan, manage sessions, detect completion, check exit conditions,
 			// analyze loop health, get session status, calculate capacity (Little's Law).
 			// Research Enhancement tools (Ralph pattern - Phase 2 - Pro only).
-							'WP_MCP_AI_Pro_Tool_Aggregate_Research_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-aggregate-research-data.php',
-							'WP_MCP_AI_Pro_Tool_Extract_Structured_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-extract-structured-data.php',
-							'WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-convert-html-to-markdown.php',
-							'WP_MCP_AI_Pro_Tool_Generate_Research_Report'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-generate-research-report.php',
-							'WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns'     => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-analyze-data-patterns.php',
-							'WP_MCP_AI_Pro_Tool_Verify_Information'        => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-verify-information.php',
-							// Research → Paper Store pipeline (Phase 3 - Post creation).
-							'WP_MCP_AI_Pro_Tool_Create_Post_From_Research' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-post-from-research.php',
+							'WP_MCP_AI_Pro_Tool_Aggregate_Research_Data' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-aggregate-research-data.php',
+			'WP_MCP_AI_Pro_Tool_Extract_Structured_Data'   => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-extract-structured-data.php',
+			'WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-convert-html-to-markdown.php',
+			'WP_MCP_AI_Pro_Tool_Generate_Research_Report'  => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-generate-research-report.php',
+			'WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns'     => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-analyze-data-patterns.php',
+			'WP_MCP_AI_Pro_Tool_Verify_Information'        => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-verify-information.php',
+			// Research → Paper Store pipeline (Phase 3 - Post creation).
+			'WP_MCP_AI_Pro_Tool_Create_Post_From_Research' => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-post-from-research.php',
 			// Template Management tools (Ralph pattern - Phase 3).
 			'WP_MCP_AI_Pro_Tool_Create_Template'           => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-create-template.php',
 			'WP_MCP_AI_Pro_Tool_Instantiate_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/orchestration/class-wp-mcp-ai-pro-tool-instantiate-template.php',
@@ -1369,21 +874,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add places management tools if enabled.
 		if ( ! empty( $settings['enable_places_management'] ) ) {
 			$places_tools = array(
-				'WP_MCP_AI_Tool_Create_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-create-place.php',
-				'WP_MCP_AI_Tool_List_Places'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-list-places.php',
-				'WP_MCP_AI_Tool_Update_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-update-place.php',
-				'WP_MCP_AI_Tool_Delete_Place'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-delete-place.php',
-				'WP_MCP_AI_Tool_Get_Place'               => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-get-place.php',
-				'WP_MCP_AI_Tool_Search_And_Save_Places'  => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-search-and-save-places.php',
-				'WP_MCP_AI_Tool_Research_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-research-place.php',
+				'WP_MCP_AI_Tool_Create_Place'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-create-place.php',
+				'WP_MCP_AI_Tool_List_Places'              => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-list-places.php',
+				'WP_MCP_AI_Tool_Update_Place'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-update-place.php',
+				'WP_MCP_AI_Tool_Delete_Place'             => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-delete-place.php',
+				'WP_MCP_AI_Tool_Get_Place'                => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-get-place.php',
+				'WP_MCP_AI_Tool_Search_And_Save_Places'   => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-search-and-save-places.php',
+				'WP_MCP_AI_Tool_Research_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-research-place.php',
 				// Turf.js geospatial analysis tool (enhanced with NPM package).
-				'WP_MCP_AI_Tool_Analyze_Geospatial'      => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-analyze-geospatial.php',
+				'WP_MCP_AI_Tool_Analyze_Geospatial'       => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-analyze-geospatial.php',
 				// Bulk import tools (v1.4.0).
-				'WP_MCP_AI_Tool_Import_Places'           => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places.php',
-				'WP_MCP_AI_Tool_Import_Places_From_Html' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places-from-html.php',
+				'WP_MCP_AI_Tool_Import_Places'            => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places.php',
+				'WP_MCP_AI_Tool_Import_Places_From_Html'  => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-import-places-from-html.php',
 				// Enrichment tools (v1.4.2).
 				'WP_MCP_AI_Tool_Enrich_Place_Coordinates' => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-coordinates.php',
-				'WP_MCP_AI_Tool_Enrich_Place_Details'    => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-details.php',
+				'WP_MCP_AI_Tool_Enrich_Place_Details'     => WP_MCP_AI_PRO_PATH . 'includes/tools/places/class-wp-mcp-ai-tool-enrich-place-details.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}
@@ -2588,6 +2093,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['search_upwork_jobs']    = 'wordpress-core';
 			$pro_tools['score_upwork_job']      = 'wordpress-core';
 			$pro_tools['draft_upwork_proposal'] = 'wordpress-core';
+
+			// ICP (Ideal Customer Profile) tools (v2.11.0).
+			$pro_tools['compute_icp_score']  = 'wordpress-core';
+			$pro_tools['manage_icp_profile'] = 'wordpress-core';
 
 			// Customer CRUD tools (v2.6.0).
 			$pro_tools['create_customer'] = 'wordpress-core';

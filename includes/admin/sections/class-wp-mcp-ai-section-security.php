@@ -156,11 +156,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'rate_limit_requests',
 						'rate_limit_window',
 						'rate_limit_by',
+						// Webhook secret status (1.2.0).
+						'_webhook_secret_status',
+						// Auth brute-force rate limiting (1.2.0).
+						'enable_auth_rate_limiting',
+						'auth_rate_limit_threshold',
+						'auth_rate_limit_window',
+						// OAuth endpoint rate limiting.
+						'enable_oauth_token_rate_limit',
+						// Connection & payload limits (1.2.0).
+						'max_sse_connections_per_user',
+						'max_request_body_size_kb',
+						'max_json_depth',
+						// Error disclosure (1.2.0).
+						'api_error_verbosity',
+						// Asset version stripping (1.2.0).
+						'strip_asset_versions',
 						// Security headers.
 						'enable_security_headers',
 						'enable_hsts',
 						'hsts_max_age',
 						'csp_frame_ancestors',
+						'cors_allow_origin',
 					),
 				),
 				'ai_safety' => array(
@@ -178,6 +195,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'enable_hitl_for_write_tools',
 						'hitl_write_tool_threshold',
 						'enable_sandbox_mode',
+						// AI Cost Control (1.2.0).
+						'enable_ai_cost_tracking',
+						'ai_daily_budget_usd',
+						'ai_monthly_budget_usd',
 					),
 				),
 				'audit'     => array(
@@ -445,9 +466,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				'rate_limit_requests'                      => array(
 					'type'        => 'number',
 					'label'       => __( 'Rate Limit (requests per window)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Maximum number of requests allowed per time window per user/IP. Recommended: 100-1000 for normal usage.', 'mcp-ai-wpoos' ),
-					'default'     => 100,
-					'placeholder' => '100',
+					'description' => __( 'Maximum number of requests allowed per time window per user/IP. Recommended: 300-1000 for normal usage with AI agents.', 'mcp-ai-wpoos' ),
+					'default'     => 300,
+					'placeholder' => '300',
 				),
 				'rate_limit_window'                        => array(
 					'type'        => 'number',
@@ -466,6 +487,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'both'    => __( 'Both User ID and IP', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'user_id',
+				),
+
+				// Webhook secret status indicator (1.2.0).
+				'_webhook_secret_status'                   => array(
+					'type'    => 'html',
+					'label'   => __( 'Webhook HMAC Secret', 'mcp-ai-wpoos' ),
+					'content' => array( __CLASS__, 'render_webhook_secret_status' ),
 				),
 
 				// ========================================
@@ -542,6 +570,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						''     => __( 'Disabled', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'none',
+				),
+				'cors_allow_origin'                        => array(
+					'type'        => 'select',
+					'label'       => __( 'CORS Allow-Origin (Cross-Origin API Access)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls which external domains can call the plugin REST API from browser-based clients. &quot;Same Origin&quot; (recommended) blocks cross-origin access. Use &quot;Allow All&quot; only if MCP clients or AI services on other domains need access.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'site' => __( 'Same Origin — only this site (recommended)', 'mcp-ai-wpoos' ),
+						'star' => __( 'Allow All — any domain can call the API', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'site',
 				),
 
 				// ========================================
@@ -736,6 +774,137 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					'description'    => __( 'Useful for staging or testing. Every tool that carries the <code>write</code> capability flag is queued for manual approval regardless of per-tool settings. This overrides the HITL threshold above.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// ========================================
+				// AI COST CONTROL (1.2.0 — AI Safety subtab)
+				// ========================================
+				'_heading_ai_cost_control'                 => array(
+					'type'  => 'heading',
+					'label' => __( 'AI API Cost Control', 'mcp-ai-wpoos' ),
+				),
+				'enable_ai_cost_tracking'                  => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable AI API Cost Tracking', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Track and enforce API spend budgets per assistant', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Monitors estimated API costs (OpenAI, Stability AI, Gemini, etc.) and enforces per-assistant budget limits. Prevents runaway spending on paid AI providers.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'ai_daily_budget_usd'                      => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Daily Budget (USD)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum estimated daily API spend per assistant. Set 0 for unlimited. Individual assistants can override this via their metadata.', 'mcp-ai-wpoos' ),
+					'default'     => 10,
+					'min'         => 0,
+					'placeholder' => '10',
+				),
+				'ai_monthly_budget_usd'                    => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Monthly Budget (USD)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum estimated monthly API spend per assistant. Set 0 for unlimited.', 'mcp-ai-wpoos' ),
+					'default'     => 100,
+					'min'         => 0,
+					'placeholder' => '100',
+				),
+
+				// ========================================
+				// CONNECTION & PAYLOAD LIMITS (1.2.0 — Network subtab)
+				// ========================================
+				'_heading_connection_limits'               => array(
+					'type'  => 'heading',
+					'label' => __( 'Connection & Payload Limits', 'mcp-ai-wpoos' ),
+				),
+				'max_sse_connections_per_user'             => array(
+					'type'        => 'number',
+					'label'       => __( 'Max SSE Connections per User', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum simultaneous Server-Sent Events (SSE) connections per user. Prevents resource exhaustion from too many concurrent streaming connections. Set 0 for unlimited.', 'mcp-ai-wpoos' ),
+					'default'     => 5,
+					'min'         => 0,
+					'max'         => 50,
+					'placeholder' => '5',
+				),
+				'max_request_body_size_kb'                 => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Request Body Size (KB)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum allowed request body size in kilobytes for chat and tool endpoints. Larger payloads are rejected with HTTP 413. Set 0 for no limit (uses PHP default).', 'mcp-ai-wpoos' ),
+					'default'     => 1024,
+					'min'         => 0,
+					'placeholder' => '1024',
+				),
+				'max_json_depth'                           => array(
+					'type'        => 'number',
+					'label'       => __( 'Max JSON Nesting Depth', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum allowed nesting depth for JSON request bodies. Prevents stack exhaustion from deeply nested payloads. PHP default is 512.', 'mcp-ai-wpoos' ),
+					'default'     => 32,
+					'min'         => 1,
+					'max'         => 512,
+					'placeholder' => '32',
+				),
+
+				// ========================================
+				// AUTH BRUTE-FORCE PROTECTION (1.2.0 — Network subtab)
+				// ========================================
+				'_heading_auth_brute_force'                => array(
+					'type'  => 'heading',
+					'label' => __( 'Authentication Brute-Force Protection', 'mcp-ai-wpoos' ),
+				),
+				'enable_auth_rate_limiting'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Auth Rate Limiting', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Throttle repeated failed authentication attempts', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Separate from general API rate limiting. Tracks failed auth attempts per IP and temporarily blocks after exceeding the threshold. Protects against credential brute-forcing on bearer token, mesh key, and Auth0 endpoints.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'auth_rate_limit_threshold'                => array(
+					'type'        => 'number',
+					'label'       => __( 'Failed Auth Threshold', 'mcp-ai-wpoos' ),
+					'description' => __( 'Number of failed authentication attempts before the IP is temporarily blocked. Recommended: 10–20.', 'mcp-ai-wpoos' ),
+					'default'     => 10,
+					'min'         => 3,
+					'max'         => 100,
+				),
+				'auth_rate_limit_window'                   => array(
+					'type'        => 'number',
+					'label'       => __( 'Auth Rate Limit Window (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Time window in which failed attempts are counted. Default: 300 (5 minutes).', 'mcp-ai-wpoos' ),
+					'default'     => 300,
+					'min'         => 60,
+					'max'         => 3600,
+				),
+				'enable_oauth_token_rate_limit'            => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Rate Limit OAuth Token Endpoint', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Apply rate limiting to /oauth/token and /oauth/register', 'mcp-ai-wpoos' ),
+					'description'    => __( 'The OAuth token and registration endpoints are publicly accessible per RFC 6749/7591. Enable this to apply rate limiting specifically to these endpoints to prevent brute-force attacks on authorization codes.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+
+				// ========================================
+				// ERROR VERBOSITY (1.2.0 — Network subtab)
+				// ========================================
+				'_heading_error_verbosity'                 => array(
+					'type'  => 'heading',
+					'label' => __( 'API Error Disclosure', 'mcp-ai-wpoos' ),
+				),
+				'api_error_verbosity'                      => array(
+					'type'        => 'select',
+					'label'       => __( 'Error Detail Level', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls how much internal detail is included in REST API error responses. Production sites should use "Safe" to avoid information disclosure.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'safe'    => __( 'Safe — generic messages only (recommended for production)', 'mcp-ai-wpoos' ),
+						'normal'  => __( 'Normal — actionable errors for authenticated users', 'mcp-ai-wpoos' ),
+						'verbose' => __( 'Verbose — full details (development only)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'normal',
+				),
+
+				// Asset version stripping (1.2.0).
+				'strip_asset_versions'                     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Strip Plugin Version from Asset URLs', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Remove version query strings from plugin CSS/JS URLs', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Hides the plugin version number from enqueued stylesheet and script URLs. This prevents attackers from fingerprinting your plugin version via page source inspection. Does not affect WordPress core assets or other plugins. Enabling this may reduce cache-busting effectiveness during plugin updates.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// ====================================================
@@ -920,7 +1089,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		<div>
 			<?php /* translators: %d: security posture score (0-100) */ ?>
 			<h3 style="margin:0 0 4px;"><?php echo esc_html( sprintf( __( 'Security Posture: %d / 100', 'mcp-ai-wpoos' ), $score ) ); ?></h3>
-			<p style="margin:0;color:#646970;"><?php esc_html_e( 'Computed from 17 weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ); ?></p>
+			<p style="margin:0;color:#646970;"><?php echo esc_html( sprintf( /* translators: %d: number of weighted security signals */ __( 'Computed from %d weighted signals. Refreshes every 5 minutes.', 'mcp-ai-wpoos' ), count( $signals ) ) ); ?></p>
 			<button type="button" class="button button-small wp-mcp-ai-refresh-posture" style="margin-top:8px;">
 				<span class="dashicons dashicons-update" style="vertical-align:middle;"></span>
 				<?php esc_html_e( 'Refresh Now', 'mcp-ai-wpoos' ); ?>
@@ -993,7 +1162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 	<div class="wp-mcp-ai-recent-events" style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px;margin-bottom:24px;">
 		<h4 style="margin-top:0;"><?php esc_html_e( 'Recent Security Events (last 10)', 'mcp-ai-wpoos' ); ?></h4>
 			<?php if ( empty( $recent_events ) ) : ?>
-			<p style="color:#646970;margin:0;"><?php esc_html_e( 'No security events logged yet. Enable the audit log under Audit & Compliance to start recording events.', 'mcp-ai-wpoos' ); ?></p>
+			<p style="color:#646970;margin:0;"><?php esc_html_e( 'No security events recorded yet. Events will appear here as they are detected by the security audit system.', 'mcp-ai-wpoos' ); ?></p>
 		<?php else : ?>
 			<table class="widefat striped" style="margin:0;">
 				<thead>
@@ -1761,6 +1930,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Render the webhook HMAC secret status indicator.
+		 *
+		 * Callback for the _webhook_secret_status HTML field.
+		 *
+		 * @since 1.2.0
+		 * @return void
+		 */
+		public static function render_webhook_secret_status() {
+			$secret = '';
+			if ( function_exists( 'wp_mcp_ai_get_api_key' ) ) {
+				$secret = wp_mcp_ai_get_api_key( 'webhook_secret', '' );
+			}
+			if ( empty( $secret ) ) {
+				$secret = get_option( 'wp_mcp_ai_webhook_secret', '' );
+			}
+
+			if ( ! empty( $secret ) ) {
+				echo '<span style="display:inline-block;padding:4px 12px;background:#d4edda;color:#155724;border-radius:4px;font-weight:600;">' .
+					esc_html__( '✓ Configured', 'mcp-ai-wpoos' ) .
+					'</span>';
+				echo '<p class="description" style="margin-top:6px;">' .
+					esc_html__( 'The webhook HMAC secret is configured. Outbound webhook calls are signed with this secret.', 'mcp-ai-wpoos' ) .
+					'</p>';
+			} else {
+				echo '<span style="display:inline-block;padding:4px 12px;background:#fff3cd;color:#856404;border-radius:4px;font-weight:600;">' .
+					esc_html__( '⚠ Not configured', 'mcp-ai-wpoos' ) .
+					'</span>';
+				echo '<p class="description" style="margin-top:6px;">' .
+					esc_html__( 'No webhook HMAC secret is configured. The secret is auto-generated on first webhook use, but you can pre-configure it for additional security. Outbound webhooks will not be signed until a secret exists.', 'mcp-ai-wpoos' ) .
+					'</p>';
+			}
 		}
 	}
 }

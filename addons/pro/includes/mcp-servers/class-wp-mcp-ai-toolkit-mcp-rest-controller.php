@@ -374,7 +374,7 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 		}
 		return rest_ensure_response(
 			array(
-				'protocolVersion' => '2025-06-18',
+				'protocolVersion' => '2026-07-28',
 				'servers'         => $descriptors,
 			)
 		);
@@ -485,7 +485,7 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 				$assistant_id = isset( $params['assistant_id'] ) ? absint( $params['assistant_id'] ) : 0;
 
 				$result = array(
-					'protocolVersion' => '2025-06-18',
+					'protocolVersion' => '2026-07-28',
 					'capabilities'    => array(
 						'tools'     => (object) array(),
 						'resources' => (object) array(

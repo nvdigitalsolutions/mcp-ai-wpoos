@@ -9,6 +9,14 @@
 // See .zed/README.md for usage and the rationale behind the tool mapping.
 {
   // ---------------------------------------------------------------------------
+  // Language servers — Phpactor is the default PHP LSP. It auto-discovers
+  // the PHP runtime and project root, so no binary path is needed.
+  // ---------------------------------------------------------------------------
+  "lsp": {
+    "phpactor": {}
+  },
+
+  // ---------------------------------------------------------------------------
   // Editor defaults — kept in sync with .vscode/settings.json so contributors
   // who switch editors get the same indentation, formatter, and exclusions.
   // ---------------------------------------------------------------------------
