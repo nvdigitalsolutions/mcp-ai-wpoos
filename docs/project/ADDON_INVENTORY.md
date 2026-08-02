@@ -118,4 +118,4 @@ If you're auditing this repo on a limited budget, use this prioritization:
 
 ---
 
-**Related documents:** [FOR_REVIEWERS.md](FOR_REVIEWERS.md) · [SECURITY_POSTURE.md](SECURITY_POSTURE.md) · [compliance/TRACEABILITY.md](compliance/TRACEABILITY.md)
+**Related documents:** [FOR_REVIEWERS.md](FOR_REVIEWERS.md) · [SECURITY_POSTURE.md](../operations/security/SECURITY_POSTURE.md) · [TRACEABILITY.md](../operations/compliance/TRACEABILITY.md)

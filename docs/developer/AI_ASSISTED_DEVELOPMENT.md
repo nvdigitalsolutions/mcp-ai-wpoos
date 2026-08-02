@@ -176,4 +176,4 @@ The project has moved from "AI wrote everything" to "AI writes, human reviews, C
 
 ---
 
-**Related documents:** [FOR_REVIEWERS.md](FOR_REVIEWERS.md) · [SECURITY_POSTURE.md](SECURITY_POSTURE.md) · [ADDON_INVENTORY.md](ADDON_INVENTORY.md) · [../AGENTS.md](../AGENTS.md) · [../CLAUDE.md](../CLAUDE.md)
+**Related documents:** [FOR_REVIEWERS.md](../project/FOR_REVIEWERS.md) · [SECURITY_POSTURE.md](../operations/security/SECURITY_POSTURE.md) · [ADDON_INVENTORY.md](../project/ADDON_INVENTORY.md) · [AGENTS.md](../../AGENTS.md) · [CLAUDE.md](../../CLAUDE.md)
