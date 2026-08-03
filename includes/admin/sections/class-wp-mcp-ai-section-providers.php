@@ -827,6 +827,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => '5',
 				),
+				'enable_omni_api'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Gemini Omni Flash API', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Use Omni Flash for video generation (experimental)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Omni Flash (May 2026) is the next-gen video model replacing Veo — 10s duration, native audio, multi-turn conversational editing, up to 5 reference images. When disabled, Veo 3.1 is used as fallback for all video generation. Note: Omni API access is rolling out gradually; if you encounter errors, disable this toggle and Veo 3.1 will be used automatically.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// Gemini Caching Settings.
 				'enable_gemini_api_caching'          => array(
