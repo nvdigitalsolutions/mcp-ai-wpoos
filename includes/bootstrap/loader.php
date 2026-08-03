@@ -42,6 +42,9 @@ if ( ! function_exists( 'wp_mcp_ai_class_exists_via_autoload' ) ) {
 		$basename = basename( $file_path, '.php' );
 		if ( 0 === strpos( $basename, 'class-' ) ) {
 			$classname = str_replace( '-', '_', substr( $basename, 6 ) );
+			if ( 0 === strpos( $classname, 'wp_mcp_ai_' ) ) {
+				$classname = substr( $classname, 10 );
+			}
 			$classname = 'WP_MCP_AI_' . str_replace( ' ', '_', ucwords( str_replace( '_', ' ', $classname ) ) );
 			if ( class_exists( $classname, false ) || interface_exists( $classname, false ) || trait_exists( $classname, false ) ) {
 				return true;
@@ -49,13 +52,19 @@ if ( ! function_exists( 'wp_mcp_ai_class_exists_via_autoload' ) ) {
 		}
 		if ( 0 === strpos( $basename, 'interface-' ) ) {
 			$classname = str_replace( '-', '_', substr( $basename, 10 ) );
-			$classname = 'Interface_' . str_replace( ' ', '_', ucwords( str_replace( '_', ' ', $classname ) ) );
+			if ( 0 === strpos( $classname, 'wp_mcp_ai_' ) ) {
+				$classname = substr( $classname, 10 );
+			}
+			$classname = 'Interface_WP_MCP_AI_' . str_replace( ' ', '_', ucwords( str_replace( '_', ' ', $classname ) ) );
 			if ( interface_exists( $classname, false ) ) {
 				return true;
 			}
 		}
 		if ( 0 === strpos( $basename, 'trait-' ) ) {
 			$classname = str_replace( '-', '_', substr( $basename, 6 ) );
+			if ( 0 === strpos( $classname, 'wp_mcp_ai_' ) ) {
+				$classname = substr( $classname, 10 );
+			}
 			$classname = 'WP_MCP_AI_Trait_' . str_replace( ' ', '_', ucwords( str_replace( '_', ' ', $classname ) ) );
 			if ( trait_exists( $classname, false ) ) {
 				return true;
