@@ -72,110 +72,118 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$provider_options = array( '' => __( '-- Use Global Default --', 'mcp-ai-wpoos' ) ) + WP_MCP_AI_Admin_Settings::get_available_providers();
 
 			return array(
-				'orchestration_intro'             => array(
+				'orchestration_intro'              => array(
 					'type'    => 'html',
 					'content' => $this->get_intro_content(),
 				),
-				'health_status'                   => array(
+				'health_status'                    => array(
 					'type'    => 'html',
 					'content' => $this->get_health_status_content(),
 				),
-				'load_monitoring'                 => array(
+				'load_monitoring'                  => array(
 					'type'    => 'html',
 					'content' => $this->get_load_monitoring_content(),
 				),
-				'performance_statistics'          => array(
+				'performance_statistics'           => array(
 					'type'    => 'html',
 					'content' => $this->get_performance_statistics_content(),
 				),
-				'configuration_presets'           => array(
+				'configuration_presets'            => array(
 					'type'    => 'html',
 					'content' => $this->get_presets_content(),
 				),
-				'orchestration_preset'            => array(
+				'orchestration_preset'             => array(
 					'type'        => 'hidden',
 					'default'     => 'auto',
 					'description' => __( 'Current orchestration configuration preset. Managed by the preset selector above.', 'mcp-ai-wpoos' ),
 				),
-				'enable_budget_management'        => array(
+				'enable_budget_management'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Dynamic Budget Management', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable dynamic budget management', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Automatically allocate and adjust token budgets based on system resources and workload tier.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_predictive_optimization'  => array(
+				'enable_predictive_optimization'   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Predictive Optimization', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable predictive optimization', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Use historical usage patterns to forecast and prevent resource exhaustion.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_capability_gating'        => array(
+				'enable_capability_gating'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Capability-Based Tool Gating', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable capability-based tool gating', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Enforce WordPress capability checks for tool access based on user roles.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_cron_orchestration'       => array(
+				'enable_cron_orchestration'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Cron-Based Task Orchestration', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable cron-based task orchestration', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Allow AI agents to create and manage scheduled background tasks with inherited budget constraints.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_auto_async_execution'     => array(
+				'enable_auto_async_execution'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Automatic Async Tool Execution', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Automatically queue long-running tools in background', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Automatically execute long-running tools (video generation, image generation, etc.) asynchronously via WordPress cron to prevent PHP timeouts. When enabled, tools with "async", "long-running", or "may-timeout" capability flags will be queued immediately and return a job_id for status polling.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'section_multi_agent'             => array(
+				// ── Capacity-aware routing (Proposal 017) ──
+				'enable_capacity_aware_routing'    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Capacity-Aware Tool Routing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Route tools to background queue when system is under load', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, the system monitors CPU, memory, and tool execution load in real-time. Tools are automatically routed to the background queue when capacity drops below safe thresholds, preventing PHP timeouts and resource exhaustion during peak usage.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'section_multi_agent'              => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Multi-Agent Orchestration', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Control multi-agent coordination features inspired by DeepSeek V4 patterns. These features enable sophisticated agent role management, profession-based AI workforce, and team-based workflows.', 'mcp-ai-wpoos' ) . '</p>',
 				),
-				'enable_agent_roles'              => array(
+				'enable_agent_roles'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Agent Role System', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable agent roles (Planner, Executor, Critic, Specialist)', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Enable the agent role abstraction layer for multi-agent coordination. Agent roles define specialized behaviors (planning, execution, validation, domain expertise) that can be assigned to AI professions. Disabling this will hide the Agents view from the orchestration dashboard.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_professions'              => array(
+				'enable_professions'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Professions', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable profession-based AI workforce management', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Enable the AI professions custom post type for creating specialized AI assistants with specific roles, tools, and expertise. Professions are the deployable agents used in multi-agent workflows. Disabling this will hide the Professions view and limit multi-agent capabilities.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_multi_agent_teams'        => array(
+				'enable_multi_agent_teams'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Multi-Agent Teams', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable team-based multi-agent coordination', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Enable creating teams of AI professions that work together on complex tasks. Teams allow agents with different roles (Planner, Executor, Critic) to collaborate, with automatic task delegation and result aggregation. Requires Agent Roles and Professions to be enabled.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_agent_coordination_tools' => array(
+				'enable_agent_coordination_tools'  => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Agent Coordination Tools', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable create_agent_team, delegate_to_agent, aggregate_agent_results tools', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Enable specialized tools for multi-agent coordination: create_agent_team (compose teams), delegate_to_agent (task delegation), and aggregate_agent_results (result merging). These tools allow AI assistants to orchestrate other AI assistants for complex workflows.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'section_agent_memory'            => array(
+				'section_agent_memory'             => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Agent Memory', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Control the chat-client long-term memory surface. When enabled, logged-in users can store and recall memories across sessions using the memory drawer in the chat interface.', 'mcp-ai-wpoos' ) . '</p>',
 				),
-				'enable_chat_memory'              => array(
+				'enable_chat_memory'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Chat-Client Memory', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable long-term memory for the chat client', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Allow logged-in users to use the long-term memory surface in the chat client. When disabled, the memory drawer, recall, and store endpoints are suppressed site-wide regardless of per-user preferences.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'memory_retention_days'           => array(
+				'memory_retention_days'            => array(
 					'type'        => 'slider',
 					'label'       => __( 'Memory Retention (Days)', 'mcp-ai-wpoos' ),
 					'description' => __( 'Memories older than this many days will be pruned during weekly cleanup. Set to 0 to never automatically delete memories.', 'mcp-ai-wpoos' ),
@@ -185,7 +193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 365,
 					'suffix'      => __( 'days', 'mcp-ai-wpoos' ),
 				),
-				'memory_dormancy_days'            => array(
+				'memory_dormancy_days'             => array(
 					'type'        => 'slider',
 					'label'       => __( 'Memory Dormancy Threshold (Days)', 'mcp-ai-wpoos' ),
 					'description' => __( 'Memories not accessed in this many days are marked dormant. Dormant memories are deleted first when per-user caps are exceeded.', 'mcp-ai-wpoos' ),
@@ -195,7 +203,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 30,
 					'suffix'      => __( 'days', 'mcp-ai-wpoos' ),
 				),
-				'memory_per_user_max'             => array(
+				'memory_per_user_max'              => array(
 					'type'        => 'slider',
 					'label'       => __( 'Max Memories Per User', 'mcp-ai-wpoos' ),
 					'description' => __( 'Maximum number of memories a single user can store. Oldest dormant memories are deleted first when this cap is exceeded.', 'mcp-ai-wpoos' ),
@@ -204,20 +212,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'step'        => 100,
 					'default'     => 1000,
 				),
-				'profession_default_provider'     => array(
+				'profession_default_provider'      => array(
 					'type'        => 'select',
 					'label'       => __( 'Professions Default Provider', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default AI provider for all professions. Individual professions can override this setting.', 'mcp-ai-wpoos' ),
 					'options'     => $provider_options,
 					'default'     => '',
 				),
-				'profession_default_model'        => array(
+				'profession_default_model'         => array(
 					'type'        => 'text',
 					'label'       => __( 'Professions Default Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default AI model for all professions (e.g., gpt-4.1, claude-sonnet-5). Leave empty to use provider default.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 				),
-				'profession_default_temperature'  => array(
+				'profession_default_temperature'   => array(
 					'type'        => 'number',
 					'label'       => __( 'Professions Default Temperature', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default creativity/randomness setting for professions (0.0 = deterministic, 1.0 = creative). Individual professions can override.', 'mcp-ai-wpoos' ),
@@ -226,20 +234,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'max'         => 1,
 					'step'        => 0.1,
 				),
-				'team_default_provider'           => array(
+				'team_default_provider'            => array(
 					'type'        => 'select',
 					'label'       => __( 'Teams Default Provider', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default AI provider for all team members. Individual teams can override this setting.', 'mcp-ai-wpoos' ),
 					'options'     => $provider_options,
 					'default'     => '',
 				),
-				'team_default_model'              => array(
+				'team_default_model'               => array(
 					'type'        => 'text',
 					'label'       => __( 'Teams Default Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default AI model for all team members (e.g., gpt-4.1, claude-sonnet-5). Leave empty to use provider default.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 				),
-				'team_default_temperature'        => array(
+				'team_default_temperature'         => array(
 					'type'        => 'number',
 					'label'       => __( 'Teams Default Temperature', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default creativity/randomness setting for teams (0.0 = deterministic, 1.0 = creative). Individual teams can override.', 'mcp-ai-wpoos' ),
@@ -248,7 +256,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'max'         => 1,
 					'step'        => 0.1,
 				),
-				'section_acp'                     => array(
+				'section_acp'                      => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Agent Client Protocol (ACP)', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . wp_kses(
 						sprintf(
@@ -259,21 +267,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						array( 'code' => array() )
 					) . '</p>',
 				),
-				'enable_acp_server'               => array(
+				'enable_acp_server'                => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable ACP Server', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable the Agent Client Protocol REST routes', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, the /acp REST routes will be available and the site will advertise ACP capabilities via the .well-known/ai-peer endpoint.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'acp_require_approval'            => array(
+				'acp_require_approval'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Require Tool Approval', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Require interactive approval for dangerous tool calls', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, dangerous tool calls initiated from an ACP client will trigger the interactive session/request_permission flow in the IDE.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'async_tool_timeout'              => array(
+				'async_tool_timeout'               => array(
 					'type'        => 'number',
 					'label'       => __( 'Async Tool Timeout (seconds)', 'mcp-ai-wpoos' ),
 					'description' => __( 'Maximum time in seconds to wait for async tools (like video generation) to complete before timing out. Default is 300 seconds (5 minutes). Increase this for tools that may take longer, such as high-quality video generation.', 'mcp-ai-wpoos' ),
@@ -282,7 +290,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'max'         => 900,
 					'step'        => 30,
 				),
-				'cron_job_retention_period'       => array(
+				// ── SSE stream tuning (Proposal 017) ──
+				'sse_max_duration_seconds'         => array(
+					'type'        => 'number',
+					'label'       => __( 'SSE Stream Max Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum time in seconds before the server forces an SSE stream reconnect. Shorter durations reduce PHP-FPM worker exhaustion but cause more frequent reconnects. Default is 120 seconds (2 minutes). Set to 0 to disable forced reconnects (streams run until the client disconnects or the 30-minute hard cap).', 'mcp-ai-wpoos' ),
+					'default'     => 120,
+					'min'         => 0,
+					'max'         => 600,
+					'step'        => 30,
+				),
+				'cron_job_retention_period'        => array(
 					'type'        => 'select',
 					'label'       => __( 'Cron Job History Retention', 'mcp-ai-wpoos' ),
 					'description' => __( 'How long to keep executed cron jobs visible in the Cron Manager after they run. This allows you to verify test jobs ran successfully and review execution history. Jobs with "Executed" status will remain visible for this period before being automatically removed.', 'mcp-ai-wpoos' ),
@@ -297,18 +315,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					),
 					'default'     => '24',
 				),
-				'use_ts_build'                    => array(
+				'use_ts_build'                     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Use TypeScript-Compiled Assets', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Load TypeScript-compiled JavaScript bundles instead of legacy JS', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, the chat interface loads TypeScript-compiled assets from assets/js/dist/ instead of legacy assets/js/*.min.js files. This provides type-safe, modern ESM-based JavaScript. Requires running <code>npm run build:js:ts</code> first to produce the dist/ files. Disable if you encounter issues with the TypeScript build.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'slider_section_health'           => array(
+				'slider_section_health'            => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Health Monitoring Thresholds', 'mcp-ai-wpoos' ) . '</h3>',
 				),
-				'memory_warning_threshold'        => array(
+				'memory_warning_threshold'         => array(
 					'type'        => 'slider',
 					'label'       => __( 'Memory Warning Threshold', 'mcp-ai-wpoos' ),
 					'description' => __( 'Trigger warnings when memory usage exceeds this percentage (modern cloud-native standard: 70%).', 'mcp-ai-wpoos' ),
@@ -318,7 +336,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 70,
 					'suffix'      => '%',
 				),
-				'memory_critical_threshold'       => array(
+				'memory_critical_threshold'        => array(
 					'type'        => 'slider',
 					'label'       => __( 'Memory Critical Threshold', 'mcp-ai-wpoos' ),
 					'description' => __( 'Trigger critical alerts when memory usage exceeds this percentage (modern cloud-native standard: 85%).', 'mcp-ai-wpoos' ),
@@ -328,7 +346,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 85,
 					'suffix'      => '%',
 				),
-				'error_rate_warning_threshold'    => array(
+				'error_rate_warning_threshold'     => array(
 					'type'        => 'slider',
 					'label'       => __( 'Error Rate Warning Threshold', 'mcp-ai-wpoos' ),
 					'description' => __( 'Trigger warnings when error rate exceeds this percentage (SRE best practice: 5%).', 'mcp-ai-wpoos' ),
@@ -338,7 +356,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 5,
 					'suffix'      => '%',
 				),
-				'error_rate_critical_threshold'   => array(
+				'error_rate_critical_threshold'    => array(
 					'type'        => 'slider',
 					'label'       => __( 'Error Rate Critical Threshold', 'mcp-ai-wpoos' ),
 					'description' => __( 'Trigger critical alerts when error rate exceeds this percentage (SRE best practice: 10%).', 'mcp-ai-wpoos' ),
@@ -348,11 +366,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 10,
 					'suffix'      => '%',
 				),
-				'slider_section_budget'           => array(
+				'slider_section_budget'            => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Adaptive Budget Allocation', 'mcp-ai-wpoos' ) . '</h3>',
 				),
-				'high_priority_budget'            => array(
+				'high_priority_budget'             => array(
 					'type'        => 'slider',
 					'label'       => __( 'High Priority Budget', 'mcp-ai-wpoos' ),
 					'description' => __( 'Percentage of available budget allocated to high-priority tasks.', 'mcp-ai-wpoos' ),
@@ -362,7 +380,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 100,
 					'suffix'      => '%',
 				),
-				'medium_priority_budget'          => array(
+				'medium_priority_budget'           => array(
 					'type'        => 'slider',
 					'label'       => __( 'Medium Priority Budget', 'mcp-ai-wpoos' ),
 					'description' => __( 'Percentage of available budget allocated to medium-priority tasks (modern standard: 75%).', 'mcp-ai-wpoos' ),
@@ -372,7 +390,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 75,
 					'suffix'      => '%',
 				),
-				'low_priority_budget'             => array(
+				'low_priority_budget'              => array(
 					'type'        => 'slider',
 					'label'       => __( 'Low Priority Budget', 'mcp-ai-wpoos' ),
 					'description' => __( 'Percentage of available budget allocated to low-priority tasks.', 'mcp-ai-wpoos' ),
@@ -382,7 +400,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 50,
 					'suffix'      => '%',
 				),
-				'critical_health_reduction'       => array(
+				'critical_health_reduction'        => array(
 					'type'        => 'slider',
 					'label'       => __( 'Critical Health Budget Reduction', 'mcp-ai-wpoos' ),
 					'description' => __( 'Reduce budgets to this percentage when system health is critical.', 'mcp-ai-wpoos' ),
@@ -392,7 +410,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 50,
 					'suffix'      => '%',
 				),
-				'warning_health_reduction'        => array(
+				'warning_health_reduction'         => array(
 					'type'        => 'slider',
 					'label'       => __( 'Warning Health Budget Reduction', 'mcp-ai-wpoos' ),
 					'description' => __( 'Reduce budgets to this percentage when system health shows warnings.', 'mcp-ai-wpoos' ),
@@ -402,11 +420,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 75,
 					'suffix'      => '%',
 				),
-				'slider_section_tokens'           => array(
+				'slider_section_tokens'            => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Context Window Limits by Workload Tier', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'These limits represent the total token budget per request, including system prompt, conversation history, user input, tool data, and AI output. Configuration Presets (above) set these values automatically, or you can customize them here.', 'mcp-ai-wpoos' ) . '</p><p class="description"><strong>' . esc_html__( 'Note:', 'mcp-ai-wpoos' ) . '</strong> ' . esc_html__( 'This is different from the "Tier Base Limits (tokens/day)" in the Token Manager, which control daily usage quotas per user tier.', 'mcp-ai-wpoos' ) . '</p>',
 				),
-				'low_tier_max_tokens'             => array(
+				'low_tier_max_tokens'              => array(
 					'type'        => 'slider',
 					'label'       => __( 'Low Tier Context Window', 'mcp-ai-wpoos' ),
 					'description' => __( 'Total context window for low-tier workloads (< 128MB memory). Includes all input and output tokens. Modern AI standard: 2000 tokens.', 'mcp-ai-wpoos' ),
@@ -416,7 +434,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 2000,
 					'suffix'      => '',
 				),
-				'medium_tier_max_tokens'          => array(
+				'medium_tier_max_tokens'           => array(
 					'type'        => 'slider',
 					'label'       => __( 'Medium Tier Context Window', 'mcp-ai-wpoos' ),
 					'description' => __( 'Total context window for medium-tier workloads (128-512MB memory). Includes all input and output tokens. Modern AI standard: 8000 tokens.', 'mcp-ai-wpoos' ),
@@ -426,7 +444,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 8000,
 					'suffix'      => '',
 				),
-				'high_tier_max_tokens'            => array(
+				'high_tier_max_tokens'             => array(
 					'type'        => 'slider',
 					'label'       => __( 'High Tier Context Window', 'mcp-ai-wpoos' ),
 					'description' => __( 'Total context window for high-tier workloads (> 512MB memory). Includes all input and output tokens. Modern AI standard: 32000 tokens.', 'mcp-ai-wpoos' ),
@@ -436,18 +454,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 32000,
 					'suffix'      => '',
 				),
-				'slider_section_call_limits'      => array(
+				'slider_section_call_limits'       => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Per-Call and Per-Session Limits', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Set maximum token limits for individual tool calls and chat sessions to prevent runaway costs and ensure fair resource distribution.', 'mcp-ai-wpoos' ) . '</p>',
 				),
-				'enable_per_call_limits'          => array(
+				'enable_per_call_limits'           => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Per-Call Token Limits', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable per-call token limits', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Limit the maximum number of tokens a single tool call can consume.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'per_call_token_limit'            => array(
+				'per_call_token_limit'             => array(
 					'type'        => 'slider',
 					'label'       => __( 'Per-Call Token Limit', 'mcp-ai-wpoos' ),
 					'description' => __( 'Maximum tokens per individual tool call (applies to all tools unless overridden). Set to 0 for unlimited.', 'mcp-ai-wpoos' ),
@@ -457,14 +475,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 10000,
 					'suffix'      => '',
 				),
-				'enable_per_session_limits'       => array(
+				'enable_per_session_limits'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Per-Session Token Limits', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable per-session token limits', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Limit the total number of tokens a single chat session can consume across all tool calls.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'per_session_token_limit'         => array(
+				'per_session_token_limit'          => array(
 					'type'        => 'slider',
 					'label'       => __( 'Per-Session Token Limit', 'mcp-ai-wpoos' ),
 					'description' => __( 'Maximum tokens per chat session (cumulative across all tool calls). Set to 0 for unlimited.', 'mcp-ai-wpoos' ),
@@ -474,18 +492,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 50000,
 					'suffix'      => '',
 				),
-				'slider_section_compression'      => array(
+				'slider_section_compression'       => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Semantic Prompt Compression', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Reduce token usage by stripping unnecessary grammar and filler words from prompts while preserving all facts, numbers, and technical terms.', 'mcp-ai-wpoos' ) . '</p>',
 				),
-				'enable_semantic_compression'     => array(
+				'enable_semantic_compression'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Semantic Prompt Compression', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Apply caveman-style compression to prompts before sending to AI models', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Strips unnecessary grammar, connectives, and filler words from prompts while preserving all facts, numbers, and technical terms. Reduces token usage by 20-35% with no quality loss. All facts and specific data are preserved verbatim.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'semantic_compression_level'      => array(
+				'semantic_compression_level'       => array(
 					'type'        => 'select',
 					'label'       => __( 'Compression Level', 'mcp-ai-wpoos' ),
 					'description' => __( 'Controls how aggressively prompts are compressed. Conservative preserves more original wording. Aggressive maximizes token savings.', 'mcp-ai-wpoos' ),
@@ -496,35 +514,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'3' => __( 'Aggressive — Maximum compression, shortest sentences (30-40% savings)', 'mcp-ai-wpoos' ),
 					),
 				),
-				'section_dspark'                  => array(
+				'section_dspark'                   => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'DSpark Optimizations', 'mcp-ai-wpoos' )
 						. '</h3><p class="description">'
 						. esc_html__( 'Speculative execution, tiered model routing, depth-scheduled verification, hybrid planning, and chain acceptance tracking — inspired by DeepSeek V4 DSpark confidence-scheduled decoding. These features work across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio, etc.).', 'mcp-ai-wpoos' )
 						. '</p>',
 				),
-				'enable_speculative_execution'    => array(
+				'enable_speculative_execution'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Speculative Tool Execution', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Draft and verify tool chains speculatively (DSpark-inspired)', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Predict tool sequences ahead of execution, verify results batch-style, and stop at first rejection. Reduces round-trips for predictable tool chains. Works with all AI providers.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'enable_depth_scheduling'         => array(
+				'enable_depth_scheduling'          => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Orchestration Depth Scheduling', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Adapt verification depth to system load and confidence', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Automatically switch between Deep, Standard, Shallow, and Minimal verification tiers based on system capacity and prediction confidence. High load + high confidence = fast path; low confidence = thorough verification.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_hybrid_planning'          => array(
+				'enable_hybrid_planning'           => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Hybrid Plan Generation', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Generate plans via parallel agent proposals + merge', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Fan out complex tasks to multiple planning agents, merge their proposals, and discover parallelizable subtask groups. Improves plan quality through agent diversity.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'enable_tiered_model_routing'     => array(
+				'enable_tiered_model_routing'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Tiered Model Routing', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Route to draft (cheap) or verification (capable) models per task', 'mcp-ai-wpoos' ),
@@ -538,14 +556,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Records which predicted tool chains were actually accepted, feeds data back to the predictor for continuous improvement, and surfaces acceptance trends in the dashboard.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'slider_section_depth'            => array(
+				'slider_section_depth'             => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Depth Scheduler Thresholds', 'mcp-ai-wpoos' )
 						. '</h3><p class="description">'
 						. esc_html__( 'Control when the depth scheduler escalates from Minimal to Deep verification. Lower spare-capacity thresholds mean more aggressive verification; higher confidence thresholds mean deeper scrutiny is triggered sooner. Inspired by DSpark confidence-scheduled verification budgets.', 'mcp-ai-wpoos' )
 						. '</p>',
 				),
-				'depth_capacity_deep'             => array(
+				'depth_capacity_deep'              => array(
 					'type'        => 'slider',
 					'label'       => __( 'Deep Tier — Spare Capacity Required', 'mcp-ai-wpoos' ),
 					'description' => __( 'Percentage of spare system capacity required before Deep verification is eligible. Default: 70%', 'mcp-ai-wpoos' ),
@@ -555,7 +573,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 70,
 					'suffix'      => '%',
 				),
-				'depth_capacity_standard'         => array(
+				'depth_capacity_standard'          => array(
 					'type'        => 'slider',
 					'label'       => __( 'Standard Tier — Spare Capacity Required', 'mcp-ai-wpoos' ),
 					'description' => __( 'Spare capacity needed for Standard verification. Falls back to Shallow when capacity is below this. Default: 40%', 'mcp-ai-wpoos' ),
@@ -565,7 +583,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 40,
 					'suffix'      => '%',
 				),
-				'depth_capacity_shallow'          => array(
+				'depth_capacity_shallow'           => array(
 					'type'        => 'slider',
 					'label'       => __( 'Shallow Tier — Spare Capacity Required', 'mcp-ai-wpoos' ),
 					'description' => __( 'Minimum spare capacity for Shallow verification. Below this, the system drops to Minimal (fastest path). Default: 15%', 'mcp-ai-wpoos' ),
@@ -575,7 +593,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 15,
 					'suffix'      => '%',
 				),
-				'depth_confidence_high'           => array(
+				'depth_confidence_high'            => array(
 					'type'        => 'slider',
 					'label'       => __( 'High Confidence Threshold', 'mcp-ai-wpoos' ),
 					'description' => __( 'Prediction confidence above this level may allow skipping to a shallower tier. Default: 0.80', 'mcp-ai-wpoos' ),
@@ -585,7 +603,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 80,
 					'suffix'      => '%',
 				),
-				'depth_confidence_medium'         => array(
+				'depth_confidence_medium'          => array(
 					'type'        => 'slider',
 					'label'       => __( 'Medium Confidence Threshold', 'mcp-ai-wpoos' ),
 					'description' => __( 'Confidence below this level triggers deeper verification when capacity allows. Default: 0.60', 'mcp-ai-wpoos' ),
@@ -595,7 +613,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 60,
 					'suffix'      => '%',
 				),
-				'depth_confidence_low'            => array(
+				'depth_confidence_low'             => array(
 					'type'        => 'slider',
 					'label'       => __( 'Low Confidence Threshold', 'mcp-ai-wpoos' ),
 					'description' => __( 'Confidence below this level always escalates verification regardless of capacity. Default: 0.40', 'mcp-ai-wpoos' ),
@@ -605,7 +623,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 40,
 					'suffix'      => '%',
 				),
-				'speculative_block_size'          => array(
+				'speculative_block_size'           => array(
 					'type'        => 'slider',
 					'label'       => __( 'Speculative Block Size', 'mcp-ai-wpoos' ),
 					'description' => __( 'Maximum number of tools to speculatively draft per block. Higher = more throughput potential, but more wasted work on rejection. Default: 4', 'mcp-ai-wpoos' ),
@@ -624,7 +642,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 60,
 					'suffix'      => '%',
 				),
-				'prediction_confidence_threshold' => array(
+				'prediction_confidence_threshold'  => array(
 					'type'        => 'slider',
 					'label'       => __( 'Prediction Confidence Threshold', 'mcp-ai-wpoos' ),
 					'description' => __( 'Minimum confidence level required to act on predictions (modern ML standard: 40%).', 'mcp-ai-wpoos' ),
@@ -634,7 +652,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 40,
 					'suffix'      => '%',
 				),
-				'prediction_safety_buffer'        => array(
+				'prediction_safety_buffer'         => array(
 					'type'        => 'slider',
 					'label'       => __( 'Prediction Safety Buffer', 'mcp-ai-wpoos' ),
 					'description' => __( 'Extra safety margin when making predictive adjustments (modern standard: 15%).', 'mcp-ai-wpoos' ),
@@ -644,7 +662,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 15,
 					'suffix'      => '%',
 				),
-				'orchestration_stats'             => array(
+				'orchestration_stats'              => array(
 					'type'    => 'html',
 					'content' => $this->get_stats_content(),
 				),
@@ -1931,7 +1949,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'enable_capability_gating',
 				'enable_cron_orchestration',
 				'enable_auto_async_execution',
+				'enable_capacity_aware_routing',
 				'async_tool_timeout',
+				'sse_max_duration_seconds',
 				'cron_job_retention_period',
 				'use_ts_build',
 				'section_multi_agent', // Section header.
@@ -2171,7 +2191,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'enable_capability_gating',
 						'enable_cron_orchestration',
 						'enable_auto_async_execution',
+						'enable_capacity_aware_routing',
 						'async_tool_timeout',
+						'sse_max_duration_seconds',
 						'cron_job_retention_period',
 						'use_ts_build',
 						// Multi-agent orchestration toggles.
@@ -4121,7 +4143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * @since 1.6.0
 		 */
 		private function render_depth_tier_distribution() {
-			$counts = get_option(
+			$counts   = get_option(
 				'wp_mcp_ai_depth_tier_counts',
 				array(
 					'deep'     => 0,
@@ -4155,8 +4177,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				<div class="dspark-tier-bar">
 					<?php foreach ( $counts as $tier => $count ) : ?>
 					<div class="dspark-tier-segment dspark-tier-<?php echo esc_attr( $tier ); ?>"
-						 style="width: <?php echo esc_attr( $tier_pct[ $tier ] ); ?>%;"
-						 title="<?php echo esc_attr( ucfirst( $tier ) . ': ' . $count . ' (' . $tier_pct[ $tier ] . '%)' ); ?>">
+						style="width: <?php echo esc_attr( $tier_pct[ $tier ] ); ?>%;"
+						title="<?php echo esc_attr( ucfirst( $tier ) . ': ' . $count . ' (' . $tier_pct[ $tier ] . '%)' ); ?>">
 					</div>
 					<?php endforeach; ?>
 				</div>
@@ -4235,7 +4257,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				<?php if ( null !== $confidence ) : ?>
 				<div class="dspark-confidence-bar">
 					<div class="dspark-confidence-fill"
-						 style="width: <?php echo esc_attr( min( 100, $confidence * 100 ) ); ?>%;
+						style="width: <?php echo esc_attr( min( 100, $confidence * 100 ) ); ?>%;
 								background: <?php echo esc_attr( $confidence >= 0.7 ? '#46b450' : ( $confidence >= 0.5 ? '#f0b849' : '#dc3232' ) ); ?>;">
 					</div>
 				</div>

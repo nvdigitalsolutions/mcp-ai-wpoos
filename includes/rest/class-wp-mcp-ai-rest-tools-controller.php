@@ -870,6 +870,25 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		$job_details = $service->get_job_details( $job_id, $user_id );
 
+		// Fallback: if cron-status service doesn't know this job, try
+		// the persistent job store (for jobs enqueued via QueueClient).
+		if ( is_wp_error( $job_details ) && \class_exists( 'WP_MCP_AI_Job_Store' ) ) {
+			$store = \WP_MCP_AI_Job_Store::get( $job_id );
+			if ( $store ) {
+				$job_details = array(
+					'job_id'       => $job_id,
+					'status'       => $store['status'],
+					'created_at'   => $store['created_at'],
+					'started_at'   => $store['started_at'],
+					'completed_at' => $store['completed_at'],
+					'result'       => $store['result'] ? \json_decode( $store['result'], true ) : null,
+					'error'        => $store['error'],
+					'handler'      => $store['handler'],
+					'attempts'     => (int) $store['attempts'],
+				);
+			}
+		}
+
 		if ( is_wp_error( $job_details ) ) {
 			return $job_details;
 		}
