@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
@@ -26,6 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
  */
 class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_SVG_Vectorizer;
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Image_Response;
 
@@ -65,44 +67,41 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 
 		return array(
 			'type'                 => 'object',
-			'properties'           => array(
-				'prompt'        => array(
-					'type'        => 'string',
-					'description' => __( 'The text prompt describing the desired image.', 'mcp-ai-wpoos' ),
+			'properties'           => array_merge(
+				array(
+					'prompt'       => array(
+						'type'        => 'string',
+						'description' => __( 'The text prompt describing the desired image.', 'mcp-ai-wpoos' ),
+					),
+					'model'        => array(
+						'type'        => 'string',
+						'description' => __( 'Gemini image model to use.', 'mcp-ai-wpoos' ),
+						'default'     => $defaults['model'],
+					),
+					'aspect_ratio' => array(
+						'type'        => 'string',
+						'description' => __( 'Aspect ratio for the generated image.', 'mcp-ai-wpoos' ),
+						'enum'        => $aspect_choices,
+						'default'     => $defaults['aspect_ratio'],
+					),
+					'mime_type'    => array(
+						'type'        => 'string',
+						'description' => __( 'Preferred MIME type for the saved image.', 'mcp-ai-wpoos' ),
+						'enum'        => $mime_choices,
+						'default'     => $defaults['mime_type'],
+					),
+					'file_name'    => array(
+						'type'        => 'string',
+						'description' => __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
+					),
+					'timeout'      => array(
+						'type'        => 'integer',
+						'description' => __( 'Override the Gemini request timeout in seconds.', 'mcp-ai-wpoos' ),
+						'minimum'     => 5,
+						'maximum'     => 300,
+					),
 				),
-				'model'         => array(
-					'type'        => 'string',
-					'description' => __( 'Gemini image model to use.', 'mcp-ai-wpoos' ),
-					'default'     => $defaults['model'],
-				),
-				'aspect_ratio'  => array(
-					'type'        => 'string',
-					'description' => __( 'Aspect ratio for the generated image.', 'mcp-ai-wpoos' ),
-					'enum'        => $aspect_choices,
-					'default'     => $defaults['aspect_ratio'],
-				),
-				'mime_type'     => array(
-					'type'        => 'string',
-					'description' => __( 'Preferred MIME type for the saved image.', 'mcp-ai-wpoos' ),
-					'enum'        => $mime_choices,
-					'default'     => $defaults['mime_type'],
-				),
-				'output_format' => array(
-					'type'        => 'string',
-					'description' => __( 'Output format for the generated image. Use "svg" to vectorize the raster output. Default is raster format.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'default', 'svg' ),
-					'default'     => 'default',
-				),
-				'file_name'     => array(
-					'type'        => 'string',
-					'description' => __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
-				),
-				'timeout'       => array(
-					'type'        => 'integer',
-					'description' => __( 'Override the Gemini request timeout in seconds.', 'mcp-ai-wpoos' ),
-					'minimum'     => 5,
-					'maximum'     => 300,
-				),
+				$this->get_output_format_parameter_schema()
 			),
 			'required'             => array( 'prompt' ),
 			'additionalProperties' => false,
@@ -287,11 +286,13 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			$result['usage'] = $image['usage'];
 		}
 
-		// Include inline content payload (base64 encoded image data).
-		$content = $this->build_inline_content_payload( $storage );
-		if ( ! empty( $content ) ) {
-			$result['content'] = $content;
-		}
+		// Add vectorization metadata if SVG output was used.
+		$result = $this->add_vectorization_metadata( $result, $storage, $output_format );
+
+		// Note: Inline content payload (base64 encoded image data) is intentionally NOT
+		// included in the default response to prevent bloating tool results sent to chat
+		// clients and LLMs. If base64 content is needed, it can be retrieved via a
+		// separate endpoint or parameter.
 
 		/**
 		 * Allow third parties to filter the Gemini image generation result before it is returned.
@@ -775,6 +776,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			'requires-model',       // Requires image model specification.
 			'consumes-tokens',      // Uses AI credits/tokens.
 			'model-dependent',      // Output quality varies by model.
+			'external-api',         // Calls Gemini API for image generation.
 		);
 	}
 
@@ -874,12 +876,13 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			'revised_prompt',
 			'provider',
 			'usage',
-			'cost',          // Cost data for UI display.
-			'text',          // Descriptive message about the generated image.
-			'vectorized',    // SVG metadata if present.
-			'svg_size',
-			'source_size',
-			'duration_ms',
+			'cost',             // Cost data for UI display.
+			'text',             // Descriptive message about the generated image.
+			'output_format',    // Output format selected (default or svg).
+			'vectorized',       // SVG vectorization flag.
+			'svg_size',         // SVG file size if vectorized.
+			'source_size',      // Source raster size if vectorized.
+			'duration_ms',      // Vectorization duration if vectorized.
 		);
 
 		$sanitized = array();
@@ -903,172 +906,5 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		return ! empty( $sanitized ) ? $sanitized : $result;
-	}
-
-	/**
-	 * Convert a raster image to SVG format using vectorization.
-	 *
-	 * @param array $storage    Stored raster image data.
-	 * @param array $arguments  Tool arguments.
-	 * @return array|WP_Error SVG storage data or error.
-	 */
-	protected function convert_to_svg( array $storage, array $arguments ) {
-		// Check if Node.js is available.
-		if ( ! $this->is_nodejs_available() ) {
-			return new WP_Error(
-				'wp_mcp_ai_nodejs_required',
-				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'mcp-ai-wpoos' )
-			);
-		}
-
-		$file_path = isset( $storage['file'] ) ? $storage['file'] : '';
-
-		if ( '' === $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_file_not_found',
-				__( 'Generated image file not found for SVG conversion.', 'mcp-ai-wpoos' )
-			);
-		}
-
-		// Prepare SVG output file.
-		$temp_output = wp_tempnam( 'gemini-svg-' );
-		if ( ! $temp_output ) {
-			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary SVG output file.', 'mcp-ai-wpoos' ) );
-		}
-
-		// Add .svg extension.
-		$temp_output_svg = $temp_output . '.svg';
-		rename( $temp_output, $temp_output_svg ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
-		$temp_output = $temp_output_svg;
-
-		// Prepare vectorization options.
-		$vectorization_options = array(
-			'colorMode'      => 'color',
-			'colorPrecision' => isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
-			'filterSpeckle'  => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
-			'mode'           => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
-			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
-		);
-
-		// Execute vectorization script.
-		$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
-		$script_args = array(
-			$file_path,
-			$temp_output,
-			wp_json_encode( $vectorization_options ),
-		);
-
-		$vectorize_result = $this->execute_nodejs_script(
-			$script_path,
-			$script_args,
-			array(
-				'timeout'    => 60,
-				'parse_json' => true,
-			)
-		);
-
-		if ( is_wp_error( $vectorize_result ) ) {
-			wp_delete_file( $temp_output );
-			return $vectorize_result;
-		}
-
-		if ( ! isset( $vectorize_result['success'] ) || ! $vectorize_result['success'] ) {
-			wp_delete_file( $temp_output );
-			return new WP_Error(
-				'wp_mcp_ai_vectorization_failed',
-				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'mcp-ai-wpoos' )
-			);
-		}
-
-		// Read SVG file.
-		$svg_data = file_get_contents( $temp_output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
-		if ( false === $svg_data || '' === $svg_data ) {
-			wp_delete_file( $temp_output );
-			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'mcp-ai-wpoos' ) );
-		}
-
-		// Cleanup temporary output file.
-		wp_delete_file( $temp_output );
-
-		// Save as WordPress attachment.
-		$svg_storage = $this->save_svg_as_attachment( $svg_data, $arguments );
-		if ( is_wp_error( $svg_storage ) ) {
-			return $svg_storage;
-		}
-
-		// Add vectorization metadata.
-		$svg_storage['vectorized']  = true;
-		$svg_storage['svg_size']    = isset( $vectorize_result['output_size'] ) ? $vectorize_result['output_size'] : $svg_storage['bytes'];
-		$svg_storage['source_size'] = isset( $vectorize_result['input_size'] ) ? $vectorize_result['input_size'] : $storage['bytes'];
-		$svg_storage['duration_ms'] = isset( $vectorize_result['duration_ms'] ) ? $vectorize_result['duration_ms'] : 0;
-
-		return $svg_storage;
-	}
-
-	/**
-	 * Save SVG data as WordPress attachment.
-	 *
-	 * @param string $svg_data  SVG file content.
-	 * @param array  $arguments Tool arguments for naming.
-	 * @return array|WP_Error Attachment data or error.
-	 */
-	protected function save_svg_as_attachment( $svg_data, array $arguments ) {
-		// Generate file name.
-		$base_name = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : 'gemini-image';
-		if ( empty( $base_name ) ) {
-			$base_name = 'gemini-image';
-		}
-
-		// Remove extension if present.
-		$base_name = preg_replace( '/\.(png|jpg|jpeg|gif|webp)$/i', '', $base_name );
-		$file_name = $base_name . '-svg-' . gmdate( 'Ymd-His' ) . '.svg';
-
-		// Upload SVG file.
-		if ( ! function_exists( 'wp_upload_bits' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
-
-		$upload = wp_upload_bits( $file_name, null, $svg_data );
-
-		if ( ! empty( $upload['error'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'mcp-ai-wpoos' ), array( 'error' => $upload['error'] ) );
-		}
-
-		$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
-
-		if ( '' === $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'mcp-ai-wpoos' ) );
-		}
-
-		// Create attachment.
-		$attachment = array(
-			'post_mime_type' => 'image/svg+xml',
-			'post_title'     => sanitize_text_field( __( 'Gemini SVG Image', 'mcp-ai-wpoos' ) ),
-			'post_content'   => '',
-			'post_status'    => 'inherit',
-		);
-
-		$attachment_id = wp_insert_attachment( $attachment, $file_path );
-
-		if ( is_wp_error( $attachment_id ) ) {
-			wp_delete_file( $file_path );
-			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'mcp-ai-wpoos' ), array( 'error' => $attachment_id ) );
-		}
-
-		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
-
-		// Get attachment URL using utility class.
-		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
-
-		return array(
-			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $local_url,
-			'download_url'  => $local_url,
-			'mime_type'     => 'image/svg+xml',
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => get_the_title( $attachment_id ),
-		);
 	}
 }
