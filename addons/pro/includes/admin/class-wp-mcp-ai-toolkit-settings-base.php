@@ -124,10 +124,18 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 			return;
 		}
 		$registered[ $this->page_slug ] = true;
+
+		// When the toolkit uses its own top-level menu, WordPress
+		// auto-generates a first submenu entry with the same name.
+		// Use a shorter menu title to avoid a duplicate label.
+		$menu_title = ( 'nvoos-pro-dashboard' === $this->parent_slug )
+			? $this->toolkit_name
+			: __( 'Settings', 'mcp-ai-wpoos-pro' );
+
 		add_submenu_page(
 			$this->parent_slug,
 			$this->toolkit_name . ' ' . __( 'Settings', 'mcp-ai-wpoos-pro' ),
-			$this->toolkit_name,
+			$menu_title,
 			'manage_options',
 			$this->page_slug,
 			array( $this, 'render_settings_page' )

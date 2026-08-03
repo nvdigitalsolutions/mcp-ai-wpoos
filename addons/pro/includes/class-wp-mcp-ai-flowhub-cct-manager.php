@@ -1877,6 +1877,13 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * @since 1.5.0
 		 */
 		public static function bootstrap() {
+			// Guard against double registration — remove any previously
+			// registered callbacks before re-adding so double-loading
+			// init.php never hooks the same callback twice.
+			remove_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 11 );
+			remove_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
+			remove_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
+
 			add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 11 );
 			add_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
 			add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
@@ -1888,6 +1895,10 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * @since 1.5.0
 		 */
 		public static function maybe_register_cct() {
+			// Self-remove so even if this callback is registered multiple times
+			// (e.g. init.php loaded twice), it only fires once per request.
+			remove_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 11 );
+
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 			if ( empty( $settings['enable_flowhub_toolkit'] ) ) {
 				return;
