@@ -41,9 +41,13 @@
 # Docs (keep readme.txt only)
 /docs
 /README.md
+/WPORG-REVIEW-FINDINGS.md
 /CONTRIBUTING.md
 /CHANGELOG.md
 /CREDITS.md
+
+# Per-folder developer READMEs (monorepo convention — not for distribution)
+src/**/README.md
 
 # JS tooling (vendor files are pre-bundled in assets/vendor/)
 /package.json
