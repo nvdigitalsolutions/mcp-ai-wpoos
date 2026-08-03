@@ -8,6 +8,8 @@ use NvoosGraphify\Memory\EmbeddingsOnIngest;
 use NvoosGraphify\Remote\Enricher;
 use NvoosGraphify\Remote\Registry as RemoteRegistry;
 
+use function get_current_screen;
+
 /**
  * Composition root for the NV oOS Graphify plugin.
  *
@@ -307,15 +309,19 @@ final class Plugin {
 
 	/** @return void */
 	public function renderAdminNotices(): void {
+		// Only show plugin notices on the plugin's own admin page.
+		$screen = get_current_screen();
+		$isPluginPage = $screen && false !== strpos( $screen->id, Admin\SettingsPage::PAGE_SLUG );
+
 		// Warn when OpenSSL is unavailable (credentials stored with weak fallback).
 		if ( class_exists( 'NvoosGraphify\Remote\Crypto' ) && ! \NvoosGraphify\Remote\Crypto::isAvailable() ) {
 			printf(
-				'<div class="notice notice-warning"><p>%s</p></div>',
+				'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
 				esc_html__( 'NV oOS Graphify: The OpenSSL PHP extension is not available. Remote-source credentials (API keys, tokens) will be stored with weak encryption. Please enable the OpenSSL extension for secure credential storage.', 'nvoos-graphify' )
 			);
 		}
 
-			$transientKey = Schema::TRANSIENT_PREFIX . 'build_complete';
+		$transientKey = Schema::TRANSIENT_PREFIX . 'build_complete';
 		if ( get_transient( $transientKey ) ) {
 			delete_transient( $transientKey );
 			printf(
@@ -324,12 +330,15 @@ final class Plugin {
 			);
 		}
 
-		$settings = Settings::all();
-		if ( empty( $settings['enabled'] ) ) {
-			printf(
-				'<div class="notice notice-warning"><p>%s</p></div>',
-				esc_html__( 'NV oOS Graphify is installed but the graph is not enabled. Go to Settings → NV oOS Graphify to enable it.', 'nvoos-graphify' )
-			);
+		// "Not enabled" notice is only relevant on the plugin's own page.
+		if ( $isPluginPage ) {
+			$settings = Settings::all();
+			if ( empty( $settings['enabled'] ) ) {
+				printf(
+					'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+					esc_html__( 'NV oOS Graphify is installed but the graph is not enabled. Go to Settings → NV oOS Graphify to enable it.', 'nvoos-graphify' )
+				);
+			}
 		}
 	}
 
