@@ -375,6 +375,7 @@ class WP_MCP_AI_Job_Notifier {
 		);
 
 		self::cache_job_status( $job_id, $status );
+		self::persist_job_status( $job_id, $result, null );
 		self::dispatch_webhooks( $job_id, 'completed', $status );
 		self::emit_sse_event( $job_id, 'completed', $status );
 	}
@@ -407,6 +408,7 @@ class WP_MCP_AI_Job_Notifier {
 		);
 
 		self::cache_job_status( $job_id, $status );
+		self::persist_job_status( $job_id, null, $error_data['message'] );
 		self::dispatch_webhooks( $job_id, 'failed', $status );
 		self::emit_sse_event( $job_id, 'failed', $status );
 	}
@@ -542,6 +544,9 @@ class WP_MCP_AI_Job_Notifier {
 	/**
 	 * Retrieve cached job status.
 	 *
+	 * Checks the transient cache first, then falls back to the
+	 * persistent job store for durable job state.
+	 *
 	 * @param string $job_id Job identifier.
 	 * @return array|null Status data or null if not found.
 	 */
@@ -549,12 +554,48 @@ class WP_MCP_AI_Job_Notifier {
 		$cache_key = self::CACHE_PREFIX . sanitize_key( $job_id );
 		$status    = get_transient( $cache_key );
 
+		// If not in cache, check persistent store.
+		if ( ! is_array( $status ) && \class_exists( 'WP_MCP_AI_Job_Store' ) ) {
+			$row = \WP_MCP_AI_Job_Store::get( $job_id );
+			if ( $row ) {
+				$status = array(
+					'job_id'       => $job_id,
+					'status'       => $row['status'],
+					'completed_at' => $row['completed_at'],
+					'result'       => $row['result'] ? \json_decode( $row['result'], true ) : null,
+					'error'        => $row['error'],
+					'metadata'     => array(),
+				);
+			}
+		}
+
 		// Enhance status with Little's Law metrics if job is running.
 		if ( is_array( $status ) && isset( $status['status'] ) && 'running' === $status['status'] ) {
 			$status = self::add_littles_law_metrics( $status );
 		}
 
 		return is_array( $status ) ? $status : null;
+	}
+
+	/**
+	 * Persist job result to the durable job store.
+	 *
+	 * Mirrors the transient cache into the database so that
+	 * job results survive cache flushes and restarts.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string      $job_id Job identifier.
+	 * @param mixed       $result Job result data.
+	 * @param string|null $error  Error message (optional).
+	 * @return void
+	 */
+	protected static function persist_job_status( $job_id, $result = null, $error = null ) {
+		if ( ! \class_exists( 'WP_MCP_AI_Job_Store' ) ) {
+			return;
+		}
+
+		\WP_MCP_AI_Job_Store::complete( $job_id, $result, $error );
 	}
 
 	/**

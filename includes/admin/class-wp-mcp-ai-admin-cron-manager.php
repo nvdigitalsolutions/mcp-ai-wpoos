@@ -212,13 +212,19 @@ class WP_MCP_AI_Admin_Cron_Manager {
 
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 
-		$jobs      = WP_MCP_AI_Cron_Manager::get_jobs();
-		$stats     = $this->get_statistics( $jobs );
-		$dlq_stats = null;
+		$jobs            = WP_MCP_AI_Cron_Manager::get_jobs();
+		$stats           = $this->get_statistics( $jobs );
+		$dlq_stats       = null;
+		$job_store_stats = null;
 
 		// Get DLQ stats if available.
 		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
 			$dlq_stats = WP_MCP_AI_Dead_Letter_Queue::get_stats();
+		}
+
+		// Get job store stats if available (Proposal 017).
+		if ( class_exists( 'WP_MCP_AI_Job_Store' ) ) {
+			$job_store_stats = \WP_MCP_AI_Job_Store::get_stats();
 		}
 
 		// Format jobs for AJAX response.
@@ -265,9 +271,10 @@ class WP_MCP_AI_Admin_Cron_Manager {
 
 		wp_send_json_success(
 			array(
-				'stats'     => $stats,
-				'jobs'      => $formatted_jobs,
-				'dlq_stats' => $dlq_stats,
+				'stats'           => $stats,
+				'jobs'            => $formatted_jobs,
+				'dlq_stats'       => $dlq_stats,
+				'job_store_stats' => $job_store_stats,
 			)
 		);
 	}
@@ -410,6 +417,11 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			// Show DLQ and SLA statistics if classes are available.
 			if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) || class_exists( 'WP_MCP_AI_SLA_Manager' ) ) :
 				$this->render_dlq_sla_stats();
+			endif;
+
+			// Show job store statistics (Proposal 017 — persistent job tracking).
+			if ( class_exists( 'WP_MCP_AI_Job_Store' ) ) :
+				$this->render_job_store_section();
 			endif;
 			?>
 
@@ -655,6 +667,91 @@ class WP_MCP_AI_Admin_Cron_Manager {
 					<?php endif; ?>
 				</div>
 			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Job Store section showing persistent job tracking stats.
+	 *
+	 * @since 1.3.0
+	 * @return void
+	 */
+	private function render_job_store_section() {
+		$stats = \WP_MCP_AI_Job_Store::get_stats();
+
+		if ( 0 === $stats['total'] ) {
+			return;
+		}
+		?>
+		<div class="wp-mcp-ai-cron-manager__intro" style="margin-top:2rem;">
+			<h2 style="margin-top:0;"><?php esc_html_e( 'Job Store', 'mcp-ai-wpoos' ); ?></h2>
+			<p><?php esc_html_e( 'Persistent job tracking for async operations enqueued via the QueueClient. The job store is the canonical source of truth for job status regardless of transport (Action Scheduler, WP-Cron, or RabbitMQ).', 'mcp-ai-wpoos' ); ?></p>
+
+			<div style="display:flex;gap:1rem;margin:1rem 0;flex-wrap:wrap;">
+				<?php
+				$statuses = array(
+					'queued'    => array(
+						'label' => __( 'Queued', 'mcp-ai-wpoos' ),
+						'color' => '#e5f2ff',
+						'text'  => '#0c5ba0',
+					),
+					'running'   => array(
+						'label' => __( 'Running', 'mcp-ai-wpoos' ),
+						'color' => '#fff3cd',
+						'text'  => '#856404',
+					),
+					'completed' => array(
+						'label' => __( 'Completed', 'mcp-ai-wpoos' ),
+						'color' => '#d4edda',
+						'text'  => '#155724',
+					),
+					'failed'    => array(
+						'label' => __( 'Failed', 'mcp-ai-wpoos' ),
+						'color' => '#f8d7da',
+						'text'  => '#721c24',
+					),
+					'cancelled' => array(
+						'label' => __( 'Cancelled', 'mcp-ai-wpoos' ),
+						'color' => '#e2e3e5',
+						'text'  => '#383d41',
+					),
+				);
+
+				foreach ( $statuses as $status => $meta ) :
+					$count = isset( $stats[ $status ] ) ? (int) $stats[ $status ] : 0;
+					?>
+					<div style="
+						background:<?php echo esc_attr( $meta['color'] ); ?>;
+						border:1px solid <?php echo esc_attr( $meta['text'] ); ?>;
+						border-radius:6px;
+						padding:0.75rem 1rem;
+						min-width:100px;
+						text-align:center;
+					">
+						<div style="font-size:1.5rem;font-weight:700;color:<?php echo esc_attr( $meta['text'] ); ?>;"><?php echo esc_html( (string) $count ); ?></div>
+						<div style="font-size:0.8rem;color:<?php echo esc_attr( $meta['text'] ); ?>;margin-top:0.25rem;"><?php echo esc_html( $meta['label'] ); ?></div>
+					</div>
+					<?php
+				endforeach;
+				?>
+
+				<div style="
+					background:#f0f6fc;
+					border:1px solid #2271b1;
+					border-radius:6px;
+					padding:0.75rem 1rem;
+					min-width:100px;
+					text-align:center;
+				">
+					<div style="font-size:1.5rem;font-weight:700;color:#2271b1;"><?php echo esc_html( (string) $stats['total'] ); ?></div>
+					<div style="font-size:0.8rem;color:#2271b1;margin-top:0.25rem;"><?php esc_html_e( 'Total', 'mcp-ai-wpoos' ); ?></div>
+				</div>
+			</div>
+
+			<p style="font-size:0.85rem;color:#646970;">
+				<?php esc_html_e( 'The job store provides durable, transport-agnostic tracking. Job IDs use UUID format (job_ prefix). Status is updated in real-time as jobs move through queued → running → completed/failed lifecycle.', 'mcp-ai-wpoos' ); ?>
+			</p>
 		</div>
 		<?php
 	}

@@ -28,10 +28,45 @@ class ProviderRouter {
 	 */
 	private array $providers = array();
 
+	/**
+	 * Health tracker for provider failover.
+	 *
+	 * @var ProviderHealthTracker|null
+	 */
+	private ?ProviderHealthTracker $healthTracker = null;
+
 	public function __construct(
 		private readonly SettingsStoreInterface $settings,
 		private readonly ErrorFactoryInterface $errors,
 	) {}
+
+	/**
+	 * Set the health tracker for failover support.
+	 *
+	 * @since 1.2.5
+	 *
+	 * @param ProviderHealthTracker $tracker Health tracker instance.
+	 * @return void
+	 */
+	public function setHealthTracker( ProviderHealthTracker $tracker ): void {
+		$this->healthTracker = $tracker;
+	}
+
+	/**
+	 * Check if provider failover is enabled and available.
+	 *
+	 * @since 1.2.5
+	 *
+	 * @return bool True when failover is active.
+	 */
+	private function failoverEnabled(): bool {
+		if ( null === $this->healthTracker ) {
+			return false;
+		}
+
+		$settings = $this->settings->get( 'enable_provider_failover', false );
+		return (bool) $settings;
+	}
 
 	/**
 	 * Register a provider client.
@@ -106,7 +141,26 @@ class ProviderRouter {
 			);
 		}
 
-		return $provider->chat( $messages, $options );
+		$result = $provider->chat( $messages, $options );
+
+		// Record outcome and attempt failover on error.
+		$slug = $provider->getProviderSlug();
+		if ( $this->isError( $result ) ) {
+			if ( $this->healthTracker ) {
+				$this->healthTracker->recordFailure( $slug, $this->classifyError( $result ) );
+			}
+
+			$fallback = $this->attemptFailover( $messages, $options, $assistantConfig, $slug );
+			if ( null !== $fallback ) {
+				return $fallback;
+			}
+		} else {
+			if ( $this->healthTracker ) {
+				$this->healthTracker->recordSuccess( $slug, 0 );
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -129,7 +183,24 @@ class ProviderRouter {
 			);
 		}
 
-		return $provider->stream( $messages, $options, $onChunk );
+		$result = $provider->stream( $messages, $options, $onChunk );
+
+		$slug = $provider->getProviderSlug();
+		if ( $this->isError( $result ) ) {
+			if ( $this->healthTracker ) {
+				$this->healthTracker->recordFailure( $slug, $this->classifyError( $result ) );
+			}
+			$fallback = $this->attemptFailover( $messages, $options, $assistantConfig, $slug, $onChunk );
+			if ( null !== $fallback ) {
+				return $fallback;
+			}
+		} else {
+			if ( $this->healthTracker ) {
+				$this->healthTracker->recordSuccess( $slug, 0 );
+			}
+		}
+
+		return $result;
 	}
 
 	/**
@@ -156,6 +227,100 @@ class ProviderRouter {
 	 */
 	public function has( string $slug ): bool {
 		return isset( $this->providers[ $this->normalizeSlug( $slug ) ] );
+	}
+
+	// ─── Failover helpers ───────────────────────────────────────────────
+
+	/**
+	 * Determine if a provider response is an error.
+	 *
+	 * @since 1.2.5
+	 *
+	 * @param mixed $result Provider response.
+	 * @return bool True when the result represents an error.
+	 */
+	private function isError( mixed $result ): bool {
+		if ( $result instanceof \WP_Error ) {
+			return true;
+		}
+
+		if ( \is_array( $result ) && isset( $result['error'] ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Classify an error for health-tracker scoring.
+	 *
+	 * @since 1.2.5
+	 *
+	 * @param mixed $result Provider response.
+	 * @return string Error classification.
+	 */
+	private function classifyError( mixed $result ): string {
+		if ( $result instanceof \WP_Error ) {
+			$message = strtolower( $result->get_error_message() );
+			if ( str_contains( $message, 'timeout' ) || str_contains( $message, 'timed out' ) ) {
+				return 'timeout';
+			}
+			if ( str_contains( $message, 'rate' ) || str_contains( $message, '429' ) ) {
+				return 'rate_limit';
+			}
+			if ( str_contains( $message, '500' ) || str_contains( $message, '502' ) || str_contains( $message, '503' ) ) {
+				return '5xx';
+			}
+			return 'api_error';
+		}
+		return 'unknown';
+	}
+
+	/**
+	 * Attempt provider failover when the primary provider fails.
+	 *
+	 * @since 1.2.5
+	 *
+	 * @param array    $messages        Chat messages.
+	 * @param array    $options         Request options.
+	 * @param array    $assistantConfig Assistant config.
+	 * @param string   $failedSlug      Slug of the provider that just failed.
+	 * @param callable $onChunk         Optional stream callback.
+	 * @return mixed|null Fallback result, or null if no fallback available.
+	 */
+	private function attemptFailover(
+		array $messages,
+		array $options,
+		array $assistantConfig,
+		string $failedSlug,
+		?callable $onChunk = null
+	): mixed {
+		if ( ! $this->failoverEnabled() || null === $this->healthTracker ) {
+			return null;
+		}
+
+		$fallbacks = $this->healthTracker->getFallbackChain( $failedSlug );
+		foreach ( $fallbacks as $fallback ) {
+			$fallbackProvider = $this->get( $fallback['slug'] );
+			if ( ! $fallbackProvider ) {
+				continue;
+			}
+
+			if ( null !== $onChunk ) {
+				$result = $fallbackProvider->stream( $messages, $options, $onChunk );
+			} else {
+				$result = $fallbackProvider->chat( $messages, $options );
+			}
+
+			if ( ! $this->isError( $result ) ) {
+				$this->healthTracker->recordSuccess( $fallback['slug'], 0 );
+				return $result;
+			}
+
+			$this->healthTracker->recordFailure( $fallback['slug'], $this->classifyError( $result ) );
+		}
+
+		return null;
 	}
 
 	// ─── Helpers ──────────────────────────────────────────────────────

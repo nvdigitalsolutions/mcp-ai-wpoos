@@ -371,7 +371,7 @@ class WP_MCP_AI_Tool_Load_Balancer {
 
 		// Tool must be read-only, idempotent, cacheable, and not state-changing.
 		if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
-			$flags = (array) $tool->get_capability_flags();
+			$flags             = (array) $tool->get_capability_flags();
 			$is_read_only      = in_array( 'read-only', $flags, true );
 			$is_state_changing = in_array( 'state-changing', $flags, true ) || in_array( 'write', $flags, true );
 			$is_cacheable      = in_array( 'cacheable', $flags, true );
@@ -395,7 +395,12 @@ class WP_MCP_AI_Tool_Load_Balancer {
 	}
 
 	/**
-	 * Cache tool execution result
+	 * Cache tool execution result.
+	 *
+	 * Also registers the cache key so that clear_cache() can invalidate
+	 * per-tool results later.
+	 *
+	 * @since 1.2.0
 	 *
 	 * @param string $tool_slug Tool identifier.
 	 * @param array  $arguments Tool arguments.
@@ -406,22 +411,53 @@ class WP_MCP_AI_Tool_Load_Balancer {
 		$cache_key = $this->generate_cache_key( $tool_slug, $arguments );
 		$ttl       = apply_filters( 'wp_mcp_ai_tool_cache_ttl', self::DEFAULT_CACHE_TTL, $tool_slug );
 
-		return wp_cache_set( $cache_key, $result, self::CACHE_GROUP, $ttl );
+		$stored = wp_cache_set( $cache_key, $result, self::CACHE_GROUP, $ttl );
+
+		// Register key for later per-tool invalidation.
+		$registry_key = self::CACHE_KEY_PREFIX . 'registry_' . sanitize_key( $tool_slug );
+		$registry     = wp_cache_get( $registry_key, self::CACHE_GROUP );
+		if ( ! \is_array( $registry ) ) {
+			$registry = array();
+		}
+		$registry[] = $cache_key;
+		wp_cache_set( $registry_key, $registry, self::CACHE_GROUP, $ttl * 2 );
+
+		return $stored;
 	}
 
 	/**
-	 * Generate cache key from tool and arguments
+	 * Generate cache key from tool and arguments.
+	 *
+	 * Recursively sorts nested arrays to ensure consistent hashing
+	 * regardless of key insertion order.
 	 *
 	 * @param string $tool_slug Tool identifier.
 	 * @param array  $arguments Tool arguments.
 	 * @return string Cache key.
 	 */
 	protected function generate_cache_key( $tool_slug, $arguments ) {
-		// Normalize arguments for consistent caching.
-		ksort( $arguments );
-		$args_hash = md5( wp_json_encode( $arguments ) );
+		$normalized = $this->deep_ksort( $arguments );
+		$args_hash  = md5( wp_json_encode( $normalized, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
 
 		return self::CACHE_KEY_PREFIX . $tool_slug . '_' . $args_hash;
+	}
+
+	/**
+	 * Recursively sort array keys for consistent cache hashing.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $input Array to sort.
+	 * @return array Sorted array.
+	 */
+	private function deep_ksort( array $input ) {
+		\ksort( $input );
+		foreach ( $input as $key => $value ) {
+			if ( \is_array( $value ) ) {
+				$input[ $key ] = $this->deep_ksort( $value );
+			}
+		}
+		return $input;
 	}
 
 	/**
@@ -479,7 +515,9 @@ class WP_MCP_AI_Tool_Load_Balancer {
 	}
 
 	/**
-	 * Clear tool result cache
+	 * Clear tool result cache.
+	 *
+	 * @since 1.2.0
 	 *
 	 * @param string|null $tool_slug Optional tool slug to clear specific tool cache.
 	 * @return bool Success status.
@@ -490,8 +528,19 @@ class WP_MCP_AI_Tool_Load_Balancer {
 			return wp_cache_flush();
 		}
 
-		// Clear specific tool cache (requires iterating through possible keys).
-		// For simplicity, we'll just return true as wp_cache doesn't support wildcard deletes.
+		$tool_slug    = sanitize_key( $tool_slug );
+		$registry_key = self::CACHE_KEY_PREFIX . 'registry_' . $tool_slug;
+		$registry     = wp_cache_get( $registry_key, self::CACHE_GROUP );
+
+		if ( ! \is_array( $registry ) ) {
+			return false;
+		}
+
+		foreach ( $registry as $cache_key ) {
+			wp_cache_delete( $cache_key, self::CACHE_GROUP );
+		}
+		wp_cache_delete( $registry_key, self::CACHE_GROUP );
+
 		return true;
 	}
 }

@@ -59,8 +59,25 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	 */
 	protected $load_monitor = null;
 
+	/**
+	 * Depth scheduler instance.
+	 *
+	 * @var WP_MCP_AI_Orchestration_Depth_Scheduler|null
+	 */
 	protected $depth_scheduler = null;
+
+	/**
+	 * Speculative executor instance.
+	 *
+	 * @var WP_MCP_AI_Speculative_Tool_Executor|null
+	 */
 	protected $speculative_executor = null;
+
+	/**
+	 * Acceptance tracker instance.
+	 *
+	 * @var WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null
+	 */
 	protected $acceptance_tracker = null;
 
 	/**
@@ -75,26 +92,55 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	);
 
 	/**
-	 * Capacity thresholds for routing decisions
+	 * Capacity thresholds for routing decisions.
+	 *
+	 * These are now filterable via `wp_mcp_ai_capacity_thresholds`.
+	 * Constants are kept as defaults for backward compatibility.
+	 *
+	 * @since 1.2.0
 	 */
 	const CAPACITY_THRESHOLD_CRITICAL = 15;  // Queue if capacity < 15%.
 	const CAPACITY_THRESHOLD_WARNING  = 30;  // Consider queueing if capacity < 30%.
 	const UTILIZATION_THRESHOLD_HIGH  = 0.85; // High utilization threshold.
 
 	/**
+	 * Get filterable capacity thresholds.
+	 *
+	 * @since 1.2.0
+	 * @return array Thresholds array.
+	 */
+	protected function get_capacity_thresholds() {
+		$defaults = array(
+			'critical'      => self::CAPACITY_THRESHOLD_CRITICAL,
+			'high_util'     => self::CAPACITY_THRESHOLD_WARNING,
+			'utilization'   => self::UTILIZATION_THRESHOLD_HIGH,
+			'slow_tool_sec' => 5.0,
+		);
+
+		/**
+		 * Filter capacity thresholds for load-based routing.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $defaults Default thresholds.
+		 */
+		return apply_filters( 'wp_mcp_ai_capacity_thresholds', $defaults );
+	}
+
+	/**
 	 * Constructor
 	 *
-	 * @param WP_MCP_AI_Tool_Registry|null       $registry Tool registry instance.
-	 * @param WP_MCP_AI_Tool_Async_Executor|null $async_executor Async executor instance.
-	 * @param WP_MCP_AI_Tool_Load_Monitor|null   $load_monitor Load monitor instance.
+	 * @param WP_MCP_AI_Tool_Registry|null                 $registry Tool registry instance.
+	 * @param WP_MCP_AI_Tool_Async_Executor|null           $async_executor Async executor instance.
+	 * @param WP_MCP_AI_Tool_Load_Monitor|null             $load_monitor Load monitor instance.
 	 * @param WP_MCP_AI_Orchestration_Depth_Scheduler|null $depth_scheduler Depth scheduler instance.
-	 * @param WP_MCP_AI_Speculative_Tool_Executor|null   $speculative_executor Speculative executor instance.
+	 * @param WP_MCP_AI_Speculative_Tool_Executor|null     $speculative_executor Speculative executor instance.
 	 * @param WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null $acceptance_tracker Acceptance tracker instance.
 	 */
 	public function __construct( $registry = null, $async_executor = null, $load_monitor = null, $depth_scheduler = null, $speculative_executor = null, $acceptance_tracker = null ) {
-		$this->registry       = $registry;
-		$this->async_executor = $async_executor;
-		$this->load_monitor   = $load_monitor;
+		$this->registry             = $registry;
+		$this->async_executor       = $async_executor;
+		$this->load_monitor         = $load_monitor;
 		$this->depth_scheduler      = $depth_scheduler;
 		$this->speculative_executor = $speculative_executor;
 		$this->acceptance_tracker   = $acceptance_tracker;
@@ -391,8 +437,10 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		// Get current load metrics for the tool.
 		$metrics = $monitor->get_load_metrics( $tool_slug );
 
+		$thresholds = $this->get_capacity_thresholds();
+
 		// Check if system is under critical load.
-		if ( isset( $metrics['capacity_score'] ) && $metrics['capacity_score'] < self::CAPACITY_THRESHOLD_CRITICAL ) {
+		if ( isset( $metrics['capacity_score'] ) && $metrics['capacity_score'] < $thresholds['critical'] ) {
 			// Critical capacity - queue non-critical tools.
 			$is_critical_request = isset( $context['priority'] ) && 'critical' === $context['priority'];
 			$is_agent_request    = isset( $context['agent_role'] );
@@ -417,7 +465,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		}
 
 		// Check if tool is showing high utilization.
-		if ( isset( $metrics['utilization'] ) && $metrics['utilization'] > self::UTILIZATION_THRESHOLD_HIGH ) {
+		if ( isset( $metrics['utilization'] ) && $metrics['utilization'] > $thresholds['utilization'] ) {
 			// High utilization - consider agent role priority.
 			$agent_role = isset( $context['agent_role'] ) ? $context['agent_role'] : null;
 
