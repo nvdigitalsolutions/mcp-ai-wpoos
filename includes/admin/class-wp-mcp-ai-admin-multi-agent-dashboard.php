@@ -347,7 +347,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 				<div class="wp-mcp-ai-test-modal__panel">
 					<div class="wp-mcp-ai-test-modal__header">
 						<h2 id="wp-mcp-ai-test-modal__title"><?php echo esc_html__( 'Test Assistant', 'mcp-ai-wpoos' ); ?></h2>
-						<button type="button" class="wp-mcp-ai-test-modal__close" aria-label="<?php echo esc_attr__( 'Close', 'mcp-ai-wpoos' ); ?>">
+						<button type="button" class="wp-mcp-ai-test-modal__close" aria-label="<?php echo esc_attr_x( 'Close', 'modal button', 'mcp-ai-wpoos' ); ?>">
 							<span class="dashicons dashicons-no-alt"></span>
 						</button>
 					</div>

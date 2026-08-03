@@ -150,4 +150,4 @@ Based on the April 2026 re-audit and May 2026 hardening (re-audit May 19, code r
 
 ---
 
-**Related documents:** [FOR_REVIEWERS.md](FOR_REVIEWERS.md) · [compliance/SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md) · [compliance/TRACEABILITY.md](compliance/TRACEABILITY.md) · [ADDON_INVENTORY.md](ADDON_INVENTORY.md)
+**Related documents:** [FOR_REVIEWERS.md](../../project/FOR_REVIEWERS.md) · [SECURITY_AUDIT_2026_04.md](../compliance/SECURITY_AUDIT_2026_04.md) · [TRACEABILITY.md](../compliance/TRACEABILITY.md) · [ADDON_INVENTORY.md](../../project/ADDON_INVENTORY.md)

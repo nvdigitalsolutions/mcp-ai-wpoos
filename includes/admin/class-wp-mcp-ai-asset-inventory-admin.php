@@ -139,7 +139,7 @@ class WP_MCP_AI_Asset_Inventory_Admin {
 					<label>
 						<?php echo esc_html__( 'Classification:', 'mcp-ai-wpoos' ); ?>
 						<select id="wp-mcp-ai-filter-classification">
-							<option value=""><?php echo esc_html__( 'All', 'mcp-ai-wpoos' ); ?></option>
+							<option value=""><?php echo esc_html_x( 'All', 'filter dropdown', 'mcp-ai-wpoos' ); ?></option>
 							<option value="public"><?php echo esc_html__( 'Public', 'mcp-ai-wpoos' ); ?></option>
 							<option value="internal"><?php echo esc_html__( 'Internal', 'mcp-ai-wpoos' ); ?></option>
 							<option value="confidential"><?php echo esc_html__( 'Confidential', 'mcp-ai-wpoos' ); ?></option>
@@ -150,7 +150,7 @@ class WP_MCP_AI_Asset_Inventory_Admin {
 					<label>
 						<?php echo esc_html__( 'Type:', 'mcp-ai-wpoos' ); ?>
 						<select id="wp-mcp-ai-filter-type">
-							<option value=""><?php echo esc_html__( 'All', 'mcp-ai-wpoos' ); ?></option>
+							<option value=""><?php echo esc_html_x( 'All', 'filter dropdown', 'mcp-ai-wpoos' ); ?></option>
 							<option value="api_key"><?php echo esc_html__( 'API Key/Credential', 'mcp-ai-wpoos' ); ?></option>
 							<option value="user_data"><?php echo esc_html__( 'User Data', 'mcp-ai-wpoos' ); ?></option>
 							<option value="chat_transcript"><?php echo esc_html__( 'Chat Transcript', 'mcp-ai-wpoos' ); ?></option>

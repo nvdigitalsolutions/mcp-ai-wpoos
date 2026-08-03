@@ -173,6 +173,23 @@ class WP_MCP_AI_Agent_Code_Sandbox {
 					__( 'Specified working directory does not exist.', 'mcp-ai-wpoos' )
 				);
 			}
+
+			// Containment check: ensure resolved path is within allowed sandbox roots.
+			$allowed_roots = self::get_allowed_sandbox_roots();
+			$contained     = false;
+			foreach ( $allowed_roots as $root ) {
+				if ( 0 === strpos( $real_working_dir, $root ) ) {
+					$contained = true;
+					break;
+				}
+			}
+			if ( ! $contained ) {
+				return new WP_Error(
+					'working_dir_not_allowed',
+					__( 'Working directory is outside allowed sandbox locations.', 'mcp-ai-wpoos' )
+				);
+			}
+
 			$working_dir = $real_working_dir;
 		}
 
@@ -625,6 +642,42 @@ class WP_MCP_AI_Agent_Code_Sandbox {
 		file_put_contents( $marker, (string) time() );
 
 		return $temp_dir;
+	}
+
+	/**
+	 * Return the set of allowed sandbox root directories (resolved via realpath).
+	 *
+	 * Caller-supplied working_dir values are only permitted when they reside
+	 * within one of these roots, preventing directory-traversal escapes.
+	 *
+	 * @since 1.2.1
+	 *
+	 * @return string[] Absolute, realpath-resolved directory paths with trailing slash.
+	 */
+	private static function get_allowed_sandbox_roots() {
+		$roots   = array();
+		$temp    = realpath( sys_get_temp_dir() );
+		$uploads = wp_upload_dir();
+
+		if ( false !== $temp ) {
+			$roots[] = trailingslashit( $temp );
+		}
+
+		if ( ! empty( $uploads['basedir'] ) ) {
+			$upload_real = realpath( $uploads['basedir'] );
+			if ( false !== $upload_real ) {
+				$roots[] = trailingslashit( $upload_real );
+			}
+		}
+
+		/**
+		 * Filter the allowed sandbox root directories.
+		 *
+		 * @since 1.2.1
+		 *
+		 * @param string[] $roots Absolute, realpath-resolved directory paths.
+		 */
+		return apply_filters( 'wp_mcp_ai_sandbox_allowed_roots', array_unique( $roots ) );
 	}
 
 	/**

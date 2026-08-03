@@ -292,7 +292,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 						<h2 class="wp-mcp-ai-professional-selector-modal__title" data-modal-title>
 							<?php esc_html_e( 'Professional Chat', 'mcp-ai-wpoos' ); ?>
 						</h2>
-						<button type="button" class="wp-mcp-ai-professional-selector-modal__close" data-modal-close aria-label="<?php echo esc_attr__( 'Close', 'mcp-ai-wpoos' ); ?>">
+						<button type="button" class="wp-mcp-ai-professional-selector-modal__close" data-modal-close aria-label="<?php echo esc_attr_x( 'Close', 'modal button', 'mcp-ai-wpoos' ); ?>">
 							<span class="dashicons dashicons-no-alt"></span>
 						</button>
 					</div>

@@ -120,4 +120,4 @@ composer run build && wp plugin-check mcp-ai-wpoos.zip
 
 ---
 
-**Related documents:** [WORDPRESS_ORG_COMPLIANCE_COMPLETE.md](compliance/WORDPRESS_ORG_COMPLIANCE_COMPLETE.md) · [FOR_REVIEWERS.md](FOR_REVIEWERS.md) · [SECURITY_POSTURE.md](SECURITY_POSTURE.md)
+**Related documents:** [WORDPRESS_ORG_COMPLIANCE_COMPLETE.md](WORDPRESS_ORG_COMPLIANCE_COMPLETE.md) · [FOR_REVIEWERS.md](../../project/FOR_REVIEWERS.md) · [SECURITY_POSTURE.md](../security/SECURITY_POSTURE.md)
