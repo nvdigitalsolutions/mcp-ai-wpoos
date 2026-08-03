@@ -102,7 +102,7 @@ jobs:
           ARTIFACT="${{ steps.version.outputs.artifact }}"
           mkdir -p "dist/${ARTIFACT}/nvoos-graphify"
 
-          # Copy plugin source (exclude dev/test/build files)
+          # Copy plugin source (exclude dev/test/build files). Keep in sync with plugins/nvoos-graphify/.distignore.
           rsync -a \
             --exclude='.git/' \
             --exclude='.gitignore' \
@@ -114,6 +114,11 @@ jobs:
             --exclude='composer.json' \
             --exclude='composer.lock' \
             --exclude='CHANGELOG.md' \
+            --exclude='README.md' \
+            --exclude='WPORG-REVIEW-FINDINGS.md' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='src/**/README.md' \
             --exclude='.DS_Store' \
             plugins/nvoos-graphify/ "dist/${ARTIFACT}/nvoos-graphify/"
 

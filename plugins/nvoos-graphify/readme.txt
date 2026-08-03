@@ -99,6 +99,23 @@ Cron schedules are cleared. Your data stays intact — reactivate at any time.
 
 All custom tables and options are removed (see `uninstall.php`). Export your graph first if you want to keep it.
 
+== Privacy Notice ==
+
+This plugin does not collect, store, or transmit any personal data by default. The core graph engine runs entirely on your WordPress server using your existing content.
+
+**Remote Sources (opt-in only):** When you explicitly configure a remote source driver (e.g. Wikidata, REST API, RSS feed), the plugin sends HTTP requests to the URLs you provide. No data is sent off-site without your explicit setup. Remote source credentials (API keys, tokens, passwords) are stored in the database encrypted with AES-256-GCM via the OpenSSL PHP extension, falling back to base64 encoding with an admin warning when OpenSSL is unavailable.
+
+**Optional AI Addons:** The companion plugins `nvoos-graphify-ai` and `nvoos-graphify-embeddings` (not included in this plugin) send content to third-party AI providers (OpenAI, Google Gemini, etc.) when configured. Refer to those addons' documentation for their privacy policies.
+
+== Third-Party Libraries ==
+
+This plugin bundles the following open-source libraries:
+
+* **Cytoscape.js** v3.28.1 — MIT License — https://github.com/cytoscape/cytoscape.js
+* **cytoscape-fcose** v2.2.0 — MIT License — https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
+
+Both libraries are served locally from `assets/vendor/` and never loaded from third-party CDNs.
+
 == Screenshots ==
 
 1. Graph Explorer — interactive Cytoscape.js visualization with search and node details
