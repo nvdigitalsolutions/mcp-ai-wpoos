@@ -188,6 +188,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_key',
+							'validate_callback' => array( __CLASS__, 'validate_tool_slug_exists' ),
 						),
 						'arguments'    => array(
 							'description' => __( 'Arguments to pass to the tool execution.', 'mcp-ai-wpoos' ),
@@ -658,14 +659,20 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$prepared_arguments = is_array( $arguments ) ? $arguments : array();
 
 		try {
-			/**
-			 * Fires immediately before executing a registered tool.
-			 *
-			 * @param string $tool_slug          Tool identifier.
-			 * @param array  $prepared_arguments Arguments passed in the request.
-			 * @param array  $context            Execution context.
-			 */
-			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+			try {
+				/**
+				 * Fires immediately before executing a registered tool.
+				 *
+				 * @param string $tool_slug          Tool identifier.
+				 * @param array  $prepared_arguments Arguments passed in the request.
+				 * @param array  $context            Execution context.
+				 */
+				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+			} catch ( WP_MCP_AI_Destructive_Confirmation_Required $gate_exception ) {
+				// Destructive-ops gate: return the confirmation request as a
+				// WP_Error envelope (HTTP 428) through the normal pipeline.
+				return $gate_exception->to_wp_error();
+			}
 
 			$wp_mcp_ai_tool_start = microtime( true );
 
@@ -1219,5 +1226,93 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return new WP_Error( 'wp_mcp_ai_no_source', '' );
+	}
+
+	/**
+	 * Validate that a requested tool slug exists in the registry.
+	 *
+	 * Used as a validate_callback on the POST /tools route so LLM-hallucinated
+	 * slugs return a 400 with did-you-mean suggestions rather than a cryptic
+	 * 404 after argument parsing.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param mixed           $value   Sanitised tool slug.
+	 * @param WP_REST_Request $request Current request.
+	 * @param string          $param   Parameter name.
+	 * @return true|WP_Error True if the slug is registered.
+	 */
+	public static function validate_tool_slug_exists( $value, $request, $param ) {
+		if ( ! function_exists( 'wp_mcp_ai_container' ) ) {
+			return true; // Too early to validate; let the executor handle it.
+		}
+
+		$container = wp_mcp_ai_container();
+		if ( ! $container || ! method_exists( $container, 'get' ) ) {
+			return true;
+		}
+
+		try {
+			$registry = $container->get( 'tool.registry' );
+		} catch ( Exception $e ) {
+			return true;
+		}
+
+		if ( ! $registry instanceof WP_MCP_AI_Tool_Registry ) {
+			return true;
+		}
+
+		$slug = is_string( $value ) ? sanitize_key( $value ) : '';
+		if ( '' === $slug ) {
+			return new WP_Error(
+				'rest_invalid_param',
+				sprintf(
+					/* translators: %s: parameter name */
+					__( 'Invalid tool slug.', 'mcp-ai-wpoos' ),
+					$param
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( $registry->get_tool( $slug ) ) {
+			return true;
+		}
+
+		// Collect all registered slugs for did-you-mean suggestions.
+		$all_tools   = $registry->get_tools();
+		$suggestions = array();
+		foreach ( $all_tools as $tool ) {
+			$suggestions[] = $tool->get_slug();
+		}
+
+		$similar = array_filter(
+			$suggestions,
+			function ( $candidate ) use ( $slug ) {
+				return levenshtein( $slug, $candidate ) <= 3
+					|| similar_text( $slug, $candidate ) > 50
+					|| false !== stripos( $candidate, $slug );
+			}
+		);
+
+		$similar = array_values( $similar );
+		if ( count( $similar ) > 3 ) {
+			$similar = array_slice( $similar, 0, 3 );
+		}
+
+		$error_data = array(
+			'status' => 400,
+			'tool'   => $slug,
+		);
+
+		if ( ! empty( $similar ) ) {
+			$error_data['suggestions'] = $similar;
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_unknown_tool',
+			__( 'The requested tool is not registered.', 'mcp-ai-wpoos' ),
+			$error_data
+		);
 	}
 }

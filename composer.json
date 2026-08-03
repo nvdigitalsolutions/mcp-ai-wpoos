@@ -49,6 +49,14 @@
         "wp-phpunit/wp-phpunit": "*",
         "yoast/phpunit-polyfills": "^4.0"
     },
+    "autoload": {
+        "classmap": [
+            "includes/"
+        ],
+        "exclude-from-classmap": [
+            "includes/tools/"
+        ]
+    },
     "scripts": {
         "lint": "phpcs",
         "lint:errors-only": "phpcs --error-severity=1 --warning-severity=8",

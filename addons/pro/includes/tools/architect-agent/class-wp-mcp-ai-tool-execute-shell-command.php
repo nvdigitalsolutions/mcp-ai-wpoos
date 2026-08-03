@@ -22,11 +22,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This tool enables an "Architect Agent" to execute shell commands within the
  * plugin directory, similar to GitHub Copilot CLI's command execution.
  *
- * Security features:
- * - Requires edit_plugins capability
+ * ## Security model
+ *
+ * The primary security boundaries are:
+ *  1. `WP_MCP_AI_ALLOW_SHELL_TOOLS` must be `true` in wp-config.php (default: false).
+ *  2. The executing user must have `manage_options` capability.
+ *  3. The command is launched via `proc_open` with a timeout (no shell interpolation).
+ *
+ * The regex-based denylist of dangerous command patterns is a UX speed-bump,
+ * not a security boundary.  Operators should run the WordPress/PHP process
+ * under a low-privilege OS user and consider a binary-allowlist model for
+ * production deployments.
+ *
+ * ## Features
  * - Command preview before execution (returned for user approval)
  * - Restricted to plugin directory as working directory
- * - Blocks dangerous commands (rm -rf, dd, etc.)
  * - Logs all executions
  * - Timeout protection
  *

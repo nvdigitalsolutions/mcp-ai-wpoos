@@ -22,6 +22,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // ---------------------------------------------------------------------------
+// Autoload migration (v1.2.0+)
+//
+// When WP_MCP_AI_AUTOLOAD_CLASSES is true (default), class-only files are not
+// require_once'd here — Composer's classmap resolves them on-demand. Files with
+// side effects (init scripts, hook registrations) are still required. The
+// full manual require chain is preserved behind the constant set to false.
+// To complete the migration:
+//   1. composer dump-autoload (builds the classmap from composer.json)
+//   2. Identify files with side effects (~30 in the loader) and keep their
+//      require_once calls.
+//   3. Run the full test suite with the constant true.
+//   4. Once validated, remove the legacy path in v1.5.0.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
 // Output-buffer guard (suppress stray output from included files)
 // ---------------------------------------------------------------------------
 
@@ -173,6 +188,7 @@ require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-api-key-store.p
 require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-url-guard.php';
 require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-concurrency-guard.php';
 require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-cost-tracker.php';
+require_once WP_MCP_AI_PATH . 'includes/exceptions/class-wp-mcp-ai-destructive-confirmation-required.php';
 require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-destructive-ops-gate.php';
 require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-request-guard.php';
 require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-csp-headers.php';

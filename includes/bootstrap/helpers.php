@@ -590,13 +590,16 @@ if ( ! function_exists( 'wp_mcp_ai_is_safe_outbound_url' ) ) {
 	/**
 	 * Validate that a URL is safe to fetch as an outbound HTTP request.
 	 *
-	 * Guards against Server-Side Request Forgery (SSRF) by:
+	 * Thin wrapper around WP_MCP_AI_Url_Guard::validate() — the single
+	 * canonical SSRF chokepoint. Guards against Server-Side Request Forgery
+	 * (SSRF) by:
 	 *  1. Requiring a valid http/https URL.
 	 *  2. Blocking any host that resolves to a loopback, private-network,
 	 *     or link-local IP address (including the AWS/GCP instance-metadata
 	 *     endpoint 169.254.169.254).
-	 *  3. DNS-resolving the hostname so that DNS-rebinding to a private IP
-	 *     after the URL check is also caught.
+	 *  3. DNS-resolving ALL A records for the hostname so DNS-rebinding to
+	 *     a private IP on any record is also caught.
+	 *  4. Blocking IPv6 loopback, link-local, and unique-local addresses.
 	 *
 	 * Operators may whitelist specific hostnames via the filter
 	 * `wp_mcp_ai_http_allowed_host`.
@@ -614,52 +617,87 @@ if ( ! function_exists( 'wp_mcp_ai_is_safe_outbound_url' ) ) {
 			return false;
 		}
 
-		// Require a valid URL with http or https scheme.
-		$sanitized = esc_url_raw( $url, array( 'http', 'https' ) );
-		if ( ! $sanitized || ! wp_http_validate_url( $sanitized ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
+			// Fail closed when the guard class is unavailable.
 			return false;
 		}
 
-		$parts = wp_parse_url( $sanitized );
-		if ( false === $parts || empty( $parts['host'] ) ) {
-			return false;
-		}
+		return ! is_wp_error( WP_MCP_AI_Url_Guard::validate( $url ) );
+	}
+}
 
-		$host = strtolower( $parts['host'] );
-
+if ( ! function_exists( 'wp_mcp_ai_remote_get' ) ) {
+	/**
+	 * SSRF-guarded wrapper around wp_remote_get().
+	 *
+	 * Validates the URL through WP_MCP_AI_Url_Guard before dispatching the
+	 * request. Tools that fetch user- or agent-supplied URLs MUST use this
+	 * wrapper (or wp_mcp_ai_remote_post()) instead of calling wp_remote_get()
+	 * directly — enforced by the WPMCPAI.HTTP.RequireGuardedHttp PHPCS sniff.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $url  URL to fetch.
+	 * @param array  $args Optional. wp_remote_get() arguments.
+	 * @return array|WP_Error HTTP response array or WP_Error (blocked URL or transport error).
+	 */
+	function wp_mcp_ai_remote_get( $url, $args = array() ) {
 		/**
-		 * Allows specific hostnames to bypass the private-IP block.
+		 * Filter: skip the URL guard for explicitly audited call sites.
 		 *
-		 * Useful for development environments or trusted internal services.
+		 * Intended ONLY for callers whose URLs are hardcoded provider
+		 * endpoints (see the 2026-04 F-SSRF-01 audit register). Returning
+		 * true bypasses validation — never use for user-supplied URLs.
 		 *
-		 * @param string[] $allowed_hosts Array of allowed hostnames (exact match).
-		 * @param string   $host          The hostname being evaluated.
-		 * @param string   $url           The full URL being evaluated.
+		 * @param bool   $skip Whether to skip validation. Default false.
+		 * @param string $url  The URL being fetched.
 		 */
-		$allowed_hosts = (array) apply_filters( 'wp_mcp_ai_http_allowed_host', array(), $host, $url );
-		if ( in_array( $host, $allowed_hosts, true ) ) {
-			return true;
-		}
-
-		// Reject hosts that are already known-private names (localhost, etc.)
-		// without requiring a DNS lookup.
-		if ( WP_MCP_AI_HTTP_Helper::is_loopback_address( $host ) ) {
-			return false;
-		}
-
-		// DNS-resolve the hostname to defend against DNS-rebinding attacks.
-		// gethostbynamel() returns all A records; gethostbyname() returns the first.
-		// We check all A records returned.
-		$resolved_ips = gethostbynamel( $host );
-		if ( false !== $resolved_ips && ! empty( $resolved_ips ) ) {
-			foreach ( $resolved_ips as $resolved_ip ) {
-				if ( WP_MCP_AI_HTTP_Helper::is_loopback_address( $resolved_ip ) ) {
-					return false;
-				}
+		if ( ! apply_filters( 'wp_mcp_ai_http_skip_url_guard', false, $url ) ) {
+			$check = WP_MCP_AI_Url_Guard::validate( $url );
+			if ( is_wp_error( $check ) ) {
+				return $check;
 			}
 		}
 
-		return true;
+		$args = wp_parse_args(
+			$args,
+			array(
+				'timeout'     => 10,
+				'redirection' => 3,
+			)
+		);
+
+		return wp_remote_get( $url, $args );
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_remote_post' ) ) {
+	/**
+	 * SSRF-guarded wrapper around wp_remote_post().
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $url  URL to post to.
+	 * @param array  $args Optional. wp_remote_post() arguments.
+	 * @return array|WP_Error HTTP response array or WP_Error (blocked URL or transport error).
+	 */
+	function wp_mcp_ai_remote_post( $url, $args = array() ) {
+		if ( ! apply_filters( 'wp_mcp_ai_http_skip_url_guard', false, $url ) ) {
+			$check = WP_MCP_AI_Url_Guard::validate( $url );
+			if ( is_wp_error( $check ) ) {
+				return $check;
+			}
+		}
+
+		$args = wp_parse_args(
+			$args,
+			array(
+				'timeout'     => 10,
+				'redirection' => 3,
+			)
+		);
+
+		return wp_remote_post( $url, $args );
 	}
 }
 
