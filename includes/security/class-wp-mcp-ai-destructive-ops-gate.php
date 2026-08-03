@@ -230,9 +230,11 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 			 * @param string $tool_slug Rejected tool identifier.
 			 * @param array  $payload   Preview/confirmation payload.
 			 */
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Tool slug, payload, and message are constructor parameters, not direct output.
 			do_action( 'wp_mcp_ai_destructive_gate_rejected', $tool_slug, $payload );
 
 			throw new WP_MCP_AI_Destructive_Confirmation_Required( $tool_slug, $payload, $message );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		/**

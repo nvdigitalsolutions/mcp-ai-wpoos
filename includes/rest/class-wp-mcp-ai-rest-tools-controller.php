@@ -614,7 +614,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// resolves to web_search_validated.
 		$is_allowed = in_array( $tool_slug, $allowed_tools, true );
 		if ( ! $is_allowed && substr( $tool_slug, -10 ) === '_validated' ) {
-			$base_slug = substr( $tool_slug, 0, -10 );
+			$base_slug  = substr( $tool_slug, 0, -10 );
 			$is_allowed = '' !== $base_slug && in_array( $base_slug, $allowed_tools, true );
 		}
 		if ( ! $is_allowed ) {
@@ -636,9 +636,9 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Build execution context.
-		$user_id      = $this->get_current_user_id();
-		$is_guest     = $this->is_guest_request();
-		$context      = array(
+		$user_id  = $this->get_current_user_id();
+		$is_guest = $this->is_guest_request();
+		$context  = array(
 			'user_id'          => $user_id,
 			'assistant_id'     => $assistant_id,
 			'request'          => $request,
@@ -1051,7 +1051,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return rest_ensure_response(
 				array(
 					'success' => true,
-					'job_id' => $job_id,
+					'job_id'  => $job_id,
 				)
 			);
 		}
@@ -1090,7 +1090,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		return rest_ensure_response(
 			array(
 				'success' => true,
-				'job_id' => $job_id,
+				'job_id'  => $job_id,
 			)
 		);
 	}
@@ -1122,7 +1122,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return rest_ensure_response(
 				array(
 					'success' => true,
-					'job_id' => $job_id,
+					'job_id'  => $job_id,
 				)
 			);
 		}
@@ -1161,7 +1161,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		return rest_ensure_response(
 			array(
 				'success' => true,
-				'job_id' => $result,
+				'job_id'  => $result,
 			)
 		);
 	}

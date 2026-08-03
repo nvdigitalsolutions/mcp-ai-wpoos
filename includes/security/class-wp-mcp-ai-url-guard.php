@@ -186,7 +186,7 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 			$normalized = strtolower( trim( $host ) );
 
 			foreach ( $blocked as $blocked_host ) {
-				if ( $normalized === strtolower( $blocked_host ) ) {
+				if ( strtolower( $blocked_host ) === $normalized ) {
 					return new WP_Error(
 						'url_guard_blocked_hostname',
 						sprintf(
@@ -303,7 +303,7 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 		 */
 		private static function cidr_match( $ip, $cidr ) {
 			list( $subnet, $mask ) = explode( '/', $cidr, 2 );
-			$mask = (int) $mask;
+			$mask                  = (int) $mask;
 
 			if ( $mask < 0 || $mask > 32 ) {
 				return false;
