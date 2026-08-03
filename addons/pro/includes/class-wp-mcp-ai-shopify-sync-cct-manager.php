@@ -2558,6 +2558,13 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			 * @since 1.7.0
 			 */
 		public static function bootstrap() {
+			// Guard against double registration — remove any previously
+			// registered callbacks before re-adding so double-loading
+			// init.php never hooks the same callback twice.
+			remove_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
+			remove_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
+			remove_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
+
 			add_action( 'init', array( __CLASS__, 'maybe_enable_cct_module' ), 10 );
 			add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 11 );
 			add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
@@ -2669,17 +2676,50 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @since 1.8.0
 		 */
 		public static function maybe_register_cct() {
+			// Self-remove so even if this callback is registered multiple times
+			// (e.g. init.php loaded twice), it only fires once per request.
+			remove_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
+
 			$module = self::get_cct_module();
 
 			if ( ! $module ) {
 				return;
 			}
 
+			// Resolve the slug we would register so we can use it as the
+			// transient lock key (per-slug serialisation).
+			$slug             = self::CCT_SLUG_DEFAULT;
+			$toolkit_settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
+			if ( ! empty( $toolkit_settings['cct_slug'] ) ) {
+				$slug = sanitize_key( $toolkit_settings['cct_slug'] );
+			}
+
+			// First-pass check: skip the costly lock acquisition when the CCT
+			// already exists (most requests).
 			if ( self::cct_exists( $module ) ) {
+				self::maybe_cleanup_duplicate_ccts( $module, $slug );
 				return;
 			}
 
 			if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
+				return;
+			}
+
+			// Acquire a transient-based mutex to prevent concurrent requests
+			// from both passing cct_exists() and creating duplicate CCTs.
+			// TTL of 30 seconds ensures a crashed process doesn't hold the
+			// lock forever.
+			$lock_key = 'wp_mcp_ai_shopify_cct_creation_lock_' . $slug;
+			if ( get_transient( $lock_key ) ) {
+				// Another request is already creating this CCT — back off.
+				return;
+			}
+			set_transient( $lock_key, true, 30 );
+
+			// Double-check after acquiring the lock — another request may
+			// have finished creating the CCT while we waited.
+			if ( self::cct_exists( $module ) ) {
+				delete_transient( $lock_key );
 				return;
 			}
 
@@ -2689,12 +2729,14 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$data->set_request( $request );
 
 			if ( method_exists( $data, 'sanitize_item_request' ) && ! $data->sanitize_item_request() ) {
+				delete_transient( $lock_key );
 				return;
 			}
 
 			$item = $data->sanitize_item_from_request();
 
 			if ( empty( $item ) || ! is_array( $item ) ) {
+				delete_transient( $lock_key );
 				return;
 			}
 
@@ -2703,6 +2745,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			$item_id = $data->update_item_in_db( $item );
 
 			if ( ! $item_id ) {
+				delete_transient( $lock_key );
 				return;
 			}
 
@@ -2713,6 +2756,126 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
 				$data->db->query_raw( 'post_types' );
 			}
+
+			// Release the mutex so the next request doesn't have to wait
+			// for the 30-second TTL to expire.
+			delete_transient( $lock_key );
+
+			// Clean up any older duplicate CCTs that share the same slug
+			// (heals pre-existing duplicates from before this fix).
+			self::maybe_cleanup_duplicate_ccts( $module, $slug );
+		}
+
+		/**
+		 * Heal pre-existing duplicate CCT records that share the same slug.
+		 *
+		 * When a cross-request race condition creates two CCT definitions
+		 * with the same slug, both point to the same underlying data table
+		 * ({@see wp_jet_cct_<slug>}).  Deleting the duplicate definition
+		 * row from JetEngine's post_types registry does NOT touch the shared
+		 * data table, so no inventory data is lost.
+		 *
+		 * This method runs at most once per slug (guarded by a persistent
+		 * option flag) to avoid repeated queries on every page load.
+		 *
+		 * @since 1.9.3
+		 *
+		 * @param \Jet_Engine\Modules\Custom_Content_Types\Module $module CCT module instance.
+		 * @param string                                            $slug   CCT slug.
+		 * @return int Number of duplicate rows removed.
+		 */
+		protected static function maybe_cleanup_duplicate_ccts( $module, $slug ) {
+			// Run at most once per slug.
+			$flag = 'wp_mcp_ai_shopify_cct_dup_cleanup_' . $slug;
+			if ( get_option( $flag, false ) ) {
+				return 0;
+			}
+
+			if ( empty( $module->manager ) || empty( $module->manager->data ) || empty( $module->manager->data->db ) ) {
+				return 0;
+			}
+
+			$data = $module->manager->data;
+
+			// Fetch all CCT records with this slug.
+			$records = $data->db->query(
+				'post_types',
+				array(
+					'slug'   => $slug,
+					'status' => 'content-type',
+				),
+				null,
+				false
+			);
+
+			if ( empty( $records ) || count( $records ) < 2 ) {
+				// No duplicates — mark clean so we never query again.
+				update_option( $flag, true, false );
+				return 0;
+			}
+
+			// Sort by ID descending and keep the highest.
+			usort(
+				$records,
+				function ( $a, $b ) {
+					$a_id = is_array( $a ) ? (int) ( $a['id'] ?? 0 ) : (int) ( $a->id ?? 0 );
+					$b_id = is_array( $b ) ? (int) ( $b['id'] ?? 0 ) : (int) ( $b->id ?? 0 );
+					return $b_id - $a_id;
+				}
+			);
+
+			$kept    = array_shift( $records );
+			$keep_id = is_array( $kept ) ? (int) ( $kept['id'] ?? 0 ) : (int) ( $kept->id ?? 0 );
+			$removed = 0;
+
+			global $wpdb;
+			$table = $wpdb->prefix . 'jet_post_types';
+
+			foreach ( $records as $duplicate ) {
+				$dup_id = is_array( $duplicate ) ? (int) ( $duplicate['id'] ?? 0 ) : (int) ( $duplicate->id ?? 0 );
+
+				if ( $dup_id <= 0 || $dup_id === $keep_id ) {
+					continue;
+				}
+
+				// Delete only the duplicate CCT definition row from JetEngine's
+				// registry.  Do NOT use JetEngine's item-deletion API — that
+				// would also drop the shared data table (wp_jet_cct_<slug>)
+				// and destroy all inventory data.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$deleted = $wpdb->delete(
+					$table,
+					array( 'id' => $dup_id ),
+					array( '%d' )
+				);
+
+				if ( $deleted ) {
+					++$removed;
+
+					if ( function_exists( 'wp_mcp_ai_log' ) ) {
+						wp_mcp_ai_log(
+							sprintf(
+								/* translators: 1: CCT slug, 2: duplicate row ID, 3: kept row ID */
+								__( 'Shopify duplicate CCT cleaned up: removed %1$s row #%2$d, kept #%3$d.', 'mcp-ai-wpoos-pro' ),
+								$slug,
+								$dup_id,
+								$keep_id
+							),
+							'info'
+						);
+					}
+				}
+			}
+
+			// Flush JetEngine's internal cache so it picks up the removal.
+			if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
+				$data->db->query_raw( 'post_types' );
+			}
+
+			// Mark this slug as cleaned so we never repeat the query.
+			update_option( $flag, true, false );
+
+			return $removed;
 		}
 
 		/**
