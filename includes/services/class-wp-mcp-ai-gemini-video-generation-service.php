@@ -706,7 +706,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$model = self::VEO_MODEL;
 		}
 
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		if ( empty( $api_key ) ) {
@@ -845,7 +847,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 */
 	protected function poll_for_completion( $operation, $args = array() ) {
 		$operation_name = $operation['operation_name'];
-		$settings       = get_option( 'wp_mcp_ai_settings', array() );
+		$settings       = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key        = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		$endpoint = sprintf(
@@ -1050,7 +1054,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 */
 	protected function download_video( $video_uri ) {
 		// Get API key for authenticated download.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		if ( empty( $api_key ) ) {
@@ -1528,7 +1534,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Poll the Gemini API for status.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		$endpoint = sprintf(
