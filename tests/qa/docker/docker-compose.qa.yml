@@ -128,6 +128,20 @@ services:
           echo "WordPress already installed."
         fi
 
+        # Build production vendor inside the container.
+        # The host may have dev dependencies installed which would
+        # poison the autoloader with references to non-existent files
+        # (e.g. myclabs/deep-copy from PHPUnit). Running composer
+        # install --no-dev inside the container ensures a clean,
+        # production-ready vendor directory before activation.
+        PLUGIN_DIR=/var/www/html/wp-content/plugins/mcp-ai-wpoos
+        if [ -f "$PLUGIN_DIR/composer.json" ]; then
+          echo "Installing production Composer dependencies..."
+          cd "$PLUGIN_DIR"
+          composer install --no-dev --no-interaction --classmap-authoritative 2>&1
+          cd /
+        fi
+
         # Activate plugin
         echo "Activating NV oOS plugin..."
         wp plugin activate mcp-ai-wpoos --allow-root

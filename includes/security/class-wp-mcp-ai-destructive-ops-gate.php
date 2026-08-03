@@ -51,6 +51,11 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 		 * @param array                         $context   Execution context.
 		 * @param WP_MCP_AI_Tool_Interface|null $tool Tool instance.
 		 * @return void
+		 *
+		 * @throws WP_MCP_AI_Destructive_Confirmation_Required When a destructive
+		 *         tool is invoked without confirmation. Callers (tool executors)
+		 *         must catch this and convert it via to_wp_error() so the
+		 *         rejection flows through the normal REST error pipeline.
 		 */
 		public static function on_before_tool_execution( $tool_slug, $arguments, $context, $tool = null ) {
 			// Check if the admin setting is enabled.
@@ -172,6 +177,9 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 		 * @param array                    $arguments Tool arguments.
 		 * @param WP_MCP_AI_Tool_Interface $tool   Tool instance.
 		 * @return void
+		 *
+		 * @throws WP_MCP_AI_Destructive_Confirmation_Required Always, so the
+		 *         executor can convert the rejection into a WP_Error envelope.
 		 */
 		private static function reject_unconfirmed( $tool_slug, $arguments, $tool ) {
 			$flags       = array();
@@ -182,30 +190,27 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 				$flags = (array) $tool->get_capability_flags();
 			}
 
-			$error = new WP_Error(
-				'wp_mcp_ai_destructive_confirmation_required',
-				sprintf(
-					/* translators: %s: tool name */
-					__( '"%s" is a destructive operation that requires explicit confirmation.', 'mcp-ai-wpoos' ),
-					$tool_name
-				),
-				array(
-					'status'    => 428, // Precondition Required.
-					'tool_slug' => $tool_slug,
-					'tool_name' => $tool_name,
-					'flags'     => $flags,
-					'preview'   => array(
-						'message'      => $description,
-						'arguments'    => $arguments,
-						'confirmation' => array(
-							'required_parameter' => 'confirm_destructive',
-							'instructions'       => __( 'To proceed, call this tool again with the parameter "confirm_destructive" set to true.', 'mcp-ai-wpoos' ),
-						),
-					),
-				)
+			$message = sprintf(
+				/* translators: %s: tool name */
+				__( '"%s" is a destructive operation that requires explicit confirmation.', 'mcp-ai-wpoos' ),
+				$tool_name
 			);
 
-			// Log the denial before terminating.
+			$payload = array(
+				'tool_slug' => $tool_slug,
+				'tool_name' => $tool_name,
+				'flags'     => $flags,
+				'preview'   => array(
+					'message'      => $description,
+					'arguments'    => $arguments,
+					'confirmation' => array(
+						'required_parameter' => 'confirm_destructive',
+						'instructions'       => __( 'To proceed, call this tool again with the parameter "confirm_destructive" set to true.', 'mcp-ai-wpoos' ),
+					),
+				),
+			);
+
+			// Log the denial before throwing.
 			if ( class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
 				WP_MCP_AI_Security_Audit_Logger::log_event(
 					WP_MCP_AI_Security_Audit_Logger::EVENT_DESTRUCTIVE_OP_DENIED,
@@ -214,7 +219,22 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 				);
 			}
 
-			wp_die( $error, 428 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WP_Error is safe.
+			/**
+			 * Filter: observe the gate rejection without catching the exception.
+			 *
+			 * Primarily intended for tests and integrations that want to assert
+			 * the gate fired without intercepting exceptions.
+			 *
+			 * @since 1.1.44
+			 *
+			 * @param string $tool_slug Rejected tool identifier.
+			 * @param array  $payload   Preview/confirmation payload.
+			 */
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Tool slug, payload, and message are constructor parameters, not direct output.
+			do_action( 'wp_mcp_ai_destructive_gate_rejected', $tool_slug, $payload );
+
+			throw new WP_MCP_AI_Destructive_Confirmation_Required( $tool_slug, $payload, $message );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		/**

@@ -836,3 +836,25 @@ add_action(
 	},
 	100
 );
+
+// One-shot upgrade routine (1.1.44): repair credential records that lost
+// their expires_at field via the pre-fix normalize_credentials() round-trip.
+// Runs once per site, tracked by an option so it is idempotent and does not
+// rely on plugin version comparisons (the plugin has no version option).
+add_action(
+	'admin_init',
+	function () {
+		if ( get_option( 'wp_mcp_ai_credential_expiry_repaired' ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Credentials' ) || ! method_exists( 'WP_MCP_AI_Credentials', 'repair_missing_expiry' ) ) {
+			return;
+		}
+
+		$result = WP_MCP_AI_Credentials::repair_missing_expiry();
+
+		update_option( 'wp_mcp_ai_credential_expiry_repaired', $result, false );
+	},
+	20
+);

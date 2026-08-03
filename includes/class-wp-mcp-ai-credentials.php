@@ -388,6 +388,10 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 					continue;
 				}
 
+				// IMPORTANT: any new field added to the issued record in
+				// issue_credential() MUST be carried through here. Dropping a
+				// field causes silent data loss on every read-modify-write
+				// round-trip (revoke/delete rewrites the whole meta array).
 				$normalized[] = array(
 					'id'         => $id,
 					'hash'       => $hash,
@@ -395,6 +399,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 					'created_by' => isset( $credential['created_by'] ) ? absint( $credential['created_by'] ) : 0,
 					'revoked_at' => isset( $credential['revoked_at'] ) ? sanitize_text_field( $credential['revoked_at'] ) : '',
 					'revoked_by' => isset( $credential['revoked_by'] ) ? absint( $credential['revoked_by'] ) : 0,
+					'expires_at' => isset( $credential['expires_at'] ) ? sanitize_text_field( $credential['expires_at'] ) : '',
 				);
 			}
 
@@ -409,6 +414,97 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 		 */
 		protected static function store_credentials( $assistant_id, $credentials ) {
 			update_post_meta( $assistant_id, self::META_KEY, array_values( $credentials ) );
+		}
+
+		/**
+		 * Repair credential records that lost their expiry date.
+		 *
+		 * Versions before 1.1.44 dropped `expires_at` during the
+		 * normalize_credentials() round-trip that revoke_credential() and
+		 * delete_credential() perform. Any credential record created after
+		 * the expiry feature shipped (1.2.0) that is missing `expires_at`
+		 * has it recomputed from `created_at + credential_lifetime_days`.
+		 *
+		 * Idempotent: safe to run multiple times. Revoked credentials are
+		 * skipped — there is no value in extending a dead token.
+		 *
+		 * @since 1.1.44
+		 *
+		 * @return array { @type int $scanned @type int $repaired }
+		 */
+		public static function repair_missing_expiry() {
+			$assistant_ids = get_posts(
+				array(
+					'post_type'      => self::ASSISTANT_POST_TYPE,
+					'post_status'    => 'any',
+					'posts_per_page' => -1,
+					'fields'         => 'ids',
+					'meta_key'       => self::META_KEY, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- One-shot upgrade repair routine; bounded by assistant count.
+				)
+			);
+
+			$scanned  = 0;
+			$repaired = 0;
+
+			$days = 90;
+			if ( function_exists( 'wp_mcp_ai_get_settings_repository' ) ) {
+				$days = absint( wp_mcp_ai_get_settings_repository()->get( 'credential_lifetime_days', 90 ) );
+			}
+
+			// A zero/negative lifetime means credentials do not expire by policy.
+			if ( $days <= 0 ) {
+				return array(
+					'scanned'  => 0,
+					'repaired' => 0,
+				);
+			}
+
+			foreach ( $assistant_ids as $assistant_id ) {
+				$credentials = self::get_credentials( $assistant_id );
+
+				if ( empty( $credentials ) ) {
+					continue;
+				}
+
+				$changed = false;
+
+				foreach ( $credentials as $index => $credential ) {
+					++$scanned;
+
+					if ( ! empty( $credential['expires_at'] ) || ! empty( $credential['revoked_at'] ) ) {
+						continue;
+					}
+
+					$created_at = isset( $credential['created_at'] ) ? strtotime( $credential['created_at'] ) : false;
+					if ( false === $created_at ) {
+						continue;
+					}
+
+					$credentials[ $index ]['expires_at'] = gmdate( 'Y-m-d H:i:s', $created_at + ( $days * DAY_IN_SECONDS ) );
+					$changed                             = true;
+					++$repaired;
+				}
+
+				if ( $changed ) {
+					self::store_credentials( $assistant_id, $credentials );
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'credential_expiry_repair',
+					'Credential expiry repair routine completed.',
+					array(
+						'scanned'  => $scanned,
+						'repaired' => $repaired,
+					)
+				);
+			}
+
+			return array(
+				'scanned'  => $scanned,
+				'repaired' => $repaired,
+			);
 		}
 
 		/**
