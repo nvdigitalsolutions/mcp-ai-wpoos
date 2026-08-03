@@ -61,6 +61,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Session_Stream_Controller' ) ) {
 		const MAX_TICKS = 900;
 
 		/**
+		 * Default maximum connection duration in seconds before forcing reconnect.
+		 *
+		 * @since 1.3.0
+		 */
+		const DEFAULT_MAX_DURATION = 120;
+
+		/**
 		 * SSE handler for framing / flushing.
 		 *
 		 * @var WP_MCP_AI_SSE_Handler
@@ -116,7 +123,41 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Session_Stream_Controller' ) ) {
 		 *
 		 * @return true|WP_Error
 		 */
+		/**
+		 * Permission callback with rate limiting.
+		 *
+		 * Limits to 3 concurrent SSE streams per IP address to prevent
+		 * PHP-FPM worker exhaustion.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 *
+		 * @return true|WP_Error
+		 */
 		public function permissions_check( WP_REST_Request $request ) {
+			$ip = $request->get_header( 'X-Forwarded-For' );
+			if ( empty( $ip ) && isset( $_SERVER['REMOTE_ADDR'] ) ) {
+				$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
+			}
+
+			// Rate limit: max 3 concurrent streams per IP.
+			if ( ! empty( $ip ) ) {
+				$key   = 'wp_mcp_ai_sse_streams_' . md5( $ip );
+				$count = get_transient( $key );
+				if ( false === $count ) {
+					$count = 0;
+				}
+
+				if ( $count >= 3 ) {
+					return new WP_Error(
+						'rate_limit_exceeded',
+						__( 'Too many concurrent SSE connections.', 'mcp-ai-wpoos' ),
+						array( 'status' => 429 )
+					);
+				}
+
+				set_transient( $key, $count + 1, MINUTE_IN_SECONDS );
+			}
+
 			return $this->permissions_check_authenticated( $request );
 		}
 
@@ -174,6 +215,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Session_Stream_Controller' ) ) {
 
 			$event_id_seq = $last_event_id;
 			$tick_count   = 0;
+			$start_time   = time();
+			$max_duration = (int) apply_filters(
+				'wp_mcp_ai_sse_max_duration',
+				(int) \WP_MCP_AI_Settings_Registry::get_setting( 'sse_max_duration_seconds', self::DEFAULT_MAX_DURATION )
+			);
 
 			/**
 			 * Fires when a chat-session SSE stream is established.
@@ -195,6 +241,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Session_Stream_Controller' ) ) {
 			// Main polling loop.
 			while ( $tick_count < self::MAX_TICKS ) {
 				if ( function_exists( 'connection_aborted' ) && connection_aborted() ) {
+					break;
+				}
+
+				// Force reconnect after max duration.
+				if ( ( time() - $start_time ) >= $max_duration ) {
+					++$event_id_seq;
+					$this->sse_handler->send_sse_event_with_id(
+						'chat:reconnect',
+						array(
+							'retry'  => 3000,
+							'reason' => 'max_duration_reached',
+						),
+						(string) $event_id_seq
+					);
 					break;
 				}
 

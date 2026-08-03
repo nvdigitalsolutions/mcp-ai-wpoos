@@ -24,8 +24,52 @@ class QueueClient implements QueueClientInterface {
 	public function enqueue( string $handler, array $payload, array $options = array() ): string {
 		$groupId = $options['group'] ?? 'wp_mcp_ai';
 		$unique  = $options['unique'] ?? false;
+		$jobId   = 'job_' . \wp_generate_uuid4();
 
-		// Prefer Action Scheduler when available.
+		// 1. Persist to the job store first (source of truth).
+		if ( \class_exists( 'WP_MCP_AI_Job_Store' ) ) {
+			\WP_MCP_AI_Job_Store::insert( array(
+				'job_id'  => $jobId,
+				'handler' => $handler,
+				'payload' => \wp_json_encode( $payload ),
+				'status'  => 'queued',
+				'user_id' => \get_current_user_id(),
+			) );
+		}
+
+		// 2. If RabbitMQ is available, publish to broker for distributed processing.
+		// The job store remains the canonical source of truth for status tracking.
+		if ( $this->isRabbitMqAvailable() ) {
+			\WP_MCP_AI_RabbitMQ_Client::get_instance()->publish(
+				'tools',
+				'execute.normal',
+				array(
+					'job_id'   => $jobId,
+					'handler'  => $handler,
+					'payload'  => $payload,
+					'user_id'  => \get_current_user_id(),
+				)
+			);
+
+			// If Action Scheduler is also present, schedule as fallback there too
+			// so that sites without the queue worker binary still process jobs.
+			if ( \function_exists( 'as_enqueue_async_action' ) ) {
+				\as_enqueue_async_action(
+					$handler,
+					\array_merge(
+						$payload,
+						array( '_job_id' => $jobId )
+					),
+					$groupId,
+					$unique,
+					$options['priority'] ?? 10,
+				);
+			}
+
+			return $jobId;
+		}
+
+		// 3. Prefer Action Scheduler when available.
 		if ( \function_exists( 'as_enqueue_async_action' ) ) {
 			if ( $unique ) {
 				$existingId = \as_has_scheduled_action( $handler, $payload, $groupId );
@@ -36,18 +80,19 @@ class QueueClient implements QueueClientInterface {
 
 			$actionId = \as_enqueue_async_action(
 				$handler,
-				$payload,
+				\array_merge(
+					$payload,
+					array( '_job_id' => $jobId )
+				),
 				$groupId,
 				$unique,
 				$options['priority'] ?? 10,
 			);
 
-			return (string) $actionId;
+			return $jobId;
 		}
 
-		// Fallback: WP-Cron single event.
-		$jobId = 'cron_' . \wp_generate_uuid4();
-
+		// 4. Fallback: WP-Cron single event.
 		\wp_schedule_single_event(
 			\time(),
 			'wp_mcp_ai_handle_async_job',
@@ -66,21 +111,104 @@ class QueueClient implements QueueClientInterface {
 	}
 
 	public function getStatus( string $jobId ): JobStatus {
+		// 1. Check persistent store first.
+		if ( \class_exists( 'WP_MCP_AI_Job_Store' ) ) {
+			$row = \WP_MCP_AI_Job_Store::get( $jobId );
+			if ( $row ) {
+				return new JobStatus(
+					jobId: $jobId,
+					status: $row['status'],
+					result: $row['result'] ? \json_decode( $row['result'], true ) : null,
+					error: $row['error'],
+					queuedAt: $row['created_at'] ? new \DateTimeImmutable( $row['created_at'] ) : null,
+					startedAt: $row['started_at'] ? new \DateTimeImmutable( $row['started_at'] ) : null,
+					completedAt: $row['completed_at'] ? new \DateTimeImmutable( $row['completed_at'] ) : null,
+					attempts: (int) $row['attempts'],
+				);
+			}
+		}
+
+		// 2. Fall back to Action Scheduler.
 		if ( \function_exists( 'as_get_scheduled_actions' ) ) {
 			return $this->getActionSchedulerStatus( $jobId );
 		}
 
+		// 3. Fall back to transient.
 		return $this->getTransientStatus( $jobId );
 	}
 
 	public function cancel( string $jobId ): bool {
-		if ( \function_exists( 'as_unschedule_action' ) ) {
-			\as_unschedule_action( '', array(), '', $jobId );
-			return true;
+		// Capability gate: users can cancel their own jobs; admins can cancel any.
+		if ( \class_exists( 'WP_MCP_AI_Job_Store' ) ) {
+			$job = \WP_MCP_AI_Job_Store::get( $jobId );
+			if ( $job ) {
+				$userId = \get_current_user_id();
+				$jobUserId = isset( $job['user_id'] ) ? (int) $job['user_id'] : 0;
+				if ( $jobUserId && $jobUserId !== $userId && ! \current_user_can( 'manage_options' ) ) {
+					return false;
+				}
+			}
 		}
 
-		// Fallback: clear the transient tracking.
+		// 1. Cancel in Action Scheduler — search for actions carrying this
+		// _job_id in their args (the job_id UUID is not an AS action ID).
+		if ( \function_exists( 'as_get_scheduled_actions' ) ) {
+			$as_job = null;
+			if ( \class_exists( 'WP_MCP_AI_Job_Store' ) ) {
+				$as_job = \WP_MCP_AI_Job_Store::get( $jobId );
+			}
+			$search_hook = ( $as_job && ! empty( $as_job['handler'] ) )
+				? $as_job['handler']
+				: '';
+
+			$actions = \as_get_scheduled_actions( array(
+				'hook'   => $search_hook,
+				'status' => \ActionScheduler_Store::STATUS_PENDING,
+			) );
+
+			foreach ( $actions as $action ) {
+				$args = $action->get_args();
+				// phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict -- get_args() may return objects.
+				if ( \is_array( $args ) && isset( $args['_job_id'] ) && $args['_job_id'] === $jobId ) {
+					\ActionScheduler::store()->cancel_action( $action->get_id() );
+					break;
+				}
+			}
+		}
+
+		// 2. Cancel WP-Cron fallback event (matched by _job_id in args).
+		$next = \wp_next_scheduled( 'wp_mcp_ai_handle_async_job' );
+		if ( $next ) {
+			$events = \_get_cron_array();
+			if ( is_array( $events ) ) {
+				foreach ( $events as $timestamp => $hooks ) {
+					if ( isset( $hooks['wp_mcp_ai_handle_async_job'] ) ) {
+						foreach ( $hooks['wp_mcp_ai_handle_async_job'] as $key => $event ) {
+							$eventArgs = isset( $event['args'] ) ? $event['args'] : array();
+							$match     = false;
+							if ( is_array( $eventArgs ) && ! empty( $eventArgs ) ) {
+								$firstArg = reset( $eventArgs );
+								if ( is_array( $firstArg ) && isset( $firstArg['_job_id'] ) && $firstArg['_job_id'] === $jobId ) {
+									$match = true;
+								}
+							}
+							if ( $match ) {
+								\wp_unschedule_event( $timestamp, 'wp_mcp_ai_handle_async_job', $eventArgs );
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// 3. Update job store status.
+		if ( \class_exists( 'WP_MCP_AI_Job_Store' ) ) {
+			\WP_MCP_AI_Job_Store::update_status( $jobId, 'cancelled' );
+		}
+
+		// 4. Clear transient tracking.
 		\delete_transient( 'wp_mcp_ai_job_' . $jobId );
+
 		return true;
 	}
 
@@ -206,6 +334,27 @@ class QueueClient implements QueueClientInterface {
 			error: $data['error'] ?? null,
 			attempts: $data['attempts'] ?? 0,
 		);
+	}
+
+	// ─── RabbitMQ helper ──────────────────────────────────────────────
+
+	/**
+	 * Check whether RabbitMQ integration is available and enabled.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return bool True when RabbitMQ can be used for job distribution.
+	 */
+	private function isRabbitMqAvailable(): bool {
+		if ( ! \class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+			return false;
+		}
+
+		try {
+			return \WP_MCP_AI_RabbitMQ_Client::get_instance()->is_available();
+		} catch ( \Exception $e ) {
+			return false;
+		}
 	}
 
 	// ─── Utilities ─────────────────────────────────────────────────────

@@ -20576,11 +20576,13 @@
             return; // SSE not supported in this browser.
         }
 
-        const endpoint = config.sessionStreamEndpoint.replace('{session_id}', encodeURIComponent(sessionId));
-        const nonce    = config.restNonce || '';
+	        const endpoint               = config.sessionStreamEndpoint.replace('{session_id}', encodeURIComponent(sessionId));
+	        const nonce                  = config.restNonce || '';
+	        const MAX_RECONNECT_DELAY_MS = 30000;
+	        const RECONNECT_BASE_MS      = 1000;
 
-        // Append nonce and last_event_id query params (EventSource cannot send headers).
-        function buildUrl(lastId) {
+	        // Append nonce and last_event_id query params (EventSource cannot send headers).
+	        function buildUrl(lastId) {
             let url = endpoint;
             const sep = (url.indexOf('?') >= 0) ? '&' : '?';
             url += sep + '_wpnonce=' + encodeURIComponent(nonce);
@@ -20590,16 +20592,42 @@
             return url;
         }
 
-        let lastEventId = 0;
-        let es = null;
+	        let lastEventId   = 0;
+	        let es            = null;
+	        let reconnectTimer = null;
+	        let errorBackoff   = RECONNECT_BASE_MS;
+	        let stopped        = false;
 
-        function open() {
-            if (es) {
-                try { es.close(); } catch (_) {}
-            }
-            es = new EventSource(buildUrl(lastEventId));
+	        function closeConnection() {
+	            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+	            if (es) { try { es.close(); } catch (_) {} es = null; }
+	        }
 
-            es.addEventListener('chat:resumed', function(ev) {
+	        function scheduleReconnect(delayMs) {
+	            closeConnection();
+	            if (stopped) { return; }
+	            reconnectTimer = setTimeout(function() {
+	                reconnectTimer = null;
+	                if (!stopped) { errorBackoff = RECONNECT_BASE_MS; open(); }
+	            }, delayMs);
+	        }
+
+	        function open() {
+	            closeConnection();
+	            if (stopped) { return; }
+	            es = new EventSource(buildUrl(lastEventId));
+
+	            // Server-forced reconnect after max duration (Proposal 017 Wave 3).
+	            es.addEventListener('chat:reconnect', function(ev) {
+	                try {
+	                    if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+	                    const data = JSON.parse(ev.data);
+	                    const retryMs = (data && typeof data.retry === 'number') ? data.retry : 3000;
+	                    scheduleReconnect(retryMs);
+	                } catch (_) { scheduleReconnect(3000); }
+	            });
+
+	            es.addEventListener('chat:resumed', function(ev) {
                 try {
                     if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
                     const data = JSON.parse(ev.data);
@@ -20633,37 +20661,54 @@
                 if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
             });
 
-            // When the server closes the stream (max ticks / [DONE]), the
-            // EventSource would normally try to reconnect automatically.
-            // We close it manually on clean [DONE] to avoid unnecessary reconnects.
-            es.addEventListener('message', function(ev) {
-                if (ev.data === '[DONE]') {
-                    try { es.close(); } catch (_) {}
-                }
-            });
-        }
+	            // When the server sends [DONE] (via generic message event), close
+	            // permanently — no reconnect needed.
+	            es.addEventListener('message', function(ev) {
+	                if (ev.data === '[DONE]') {
+	                    stopped = true;
+	                    closeConnection();
+	                }
+	            });
+
+	            // Handle connection errors with exponential backoff (Proposal 017).
+	            // EventSource fires 'error' for network failures and non-2xx
+	            // responses (e.g. 429 rate limiting).
+	            es.addEventListener('error', function() {
+	                if (stopped) { return; }
+	                closeConnection();
+	                if (stopped) { return; }
+	                errorBackoff = Math.min(errorBackoff * 2, MAX_RECONNECT_DELAY_MS);
+	                scheduleReconnect(errorBackoff);
+	            });
+	        }
 
         open();
 
-        // Re-open on tab visibility restore so the stream survives tab switches.
-        document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'visible' && es && es.readyState === 2 /* CLOSED */) {
-                open();
-            }
-        });
+	        // Re-open on tab visibility restore so the stream survives tab switches.
+	        document.addEventListener('visibilitychange', function() {
+	            if (stopped) { return; }
+	            if (document.visibilityState === 'visible') {
+	                if (!es || es.readyState === 2 /* CLOSED */) {
+	                    closeConnection();
+	                    errorBackoff = RECONNECT_BASE_MS;
+	                    open();
+	                }
+	            }
+	        });
 
-        // Clean up when container is hidden/removed.
-        const streamObserver = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
-                    if (container.hasAttribute('hidden') && es) {
-                        try { es.close(); } catch (_) {}
-                    }
-                }
-            });
-        });
-        streamObserver.observe(container, { attributes: true });
-    }
+	        // Clean up when container is hidden/removed.
+	        const streamObserver = new MutationObserver(function(mutations) {
+	            mutations.forEach(function(mutation) {
+	                if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
+	                    if (container.hasAttribute('hidden')) {
+	                        stopped = true;
+	                        closeConnection();
+	                    }
+	                }
+	            });
+	        });
+	        streamObserver.observe(container, { attributes: true });
+	    }
 
     // Expose public API for dynamic initialization (e.g., when chat is inserted via AJAX)
     if (!window.wpMcpAiChatInit) {

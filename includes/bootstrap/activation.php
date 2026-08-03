@@ -422,6 +422,16 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 				WP_MCP_AI_Dead_Letter_Queue::create_table();
 			}
 		}
+
+		// Create the general-purpose job store table (v1.1.45).
+		// Used by the QueueClient adapter for durable, transport-agnostic job tracking.
+		$job_store_file = WP_MCP_AI_PATH . 'includes/db/class-wp-mcp-ai-job-store.php';
+		if ( file_exists( $job_store_file ) ) {
+			require_once $job_store_file;
+			if ( method_exists( 'WP_MCP_AI_Job_Store', 'create_table' ) ) {
+				WP_MCP_AI_Job_Store::create_table();
+			}
+		}
 	}
 }
 

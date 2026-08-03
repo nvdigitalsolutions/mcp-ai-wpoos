@@ -310,6 +310,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => $provider_list,
 				),
 
+				// ── Provider Failover (Proposal 017) ──
+				'enable_provider_failover'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Automatic Provider Failover', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically fail over to next provider when the primary fails', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, the system tracks provider health in real-time. If the primary AI provider returns errors (5xx, rate-limit, timeout), the request is automatically retried on the next healthy provider in the priority order. This may increase API costs if fallback providers have different pricing.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// OpenAI Settings.
 				'enable_openai'                      => array(
 					'type'           => 'checkbox',
@@ -1487,7 +1496,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'priority',
 					'label'  => __( 'Priority Order', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-sort',
-					'fields' => array( 'provider_priority_list' ),
+					'fields' => array( 'provider_priority_list', 'enable_provider_failover' ),
 				),
 				'openai'               => array(
 					'id'     => 'openai',
@@ -1754,6 +1763,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Render fields for the active sub-tab.
 			if ( 'priority' === $active_subtab && isset( $fields['provider_priority_list'] ) ) {
 				$this->render_provider_priority_list( $fields['provider_priority_list'] );
+				// Also render standard fields (e.g. failover toggle) below the priority list.
+				foreach ( $active_group['fields'] as $key ) {
+					if ( 'provider_priority_list' === $key ) {
+						continue; // Already rendered above.
+					}
+					if ( isset( $fields[ $key ] ) ) {
+						$this->render_field( $key, $fields[ $key ] );
+					}
+				}
 			} else {
 				foreach ( $active_group['fields'] as $key ) {
 					if ( isset( $fields[ $key ] ) ) {
