@@ -188,7 +188,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 	 * @return bool True if Omni API is available.
 	 */
 	public static function is_omni_api_available() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 
 		// Explicit feature flag for pre-release access.
 		if ( ! empty( $settings['enable_omni_api'] ) ) {
@@ -682,7 +684,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 	 * @return array|WP_Error Operation details or error.
 	 */
 	protected function submit_omni_request( $payload, $operation = 'generate' ) {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		if ( empty( $api_key ) ) {
@@ -839,7 +843,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 	 */
 	protected function poll_for_completion( $operation, $args = array() ) {
 		$operation_name = $operation['operation_name'];
-		$settings       = get_option( 'wp_mcp_ai_settings', array() );
+		$settings       = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key        = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		$endpoint = sprintf(
@@ -999,7 +1005,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 	 * @return array|WP_Error Video binary data or error.
 	 */
 	protected function download_video( $video_uri ) {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		// Append API key as query parameter for GCS URLs.
