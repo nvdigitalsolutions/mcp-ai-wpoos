@@ -14,7 +14,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "hono": "^4.12.27"
+    "hono": "^4.12.34"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.3",
@@ -25,7 +25,6 @@
   },
   "overrides": {
     "esbuild": "^0.28.1",
-    "hono": ">=4.12.34",
     "undici": ">=8.10.0",
     "ws": "^8.21.0",
     "sharp": ">=0.35.3",
