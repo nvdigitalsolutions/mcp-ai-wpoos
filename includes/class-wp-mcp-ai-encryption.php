@@ -53,9 +53,18 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 		/**
 		 * Get or generate the master encryption key.
 		 *
+		 * Sites may keep the key out of the database by defining the
+		 * WP_MCP_AI_MASTER_KEY constant in wp-config.php (base64-encoded
+		 * 32-byte key, as produced by WP_MCP_AI_Encryption::generate_key()).
+		 * When defined, the constant takes precedence over the stored option.
+		 *
 		 * @return string The master encryption key.
 		 */
 		public static function get_master_key() {
+			if ( defined( 'WP_MCP_AI_MASTER_KEY' ) && is_string( WP_MCP_AI_MASTER_KEY ) && '' !== WP_MCP_AI_MASTER_KEY ) {
+				return WP_MCP_AI_MASTER_KEY;
+			}
+
 			$key = get_option( self::MASTER_KEY_OPTION );
 
 			if ( empty( $key ) ) {
@@ -64,6 +73,17 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 			}
 
 			return $key;
+		}
+
+		/**
+		 * Whether the master key is managed externally via wp-config.php.
+		 *
+		 * @since 1.1.44
+		 *
+		 * @return bool
+		 */
+		public static function is_master_key_externally_managed() {
+			return defined( 'WP_MCP_AI_MASTER_KEY' ) && is_string( WP_MCP_AI_MASTER_KEY ) && '' !== WP_MCP_AI_MASTER_KEY;
 		}
 
 		/**
@@ -214,6 +234,17 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 		 */
 		public static function rotate_master_key() {
 			global $wpdb;
+
+			// When the key is managed via wp-config.php the operator must rotate
+			// it manually (generate a new key, decrypt/re-encrypt secrets offline
+			// or temporarily define the old key). Rotating here would desync the
+			// config-defined key from the stored ciphertexts.
+			if ( self::is_master_key_externally_managed() ) {
+				return new WP_Error(
+					'wp_mcp_ai_master_key_externally_managed',
+					__( 'The master encryption key is defined in wp-config.php (WP_MCP_AI_MASTER_KEY) and cannot be rotated by the plugin. Rotate the constant manually and re-encrypt stored secrets.', 'mcp-ai-wpoos' )
+				);
+			}
 
 			// Get current master key.
 			$old_key = self::get_master_key();

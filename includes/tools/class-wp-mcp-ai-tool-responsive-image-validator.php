@@ -719,7 +719,9 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @return string Page content.
 	 */
 	private function fetch_page_content( $url ) {
-		$response = wp_safe_remote_get( $url, array( 'timeout' => 20 ) );
+		// SSRF-guarded fetch (URL was already validated in execute();
+		// the wrapper re-validates as defence-in-depth).
+		$response = wp_mcp_ai_remote_get( $url, array( 'timeout' => 20 ) );
 
 		if ( is_wp_error( $response ) ) {
 			return '';
@@ -848,7 +850,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	public function get_capability_flags() {
 		return array(
 			'read-only',           // Only reads data, does not modify state.
-			'external-api',        // Fetches user-provided URLs via wp_remote_get().
+			'external-api',        // Fetches user-provided URLs via wp_mcp_ai_remote_get() (SSRF-guarded).
 			'requires-capability', // Requires user capabilities.
 		);
 	}

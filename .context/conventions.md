@@ -48,7 +48,7 @@ includes/
 │                                        → cron → hooks → loader → activation
 ├── class-wp-mcp-ai-plugin.php         ← Main singleton + DI container wiring
 ├── class-wp-mcp-ai-container.php      ← Service locator / DI
-├── tools/                             ← ~201 tool files; ~201 enabled in base mode
+├── tools/                             ← ~263 tool files; ~263 enabled in base mode
 │   ├── class-wp-mcp-ai-tool-{name}.php
 │   ├── okf/                            ← OKF knowledge tools (6 tools)
 │   └── orchestration/                 ← Multi-tool orchestration
@@ -71,7 +71,7 @@ includes/
 addons/pro/
 ├── mcp-ai-wpoos-pro.php               ← Pro entry (no WP plugin header in repo)
 └── includes/
-    ├── tools/                         ← 354+ pro tool classes (same naming convention)
+    ├── tools/                         ← 1,232+ pro tool classes (same naming convention)
     ├── tools/{category}/              ← Categorized pro tools
     ├── admin/                         ← Pro admin pages
     ├── rest/                          ← Pro REST controllers
@@ -90,7 +90,7 @@ packages/                              ← 9 standalone NPM packages
 
 | Constant | Default | Effect |
 |---|---|---|
-| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = ~201 base tools; `false` = ~1,031+ total |
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = ~263 base tools; `false` = ~1,500 total |
 | `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks — do not redefine |
 | `WP_MCP_AI_PRO_VERSION` | set by Pro at boot | Prevents double-loading of Pro addon |
 | `WP_DEBUG` | WordPress default | Enables extra error logging throughout |
@@ -130,7 +130,7 @@ npm test                      # Jest unit tests
 | | Base plugin | Pro addon |
 |---|---|---|
 | **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
-| **Tools** | ~201 core tools | +~830 Pro tools = **~1,031+ total** |
+| **Tools** | ~263 core tools | +~1,232 Pro tools = **~1,500 total** |
 | **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
 | **PHP minimum** | 7.4 | 8.1 |
 | **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (phpspreadsheet etc.) |

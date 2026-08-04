@@ -310,6 +310,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => $provider_list,
 				),
 
+				// ── Provider Failover (Proposal 017) ──
+				'enable_provider_failover'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Automatic Provider Failover', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically fail over to next provider when the primary fails', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, the system tracks provider health in real-time. If the primary AI provider returns errors (5xx, rate-limit, timeout), the request is automatically retried on the next healthy provider in the priority order. This may increase API costs if fallback providers have different pricing.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// OpenAI Settings.
 				'enable_openai'                      => array(
 					'type'           => 'checkbox',
@@ -817,6 +826,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'10' => '10 seconds (Omni Flash only)',
 					),
 					'default'     => '5',
+				),
+				'enable_omni_api'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Gemini Omni Flash API', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Use Omni Flash for video generation (experimental)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Omni Flash (May 2026) is the next-gen video model replacing Veo — 10s duration, native audio, multi-turn conversational editing, up to 5 reference images. When disabled, Veo 3.1 is used as fallback for all video generation. Note: Omni API access is rolling out gradually; if you encounter errors, disable this toggle and Veo 3.1 will be used automatically.', 'mcp-ai-wpoos' ),
+					'default'        => false,
 				),
 
 				// Gemini Caching Settings.
@@ -1487,7 +1503,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'priority',
 					'label'  => __( 'Priority Order', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-sort',
-					'fields' => array( 'provider_priority_list' ),
+					'fields' => array( 'provider_priority_list', 'enable_provider_failover' ),
 				),
 				'openai'               => array(
 					'id'     => 'openai',
@@ -1754,6 +1770,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Render fields for the active sub-tab.
 			if ( 'priority' === $active_subtab && isset( $fields['provider_priority_list'] ) ) {
 				$this->render_provider_priority_list( $fields['provider_priority_list'] );
+				// Also render standard fields (e.g. failover toggle) below the priority list.
+				foreach ( $active_group['fields'] as $key ) {
+					if ( 'provider_priority_list' === $key ) {
+						continue; // Already rendered above.
+					}
+					if ( isset( $fields[ $key ] ) ) {
+						$this->render_field( $key, $fields[ $key ] );
+					}
+				}
 			} else {
 				foreach ( $active_group['fields'] as $key ) {
 					if ( isset( $fields[ $key ] ) ) {

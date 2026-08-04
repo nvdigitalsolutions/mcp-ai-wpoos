@@ -575,11 +575,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'gemini_image_aspect_ratio'             => '1:1',
 				'gemini_image_mime_type'                => 'image/png',
 				'max_history_messages'                  => 8,
-				'context_strategy'                      => 'sliding_window', // 'sliding_window' | 'bme' | 'bme_rag'
+				'context_strategy'                      => 'sliding_window', // Accepts: sliding_window, bme, or bme_rag.
 				'end_window_size'                       => 10,
 				'summary_trigger_count'                 => 30,
-				'summary_trigger_tokens'                => 0, // 0 = use count-based trigger; >0 = use token-based trigger
-				'summary_model'                         => '', // Empty = use assistant model; otherwise model slug
+				'summary_trigger_tokens'                => 0, // Zero means use count-based trigger; positive values enable token-based triggering.
+				'summary_model'                         => '', // Empty means use the assistant model; otherwise a model slug.
 				'summary_max_tokens'                    => 500,
 				'tool_result_summarize_threshold'       => 2000,
 				'chat_colors'                           => self::get_default_chat_colors(),
@@ -648,6 +648,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'require_https'                         => false,
 				'enable_security_audit_log'             => true,
 				'cors_allow_origin'                     => 'site',
+				// ── Provider failover (Proposal 017, Wave 3) ──
+				'enable_provider_failover'              => false,
+				'provider_failover_priority'            => array( 'gemini', 'anthropic', 'openrouter', 'openai' ),
+				'provider_health_threshold'             => -10,
+				// ── Capacity-aware routing (Proposal 017, Wave 2) ──
+				'enable_capacity_aware_routing'         => true,
+				// ── SSE stream tuning (Proposal 017, Wave 3) ──
+				'sse_max_duration_seconds'              => 120,
 				'enable_mesh'                           => false,
 				'mesh_inbound_api_key'                  => '',
 				'mesh_peer_sites'                       => array(),

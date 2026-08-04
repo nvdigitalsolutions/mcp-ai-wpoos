@@ -36,11 +36,32 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	const HOOK = 'nvoos_cloudways_dashboard_provision_app';
 
 	/**
-	 * Polling interval in seconds.
+	 * Base polling interval in seconds.
 	 *
 	 * @var int
 	 */
-	const POLL_INTERVAL = 30;
+	const POLL_INTERVAL_BASE = 30;
+
+	/**
+	 * Maximum polling interval in seconds (cap).
+	 *
+	 * @var int
+	 */
+	const POLL_INTERVAL_MAX = 300; // 5 minutes.
+
+	/**
+	 * Backoff multiplier for exponential delay.
+	 *
+	 * @var int
+	 */
+	const BACKOFF_MULTIPLIER = 2;
+
+	/**
+	 * Maximum jitter in seconds added to each delay.
+	 *
+	 * @var int
+	 */
+	const JITTER_MAX_SECONDS = 5;
 
 	/**
 	 * Maximum number of polling attempts before giving up.
@@ -300,14 +321,41 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 	 * @param int   $attempt       Current attempt.
 	 * @return void
 	 */
+	/**
+	 * Calculate the next poll delay with exponential backoff and jitter.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int $attempt Current attempt count.
+	 * @return int Delay in seconds.
+	 */
+	private static function calculate_poll_delay( $attempt ) {
+		$exponential = self::POLL_INTERVAL_BASE * pow( self::BACKOFF_MULTIPLIER, $attempt - 1 );
+		$capped      = min( $exponential, self::POLL_INTERVAL_MAX );
+		$jitter      = wp_rand( 0, self::JITTER_MAX_SECONDS );
+
+		return (int) ( $capped + $jitter );
+	}
+
+	/**
+	 * Re-schedule the job for another poll.
+	 *
+	 * @param int   $app_id        Cloudways app ID.
+	 * @param array $toolkit_ids   Toolkit slugs.
+	 * @param array $assistant_ids Assistant IDs.
+	 * @param int   $attempt       Current attempt.
+	 * @return void
+	 */
 	private static function reschedule( $app_id, $toolkit_ids, $assistant_ids, $attempt ) {
 		if ( ! function_exists( 'as_schedule_single_action' ) ) {
 			self::set_status( $app_id, 'failed', 'Action Scheduler not available for re-scheduling.' );
 			return;
 		}
 
+		$delay = self::calculate_poll_delay( $attempt );
+
 		as_schedule_single_action(
-			time() + self::POLL_INTERVAL,
+			time() + $delay,
 			self::HOOK,
 			array(
 				'app_id'        => $app_id,
@@ -321,6 +369,19 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 
 	/**
 	 * Update provisioning status in the options table.
+	 *
+	 * @param int         $app_id  Cloudways app ID.
+	 * @param string      $status  Status label.
+	 * @param string|null $error   Error message.
+	 * @param int|null    $attempt Attempt count.
+	 * @param array|null  $results Final results (for 'ready' state).
+	 * @return void
+	 */
+	/**
+	 * Update provisioning status in the options table.
+	 *
+	 * For terminal states (ready, failed, timeout), schedules a deferred
+	 * cleanup so completed jobs do not pollute the options table forever.
 	 *
 	 * @param int         $app_id  Cloudways app ID.
 	 * @param string      $status  Status label.
@@ -345,6 +406,44 @@ class NV_oOS_CloudwaysDashboard_Provisioning_Job {
 		}
 
 		update_option( self::status_key( $app_id ), $current );
+
+		// Schedule cleanup for terminal states.
+		$terminal_states = array( 'ready', 'failed', 'timeout' );
+		if ( in_array( $status, $terminal_states, true ) ) {
+			$hook = 'nvoos_cloudways_dashboard_cleanup_provisioning_status';
+			if ( ! wp_next_scheduled( $hook, array( 'app_id' => $app_id ) ) ) {
+				wp_schedule_single_event( time() + DAY_IN_SECONDS, $hook, array( 'app_id' => $app_id ) );
+			}
+		}
+	}
+
+	/**
+	 * Clean up provisioning status and related option records for an app.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int $app_id Cloudways app ID.
+	 * @return void
+	 */
+	public static function cleanup_status( $app_id ) {
+		delete_option( self::status_key( $app_id ) );
+		delete_option( "nvoos_cw_app_plugin_intent_{$app_id}" );
+		delete_option( "nvoos_cw_toolkit_intents_{$app_id}" );
+	}
+
+	/**
+	 * Register cleanup hooks on plugin init.
+	 *
+	 * @since 1.2.0
+	 * @return void
+	 */
+	public static function register_cleanup_hooks() {
+		add_action(
+			'nvoos_cloudways_dashboard_cleanup_provisioning_status',
+			array( __CLASS__, 'cleanup_status' ),
+			10,
+			1
+		);
 	}
 
 	/**

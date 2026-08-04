@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **July 29, 2026** · Version: **2.11**
+> Last reviewed: **August 4, 2026** · Version: **2.12**
 
 ### Related Files
 
@@ -355,6 +355,22 @@ Seven new security infrastructure classes in `includes/security/` that operate a
 - **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.
 
 Reference: `docs/operations/production-hardening-guide.md`, `docs/developer/api-key-encryption.md`.
+
+### MCP Protocol (2026-07-28 Spec, v1.1.43)
+
+Stateless core — sessions/initialize/initialized retired (SEP-2567, SEP-2575). server/discover RPC. _meta per-request. Mcp-Method/Mcp-Name headers on Streamable HTTP. Legacy client shim. SSE preserved (deprecated per SEP-2596, 12-month off-ramp).
+
+### OKF v0.2 Trust-Signals (v1.1.43)
+
+Recursive descent parser with inline YAML, nested objects, flow sequences. Trust tiers: unverified / machine-confirmed / human-reviewed. New okf_validate_attestation tool. Full v0.1 backward compat.
+
+### Security Hardening v1.1.43–v1.1.44
+
+SSRF across 7 providers. SQL table-name validation. Auth gating (A2A cards, Chat SPA endpoints). IP-based guest rate-limiting. safe_unserialize helper. Proposal 016 (277 autoload optimizations, phpcs sweep, 8 findings). Proposal 017 (12 polling/queue/load-balancing weaknesses). Deferred items #5755 (post meta, term, REST filtering). Phase 3 operational (audit logger, CSP, posture signals).
+
+### Architecture (v1.1.43–v1.1.44)
+
+Pro Module Registry (625-line init decomposed to PSR-4). PlatformFlushInterface (last WP ref extracted from nvoos/core). ICP System (7-dimension scoring). CCT stability (mutex lock, FlowHub guard, base-plugin graceful degradation). Veo/Gemini fixes (async context, API key resolution).
 
 ### Framework-Agnostic Core — lib/core (v1.1.42)
 

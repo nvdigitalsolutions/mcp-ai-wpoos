@@ -68,7 +68,23 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 		const FILTER_BLOCKED_HOSTNAMES = 'wp_mcp_ai_url_guard_blocked_hostnames';
 
 		/**
+		 * Filter: allow sites to whitelist specific hostnames.
+		 */
+		const FILTER_ALLOWED_HOSTS = 'wp_mcp_ai_http_allowed_host';
+
+		/**
 		 * Validate that a URL is safe for outbound HTTP requests.
+		 *
+		 * This is the single canonical SSRF chokepoint for the plugin. It:
+		 *  1. Requires a valid http/https URL.
+		 *  2. Blocks cloud metadata endpoints and operator-defined hostnames.
+		 *  3. Blocks loopback/private/link-local/multicast IPv4 ranges (CIDR).
+		 *  4. Blocks IPv6 loopback, link-local, and unique-local addresses.
+		 *  5. Resolves ALL A records for a hostname and rejects if any resolve
+		 *     to a blocked address (DNS-rebinding defence).
+		 *
+		 * Operators may whitelist specific hostnames via the
+		 * `wp_mcp_ai_http_allowed_host` filter.
 		 *
 		 * @param string $url The URL to validate.
 		 * @return true|WP_Error True if safe, WP_Error with details if blocked.
@@ -81,7 +97,16 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 				);
 			}
 
-			$parsed = wp_parse_url( $url );
+			// Require a valid URL with http or https scheme.
+			$sanitized = esc_url_raw( $url, array( 'http', 'https' ) );
+			if ( ! $sanitized ) {
+				return new WP_Error(
+					'url_guard_invalid_scheme',
+					__( 'Only HTTP and HTTPS URLs are allowed.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$parsed = wp_parse_url( $sanitized );
 
 			if ( false === $parsed || empty( $parsed['host'] ) ) {
 				return new WP_Error(
@@ -90,7 +115,13 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 				);
 			}
 
-			$host = $parsed['host'];
+			$host = strtolower( $parsed['host'] );
+
+			// Operator whitelist — checked before any blocking.
+			$allowed_hosts = (array) apply_filters( self::FILTER_ALLOWED_HOSTS, array(), $host, $url );
+			if ( in_array( $host, $allowed_hosts, true ) ) {
+				return true;
+			}
 
 			// Check blocked hostnames first (fast, no DNS lookup).
 			$hostname_check = self::check_blocked_hostnames( $host );
@@ -98,23 +129,43 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 				return $hostname_check;
 			}
 
-			// Resolve hostname to IP.
-			$ip = self::resolve_host( $host );
-			if ( false === $ip ) {
+			// Reject known-private hostnames without a DNS lookup.
+			if ( class_exists( 'WP_MCP_AI_HTTP_Helper' ) && WP_MCP_AI_HTTP_Helper::is_loopback_address( $host ) ) {
 				return new WP_Error(
-					'url_guard_dns_failed',
+					'url_guard_blocked_hostname',
 					sprintf(
 						/* translators: %s: hostname */
-						__( 'Could not resolve hostname: %s', 'mcp-ai-wpoos' ),
+						__( 'Connection to %s is blocked for security reasons.', 'mcp-ai-wpoos' ),
 						esc_html( $host )
 					)
 				);
 			}
 
-			// Check IP against blocked ranges.
-			$ip_check = self::check_blocked_ip( $ip );
-			if ( is_wp_error( $ip_check ) ) {
-				return $ip_check;
+			// Resolve hostname to IP(s).
+			$ips = self::resolve_host_all( $host );
+			if ( false === $ips || empty( $ips ) ) {
+				// Use a generic message so the response cannot be used as an
+				// internal-hostname enumeration oracle. The hostname is only
+				// exposed in the error data when WP_DEBUG is enabled.
+				$error_data = array( 'reason' => 'dns_failed' );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					$error_data['host'] = $host;
+				}
+
+				return new WP_Error(
+					'url_guard_dns_failed',
+					__( 'The URL could not be validated.', 'mcp-ai-wpoos' ),
+					$error_data
+				);
+			}
+
+			// Check EVERY resolved IP — a host is blocked if any of its
+			// records point at a blocked address (DNS-rebinding defence).
+			foreach ( $ips as $ip ) {
+				$ip_check = self::check_blocked_ip( $ip );
+				if ( is_wp_error( $ip_check ) ) {
+					return $ip_check;
+				}
 			}
 
 			return true;
@@ -135,7 +186,7 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 			$normalized = strtolower( trim( $host ) );
 
 			foreach ( $blocked as $blocked_host ) {
-				if ( $normalized === strtolower( $blocked_host ) ) {
+				if ( strtolower( $blocked_host ) === $normalized ) {
 					return new WP_Error(
 						'url_guard_blocked_hostname',
 						sprintf(
@@ -157,6 +208,11 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 		 * @return true|WP_Error
 		 */
 		private static function check_blocked_ip( $ip ) {
+			// IPv6 addresses have their own block logic.
+			if ( false !== filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+				return self::check_blocked_ipv6( $ip );
+			}
+
 			$blocked = apply_filters(
 				self::FILTER_BLOCKED_RANGES,
 				self::BLOCKED_IPV4_RANGES
@@ -180,38 +236,35 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 		}
 
 		/**
-		 * Resolve a hostname to an IPv4 address.
+		 * Resolve a hostname to all of its IP addresses.
 		 *
-		 * Uses gethostbyname() which returns the unmodified hostname on failure.
-		 * We handle both the failure case and IPv6-only hosts.
+		 * Returns every A record via gethostbynamel() so DNS-rebinding to a
+		 * private IP on a secondary record is also caught. Literal IPv4/IPv6
+		 * hosts are returned as single-element arrays.
 		 *
 		 * @param string $host Hostname.
-		 * @return string|false IP address or false on failure.
+		 * @return array<string>|false Array of IPs or false on failure.
 		 */
-		private static function resolve_host( $host ) {
-			// Quick check: is it already an IP?
+		private static function resolve_host_all( $host ) {
+			// Quick check: is it already an IPv4 literal?
 			if ( false !== filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
-				return $host;
+				return array( $host );
 			}
 
-			// If it's an IPv6 address, try to map to IPv4.
-			if ( false !== filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
-				// IPv6 loopback or link-local — blocked.
-				$ipv6_check = self::check_blocked_ipv6( $host );
-				if ( is_wp_error( $ipv6_check ) ) {
-					return false;
-				}
-				return $host;
+			// IPv6 literal (strip brackets wp_parse_url may leave in place).
+			$unbracketed = trim( $host, '[]' );
+			if ( false !== filter_var( $unbracketed, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+				return array( $unbracketed );
 			}
 
-			$ip = gethostbyname( $host );
+			$ips = gethostbynamel( $host );
 
-			// gethostbyname returns the hostname unchanged on failure.
-			if ( $ip === $host ) {
+			// gethostbynamel returns false on failure.
+			if ( false === $ips || empty( $ips ) ) {
 				return false;
 			}
 
-			return $ip;
+			return $ips;
 		}
 
 		/**
@@ -250,7 +303,7 @@ if ( ! class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
 		 */
 		private static function cidr_match( $ip, $cidr ) {
 			list( $subnet, $mask ) = explode( '/', $cidr, 2 );
-			$mask = (int) $mask;
+			$mask                  = (int) $mask;
 
 			if ( $mask < 0 || $mask > 32 ) {
 				return false;

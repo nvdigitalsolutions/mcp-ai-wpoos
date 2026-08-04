@@ -238,7 +238,9 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		 */
 		$request_args = apply_filters( 'wp_mcp_ai_scrape_product_request_args', $request_args, $url );
 
-		$response = wp_remote_get( $url, $request_args );
+		// SSRF-guarded fetch (URL was already validated in execute(); the
+		// wrapper re-validates as defence-in-depth).
+		$response = wp_mcp_ai_remote_get( $url, $request_args );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(

@@ -60,7 +60,7 @@ class SchemaOrg {
 				if ( $targetNode ) {
 					$about[] = array(
 						'@type' => 'Thing',
-						'name'  => esc_html( $targetNode->label ),
+						'name'  => wp_strip_all_tags( $targetNode->label ),
 						'url'   => esc_url( $targetNode->url ),
 					);
 				}

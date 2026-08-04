@@ -133,10 +133,10 @@ class GraphExplorer {
 					<?php echo esc_html__( 'Fit to Screen', 'nvoos-graphify' ); ?>
 				</button>
 				<span class="graphify-legend">
-					<span class="legend-dot" style="background:#e74c3c"></span> Post
-					<span class="legend-dot" style="background:#3498db"></span> Page
-					<span class="legend-dot" style="background:#2ecc71"></span> Term
-					<span class="legend-dot" style="background:#f39c12"></span> User
+					<span class="legend-dot" style="background:#e74c3c"></span> <?php esc_html_e( 'Post', 'nvoos-graphify' ); ?>
+					<span class="legend-dot" style="background:#3498db"></span> <?php esc_html_e( 'Page', 'nvoos-graphify' ); ?>
+					<span class="legend-dot" style="background:#2ecc71"></span> <?php esc_html_e( 'Term', 'nvoos-graphify' ); ?>
+					<span class="legend-dot" style="background:#f39c12"></span> <?php esc_html_e( 'User', 'nvoos-graphify' ); ?>
 				</span>
 			</div>
 

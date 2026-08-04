@@ -188,7 +188,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 	 * @return bool True if Omni API is available.
 	 */
 	public static function is_omni_api_available() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 
 		// Explicit feature flag for pre-release access.
 		if ( ! empty( $settings['enable_omni_api'] ) ) {
@@ -488,6 +490,7 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			'videoConfig'        => array(
 				'durationSeconds' => $duration,
 				'aspectRatio'     => $aspect_ratio,
+				'generateAudio'   => true,
 			),
 		);
 
@@ -682,7 +685,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 	 * @return array|WP_Error Operation details or error.
 	 */
 	protected function submit_omni_request( $payload, $operation = 'generate' ) {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		if ( empty( $api_key ) ) {
@@ -694,10 +699,12 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		}
 
 		// Select the appropriate endpoint based on operation type.
-		// Omni uses a long-running operation endpoint similar to Veo.
+		// Omni uses :predict for generation (like Veo's :predictLongRunning)
+		// and :edit for multi-turn conversational editing.
+		// Matches the lib/core reference implementation (GenerateOmniVideoTool).
 		$action = 'generate' === $operation
-			? 'generateVideo'
-			: 'editVideo';
+			? 'predict'
+			: 'edit';
 
 		$endpoint = sprintf(
 			'https://generativelanguage.googleapis.com/v1beta/models/%s:%s',
@@ -839,7 +846,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 	 */
 	protected function poll_for_completion( $operation, $args = array() ) {
 		$operation_name = $operation['operation_name'];
-		$settings       = get_option( 'wp_mcp_ai_settings', array() );
+		$settings       = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key        = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		$endpoint = sprintf(
@@ -955,20 +964,29 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		}
 
 		// Extract video URI from response.
+		// The :predict endpoint returns predictions[0].videoUri (standard format).
 		$video_uri = null;
 
-		// Omni response structure: response.generateVideoResponse.generatedSamples[0].video.uri.
-		if ( isset( $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'] ) ) {
+		if ( isset( $result['response']['predictions'][0]['videoUri'] ) ) {
+			$video_uri = $result['response']['predictions'][0]['videoUri'];
+		} elseif ( isset( $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'] ) ) {
 			$video_uri = $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'];
 		} elseif ( isset( $result['response']['editVideoResponse']['editedVideo']['uri'] ) ) {
-			// Edit response structure.
 			$video_uri = $result['response']['editVideoResponse']['editedVideo']['uri'];
-		} elseif ( isset( $result['response']['predictions'][0]['videoUri'] ) ) {
-			// Legacy structure.
-			$video_uri = $result['response']['predictions'][0]['videoUri'];
 		}
 
 		if ( empty( $video_uri ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'omni_unknown_response_format',
+				'Omni response did not match any known video URI path',
+				array(
+					'response_keys'     => is_array( $result ) ? array_keys( $result ) : gettype( $result ),
+					'inner_keys'        => isset( $result['response'] ) && is_array( $result['response'] ) ? array_keys( $result['response'] ) : 'no response key',
+					'has_predictions'   => isset( $result['response']['predictions'] ),
+					'predictions_count' => isset( $result['response']['predictions'] ) ? count( $result['response']['predictions'] ) : 0,
+				)
+			);
+
 			return new WP_Error(
 				'wp_mcp_ai_no_video_uri',
 				__( 'No video URI in Omni response.', 'mcp-ai-wpoos' ),
@@ -999,7 +1017,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 	 * @return array|WP_Error Video binary data or error.
 	 */
 	protected function download_video( $video_uri ) {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		// Append API key as query parameter for GCS URLs.
@@ -1067,18 +1087,29 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		$prefix = self::ASYNC_OP_PREFIX;
 
 		// Store operation details for the cron callback.
-		set_transient(
-			$prefix . $job_id,
-			array(
-				'operation_name' => $operation['operation_name'],
-				'model'          => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
-				'is_edit'        => isset( $operation['is_edit'] ) ? $operation['is_edit'] : false,
-				'args'           => $args,
-				'created_at'     => time(),
-				'status'         => 'queued',
-			),
-			HOUR_IN_SECONDS * 6
+		$job_data = array(
+			'operation_name' => $operation['operation_name'],
+			'model'          => isset( $operation['model_used'] ) ? $operation['model_used'] : self::OMNI_MODEL,
+			'is_edit'        => isset( $operation['is_edit'] ) ? $operation['is_edit'] : false,
+			'args'           => $args,
+			'created_at'     => time(),
+			'status'         => 'queued',
 		);
+
+		// Store parent_job_id if present (from async executor context).
+		if ( isset( $args['parent_job_id'] ) && ! empty( $args['parent_job_id'] ) ) {
+			$job_data['parent_job_id'] = sanitize_key( $args['parent_job_id'] );
+		}
+
+		// Store user_id and assistant_id for completion hook routing.
+		if ( isset( $args['user_id'] ) ) {
+			$job_data['user_id'] = absint( $args['user_id'] );
+		}
+		if ( isset( $args['assistant_id'] ) ) {
+			$job_data['assistant_id'] = absint( $args['assistant_id'] );
+		}
+
+		set_transient( $prefix . $job_id, $job_data, HOUR_IN_SECONDS * 6 );
 
 		// Schedule first poll with a 1-second delay to ensure transient is saved.
 		// This prevents race condition where cron executes before database commit.
@@ -1179,6 +1210,22 @@ class WP_MCP_AI_Gemini_Omni_Service {
 					'error'  => $result->get_error_message(),
 				)
 			);
+
+			// Fire failure hook.
+			do_action(
+				'wp_mcp_ai_job_failed',
+				$job_id,
+				$result,
+				array(
+					'tool'   => 'generate_omni_video',
+					'prompt' => isset( $data['args']['prompt'] ) ? $data['args']['prompt'] : '',
+				)
+			);
+
+			if ( isset( $data['parent_job_id'] ) && ! empty( $data['parent_job_id'] ) ) {
+				$this->complete_parent_job_error( $data['parent_job_id'], $result );
+			}
+
 			return;
 		}
 
@@ -1194,6 +1241,32 @@ class WP_MCP_AI_Gemini_Omni_Service {
 				'Omni async video completed',
 				array( 'job_id' => $job_id )
 			);
+
+			// Fire completion hooks (mirrors Veo service pattern).
+			$hook_result = array(
+				'success'   => true,
+				'job_id'    => $job_id,
+				'model'     => isset( $data['model'] ) ? $data['model'] : self::OMNI_MODEL,
+				'prompt'    => isset( $data['args']['prompt'] ) ? $data['args']['prompt'] : '',
+				'duration'  => isset( $result['duration'] ) ? $result['duration'] : null,
+				'video_uri' => isset( $result['video_uri'] ) ? $result['video_uri'] : '',
+			);
+
+			$hook_meta = array(
+				'tool'   => 'generate_omni_video',
+				'prompt' => isset( $data['args']['prompt'] ) ? $data['args']['prompt'] : '',
+			);
+
+			if ( isset( $data['args']['user_id'] ) ) {
+				$hook_meta['user_id'] = absint( $data['args']['user_id'] );
+			}
+
+			do_action( 'wp_mcp_ai_job_completed', $job_id, $hook_result, $hook_meta );
+
+			// Complete parent job if present.
+			if ( isset( $data['parent_job_id'] ) && ! empty( $data['parent_job_id'] ) ) {
+				$this->complete_parent_job( $data['parent_job_id'], $hook_result );
+			}
 		} else {
 			// Still running — re-schedule.
 			$data['poll_attempts'] = isset( $data['poll_attempts'] ) ? $data['poll_attempts'] + 1 : 1;
@@ -1288,15 +1361,35 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		$veo_service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
 		// Translate Omni-style args to VEO-style args.
+		// Cap duration at Veo max (8s) since Omni supports up to 10s.
+		$veo_duration = isset( $args['duration'] ) ? absint( $args['duration'] ) : 5;
+		if ( $veo_duration > 8 ) {
+			$veo_duration = 8;
+		}
+
 		$veo_args = array(
 			'prompt'          => $args['prompt'],
-			'duration'        => isset( $args['duration'] ) ? min( absint( $args['duration'] ), 8 ) : 5,
+			'duration'        => $veo_duration,
 			'aspect_ratio'    => isset( $args['aspect_ratio'] ) ? $args['aspect_ratio'] : '16:9',
 			'resolution'      => isset( $args['resolution'] ) ? $args['resolution'] : '720p',
 			'negative_prompt' => isset( $args['negative_prompt'] ) ? $args['negative_prompt'] : '',
 			'async'           => isset( $args['async'] ) ? $args['async'] : false,
 			'user_id'         => isset( $args['user_id'] ) ? $args['user_id'] : get_current_user_id(),
 		);
+
+		// Forward async executor context fields so the Veo service can:
+		// 1. Prevent dual-async (in_async_executor flag).
+		// 2. Complete the parent async job when video generation finishes (parent_job_id).
+		// 3. Route completion hooks to the correct assistant (assistant_id).
+		if ( isset( $args['in_async_executor'] ) ) {
+			$veo_args['in_async_executor'] = $args['in_async_executor'];
+		}
+		if ( isset( $args['parent_job_id'] ) ) {
+			$veo_args['parent_job_id'] = sanitize_key( $args['parent_job_id'] );
+		}
+		if ( isset( $args['assistant_id'] ) ) {
+			$veo_args['assistant_id'] = absint( $args['assistant_id'] );
+		}
 
 		// Handle reference image.
 		if ( ! empty( $args['reference_images'] ) && is_array( $args['reference_images'] ) ) {
@@ -1352,6 +1445,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		}
 
 		// Quota/rate limit errors.
+		// Also treat argument validation errors (e.g., "durationSeconds out of bound")
+		// as retryable because the Veo fallback has different (lower) max duration (8s vs 10s)
+		// and will properly clamp the duration during build_generation_payload.
 		$retryable = array(
 			'quota',
 			'rate limit',
@@ -1359,6 +1455,9 @@ class WP_MCP_AI_Gemini_Omni_Service {
 			'resource exhausted',
 			'unavailable',
 			'not found',
+			'out of bound',
+			'invalid argument',
+			'invalid parameter',
 		);
 
 		foreach ( $retryable as $indicator ) {
@@ -1377,5 +1476,89 @@ class WP_MCP_AI_Gemini_Omni_Service {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Complete parent async job with final video result.
+	 *
+	 * When Omni video generation is called through the async executor,
+	 * there are two job IDs: async_xxx (from async executor) and an
+	 * Omni job ID. This method updates the parent job with the result.
+	 *
+	 * @param string $parent_job_id Parent async job ID.
+	 * @param array  $result        Final video generation result.
+	 */
+	protected function complete_parent_job( $parent_job_id, $result ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+		}
+
+		$parent_transient_key = WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $parent_job_id;
+		$parent_metadata      = get_transient( $parent_transient_key );
+
+		if ( ! $parent_metadata ) {
+			WP_MCP_AI_Logger::log_event(
+				'omni_parent_job_not_found',
+				'Parent async job not found when completing Omni job',
+				array( 'parent_job_id' => $parent_job_id )
+			);
+			return;
+		}
+
+		$serialized     = serialize( $result ); // phpcs:ignore
+		$wrapped_result = array(
+			'compressed'    => false,
+			'data'          => $result,
+			'original_size' => strlen( $serialized ),
+		);
+
+		$parent_metadata['status']       = 'completed';
+		$parent_metadata['completed_at'] = time();
+		$parent_metadata['result']       = $wrapped_result;
+		set_transient( $parent_transient_key, $parent_metadata, DAY_IN_SECONDS );
+
+		do_action(
+			'wp_mcp_ai_job_completed',
+			$parent_job_id,
+			$result,
+			array(
+				'tool' => 'generate_omni_video',
+				'note' => 'Parent async job completed by Omni service',
+			)
+		);
+	}
+
+	/**
+	 * Mark parent async job as failed when Omni generation fails.
+	 *
+	 * @param string   $parent_job_id Parent async job ID.
+	 * @param WP_Error $error         The error that occurred.
+	 */
+	protected function complete_parent_job_error( $parent_job_id, $error ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+		}
+
+		$parent_transient_key = WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $parent_job_id;
+		$parent_metadata      = get_transient( $parent_transient_key );
+
+		if ( ! $parent_metadata ) {
+			return;
+		}
+
+		$parent_metadata['status']       = 'failed';
+		$parent_metadata['completed_at'] = time();
+		$parent_metadata['error']        = $error->get_error_message();
+		set_transient( $parent_transient_key, $parent_metadata, DAY_IN_SECONDS );
+
+		do_action(
+			'wp_mcp_ai_job_failed',
+			$parent_job_id,
+			$error,
+			array(
+				'tool' => 'generate_omni_video',
+				'note' => 'Parent async job failed by Omni service',
+			)
+		);
 	}
 }

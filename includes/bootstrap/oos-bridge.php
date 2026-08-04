@@ -126,6 +126,9 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	$router = new Nvoos\Core\Application\Provider\ProviderRouter( $settings, $error_factory );
 
+	// Attach health tracker for provider failover (Proposal 017, Wave 3).
+	$router->setHealthTracker( new Nvoos\Core\Application\Provider\ProviderHealthTracker() );
+
 	// Register all 12 providers.
 	$router->register( new Nvoos\Core\Infrastructure\Provider\OpenAiClient( $settings, $http_client, $error_factory ) );
 	$router->register( new Nvoos\Core\Infrastructure\Provider\GeminiClient( $settings, $http_client, $error_factory ) );

@@ -185,17 +185,22 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			}
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.
-			$GLOBALS['wp_mcp_ai_resource_manager']   = $this->resource_manager;
-			$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
-			$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
-			$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;
-			$GLOBALS['wp_mcp_ai_shortcodes']         = $this->shortcodes;
+			// Deprecated: new code should use wp_mcp_ai_container()->get(...).
+			// Gate behind WP_MCP_AI_LEGACY_GLOBALS to allow gradual migration;
+			// will default to false in v1.4.0 and be removed in v1.5.0.
+			if ( defined( 'WP_MCP_AI_LEGACY_GLOBALS' ) && WP_MCP_AI_LEGACY_GLOBALS ) {
+				$GLOBALS['wp_mcp_ai_resource_manager']   = $this->resource_manager;
+				$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
+				$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
+				$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;
+				$GLOBALS['wp_mcp_ai_shortcodes']         = $this->shortcodes;
 
-			if ( is_admin() ) {
-				$GLOBALS['wp_mcp_ai_admin_cron_manager']     = $this->admin_cron_manager;
-				$GLOBALS['wp_mcp_ai_admin_dlq_manager']      = $this->admin_dlq_manager;
-				$GLOBALS['wp_mcp_ai_admin_token_manager']    = $this->admin_token_manager;
-				$GLOBALS['wp_mcp_ai_admin_crawl4ai_monitor'] = $this->admin_crawl4ai_monitor;
+				if ( is_admin() ) {
+					$GLOBALS['wp_mcp_ai_admin_cron_manager']     = $this->admin_cron_manager;
+					$GLOBALS['wp_mcp_ai_admin_dlq_manager']      = $this->admin_dlq_manager;
+					$GLOBALS['wp_mcp_ai_admin_token_manager']    = $this->admin_token_manager;
+					$GLOBALS['wp_mcp_ai_admin_crawl4ai_monitor'] = $this->admin_crawl4ai_monitor;
+				}
 			}
 
 			WP_MCP_AI_Crawler::init();

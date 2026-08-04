@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-**Last Updated:** July 10, 2026
+**Last Updated:** August 4, 2026
 
 ---
 
@@ -31,7 +31,7 @@
 | # | Addon | Directory | Version | Status | License | Requires | Description |
 |---|---|---|---|---|---|---|---|
 | 3 | **Graphify** | `addons/graphify/` | 0.6.0 | ✅ Production | Proprietary | Base plugin | Knowledge graph builder. Extracts entities and relationships from content, builds navigable graphs, exposes via tools and REST API. Includes WooCommerce, Wikidata, RSS/Sitemap, SPARQL, CSV, and Federation drivers. |
-| 4 | **Chat SPA** | `addons/chat-spa/` | 0.6.0 | ✅ Production | GPL-3.0 | Base plugin | React-based chat surface using Vercel AI SDK. Drop-in shortcode + Gutenberg block. Connects to existing NV oOS REST endpoints. |
+| 4 | **Chat SPA** | `addons/chat-spa/` | 0.7.0 | ✅ Production | GPL-3.0 | Base plugin | React-based chat surface using Vercel AI SDK. Drop-in shortcode + Gutenberg block. Connects to existing NV oOS REST endpoints. |
 | 5 | **Docs Hub** | `addons/docs-hub/` | 0.3.9 | ✅ Production | GPL-3.0 | Base plugin | React SPA documentation browser. Discovers and renders Markdown from all installed plugins/addons in a GitBook-style interface. |
 | 6 | **Algorave** | `addons/algorave/` | 1.0.7 | ✅ Production | AGPL-3.0 | Base plugin | Live-coding music extension. AI-powered pattern generation, browser-based audio synthesis (Tone.js/Strudel), MIDI export, audio visualization. ⚠️ Has 1 partially-fixed High finding (F-AI-01: `new Function()` sandboxing). |
 | 7 | **Fantasy Football** | `addons/fantasy-football/` | 0.1.0 | ✅ Production | Proprietary | Base plugin | ESPN and Yahoo Fantasy Sports API integration. Team management, player research, trade analysis, league reports, AI logo generation. |

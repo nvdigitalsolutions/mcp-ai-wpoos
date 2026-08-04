@@ -5899,7 +5899,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
 			try {
-				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+				try {
+					do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+				} catch ( WP_MCP_AI_Destructive_Confirmation_Required $wp_mcp_ai_gate_exception ) {
+					// Destructive-ops gate: return the confirmation request as a
+					// WP_Error envelope (HTTP 428) through the normal pipeline.
+					return $wp_mcp_ai_gate_exception->to_wp_error();
+				}
 
 				$wp_mcp_ai_tool_start = microtime( true );
 
@@ -11812,7 +11818,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 				}
 
-				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
+				try {
+					do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
+				} catch ( WP_MCP_AI_Destructive_Confirmation_Required $wp_mcp_ai_gate_exception ) {
+					// Destructive-ops gate: return the confirmation request as a
+					// WP_Error envelope (HTTP 428) through the normal pipeline.
+					return $wp_mcp_ai_gate_exception->to_wp_error();
+				}
 
 				$wp_mcp_ai_tool_start = microtime( true );
 

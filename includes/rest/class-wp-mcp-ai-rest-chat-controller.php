@@ -68,10 +68,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	}
 
 	/**
-	 * Get the main REST controller with fallback to global scope.
-	 *
-	 * This method provides a defensive fallback for scenarios where the main controller
-	 * reference may be lost due to caching, opcache, or other environmental issues.
+	 * Get the main REST controller.
 	 *
 	 * @return WP_MCP_AI_REST|null Main REST controller or null if unavailable.
 	 */
@@ -81,22 +78,15 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return $this->main_controller;
 		}
 
-		// Fallback: Try to get from global scope.
-		if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) && $GLOBALS['wp_mcp_ai_rest_controller'] instanceof WP_MCP_AI_REST ) {
-			// Cache the reference for future use.
-			$this->main_controller = $GLOBALS['wp_mcp_ai_rest_controller'];
-
-			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'debug',
-					'Chat Controller: Retrieved main_controller from global scope',
-					array(
-						'context' => 'get_main_controller_fallback',
-					)
-				);
-			}
-
-			return $this->main_controller;
+		// Fail closed: do not reconstruct from globals. If the DI wired
+		// reference was lost, the container state is unreliable and
+		// silent reconstruction risks running with stale auth context.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'chat_controller_unavailable',
+				'Chat Controller: main_controller is unavailable — no DI reference and global fallback disabled (v1.2.0+).',
+				array( 'context' => 'get_main_controller' )
+			);
 		}
 
 		return null;

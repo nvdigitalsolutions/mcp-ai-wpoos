@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
-	define( 'WP_MCP_AI_VERSION', '1.1.43' );
+	define( 'WP_MCP_AI_VERSION', '1.1.44' );
 }
 
 if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
@@ -128,4 +128,47 @@ if ( ! defined( 'WP_MCP_AI_ALLOW_TONEJS_EVAL' ) ) {
  */
 if ( ! defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) ) {
 	define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );
+}
+
+/**
+ * Enable Composer classmap autoloading for includes/ classes.
+ *
+ * When enabled, the plugin skips the manual require_once chain in
+ * loader.php for class-only files and relies on Composer's
+ * classmap (built by `composer dump-autoload`) to resolve classes.
+ * Files with side effects (init scripts, hook registrations) are
+ * still require_once'd explicitly.
+ *
+ * Defaults to true. Set to false to revert to the legacy manual
+ * require chain. This flag will be removed in v1.5.0.
+ *
+ * define( 'WP_MCP_AI_AUTOLOAD_CLASSES', false );
+ *
+ * @since 1.2.0
+ * @var bool
+ */
+if ( ! defined( 'WP_MCP_AI_AUTOLOAD_CLASSES' ) ) {
+	define( 'WP_MCP_AI_AUTOLOAD_CLASSES', true );
+}
+
+/**
+ * Keep backward-compatible $GLOBALS backfill of core plugin instances.
+ *
+ * When enabled, WP_MCP_AI::bootstrap() writes references to
+ * $GLOBALS['wp_mcp_ai_*'] for code that reads them directly.
+ * This is deprecated — new code should use
+ * wp_mcp_ai_container()->get(...).
+ *
+ * Defaults to true. Set to false to disable the backfill and emit
+ * _doing_it_wrong() notices for direct $GLOBALS access (where
+ * detectable). This flag will default to false in v1.4.0 and
+ * be removed in v1.5.0.
+ *
+ * define( 'WP_MCP_AI_LEGACY_GLOBALS', false );
+ *
+ * @since 1.2.0
+ * @var bool
+ */
+if ( ! defined( 'WP_MCP_AI_LEGACY_GLOBALS' ) ) {
+	define( 'WP_MCP_AI_LEGACY_GLOBALS', true );
 }

@@ -366,8 +366,9 @@ class NV_oOS_Graphify_REST {
 		);
 
 		// POST /webhooks/{slug} — receive a webhook payload for a configured webhook source.
-		// Authentication is via per-source HMAC-SHA256 (X-NVOOS-Signature header), so the
-		// permission_callback intentionally returns true and verification happens in the handler.
+		// Authentication is via per-source HMAC-SHA256 (X-NVOOS-Signature header). The
+		// permission_callback intentionally returns true — signature verification happens
+		// in the handler. See receive_webhook() L774-778.
 		register_rest_route(
 			self::NAMESPACE,
 			'/webhooks/(?P<slug>[a-z0-9_\-]+)',
