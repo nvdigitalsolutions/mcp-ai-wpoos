@@ -25,10 +25,10 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # ~1,031+ total built-in tool implementations
-│   ├── security/         # Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
+│   ├── tools/            # ~1,500 total built-in tool implementations
+│   ├── security/         # Security infrastructure (10 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, security posture)
 │   ├── elementor/        # Elementor widget integrations
-│   ├── okf/              # OKF v0.1 engine (parser, reader, writer)
+│   ├── okf/              # OKF v0.2 engine (parser, reader, writer)
 │   ├── integrations/     # Third-party plugin integrations
 │   ├── bridge/           # WordPress adapters for lib/core domain contracts
 │   └── crawler/          # Crawl4AI integration
@@ -283,8 +283,8 @@ class Test_Feature extends WP_UnitTestCase {
 ### Base Version vs Full Version
 
 The plugin has two modes:
-- **Base Version** (default): ~201 core tools, no third-party dependencies
-- **Full Version**: ~1,031+ tools (~201 base + ~830+ pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
+- **Base Version** (default): ~263 core tools, no third-party dependencies
+- **Full Version**: ~1,500 tools (~263 base + ~1,232 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
 
 Control with: `define( 'WP_MCP_AI_BASE_VERSION', true/false );`
 
