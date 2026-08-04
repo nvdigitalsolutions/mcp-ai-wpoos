@@ -37,6 +37,13 @@
 - **Graphify ecosystem audit** — wp.org Plugin Check compliance verified, migration gap analysis, chat shortcode integration plan. (PR #5779)
 - **Project name** corrected to 'NVoOS' in README. (PR #5776)
 
+### Security — npm Dependency Override Floors
+
+- **undici** `>=7.28.0`/`>=8.5.0` → `>=8.10.0` across 11 package.json files. Resolves 5 HIGH CVEs (cross-user cache directive disclosure, cookie attribute injection, response desynchronization via retry interceptor, CRLF injection via blob body, parse-time crash via degenerate private cache directives) and 4 MODERATE CVEs. (PR #5787)
+- **fast-uri** `>=3.1.2`/`>=3.1.3` → `>=3.1.4` across 3 package.json files. Resolves CVE-2026-16221 (host confusion via literal backslash authority delimiter). (PR #5787)
+- **ip-address** `>=10.2.0` → `>=10.4.0` across 3 package.json files. Resolves IPv4-mapped/NAT64 IPv6 SSRF bypass and CIDR suffix special-use classification suppression. (PR #5787)
+- All 11 package-lock.json files regenerated to resolve patched versions.
+
 ### Versioning
 
 - Bumped to **1.1.44** across all version-bearing files. Pro addon: **1.1.27**.
