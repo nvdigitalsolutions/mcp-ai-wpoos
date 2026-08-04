@@ -33,7 +33,8 @@
         "symfony/translation-contracts": "^2.5",
         "symfony/var-exporter": "^5.4",
         "psr/cache": "^1.0",
-        "psr/log": "^1.1"
+        "psr/log": "^1.1",
+        "guzzlehttp/guzzle": "^7.15.2"
     },
     "suggest": {
         "rahul900day/tiktoken-php": "Provides token counting for OpenAI models. Without this, token counting is estimated."
