@@ -1,8 +1,8 @@
 # Security Posture — Current State
 
-> **Last Updated:** June 2, 2026
-> **Based on:** April 2026 Security Audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) + subsequent remediation
-> **Audit scope:** Base plugin + Pro addon + 6 minor addons = 2,983 PHP files, 815 tools
+> **Last Updated:** August 4, 2026
+> **Based on:** April 2026 Security Audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) + subsequent remediation through v1.1.44
+> **Audit scope:** Base plugin + Pro addon + 6 minor addons = 2,983 PHP files, ~1,500 tools
 
 ---
 

@@ -1,5 +1,105 @@
 # oOS – Changelog
 
+## [1.1.44] - 2026-08-04
+
+### Fixed — CCT Stability & Base Plugin Hardening
+
+- **CCT duplicate registration race condition** — database-backed mutex lock prevents concurrent CCT registrations from creating duplicates. (PR #5786)
+- **FlowHub CCT duplicate registration** — registration guard now checks for existing CCT before re-registration; duplicate menu title removed. (PR #5784)
+- **Base plugin fatal error without lib/core/** — `require_once` of non-existent `PlatformFlushInterface.php` now guarded with `file_exists()`; plugin continues gracefully. (PR #5785)
+- **Veo fallback async context forwarding** — fallback chain correctly forwards task ID/poll URL between attempts; Omni API endpoint URL corrected; audio completion hook fixed. (PR #5783)
+- **Gemini API key resolution in video services** after credential split — `generate_video_via_veo` and `generate_video_via_imagen` now correctly resolve keys from `wp_mcp_ai_credentials`. (PR #5782)
+
+### Security — Proposal 016: Architecture Hardening (All Waves)
+
+- **Perf optimization** — 277 `require_once` calls for class-only files wrapped in `spl_autoload_register` conditional, reducing filesystem stat calls on every request. (PR #5780)
+- **Autoload fix** — class-name heuristic corrected to strip `wp_mcp_ai_` prefix from file names before resolution. (PR #5780)
+- **phpcs sweep** — repository-wide auto-fix: trailing commas, blank lines, Yoda conditions, short array syntax. (PR #5780)
+- **Docker QA vendor fix** — `composer install --no-dev` now runs inside container to prevent vendor mismatch. (PR #5780)
+- **Medium findings** — error-log guarded by `WP_DEBUG`; auto-index detection added; debug output gated behind `WP_MCP_AI_DEBUG`. (PR #5780)
+- **Low findings** — DNS-failure message no longer leaks hostname; `WP_MCP_AI_MASTER_KEY` constant support; `@since` tags aligned; shell-command denylist documented as speed-bump. (PR #5780)
+
+### Security — Proposal 017: Polling, Queue & Load Balancing Hardening
+
+- **12 structural weaknesses remediated** across polling infrastructure, Action Scheduler queues, and provider load-balancing subsystems. (PR #5781)
+- Polling timeout inconsistency resolved with unified 30s cap. Queue worker deduplication via wp_mcp_ai_queue_lock transient. Load-balancer health-check standardized to 15s with jitter. Stale `.php.bak` file removed. (PR #5781)
+
+### Security — Deferred Items (#5755, Items 5–7)
+
+- **Post meta output escaping** — `esc_html()` applied in admin tables. (PR #5777)
+- **Term description hardening** — `wp_kses_post()` applied to term output. (PR #5777)
+- **REST response field filtering** — internal-only debug keys removed from REST responses. (PR #5777)
+
+### Docs & Ecosystem
+
+- **FOR_REVIEWERS.md** updated for v1.1.43: ~1,500 total tools, 10 security classes, refreshed posture status. (PR #5776)
+- **16 broken cross-reference links** fixed across 5 files after docs reorganization. (PR #5776)
+- **Graphify ecosystem audit** — wp.org Plugin Check compliance verified, migration gap analysis, chat shortcode integration plan. (PR #5779)
+- **Project name** corrected to 'NVoOS' in README. (PR #5776)
+
+### Versioning
+
+- Bumped to **1.1.44** across all version-bearing files. Pro addon: **1.1.27**.
+- Tool count: ~263 base + ~1,232 Pro (~1,500 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
+## [1.1.43] - 2026-08-01
+
+### Security — v1.1.43 Hardening (16 files)
+
+- **SSRF protection** across 7 provider connection handlers (blocks cloud metadata endpoints + private IPs). A2A agent URL SSRF guard with federation peer allowlist. (PR #5754)
+- **SQL injection defense** — table-name regex validation in dynamic SQL queries. (PR #5754)
+- **Auth gating** — A2A per-assistant agent cards now require authentication. Chat SPA /config and /manifest endpoints changed to `logged_in_permission`. (PR #5754)
+- **Missing args schemas** on 7 REST endpoints (voice, security center, chat transcripts, A2A webhook). (PR #5754)
+- **Guest rate-limiting** changed from shared counter to IP-based hashed keys (DoS vector closed). (PR #5754)
+- **Tool capability mismatches** — `check_site_security`, `delete_cron_job`, `purge_cache` corrected. (PR #5754)
+- **Defense-in-depth capability gate** centralized in Tool Registry. (PR #5754)
+- **PHP object injection prevention** via `safe_unserialize` helper with `allowed_classes => false`. (PR #5754)
+- **Post meta/term output escaping** hardened. (PR #5754)
+
+### Added — MCP Protocol Upgrade (2026-07-28)
+
+- **Stateless core** — sessions and `initialize`/`initialized` handshake retired (SEP-2567, SEP-2575). New `server/discover` RPC. (PR #5759)
+- **`_meta` per-request** for protocol version, client identity, capabilities. (PR #5759)
+- **`Mcp-Method`/`Mcp-Name` headers** on Streamable HTTP (SEP-2243). TTL/cache-scope on `tools/list` (SEP-2549). (PR #5759)
+- **Legacy client shim** preserves backward compatibility. SSE transport preserved (deprecated per SEP-2596, 12-month off-ramp). (PR #5759)
+
+### Added — OKF v0.2 Trust-Signal Support
+
+- **Recursive descent parser** — indentation-aware parsing, inline YAML mappings, nested object lists, flow sequences. (PR #5758)
+- **Trust-tier derivation** — `unverified` / `machine-confirmed` / `human-reviewed` with staleness checks. New `okf_validate_attestation` tool. All 6 existing OKF tools surface trust signals. (PR #5758)
+
+### Added — ICP System (Pro CRM Phase G)
+
+- **7-dimension scoring engine** (0–100) with fit+intent separation, behavioral decay, negative scoring. 2 new MCP tools. Admin UI with 7-tab weighted editor. (PR #5767)
+
+### Changed — Architecture
+
+- **Pro Module Registry** — `wp_mcp_ai_pro_init()` decomposed from ~625-line monolithic function into PSR-4 module registry with dependency ordering. (PR #5762, #5761)
+- **Hexagonal Architecture purity** — `PlatformFlushInterface` contract extracts WordPress dependency from `lib/core/` SSE handler. Zero framework references remain in nvoos/core. (PR #5760, #5761)
+
+### Fixed — Profession & Playbook Sync (7 PRs)
+
+- Playbook bulk sync silent failures now report errors to admin UI. (PR #5765, #5769)
+- Force-regenerated playbook files no longer incorrectly deleted. (PR #5770)
+- Undefined array key `orphaned_attachments` in playbook stats fixed. (PR #5768)
+- Duplicate profession slugs removed from knowledge base (312→311 entries). (PR #5772)
+- Title fallback prevents duplicate posts on Update. (PR #5771)
+- Consumed-post collision fix ensures all unique KB entries create distinct posts. (PR #5773)
+- Test Model assistant dropdown restored. (PR #5765)
+
+### Security — Phase 3 Operational Hardening
+
+- Audit logger REST route hook corrected from `init` to `rest_api_init`. Posture signals hardened. (PR #5764)
+
+### Dependency Updates
+
+- WPCS bumped to 3.4.1 for CVE-2026-45293. Phpactor LSP replaces Intelephense. (PR #5760, #5757)
+
+### Versioning
+
+- Bumped to **1.1.43**. Pro addon: **1.1.26**. Tool count: ~263 base + ~1,232 Pro (~1,500 total). Provider count: 15. Addon count: 27.
+
 ## [1.1.42] - 2026-07-29
 
 ### Added — Security Infrastructure Hardening

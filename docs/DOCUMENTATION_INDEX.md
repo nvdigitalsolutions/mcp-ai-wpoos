@@ -1,14 +1,20 @@
 # NV oOS Documentation Index
 
-**Last Updated:** July 29, 2026  
-**Plugin Version:** 1.1.42  
-**MCP Version:** 2024-11-05
+**Last Updated:** August 4, 2026  
+**Plugin Version:** 1.1.44  
+**MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **AUGUST 4, 2026 UPDATE (v1.1.44):** CCT STABILITY (4 PRs), API KEY RESOLUTION (2 PRs), PROPOSAL 016 ARCHITECTURE HARDENING (ALL WAVES), PROPOSAL 017 POLLING/QUEUE/LOAD-BALANCING, DEFERRED SECURITY #5755, DOCS (FOR_REVIEWERS v1.1.43, 16 BROKEN LINKS FIXED, GRAPHIFY ECOSYSTEM AUDIT)
+>
+> **AUGUST 1, 2026 UPDATE (v1.1.43):** MCP 2026-07-28 STATELESS CORE, SECURITY v1.1.43 HARDENING (SSRF/CSRF/SQL/XSS), OKF v0.2 TRUST-SIGNALS, ICP SYSTEM (PRO CRM PHASE G), PRO MODULE REGISTRY PSR-4, HEXAGONAL ARCHITECTURE PURITY, 7 PLAYBOOK/PROFESSION SYNC FIXES, PHASE 3 OPERATIONAL SECURITY, WPCS 3.4.1 (CVE-2026-45293)
+>
+> **JULY 29, 2026 UPDATE (v1.1.42):** SECURITY INFRASTRUCTURE (7 CLASSES), FRAMEWORK-AGNOSTIC CORE (nvoos/core), STATUS PAGE AND INCIDENT COMMUNICATION (PRO), 21 AGENT SKILLS + 6 BMAD AGENTS, ALGORAVE ADDON, SECURITY HARDENING (12 FIXES)
+>
 > **JULY 16, 2026 UPDATE (v1.1.40):** PHASE 8 PRO TOOLKIT MCP SERVERS (33 total, +4: Pro Scheduler, FlowHub, Shopify Sync, EZuite). OAUTH 2.0 MCP AUTHENTICATION (PKCE, hierarchical scopes, token management UI). PER-TOOLKIT MCP SETTINGS SLUG FIX. CONTENT FORMAT AWARENESS. RESEARCH→PAPER STORE→DRAFT PIPELINE. SETTINGS CREDENTIAL SPLIT. DEMO VIDEO PIPELINE. KIMI & DEEPSEEK PARITY. JULY 2026 MODEL CATALOG. OOS SCHEMASTORE + 45 TESTS. SSE HTTP/2 FIXES. SETTINGS IMPORT/EXPORT BATCH. CREDENTIAL BATCH FIXES.
 >
 > **JULY 10, 2026 UPDATE (v1.1.38):** PAGE AGENT ADDON v0.1.0, PRO SPA v2 MAJOR PARITY & POLISH, PER-USER CHAT MEMORY TOGGLE, CREATE_POST/SAVE_POST MARKDOWN-TO-HTML + TAXONOMY SUGGESTIONS, WORKFLOW BLUEPRINT EXISTING-CONTENT AWARENESS, SPA ACCESSIBILITY, ZAP TRIAGE
@@ -43,7 +49,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Documentation** - GPT-Realtime-2 proposal + plan. FastAPI porting plan (PR #5467).
 > - **Versioning** - bumped to 1.1.34.
 >
-> **JUNE 24, 2026 UPDATE (v1.1.33):**
+> **JULY 16, 2026 UPDATE (v1.1.40):**
 > - **WP 7.0 Connectors Credential Integration (PR #5458)** — Credential_Resolver integrated into all 17 AI client get_api_key() methods. Fallback chain: WP 7.0 Connectors → plugin settings → env vars → PHP constants. get_key_source() / get_key_source_label() added. Credential source badges and WP 7.0 Connectors hints rendered in admin settings UI. All 13 provider API key field descriptions updated. Provider diagnostics show key source column. Settings health check counts credentials via resolver. 17 Pro addon files updated to use Credential_Resolver::has_credentials() / get_api_key().
 > - **nvoos-graphify v1.0.0 Release (PR #5456)** — Standalone nvoos-graphify plugin released at v1.0.0 (Plugin Check compliant). nvoos-graphify-ai released at v1.0.0-dev. Fixed 8 output-escaping errors, critical prepare() spread-operator bug, vector → embedding_vector column rename (MariaDB/MySQL conflict), snake_case→camelCase method calls across tools/controllers/cross-plugin integrations. Documented REST access model: read + guest token for reads, manage_options for export/write.
 > - **Security Dependencies (PR #5457)** — guzzlehttp/guzzle 7.10.0 → 7.12.1 (CVE-2026-55568, CVE-2026-55767). guzzlehttp/psr7 2.11.0 → 2.12.1 (CVE-2026-55766). guzzlehttp/promises 2.3.0 → 2.5.0. undici npm override >=7.28.0 → >=8.5.0.

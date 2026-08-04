@@ -11,8 +11,8 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.43
-**Release Date:** 2026-08-01
+**Version:** 1.1.44
+**Release Date:** 2026-08-04
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
@@ -147,6 +147,15 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.44)
+
+- 🐛 **CCT Stability & Base Plugin Hardening (4 fixes).** CCT duplicate registration race condition resolved with mutex lock. FlowHub CCT duplicate registration and menu title corrected. Fatal error when base plugin loads without `lib/core/` fixed (graceful degradation). Veo fallback async context forwarding, Omni API endpoint, audio, and completion hooks repaired.
+- 🔑 **API Key Resolution Fixes (2 PRs).** Gemini API key resolution in video services restored after credential split. Veo video generation fallback chain now correctly forwards async context.
+- 🛡️ **Security & Architecture Hardening — Proposal 016 (all waves).** Perf optimization: 277 class-only requires wrapped in `spl_autoload_register` conditional. Autoload class-name heuristic corrected to strip `wp_mcp_ai_` prefix. Repository-wide phpcs auto-fix + manual corrections. Docker QA vendor mismatch resolved. All proposal findings addressed (medium-severity: error-log verbosity reduction, auto-index detection, debug output lock; low-severity: 6 findings resolved).
+- ⚡ **Polling, Queue & Load Balancing Hardening — Proposal 017.** Twelve structural weaknesses identified and remediated across polling infrastructure, Action Scheduler queue management, and provider load-balancing subsystems. Stale backup file causing ambiguous class resolution removed.
+- 🔒 **Deferred Security Items (#5755, items 5–7).** Remaining security-hardening items from earlier audit resolved — post-meta output escaping, term description escaping, and REST response field filtering.
+- 📝 **Docs & Ecosystem.** FOR_REVIEWERS.md updated with latest tool counts (~1,500 total), addon inventory, and security posture. 16 broken cross-reference links fixed across 5 files after docs reorganization. Graphify ecosystem audit: wp.org review fixes, migration gap analysis, and chat shortcode integration plan.
 
 ### ✨ What's New at a Glance (v1.1.43)
 
@@ -555,7 +564,19 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.43 — August 2026)
+## 🆕 Latest Updates (v1.1.44 — August 2026)
+
+### August 2–4, 2026 — CCT Stability, Proposal 016+017 Hardening, API Key Fixes, Docs 🐛🛡️🔑📝
+
+- ✅ **CCT Stability Fixes (4 PRs).** CCT duplicate registration race condition resolved with database-backed mutex lock (`wp_mcp_ai_cct_registration_mutex` option). FlowHub CCT duplicate registration corrected — second menu title entry removed, registration guard now checks for existing CCT before attempting re-registration. Base plugin fatal error when `lib/core/` is absent (`require_once` of non-existent `PlatformFlushInterface.php`) — now guarded with `file_exists()` check, plugin continues gracefully without core features.
+- ✅ **API Key & Provider Fixes (2 PRs).** Gemini API key resolution in video services (`generate_video_via_veo`, `generate_video_via_imagen`) restored after the v1.1.43 credential split moved keys to `wp_mcp_ai_credentials` option. Veo fallback chain now correctly forwards async context parameters (task ID, poll URL) between fallback attempts — fixes silent failures when primary model is unavailable. Omni API endpoint URL corrected. Audio completion hook registration fixed.
+- ✅ **Security & Architecture Hardening — Proposal 016 (all waves).** 277 `require_once` calls for class-only files wrapped in `spl_autoload_register` conditional — reduces filesystem stat calls on every request. Autoload class-name heuristic corrected to strip `wp_mcp_ai_` prefix from file names before resolution. Repository-wide phpcs auto-fix applied (trailing commas, blank lines, Yoda conditions, short array syntax). Docker QA container vendor mismatch fixed (runs `composer install --no-dev` inside container). All medium-severity findings addressed (error-log guarding, auto-index detection, debug output gate). 6 low-severity findings resolved (DNS info leak, master-key constant, version-drift alignment, shell-command denylist documentation, orphaned comment removal).
+- ✅ **Polling, Queue & Load Balancing Hardening — Proposal 017.** Twelve structural weaknesses across three subsystems: polling timeout inconsistencies resolved with unified 30s cap; queue worker deduplication via `wp_mcp_ai_queue_lock` transient; load-balancer health-check interval standardized to 15s with jitter. Stale `.php.bak` backup file removed (was shadowing the real class file and causing ambiguous resolution).
+- ✅ **Deferred Security Items (#5755, items 5–7).** Post meta values escaped via `esc_html()` before rendering in admin tables. Term description output hardened with `wp_kses_post()`. REST response field list filtered to remove internal-only debug keys (`_debug_trace`, `_internal_state`).
+- ✅ **Docs & Ecosystem.** `FOR_REVIEWERS.md` updated for v1.1.43: total tool count ~1,500 (~263 base + ~1,232 Pro), 10 security classes, security posture status refreshed. 16 broken cross-reference links fixed across 5 docs files after the July docs reorganization. Graphify ecosystem audit completed: wp.org Plugin Check compliance verified, migration gap analysis documented, chat shortcode integration plan with NV oOS REST endpoints drafted.
+- 📦 **Versioning** — bumped to **1.1.44** across all version-bearing files. Pro addon: 1.1.27. Tool count: ~263 base + ~1,232 Pro (~1,500 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**. Knowledge base: **311 professions** (12 industry categories).
+
+## 🆕 Previous Updates (v1.1.43 — August 2026)
 
 ### July 30–August 1, 2026 — MCP Protocol Upgrade, Security Hardening, OKF v0.2, ICP System, Sync Fixes 🔒🆙📚🎯🔧
 
@@ -812,6 +833,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| **v1.1.44** | Aug 2026 | CCT stability (4 fixes: mutex lock, FlowHub duplicate, base-plugin fatal w/out lib/core, Veo async context), API key resolution (Gemini video + Veo fallback), Proposal 016 security & architecture hardening (all waves, 277 autoload optimizations, phpcs sweep), Proposal 017 polling/queue/load-balancing hardening (12 weaknesses), Deferred security items #5755 (post meta, term escaping, REST field filtering), Docs: FOR_REVIEWERS v1.1.43 update, 16 broken links fixed, Graphify ecosystem audit |
 | **v1.1.43** | Aug 2026 | MCP 2026-07-28 stateless core upgrade, Security v1.1.43 hardening (SSRF/CSRF/SQL/XSS/info-disclosure across 16 files), OKF v0.2 trust-signal support, ICP System (Pro CRM Phase G, 7-dimension scoring), Pro Module Registry (PSR-4, 625-line monolithic init decomposed), Hexagonal architecture purity (PlatformFlushInterface), 7 playbook/profession sync fixes, Phase 3 operational security hardening, WPCS 3.4.1 (CVE-2026-45293) |
 | **v1.1.42** | Jul 2026 | Security Infrastructure (7 classes, 21 posture signals A-F), Framework-Agnostic Core (lib/core/, 32 contracts, 21 adapters), Status Page & Incident Communication (Pro), 21 Agent Skills + 6 BMAD Agents, Algorave addon (9 tools), Security Hardening (12 fixes, 13 unit tests) |
 | **v1.1.38** | Jul 2026 | Page Agent addon v0.1.0 (AI browser page control copilot), Pro SPA v2 major parity & polish (voice pipeline, tasks drawer, workflow tracker, file attachments, tool shortcuts, slash commands, mobile hamburger, autoscroll/viewport fixes, cache-busting, assistant preloading), Per-user chat memory toggle, create_post/save_post Markdown-to-HTML + taxonomy suggestions, Workflow blueprint existing-content awareness, SPA accessibility: annotation pills, ZAP medium findings triaged |
