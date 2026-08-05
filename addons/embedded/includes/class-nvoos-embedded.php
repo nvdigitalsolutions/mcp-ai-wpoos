@@ -232,6 +232,13 @@ class NV_oOS_Embedded {
 		$registry->register_llm_backend( new NV_oOS_Embedded_Client_Backend() );
 		$registry->register_llm_backend( new NV_oOS_Embedded_Server_Backend() );
 
+		// Register self-hosted OCR backends if client class is available.
+		if ( class_exists( 'WP_MCP_AI_Self_Hosted_OCR_Client' ) ) {
+			require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-nvoos-embedded-self-hosted-ocr-backend.php';
+			$registry->register_llm_backend( new NV_oOS_Embedded_Self_Hosted_OCR_Backend( 'unlimited_ocr' ) );
+			$registry->register_llm_backend( new NV_oOS_Embedded_Self_Hosted_OCR_Backend( 'deepseek_ocr' ) );
+		}
+
 		/**
 		 * Fires after default embedded backends are registered.
 		 *

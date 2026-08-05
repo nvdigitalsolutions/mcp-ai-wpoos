@@ -106,6 +106,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_sync_media_templates'   => 'handle_sync_media_templates',
 				'wp_ajax_wp_mcp_ai_clear_test_files'       => 'handle_clear_test_files',
 				'wp_ajax_wp_mcp_ai_clear_dev_files'        => 'handle_clear_dev_files',
+				'wp_ajax_wp_mcp_ai_test_unlimited_ocr_connection' => 'handle_test_unlimited_ocr_connection',
+				'wp_ajax_wp_mcp_ai_test_deepseek_ocr_connection' => 'handle_test_deepseek_ocr_connection',
 			);
 
 			$action          = current_action();
@@ -338,6 +340,152 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			wp_send_json_success( array( 'message' => __( 'Successfully connected to LM Studio!', 'mcp-ai-wpoos' ) ) );
+		}
+
+		/**
+		 * Handle AJAX request to test Unlimited-OCR connection.
+		 *
+		 * @since 1.5.0
+		 */
+		public function handle_test_unlimited_ocr_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
+
+			if ( empty( $endpoint_url ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Self_Hosted_OCR_Client' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-self-hosted-ocr-client.php';
+			}
+
+			$client = new WP_MCP_AI_Self_Hosted_OCR_Client();
+
+			// Temporarily set the endpoint URL so test_connection can use it.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings['unlimited_ocr_endpoint_url'] = $endpoint_url;
+
+			// Use a direct HTTP test matching the LM Studio pattern for consistency.
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
+			$timeout      = max( 30, $timeout );
+			$resource_mgr->ensure_execution_time( $timeout + 10 );
+
+			$api_url = trailingslashit( $endpoint_url ) . 'v1/models';
+
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
+			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+
+			if ( 200 !== $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid endpoint or connection failed. Ensure the vLLM server is running with the Unlimited-OCR model.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( $body, true );
+			$model_list = isset( $data['data'] ) ? wp_list_pluck( $data['data'], 'id' ) : array();
+
+			wp_send_json_success(
+				array(
+					'message' => __( 'Successfully connected to Unlimited-OCR!', 'mcp-ai-wpoos' ),
+					'models'  => $model_list,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to test DeepSeek-OCR connection.
+		 *
+		 * @since 1.5.0
+		 */
+		public function handle_test_deepseek_ocr_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
+
+			if ( empty( $endpoint_url ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
+			$timeout      = max( 30, $timeout );
+			$resource_mgr->ensure_execution_time( $timeout + 10 );
+
+			$api_url = trailingslashit( $endpoint_url ) . 'v1/models';
+
+			$host_check = wp_mcp_ai_validate_ai_provider_url( $api_url );
+			if ( is_wp_error( $host_check ) ) {
+				wp_send_json_error( array( 'message' => $host_check->get_error_message() ) );
+				return;
+			}
+
+			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+
+			if ( 200 !== $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid endpoint or connection failed. Ensure vLLM is running with the DeepSeek-OCR model and NGramPerReqLogitsProcessor registered.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( $body, true );
+			$model_list = isset( $data['data'] ) ? wp_list_pluck( $data['data'], 'id' ) : array();
+
+			wp_send_json_success(
+				array(
+					'message' => __( 'Successfully connected to DeepSeek-OCR!', 'mcp-ai-wpoos' ),
+					'models'  => $model_list,
+				)
+			);
 		}
 
 		/**
