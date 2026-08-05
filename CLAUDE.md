@@ -364,13 +364,27 @@ Stateless core — sessions/initialize/initialized retired (SEP-2567, SEP-2575).
 
 Recursive descent parser with inline YAML, nested objects, flow sequences. Trust tiers: unverified / machine-confirmed / human-reviewed. New okf_validate_attestation tool. Full v0.1 backward compat.
 
-### Security Hardening v1.1.43–v1.1.44
+### Security Hardening v1.1.43–v1.1.45
 
 SSRF across 7 providers. SQL table-name validation. Auth gating (A2A cards, Chat SPA endpoints). IP-based guest rate-limiting. safe_unserialize helper. Proposal 016 (277 autoload optimizations, phpcs sweep, 8 findings). Proposal 017 (12 polling/queue/load-balancing weaknesses). Deferred items #5755 (post meta, term, REST filtering). Phase 3 operational (audit logger, CSP, posture signals).
 
-### Architecture (v1.1.43–v1.1.44)
+### Architecture (v1.1.43–v1.1.45)
 
 Pro Module Registry (625-line init decomposed to PSR-4). PlatformFlushInterface (last WP ref extracted from nvoos/core). ICP System (7-dimension scoring). CCT stability (mutex lock, FlowHub guard, base-plugin graceful degradation). Veo/Gemini fixes (async context, API key resolution).
+
+### Self-Hosted OCR — Unlimited-OCR + DeepSeek-OCR (v1.1.45)
+
+Unified client (`WP_MCP_AI_Self_Hosted_OCR_Client`, 640 lines in `includes/`) supporting Baidu Unlimited-OCR (3B, MIT, 93.23% OmniDocBench) and DeepSeek-OCR (~3B, MIT) via self-hosted vLLM with OpenAI-compatible REST APIs. Both models share NGramPerReqLogitsProcessor + `<image>` prompt pattern. Pro tools: `pro_unlimited_ocr` (long-horizon, structured output — text/structured/raw, table/form-field extraction, Paper Store persistence) and `pro_batch_ocr` (Action Scheduler, sync up to 10, async up to 100). Structured extraction service (`WP_MCP_AI_Structured_Extraction_Service`) for `<|det|>` marker parsing. Embedded backend (`NV_oOS_Embedded_Self_Hosted_OCR_Backend` implementing `NV_oOS_Embedded_LLM_Backend`) + OCR health dashboard. Settings: `unlimited_ocr_endpoint_url` / `deepseek_ocr_endpoint_url` with AJAX Test Connection buttons.
+
+Reference: `docs/project/proposals/018-unlimited-ocr-integration.md`, `docs/project/proposals/018-unlimited-ocr-integration-implementation-plan.md`.
+
+### Embedded Addon v0.2.0 (v1.1.45)
+
+Backend registry expanded with voice tool calling, OpenMed healthcare tools, and new MCP abilities registered via `wp_register_ability()` for AI agent discovery through the WordPress Abilities API.
+
+### AI Transparency & SGI Compliance (v1.1.45)
+
+AI transparency and SGI compliance infrastructure (Proposal 017) integrated into the plugin framework — part of ongoing regulatory alignment for AI-powered operations.
 
 ### Framework-Agnostic Core — lib/core (v1.1.42)
 

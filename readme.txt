@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.42
+Stable tag: 1.1.45
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,19 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.45 - August 5, 2026 =
+
+Bumped to 1.1.45 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+
+**Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR), Embedded v0.2.0, AI Transparency, Graphify Ecosystem**
+
+* **Self-Hosted OCR — Proposal 018 (17 files, +4,087 lines).** Unified vLLM client for Baidu Unlimited-OCR (93.23% OmniDocBench) and DeepSeek-OCR. New Pro tools: pro_unlimited_ocr (structured output, table/form extraction) and pro_batch_ocr (Action Scheduler). Structured extraction service. Embedded backend + health dashboard. Admin settings UI with Test Connection buttons.
+* **Embedded Addon v0.2.0.** Voice tool calling, OpenMed healthcare tools, MCP abilities. OCR document ability via WordPress Abilities API.
+* **AI Transparency & SGI Compliance (Proposal 017).** Regulatory compliance infrastructure for AI operations.
+* **Comic Reader v0.2.0.** Enhanced format support and reading interface.
+* **Graphify Ecosystem.** Standalone plugins: nvoos-graphify v1.0.1, nvoos-graphify-ai v1.0.0, nvoos-graphify-ai-platform v1.0.0.
+* **Build Automation.** Auto-build nvdigital-oos WP.org packages on every release.
 
 = 1.1.38 - July 10, 2026 =
 

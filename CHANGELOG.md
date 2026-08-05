@@ -1,5 +1,46 @@
 # oOS – Changelog
 
+## [1.1.45] - 2026-08-05
+
+### Added — Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR) — Proposal 018
+
+- **Self-Hosted OCR Client** (`includes/class-wp-mcp-ai-self-hosted-ocr-client.php`, 640 lines) — unified vLLM client supporting both Baidu Unlimited-OCR (3B, MIT, 93.23% OmniDocBench) and DeepSeek-OCR (~3B, MIT) with model-type discriminator, connection testing, single/multi-image OCR, post-processing pipeline. (PR #5795)
+- **Pro Unlimited-OCR Tool** (`addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-pro-unlimited-ocr.php`, 454 lines) — dedicated long-horizon OCR tool with structured output (text/structured/raw), table extraction, form field detection, and Paper Store integration. (PR #5795)
+- **Pro Batch OCR Tool** (`addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-pro-batch-ocr.php`, 441 lines) — batch document processing via Action Scheduler (sync up to 10 docs, async up to 100). (PR #5795)
+- **Structured Extraction Service** (`addons/pro/includes/services/class-wp-mcp-ai-structured-extraction-service.php`, 373 lines) — parses `<|det|>` markers into blocks, extracts tables from pipe-delimited rows, detects form fields via bounding-box proximity heuristics. (PR #5795)
+- **Embedded OCR Backend** (`addons/embedded/includes/embedded/class-nvoos-embedded-self-hosted-ocr-backend.php`, 291 lines) — implements `NV_oOS_Embedded_LLM_Backend` for self-hosted OCR, with health status, model listing, and OCR document execution. (PR #5795)
+- **OCR Health Dashboard** (`addons/embedded/includes/admin/class-nvoos-embedded-ocr-dashboard.php`, 218 lines) — admin sub-page showing OCR backend status, model info, requirements, and Docker deployment guide. (PR #5795)
+- **OCR Ability Registration** — new `nvoos-embedded/ocr-document` ability registered via WordPress Abilities API with JSON Schema input/output contracts. (PR #5795)
+- **Admin Settings UI** — two new endpoint URL fields (Unlimited-OCR, DeepSeek-OCR) with AJAX Test Connection buttons in the API Configuration section. JavaScript handlers added to `admin-settings.js`. (PR #5795)
+
+### Changed — Self-Hosted OCR Integration
+
+- **extract_image_text tool** — provider enum expanded to include `unlimited_ocr` and `deepseek_ocr`; new `call_self_hosted_ocr()` dispatch method. (PR #5795)
+- **pro_document_ocr tool** — provider enum expanded; description updated to mention self-hosted options. (PR #5795)
+- **OCR Service** (`WP_MCP_AI_OCR_Service`) — `unlimited_ocr` and `deepseek_ocr` added to provider routing, fallback chains, and `determine_best_provider()`. (PR #5795)
+- **Embedded addon** — backend registry registers two OCR backends (one per model type) when client class is available. (PR #5795)
+
+### Added — Embedded Addon v0.2.0
+
+- **Backend registry expansion** — voice tool calling, OpenMed healthcare tools, and new MCP abilities. (PR #5791)
+- **AI transparency & SGI compliance** infrastructure. (PR #5792)
+
+### Added — Ecosystem
+
+- **Comic Reader addon v0.2.0** — enhanced format support and reading interface.
+- **Graphify standalone plugins** — nvoos-graphify v1.0.1, nvoos-graphify-ai v1.0.0, nvoos-graphify-ai-platform v1.0.0.
+- **Build automation** — auto-build nvdigital-oos WP.org packages on every release. (PR #5794)
+
+### Docs & Proposals
+
+- **Proposal 018** — Unlimited-OCR & DeepSeek-OCR integration proposal (367 lines) and implementation plan (668 lines) in `docs/project/proposals/`. (PR #5795)
+
+### Versioning
+
+- Bumped to **1.1.45** across all version-bearing files. Pro addon: **1.1.28**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
 ## [1.1.44] - 2026-08-04
 
 ### Fixed — CCT Stability & Base Plugin Hardening

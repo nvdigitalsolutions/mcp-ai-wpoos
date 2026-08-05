@@ -19,6 +19,7 @@ Provides the WordPress admin UI for managing embedded AI settings — model sele
 |---|---|---|
 | `WP_MCP_AI_WebLLM_Settings_Page` | `class-wp-mcp-ai-webllm-settings-page.php` | WordPress admin menu (`admin_menu`) |
 | `WP_MCP_AI_Embedded_Model_Ajax` | `class-wp-mcp-ai-embedded-model-ajax.php` | WordPress AJAX (`wp_ajax_*`) |
+| `NV_oOS_Embedded_OCR_Dashboard` | `class-nvoos-embedded-ocr-dashboard.php` | WordPress admin menu (`admin_menu`) — OCR health sub-page |
 
 ## Inputs / Outputs / Neighbors
 
