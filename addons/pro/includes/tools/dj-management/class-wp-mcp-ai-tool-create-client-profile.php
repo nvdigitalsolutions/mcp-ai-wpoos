@@ -168,7 +168,6 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 				return new WP_Error(
 					'tool_error',
 					__( 'Client with this email already exists.', 'mcp-ai-wpoos-pro' ),
-					'client_id' => $existing[0]->ID
 				);
 			}
 		}

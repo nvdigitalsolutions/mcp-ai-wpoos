@@ -147,7 +147,6 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 			return new WP_Error(
 				'tool_error',
 				'Missing required variables: ' . implode( ', ', $unreplaced_placeholders ),
-				'unreplaced_placeholders' => $unreplaced_placeholders
 			);
 		}
 
