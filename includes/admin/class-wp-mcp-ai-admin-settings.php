@@ -123,6 +123,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_unlimited_ocr_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_deepseek_ocr_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudways_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -1715,6 +1717,36 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_section(
+				'wp_mcp_ai_unlimited_ocr_section',
+				__( 'Unlimited-OCR Configuration (Self-Hosted)', 'mcp-ai-wpoos' ),
+				array( $this, 'render_unlimited_ocr_section_description' ),
+				self::PAGE_SLUG
+			);
+
+			add_settings_field(
+				'unlimited_ocr_endpoint_url',
+				__( 'Unlimited-OCR Endpoint URL', 'mcp-ai-wpoos' ),
+				array( $this, 'render_unlimited_ocr_endpoint_url_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_unlimited_ocr_section'
+			);
+
+			add_settings_section(
+				'wp_mcp_ai_deepseek_ocr_section',
+				__( 'DeepSeek-OCR Configuration (Self-Hosted)', 'mcp-ai-wpoos' ),
+				array( $this, 'render_deepseek_ocr_section_description' ),
+				self::PAGE_SLUG
+			);
+
+			add_settings_field(
+				'deepseek_ocr_endpoint_url',
+				__( 'DeepSeek-OCR Endpoint URL', 'mcp-ai-wpoos' ),
+				array( $this, 'render_deepseek_ocr_endpoint_url_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_deepseek_ocr_section'
+			);
+
+			add_settings_section(
 				'wp_mcp_ai_authentication_section',
 				__( 'Authentication', 'mcp-ai-wpoos' ),
 				'__return_false',
@@ -2496,6 +2528,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$clean['ollama_use_openai_compatible_endpoint'] = ! empty( $settings['ollama_use_openai_compatible_endpoint'] );
+
+			if ( isset( $settings['unlimited_ocr_endpoint_url'] ) ) {
+				$url                                 = trim( $settings['unlimited_ocr_endpoint_url'] );
+				$clean['unlimited_ocr_endpoint_url'] = $url ? esc_url_raw( $url ) : '';
+			}
+
+			if ( isset( $settings['deepseek_ocr_endpoint_url'] ) ) {
+				$url                                = trim( $settings['deepseek_ocr_endpoint_url'] );
+				$clean['deepseek_ocr_endpoint_url'] = $url ? esc_url_raw( $url ) : '';
+			}
 
 			if ( isset( $settings['lm_studio_endpoint_url'] ) ) {
 				$url                             = trim( $settings['lm_studio_endpoint_url'] );
@@ -4003,6 +4045,64 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Render the Unlimited-OCR section description.
+		 *
+		 * @since 1.5.0
+		 */
+		public function render_unlimited_ocr_section_description() {
+			?>
+		<p><?php esc_html_e( 'Connect to a self-hosted Baidu Unlimited-OCR vLLM instance for state-of-the-art long-document OCR. Requires Docker with GPU. Deploy via: docker run vllm/vllm-openai:unlimited-ocr baidu/Unlimited-OCR ...', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Unlimited-OCR endpoint URL field.
+		 *
+		 * @since 1.5.0
+		 */
+		public function render_unlimited_ocr_endpoint_url_field() {
+			$settings = self::get_settings();
+			$value    = isset( $settings['unlimited_ocr_endpoint_url'] ) ? $settings['unlimited_ocr_endpoint_url'] : '';
+			?>
+		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[unlimited_ocr_endpoint_url]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="http://localhost:8000" />
+		<p class="description">
+			<?php esc_html_e( 'Enter the URL of your Unlimited-OCR vLLM instance (e.g., http://localhost:8000). Deploy the official vllm/vllm-openai:unlimited-ocr Docker image with GPU support.', 'mcp-ai-wpoos' ); ?>
+			<button type="button" id="wp-mcp-ai-test-unlimited-ocr-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?></button>
+			<span id="wp-mcp-ai-unlimited-ocr-test-result" style="margin-left: 10px;"></span>
+		</p>
+			<?php
+		}
+
+		/**
+		 * Render the DeepSeek-OCR section description.
+		 *
+		 * @since 1.5.0
+		 */
+		public function render_deepseek_ocr_section_description() {
+			?>
+		<p><?php esc_html_e( 'Connect to a self-hosted DeepSeek-OCR vLLM instance for document OCR. Requires vLLM >=0.11.1 (nightly build) with NGramPerReqLogitsProcessor. Deploy via upstream vLLM with model deepseek-ai/DeepSeek-OCR.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the DeepSeek-OCR endpoint URL field.
+		 *
+		 * @since 1.5.0
+		 */
+		public function render_deepseek_ocr_endpoint_url_field() {
+			$settings = self::get_settings();
+			$value    = isset( $settings['deepseek_ocr_endpoint_url'] ) ? $settings['deepseek_ocr_endpoint_url'] : '';
+			?>
+		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[deepseek_ocr_endpoint_url]" value="<?php echo esc_attr( $value ); ?>" class="regular-text" placeholder="http://localhost:8000" />
+		<p class="description">
+			<?php esc_html_e( 'Enter the URL of your DeepSeek-OCR vLLM instance (e.g., http://localhost:8000). Requires vLLM nightly build with NGramPerReqLogitsProcessor registered.', 'mcp-ai-wpoos' ); ?>
+			<button type="button" id="wp-mcp-ai-test-deepseek-ocr-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?></button>
+			<span id="wp-mcp-ai-deepseek-ocr-test-result" style="margin-left: 10px;"></span>
+		</p>
+			<?php
+		}
+
+		/**
 		 * Render the LM Studio section description.
 		 */
 		public function render_lm_studio_section_description() {
@@ -5317,11 +5417,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			// Final fallback to minimal hardcoded list.
 			$choices = array(
-				'gpt-4.1'       => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
-			'gpt-4.1-mini'  => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
-			'gpt-4.1-nano'  => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
-			'gpt-4o-mini'   => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
-				'gpt-4-turbo' => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
+				'gpt-4.1'      => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
+				'gpt-4.1-mini' => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
+				'gpt-4.1-nano' => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini'  => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+				'gpt-4-turbo'  => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
 			);
 
 			/**

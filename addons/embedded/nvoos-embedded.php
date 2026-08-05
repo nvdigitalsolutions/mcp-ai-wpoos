@@ -68,6 +68,12 @@ require_once NVOOS_EMBEDDED_PATH . 'includes/abilities/class-nvoos-embedded-abil
 if ( is_admin() ) {
 	require_once NVOOS_EMBEDDED_PATH . 'includes/admin/class-wp-mcp-ai-webllm-settings-page.php';
 	require_once NVOOS_EMBEDDED_PATH . 'includes/admin/class-wp-mcp-ai-embedded-model-ajax.php';
+
+	// Load OCR health dashboard if self-hosted OCR client is available.
+	if ( class_exists( 'WP_MCP_AI_Self_Hosted_OCR_Client' ) ) {
+		require_once NVOOS_EMBEDDED_PATH . 'includes/admin/class-nvoos-embedded-ocr-dashboard.php';
+		new NV_oOS_Embedded_OCR_Dashboard();
+	}
 }
 
 /**

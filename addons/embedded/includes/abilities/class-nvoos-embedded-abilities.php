@@ -38,6 +38,7 @@ class NV_oOS_Embedded_Abilities {
 	const CATEGORY_VOICE     = 'nvoos-embedded-voice';
 	const CATEGORY_INFERENCE = 'nvoos-embedded-inference';
 	const CATEGORY_VISION    = 'nvoos-embedded-vision';
+	const CATEGORY_OCR       = 'nvoos-embedded-ocr';
 
 	/**
 	 * Register all abilities on wp_abilities_api_init.
@@ -67,6 +68,7 @@ class NV_oOS_Embedded_Abilities {
 		self::register_model_list_ability();
 		self::register_stt_config_ability();
 		self::register_analyze_image_ability();
+		self::register_ocr_document_ability();
 	}
 
 	// ── Voice / STT ────────────────────────────────────────────────────
@@ -433,6 +435,87 @@ class NV_oOS_Embedded_Abilities {
 						'model_used'  => $model,
 						'client_side' => true,
 					);
+				},
+				'meta'                => array(
+					'mcp' => array( 'public' => true ),
+				),
+			)
+		);
+	}
+
+	// ── OCR ──────────────────────────────────────────────────────────
+
+	/**
+	 * Register OCR document ability.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @return void
+	 */
+	private static function register_ocr_document_ability() {
+		wp_register_ability(
+			'nvoos-embedded/ocr-document',
+			array(
+				'label'               => __( 'OCR Document', 'nvoos-embedded' ),
+				'description'         => __( 'Extract text from images and PDFs using self-hosted OCR models (Unlimited-OCR or DeepSeek-OCR). Documents never leave your server.', 'nvoos-embedded' ),
+				'category'            => self::CATEGORY_OCR,
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'image_data'       => array(
+							'type'        => 'string',
+							'description' => __( 'Base64-encoded image data for single-page OCR.', 'nvoos-embedded' ),
+						),
+						'image_data_array' => array(
+							'type'        => 'array',
+							'items'       => array( 'type' => 'string' ),
+							'description' => __( 'Array of base64-encoded images for multi-page OCR.', 'nvoos-embedded' ),
+						),
+						'prompt'           => array(
+							'type'        => 'string',
+							'description' => __( 'OCR prompt. Uses model default if omitted.', 'nvoos-embedded' ),
+						),
+						'model_type'       => array(
+							'type'        => 'string',
+							'enum'        => array( 'unlimited_ocr', 'deepseek_ocr' ),
+							'default'     => 'unlimited_ocr',
+							'description' => __( 'OCR model to use.', 'nvoos-embedded' ),
+						),
+					),
+				),
+				'output_schema'       => array(
+					'type'       => 'object',
+					'properties' => array(
+						'text'            => array( 'type' => 'string' ),
+						'raw'             => array( 'type' => 'string' ),
+						'model_type'      => array( 'type' => 'string' ),
+						'metadata'        => array( 'type' => 'object' ),
+					),
+				),
+				'permission_callback' => function () {
+					return current_user_can( 'upload_files' );
+				},
+				'execute_callback'    => function ( $input ) {
+					$model_type = isset( $input['model_type'] )
+						? sanitize_key( $input['model_type'] )
+						: 'unlimited_ocr';
+
+					$backend_slug = 'self_hosted_ocr_' . $model_type;
+					$registry     = NV_oOS_Embedded_Backend_Registry::get_instance();
+					$backend      = $registry->get_llm_backend( $backend_slug );
+
+					if ( ! $backend || ! $backend instanceof NV_oOS_Embedded_Self_Hosted_OCR_Backend ) {
+						return new WP_Error(
+							'backend_unavailable',
+							sprintf(
+								/* translators: %s: model type */
+								__( 'Self-hosted OCR backend for %s is not available.', 'nvoos-embedded' ),
+								esc_html( $model_type )
+							)
+						);
+					}
+
+					return $backend->ocr_document( $input );
 				},
 				'meta'                => array(
 					'mcp' => array( 'public' => true ),

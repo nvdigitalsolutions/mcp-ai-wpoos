@@ -77,7 +77,7 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Advanced AI-powered OCR for PDF and image to text extraction optimized for document creation workflows. Features: multi-page PDF processing, batch image processing, layout preservation, structured output (JSON/Markdown/HTML), confidence scores, and seamless integration with document generation. Supports OpenAI GPT-4o Vision, Google Gemini, and Claude vision models. Built on ISO/IEC 42001:2023 and NIST AI standards.', 'mcp-ai-wpoos-pro' );
+		return __( 'Advanced AI-powered OCR for PDF and image to text extraction optimized for document creation workflows. Features: multi-page PDF processing, batch image processing, layout preservation, structured output (JSON/Markdown/HTML), confidence scores, and seamless integration with document generation. Supports OpenAI GPT-4o Vision, Google Gemini, Claude vision models, Unlimited-OCR, and DeepSeek-OCR. Built on ISO/IEC 42001:2023 and NIST AI standards.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -125,9 +125,9 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 					'properties'  => array(
 						'provider'          => array(
 							'type'        => 'string',
-							'enum'        => array( 'auto', 'openai', 'gemini', 'anthropic', 'ollama', 'tesseract' ),
+							'enum'        => array( 'auto', 'openai', 'gemini', 'anthropic', 'ollama', 'tesseract', 'unlimited_ocr', 'deepseek_ocr' ),
 							'default'     => 'auto',
-							'description' => __( 'AI provider for OCR. "auto" selects best available. OpenAI GPT-4o and Anthropic Claude recommended for highest accuracy.', 'mcp-ai-wpoos-pro' ),
+							'description' => __( 'AI provider for OCR. "auto" selects best available. OpenAI GPT-4o, Anthropic Claude, Unlimited-OCR and DeepSeek-OCR recommended for highest accuracy. Unlimited-OCR and DeepSeek-OCR require self-hosted vLLM instances.', 'mcp-ai-wpoos-pro' ),
 						),
 						'preserve_layout'   => array(
 							'type'        => 'boolean',

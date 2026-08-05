@@ -292,9 +292,101 @@ window.wpMcpAiSaveExpandedState = function() {
             $('input[name="wp_mcp_ai_settings[lm_studio_model]"]').val(modelName);
             $('#wp-mcp-ai-lm-studio-models-list').prepend('<p style="color: #00a32a; font-weight: bold;">Selected: ' + modelName + '</p>');
         });
-    }
+    	}
 
-    function formatBytes(bytes, decimals = 2) {
+	function initUnlimitedOcrHandlers() {
+		// Test Unlimited-OCR connection.
+		$('#wp-mcp-ai-test-unlimited-ocr-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-unlimited-ocr-test-result');
+			const endpointUrl = $('input[name="wp_mcp_ai_settings[unlimited_ocr_endpoint_url]"]').val();
+
+			if (!endpointUrl) {
+				$result.html('<span style="color: #d63638;">Please enter an endpoint URL first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting...</span>');
+
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_unlimited_ocr_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					endpoint_url: endpointUrl
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						let msg = response.data.message;
+						if (response.data.models && response.data.models.length > 0) {
+							msg += ' Models: ' + response.data.models.join(', ');
+						}
+						$result.html('<span style="color: #00a32a;">&#10003; ' + msg + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">&#10007; ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">&#10007; ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	function initDeepseekOcrHandlers() {
+		// Test DeepSeek-OCR connection.
+		$('#wp-mcp-ai-test-deepseek-ocr-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-deepseek-ocr-test-result');
+			const endpointUrl = $('input[name="wp_mcp_ai_settings[deepseek_ocr_endpoint_url]"]').val();
+
+			if (!endpointUrl) {
+				$result.html('<span style="color: #d63638;">Please enter an endpoint URL first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting...</span>');
+
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_deepseek_ocr_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					endpoint_url: endpointUrl
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						let msg = response.data.message;
+						if (response.data.models && response.data.models.length > 0) {
+							msg += ' Models: ' + response.data.models.join(', ');
+						}
+						$result.html('<span style="color: #00a32a;">&#10003; ' + msg + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">&#10007; ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">&#10007; ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+    	function formatBytes(bytes, decimals) {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
         const dm = decimals < 0 ? 0 : decimals;
@@ -896,10 +988,12 @@ window.wpMcpAiSaveExpandedState = function() {
         }
         log('wpMcpAiAdmin loaded:', wpMcpAiAdmin);
         
-        initColorPickers();
-        initOllamaHandlers();
-        initLMStudioHandlers();
-        initCloudwaysHandlers();
+        	initColorPickers();
+        	initOllamaHandlers();
+        	initLMStudioHandlers();
+        	initUnlimitedOcrHandlers();
+        	initDeepseekOcrHandlers();
+        	initCloudwaysHandlers();
         initCloudflareHandlers();
         initBraveSearchHandlers();
         initTavilyHandlers();
