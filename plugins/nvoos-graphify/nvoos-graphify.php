@@ -3,7 +3,7 @@
  * Plugin Name:  NV oOS Graphify
  * Plugin URI:   https://github.com/nvdigitalsolutions/nvoos-graphify
  * Description:  Visual knowledge graph for WordPress. Maps your content into an interactive, navigable graph. Zero API keys required.
- * Version:      1.0.0
+ * Version:      1.0.1
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Author:       NV Digital Solutions

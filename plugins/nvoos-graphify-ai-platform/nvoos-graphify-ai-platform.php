@@ -3,7 +3,7 @@
  * Plugin Name:  NV oOS Graphify — Platform
  * Plugin URI:   https://github.com/nvdigitalsolutions/nvoos-graphify-ai-platform
  * Description:  Platform layer for NV oOS Graphify. Adds agents, skills, slash-commands, harness, measurement, professions, A2A, ACP, federation, and blueprints on top of the AI addon.
- * Version:      1.0.0-dev
+ * Version:      1.0.0
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Requires Plugins: nvoos-graphify, nvoos-graphify-ai

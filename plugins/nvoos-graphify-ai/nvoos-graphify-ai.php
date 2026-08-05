@@ -3,7 +3,7 @@
  * Plugin Name:  NV oOS Graphify — AI
  * Plugin URI:   https://github.com/nvdigitalsolutions/nvoos-graphify-ai
  * Description:  AI chat assistant addon for NV oOS Graphify. Adds chat, 13 AI providers, AI tools, embeddings, and agent memory to your knowledge graph. One install, one API key.
- * Version:      1.0.0-dev
+ * Version:      1.0.0
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Requires Plugins: nvoos-graphify
