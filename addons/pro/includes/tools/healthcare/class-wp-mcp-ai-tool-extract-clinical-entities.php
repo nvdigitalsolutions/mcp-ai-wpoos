@@ -104,9 +104,12 @@ class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_capability_flags() {
 		return array(
-			'is_destructive'    => false,
-			'accesses_phi'      => true,
-			'requires_phi_gate' => true,
+			'pro',
+			'read-only',
+			'pii-data',
+			'hipaa-relevant',
+			'external-api',
+			'network-dependent',
 		);
 	}
 
@@ -117,7 +120,7 @@ class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interfa
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error  Result envelope or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// ── PHI gate ────────────────────────────────────────────────────
 		if ( ! class_exists( 'WP_MCP_AI_Healthcare_Engine' ) || ! WP_MCP_AI_Healthcare_Engine::phi_acknowledged() ) {
 			return new WP_Error(

@@ -95,9 +95,13 @@ class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_capability_flags() {
 		return array(
-			'is_destructive'    => false,
-			'accesses_phi'      => true,
-			'requires_phi_gate' => true,
+			'pro',
+			'read-only',
+			'pii-data',
+			'hipaa-relevant',
+			'requires-capability',
+			'external-api',
+			'network-dependent',
 		);
 	}
 
@@ -108,7 +112,7 @@ class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interfac
 	 * @param array $context   Execution context (user_id, assistant_id, etc.).
 	 * @return array|WP_Error  Result envelope or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// ── L3: PHI Acknowledgement gate ────────────────────────────────
 		if ( ! class_exists( 'WP_MCP_AI_Healthcare_Engine' ) ) {
 			return new WP_Error(
