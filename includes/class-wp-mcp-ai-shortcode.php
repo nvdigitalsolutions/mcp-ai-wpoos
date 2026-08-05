@@ -1504,10 +1504,33 @@ class WP_MCP_AI_Shortcode {
 				$container_classes[] = 'wp-mcp-ai-chat--template-' . $template;
 			}
 			?>
-		<div class="<?php echo esc_attr( implode( ' ', $container_classes ) ); ?>" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat data-template="<?php echo esc_attr( $template ); ?>">
+		<div class="<?php echo esc_attr( implode( ' ', $container_classes ) ); ?>" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat data-template="<?php echo esc_attr( $template ); ?>"
+						<?php
+						// Emit AI transparency data attributes (Proposal 017 — SGI/Article 50).
+						if ( class_exists( 'WP_MCP_AI_Transparency_Service' ) ) {
+							$transparency_svc   = WP_MCP_AI_Transparency_Service::get_instance();
+							$transparency_attrs = $transparency_svc->get_chat_data_attributes();
+							foreach ( $transparency_attrs as $attr_key => $attr_value ) {
+								echo ' ' . esc_attr( $attr_key ) . '="' . esc_attr( $attr_value ) . '"';
+							}
+						}
+						?>
+					>
 			<?php
+			// Render AI disclosure banner (Proposal 017 — EU AI Act Article 50(1)).
+			if ( class_exists( 'WP_MCP_AI_Transparency_Service' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method returns pre-escaped HTML.
+				echo WP_MCP_AI_Transparency_Service::get_instance()->get_disclosure_banner_html();
+			}
+
 			if ( $is_elementor_editor ) {
 				echo $this->render_editor_notice(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_editor_notice() returns a static HTML string with all dynamic values escaped via esc_html_e().
+			}
+
+			// Render consent modal (Proposal 017 — pre-interaction AI consent).
+			if ( class_exists( 'WP_MCP_AI_Transparency_Service' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method returns pre-escaped HTML.
+				echo WP_MCP_AI_Transparency_Service::get_instance()->get_consent_modal_html();
 			}
 			?>
 			<div class="wp-mcp-ai-chat__assistant">

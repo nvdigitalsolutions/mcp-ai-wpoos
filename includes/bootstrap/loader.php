@@ -429,7 +429,7 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/security/
 	require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-security-audit-logger.php';
 }
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/helpers/api-key-helpers.php' ) ) {
-	require_once WP_MCP_AI_PATH . 'includes/helpers/api-key-helpers.php';
+		require_once WP_MCP_AI_PATH . 'includes/helpers/api-key-helpers.php';
 }
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-validated-upload.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-validated-upload.php';
@@ -438,9 +438,22 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/traits/tr
 	require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-object-access.php';
 }
 
-// ---------------------------------------------------------------------------
-// Dependency injection container and service layer
-// ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Transparency & Compliance (Proposal 017) — AI disclosure, consent, provenance
+	// ---------------------------------------------------------------------------
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transparency-service.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transparency-service.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-consent-manager.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-consent-manager.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-generation-provenance.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-generation-provenance.php';
+}
+
+	// ---------------------------------------------------------------------------
+	// Dependency injection container and service layer
+	// ---------------------------------------------------------------------------
 
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-container.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-container.php';
@@ -1051,10 +1064,14 @@ WP_MCP_AI_Memory_Privacy_Filter::bootstrap();
 // Memory Layer 2026 Enhancements Phase 3 — auto-capture service (default OFF).
 // Hooks `wp_mcp_ai_tool_executed` and `wp_mcp_ai_before_chat_request`
 // silently. Master kill: filter `wp_mcp_ai_memory_auto_capture_enabled`.
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-auto-capture-service.php';
-WP_MCP_AI_Memory_Auto_Capture_Service::bootstrap();
+	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-auto-capture-service.php';
+	WP_MCP_AI_Memory_Auto_Capture_Service::bootstrap();
 
-// Memory Layer 2026 Enhancements Phase 4 — RRF fusion retrieval service.
+	// Transparency & Compliance (Proposal 017) — boot AI disclosure, consent, provenance.
+	// Registers REST header injection, consent endpoint, and provenance hooks.
+	WP_MCP_AI_Transparency_Service::boot();
+
+	// Memory Layer 2026 Enhancements Phase 4 — RRF fusion retrieval service.
 // Stateless / static; no bootstrap hook required. Loaded eagerly here so
 // `WP_MCP_AI_Vector_Context_Service::search_context_rrf()` can resolve it
 // without lazy `require_once` calls inside the hot retrieval path.
@@ -1195,6 +1212,12 @@ if ( is_admin() ) {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-information-labelling.php';
 	}
 	WP_MCP_AI_Information_Labelling::get_instance();
+
+	// Transparency & Compliance admin settings (Proposal 017).
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-transparency-settings.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-transparency-settings.php';
+	}
+	WP_MCP_AI_Admin_Transparency_Settings::init();
 
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-incident-learning.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-incident-learning.php';
