@@ -388,6 +388,158 @@ jobs:
           echo "📦 Base-only ZIP contents (first 30 entries):"
           unzip -l "${PLUGIN_SLUG}-${VERSION}.zip" | head -35
 
+      - name: Build nvdigital-oos WordPress.org submission packages
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          NV_PREFIX="nvdigital-open-operator-system-oos"
+          WORKSPACE="${{ github.workspace }}"
+
+          # Shared text-domain transform helper.
+          # Operates on the current working directory (cd into the target first).
+          transform_text_domains() {
+            local BASE_DOMAIN="${1:-mcp-ai-wpoos}"
+            local PRO_DOMAIN="${2:-mcp-ai-wpoos-pro}"
+            local TGT_BASE="${3:-nvdigital-open-operator-system-oos}"
+            local TGT_PRO="${4:-nvdigital-open-operator-system-oos-pro}"
+
+            # PHP: headers + quoted strings
+            find . -name "*.php" -type f \
+              -exec sed -i "s/Text Domain: ${BASE_DOMAIN}/Text Domain: ${TGT_BASE}/g" {} \; \
+              -exec sed -i "s/Text Domain: ${PRO_DOMAIN}/Text Domain: ${TGT_PRO}/g" {} \; \
+              -exec sed -i "s/'${BASE_DOMAIN}'/'${TGT_BASE}'/g" {} \; \
+              -exec sed -i "s/\"${BASE_DOMAIN}\"/\"${TGT_BASE}\"/g" {} \; \
+              -exec sed -i "s/'${PRO_DOMAIN}'/'${TGT_PRO}'/g" {} \; \
+              -exec sed -i "s/\"${PRO_DOMAIN}\"/\"${TGT_PRO}\"/g" {} \;
+
+            # JS: quoted strings
+            find . -name "*.js" -type f \
+              -exec sed -i "s/'${BASE_DOMAIN}'/'${TGT_BASE}'/g" {} \; \
+              -exec sed -i "s/\"${BASE_DOMAIN}\"/\"${TGT_BASE}\"/g" {} \; \
+              -exec sed -i "s/'${PRO_DOMAIN}'/'${TGT_PRO}'/g" {} \; \
+              -exec sed -i "s/\"${PRO_DOMAIN}\"/\"${TGT_PRO}\"/g" {} \;
+          }
+
+          # ---- 1. Base package ------------------------------------------------
+          echo "📦 Building ${NV_PREFIX}-${VERSION}.zip (base)..."
+          TMP="/tmp/nv-build-base-$$"
+          mkdir -p "$TMP/${NV_PREFIX}"
+          cp -a build/${PLUGIN_SLUG}/. "$TMP/${NV_PREFIX}/"
+
+          cd "$TMP/${NV_PREFIX}"
+          transform_text_domains "mcp-ai-wpoos" "mcp-ai-wpoos-pro" "${NV_PREFIX}" "${NV_PREFIX}-pro"
+
+          # Rename main plugin file
+          if [ -f "mcp-ai-wpoos.php" ]; then
+            mv "mcp-ai-wpoos.php" "${NV_PREFIX}.php"
+            echo "   Renamed: mcp-ai-wpoos.php → ${NV_PREFIX}.php"
+          fi
+
+          # Rename POT file
+          if [ -f "languages/mcp-ai-wpoos.pot" ]; then
+            mv "languages/mcp-ai-wpoos.pot" "languages/${NV_PREFIX}.pot"
+            sed -i "s/\"Project-Id-Version: mcp-ai-wpoos/\"Project-Id-Version: ${NV_PREFIX}/g" "languages/${NV_PREFIX}.pot"
+            echo "   Renamed: mcp-ai-wpoos.pot → ${NV_PREFIX}.pot"
+          fi
+
+          # Fix readme.txt
+          if [ -f "readme.txt" ]; then
+            sed -i -E \
+              "s#https://wordpress\\.org/support/plugin/(wp-mcp-ai|mcp-ai-wpoos[a-z-]*|nvdigital-open-operator-system-oos[a-z-]*)/?#https://wordpress.org/support/plugin/${NV_PREFIX}/#g" \
+              readme.txt
+            sed -i "s|mcp-ai-wpoos-base|${NV_PREFIX}|g" readme.txt
+            sed -i "s|mcp-ai-wpoos-pro|${NV_PREFIX}-pro|g" readme.txt
+            sed -i "s|mcp-ai-wpoos|${NV_PREFIX}|g" readme.txt
+            echo "   readme.txt forum URL → ${NV_PREFIX}"
+          fi
+
+          cd "$TMP"
+          zip -rq "${WORKSPACE}/${NV_PREFIX}-${VERSION}.zip" "${NV_PREFIX}/" -x "*.DS_Store" -x "*__MACOSX*"
+          cd "${WORKSPACE}"
+          rm -rf "$TMP"
+          ls -lh "${NV_PREFIX}-${VERSION}.zip"
+          echo ""
+
+          # ---- 2. Pro package -------------------------------------------------
+          echo "📦 Building ${NV_PREFIX}-pro-${VERSION}.zip (pro addon)..."
+          PRO_SRC="build-full/${PLUGIN_SLUG}/addons/pro"
+          if [ -d "$PRO_SRC" ]; then
+            TMP="/tmp/nv-build-pro-$$"
+            mkdir -p "$TMP/${NV_PREFIX}-pro"
+            cp -a "$PRO_SRC"/. "$TMP/${NV_PREFIX}-pro/"
+
+            cd "$TMP/${NV_PREFIX}-pro"
+            transform_text_domains "mcp-ai-wpoos" "mcp-ai-wpoos-pro" "${NV_PREFIX}" "${NV_PREFIX}-pro"
+
+            # Rename main pro file
+            if [ -f "mcp-ai-wpoos-pro.php" ]; then
+              mv "mcp-ai-wpoos-pro.php" "${NV_PREFIX}-pro.php"
+              echo "   Renamed: mcp-ai-wpoos-pro.php → ${NV_PREFIX}-pro.php"
+            fi
+
+            # Rename POT file
+            if [ -f "languages/mcp-ai-wpoos-pro.pot" ]; then
+              mv "languages/mcp-ai-wpoos-pro.pot" "languages/${NV_PREFIX}-pro.pot"
+              sed -i "s/\"Project-Id-Version: mcp-ai-wpoos-pro/\"Project-Id-Version: ${NV_PREFIX}-pro/g" "languages/${NV_PREFIX}-pro.pot"
+              echo "   Renamed: mcp-ai-wpoos-pro.pot → ${NV_PREFIX}-pro.pot"
+            fi
+
+            cd "$TMP"
+            zip -rq "${WORKSPACE}/${NV_PREFIX}-pro-${VERSION}.zip" "${NV_PREFIX}-pro/" -x "*.DS_Store" -x "*__MACOSX*"
+            cd "${WORKSPACE}"
+            rm -rf "$TMP"
+            ls -lh "${NV_PREFIX}-pro-${VERSION}.zip"
+          else
+            echo "   ⚠️  Pro addon source not found at $PRO_SRC — skipping"
+          fi
+          echo ""
+
+          # ---- 3. Complete package --------------------------------------------
+          echo "📦 Building ${NV_PREFIX}-complete-${VERSION}.zip (base + pro combined)..."
+          TMP="/tmp/nv-build-complete-$$"
+          mkdir -p "$TMP/${NV_PREFIX}-complete"
+          cp -a build-full/${PLUGIN_SLUG}/. "$TMP/${NV_PREFIX}-complete/"
+
+          cd "$TMP/${NV_PREFIX}-complete"
+          transform_text_domains "mcp-ai-wpoos" "mcp-ai-wpoos-pro" "${NV_PREFIX}" "${NV_PREFIX}-pro"
+
+          # Rename main plugin file
+          if [ -f "mcp-ai-wpoos.php" ]; then
+            mv "mcp-ai-wpoos.php" "${NV_PREFIX}.php"
+            echo "   Renamed: mcp-ai-wpoos.php → ${NV_PREFIX}.php"
+          fi
+
+          # Rename pro file inside addons (if still exists after transform)
+          if [ -f "addons/pro/mcp-ai-wpoos-pro.php" ]; then
+            mv "addons/pro/mcp-ai-wpoos-pro.php" "addons/pro/${NV_PREFIX}-pro.php"
+            echo "   Renamed: addons/pro/mcp-ai-wpoos-pro.php → addons/pro/${NV_PREFIX}-pro.php"
+          fi
+
+          # Rename POT files
+          if [ -f "languages/mcp-ai-wpoos.pot" ]; then
+            mv "languages/mcp-ai-wpoos.pot" "languages/${NV_PREFIX}.pot"
+            sed -i "s/\"Project-Id-Version: mcp-ai-wpoos/\"Project-Id-Version: ${NV_PREFIX}/g" "languages/${NV_PREFIX}.pot"
+          fi
+
+          # Fix readme.txt
+          if [ -f "readme.txt" ]; then
+            sed -i -E \
+              "s#https://wordpress\\.org/support/plugin/(wp-mcp-ai|mcp-ai-wpoos[a-z-]*|nvdigital-open-operator-system-oos[a-z-]*)/?#https://wordpress.org/support/plugin/${NV_PREFIX}/#g" \
+              readme.txt
+            sed -i "s|mcp-ai-wpoos-base|${NV_PREFIX}|g" readme.txt
+            sed -i "s|mcp-ai-wpoos-pro|${NV_PREFIX}-pro|g" readme.txt
+            sed -i "s|mcp-ai-wpoos|${NV_PREFIX}|g" readme.txt
+            echo "   readme.txt forum URL → ${NV_PREFIX}"
+          fi
+
+          cd "$TMP"
+          zip -rq "${WORKSPACE}/${NV_PREFIX}-complete-${VERSION}.zip" "${NV_PREFIX}-complete/" -x "*.DS_Store" -x "*__MACOSX*"
+          cd "${WORKSPACE}"
+          rm -rf "$TMP"
+          ls -lh "${NV_PREFIX}-complete-${VERSION}.zip"
+          echo ""
+
+          echo "✅ All nvdigital-oos WP.org packages built"
+
       - name: Build optional component ZIPs (knowledge-base, vectorizer)
         run: |
           echo "📦 Building optional component ZIPs for on-demand downloads..."
@@ -420,6 +572,30 @@ jobs:
           path: |
             build/optional-components/knowledge-base.zip
             build/optional-components/neplex-vectorizer.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload nvdigital-oos base package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}
+          path: nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload nvdigital-oos pro package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvdigital-open-operator-system-oos-pro-${{ steps.version.outputs.version }}
+          path: nvdigital-open-operator-system-oos-pro-${{ steps.version.outputs.version }}.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload nvdigital-oos complete package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvdigital-open-operator-system-oos-complete-${{ steps.version.outputs.version }}
+          path: nvdigital-open-operator-system-oos-complete-${{ steps.version.outputs.version }}.zip
           if-no-files-found: error
           retention-days: 30
 
@@ -688,6 +864,21 @@ jobs:
         with:
           name: ${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}-optional-components
 
+      - name: Download nvdigital-oos base package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvdigital-open-operator-system-oos-${{ needs.build.outputs.version }}
+
+      - name: Download nvdigital-oos pro package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvdigital-open-operator-system-oos-pro-${{ needs.build.outputs.version }}
+
+      - name: Download nvdigital-oos complete package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nvdigital-open-operator-system-oos-complete-${{ needs.build.outputs.version }}
+
       - name: Generate release notes
         id: release_notes
         run: |
@@ -731,22 +922,30 @@ jobs:
             
             ### 📥 Installation
             
-            **Two artifacts are attached:**
+            ### 📥 Repository Packages (wp-mcp-ai-*)
 
             - `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}.zip` — **Base plugin only** (matches what is published to WordPress.org).
-            - `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}-full.zip` — **Full build** including bundled addons (Pro, Embedded, Fantasy-Football, etc.). Not submitted to WordPress.org.
-            - `knowledge-base.zip` — **Optional:** 218+ profession playbooks and knowledge base documents. Downloaded on-demand by the plugin.
-            - `neplex-vectorizer.zip` — **Optional:** Vectorizer library placeholder (now bundled with the base plugin).
+            - `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}-full.zip` — **Full build** including bundled addons (Pro, Embedded, Fantasy-Football, etc.).
+            - `knowledge-base.zip` — **Optional:** 218+ profession playbooks and knowledge base documents.
+            - `neplex-vectorizer.zip` — **Optional:** Vectorizer library placeholder.
+
+            ### 📥 WordPress.org Submission Packages (nvdigital-open-operator-system-oos-*)
+
+            Packages with WordPress.org-compliant text domains and naming. Extract to a stable folder name (no version in the folder).
+
+            - `nvdigital-open-operator-system-oos-${{ needs.build.outputs.version }}.zip` — **Base** (~263 tools, free).
+            - `nvdigital-open-operator-system-oos-pro-${{ needs.build.outputs.version }}.zip` — **Pro addon** (requires base).
+            - `nvdigital-open-operator-system-oos-complete-${{ needs.build.outputs.version }}.zip` — **Complete** (base + pro bundled).
 
             **Option 1: Upload ZIP**
-            1. Download `${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}.zip` (base) or `…-full.zip` (everything) below
+            1. Download any package below
             2. Go to WordPress Admin → Plugins → Add New → Upload Plugin
             3. Upload the ZIP file and click "Install Now"
             4. Activate the plugin
             
             **Option 2: WordPress.org** (when available — base plugin only)
             1. Go to WordPress Admin → Plugins → Add New
-            2. Search for "WP Open Operator System"
+            2. Search for "NV Digital Open Operator System"
             3. Click "Install Now" and "Activate"
             
             ### 📚 Documentation
@@ -763,6 +962,7 @@ jobs:
             
           files: |
             ${{ env.PLUGIN_SLUG }}-*.zip
+            nvdigital-open-operator-system-oos-*.zip
             knowledge-base.zip
             neplex-vectorizer.zip
           fail_on_unmatched_files: true

@@ -14,13 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-self-hosted-ocr-client.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides a tool for extracting text from images (OCR) via multiple AI vision providers.
- * Supports OpenAI, Anthropic, and Gemini.
+ * Supports OpenAI, Anthropic, Gemini, Unlimited-OCR, and DeepSeek-OCR.
  */
 class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
@@ -49,7 +50,7 @@ class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Extracts all visible text from images using AI OCR capabilities from OpenAI, Anthropic, or Gemini. Supports documents, screenshots, handwriting, and complex layouts.', 'mcp-ai-wpoos' );
+		return __( 'Extracts all visible text from images using AI OCR capabilities from OpenAI, Anthropic, Gemini, Unlimited-OCR, or DeepSeek-OCR. Supports documents, screenshots, handwriting, and complex layouts.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -75,8 +76,8 @@ class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'provider'         => array(
 					'type'        => 'string',
-					'description' => __( 'AI provider to use: openai, anthropic, or gemini. Defaults to your configured default provider. Anthropic Claude recommended for best OCR accuracy.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'openai', 'anthropic', 'gemini' ),
+					'description' => __( 'AI provider to use: openai, anthropic, gemini, unlimited_ocr, or deepseek_ocr. Defaults to your configured default provider. Unlimited-OCR and DeepSeek-OCR require self-hosted vLLM instances. Anthropic Claude recommended for best OCR accuracy.', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'openai', 'anthropic', 'gemini', 'unlimited_ocr', 'deepseek_ocr' ),
 					'default'     => $default_provider,
 				),
 				'preserve_layout'  => array(
@@ -222,10 +223,81 @@ class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_
 				return $this->call_anthropic_ocr( $image_url, $image_content, $prompt, $max_tokens, $settings );
 			case 'gemini':
 				return $this->call_gemini_ocr( $image_url, $image_content, $prompt, $max_tokens, $settings );
+			case 'unlimited_ocr':
+			case 'deepseek_ocr':
+				return $this->call_self_hosted_ocr( $image_url, $image_content, $prompt, $provider, $max_tokens, $settings );
 			case 'openai':
 			default:
 				return $this->call_openai_ocr( $image_url, $image_content, $prompt, $max_tokens, $settings );
 		}
+	}
+
+	/**
+	 * Call self-hosted OCR provider (Unlimited-OCR or DeepSeek-OCR).
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string $image_url     Image URL.
+	 * @param string $image_content Base64 image content (unused — fetches fresh from URL).
+	 * @param string $prompt        Prompt for the model.
+	 * @param string $provider      Provider slug ('unlimited_ocr' or 'deepseek_ocr').
+	 * @param int    $max_tokens    Maximum tokens for response (unused — model handles context).
+	 * @param array  $settings      Plugin settings.
+	 * @return array|WP_Error Response or error.
+	 */
+	private function call_self_hosted_ocr( $image_url, $image_content, $prompt, $provider, $max_tokens, $settings ) {
+		if ( ! class_exists( 'WP_MCP_AI_Self_Hosted_OCR_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_client_not_available',
+				__( 'Self-hosted OCR client is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$client = new WP_MCP_AI_Self_Hosted_OCR_Client();
+
+		// Validate model type.
+		if ( ! $client->is_valid_model_type( $provider ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_provider',
+				sprintf(
+					/* translators: %s: provider name */
+					__( 'Invalid self-hosted OCR provider: %s.', 'mcp-ai-wpoos' ),
+					esc_html( $provider )
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Test connection first.
+		$connection = $client->test_connection( $provider );
+		if ( is_wp_error( $connection ) ) {
+			return $connection;
+		}
+
+		// Fetch and encode the image.
+		$image_data = $client->fetch_and_encode_image( $image_url );
+		if ( is_wp_error( $image_data ) ) {
+			return $image_data;
+		}
+
+		// Perform OCR.
+		$result = $client->ocr_image( $image_data, $prompt, $provider );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Return in the format expected by the execute() method.
+		return array(
+			'text'     => $result['text'],
+			'provider' => $provider,
+			'model'    => $result['metadata']['model'],
+			'usage'    => array(
+				'completion_tokens' => isset( $result['metadata']['character_count'] ) ? $result['metadata']['character_count'] : 0,
+			),
+			'metadata' => $result['metadata'],
+		);
 	}
 
 	/**
@@ -600,11 +672,12 @@ class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'requires-credentials',  // Requires AI provider API key.
+			'requires-credentials',  // Requires AI provider API key (for cloud providers).
 			'requires-vision-model', // Requires vision-capable AI model (for OCR).
 			'read-only',             // Only reads/analyzes data.
 			'external-api',          // Makes external API requests.
-			'network-dependent',     // Requires internet connection.
+			'network-dependent',     // Requires internet connection (for cloud providers).
+			'local-only',            // Can operate locally via self-hosted Unlimited-OCR or DeepSeek-OCR.
 			'consumes-tokens',       // Uses AI tokens/credits.
 			'model-dependent',       // Behavior varies by model.
 			'async',                 // May take significant time.

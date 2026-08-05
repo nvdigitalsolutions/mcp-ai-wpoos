@@ -724,6 +724,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				// ── Embedded Voice & STT Settings ─────────────────────────
 				'embedded_stt_backend'                  => 'whisper_cpp_wasm',
 				'embedded_stt_model'                    => 'tiny.en',
+
+				// ── Transparency & Compliance (Proposal 017) ───────────────────
+				// EU AI Act Article 50 · India IT Rules 2026 (SGI) · CA SB 942
+				'enable_ai_disclosure'                  => true,
+				'ai_disclosure_message'                 => '',
+				'ai_disclosure_position'                => 'banner',
+				'enable_consent_modal'                  => true,
+				'consent_message'                       => '',
+				'enable_transparency_headers'           => true,
+				'enable_generation_logging'             => true,
+				'generation_log_retention_days'         => 365,
 			);
 		}
 

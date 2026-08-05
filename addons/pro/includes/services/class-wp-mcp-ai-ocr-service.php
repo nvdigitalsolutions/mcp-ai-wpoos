@@ -24,6 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Google Gemini Vision (secondary)
  * - Ollama Vision Models (local fallback)
  * - Tesseract OCR (system fallback)
+ * - Unlimited-OCR (Baidu, self-hosted)
+ * - DeepSeek-OCR (DeepSeek, self-hosted)
  *
  * @since 1.3.0
  */
@@ -580,6 +582,10 @@ class WP_MCP_AI_OCR_Service {
 						return $this->extract_with_ollama( $image_path, $options );
 					case 'tesseract':
 						return $this->extract_with_tesseract( $image_path, $options );
+					case 'unlimited_ocr':
+						return $this->extract_with_unlimited_ocr( $image_path, $options );
+					case 'deepseek_ocr':
+						return $this->extract_with_deepseek_ocr( $image_path, $options );
 					default:
 						return new WP_Error( 'unknown_provider', sprintf( 'Unknown OCR provider: %s', $provider ) );
 				}
@@ -881,6 +887,92 @@ class WP_MCP_AI_OCR_Service {
 	}
 
 	/**
+	 * Extract text using self-hosted Unlimited-OCR.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string $image_path Path to image file.
+	 * @param array  $options    Extraction options.
+	 * @return string|WP_Error Extracted text or error.
+	 */
+	protected function extract_with_unlimited_ocr( $image_path, $options = array() ) {
+		return $this->extract_with_self_hosted_ocr( $image_path, 'unlimited_ocr', $options );
+	}
+
+	/**
+	 * Extract text using self-hosted DeepSeek-OCR.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string $image_path Path to image file.
+	 * @param array  $options    Extraction options.
+	 * @return string|WP_Error Extracted text or error.
+	 */
+	protected function extract_with_deepseek_ocr( $image_path, $options = array() ) {
+		return $this->extract_with_self_hosted_ocr( $image_path, 'deepseek_ocr', $options );
+	}
+
+	/**
+	 * Extract text using a self-hosted OCR model (Unlimited-OCR or DeepSeek-OCR).
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string $image_path Path to image file.
+	 * @param string $model_type Model type ('unlimited_ocr' or 'deepseek_ocr').
+	 * @param array  $options    Extraction options.
+	 * @return string|WP_Error Extracted text or error.
+	 */
+	protected function extract_with_self_hosted_ocr( $image_path, $model_type, $options = array() ) {
+		if ( ! class_exists( 'WP_MCP_AI_Self_Hosted_OCR_Client' ) ) {
+			return new WP_Error(
+				'client_not_available',
+				__( 'Self-hosted OCR client is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$client = new WP_MCP_AI_Self_Hosted_OCR_Client();
+
+		// Validate model type.
+		if ( ! $client->is_valid_model_type( $model_type ) ) {
+			return new WP_Error(
+				'invalid_model_type',
+				sprintf(
+					/* translators: %s: model type */
+					__( 'Invalid self-hosted OCR model type: %s.', 'mcp-ai-wpoos-pro' ),
+					esc_html( $model_type )
+				)
+			);
+		}
+
+		// Test connection.
+		$connection = $client->test_connection( $model_type );
+		if ( is_wp_error( $connection ) ) {
+			return $connection;
+		}
+
+		// Encode the image.
+		$image_data = $client->encode_image_file( $image_path );
+		if ( is_wp_error( $image_data ) ) {
+			return $image_data;
+		}
+
+		// Build prompt from options.
+		$prompt = '';
+		if ( ! empty( $options['preserve_layout'] ) && 'unlimited_ocr' === $model_type ) {
+			$prompt = '<image>document parsing. Preserve the original layout and formatting.';
+		}
+
+		// Perform OCR.
+		$result = $client->ocr_image( $image_data, $prompt, $model_type );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return $result['text'];
+	}
+
+	/**
 	 * Extract text using standard PDF parsing (non-OCR).
 	 *
 	 * @param string $pdf_path Path to PDF file.
@@ -944,6 +1036,16 @@ class WP_MCP_AI_OCR_Service {
 			return 'ollama';
 		}
 
+		// Try Unlimited-OCR if endpoint configured.
+		if ( ! empty( $settings['unlimited_ocr_endpoint_url'] ) ) {
+			return 'unlimited_ocr';
+		}
+
+		// Try DeepSeek-OCR if endpoint configured.
+		if ( ! empty( $settings['deepseek_ocr_endpoint_url'] ) ) {
+			return 'deepseek_ocr';
+		}
+
 		// Finally, fall back to Tesseract if available.
 		$tesseract = shell_exec( 'which tesseract 2>/dev/null' );
 		if ( ! empty( $tesseract ) ) {
@@ -981,7 +1083,7 @@ class WP_MCP_AI_OCR_Service {
 
 			if ( 'auto' === $fallback ) {
 				// Auto mode - try all providers except primary.
-				$all_providers = array( 'openai', 'gemini', 'ollama', 'tesseract' );
+				$all_providers = array( 'openai', 'gemini', 'ollama', 'tesseract', 'unlimited_ocr', 'deepseek_ocr' );
 				$fallbacks     = array_diff( $all_providers, array( $primary ) );
 				return array_values( $fallbacks );
 			}

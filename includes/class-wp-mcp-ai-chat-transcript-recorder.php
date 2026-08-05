@@ -161,6 +161,34 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 					'result'       => is_numeric( $result ) ? "ID: {$result}" : gettype( $result ),
 				)
 			);
+
+			// Fire provenance action for generation logging (Proposal 017 — SGI/Article 50).
+			// Extraction of model/provider from response is best-effort.
+			$model    = isset( $response['model'] ) ? sanitize_text_field( $response['model'] ) : '';
+			$provider = '';
+			if ( isset( $response['provider'] ) ) {
+				$provider = sanitize_text_field( $response['provider'] );
+			} elseif ( isset( $options['provider'] ) ) {
+				$provider = sanitize_text_field( $options['provider'] );
+			}
+
+			/**
+			 * Fires after a chat transcript is successfully recorded.
+			 *
+			 * Hooked by WP_MCP_AI_Generation_Provenance to write immutable
+			 * provenance records for AI transparency compliance.
+			 *
+			 * @since 1.1.45
+			 *
+			 * @param string      $session_key  Session identifier.
+			 * @param int|string  $assistant_id Assistant identifier.
+			 * @param int         $user_id      WordPress user ID.
+			 * @param array       $messages     Chat messages.
+			 * @param array       $response     LLM response payload.
+			 * @param string      $model        Model slug.
+			 * @param string      $provider     Provider slug.
+			 */
+			do_action( 'wp_mcp_ai_chat_transcript_recorded', $session_key, $assistant_id, $user_id, $messages, $response, $model, $provider );
 		} catch ( Throwable $exception ) {
 			WP_MCP_AI_Logger::log_error(
 				'Unexpected error while saving chat transcript.',
