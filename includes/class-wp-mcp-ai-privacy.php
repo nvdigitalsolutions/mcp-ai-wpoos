@@ -69,50 +69,63 @@ class WP_MCP_AI_Privacy {
 	private function get_privacy_policy_content() {
 		return __(
 			'<h2>What Personal Data We Collect and Why</h2>
-			
-			<h3>AI Assistant Interactions</h3>
-			<p>When you use our AI Assistant features, we collect:</p>
-			<ul>
-				<li><strong>Chat Transcripts:</strong> Messages you send to AI assistants are stored locally in your browser for 24 hours and optionally on our server if enabled.</li>
-				<li><strong>Usage Analytics:</strong> We track which assistants and tools you use to improve performance and user experience.</li>
-				<li><strong>Assistant Credentials:</strong> If you create custom AI assistants, we store associated API credentials securely.</li>
-			</ul>
-			
-			<h3>User Settings and Preferences</h3>
-			<p>We store your AI assistant preferences, including:</p>
-			<ul>
-				<li>Selected AI models and providers</li>
-				<li>Custom system prompts and configurations</li>
-				<li>Tool selections and permissions</li>
-			</ul>
-			
-			<h3>How Long We Retain Your Data</h3>
-			<ul>
-				<li><strong>Chat Transcripts:</strong> Browser storage for 24 hours; server storage (if enabled) until manually deleted or account deletion.</li>
-				<li><strong>Usage Analytics:</strong> Aggregated data retained for 90 days; individual records for 30 days.</li>
-				<li><strong>API Credentials:</strong> Retained until you delete them or your account is deleted.</li>
-				<li><strong>User Settings:</strong> Retained until you delete them or your account is deleted.</li>
-			</ul>
-			
-			<h3>Where We Send Your Data</h3>
-			<p>Your chat messages and data may be sent to third-party AI providers you select:</p>
-			<ul>
-				<li><strong>OpenAI:</strong> If using OpenAI GPT models</li>
-				<li><strong>Google:</strong> If using Google Gemini models</li>
-				<li><strong>Anthropic:</strong> If using Claude models</li>
-				<li><strong>Local AI (Ollama):</strong> Data stays on your server if using local models</li>
-			</ul>
-			<p>Please review the privacy policies of these providers for information on how they handle your data.</p>
-			
-			<h3>Your Data Rights</h3>
-			<p>You have the right to:</p>
-			<ul>
-				<li>Export all personal data we have collected</li>
-				<li>Request erasure of your personal data</li>
-				<li>Object to processing of your personal data</li>
-				<li>Restrict processing of your personal data</li>
-			</ul>
-			<p>You can exercise these rights using the Privacy Tools in your WordPress admin area or by contacting the site administrator.</p>',
+
+<h3>AI Assistant Interactions</h3>
+<p>When you use our AI Assistant features, we collect:</p>
+<ul>
+<li><strong>Chat Transcripts:</strong> Messages you send to AI assistants are stored locally in your browser for 24 hours and optionally on our server if enabled.</li>
+<li><strong>Usage Analytics:</strong> We track which assistants and tools you use to improve performance and user experience.</li>
+<li><strong>Assistant Credentials:</strong> If you create custom AI assistants, we store associated API credentials securely.</li>
+</ul>
+
+<h3>AI Transparency & Labelling</h3>
+<p>In compliance with the EU AI Act Article 50 and related regulations, we provide:</p>
+<ul>
+<li><strong>AI Disclosure:</strong> All AI-powered chat interfaces display a visible notice informing you that you are interacting with an artificial intelligence system.</li>
+<li><strong>Consent:</strong> Before your first interaction, you are asked to acknowledge that responses are AI-generated.</li>
+<li><strong>Provenance Headers:</strong> API responses from our AI chat endpoints include machine-readable headers (X-AI-Generated) identifying the content as AI-generated.</li>
+<li><strong>Generation Logging:</strong> We maintain immutable, cryptographically verifiable records of AI interactions for compliance and audit purposes.</li>
+</ul>
+
+<h3>User Settings and Preferences</h3>
+<p>We store your AI assistant preferences, including:</p>
+<ul>
+<li>Selected AI models and providers</li>
+<li>Custom system prompts and configurations</li>
+<li>Tool selections and permissions</li>
+<li>AI consent preferences (whether you have acknowledged AI interactions)</li>
+</ul>
+
+<h3>How Long We Retain Your Data</h3>
+<ul>
+<li><strong>Chat Transcripts:</strong> Browser storage for 24 hours; server storage (if enabled) until manually deleted or account deletion.</li>
+<li><strong>Generation Provenance Records:</strong> Retained for the configured period (default 365 days) for compliance auditing.</li>
+<li><strong>Consent Records:</strong> Retained until you revoke consent or your account is deleted.</li>
+<li><strong>Usage Analytics:</strong> Aggregated data retained for 90 days; individual records for 30 days.</li>
+<li><strong>API Credentials:</strong> Retained until you delete them or your account is deleted.</li>
+<li><strong>User Settings:</strong> Retained until you delete them or your account is deleted.</li>
+</ul>
+
+<h3>Where We Send Your Data</h3>
+<p>Your chat messages and data may be sent to third-party AI providers you select:</p>
+<ul>
+<li><strong>OpenAI:</strong> If using OpenAI GPT models</li>
+<li><strong>Google:</strong> If using Google Gemini models</li>
+<li><strong>Anthropic:</strong> If using Claude models</li>
+<li><strong>Local AI (Ollama):</strong> Data stays on your server if using local models</li>
+</ul>
+<p>Please review the privacy policies of these providers for information on how they handle your data. Note that your messages may be processed by these providers to generate AI responses.</p>
+
+<h3>Your Data Rights</h3>
+<p>You have the right to:</p>
+<ul>
+<li>Export all personal data we have collected, including generation provenance records associated with your account</li>
+<li>Request erasure of your personal data, including chat transcripts and generation records</li>
+<li>Object to processing of your personal data by AI systems</li>
+<li>Restrict processing of your personal data</li>
+<li>Withdraw consent for AI interactions at any time</li>
+</ul>
+<p>You can exercise these rights using the Privacy Tools in your WordPress admin area or by contacting the site administrator.</p>',
 			'mcp-ai-wpoos'
 		);
 	}
