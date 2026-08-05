@@ -55,6 +55,18 @@ class NV_oOS_Embedded {
 			return;
 		}
 
+		// Migrate settings from scattered options to unified key (v0.2.0).
+		self::maybe_migrate_settings();
+
+		// Register built-in backends via the registry.
+		add_action( 'nvoos_embedded_backends_init', array( __CLASS__, 'register_default_backends' ) );
+
+		// Initialize abilities registration (WordPress 6.9+).
+		NV_oOS_Embedded_Abilities::init();
+
+		// Register Site Health checks (v0.2.0).
+		add_filter( 'site_status_tests', array( __CLASS__, 'register_site_health_tests' ) );
+
 		// Register embedded provider bridge with the language model router.
 		add_filter( 'wp_mcp_ai_embedded_chat_completion', array( __CLASS__, 'handle_embedded_chat_completion' ), 10, 3 );
 
@@ -90,6 +102,9 @@ class NV_oOS_Embedded {
 
 		// Register webchat tools with the oOS tool registry.
 		add_action( 'wp_mcp_ai_register_tools', array( __CLASS__, 'register_webchat_tools' ) );
+
+		// Fire backend init action so built-in and third-party backends register.
+		do_action( 'nvoos_embedded_backends_init' );
 	}
 
 	/**
@@ -123,6 +138,171 @@ class NV_oOS_Embedded {
 	}
 
 	/**
+	 * Get default settings for the embedded addon.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @return array Default settings keyed by option name.
+	 */
+	public static function get_default_settings() {
+		return array(
+			'enabled'               => true,
+			// Inference backends.
+			'inference_backend'     => 'auto',
+			'client_model'          => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
+			'server_model'          => 'granite-3.1-2b-instruct',
+			'server_binary_path'    => '',
+			'server_max_tokens'     => 512,
+			'server_temperature'    => 0.7,
+			'server_context_window' => 2048,
+			// Voice / STT.
+			'enable_voice_mode'     => false,
+			'stt_backend'           => 'whisper_cpp_wasm',
+			'stt_model'             => 'tiny.en',
+			'vad_threshold'         => 0.5,
+			'vad_silence_ms'        => 800,
+			'gemma4_audio_endpoint' => '',
+			// Feature flags.
+			'enable_tool_calling'   => false,
+			'enable_multimodal'     => false,
+			'enable_langchain'      => false,
+			// WebChat.
+			'enable_webchat'        => false,
+			'webchat_max_rooms'     => 50,
+		);
+	}
+
+	/**
+	 * Migrate settings from scattered options to unified key.
+	 *
+	 * Runs once on plugin update. Preserves old keys for 1 release cycle
+	 * so rollback is safe.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_settings() {
+		$migration_done = get_option( 'nvoos_embedded_settings_migrated_v020', false );
+		if ( $migration_done ) {
+			return;
+		}
+
+		$defaults     = self::get_default_settings();
+		$new_settings = get_option( self::OPTION_KEY, array() );
+
+		// Merge from wp_mcp_ai_settings.
+		$base_settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $base_settings['enable_webchat_integration'] ) ) {
+			$new_settings['enable_webchat'] = true;
+		}
+
+		// Merge from standalone feature flags.
+		if ( get_option( 'wp_mcp_ai_enable_webllm_tools', false ) ) {
+			$new_settings['enable_tool_calling'] = true;
+		}
+		if ( get_option( 'wp_mcp_ai_enable_webllm_vision', false ) ) {
+			$new_settings['enable_multimodal'] = true;
+		}
+
+		$new_settings = array_merge( $defaults, $new_settings );
+		update_option( self::OPTION_KEY, $new_settings, 'yes' );
+		update_option( 'nvoos_embedded_settings_migrated_v020', true );
+
+		// Clean up old standalone feature-flag options.
+		delete_option( 'wp_mcp_ai_enable_webllm_tools' );
+		delete_option( 'wp_mcp_ai_enable_webllm_vision' );
+	}
+
+	/**
+	 * Register built-in LLM backends with the registry.
+	 *
+	 * Hooked into nvoos_embedded_backends_init. Third-party plugins can
+	 * register additional backends on the nvoos_embedded_backends_registered
+	 * action that fires after this.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @return void
+	 */
+	public static function register_default_backends() {
+		$registry = NV_oOS_Embedded_Backend_Registry::get_instance();
+
+		// Register LLM backends.
+		$registry->register_llm_backend( new NV_oOS_Embedded_Client_Backend() );
+		$registry->register_llm_backend( new NV_oOS_Embedded_Server_Backend() );
+
+		/**
+		 * Fires after default embedded backends are registered.
+		 *
+		 * Plugins can use this to register additional backends or
+		 * override existing ones (unregister + register pattern).
+		 *
+		 * @since 0.2.0
+		 *
+		 * @param NV_oOS_Embedded_Backend_Registry $registry The backend registry.
+		 */
+		do_action( 'nvoos_embedded_backends_registered', $registry );
+	}
+
+	/**
+	 * Register WordPress Site Health tests for the embedded addon.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param array $tests Site Health tests.
+	 * @return array Modified tests.
+	 */
+	public static function register_site_health_tests( $tests ) {
+		if ( ! class_exists( 'NV_oOS_Embedded_Backend_Registry' ) ) {
+			return $tests;
+		}
+
+		$registry = NV_oOS_Embedded_Backend_Registry::get_instance();
+
+		foreach ( $registry->get_all_llm_backends() as $slug => $backend ) {
+			$health = $backend->get_health_status();
+
+			if ( ! isset( $health['test'] ) ) {
+				continue;
+			}
+
+			$test_data = $health['test'];
+			$test_key  = isset( $test_data['test'] ) ? $test_data['test'] : 'nvoos_embedded_' . $slug;
+			$is_direct = 'critical' === $health['status'];
+
+			$callback = function () use ( $backend, $health ) {
+				$result                = array();
+				$result['label']       = $health['label'];
+				$result['status']      = $health['status'];
+				$result['badge']       = isset( $health['test']['badge'] ) ? $health['test']['badge'] : array(
+					'label' => __( 'Embedded AI', 'nvoos-embedded' ),
+					'color' => 'blue',
+				);
+				$result['description'] = isset( $health['test']['description'] ) ? $health['test']['description'] : $health['description'];
+				$result['actions']     = isset( $health['actions'] ) ? $health['actions'] : '';
+				$result['test']        = $test_key;
+
+				return $result;
+			};
+
+			if ( $is_direct ) {
+				$tests['direct'][ $test_key ] = array(
+					'label' => $health['label'],
+					'test'  => $callback,
+				);
+			} else {
+				$tests['async'][ $test_key ] = array(
+					'label' => $health['label'],
+					'test'  => $callback,
+				);
+			}
+		}
+
+		return $tests;
+	}
+
+	/**
 	 * Handle embedded provider chat completion via filter.
 	 *
 	 * Bridges the language model router's `wp_mcp_ai_embedded_chat_completion` filter
@@ -141,15 +321,17 @@ class NV_oOS_Embedded {
 			return $result;
 		}
 
-		if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+		$registry = NV_oOS_Embedded_Backend_Registry::get_instance();
+		$backend  = $registry->get_active_llm_backend();
+
+		if ( ! $backend ) {
 			return new WP_Error(
-				'embedded_client_unavailable',
-				__( 'Embedded LLM client class is not available.', 'nvoos-embedded' )
+				'no_embedded_backend',
+				__( 'No embedded inference backend is available.', 'nvoos-embedded' )
 			);
 		}
 
-		$client = new WP_MCP_AI_Embedded_Client();
-		return $client->create_chat_completion( $messages, $options );
+		return $backend->create_chat_completion( $messages, $options );
 	}
 
 	/**
@@ -279,6 +461,12 @@ class NV_oOS_Embedded {
 		if ( $has_tools || $has_system_prompt || $has_knowledge ) {
 			wp_enqueue_script( 'wp-mcp-ai-webllm-tool-adapter' );
 			wp_enqueue_script( 'wp-mcp-ai-webllm-function-calling' );
+		}
+
+		// Enqueue voice tool calling bridge if voice mode + tools enabled.
+		$settings = get_option( self::OPTION_KEY, array() );
+		if ( ! empty( $settings['enable_voice_mode'] ) && ( $has_tools || $has_system_prompt || $has_knowledge ) ) {
+			wp_enqueue_script( 'nvoos-voice-tool-bridge' );
 		}
 	}
 
@@ -419,6 +607,17 @@ class NV_oOS_Embedded {
 				true
 			);
 		}
+
+		// Voice tool calling bridge (v1.3.0).
+		if ( ! wp_script_is( 'nvoos-voice-tool-bridge', 'registered' ) ) {
+			wp_register_script(
+				'nvoos-voice-tool-bridge',
+				NVOOS_EMBEDDED_URL . 'assets/js/voice-tool-calling-bridge' . $suffix,
+				array(),
+				$version,
+				true
+			);
+		}
 	}
 
 	/**
@@ -537,6 +736,24 @@ class NV_oOS_Embedded {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function handle_transcribe_request( WP_REST_Request $request ) {
+		// Rate limiting: max 30 requests per minute per user/IP.
+		$user_id    = get_current_user_id();
+		$ip         = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+		$rate_key   = 'nvoos_transcribe_rate_' . ( $user_id ? 'u' . $user_id : 'ip_' . md5( $ip ) );
+		$rate_count = get_transient( $rate_key );
+
+		if ( false === $rate_count ) {
+			set_transient( $rate_key, 1, 60 );
+		} elseif ( $rate_count >= 30 ) {
+			return new WP_Error(
+				'rate_limit_exceeded',
+				__( 'Too many transcription requests. Please wait before trying again.', 'nvoos-embedded' ),
+				array( 'status' => 429 )
+			);
+		} else {
+			set_transient( $rate_key, $rate_count + 1, 60 );
+		}
+
 		$audio_data   = $request->get_param( 'audio' );
 		$model        = $request->get_param( 'model' );
 		$language     = $request->get_param( 'language' );

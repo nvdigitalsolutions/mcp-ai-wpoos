@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Embedded AI Addon
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Embedded AI and WebChat extension for NV oOS. Enables server-side LLM inference via llama.cpp (GGUF models), client-side browser inference via WebLLM (WebGPU), and decentralised P2P WebChat rooms with WebRTC signaling. Requires NV oOS base plugin.
- * Version:     0.1.0
+ * Version:     0.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -34,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_EMBEDDED_VERSION', '0.1.0' );
+define( 'NVOOS_EMBEDDED_VERSION', '0.2.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_EMBEDDED_FILE', __FILE__ );
@@ -48,12 +48,21 @@ define( 'NVOOS_EMBEDDED_URL', plugin_dir_url( __FILE__ ) );
 // Load core classes.
 require_once NVOOS_EMBEDDED_PATH . 'includes/class-nvoos-embedded.php';
 
+// Load backend registry infrastructure (v0.2.0).
+require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/interface-nvoos-embedded-llm-backend.php';
+require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-nvoos-embedded-backend-registry.php';
+require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-nvoos-embedded-client-backend.php';
+require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-nvoos-embedded-server-backend.php';
+
 // Load embedded LLM classes.
 require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-wp-mcp-ai-embedded-client.php';
 require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-nvoos-embedded-webllm-enqueue.php';
 
 // Load embedded transcribe (Gemma 4 audio STT).
 require_once NVOOS_EMBEDDED_PATH . 'includes/embedded/class-wp-mcp-ai-embedded-transcribe.php';
+
+// Load abilities registration (WordPress 6.9+ Abilities API).
+require_once NVOOS_EMBEDDED_PATH . 'includes/abilities/class-nvoos-embedded-abilities.php';
 
 // Load admin classes.
 if ( is_admin() ) {

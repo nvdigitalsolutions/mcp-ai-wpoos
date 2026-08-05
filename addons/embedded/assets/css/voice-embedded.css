@@ -200,3 +200,47 @@
 		font-size: 24px;
 	}
 }
+
+/* ── Accessibility: Reduced Motion ─────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+	.nvoos-embedded-ptt-button {
+		transition: none;
+	}
+
+	.nvoos-embedded-voice-transcription {
+		animation: none;
+	}
+}
+
+/* ── Accessibility: High Contrast / Forced Colors ───────────── */
+
+@media (forced-colors: active) {
+	.nvoos-embedded-ptt-button {
+		border: 2px solid ButtonText;
+		background: ButtonFace;
+		color: ButtonText;
+	}
+
+	.nvoos-embedded-ptt-button:focus-visible {
+		outline: 3px solid Highlight;
+		outline-offset: 2px;
+	}
+
+	.nvoos-embedded-ptt-button.active {
+		border-color: Highlight;
+		background: Highlight;
+		color: HighlightText;
+	}
+
+	.nvoos-embedded-voice-status {
+		color: GrayText;
+	}
+}
+
+/* ── Keyboard focus indicator enhancement ──────────────────── */
+
+.nvoos-embedded-ptt-button:focus-visible {
+	outline: 3px solid #2271b1;
+	outline-offset: 2px;
+}
