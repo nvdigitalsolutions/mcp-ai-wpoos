@@ -28,6 +28,7 @@ Registers every embedded addon operation as a WordPress Ability (`wp_register_ab
 | `nvoos-embedded/get-llm-backends` | `nvoos-embedded-inference` | Yes | `{ backends[], active }` |
 | `nvoos-embedded/get-model-list` | `nvoos-embedded-inference` | Yes | `{ models[] }` (filterable by `backend`, `type`) |
 | `nvoos-embedded/analyze-image` | `nvoos-embedded-vision` | Yes | `{ description, model_used, client_side }` |
+| `nvoos-embedded/ocr-document` | `nvoos-embedded-ocr` | Yes | `{ text, raw, model_type, metadata }` |
 
 ## Inputs / Outputs / Neighbors
 

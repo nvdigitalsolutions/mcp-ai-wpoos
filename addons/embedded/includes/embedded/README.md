@@ -24,6 +24,7 @@ Provides a pluggable registry for LLM and STT inference backends. One backend do
 | `WP_MCP_AI_Embedded_Client` | `class-wp-mcp-ai-embedded-client.php` | Wrapped by `NV_oOS_Embedded_Server_Backend` (internal) |
 | `WP_MCP_AI_Embedded_Transcribe` | `class-wp-mcp-ai-embedded-transcribe.php` | `NV_oOS_Embedded::handle_transcribe_request()` |
 | `WP_MCP_AI_WebLLM_Enqueue` | `class-nvoos-embedded-webllm-enqueue.php` | Base plugin shortcode/Elementor widget |
+| `NV_oOS_Embedded_Self_Hosted_OCR_Backend` | `class-nvoos-embedded-self-hosted-ocr-backend.php` | Registry → auto-registered when `WP_MCP_AI_Self_Hosted_OCR_Client` is available |
 
 ## Inputs / Outputs / Neighbors
 
