@@ -27,6 +27,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Pre-configured clinical NER models available in OpenMed.
 	 *
@@ -43,57 +45,62 @@ class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interfa
 	);
 
 	/**
-	 * Get the tool slug.
-	 *
-	 * @return string
+	 * {@inheritdoc}
 	 */
 	public function get_slug() {
 		return 'extract_clinical_entities';
 	}
 
 	/**
-	 * Get the tool definition for AI discovery.
-	 *
-	 * @return array
+	 * {@inheritdoc}
 	 */
-	public function get_definition() {
+	public function get_name() {
+		return __( 'Extract Clinical Entities', 'nvoos-embedded' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __(
+			'Extracts clinical entities (diseases, medications, procedures, anatomy, '
+			. 'lab values, symptoms) from unstructured medical text using specialised '
+			. 'clinical NLP models. Runs locally — no patient data leaves the network.',
+			'nvoos-embedded'
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
 		$model_names = array_keys( self::CLINICAL_MODELS );
 
 		return array(
-			'name'                => __( 'Extract Clinical Entities', 'nvoos-embedded' ),
-			'description'         => __(
-				'Extracts clinical entities (diseases, medications, procedures, anatomy, '
-				. 'lab values, symptoms) from unstructured medical text using specialised '
-				. 'clinical NLP models. Runs locally — no patient data leaves the network.',
-				'nvoos-embedded'
-			),
-			'required_capability' => 'edit_posts',
-			'parameters'          => array(
-				'type'       => 'object',
-				'properties' => array(
-					'text'           => array(
-						'type'        => 'string',
-						'description' => __( 'Unstructured clinical text to analyze (encounter note, lab report, discharge summary, etc.).', 'nvoos-embedded' ),
-					),
-					'model'          => array(
-						'type'        => 'string',
-						'description' => __( 'Clinical NER model to use.', 'nvoos-embedded' ),
-						'enum'        => $model_names,
-						'default'     => 'general_clinical_ner',
-					),
-					'min_confidence' => array(
-						'type'        => 'number',
-						'description' => __( 'Minimum confidence threshold for returned entities (0.0–1.0).', 'nvoos-embedded' ),
-						'default'     => 0.5,
-					),
-					'entity_types'   => array(
-						'type'        => 'array',
-						'description' => __( 'Filter to specific entity types. Empty = all types.', 'nvoos-embedded' ),
-						'items'       => array( 'type' => 'string' ),
-					),
+			'type'       => 'object',
+			'properties' => array(
+				'text'           => array(
+					'type'        => 'string',
+					'description' => __( 'Unstructured clinical text to analyze (encounter note, lab report, discharge summary, etc.).', 'nvoos-embedded' ),
 				),
-				'required'   => array( 'text' ),
+				'model'          => array(
+					'type'        => 'string',
+					'description' => __( 'Clinical NER model to use.', 'nvoos-embedded' ),
+					'enum'        => $model_names,
+					'default'     => 'general_clinical_ner',
+				),
+				'min_confidence' => array(
+					'type'        => 'number',
+					'description' => __( 'Minimum confidence threshold for returned entities (0.0–1.0).', 'nvoos-embedded' ),
+					'default'     => 0.5,
+				),
+				'entity_types'   => array(
+					'type'        => 'array',
+					'description' => __( 'Filter to specific entity types. Empty = all types.', 'nvoos-embedded' ),
+					'items'       => array( 'type' => 'string' ),
+				),
 			),
+			'required'   => array( 'text' ),
 		);
 	}
 
@@ -105,7 +112,6 @@ class WP_MCP_AI_Tool_Extract_Clinical_Entities implements WP_MCP_AI_Tool_Interfa
 	public function get_capability_flags() {
 		return array(
 			'pro',
-			'read-only',
 			'pii-data',
 			'hipaa-relevant',
 			'external-api',

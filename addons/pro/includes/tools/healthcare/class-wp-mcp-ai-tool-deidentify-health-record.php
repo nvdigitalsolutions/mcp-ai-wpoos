@@ -33,6 +33,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * De-identification methods supported by OpenMed.
 	 *
@@ -41,50 +43,55 @@ class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interfac
 	const DEIDENTIFY_METHODS = array( 'mask', 'remove', 'replace', 'hash', 'shift_dates' );
 
 	/**
-	 * Get the tool slug.
-	 *
-	 * @return string
+	 * {@inheritdoc}
 	 */
 	public function get_slug() {
 		return 'deidentify_health_record';
 	}
 
 	/**
-	 * Get the tool definition for AI discovery.
-	 *
-	 * @return array
+	 * {@inheritdoc}
 	 */
-	public function get_definition() {
+	public function get_name() {
+		return __( 'De-identify Health Record', 'nvoos-embedded' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __(
+			'Removes personally identifiable health information from clinical text '
+			. 'using HIPAA Safe Harbor de-identification. Supports all 18 PHI '
+			. 'identifier types. No patient data leaves your network.',
+			'nvoos-embedded'
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
 		return array(
-			'name'                => __( 'De-identify Health Record', 'nvoos-embedded' ),
-			'description'         => __(
-				'Removes personally identifiable health information from clinical text '
-				. 'using HIPAA Safe Harbor de-identification. Supports all 18 PHI '
-				. 'identifier types. No patient data leaves your network.',
-				'nvoos-embedded'
-			),
-			'required_capability' => 'deidentify_phi',
-			'parameters'          => array(
-				'type'       => 'object',
-				'properties' => array(
-					'text'             => array(
-						'type'        => 'string',
-						'description' => __( 'Clinical text containing PHI to be de-identified.', 'nvoos-embedded' ),
-					),
-					'method'           => array(
-						'type'        => 'string',
-						'description' => __( 'De-identification method.', 'nvoos-embedded' ),
-						'enum'        => self::DEIDENTIFY_METHODS,
-						'default'     => 'mask',
-					),
-					'replacement_text' => array(
-						'type'        => 'string',
-						'description' => __( 'Replacement text when method is "replace".', 'nvoos-embedded' ),
-						'default'     => '[REDACTED]',
-					),
+			'type'       => 'object',
+			'properties' => array(
+				'text'             => array(
+					'type'        => 'string',
+					'description' => __( 'Clinical text containing PHI to be de-identified.', 'nvoos-embedded' ),
 				),
-				'required'   => array( 'text' ),
+				'method'           => array(
+					'type'        => 'string',
+					'description' => __( 'De-identification method.', 'nvoos-embedded' ),
+					'enum'        => self::DEIDENTIFY_METHODS,
+					'default'     => 'mask',
+				),
+				'replacement_text' => array(
+					'type'        => 'string',
+					'description' => __( 'Replacement text when method is "replace".', 'nvoos-embedded' ),
+					'default'     => '[REDACTED]',
+				),
 			),
+			'required'   => array( 'text' ),
 		);
 	}
 
@@ -96,13 +103,21 @@ class WP_MCP_AI_Tool_Deidentify_Health_Record implements WP_MCP_AI_Tool_Interfac
 	public function get_capability_flags() {
 		return array(
 			'pro',
-			'read-only',
 			'pii-data',
 			'hipaa-relevant',
 			'requires-capability',
 			'external-api',
 			'network-dependent',
 		);
+	}
+
+	/**
+	 * Override default capability for PHI operations.
+	 *
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'deidentify_phi';
 	}
 
 	/**
