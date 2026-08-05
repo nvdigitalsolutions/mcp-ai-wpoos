@@ -1,0 +1,332 @@
+# Build NV Digital oOS WordPress.org Submission Packages
+#
+# Produces distribution ZIPs of the nvdigital-open-operator-system-oos plugin
+# with WordPress.org-compliant text domains transformed throughout.
+#
+# This workflow runs build-plugin-zip.sh --all, which internally:
+#   1. Builds frontend assets (npm build:full)
+#   2. Installs production PHP dependencies (composer install --no-dev)
+#   3. Creates mcp-ai-wpoos-*.zip (repository text domains)
+#   4. Transforms text domains → nvdigital-open-operator-system-oos (WP.org)
+#
+# Outputs (uploaded as individual artifacts + attached to release):
+#   nvdigital-open-operator-system-oos-{version}.zip         (Base)
+#   nvdigital-open-operator-system-oos-pro-{version}.zip      (Pro addon)
+#   nvdigital-open-operator-system-oos-complete-{version}.zip (Base + Pro)
+#
+# Triggered by:
+#   - Manual workflow_dispatch with optional version input
+#   - Push to a tag matching "nvdigital-oos-v*.*.*"
+
+name: Build NV Digital oOS WP.org Packages
+
+on:
+  push:
+    tags:
+      - 'nvdigital-oos-v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Plugin version (e.g. 1.1.43)'
+        required: false
+        type: string
+      create_release:
+        description: 'Create a GitHub Release with the artifacts'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  # ===========================================================================
+  # Build the nvdigital-open-operator-system-oos-* ZIPs
+  # ===========================================================================
+  build:
+    name: Build oOS WP.org Packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Free disk space
+        run: |
+          echo "=== Before cleanup ==="
+          df -h
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/.ghcup /usr/local/share/powershell /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/node_modules /opt/pipx
+          sudo docker image prune -af || true
+          sudo docker system prune -af --volumes || true
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          echo "=== After cleanup ==="
+          df -h
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            # Extract version from tag (nvdigital-oos-v1.1.43 → 1.1.43)
+            VERSION="${GITHUB_REF_NAME#nvdigital-oos-v}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Read version from plugin header (for manual dispatch without version)
+            VERSION=$(grep -E "^\s*\*\s*Version:" mcp-ai-wpoos.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, mysqli, zip, dom, xml, curl
+          tools: composer:v2
+
+      - name: Build plugin ZIPs (base, pro, combined, wp-org)
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "📦 Running build-plugin-zip.sh --all --version ${VERSION}..."
+          bash bin/build-plugin-zip.sh --all --version "$VERSION"
+          echo "✅ Build complete"
+
+      - name: List built artifacts
+        run: |
+          echo "📁 WordPress.org packages:"
+          ls -lh build/nvdigital-open-operator-system-oos-*.zip 2>/dev/null || echo "  (none found)"
+          echo ""
+          echo "📁 All build outputs:"
+          ls -lh build/*.zip 2>/dev/null || echo "  (none found)"
+
+      - name: Generate SHA-256 checksums
+        run: |
+          for zip in build/nvdigital-open-operator-system-oos-*.zip; do
+            if [ -f "$zip" ]; then
+              sha256sum "$zip" > "${zip}.sha256"
+              echo "✅ $(basename "$zip"): $(cat "${zip}.sha256" | awk '{print $1}')"
+            fi
+          done
+
+      - name: Upload base package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}
+          path: |
+            build/nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip
+            build/nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload pro package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvdigital-open-operator-system-oos-pro-${{ steps.version.outputs.version }}
+          path: |
+            build/nvdigital-open-operator-system-oos-pro-${{ steps.version.outputs.version }}.zip
+            build/nvdigital-open-operator-system-oos-pro-${{ steps.version.outputs.version }}.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload complete package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvdigital-open-operator-system-oos-complete-${{ steps.version.outputs.version }}
+          path: |
+            build/nvdigital-open-operator-system-oos-complete-${{ steps.version.outputs.version }}.zip
+            build/nvdigital-open-operator-system-oos-complete-${{ steps.version.outputs.version }}.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  # ===========================================================================
+  # Publish ZIPs to repository build/ directory
+  # Only on push to main/alpha-working or tag pushes — not on PRs.
+  # ===========================================================================
+  publish:
+    name: Publish ZIPs to Repository
+    needs: build
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/alpha-working' || startsWith(github.ref, 'refs/tags/'))
+
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#nvdigital-oos-v}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION=$(grep -E "^\s*\*\s*Version:" mcp-ai-wpoos.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nvdigital-open-operator-system-oos-*
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Copy ZIPs to build directory
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p build
+
+          for variant in "" "-pro" "-complete"; do
+            ZIP="artifacts/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip"
+            if [ -f "$ZIP" ]; then
+              cp "$ZIP" "build/"
+              SHA="artifacts/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip.sha256"
+              [ -f "$SHA" ] && cp "$SHA" "build/"
+              SIZE=$(du -h "build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip" | cut -f1)
+              echo "✅ build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip — ${SIZE}"
+            else
+              echo "⚠️  $ZIP not found — skipping"
+            fi
+          done
+
+      - name: Commit and push ZIPs
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          for variant in "" "-pro" "-complete"; do
+            ZIP="build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip"
+            SHA="build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip.sha256"
+            [ -f "$ZIP" ] && git add -f "$ZIP" 2>/dev/null || true
+            [ -f "$SHA" ] && git add -f "$SHA" 2>/dev/null || true
+          done
+
+          if git diff --staged --quiet; then
+            echo "✅ oOS WP.org ZIPs already up-to-date in build/ — nothing to commit"
+          else
+            echo "📝 Committing oOS WP.org ZIPs to build/..."
+            git diff --staged --stat
+
+            git commit -m "build: add oOS WP.org packages v${VERSION} [skip ci]
+
+          - nvdigital-open-operator-system-oos-${VERSION}.zip
+          - nvdigital-open-operator-system-oos-pro-${VERSION}.zip
+          - nvdigital-open-operator-system-oos-complete-${VERSION}.zip
+
+          Auto-generated by GitHub Actions"
+
+            git config core.autocrlf false
+            git pull --rebase --autostash origin ${{ github.ref_name }} || {
+              echo "⚠️ Rebase conflict detected. Resolving with ours strategy..."
+              for variant in "" "-pro" "-complete"; do
+                ZIP="build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip"
+                SHA="build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip.sha256"
+                [ -f "$ZIP" ] && git checkout --ours "$ZIP" && git add -f "$ZIP" || true
+                [ -f "$SHA" ] && git checkout --ours "$SHA" && git add -f "$SHA" || true
+              done
+              git rebase --continue || {
+                echo "❌ Failed to resolve rebase conflicts"
+                git rebase --abort
+                exit 1
+              }
+            }
+            git push origin ${{ github.ref_name }}
+            echo "🎉 oOS WP.org ZIPs published to build/"
+          fi
+
+  # ===========================================================================
+  # Create a GitHub Release (on tag push or when create_release input is true)
+  # ===========================================================================
+  release:
+    name: Create GitHub Release
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    if: |
+      inputs.create_release == true || startsWith(github.ref, 'refs/tags/nvdigital-oos-v')
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#nvdigital-oos-v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nvdigital-open-operator-system-oos-*
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nvdigital-oos-v${{ steps.version.outputs.version }}
+          name: "NV Digital Open Operator System (oOS) v${{ steps.version.outputs.version }}"
+          body: |
+            ## NV Digital Open Operator System (oOS) v${{ steps.version.outputs.version }}
+
+            WordPress.org submission packages with compliant text domains.
+
+            ### 📥 Downloads
+
+            Three packages are attached:
+
+            | Package | File | Description |
+            |---------|------|-------------|
+            | **Base** | `nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip` | Free base plugin (~263 tools) |
+            | **Pro** | `nvdigital-open-operator-system-oos-pro-${{ steps.version.outputs.version }}.zip` | Pro addon (requires base) |
+            | **Complete** | `nvdigital-open-operator-system-oos-complete-${{ steps.version.outputs.version }}.zip` | Base + Pro combined |
+
+            ### Requirements
+
+            - WordPress 6.0+
+            - PHP 7.4+ (base) / PHP 8.1+ (pro)
+            - AI provider API key (OpenAI, Gemini, or Ollama)
+
+            ### Installation
+
+            1. Download the desired ZIP file below
+            2. Go to WordPress Admin → Plugins → Add New → Upload Plugin
+            3. Upload the ZIP and click "Install Now"
+            4. Activate the plugin
+
+            ### Checksums
+
+            See the `.sha256` files attached to this release for verification.
+
+            ### Links
+
+            - [GitHub Repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
+            - [WordPress.org Plugin](https://wordpress.org/plugins/nvdigital-open-operator-system-oos/)
+            - [Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs)
+            - [Report Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
