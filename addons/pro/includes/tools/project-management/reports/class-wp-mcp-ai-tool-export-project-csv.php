@@ -165,11 +165,11 @@ class WP_MCP_AI_Tool_Export_Project_Csv implements WP_MCP_AI_Tool_Interface, WP_
 		$task_count = count( $tasks );
 
 		return array(
-			'success'     => true,
-			'project_id'  => $project_id,
+			'success'      => true,
+			'project_id'   => $project_id,
 			'project_name' => $project_name,
-			'task_count'  => $task_count,
-			'csv'         => $csv,
+			'task_count'   => $task_count,
+			'csv'          => $csv,
 			'generated_at' => current_time( 'mysql' ),
 		);
 	}
@@ -195,12 +195,12 @@ class WP_MCP_AI_Tool_Export_Project_Csv implements WP_MCP_AI_Tool_Interface, WP_
 			__( 'Tags', 'mcp-ai-wpoos-pro' ),
 		);
 
-		$rows = array();
+		$rows   = array();
 		$rows[] = $this->csv_row( $headers );
 
 		foreach ( $tasks as $task ) {
-			$task_id      = $task->ID;
-			$title        = $task->post_title;
+			$task_id  = $task->ID;
+			$title    = $task->post_title;
 			$status   = get_post_meta( $task_id, '_task_status', true );
 			$status   = $status ? $status : 'pending';
 			$priority = get_post_meta( $task_id, '_task_priority', true );
@@ -237,8 +237,8 @@ class WP_MCP_AI_Tool_Export_Project_Csv implements WP_MCP_AI_Tool_Interface, WP_
 			}
 
 			// Tags from taxonomy.
-			$tags       = wp_get_post_terms( $task_id, 'mcp_ai_task_category', array( 'fields' => 'names' ) );
-			$tags_str   = '';
+			$tags     = wp_get_post_terms( $task_id, 'mcp_ai_task_category', array( 'fields' => 'names' ) );
+			$tags_str = '';
 
 			if ( ! is_wp_error( $tags ) && ! empty( $tags ) ) {
 				$tags_str = implode( '; ', $tags );

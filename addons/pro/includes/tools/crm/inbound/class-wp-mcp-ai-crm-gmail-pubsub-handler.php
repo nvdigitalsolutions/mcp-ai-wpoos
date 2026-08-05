@@ -163,7 +163,7 @@ class WP_MCP_AI_CRM_Gmail_PubSub_Handler {
 			}
 			return new WP_REST_Response(
 				array(
-					'ack' => true,
+					'ack'  => true,
 					'note' => 'No matching connection; queued poll.',
 				),
 				200
@@ -255,10 +255,10 @@ class WP_MCP_AI_CRM_Gmail_PubSub_Handler {
 
 		if ( ! empty( $body['historyId'] ) ) {
 			$watch_state = array(
-				'topic_name'  => $topic_name,
-				'history_id'  => $body['historyId'],
-				'expiration'  => $body['expiration'] ?? '',
-				'started_at'  => current_time( 'mysql', true ),
+				'topic_name' => $topic_name,
+				'history_id' => $body['historyId'],
+				'expiration' => $body['expiration'] ?? '',
+				'started_at' => current_time( 'mysql', true ),
 			);
 			update_option( self::WATCH_OPTION_PREFIX . $connection_id, $watch_state, false );
 

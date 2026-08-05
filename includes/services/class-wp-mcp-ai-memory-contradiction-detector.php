@@ -256,7 +256,7 @@ class WP_MCP_AI_Memory_Contradiction_Detector {
 		// lands).
 		if ( empty( $candidates ) ) {
 			/** This filter is documented in includes/tools/class-wp-mcp-ai-tool-recall-memory.php */
-			$pool = apply_filters(
+			$pool       = apply_filters(
 				'wp_mcp_ai_recall_memory_candidates',
 				array(),
 				array(

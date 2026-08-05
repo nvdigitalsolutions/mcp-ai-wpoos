@@ -384,7 +384,7 @@ class WP_MCP_AI_REST_Threads_Controller extends WP_REST_Controller {
 		// cross-origin.
 		$auth_header = '';
 		if ( function_exists( 'getallheaders' ) ) {
-			$headers = getallheaders();
+			$headers     = getallheaders();
 			$auth_header = isset( $headers['Authorization'] ) ? (string) $headers['Authorization'] : '';
 		}
 		if ( empty( $auth_header ) && isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {

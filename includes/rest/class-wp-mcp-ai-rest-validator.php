@@ -790,7 +790,7 @@ class WP_MCP_AI_REST_Validator {
 		if ( ! empty( $options['cache_system_prompt'] ) && ! empty( $options['system_prompt'] ) ) {
 			$assistant_id = isset( $assistant_config['ID'] ) ? (int) $assistant_config['ID'] : 0;
 			// Use the first 256 chars of system prompt as the stable prefix identifier.
-			$prompt_prefix = substr( $options['system_prompt'], 0, 256 );
+			$prompt_prefix               = substr( $options['system_prompt'], 0, 256 );
 			$options['prompt_cache_key'] = 'wp_mcp_ai_' . $assistant_id . '_' . md5( $prompt_prefix );
 		}
 
@@ -822,7 +822,7 @@ class WP_MCP_AI_REST_Validator {
 							'prompt_cache_split',
 							'System prompt split for cache optimization',
 							array(
-								'static_core_length'  => strlen( $split['static_core'] ),
+								'static_core_length'     => strlen( $split['static_core'] ),
 								'dynamic_context_length' => strlen( $split['dynamic_context'] ),
 							)
 						);

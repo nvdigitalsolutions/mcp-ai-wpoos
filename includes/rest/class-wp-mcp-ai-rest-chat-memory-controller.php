@@ -653,7 +653,7 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 		}
 
 		$request_context_type = $request->get_param( 'context_type' );
-		$context_type          = (string) ( $request_context_type ? $request_context_type : 'user_note' );
+		$context_type         = (string) ( $request_context_type ? $request_context_type : 'user_note' );
 
 		$args = array(
 			'agent_id'     => $agent_id,

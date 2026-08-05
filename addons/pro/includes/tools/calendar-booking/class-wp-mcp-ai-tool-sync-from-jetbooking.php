@@ -190,14 +190,14 @@ class WP_MCP_AI_Tool_Sync_From_JetBooking implements WP_MCP_AI_Tool_Interface, W
 					$errors[] = $post_id->get_error_message();
 					continue;
 				}
-				$updated++;
+				++$updated;
 			} else {
 				$post_id = wp_insert_post( $post_data, true );
 				if ( is_wp_error( $post_id ) ) {
 					$errors[] = $post_id->get_error_message();
 					continue;
 				}
-				$created++;
+				++$created;
 			}
 
 			update_post_meta( $post_id, '_jetbooking_id', $jb_id );

@@ -245,14 +245,14 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		}
 
 		$tool_args = array(
-			'source_directory'   => $dir,
-			'recursive'          => ! WP_CLI\Utils\get_flag_value( $assoc_args, 'no-recursive', false ),
-			'max_pages'          => absint( WP_CLI\Utils\get_flag_value( $assoc_args, 'max-pages', 500 ) ),
-			'default_country'    => WP_CLI\Utils\get_flag_value( $assoc_args, 'country', '' ),
-			'parent_page_path'   => WP_CLI\Utils\get_flag_value( $assoc_args, 'parent-page', '' ),
-			'default_place_type' => WP_CLI\Utils\get_flag_value( $assoc_args, 'default-type', 'attraction' ),
-			'dry_run'            => $is_dry_run,
-			'skip_existing'      => true,
+			'source_directory'     => $dir,
+			'recursive'            => ! WP_CLI\Utils\get_flag_value( $assoc_args, 'no-recursive', false ),
+			'max_pages'            => absint( WP_CLI\Utils\get_flag_value( $assoc_args, 'max-pages', 500 ) ),
+			'default_country'      => WP_CLI\Utils\get_flag_value( $assoc_args, 'country', '' ),
+			'parent_page_path'     => WP_CLI\Utils\get_flag_value( $assoc_args, 'parent-page', '' ),
+			'default_place_type'   => WP_CLI\Utils\get_flag_value( $assoc_args, 'default-type', 'attraction' ),
+			'dry_run'              => $is_dry_run,
+			'skip_existing'        => true,
 			'auto_create_services' => WP_CLI\Utils\get_flag_value( $assoc_args, 'auto-create-services', false ),
 		);
 
@@ -536,14 +536,14 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 			$this->dry_run_notice();
 		}
 
-		$country             = WP_CLI\Utils\get_flag_value( $assoc_args, 'country', '' );
-		$city_subdir         = WP_CLI\Utils\get_flag_value( $assoc_args, 'city-subdir', 'destinations' );
-		$experience_subdir   = WP_CLI\Utils\get_flag_value( $assoc_args, 'experience-subdir', 'experiences' );
-		$import_experiences  = WP_CLI\Utils\get_flag_value( $assoc_args, 'import-experiences', false );
-		$create_services     = WP_CLI\Utils\get_flag_value( $assoc_args, 'create-services', false );
-		$service_duration    = absint( WP_CLI\Utils\get_flag_value( $assoc_args, 'service-duration', 180 ) );
-		$service_price       = floatval( WP_CLI\Utils\get_flag_value( $assoc_args, 'service-price', 0 ) );
-		$max_pages           = absint( WP_CLI\Utils\get_flag_value( $assoc_args, 'max-pages', 2000 ) );
+		$country            = WP_CLI\Utils\get_flag_value( $assoc_args, 'country', '' );
+		$city_subdir        = WP_CLI\Utils\get_flag_value( $assoc_args, 'city-subdir', 'destinations' );
+		$experience_subdir  = WP_CLI\Utils\get_flag_value( $assoc_args, 'experience-subdir', 'experiences' );
+		$import_experiences = WP_CLI\Utils\get_flag_value( $assoc_args, 'import-experiences', false );
+		$create_services    = WP_CLI\Utils\get_flag_value( $assoc_args, 'create-services', false );
+		$service_duration   = absint( WP_CLI\Utils\get_flag_value( $assoc_args, 'service-duration', 180 ) );
+		$service_price      = floatval( WP_CLI\Utils\get_flag_value( $assoc_args, 'service-price', 0 ) );
+		$max_pages          = absint( WP_CLI\Utils\get_flag_value( $assoc_args, 'max-pages', 2000 ) );
 
 		// Default type mappings.
 		$city_type_mapping_json  = WP_CLI\Utils\get_flag_value(
@@ -629,10 +629,10 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 
 			$city_number = 0;
 			foreach ( $city_places as $city ) {
-				$city_number++;
-				$city_name  = $city['name'];
-				$city_dir   = $city['dir'];
-				$parent_id  = $city['place_id'];
+				++$city_number;
+				$city_name   = $city['name'];
+				$city_dir    = $city['dir'];
+				$parent_id   = $city['place_id'];
 				$parent_page = $city['index_page'];
 
 				WP_CLI::log( '' );
@@ -684,7 +684,7 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 					'buffer_time_minutes' => 30,
 					'category'            => $country ? $country : '',
 				) : array();
-				$exp_result = $this->run_html_import(
+				$exp_result   = $this->run_html_import(
 					$exp_dir,
 					$country,
 					array( '/experiences/' => 'experience' ),
@@ -754,17 +754,17 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 	 */
 	private function run_html_import( $dir, $country, $type_mapping, $default_type, $parent_page, $recursive, $max_pages, $dry_run, $create_services = false, $service_defaults = array() ) {
 		$tool_args = array(
-			'source_directory'    => $dir,
-			'recursive'           => $recursive,
-			'max_pages'           => $max_pages,
-			'default_country'     => $country,
-			'default_place_type'  => $default_type,
-			'parent_page_path'    => $parent_page,
-			'place_type_mapping'  => $type_mapping,
-			'dry_run'             => $dry_run,
-			'skip_existing'       => true,
+			'source_directory'     => $dir,
+			'recursive'            => $recursive,
+			'max_pages'            => $max_pages,
+			'default_country'      => $country,
+			'default_place_type'   => $default_type,
+			'parent_page_path'     => $parent_page,
+			'place_type_mapping'   => $type_mapping,
+			'dry_run'              => $dry_run,
+			'skip_existing'        => true,
 			'auto_create_services' => $create_services,
-			'service_defaults'    => $service_defaults,
+			'service_defaults'     => $service_defaults,
 		);
 
 		$tool   = new WP_MCP_AI_Tool_Import_Places_From_Html();
@@ -842,8 +842,8 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 				continue;
 			}
 
-			$city_dir     = $source_dir . '/destinations/' . $city_slug;
-			$city_index   = $city_dir . '/index.html';
+			$city_dir   = $source_dir . '/destinations/' . $city_slug;
+			$city_index = $city_dir . '/index.html';
 
 			// Best-effort: if index.html doesn't exist, try without.
 			if ( ! file_exists( $city_index ) ) {
@@ -879,7 +879,7 @@ class WP_MCP_AI_Pro_CLI_Place_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 			return '';
 		}
 
-		$path = trim( $path, '/' );
+		$path  = trim( $path, '/' );
 		$parts = explode( '/', $path );
 
 		// Look for pattern: destinations/{slug} or just the last segment.

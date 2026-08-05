@@ -162,8 +162,8 @@ class WP_MCP_AI_Tool_Create_Comic_Layout implements WP_MCP_AI_Tool_Interface, WP
 
 		// Parse grid layout.
 		$grid_parts = explode( 'x', strtolower( $layout_grid ) );
-		$rows = isset( $grid_parts[0] ) ? absint( $grid_parts[0] ) : 2;
-		$cols = isset( $grid_parts[1] ) ? absint( $grid_parts[1] ) : 2;
+		$rows       = isset( $grid_parts[0] ) ? absint( $grid_parts[0] ) : 2;
+		$cols       = isset( $grid_parts[1] ) ? absint( $grid_parts[1] ) : 2;
 
 		if ( $rows < 1 || $rows > 6 ) {
 			$rows = 2;
@@ -253,16 +253,16 @@ class WP_MCP_AI_Tool_Create_Comic_Layout implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'success' => true,
 			'data'    => array(
-				'comic_id'       => $comic_id,
-				'page_number'    => $page_number,
-				'layout_grid'    => esc_html( $layout_grid ),
-				'rows'           => $rows,
-				'cols'           => $cols,
-				'gutter_width'   => $gutter_width,
-				'page_url'       => esc_url( $page_url ),
-				'attachment_id'  => $attachment_id,
-				'panel_count'    => count( $panel_ids ),
-				'engine'         => $has_imagick ? 'imagick' : 'gd',
+				'comic_id'      => $comic_id,
+				'page_number'   => $page_number,
+				'layout_grid'   => esc_html( $layout_grid ),
+				'rows'          => $rows,
+				'cols'          => $cols,
+				'gutter_width'  => $gutter_width,
+				'page_url'      => esc_url( $page_url ),
+				'attachment_id' => $attachment_id,
+				'panel_count'   => count( $panel_ids ),
+				'engine'        => $has_imagick ? 'imagick' : 'gd',
 			),
 		);
 	}

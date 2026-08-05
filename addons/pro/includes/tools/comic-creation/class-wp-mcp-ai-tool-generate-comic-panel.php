@@ -52,29 +52,29 @@ class WP_MCP_AI_Tool_Generate_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'panel_id'       => array(
+				'panel_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of an existing `mcp_ai_comic_panel` post to generate artwork for.', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'    => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Text description of the panel content. Used when panel_id is not provided.', 'mcp-ai-wpoos-pro' ),
 				),
-				'character_ids'  => array(
+				'character_ids' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of character post IDs to reference in the panel.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
-				'style'          => array(
+				'style'         => array(
 					'type'        => 'string',
 					'description' => __( 'Art style for the panel (e.g., "manga", "american-comic", "noir").', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'american-comic',
 				),
-				'camera_angle'   => array(
+				'camera_angle'  => array(
 					'type'        => 'string',
 					'description' => __( 'Camera angle for the panel composition.', 'mcp-ai-wpoos-pro' ),
 				),
-				'dimensions'     => array(
+				'dimensions'    => array(
 					'type'        => 'string',
 					'description' => __( 'Image dimensions in WxH format (e.g., "800x1200").', 'mcp-ai-wpoos-pro' ),
 					'default'     => '800x1200',
@@ -182,7 +182,7 @@ class WP_MCP_AI_Tool_Generate_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Parse dimensions.
-		$dims = explode( 'x', strtolower( $dimensions ) );
+		$dims   = explode( 'x', strtolower( $dimensions ) );
 		$width  = isset( $dims[0] ) ? absint( $dims[0] ) : 800;
 		$height = isset( $dims[1] ) ? absint( $dims[1] ) : 1200;
 
@@ -197,11 +197,11 @@ class WP_MCP_AI_Tool_Generate_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 			'comic_panel_generation_started',
 			'Starting comic panel image generation',
 			array(
-				'panel_id'      => $panel_id,
-				'style'         => $style,
-				'width'         => $width,
-				'height'        => $height,
-				'user_id'       => $user_id,
+				'panel_id' => $panel_id,
+				'style'    => $style,
+				'width'    => $width,
+				'height'   => $height,
+				'user_id'  => $user_id,
 			)
 		);
 

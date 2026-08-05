@@ -81,32 +81,32 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 				'type'       => 'object',
 				'properties' => array(
 					// Multi-step research mode parameters.
-					'topic'             => array(
+					'topic'                  => array(
 						'type'        => 'string',
 						'description' => 'Research topic (e.g., "residential project feasibility" or "concrete specifications"). Use this for automatic research.',
 					),
-					'report_type'       => array(
+					'report_type'            => array(
 						'type'        => 'string',
 						'description' => 'Type of report to generate',
 						'enum'        => array( 'aia_project', 'ncs_drawing', 'csi_specification', 'general' ),
 					),
-					'depth'             => array(
+					'depth'                  => array(
 						'type'        => 'string',
 						'description' => 'Research depth level',
 						'enum'        => array( 'basic', 'standard', 'comprehensive' ),
 						'default'     => 'standard',
 					),
-					'focus_areas'       => array(
+					'focus_areas'            => array(
 						'type'        => 'array',
 						'description' => 'Specific areas to focus research on (e.g., ["sustainability", "cost estimating"])',
 						'items'       => array( 'type' => 'string' ),
 					),
 					// Legacy formatting mode parameters (backward compatibility).
-					'title'             => array(
+					'title'                  => array(
 						'type'        => 'string',
 						'description' => 'Report title (for formatting pre-written content)',
 					),
-					'sections'          => array(
+					'sections'               => array(
 						'type'        => 'array',
 						'description' => 'Pre-written report sections (for formatting mode)',
 						'items'       => array(
@@ -117,22 +117,22 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 							),
 						),
 					),
-					'include_toc'       => array(
+					'include_toc'            => array(
 						'type'        => 'boolean',
 						'description' => 'Include table of contents (default: true)',
 						'default'     => true,
 					),
-					'include_citations' => array(
+					'include_citations'      => array(
 						'type'        => 'boolean',
 						'description' => 'Include citations section (default: true)',
 						'default'     => true,
 					),
-					'citations'             => array(
+					'citations'              => array(
 						'type'        => 'array',
 						'description' => 'Pre-provided citations (for formatting mode)',
 						'items'       => array( 'type' => 'string' ),
 					),
-					'save_to_paper_store'   => array(
+					'save_to_paper_store'    => array(
 						'type'        => 'boolean',
 						'description' => __( 'Whether to save the generated report to the Paper Store as a temporary record for later review, export, or post creation.', 'mcp-ai-wpoos-pro' ),
 						'default'     => false,
@@ -141,27 +141,27 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 						'type'        => 'string',
 						'description' => __( 'Paper Store collection name for saving the report. Default: "research-reports". Only used when save_to_paper_store is true.', 'mcp-ai-wpoos-pro' ),
 					),
-					'create_draft_post'     => array(
+					'create_draft_post'      => array(
 						'type'        => 'boolean',
 						'description' => __( 'Whether to automatically create a WordPress draft post from the research report content.', 'mcp-ai-wpoos-pro' ),
 						'default'     => false,
 					),
-					'draft_post_type'       => array(
+					'draft_post_type'        => array(
 						'type'        => 'string',
 						'description' => __( 'WordPress post type for the draft. Default: "post".', 'mcp-ai-wpoos-pro' ),
 						'default'     => 'post',
 					),
-					'draft_post_status'     => array(
+					'draft_post_status'      => array(
 						'type'        => 'string',
 						'description' => __( 'WordPress post status for the draft. Use "draft" for private review or "pending" for editorial workflow.', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'draft', 'pending' ),
 						'default'     => 'draft',
 					),
-					'draft_post_category'   => array(
+					'draft_post_category'    => array(
 						'type'        => 'integer',
 						'description' => __( 'Category term ID to assign to the draft post.', 'mcp-ai-wpoos-pro' ),
 					),
-					'draft_post_tags'       => array(
+					'draft_post_tags'        => array(
 						'type'        => 'array',
 						'items'       => array( 'type' => 'string' ),
 						'description' => __( 'Tags to assign to the draft post.', 'mcp-ai-wpoos-pro' ),
@@ -1317,7 +1317,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		}
 
 		// Check publish capability.
-		$user_id = isset( $context['user_id'] ) ? (int) $context['user_id'] : get_current_user_id();
+		$user_id          = isset( $context['user_id'] ) ? (int) $context['user_id'] : get_current_user_id();
 		$post_type_object = get_post_type_object( $post_type );
 		if ( $post_type_object && ! user_can( $user_id, $post_type_object->cap->publish_posts ) ) {
 			return new WP_Error(
@@ -1371,11 +1371,11 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 
 		// Gate 2 — Escape at exit.
 		return array(
-			'post_id'    => $post_id,
-			'post_type'  => esc_html( $post_type ),
+			'post_id'     => $post_id,
+			'post_type'   => esc_html( $post_type ),
 			'post_status' => esc_html( $post_status ),
-			'edit_url'   => esc_url( get_edit_post_link( $post_id, 'raw' ) ),
-			'permalink'  => esc_url( get_permalink( $post_id ) ),
+			'edit_url'    => esc_url( get_edit_post_link( $post_id, 'raw' ) ),
+			'permalink'   => esc_url( get_permalink( $post_id ) ),
 		);
 	}
 }

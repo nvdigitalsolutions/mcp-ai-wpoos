@@ -202,7 +202,7 @@ class WP_MCP_AI_PM_Workflow_Engine {
 			return new WP_Error( 'not_found', __( 'Workflow rule not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$trigger_type = get_post_meta( $rule_id, '_pm_wf_trigger_type', true );
+		$trigger_type   = get_post_meta( $rule_id, '_pm_wf_trigger_type', true );
 		$conditions_raw = get_post_meta( $rule_id, '_pm_wf_conditions', true );
 		$conditions     = json_decode( $conditions_raw ? $conditions_raw : '[]', true );
 

@@ -118,12 +118,12 @@ class WP_MCP_AI_DICOMweb_Client {
 			$headers['Authorization'] = 'Basic ' . base64_encode( $conn['username'] . ':' . $conn['password'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		}
 		$args = array(
-			'headers'             => $headers,
-			'timeout'             => isset( $conn['timeout'] ) ? (int) $conn['timeout'] : 30,
-			'sslverify'           => true,
-			'user-agent'          => 'NV-oOS-DICOMweb/1.0',
-			'reject_unsafe_urls'  => true,
-			'redirection'         => 0,
+			'headers'            => $headers,
+			'timeout'            => isset( $conn['timeout'] ) ? (int) $conn['timeout'] : 30,
+			'sslverify'          => true,
+			'user-agent'         => 'NV-oOS-DICOMweb/1.0',
+			'reject_unsafe_urls' => true,
+			'redirection'        => 0,
 		);
 
 		/**

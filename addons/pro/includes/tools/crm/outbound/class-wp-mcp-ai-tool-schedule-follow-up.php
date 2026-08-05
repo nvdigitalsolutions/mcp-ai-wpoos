@@ -129,10 +129,10 @@ class WP_MCP_AI_Tool_Schedule_Follow_Up implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'unavailable', self::get_unavailable_reason() );
 		}
 
-		$lead_id     = absint( $arguments['lead_id'] );
-		$days        = min( 30, max( 1, absint( $arguments['days'] ?? 2 ) ) );
-		$notes       = sanitize_textarea_field( $arguments['notes'] ?? '' );
-		$due         = gmdate( 'Y-m-d', strtotime( "+{$days} days" ) );
+		$lead_id = absint( $arguments['lead_id'] );
+		$days    = min( 30, max( 1, absint( $arguments['days'] ?? 2 ) ) );
+		$notes   = sanitize_textarea_field( $arguments['notes'] ?? '' );
+		$due     = gmdate( 'Y-m-d', strtotime( "+{$days} days" ) );
 
 		// Include lead name in the activity title for clarity.
 		$lead_post = get_post( $lead_id );

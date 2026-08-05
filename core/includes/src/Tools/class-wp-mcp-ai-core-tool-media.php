@@ -39,7 +39,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'Media', 'wp-mcp-ai-core' );
+		return __( 'Media', 'mcp-ai-wpoos-core' );
 	}
 
 	/**
@@ -48,7 +48,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query and manage WordPress media library attachments. Supports listing, searching, and uploading media files.', 'wp-mcp-ai-core' );
+		return __( 'Query and manage WordPress media library attachments. Supports listing, searching, and uploading media files.', 'mcp-ai-wpoos-core' );
 	}
 
 	/**
@@ -62,44 +62,44 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 			'properties' => array(
 				'action'        => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: get, list, upload, search.', 'wp-mcp-ai-core' ),
+					'description' => __( 'The action to perform: get, list, upload, search.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'get', 'list', 'upload', 'search' ),
 					'default'     => 'list',
 				),
 				'attachment_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Attachment ID for get action.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Attachment ID for get action.', 'mcp-ai-wpoos-core' ),
 				),
 				'mime_type'     => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by MIME type (e.g., image, video, application/pdf).', 'wp-mcp-ai-core' ),
+					'description' => __( 'Filter by MIME type (e.g., image, video, application/pdf).', 'mcp-ai-wpoos-core' ),
 				),
 				'per_page'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of items to return. Default: 10. Max: 100.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Number of items to return. Default: 10. Max: 100.', 'mcp-ai-wpoos-core' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
 				'page'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-core' ),
 					'default'     => 1,
 				),
 				'search'        => array(
 					'type'        => 'string',
-					'description' => __( 'Search term to filter media.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Search term to filter media.', 'mcp-ai-wpoos-core' ),
 				),
 				'url'           => array(
 					'type'        => 'string',
-					'description' => __( 'URL of media file to upload (for upload action).', 'wp-mcp-ai-core' ),
+					'description' => __( 'URL of media file to upload (for upload action).', 'mcp-ai-wpoos-core' ),
 				),
 				'title'         => array(
 					'type'        => 'string',
-					'description' => __( 'Title for the uploaded media.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Title for the uploaded media.', 'mcp-ai-wpoos-core' ),
 				),
 				'alt_text'      => array(
 					'type'        => 'string',
-					'description' => __( 'Alt text for the uploaded media.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Alt text for the uploaded media.', 'mcp-ai-wpoos-core' ),
 				),
 			),
 			'required'   => array(),
@@ -142,7 +142,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-core' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-core' )
 				);
 		}
 	}
@@ -157,7 +157,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( empty( $arguments['attachment_id'] ) ) {
 			return new WP_Error(
 				'missing_attachment_id',
-				__( 'Attachment ID is required for get action.', 'wp-mcp-ai-core' )
+				__( 'Attachment ID is required for get action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -166,7 +166,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
 			return new WP_Error(
 				'attachment_not_found',
-				__( 'Attachment not found.', 'wp-mcp-ai-core' )
+				__( 'Attachment not found.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -222,7 +222,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( empty( $arguments['search'] ) ) {
 			return new WP_Error(
 				'missing_search_term',
-				__( 'Search term is required for search action.', 'wp-mcp-ai-core' )
+				__( 'Search term is required for search action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -240,7 +240,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( empty( $arguments['url'] ) ) {
 			return new WP_Error(
 				'missing_url',
-				__( 'URL is required for upload action.', 'wp-mcp-ai-core' )
+				__( 'URL is required for upload action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -249,7 +249,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to upload files.', 'wp-mcp-ai-core' )
+				__( 'You do not have permission to upload files.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -259,7 +259,7 @@ class WP_MCP_AI_Core_Tool_Media implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
 			return new WP_Error(
 				'invalid_url',
-				__( 'Invalid URL provided.', 'wp-mcp-ai-core' )
+				__( 'Invalid URL provided.', 'mcp-ai-wpoos-core' )
 			);
 		}
 

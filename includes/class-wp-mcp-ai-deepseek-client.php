@@ -248,21 +248,21 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		 * @return int
 		 */
 		protected function resolve_timeout( array $options = array() ) {
-		if ( ! empty( $options['timeout'] ) && is_numeric( $options['timeout'] ) ) {
-			return max( 10, absint( $options['timeout'] ) );
-		}
+			if ( ! empty( $options['timeout'] ) && is_numeric( $options['timeout'] ) ) {
+				return max( 10, absint( $options['timeout'] ) );
+			}
 
-		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
-		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 
-		// Provider-specific override (for backward compatibility).
-		if ( ! empty( $settings['deepseek_timeout'] ) ) {
-			return max( 10, absint( $settings['deepseek_timeout'] ) );
-		}
+			// Provider-specific override (for backward compatibility).
+			if ( ! empty( $settings['deepseek_timeout'] ) ) {
+				return max( 10, absint( $settings['deepseek_timeout'] ) );
+			}
 
-		$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 
-		return max( 10, $timeout );
+			return max( 10, $timeout );
 		}
 
 		/**

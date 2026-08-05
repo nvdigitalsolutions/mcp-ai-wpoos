@@ -52,17 +52,17 @@ class WP_MCP_AI_Tool_Export_Comic_Cbz implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'comic_id'  => array(
+				'comic_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the comic script post to export.', 'mcp-ai-wpoos-pro' ),
 				),
-				'format'    => array(
+				'format'   => array(
 					'type'        => 'string',
 					'description' => __( 'Export format.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'cbz', 'cbr' ),
 					'default'     => 'cbz',
 				),
-				'page_ids'  => array(
+				'page_ids' => array(
 					'type'        => 'array',
 					'description' => __( 'Optional: specific panel IDs to include. If empty, all panels linked to the comic are exported.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
@@ -168,7 +168,7 @@ class WP_MCP_AI_Tool_Export_Comic_Cbz implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Resolve panels for this comic.
 		if ( empty( $page_ids ) ) {
-			$panels = get_posts(
+			$panels   = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_comic_panel',
 					'post_status'    => 'publish',
@@ -322,9 +322,9 @@ class WP_MCP_AI_Tool_Export_Comic_Cbz implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string ComicInfo XML content.
 	 */
 	private function generate_comic_info_xml( $comic_post, $panel_count ) {
-		$title  = esc_xml( $comic_post->post_title );
-		$genre  = esc_xml( get_post_meta( $comic_post->ID, '_comic_genre', true ) ? get_post_meta( $comic_post->ID, '_comic_genre', true ) : '' );
-		$style  = esc_xml( get_post_meta( $comic_post->ID, '_comic_style', true ) ? get_post_meta( $comic_post->ID, '_comic_style', true ) : '' );
+		$title   = esc_xml( $comic_post->post_title );
+		$genre   = esc_xml( get_post_meta( $comic_post->ID, '_comic_genre', true ) ? get_post_meta( $comic_post->ID, '_comic_genre', true ) : '' );
+		$style   = esc_xml( get_post_meta( $comic_post->ID, '_comic_style', true ) ? get_post_meta( $comic_post->ID, '_comic_style', true ) : '' );
 		$premise = esc_xml( get_post_meta( $comic_post->ID, '_comic_premise', true ) ? get_post_meta( $comic_post->ID, '_comic_premise', true ) : '' );
 
 		return sprintf(

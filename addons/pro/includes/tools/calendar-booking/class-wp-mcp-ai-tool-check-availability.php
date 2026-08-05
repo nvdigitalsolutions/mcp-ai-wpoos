@@ -107,33 +107,33 @@ class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'start_time'           => array(
+				'start_time'             => array(
 					'type'        => 'string',
 					'description' => __( 'Start time to check (Y-m-d H:i:s format, required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'end_time'             => array(
+				'end_time'               => array(
 					'type'        => 'string',
 					'description' => __( 'End time to check (Y-m-d H:i:s format, required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'check_business_hours' => array(
+				'check_business_hours'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Validate against business hours', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'check_blocked_times'  => array(
+				'check_blocked_times'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Check for blocked time slots', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'provider_id'          => array(
+				'provider_id'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional provider ID for JetAppointment availability check.', 'mcp-ai-wpoos-pro' ),
 				),
-				'service_id'           => array(
+				'service_id'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional service ID for JetAppointment availability check.', 'mcp-ai-wpoos-pro' ),
 				),
-				'instance_id'          => array(
+				'instance_id'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional JetBooking instance ID for availability check.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Check_Availability implements WP_MCP_AI_Tool_Interface, WP_
 
 		$is_available = true;
 		$reasons      = array();
-		$per_system    = array();
+		$per_system   = array();
 
 		// Check for conflicts.
 		$conflicts = $this->check_conflicts( $start_time, $end_time );

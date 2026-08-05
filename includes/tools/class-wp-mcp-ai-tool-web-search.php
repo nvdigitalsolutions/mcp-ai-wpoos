@@ -129,31 +129,31 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'       => array(
+				'query'                  => array(
 					'type'        => 'string',
 					'description' => __( 'The search query to look up.', 'mcp-ai-wpoos' ),
 				),
-				'max_results' => array(
+				'max_results'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return (1-10).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 10,
 					'default'     => 5,
 				),
-				'country'     => array(
+				'country'                => array(
 					'type'        => 'string',
 					'description' => __( 'ISO 3166-1 alpha-2 country code to geo-target results (e.g. "US", "GB", "DE"). Supported by Brave and Tavily.', 'mcp-ai-wpoos' ),
 				),
-				'language'    => array(
+				'language'               => array(
 					'type'        => 'string',
 					'description' => __( 'ISO 639-1 language code to localise results (e.g. "en", "de", "fr"). Combined with country for DuckDuckGo region targeting.', 'mcp-ai-wpoos' ),
 				),
-				'freshness'   => array(
+				'freshness'              => array(
 					'type'        => 'string',
 					'description' => __( 'Filter results by recency: "pd" = past day, "pw" = past week, "pm" = past month, "py" = past year. Supported by Brave.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'pd', 'pw', 'pm', 'py' ),
 				),
-				'save_to_paper_store' => array(
+				'save_to_paper_store'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to automatically save search results to the Paper Store as a temporary record for later review or post creation.', 'mcp-ai-wpoos' ),
 					'default'     => false,
@@ -162,7 +162,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'type'        => 'string',
 					'description' => __( 'Paper Store collection name for saving results. Default: "web-search-results". Only used when save_to_paper_store is true.', 'mcp-ai-wpoos' ),
 				),
-				'paper_store_tags' => array(
+				'paper_store_tags'       => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Optional tags to apply to the Paper Store record for categorization.', 'mcp-ai-wpoos' ),

@@ -2123,11 +2123,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			if ( $pro_active && $media_toolkit_enabled ) {
 				// Count media templates.
 				if ( post_type_exists( 'mcp_ai_media_tpl' ) ) {
-					$tpl_counts             = wp_count_posts( 'mcp_ai_media_tpl' );
-					$media_templates_count  = isset( $tpl_counts->publish ) ? $tpl_counts->publish : 0;
+					$tpl_counts            = wp_count_posts( 'mcp_ai_media_tpl' );
+					$media_templates_count = isset( $tpl_counts->publish ) ? $tpl_counts->publish : 0;
 
 					// Count preset templates.
-					$preset_tpl_query = new WP_Query(
+					$preset_tpl_query        = new WP_Query(
 						array(
 							'post_type'      => 'mcp_ai_media_tpl',
 							'post_status'    => 'publish',
@@ -2147,11 +2147,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 				// Count media collections.
 				if ( post_type_exists( 'mcp_ai_media_coll' ) ) {
-					$coll_counts              = wp_count_posts( 'mcp_ai_media_coll' );
-					$media_collections_count  = isset( $coll_counts->publish ) ? $coll_counts->publish : 0;
+					$coll_counts             = wp_count_posts( 'mcp_ai_media_coll' );
+					$media_collections_count = isset( $coll_counts->publish ) ? $coll_counts->publish : 0;
 
 					// Count preset collections.
-					$preset_coll_query = new WP_Query(
+					$preset_coll_query         = new WP_Query(
 						array(
 							'post_type'      => 'mcp_ai_media_coll',
 							'post_status'    => 'publish',
@@ -2171,11 +2171,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 				// Get available preset counts from the presets class.
 				if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
-					$media_presets_available  = count( WP_MCP_AI_Media_Template_Presets::get_presets() );
-					$media_coll_available     = count( WP_MCP_AI_Media_Template_Presets::get_collection_presets() );
+					$media_presets_available = count( WP_MCP_AI_Media_Template_Presets::get_presets() );
+					$media_coll_available    = count( WP_MCP_AI_Media_Template_Presets::get_collection_presets() );
 				} else {
-					$media_presets_available  = 0;
-					$media_coll_available     = 0;
+					$media_presets_available = 0;
+					$media_coll_available    = 0;
 				}
 
 				// Determine sync status.
@@ -2184,8 +2184,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				$media_seeded     = get_option( 'wp_mcp_ai_media_presets_seeded', '' );
 				$coll_seeded      = get_option( 'wp_mcp_ai_media_collections_seeded', false );
 
-				$tpl_status_text  = $tpl_sync_needed ? __( 'Updates Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
-				$tpl_status_class = $tpl_sync_needed ? 'warning' : 'success';
+				$tpl_status_text   = $tpl_sync_needed ? __( 'Updates Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
+				$tpl_status_class  = $tpl_sync_needed ? 'warning' : 'success';
 				$coll_status_text  = $coll_sync_needed ? __( 'Presets Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
 				$coll_status_class = $coll_sync_needed ? 'warning' : 'success';
 			}
@@ -2285,12 +2285,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			</div>
 
 			<?php
-			$media_sync_processing      = __( 'Syncing...', 'mcp-ai-wpoos' );
-			$media_sync_nonce           = wp_create_nonce( 'wp_mcp_ai_sync_media_templates' );
-			$media_sync_error           = __( 'An error occurred.', 'mcp-ai-wpoos' );
-			$media_sync_ajax_error      = __( 'AJAX error: ', 'mcp-ai-wpoos' );
-			$media_sync_seed_confirm    = __( 'This will add pre-configured media templates and collections without modifying existing ones. Continue?', 'mcp-ai-wpoos' );
-			$media_sync_force_confirm   = __( 'This will update all preset media templates and collections with the latest versions. Existing presets will be overwritten. Continue?', 'mcp-ai-wpoos' );
+			$media_sync_processing    = __( 'Syncing...', 'mcp-ai-wpoos' );
+			$media_sync_nonce         = wp_create_nonce( 'wp_mcp_ai_sync_media_templates' );
+			$media_sync_error         = __( 'An error occurred.', 'mcp-ai-wpoos' );
+			$media_sync_ajax_error    = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+			$media_sync_seed_confirm  = __( 'This will add pre-configured media templates and collections without modifying existing ones. Continue?', 'mcp-ai-wpoos' );
+			$media_sync_force_confirm = __( 'This will update all preset media templates and collections with the latest versions. Existing presets will be overwritten. Continue?', 'mcp-ai-wpoos' );
 
 			ob_start();
 			?>

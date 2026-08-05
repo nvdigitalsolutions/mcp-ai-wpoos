@@ -176,175 +176,175 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 		private static function get_content_presets() {
 			return array(
 				'content_pipeline'         => array(
-										'name'        => __( 'Blog Post Pipeline', 'mcp-ai-wpoos-pro' ),
-										'description' => __( 'Research a topic, generate an outline, write a draft, optimise for SEO, and publish.', 'mcp-ai-wpoos-pro' ),
-										'category'    => 'content',
-										'icon'        => 'dashicons-admin-page',
-										'tags'        => array( 'content', 'seo', 'publishing' ),
-										'nodes'       => array(
-											array(
-												'id'       => 'node_1',
-												'type'     => 'input',
-												'position' => array(
-													'x' => 250,
-													'y' => 0,
-												),
-												'data'     => array(
-													'label'       => __( 'Topic Input', 'mcp-ai-wpoos-pro' ),
-													'description' => __( 'Enter the blog topic to research.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_1b',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 75,
-												),
-												'data'     => array(
-													'label'       => __( 'Check Existing Content', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'get_recent_posts',
-													'arguments'   => array(
-														'status' => 'publish',
-														'limit'  => 20,
-													),
-													'description' => __( 'Review recently published posts to avoid duplicate topics and identify content gaps.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_2',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 150,
-												),
-												'data'     => array(
-													'label'       => __( 'Research Topic', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'web_search',
-													'arguments'   => array( 'query' => '{{input.topic}}' ),
-													'description' => __( 'Research the topic using web search.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_3',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 300,
-												),
-												'data'     => array(
-													'label'       => __( 'Generate Outline', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'client_summarize_text',
-													'arguments'   => array( 'format' => 'outline' ),
-													'description' => __( 'Generate a structured outline from research.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_4',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 450,
-												),
-												'data'     => array(
-													'label'       => __( 'Write Draft', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'create_post',
-													'arguments'   => array(
-														'post_status' => 'draft',
-														'post_type'   => 'post',
-													),
-													'description' => __( 'Create a draft post from the outline.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_5',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 600,
-												),
-												'data'     => array(
-													'label'       => __( 'Optimise SEO', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'seo_meta_optimizer',
-													'arguments'   => array( 'post_id' => '{{node_4.post_id}}' ),
-													'description' => __( 'Optimise post meta for search engines.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_6',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 750,
-												),
-												'data'     => array(
-													'label'       => __( 'Publish Post', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'save_post',
-													'arguments'   => array(
-														'post_id'     => '{{node_4.post_id}}',
-														'post_status' => 'publish',
-													),
-													'description' => __( 'Publish the finished post.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_7',
-												'type'     => 'output',
-												'position' => array(
-													'x' => 250,
-													'y' => 900,
-												),
-												'data'     => array(
-													'label'       => __( 'Pipeline Complete', 'mcp-ai-wpoos-pro' ),
-													'description' => __( 'Blog post published successfully.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-										),
-										'edges'       => array(
-											array(
-												'id'           => 'edge_1_1b',
-												'source'       => 'node_1',
-												'target'       => 'node_1b',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_1b_2',
-												'source'       => 'node_1b',
-												'target'       => 'node_2',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_2_3',
-												'source'       => 'node_2',
-												'target'       => 'node_3',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_3_4',
-												'source'       => 'node_3',
-												'target'       => 'node_4',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_4_5',
-												'source'       => 'node_4',
-												'target'       => 'node_5',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_5_6',
-												'source'       => 'node_5',
-												'target'       => 'node_6',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_6_7',
-												'source'       => 'node_6',
-												'target'       => 'node_7',
-												'sourceHandle' => 'output',
-											),
-										),
-									),
+					'name'        => __( 'Blog Post Pipeline', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Research a topic, generate an outline, write a draft, optimise for SEO, and publish.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'content',
+					'icon'        => 'dashicons-admin-page',
+					'tags'        => array( 'content', 'seo', 'publishing' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Topic Input', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Enter the blog topic to research.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_1b',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 75,
+							),
+							'data'     => array(
+								'label'       => __( 'Check Existing Content', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'get_recent_posts',
+								'arguments'   => array(
+									'status' => 'publish',
+									'limit'  => 20,
+								),
+								'description' => __( 'Review recently published posts to avoid duplicate topics and identify content gaps.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Research Topic', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'web_search',
+								'arguments'   => array( 'query' => '{{input.topic}}' ),
+								'description' => __( 'Research the topic using web search.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Generate Outline', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'client_summarize_text',
+								'arguments'   => array( 'format' => 'outline' ),
+								'description' => __( 'Generate a structured outline from research.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Write Draft', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'create_post',
+								'arguments'   => array(
+									'post_status' => 'draft',
+									'post_type'   => 'post',
+								),
+								'description' => __( 'Create a draft post from the outline.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_5',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
+							'data'     => array(
+								'label'       => __( 'Optimise SEO', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'seo_meta_optimizer',
+								'arguments'   => array( 'post_id' => '{{node_4.post_id}}' ),
+								'description' => __( 'Optimise post meta for search engines.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_6',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
+							'data'     => array(
+								'label'       => __( 'Publish Post', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'save_post',
+								'arguments'   => array(
+									'post_id'     => '{{node_4.post_id}}',
+									'post_status' => 'publish',
+								),
+								'description' => __( 'Publish the finished post.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_7',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 900,
+							),
+							'data'     => array(
+								'label'       => __( 'Pipeline Complete', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Blog post published successfully.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_1b',
+							'source'       => 'node_1',
+							'target'       => 'node_1b',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_1b_2',
+							'source'       => 'node_1b',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_4_5',
+							'source'       => 'node_4',
+							'target'       => 'node_5',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_5_6',
+							'source'       => 'node_5',
+							'target'       => 'node_6',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_6_7',
+							'source'       => 'node_6',
+							'target'       => 'node_7',
+							'sourceHandle' => 'output',
+						),
+					),
+				),
 				'content_refresh'          => array(
 					'name'        => __( 'Content Refresh', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Find old posts, analyse performance, update content, and regenerate images.', 'mcp-ai-wpoos-pro' ),
@@ -933,179 +933,179 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 					),
 				),
 				'keyword_research_pipeline' => array(
-										'name'        => __( 'Keyword Pipeline', 'mcp-ai-wpoos-pro' ),
-										'description' => __( 'Research keywords, analyse competition, prioritise opportunities, generate an image, and create content briefs.', 'mcp-ai-wpoos-pro' ),
-										'category'    => 'seo',
-										'icon'        => 'dashicons-search',
-										'tags'        => array( 'seo', 'keywords', 'research' ),
-										'nodes'       => array(
-											array(
-												'id'       => 'node_1',
-												'type'     => 'input',
-												'position' => array(
-													'x' => 250,
-													'y' => 0,
-												),
-												'data'     => array(
-													'label'       => __( 'Seed Keywords', 'mcp-ai-wpoos-pro' ),
-													'description' => __( 'Enter seed keywords to begin research.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_1b',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 75,
-												),
-												'data'     => array(
-													'label'       => __( 'Check Existing Content', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'get_recent_posts',
-													'arguments'   => array(
-														'status' => 'publish',
-														'limit'  => 30,
-													),
-													'description' => __( 'Review recently published posts to identify which keywords and topics are already covered, so briefs target genuine content gaps.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_2',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 150,
-												),
-												'data'     => array(
-													'label'       => __( 'Research Keywords', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'web_search',
-													'arguments'   => array( 'query' => '{{input.keywords}} keyword research' ),
-													'description' => __( 'Find related keywords and search volumes.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_3',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 300,
-												),
-												'data'     => array(
-													'label'       => __( 'Analyse Competition', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'sitekit_get_search_console',
-													'arguments'   => array( 'metric' => 'impressions' ),
-													'description' => __( 'Evaluate competition levels for each keyword.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_4',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 450,
-												),
-												'data'     => array(
-													'label'       => __( 'Prioritise Keywords', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'content_recommendation_engine',
-													'arguments'   => array( 'mode' => 'ranking_potential' ),
-													'description' => __( 'Rank keywords by opportunity score.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_4b',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 525,
-												),
-												'data'     => array(
-													'label'       => __( 'Generate Featured Image', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'generate_openai_image',
-													'arguments'   => array(
-														'prompt'  => '{{node_1.value}}',
-														'size'    => '1792x1024',
-														'model'   => 'dall-e-3',
-														'quality' => 'hd',
-													),
-													'description' => __( 'Generate an AI featured image for the content.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_5',
-												'type'     => 'tool',
-												'position' => array(
-													'x' => 250,
-													'y' => 600,
-												),
-												'data'     => array(
-													'label'       => __( 'Create Content Briefs', 'mcp-ai-wpoos-pro' ),
-													'toolSlug'    => 'create_post',
-													'arguments'   => array(
-														'post_type'         => 'post',
-														'post_status'       => 'draft',
-														'featured_image_id' => '{{node_4b.attachment_id}}',
-													),
-													'description' => __( 'Generate content briefs for prioritised keywords.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-											array(
-												'id'       => 'node_6',
-												'type'     => 'output',
-												'position' => array(
-													'x' => 250,
-													'y' => 750,
-												),
-												'data'     => array(
-													'label'       => __( 'Pipeline Complete', 'mcp-ai-wpoos-pro' ),
-													'description' => __( 'Keyword research pipeline finished. Content briefs ready.', 'mcp-ai-wpoos-pro' ),
-												),
-											),
-										),
-										'edges'       => array(
-											array(
-												'id'           => 'edge_1_1b',
-												'source'       => 'node_1',
-												'target'       => 'node_1b',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_1b_2',
-												'source'       => 'node_1b',
-												'target'       => 'node_2',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_2_3',
-												'source'       => 'node_2',
-												'target'       => 'node_3',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_3_4',
-												'source'       => 'node_3',
-												'target'       => 'node_4',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_4_4b',
-												'source'       => 'node_4',
-												'target'       => 'node_4b',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_4b_5',
-												'source'       => 'node_4b',
-												'target'       => 'node_5',
-												'sourceHandle' => 'output',
-											),
-											array(
-												'id'           => 'edge_5_6',
-												'source'       => 'node_5',
-												'target'       => 'node_6',
-												'sourceHandle' => 'output',
-											),
+					'name'        => __( 'Keyword Pipeline', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Research keywords, analyse competition, prioritise opportunities, generate an image, and create content briefs.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'seo',
+					'icon'        => 'dashicons-search',
+					'tags'        => array( 'seo', 'keywords', 'research' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Seed Keywords', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Enter seed keywords to begin research.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_1b',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 75,
+							),
+							'data'     => array(
+								'label'       => __( 'Check Existing Content', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'get_recent_posts',
+								'arguments'   => array(
+									'status' => 'publish',
+									'limit'  => 30,
+								),
+								'description' => __( 'Review recently published posts to identify which keywords and topics are already covered, so briefs target genuine content gaps.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Research Keywords', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'web_search',
+								'arguments'   => array( 'query' => '{{input.keywords}} keyword research' ),
+								'description' => __( 'Find related keywords and search volumes.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Analyse Competition', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'sitekit_get_search_console',
+								'arguments'   => array( 'metric' => 'impressions' ),
+								'description' => __( 'Evaluate competition levels for each keyword.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Prioritise Keywords', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'content_recommendation_engine',
+								'arguments'   => array( 'mode' => 'ranking_potential' ),
+								'description' => __( 'Rank keywords by opportunity score.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4b',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 525,
+							),
+							'data'     => array(
+								'label'       => __( 'Generate Featured Image', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'generate_openai_image',
+								'arguments'   => array(
+									'prompt'  => '{{node_1.value}}',
+									'size'    => '1792x1024',
+									'model'   => 'dall-e-3',
+									'quality' => 'hd',
+								),
+								'description' => __( 'Generate an AI featured image for the content.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_5',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 600,
+							),
+							'data'     => array(
+								'label'       => __( 'Create Content Briefs', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'create_post',
+								'arguments'   => array(
+									'post_type'         => 'post',
+									'post_status'       => 'draft',
+									'featured_image_id' => '{{node_4b.attachment_id}}',
+								),
+								'description' => __( 'Generate content briefs for prioritised keywords.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_6',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 250,
+								'y' => 750,
+							),
+							'data'     => array(
+								'label'       => __( 'Pipeline Complete', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Keyword research pipeline finished. Content briefs ready.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_1b',
+							'source'       => 'node_1',
+							'target'       => 'node_1b',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_1b_2',
+							'source'       => 'node_1b',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_4_4b',
+							'source'       => 'node_4',
+							'target'       => 'node_4b',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_4b_5',
+							'source'       => 'node_4b',
+							'target'       => 'node_5',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_5_6',
+							'source'       => 'node_5',
+							'target'       => 'node_6',
+							'sourceHandle' => 'output',
+						),
 
-										),
-									),
+					),
+				),
 			);
 		}
 

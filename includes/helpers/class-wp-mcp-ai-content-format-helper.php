@@ -36,10 +36,10 @@ class WP_MCP_AI_Content_Format_Helper {
 	 * @since 1.10.0
 	 * @var string
 	 */
-	const FORMAT_BLOCK_EDITOR  = 'block-editor';
-	const FORMAT_CLASSIC       = 'classic-editor';
-	const FORMAT_ELEMENTOR     = 'elementor';
-	const FORMAT_AUTO          = 'auto';
+	const FORMAT_BLOCK_EDITOR = 'block-editor';
+	const FORMAT_CLASSIC      = 'classic-editor';
+	const FORMAT_ELEMENTOR    = 'elementor';
+	const FORMAT_AUTO         = 'auto';
 
 	/**
 	 * SEO plugin constants.
@@ -205,7 +205,7 @@ class WP_MCP_AI_Content_Format_Helper {
 			return '';
 		}
 
-		$settings   = $widget['settings'];
+		$settings    = $widget['settings'];
 		$widget_type = isset( $widget['widgetType'] ) ? $widget['widgetType'] : '';
 		$text        = '';
 
@@ -405,8 +405,8 @@ class WP_MCP_AI_Content_Format_Helper {
 	 * @return string Extracted text.
 	 */
 	private static function scan_common_text_keys( $settings ) {
-		$text       = '';
-		$text_keys  = array(
+		$text      = '';
+		$text_keys = array(
 			'title',
 			'heading',
 			'text',
@@ -473,31 +473,31 @@ class WP_MCP_AI_Content_Format_Helper {
 		switch ( $plugin ) {
 			case self::SEO_RANK_MATH:
 				return array(
-					'title'          => 'rank_math_title',
-					'description'    => 'rank_math_description',
-					'focus_keyword'  => 'rank_math_focus_keyword',
+					'title'         => 'rank_math_title',
+					'description'   => 'rank_math_description',
+					'focus_keyword' => 'rank_math_focus_keyword',
 				);
 
 			case self::SEO_YOAST:
 				return array(
-					'title'          => '_yoast_wpseo_title',
-					'description'    => '_yoast_wpseo_metadesc',
-					'focus_keyword'  => '_yoast_wpseo_focuskw',
+					'title'         => '_yoast_wpseo_title',
+					'description'   => '_yoast_wpseo_metadesc',
+					'focus_keyword' => '_yoast_wpseo_focuskw',
 				);
 
 			case self::SEO_SEOPRESS:
 				return array(
-					'title'          => '_seopress_titles_title',
-					'description'    => '_seopress_titles_desc',
-					'focus_keyword'  => '_seopress_analysis_target_kw',
+					'title'         => '_seopress_titles_title',
+					'description'   => '_seopress_titles_desc',
+					'focus_keyword' => '_seopress_analysis_target_kw',
 				);
 
 			default:
 				// Fallback to custom meta keys when no SEO plugin is active.
 				return array(
-					'title'          => '_wp_mcp_ai_seo_title',
-					'description'    => '_wp_mcp_ai_meta_description',
-					'focus_keyword'  => '_wp_mcp_ai_focus_keyword',
+					'title'         => '_wp_mcp_ai_seo_title',
+					'description'   => '_wp_mcp_ai_meta_description',
+					'focus_keyword' => '_wp_mcp_ai_focus_keyword',
 				);
 		}
 	}

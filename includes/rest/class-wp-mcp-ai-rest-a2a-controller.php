@@ -133,13 +133,13 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'callback'            => array( $this, 'handle_webhook' ),
 				'permission_callback' => array( $this, 'permissions_check_a2a' ),
 				'args'                => array(
-					'type'       => array(
+					'type' => array(
 						'description'       => __( 'Webhook event type.', 'mcp-ai-wpoos' ),
 						'type'              => 'string',
 						'required'          => false,
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'data'       => array(
+					'data' => array(
 						'description' => __( 'Webhook payload data.', 'mcp-ai-wpoos' ),
 						'type'        => 'object',
 						'required'    => false,

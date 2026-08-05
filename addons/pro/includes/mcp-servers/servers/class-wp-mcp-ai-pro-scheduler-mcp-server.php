@@ -117,20 +117,20 @@ class WP_MCP_AI_Pro_Scheduler_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 	 */
 	public function compute_tool_scopes() {
 		return array(
-			'create_pro_schedule'                  => 'read_write',
-			'list_pro_schedules'                   => 'read_only',
-			'update_pro_schedule'                  => 'read_write',
-			'delete_pro_schedule'                  => 'read_write',
-			'get_schedule_run_history'             => 'read_only',
-			'get_schedule_latest_result'           => 'read_only',
-			'dry_run_pro_schedule'                 => 'read_only',
-			'render_schedule_result'               => 'read_only',
-			'schedule_channel_broadcast'           => 'read_write',
-			'plan_schedules_from_workflow'         => 'read_write',
-			'configure_schedule_widget_defaults'   => 'read_write',
-			'get_session_status'                   => 'read_only',
-			'manage_autonomous_session'            => 'read_write',
-			'create_execution_prompt'              => 'read_only',
+			'create_pro_schedule'                => 'read_write',
+			'list_pro_schedules'                 => 'read_only',
+			'update_pro_schedule'                => 'read_write',
+			'delete_pro_schedule'                => 'read_write',
+			'get_schedule_run_history'           => 'read_only',
+			'get_schedule_latest_result'         => 'read_only',
+			'dry_run_pro_schedule'               => 'read_only',
+			'render_schedule_result'             => 'read_only',
+			'schedule_channel_broadcast'         => 'read_write',
+			'plan_schedules_from_workflow'       => 'read_write',
+			'configure_schedule_widget_defaults' => 'read_write',
+			'get_session_status'                 => 'read_only',
+			'manage_autonomous_session'          => 'read_write',
+			'create_execution_prompt'            => 'read_only',
 		);
 	}
 

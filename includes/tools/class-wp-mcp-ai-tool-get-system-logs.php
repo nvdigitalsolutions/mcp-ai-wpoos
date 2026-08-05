@@ -406,7 +406,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return false;
 		}
 
-		$allowed_directories   = $this->get_default_log_directories();
+		$allowed_directories = $this->get_default_log_directories();
 		if ( defined( 'WP_PLUGIN_DIR' ) ) {
 			$allowed_directories[] = $this->normalize_path( WP_PLUGIN_DIR );
 		}

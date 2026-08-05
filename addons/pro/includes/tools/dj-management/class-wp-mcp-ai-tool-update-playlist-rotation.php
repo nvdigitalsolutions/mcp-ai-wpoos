@@ -167,9 +167,9 @@ class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interfac
 		// Check if DJ Management toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_dj_management_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'DJ Management Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'DJ Management Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -181,18 +181,18 @@ class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interfac
 
 		// Validate playlist_id.
 		if ( $playlist_id <= 0 ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'A valid playlist ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'A valid playlist ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Verify playlist exists and is correct post type.
 		$playlist = get_post( $playlist_id );
 		if ( ! $playlist || 'dj_playlist' !== $playlist->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Playlist not found or invalid playlist type.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Playlist not found or invalid playlist type.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -202,30 +202,30 @@ class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interfac
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'You do not have permission to update this playlist.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'You do not have permission to update this playlist.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate action.
 		if ( ! in_array( $action, self::VALID_ACTIONS, true ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'tool_error',
+				sprintf(
 					/* translators: %s: comma-separated list of valid actions */
 					__( 'Invalid action. Valid actions are: %s.', 'mcp-ai-wpoos-pro' ),
 					implode( ', ', self::VALID_ACTIONS )
-				),
+				)
 			);
 		}
 
 		// Parse and validate track_ids.
 		$track_ids = isset( $arguments['track_ids'] ) ? $arguments['track_ids'] : array();
 		if ( ! is_array( $track_ids ) || empty( $track_ids ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'At least one track ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'At least one track ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -239,9 +239,9 @@ class WP_MCP_AI_Tool_Update_Playlist_Rotation implements WP_MCP_AI_Tool_Interfac
 		);
 
 		if ( empty( $track_ids ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No valid track IDs provided.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'No valid track IDs provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

@@ -115,7 +115,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'        => 1.10, // $1.10 per 1M tokens.
 				'output'       => 4.40, // $4.40 per 1M tokens.
 				'cached_input' => 0.55, // $0.55 per 1M tokens.
-			),			// GPT-4o Realtime models (audio/speech).
+			),          // GPT-4o Realtime models (audio/speech).
 			// December 2024 update: 60% cheaper pricing, WebRTC support.
 			'gpt-4o-realtime-preview'      => array(
 				'input'        => 100.00, // Audio input: $100 per 1M tokens.
@@ -200,7 +200,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 3.00,   // $3.00 per 1M.
 			),
 			// Veo 3.1 video generation ($0.40/sec standard).
-			'veo-3.1-generate-preview'       => array(
+			'veo-3.1-generate-preview'      => array(
 				'per_second' => 0.040,
 			),
 			'veo-3.1-generate-001'          => array(
@@ -215,7 +215,7 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'anthropic'    => array(
-						// Claude Fable 5 (June 2026 - top tier above Opus).
+			// Claude Fable 5 (June 2026 - top tier above Opus).
 			'claude-fable-5'             => array(
 				'input'  => 10.00,  // $10 per 1M input tokens.
 				'output' => 50.00,  // $50 per 1M output tokens.

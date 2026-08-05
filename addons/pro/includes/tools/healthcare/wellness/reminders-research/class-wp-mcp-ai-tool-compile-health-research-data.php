@@ -653,11 +653,11 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		if ( ! empty( $payload['health_records']['allergies'] ) ) {
 			$allergens = wp_list_pluck( $payload['health_records']['allergies'], 'allergen' );
 			/* translators: %s: comma-separated list of allergens */
-			$lines[]   = sprintf( __( 'Known allergies: %s', 'mcp-ai-wpoos-pro' ), implode( ', ', array_map( 'esc_html', $allergens ) ) );
+			$lines[] = sprintf( __( 'Known allergies: %s', 'mcp-ai-wpoos-pro' ), implode( ', ', array_map( 'esc_html', $allergens ) ) );
 		}
 
 		if ( ! empty( $payload['health_records']['prescriptions'] ) ) {
-			$meds    = wp_list_pluck( $payload['health_records']['prescriptions'], 'medication' );
+			$meds = wp_list_pluck( $payload['health_records']['prescriptions'], 'medication' );
 			/* translators: %s: comma-separated list of medications */
 			$lines[] = sprintf( __( 'Active medications: %s', 'mcp-ai-wpoos-pro' ), implode( ', ', array_map( 'esc_html', $meds ) ) );
 		}

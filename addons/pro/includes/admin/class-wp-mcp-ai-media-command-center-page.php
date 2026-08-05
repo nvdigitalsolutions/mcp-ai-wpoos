@@ -1891,7 +1891,7 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		$items = array();
 		$now   = time();
 		foreach ( $templates as $tpl ) {
-			$cats         = wp_get_object_terms( $tpl->ID, 'media_template_category', array( 'fields' => 'names' ) );
+			$cats = wp_get_object_terms( $tpl->ID, 'media_template_category', array( 'fields' => 'names' ) );
 			if ( is_wp_error( $cats ) ) {
 				$cats = array();
 			}

@@ -311,7 +311,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		<?php
 		// Build an HMAC-signed policy token so the AJAX endpoint can verify
 		// that shortcode attributes haven't been tampered with by the client.
-		$policy = array(
+		$policy       = array(
 			'assistant'             => $assistant,
 			'allow_guests'          => wp_validate_boolean( $atts['allow_guests'] ),
 			'save_transcript'       => wp_validate_boolean( $atts['save_transcript'] ),
@@ -566,8 +566,8 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		}
 
 		// Decode and verify the HMAC-signed policy.
-		$decoded  = base64_decode( $policy_token, true );
-		$policy   = null;
+		$decoded = base64_decode( $policy_token, true );
+		$policy  = null;
 
 		if ( false !== $decoded ) {
 			$parts = explode( '|', $decoded, 2 );
@@ -601,9 +601,9 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 		// Determine the assistant:
 		// - If the policy locks an assistant (non-empty), use it (prevents
-		//   users from overriding the administrator's choice).
+		// users from overriding the administrator's choice).
 		// - If the policy allows any assistant (empty), use the user-selected
-		//   assistant_id from the dropdown.
+		// assistant_id from the dropdown.
 		$assistant = $policy['assistant'];
 		if ( empty( $assistant ) ) {
 			$assistant = isset( $_POST['assistant_id'] )

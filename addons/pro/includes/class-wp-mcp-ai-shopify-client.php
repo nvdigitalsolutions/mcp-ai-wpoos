@@ -105,16 +105,16 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 
 		/**
 		 * Determine whether sandbox / development mode is active.
-	 *
-	 * Development stores created from the Shopify Partners dashboard are
-	 * used for testing.  When sandbox_mode is on, certain safety checks
-	 * (e.g. writing to a production store) may be relaxed or logged
-	 * differently.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return bool
-	 */
+		 *
+		 * Development stores created from the Shopify Partners dashboard are
+		 * used for testing.  When sandbox_mode is on, certain safety checks
+		 * (e.g. writing to a production store) may be relaxed or logged
+		 * differently.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return bool
+		 */
 		public function is_sandbox() {
 			$connection = $this->get_connection();
 			return $connection && ! empty( $connection['sandbox_mode'] );
@@ -519,10 +519,10 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 						'shopify_graphql_cost',
 						'Shopify GraphQL cost telemetry.',
 						array(
-							'requestedQueryCost'     => isset( $cost['requestedQueryCost'] ) ? absint( $cost['requestedQueryCost'] ) : 0,
-							'actualQueryCost'        => isset( $cost['actualQueryCost'] ) ? absint( $cost['actualQueryCost'] ) : null,
-							'throttleStatus'         => isset( $cost['throttleStatus'] ) ? $cost['throttleStatus'] : null,
-							'connection_id'          => $this->connection_id,
+							'requestedQueryCost' => isset( $cost['requestedQueryCost'] ) ? absint( $cost['requestedQueryCost'] ) : 0,
+							'actualQueryCost'    => isset( $cost['actualQueryCost'] ) ? absint( $cost['actualQueryCost'] ) : null,
+							'throttleStatus'     => isset( $cost['throttleStatus'] ) ? $cost['throttleStatus'] : null,
+							'connection_id'      => $this->connection_id,
 						)
 					);
 				}
@@ -1104,9 +1104,9 @@ query GetShopInfo {
 			}
 
 			// Step 2 — poll until completed.
-			$poll_query   = 'query PollBulk($id: ID!) { node(id: $id) { ... on BulkOperation { id status errorCode objectCount url partialDataUrl } } }';
-			$elapsed      = 0;
-			$result_url   = '';
+			$poll_query = 'query PollBulk($id: ID!) { node(id: $id) { ... on BulkOperation { id status errorCode objectCount url partialDataUrl } } }';
+			$elapsed    = 0;
+			$result_url = '';
 
 			while ( $elapsed < self::BULK_MAX_WAIT ) {
 				sleep( self::BULK_POLL_INTERVAL );

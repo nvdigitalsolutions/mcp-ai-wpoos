@@ -223,8 +223,8 @@ class WP_MCP_AI_CRM_REST_Controller {
 			$args['s'] = $request->get_param( 'search' );
 		}
 
-		$query   = new WP_Query( $args );
-		$items   = array();
+		$query    = new WP_Query( $args );
+		$items    = array();
 		$post_ids = wp_list_pluck( $query->posts, 'ID' );
 
 		// Batch-load all post meta to avoid N+1 queries.
@@ -234,7 +234,7 @@ class WP_MCP_AI_CRM_REST_Controller {
 		}
 
 		foreach ( $query->posts as $post ) {
-			$meta  = $meta_cache[ $post->ID ] ?? array();
+			$meta    = $meta_cache[ $post->ID ] ?? array();
 			$items[] = array(
 				'id'         => $post->ID,
 				'full_name'  => $post->post_title,
@@ -250,10 +250,10 @@ class WP_MCP_AI_CRM_REST_Controller {
 
 		$response = rest_ensure_response(
 			array(
-				'items'      => $items,
-				'total'      => (int) $query->found_posts,
-				'page'       => (int) $args['paged'],
-				'per_page'   => (int) $args['posts_per_page'],
+				'items'    => $items,
+				'total'    => (int) $query->found_posts,
+				'page'     => (int) $args['paged'],
+				'per_page' => (int) $args['posts_per_page'],
 			)
 		);
 		$response->header( 'X-WP-Total', (int) $query->found_posts );
@@ -312,8 +312,8 @@ class WP_MCP_AI_CRM_REST_Controller {
 			$args['s'] = $request->get_param( 'search' );
 		}
 
-		$query   = new WP_Query( $args );
-		$items   = array();
+		$query    = new WP_Query( $args );
+		$items    = array();
 		$post_ids = wp_list_pluck( $query->posts, 'ID' );
 
 		$meta_cache = array();
@@ -322,7 +322,7 @@ class WP_MCP_AI_CRM_REST_Controller {
 		}
 
 		foreach ( $query->posts as $post ) {
-			$meta  = $meta_cache[ $post->ID ] ?? array();
+			$meta    = $meta_cache[ $post->ID ] ?? array();
 			$items[] = array(
 				'id'         => $post->ID,
 				'title'      => $post->post_title,
@@ -337,10 +337,10 @@ class WP_MCP_AI_CRM_REST_Controller {
 
 		$response = rest_ensure_response(
 			array(
-				'items'      => $items,
-				'total'      => (int) $query->found_posts,
-				'page'       => (int) $args['paged'],
-				'per_page'   => (int) $args['posts_per_page'],
+				'items'    => $items,
+				'total'    => (int) $query->found_posts,
+				'page'     => (int) $args['paged'],
+				'per_page' => (int) $args['posts_per_page'],
 			)
 		);
 		$response->header( 'X-WP-Total', (int) $query->found_posts );
@@ -448,9 +448,9 @@ class WP_MCP_AI_CRM_REST_Controller {
 			)
 		);
 
-		$pipeline_total  = 0;
-		$weighted_total  = 0;
-		$won_total       = 0;
+		$pipeline_total = 0;
+		$weighted_total = 0;
+		$won_total      = 0;
 
 		foreach ( $deals as $deal_id ) {
 			$amount      = (float) get_post_meta( $deal_id, 'deal_amount', true );

@@ -344,7 +344,7 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 
 		// Apply TF-IDF relevance ranking when active.
 		if ( $use_relevance ) {
-			$total_found = count( $records );
+			$total_found   = count( $records );
 			$field_weights = array(
 				'title'     => 3.0,
 				'diagnosis' => 3.0,
@@ -352,7 +352,7 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 				'facility'  => 1.5,
 				'summary'   => 1.0,
 			);
-			$records = $this->rank_by_relevance( $records, $search, $field_weights );
+			$records       = $this->rank_by_relevance( $records, $search, $field_weights );
 
 			// Paginate the relevance-ranked results.
 			$total_pages = $per_page > 0 ? (int) ceil( $total_found / $per_page ) : 1;

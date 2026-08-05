@@ -39,7 +39,7 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'Taxonomies', 'wp-mcp-ai-core' );
+		return __( 'Taxonomies', 'mcp-ai-wpoos-core' );
 	}
 
 	/**
@@ -48,7 +48,7 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query WordPress taxonomies and terms. Supports listing taxonomies, getting terms, searching, and managing term assignments.', 'wp-mcp-ai-core' );
+		return __( 'Query WordPress taxonomies and terms. Supports listing taxonomies, getting terms, searching, and managing term assignments.', 'mcp-ai-wpoos-core' );
 	}
 
 	/**
@@ -62,51 +62,51 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 			'properties' => array(
 				'action'     => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: list_taxonomies, list_terms, get_term, search_terms.', 'wp-mcp-ai-core' ),
+					'description' => __( 'The action to perform: list_taxonomies, list_terms, get_term, search_terms.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'list_taxonomies', 'list_terms', 'get_term', 'search_terms' ),
 					'default'     => 'list_taxonomies',
 				),
 				'taxonomy'   => array(
 					'type'        => 'string',
-					'description' => __( 'Taxonomy name (e.g., category, post_tag).', 'wp-mcp-ai-core' ),
+					'description' => __( 'Taxonomy name (e.g., category, post_tag).', 'mcp-ai-wpoos-core' ),
 				),
 				'term_id'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Term ID for get_term action.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Term ID for get_term action.', 'mcp-ai-wpoos-core' ),
 				),
 				'per_page'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of terms to return. Default: 20. Max: 100.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Number of terms to return. Default: 20. Max: 100.', 'mcp-ai-wpoos-core' ),
 					'default'     => 20,
 					'maximum'     => 100,
 				),
 				'page'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-core' ),
 					'default'     => 1,
 				),
 				'search'     => array(
 					'type'        => 'string',
-					'description' => __( 'Search term to filter results.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Search term to filter results.', 'mcp-ai-wpoos-core' ),
 				),
 				'parent'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter terms by parent ID.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Filter terms by parent ID.', 'mcp-ai-wpoos-core' ),
 				),
 				'hide_empty' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to hide terms with no posts. Default: false.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Whether to hide terms with no posts. Default: false.', 'mcp-ai-wpoos-core' ),
 					'default'     => false,
 				),
 				'orderby'    => array(
 					'type'        => 'string',
-					'description' => __( 'Field to order by. Default: name.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Field to order by. Default: name.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'name', 'slug', 'term_id', 'count', 'parent' ),
 					'default'     => 'name',
 				),
 				'order'      => array(
 					'type'        => 'string',
-					'description' => __( 'Order direction. Default: ASC.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Order direction. Default: ASC.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'ASC', 'DESC' ),
 					'default'     => 'ASC',
 				),
@@ -149,7 +149,7 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-core' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-core' )
 				);
 		}
 	}
@@ -184,7 +184,7 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 		if ( empty( $arguments['taxonomy'] ) ) {
 			return new WP_Error(
 				'missing_taxonomy',
-				__( 'Taxonomy is required for list_terms action.', 'wp-mcp-ai-core' )
+				__( 'Taxonomy is required for list_terms action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -193,7 +193,7 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 		if ( ! taxonomy_exists( $taxonomy ) ) {
 			return new WP_Error(
 				'invalid_taxonomy',
-				__( 'The specified taxonomy does not exist.', 'wp-mcp-ai-core' )
+				__( 'The specified taxonomy does not exist.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -255,7 +255,7 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 		if ( empty( $arguments['term_id'] ) ) {
 			return new WP_Error(
 				'missing_term_id',
-				__( 'Term ID is required for get_term action.', 'wp-mcp-ai-core' )
+				__( 'Term ID is required for get_term action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -265,7 +265,7 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 		if ( $taxonomy && ! taxonomy_exists( $taxonomy ) ) {
 			return new WP_Error(
 				'invalid_taxonomy',
-				__( 'The specified taxonomy does not exist.', 'wp-mcp-ai-core' )
+				__( 'The specified taxonomy does not exist.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -278,7 +278,7 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 		if ( ! $term ) {
 			return new WP_Error(
 				'term_not_found',
-				__( 'Term not found.', 'wp-mcp-ai-core' )
+				__( 'Term not found.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -295,7 +295,7 @@ class WP_MCP_AI_Core_Tool_Taxonomies implements WP_MCP_AI_Core_Tool_Interface, W
 		if ( empty( $arguments['search'] ) ) {
 			return new WP_Error(
 				'missing_search_term',
-				__( 'Search term is required for search_terms action.', 'wp-mcp-ai-core' )
+				__( 'Search term is required for search_terms action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 

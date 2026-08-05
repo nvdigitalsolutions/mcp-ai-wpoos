@@ -134,32 +134,32 @@ class WP_MCP_AI_Memory_Privacy_Filter {
 	public static function default_patterns() {
 		return array(
 			// OpenAI keys (current `sk-...` and project `sk-proj-...` formats).
-			'openai_key'           => '/\bsk-(?:proj-)?[A-Za-z0-9_\-]{20,}\b/',
+			'openai_key'          => '/\bsk-(?:proj-)?[A-Za-z0-9_\-]{20,}\b/',
 			// Anthropic keys (`sk-ant-...`).
-			'anthropic_key'        => '/\bsk-ant-[A-Za-z0-9_\-]{20,}\b/',
+			'anthropic_key'       => '/\bsk-ant-[A-Za-z0-9_\-]{20,}\b/',
 			// AWS access key IDs.
-			'aws_access_key'       => '/\bAKIA[0-9A-Z]{16}\b/',
+			'aws_access_key'      => '/\bAKIA[0-9A-Z]{16}\b/',
 			// AWS secret access keys (40 base64-ish chars following the literal phrase).
-			'aws_secret_key'       => '/(?i)aws_secret_access_key\s*[:=]\s*["\']?[A-Za-z0-9\/+=]{40}["\']?/',
+			'aws_secret_key'      => '/(?i)aws_secret_access_key\s*[:=]\s*["\']?[A-Za-z0-9\/+=]{40}["\']?/',
 			// GitHub personal access tokens.
-			'github_pat'           => '/\bghp_[A-Za-z0-9]{36}\b/',
+			'github_pat'          => '/\bghp_[A-Za-z0-9]{36}\b/',
 			// GitHub server tokens.
-			'github_server_token'  => '/\bghs_[A-Za-z0-9]{36}\b/',
+			'github_server_token' => '/\bghs_[A-Za-z0-9]{36}\b/',
 			// GitHub OAuth user tokens.
-			'github_oauth_token'   => '/\bgho_[A-Za-z0-9]{36}\b/',
+			'github_oauth_token'  => '/\bgho_[A-Za-z0-9]{36}\b/',
 			// Google API keys (`AIza...`).
-			'google_api_key'       => '/\bAIza[0-9A-Za-z_\-]{35}\b/',
+			'google_api_key'      => '/\bAIza[0-9A-Za-z_\-]{35}\b/',
 			// Slack bot/user/legacy tokens.
-			'slack_token'          => '/\bxox[abprs]-[A-Za-z0-9\-]{10,}\b/',
+			'slack_token'         => '/\bxox[abprs]-[A-Za-z0-9\-]{10,}\b/',
 			// Stripe live + test secret keys.
-			'stripe_secret_key'    => '/\bsk_(?:live|test)_[A-Za-z0-9]{20,}\b/',
+			'stripe_secret_key'   => '/\bsk_(?:live|test)_[A-Za-z0-9]{20,}\b/',
 			// Generic bearer tokens (only in `Authorization: Bearer` context to avoid
 			// stripping the word "Bearer" in prose).
-			'bearer_token'         => '/(?i)(authorization\s*:\s*bearer\s+)[A-Za-z0-9._\-]{20,}/',
+			'bearer_token'        => '/(?i)(authorization\s*:\s*bearer\s+)[A-Za-z0-9._\-]{20,}/',
 			// Private blocks the user marks explicitly.
-			'private_block'        => '/<private>[\s\S]*?<\/private>/i',
+			'private_block'       => '/<private>[\s\S]*?<\/private>/i',
 			// PEM-encoded private keys.
-			'pem_private_key'      => '/-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----[\s\S]+?-----END (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/',
+			'pem_private_key'     => '/-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----[\s\S]+?-----END (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----/',
 		);
 	}
 

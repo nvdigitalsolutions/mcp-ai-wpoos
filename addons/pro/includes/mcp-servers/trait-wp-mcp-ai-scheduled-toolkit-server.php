@@ -72,7 +72,7 @@ trait WP_MCP_AI_Scheduled_Toolkit_Server_Trait {
 	 * @return int Sync interval in seconds, 0 if unknown.
 	 */
 	public function get_sync_interval() {
-		$option  = get_option( $this->get_sync_interval_option_key(), array() );
+		$option   = get_option( $this->get_sync_interval_option_key(), array() );
 		$interval = isset( $option['sync_interval'] ) ? (int) $option['sync_interval'] : 0;
 		if ( $interval <= 0 && isset( $option['sync_interval_minutes'] ) ) {
 			$interval = (int) $option['sync_interval_minutes'] * MINUTE_IN_SECONDS;
@@ -90,13 +90,13 @@ trait WP_MCP_AI_Scheduled_Toolkit_Server_Trait {
 	 * @return array{last_sync: int, status: string, row_count: int}
 	 */
 	public function get_sync_status() {
-		$hook = $this->get_sync_hook_name();
+		$hook      = $this->get_sync_hook_name();
 		$last_sync = 0;
 		$status    = 'unknown';
 		$row_count = 0;
 
 		if ( function_exists( 'as_get_scheduled_actions' ) ) {
-			$args = array(
+			$args    = array(
 				'hook'     => $hook,
 				'status'   => \ActionScheduler_Store::STATUS_COMPLETE,
 				'per_page' => 1,
@@ -115,7 +115,7 @@ trait WP_MCP_AI_Scheduled_Toolkit_Server_Trait {
 					'status'   => \ActionScheduler_Store::STATUS_PENDING,
 					'per_page' => 1,
 				);
-				$pending = as_get_scheduled_actions( $pending_args );
+				$pending      = as_get_scheduled_actions( $pending_args );
 				if ( ! empty( $pending ) ) {
 					$status = 'pending';
 				}
@@ -226,9 +226,9 @@ trait WP_MCP_AI_Scheduled_Toolkit_Server_Trait {
 	 * @return array<string,mixed>
 	 */
 	public function effective_limits() {
-		$config     = $this->get_configuration();
-		$defaults   = $this->get_default_limits();
-		$limits     = array(
+		$config   = $this->get_configuration();
+		$defaults = $this->get_default_limits();
+		$limits   = array(
 			'requests_per_minute' => isset( $config['requests_per_minute'] ) && (int) $config['requests_per_minute'] > 0
 				? (int) $config['requests_per_minute']
 				: $defaults['requests_per_minute'],

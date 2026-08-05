@@ -138,9 +138,9 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -159,9 +159,9 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 			$existing_template = get_post( $template_id );
 
 			if ( ! $existing_template || 'mcp_ai_media_tpl' !== $existing_template->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Media template not found.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Media template not found.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -171,9 +171,9 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'You do not have permission to update this template.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'You do not have permission to update this template.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -181,37 +181,37 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		if ( empty( $title ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Template title is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Template title is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $operation ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Operation type is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Operation type is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate operation type.
 		$valid_operations = array( 'add_logo', 'resize_graphic', 'expand_scene', 'ai_enhance', 'ai_style', 'ai_background', 'ai_retouch' );
 		if ( ! in_array( $operation, $valid_operations, true ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'tool_error',
+				sprintf(
 					/* translators: %s: comma-separated list of valid operations */
 					__( 'Invalid operation type. Valid operations: %s', 'mcp-ai-wpoos-pro' ),
 					implode( ', ', $valid_operations )
-				),
+				)
 			);
 		}
 
 		// Validate parameters.
 		if ( ! is_array( $parameters ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Parameters must be an object/array.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Parameters must be an object/array.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -222,9 +222,9 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 		// Get current user.
 		$user_id = get_current_user_id();
 		if ( empty( $user_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'User not authenticated.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'User not authenticated.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -239,13 +239,13 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 			$result = wp_update_post( $post_data, true );
 
 			if ( is_wp_error( $result ) ) {
-				return array(
-					'success' => false,
-					'error'   => sprintf(
+				return new WP_Error(
+					'tool_error',
+					sprintf(
 						/* translators: %s: error message */
 						__( 'Failed to update template: %s', 'mcp-ai-wpoos-pro' ),
 						$result->get_error_message()
-					),
+					)
 				);
 			}
 		} else {
@@ -261,13 +261,13 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 			$template_id = wp_insert_post( $post_data, true );
 
 			if ( is_wp_error( $template_id ) ) {
-				return array(
-					'success' => false,
-					'error'   => sprintf(
+				return new WP_Error(
+					'tool_error',
+					sprintf(
 						/* translators: %s: error message */
 						__( 'Failed to create template: %s', 'mcp-ai-wpoos-pro' ),
 						$template_id->get_error_message()
-					),
+					)
 				);
 			}
 

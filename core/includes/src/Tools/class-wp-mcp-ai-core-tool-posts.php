@@ -40,7 +40,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'Posts', 'wp-mcp-ai-core' );
+		return __( 'Posts', 'mcp-ai-wpoos-core' );
 	}
 
 	/**
@@ -49,7 +49,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query, create, update, and manage WordPress posts. Supports filtering by post type, status, author, and search terms.', 'wp-mcp-ai-core' );
+		return __( 'Query, create, update, and manage WordPress posts. Supports filtering by post type, status, author, and search terms.', 'mcp-ai-wpoos-core' );
 	}
 
 	/**
@@ -63,66 +63,66 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 			'properties' => array(
 				'action'      => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: get, list, create, update, delete, search.', 'wp-mcp-ai-core' ),
+					'description' => __( 'The action to perform: get, list, create, update, delete, search.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'get', 'list', 'create', 'update', 'delete', 'search' ),
 					'default'     => 'list',
 				),
 				'post_id'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Post ID for get, update, or delete actions.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Post ID for get, update, or delete actions.', 'mcp-ai-wpoos-core' ),
 				),
 				'post_type'   => array(
 					'type'        => 'string',
-					'description' => __( 'Post type to query. Default: post.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Post type to query. Default: post.', 'mcp-ai-wpoos-core' ),
 					'default'     => 'post',
 				),
 				'post_status' => array(
 					'type'        => 'string',
-					'description' => __( 'Post status to query. Default: publish.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Post status to query. Default: publish.', 'mcp-ai-wpoos-core' ),
 					'default'     => 'publish',
 				),
 				'per_page'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of posts to return. Default: 10. Max: 100.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Number of posts to return. Default: 10. Max: 100.', 'mcp-ai-wpoos-core' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
 				'page'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-core' ),
 					'default'     => 1,
 				),
 				'search'      => array(
 					'type'        => 'string',
-					'description' => __( 'Search term to filter posts.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Search term to filter posts.', 'mcp-ai-wpoos-core' ),
 				),
 				'author'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter posts by author ID.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Filter posts by author ID.', 'mcp-ai-wpoos-core' ),
 				),
 				'orderby'     => array(
 					'type'        => 'string',
-					'description' => __( 'Field to order by. Default: date.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Field to order by. Default: date.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'date', 'title', 'modified', 'ID', 'author', 'menu_order' ),
 					'default'     => 'date',
 				),
 				'order'       => array(
 					'type'        => 'string',
-					'description' => __( 'Order direction. Default: DESC.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Order direction. Default: DESC.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'ASC', 'DESC' ),
 					'default'     => 'DESC',
 				),
 				'title'       => array(
 					'type'        => 'string',
-					'description' => __( 'Post title for create/update.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Post title for create/update.', 'mcp-ai-wpoos-core' ),
 				),
 				'content'     => array(
 					'type'        => 'string',
-					'description' => __( 'Post content for create/update.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Post content for create/update.', 'mcp-ai-wpoos-core' ),
 				),
 				'excerpt'     => array(
 					'type'        => 'string',
-					'description' => __( 'Post excerpt for create/update.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Post excerpt for create/update.', 'mcp-ai-wpoos-core' ),
 				),
 			),
 			'required'   => array(),
@@ -169,7 +169,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-core' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-core' )
 				);
 		}
 	}
@@ -184,7 +184,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( empty( $arguments['post_id'] ) ) {
 			return new WP_Error(
 				'missing_post_id',
-				__( 'Post ID is required for get action.', 'wp-mcp-ai-core' )
+				__( 'Post ID is required for get action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -193,7 +193,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! $post ) {
 			return new WP_Error(
 				'post_not_found',
-				__( 'Post not found.', 'wp-mcp-ai-core' )
+				__( 'Post not found.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -233,7 +233,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( empty( $arguments['search'] ) ) {
 			return new WP_Error(
 				'missing_search_term',
-				__( 'Search term is required for search action.', 'wp-mcp-ai-core' )
+				__( 'Search term is required for search action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -254,7 +254,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to create posts.', 'wp-mcp-ai-core' )
+				__( 'You do not have permission to create posts.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -296,7 +296,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( empty( $arguments['post_id'] ) ) {
 			return new WP_Error(
 				'missing_post_id',
-				__( 'Post ID is required for update action.', 'wp-mcp-ai-core' )
+				__( 'Post ID is required for update action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -306,7 +306,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! $post ) {
 			return new WP_Error(
 				'post_not_found',
-				__( 'Post not found.', 'wp-mcp-ai-core' )
+				__( 'Post not found.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -315,7 +315,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! user_can( $user_id, 'edit_post', $post_id ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to edit this post.', 'wp-mcp-ai-core' )
+				__( 'You do not have permission to edit this post.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -357,7 +357,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( empty( $arguments['post_id'] ) ) {
 			return new WP_Error(
 				'missing_post_id',
-				__( 'Post ID is required for delete action.', 'wp-mcp-ai-core' )
+				__( 'Post ID is required for delete action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -367,7 +367,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! $post ) {
 			return new WP_Error(
 				'post_not_found',
-				__( 'Post not found.', 'wp-mcp-ai-core' )
+				__( 'Post not found.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -376,7 +376,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! user_can( $user_id, 'delete_post', $post_id ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to delete this post.', 'wp-mcp-ai-core' )
+				__( 'You do not have permission to delete this post.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -385,7 +385,7 @@ class WP_MCP_AI_Core_Tool_Posts implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! $result ) {
 			return new WP_Error(
 				'delete_failed',
-				__( 'Failed to delete post.', 'wp-mcp-ai-core' )
+				__( 'Failed to delete post.', 'mcp-ai-wpoos-core' )
 			);
 		}
 

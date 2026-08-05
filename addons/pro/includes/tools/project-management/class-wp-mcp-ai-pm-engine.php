@@ -110,7 +110,7 @@ class WP_MCP_AI_PM_Engine {
 		 *
 		 * @param array $merged Settings after merging stored values with defaults.
 		 */
-		$filtered           = apply_filters( 'wp_mcp_ai_pm_toolkit_settings', $merged );
+		$filtered             = apply_filters( 'wp_mcp_ai_pm_toolkit_settings', $merged );
 		self::$settings_cache = is_array( $filtered ) ? $filtered : $merged;
 
 		return self::$settings_cache;
@@ -238,7 +238,7 @@ class WP_MCP_AI_PM_Engine {
 			$status = get_post_meta( $project->ID, '_project_status', true );
 
 			if ( 'at-risk' === $status ) {
-				$at_risk_count++;
+				++$at_risk_count;
 			}
 
 			// Count tasks per project.
@@ -255,26 +255,26 @@ class WP_MCP_AI_PM_Engine {
 			foreach ( $tasks as $task ) {
 				$task_status = get_post_meta( $task->ID, '_task_status', true );
 				if ( ! in_array( $task_status, array( 'completed', 'cancelled' ), true ) ) {
-					$total_open_tasks++;
+					++$total_open_tasks;
 				}
 				if ( 'blocked' === $task_status ) {
-					$total_blocked_tasks++;
+					++$total_blocked_tasks;
 				}
 
 				$due_date = get_post_meta( $task->ID, '_task_due_date', true );
 				if ( $due_date && strtotime( $due_date ) < time() && 'completed' !== $task_status ) {
-					$total_overdue_tasks++;
+					++$total_overdue_tasks;
 				}
 			}
 
 			// Schedule variance: compare end_date to today.
 			$end_date = get_post_meta( $project->ID, '_project_end_date', true );
 			if ( $end_date ) {
-				$start_date = get_post_meta( $project->ID, '_project_start_date', true );
-				$start_ts   = $start_date ? strtotime( $start_date ) : strtotime( $project->post_date );
-				$end_ts     = strtotime( $end_date );
-				$total_days = max( 1, ( $end_ts - $start_ts ) / DAY_IN_SECONDS );
-				$remaining_days = max( 0, ( $end_ts - time() ) / DAY_IN_SECONDS );
+				$start_date               = get_post_meta( $project->ID, '_project_start_date', true );
+				$start_ts                 = $start_date ? strtotime( $start_date ) : strtotime( $project->post_date );
+				$end_ts                   = strtotime( $end_date );
+				$total_days               = max( 1, ( $end_ts - $start_ts ) / DAY_IN_SECONDS );
+				$remaining_days           = max( 0, ( $end_ts - time() ) / DAY_IN_SECONDS );
 				$schedule_variance_total += ( $remaining_days / $total_days );
 			}
 		}
@@ -490,9 +490,9 @@ class WP_MCP_AI_PM_Engine {
 						'compare' => 'NOT IN',
 					),
 				),
-				'orderby'  => 'meta_value',
-				'meta_key' => '_task_due_date',
-				'order'    => 'ASC',
+				'orderby'        => 'meta_value',
+				'meta_key'       => '_task_due_date',
+				'order'          => 'ASC',
 			)
 		);
 
@@ -532,9 +532,9 @@ class WP_MCP_AI_PM_Engine {
 						'type'    => 'DATE',
 					),
 				),
-				'orderby'  => 'meta_value',
-				'meta_key' => '_event_date',
-				'order'    => 'ASC',
+				'orderby'        => 'meta_value',
+				'meta_key'       => '_event_date',
+				'order'          => 'ASC',
 			)
 		);
 
@@ -662,7 +662,7 @@ class WP_MCP_AI_PM_Engine {
 			if ( ! isset( $assignee_tasks[ $assignee_id ] ) ) {
 				$assignee_tasks[ $assignee_id ] = 0;
 			}
-			$assignee_tasks[ $assignee_id ]++;
+			++$assignee_tasks[ $assignee_id ];
 		}
 
 		$result      = array();

@@ -157,15 +157,15 @@ class WP_MCP_AI_JetEngine_Meta_Helper {
 					continue;
 				}
 
-				$meta_key  = $def['meta_key'];
-				$type      = isset( $def['type'] ) ? $def['type'] : 'string';
-				$label     = isset( $def['label'] ) ? $def['label'] : $meta_key;
+				$meta_key = $def['meta_key'];
+				$type     = isset( $def['type'] ) ? $def['type'] : 'string';
+				$label    = isset( $def['label'] ) ? $def['label'] : $meta_key;
 
 				$args = array(
-					'show_in_rest'  => true,
-					'single'        => true,
-					'type'          => self::schema_type_to_wp_type( $type ),
-					'description'   => $label,
+					'show_in_rest'      => true,
+					'single'            => true,
+					'type'              => self::schema_type_to_wp_type( $type ),
+					'description'       => $label,
 					'sanitize_callback' => 'sanitize_text_field',
 				);
 
@@ -207,11 +207,11 @@ class WP_MCP_AI_JetEngine_Meta_Helper {
 				continue;
 			}
 
-			$type         = isset( $def['type'] ) ? $def['type'] : 'string';
-			$meta_key     = $def['meta_key'];
-			$label        = isset( $def['label'] ) ? $def['label'] : $meta_key;
-			$description  = isset( $def['description'] ) ? $def['description'] : '';
-			$has_enum     = ! empty( $def['enum'] ) && is_array( $def['enum'] );
+			$type        = isset( $def['type'] ) ? $def['type'] : 'string';
+			$meta_key    = $def['meta_key'];
+			$label       = isset( $def['label'] ) ? $def['label'] : $meta_key;
+			$description = isset( $def['description'] ) ? $def['description'] : '';
+			$has_enum    = ! empty( $def['enum'] ) && is_array( $def['enum'] );
 
 			$field = array(
 				'title'        => $label,

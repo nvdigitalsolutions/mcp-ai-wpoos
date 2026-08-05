@@ -131,9 +131,9 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate action.
 		if ( empty( $arguments['action'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Action parameter is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Action parameter is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -149,9 +149,9 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 			case 'delete':
 				return $this->delete_track( $arguments );
 			default:
-				return array(
-					'success' => false,
-					'error'   => __( 'Invalid action.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Invalid action.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -164,9 +164,9 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function add_track( $arguments ) {
 		if ( empty( $arguments['title'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Track title is required for add action.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Track title is required for add action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -182,9 +182,9 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 		$track_id = wp_insert_post( $post_data );
 
 		if ( is_wp_error( $track_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $track_id->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$track_id->get_error_message()
 			);
 		}
 
@@ -210,18 +210,18 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function update_track( $arguments ) {
 		if ( empty( $arguments['track_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Track ID is required for update action.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Track ID is required for update action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		$track_id = absint( $arguments['track_id'] );
 
 		if ( ! get_post( $track_id ) || get_post_type( $track_id ) !== 'dj_track' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid track ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid track ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -284,18 +284,18 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function delete_track( $arguments ) {
 		if ( empty( $arguments['track_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Track ID is required for delete action.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Track ID is required for delete action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		$track_id = absint( $arguments['track_id'] );
 
 		if ( ! get_post( $track_id ) || get_post_type( $track_id ) !== 'dj_track' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid track ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid track ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

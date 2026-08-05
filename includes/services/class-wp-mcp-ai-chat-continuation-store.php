@@ -237,7 +237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
 				return false;
 			}
 
-			$now = time();
+			$now           = time();
 			$existing_lock = isset( $row['processing_at'] ) ? (int) $row['processing_at'] : 0;
 			$existing_ttl  = isset( $row['processing_ttl'] ) ? (int) $row['processing_ttl'] : 0;
 
@@ -371,20 +371,20 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
 			$now = time();
 
 			$normalized = array(
-				'job_id'           => self::sanitize_job_id( $job_id ),
-				'chat_session_id'  => $session_id,
-				'assistant_id'     => isset( $payload['assistant_id'] ) ? absint( $payload['assistant_id'] ) : 0,
-				'user_id'          => isset( $payload['user_id'] ) ? absint( $payload['user_id'] ) : 0,
-				'guest_token'      => isset( $payload['guest_token'] ) ? (string) $payload['guest_token'] : '',
-				'tool_call_id'     => isset( $payload['tool_call_id'] ) ? (string) $payload['tool_call_id'] : '',
-				'tool_name'        => isset( $payload['tool_name'] ) ? (string) $payload['tool_name'] : '',
-				'provider'         => isset( $payload['provider'] ) ? (string) $payload['provider'] : '',
-				'model'            => isset( $payload['model'] ) ? (string) $payload['model'] : '',
-				'options'          => isset( $payload['options'] ) && is_array( $payload['options'] ) ? $payload['options'] : array(),
-				'harness_profile'  => isset( $payload['harness_profile'] ) && is_array( $payload['harness_profile'] ) ? $payload['harness_profile'] : array(),
-				'messages'         => $messages,
-				'created_at'       => isset( $payload['created_at'] ) ? (int) $payload['created_at'] : $now,
-				'expires_at'       => isset( $payload['expires_at'] ) ? (int) $payload['expires_at'] : ( $now + self::DEFAULT_TTL ),
+				'job_id'          => self::sanitize_job_id( $job_id ),
+				'chat_session_id' => $session_id,
+				'assistant_id'    => isset( $payload['assistant_id'] ) ? absint( $payload['assistant_id'] ) : 0,
+				'user_id'         => isset( $payload['user_id'] ) ? absint( $payload['user_id'] ) : 0,
+				'guest_token'     => isset( $payload['guest_token'] ) ? (string) $payload['guest_token'] : '',
+				'tool_call_id'    => isset( $payload['tool_call_id'] ) ? (string) $payload['tool_call_id'] : '',
+				'tool_name'       => isset( $payload['tool_name'] ) ? (string) $payload['tool_name'] : '',
+				'provider'        => isset( $payload['provider'] ) ? (string) $payload['provider'] : '',
+				'model'           => isset( $payload['model'] ) ? (string) $payload['model'] : '',
+				'options'         => isset( $payload['options'] ) && is_array( $payload['options'] ) ? $payload['options'] : array(),
+				'harness_profile' => isset( $payload['harness_profile'] ) && is_array( $payload['harness_profile'] ) ? $payload['harness_profile'] : array(),
+				'messages'        => $messages,
+				'created_at'      => isset( $payload['created_at'] ) ? (int) $payload['created_at'] : $now,
+				'expires_at'      => isset( $payload['expires_at'] ) ? (int) $payload['expires_at'] : ( $now + self::DEFAULT_TTL ),
 			);
 
 			// Preserve dispatcher-managed passthrough keys when callers (e.g. the
@@ -421,7 +421,7 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
 			}
 
 			// De-duplicate, append.
-			$index[ $session_id ] = array_values( array_diff( $index[ $session_id ], array( $job_id ) ) );
+			$index[ $session_id ]   = array_values( array_diff( $index[ $session_id ], array( $job_id ) ) );
 			$index[ $session_id ][] = $job_id;
 
 			$max_per_session = (int) apply_filters(
@@ -429,7 +429,7 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
 				self::MAX_CONTINUATIONS_PER_SESSION
 			);
 			if ( $max_per_session > 0 && count( $index[ $session_id ] ) > $max_per_session ) {
-				$dropped = array_slice( $index[ $session_id ], 0, count( $index[ $session_id ] ) - $max_per_session );
+				$dropped              = array_slice( $index[ $session_id ], 0, count( $index[ $session_id ] ) - $max_per_session );
 				$index[ $session_id ] = array_slice( $index[ $session_id ], -$max_per_session );
 				foreach ( $dropped as $dropped_job ) {
 					delete_transient( self::TRANSIENT_PREFIX . $dropped_job );
@@ -559,7 +559,7 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
 				return;
 			}
 
-			$over = count( $lru ) - $max;
+			$over    = count( $lru ) - $max;
 			$dropped = array_slice( $lru, 0, $over );
 			$kept    = array_slice( $lru, $over );
 

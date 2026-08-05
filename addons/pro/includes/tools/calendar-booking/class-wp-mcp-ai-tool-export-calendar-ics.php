@@ -174,36 +174,36 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		// Check if project management is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_project_management'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Project Management is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Project Management is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate project ID.
 		$project_id = absint( $arguments['project_id'] );
 		if ( ! $project_id || get_post_type( $project_id ) !== 'project' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid project ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid project ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Check if ICS package is available.
 		$ics_available = $this->check_ics_availability();
 		if ( ! $ics_available ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'ICS package is not available. Please ensure Node.js and ICS package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'ICS package is not available. Please ensure Node.js and ICS package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Get project details.
 		$project = get_post( $project_id );
 		if ( ! $project ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Project not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Project not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -211,9 +211,9 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		$events = $this->collect_project_events( $project_id, $arguments );
 
 		if ( empty( $events ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No events found for this project in the specified date range.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'No events found for this project in the specified date range.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -233,9 +233,9 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		$result = $this->generate_ics_file( $ics_params );
 
 		if ( ! $result || isset( $result['error'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => isset( $result['error'] ) ? $result['error'] : __( 'ICS file generation failed.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				isset( $result['error'] ) ? $result['error'] : __( 'ICS file generation failed.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

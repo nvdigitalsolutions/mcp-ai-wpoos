@@ -386,7 +386,7 @@ class WP_MCP_AI_CRM_IMAP_Client {
 				if ( ')' === trim( $line ) ) {
 					break;
 				}
-				$body .= $line . "\r\n";
+				$body    .= $line . "\r\n";
 				$body_len = strlen( $body );
 				if ( $body_len >= $byte_len ) {
 					break;
@@ -492,8 +492,8 @@ class WP_MCP_AI_CRM_IMAP_Client {
 
 			// Handle literal responses: if a line ends with {N}, read N bytes.
 			if ( preg_match( '/\{(\d+)\}$/', $line, $lm ) ) {
-				$literal_len = (int) $lm[1];
-				$literal     = '';
+				$literal_len     = (int) $lm[1];
+				$literal         = '';
 				$literal_len_int = $literal_len;
 				$literal_strlen  = strlen( $literal );
 				while ( $literal_strlen < $literal_len_int ) {
@@ -501,8 +501,8 @@ class WP_MCP_AI_CRM_IMAP_Client {
 					if ( false === $chunk ) {
 						break;
 					}
-					$literal        .= $chunk;
-					$literal_strlen  = strlen( $literal );
+					$literal       .= $chunk;
+					$literal_strlen = strlen( $literal );
 				}
 				$lines[] = $literal;
 			}

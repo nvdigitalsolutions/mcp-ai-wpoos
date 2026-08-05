@@ -44,12 +44,12 @@ if ( ! class_exists( 'WP_MCP_AI_Api_Key_Store' ) ) {
 		 * @var array<string, string>
 		 */
 		const MANAGED_KEYS = array(
-			'openai_api_key'             => 'OpenAI API Key',
-			'stability_api_key'          => 'Stability AI API Key',
-			'google_maps_api_key'        => 'Google Maps API Key',
-			'removebg_api_key'           => 'remove.bg API Key',
-			'yahoo_client_secret'        => 'Yahoo OAuth Client Secret',
-			'webhook_secret'             => 'Webhook HMAC Secret',
+			'openai_api_key'               => 'OpenAI API Key',
+			'stability_api_key'            => 'Stability AI API Key',
+			'google_maps_api_key'          => 'Google Maps API Key',
+			'removebg_api_key'             => 'remove.bg API Key',
+			'yahoo_client_secret'          => 'Yahoo OAuth Client Secret',
+			'webhook_secret'               => 'Webhook HMAC Secret',
 			'pro_chat_continuation_secret' => 'Chat Continuation Webhook Secret',
 		);
 

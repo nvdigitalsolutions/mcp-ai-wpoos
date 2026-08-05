@@ -167,7 +167,7 @@ class WP_MCP_AI_Tool_Enrich_Place_Coordinates implements WP_MCP_AI_Tool_Interfac
 			}
 			$item               = $this->geocode_place( $place, $provider, $dry_run );
 			$results['items'][] = $item;
-			$results             = $this->tally( $results, $item );
+			$results            = $this->tally( $results, $item );
 			$results['message'] = $item['message'];
 			return $results;
 		}
@@ -193,7 +193,7 @@ class WP_MCP_AI_Tool_Enrich_Place_Coordinates implements WP_MCP_AI_Tool_Interfac
 		foreach ( $places as $place ) {
 			$item               = $this->geocode_place( $place, $provider, $dry_run );
 			$results['items'][] = $item;
-			$results             = $this->tally( $results, $item );
+			$results            = $this->tally( $results, $item );
 		}
 
 		$results['message'] = sprintf(

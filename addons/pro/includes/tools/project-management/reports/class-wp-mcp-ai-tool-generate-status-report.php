@@ -174,11 +174,11 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 
 		if ( class_exists( 'WP_MCP_AI_PM_Engine' ) ) {
 			$task_counts = array(
-				'total'     => WP_MCP_AI_PM_Engine::count_tasks( $project_id ),
-				'completed' => WP_MCP_AI_PM_Engine::count_tasks( $project_id, 'completed' ),
+				'total'       => WP_MCP_AI_PM_Engine::count_tasks( $project_id ),
+				'completed'   => WP_MCP_AI_PM_Engine::count_tasks( $project_id, 'completed' ),
 				'in_progress' => WP_MCP_AI_PM_Engine::count_tasks( $project_id, 'in-progress' ),
-				'pending'   => WP_MCP_AI_PM_Engine::count_tasks( $project_id, 'pending' ),
-				'blocked'   => WP_MCP_AI_PM_Engine::count_tasks( $project_id, 'blocked' ),
+				'pending'     => WP_MCP_AI_PM_Engine::count_tasks( $project_id, 'pending' ),
+				'blocked'     => WP_MCP_AI_PM_Engine::count_tasks( $project_id, 'blocked' ),
 			);
 		} else {
 			$task_counts = $this->count_tasks_manual( $project_id );
@@ -231,10 +231,10 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'success'     => true,
-			'project_id'  => $project_id,
-			'format'      => $format,
-			'report'      => $report,
+			'success'      => true,
+			'project_id'   => $project_id,
+			'format'       => $format,
+			'report'       => $report,
 			'generated_at' => current_time( 'mysql' ),
 		);
 	}
@@ -274,7 +274,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 		foreach ( $tasks as $task_id ) {
 			$status = get_post_meta( $task_id, '_task_status', true );
 			if ( isset( $counts[ $status ] ) ) {
-				$counts[ $status ]++;
+				++$counts[ $status ];
 			}
 		}
 
@@ -369,8 +369,8 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 			$due_date = get_post_meta( $task->ID, '_task_due_date', true );
 
 			if ( $due_date && $due_date >= $today && $due_date <= $cutoff ) {
-				$assignee_id    = get_post_meta( $task->ID, '_task_assigned_to', true );
-				$assignee_name  = '';
+				$assignee_id   = get_post_meta( $task->ID, '_task_assigned_to', true );
+				$assignee_name = '';
 				if ( $assignee_id ) {
 					$user = get_user_by( 'id', (int) $assignee_id );
 					if ( $user ) {
@@ -381,12 +381,12 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 				$priority_raw = get_post_meta( $task->ID, '_task_priority', true );
 
 				$upcoming[] = array(
-					'id'        => $task->ID,
-					'title'     => $task->post_title,
-					'due_date'  => $due_date,
-					'status'    => get_post_meta( $task->ID, '_task_status', true ),
-					'priority'  => $priority_raw ? $priority_raw : 'medium',
-					'assignee'  => $assignee_name,
+					'id'       => $task->ID,
+					'title'    => $task->post_title,
+					'due_date' => $due_date,
+					'status'   => get_post_meta( $task->ID, '_task_status', true ),
+					'priority' => $priority_raw ? $priority_raw : 'medium',
+					'assignee' => $assignee_name,
 				);
 			}
 		}
@@ -436,9 +436,9 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 			}
 
 			$blockers[] = array(
-				'id'      => $task->ID,
-				'title'   => $task->post_title,
-				'reason'  => $block_reason ? $block_reason : __( 'No reason provided', 'mcp-ai-wpoos-pro' ),
+				'id'       => $task->ID,
+				'title'    => $task->post_title,
+				'reason'   => $block_reason ? $block_reason : __( 'No reason provided', 'mcp-ai-wpoos-pro' ),
 				'assignee' => $assignee,
 			);
 		}
@@ -473,7 +473,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 
 		// Factor 1: Blockers.
 		if ( $task_counts['blocked'] > 0 ) {
-			$score += 30;
+			$score         += 30;
 			$risk_factors[] = sprintf(
 				/* translators: %d: number of blocked tasks */
 				__( '%d blocked task(s) are halting progress.', 'mcp-ai-wpoos-pro' ),
@@ -486,7 +486,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 		if ( $total > 0 ) {
 			$completion_pct = ( (int) $task_counts['completed'] / $total ) * 100;
 			if ( $completion_pct < 20 ) {
-				$score += 15;
+				$score         += 15;
 				$risk_factors[] = __( 'Low task completion rate (below 20%).', 'mcp-ai-wpoos-pro' );
 			}
 		}
@@ -495,8 +495,8 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 		if ( $project_end && 'planning' !== $project_status && 'on-hold' !== $project_status ) {
 			$end_timestamp = strtotime( $project_end );
 			if ( $end_timestamp && $end_timestamp < time() ) {
-				$score        += 25;
-				$days_overdue = ceil( ( time() - $end_timestamp ) / DAY_IN_SECONDS );
+				$score         += 25;
+				$days_overdue   = ceil( ( time() - $end_timestamp ) / DAY_IN_SECONDS );
 				$risk_factors[] = sprintf(
 					/* translators: %d: number of days overdue */
 					__( 'Project end date is %d day(s) in the past.', 'mcp-ai-wpoos-pro' ),
@@ -507,13 +507,13 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 
 		// Factor 4: Project status.
 		if ( 'at-risk' === $project_status ) {
-			$score += 20;
+			$score         += 20;
 			$risk_factors[] = __( 'Project is flagged as at-risk.', 'mcp-ai-wpoos-pro' );
 		}
 
 		// Factor 5: Stale tasks.
 		if ( class_exists( 'WP_MCP_AI_PM_Engine' ) ) {
-			$stale = WP_MCP_AI_PM_Engine::detect_stale_tasks( 14 );
+			$stale         = WP_MCP_AI_PM_Engine::detect_stale_tasks( 14 );
 			$project_stale = array_filter(
 				$stale,
 				function ( $s ) use ( $project_id ) {
@@ -521,7 +521,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 				}
 			);
 			if ( count( $project_stale ) > 0 ) {
-				$score += 10;
+				$score         += 10;
 				$risk_factors[] = sprintf(
 					/* translators: %d: number of stale tasks */
 					__( '%d stale task(s) with no recent activity.', 'mcp-ai-wpoos-pro' ),
@@ -708,7 +708,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 			$report .= esc_html__( 'No tasks due in the next 7 days.', 'mcp-ai-wpoos-pro' ) . "\n";
 		} else {
 			foreach ( $upcoming_tasks as $task ) {
-				$line = '- ' . esc_html( $task['title'] );
+				$line  = '- ' . esc_html( $task['title'] );
 				$line .= ' | ' . esc_html__( 'Due', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( $task['due_date'] );
 				$line .= ' | ' . esc_html__( 'Priority', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( $task['priority'] );
 				if ( $task['assignee'] ) {
@@ -728,7 +728,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 				if ( $blocker['assignee'] ) {
 					$line .= ' (' . esc_html( $blocker['assignee'] ) . ')';
 				}
-				$line .= ' — ' . esc_html( $blocker['reason'] );
+				$line   .= ' — ' . esc_html( $blocker['reason'] );
 				$report .= $line . "\n";
 			}
 		}
@@ -849,7 +849,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 		} else {
 			$report .= '<ul>' . "\n";
 			foreach ( $upcoming_tasks as $task ) {
-				$line = '<li>' . esc_html( $task['title'] );
+				$line  = '<li>' . esc_html( $task['title'] );
 				$line .= ' | ' . esc_html__( 'Due', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( $task['due_date'] );
 				$line .= ' | ' . esc_html__( 'Priority', 'mcp-ai-wpoos-pro' ) . ': ' . esc_html( $task['priority'] );
 				if ( $task['assignee'] ) {
@@ -871,7 +871,7 @@ class WP_MCP_AI_Tool_Generate_Status_Report implements WP_MCP_AI_Tool_Interface,
 				if ( $blocker['assignee'] ) {
 					$line .= ' (' . esc_html( $blocker['assignee'] ) . ')';
 				}
-				$line .= ' &mdash; ' . esc_html( $blocker['reason'] );
+				$line   .= ' &mdash; ' . esc_html( $blocker['reason'] );
 				$report .= $line . '</li>' . "\n";
 			}
 			$report .= '</ul>' . "\n";

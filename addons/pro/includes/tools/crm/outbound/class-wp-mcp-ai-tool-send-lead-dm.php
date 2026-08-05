@@ -129,8 +129,8 @@ class WP_MCP_AI_Tool_Send_Lead_Dm implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$platform    = sanitize_key( $arguments['platform'] ?? 'linkedin' );
-		$lead_id     = absint( $arguments['lead_id'] );
+		$platform = sanitize_key( $arguments['platform'] ?? 'linkedin' );
+		$lead_id  = absint( $arguments['lead_id'] );
 
 		// Consent gate.
 		if ( class_exists( 'WP_MCP_AI_CRM_Consent' ) && ! WP_MCP_AI_CRM_Consent::is_permitted( $lead_id, 'dm' ) ) {

@@ -52,15 +52,15 @@ class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'panel_id'       => array(
+				'panel_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the `mcp_ai_comic_panel` post to add lettering to.', 'mcp-ai-wpoos-pro' ),
 				),
-				'image_id'       => array(
+				'image_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of a WordPress attachment/image to letter. Used when panel_id is not provided.', 'mcp-ai-wpoos-pro' ),
 				),
-				'text_elements'  => array(
+				'text_elements' => array(
 					'type'        => 'string',
 					'description' => __( 'JSON-encoded array of text element objects. Each element: { text: string, x: int, y: int, font_size: int, style: "dialogue"|"caption"|"sfx"|"title", color: string, font: string, rotation: int }.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -123,9 +123,9 @@ class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// --- Sanitize all arguments at entry (Gate 1) ---
-		$panel_id  = isset( $arguments['panel_id'] ) ? absint( $arguments['panel_id'] ) : 0;
-		$image_id  = isset( $arguments['image_id'] ) ? absint( $arguments['image_id'] ) : 0;
-		$text_raw  = isset( $arguments['text_elements'] ) ? $arguments['text_elements'] : '';
+		$panel_id = isset( $arguments['panel_id'] ) ? absint( $arguments['panel_id'] ) : 0;
+		$image_id = isset( $arguments['image_id'] ) ? absint( $arguments['image_id'] ) : 0;
+		$text_raw = isset( $arguments['text_elements'] ) ? $arguments['text_elements'] : '';
 
 		// Parse and sanitize text elements.
 		if ( is_string( $text_raw ) ) {
@@ -216,10 +216,10 @@ class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_
 			'comic_lettering_started',
 			'Starting comic panel lettering',
 			array(
-				'panel_id'       => $panel_id,
-				'image_id'       => $source_image_id,
-				'element_count'  => count( $sanitized ),
-				'user_id'        => $user_id,
+				'panel_id'      => $panel_id,
+				'image_id'      => $source_image_id,
+				'element_count' => count( $sanitized ),
+				'user_id'       => $user_id,
 			)
 		);
 
@@ -249,9 +249,9 @@ class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_
 			'comic_lettered',
 			'Comic panel lettered successfully',
 			array(
-				'panel_id'       => $panel_id,
-				'element_count'  => count( $sanitized ),
-				'user_id'        => $user_id,
+				'panel_id'      => $panel_id,
+				'element_count' => count( $sanitized ),
+				'user_id'       => $user_id,
 			)
 		);
 
@@ -259,12 +259,12 @@ class WP_MCP_AI_Tool_Letter_Comic_Panel implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'success' => true,
 			'data'    => array(
-				'panel_id'       => $panel_id,
-				'image_id'       => $source_image_id,
-				'original_url'   => esc_url( $source_image_url ),
-				'lettered_url'   => esc_url( $lettered_url ),
-				'text_elements'  => $sanitized,
-				'element_count'  => count( $sanitized ),
+				'panel_id'      => $panel_id,
+				'image_id'      => $source_image_id,
+				'original_url'  => esc_url( $source_image_url ),
+				'lettered_url'  => esc_url( $lettered_url ),
+				'text_elements' => $sanitized,
+				'element_count' => count( $sanitized ),
 			),
 		);
 	}

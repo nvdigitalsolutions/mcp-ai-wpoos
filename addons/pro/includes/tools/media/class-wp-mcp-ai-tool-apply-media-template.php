@@ -126,9 +126,9 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -138,41 +138,41 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 		$override_params = isset( $arguments['override_params'] ) ? $arguments['override_params'] : array();
 
 		if ( empty( $template_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Template ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Template ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $attachment_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Attachment ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Attachment ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Verify template exists and is a media template.
 		$template = get_post( $template_id );
 		if ( ! $template || 'mcp_ai_media_tpl' !== $template->post_type || 'publish' !== $template->post_status ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid template ID or template is not published.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid template ID or template is not published.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Verify attachment exists and is an image.
 		$attachment = get_post( $attachment_id );
 		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid attachment ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid attachment ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( ! wp_attachment_is_image( $attachment_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Attachment is not an image.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Attachment is not an image.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -181,9 +181,9 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 		$parameters = get_post_meta( $template_id, '_mcp_ai_template_parameters', true );
 
 		if ( empty( $operation ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Template operation is not configured.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Template operation is not configured.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -192,9 +192,9 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 		if ( ! empty( $parameters ) ) {
 			$params = json_decode( $parameters, true );
 			if ( json_last_error() !== JSON_ERROR_NONE ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Template parameters are invalid JSON.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Template parameters are invalid JSON.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -209,9 +209,9 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 		$tool     = $registry->get_tool( 'graphic_editor_plus' );
 
 		if ( ! $tool ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Graphic Editor Plus tool is not available.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Graphic Editor Plus tool is not available.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

@@ -250,7 +250,7 @@ class WP_MCP_AI_Ext_Cog_Settings {
 				'description' => __( 'Model used by ext_cog_analyze_sensory_input when model=auto.', 'mcp-ai-wpoos' ),
 				'options'     => array(
 					'auto'                 => __( 'Auto (use assistant\'s provider)', 'mcp-ai-wpoos' ),
-					'gpt-4.1'               => 'GPT-4o',
+					'gpt-4.1'              => 'GPT-4o',
 					'gpt-4-vision-preview' => 'GPT-4 Vision Preview',
 					'gemini-3.5-flash'     => 'Gemini 3.5 Flash',
 					'gemini-3.1-pro'       => 'Gemini 3.1 Pro',

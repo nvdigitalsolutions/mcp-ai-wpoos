@@ -171,7 +171,7 @@ class WP_MCP_AI_Tool_Enrich_Place_Details implements WP_MCP_AI_Tool_Interface, W
 			}
 			$item               = $this->enrich( $place, $fields, $api_key, $dry_run );
 			$results['items'][] = $item;
-			$results             = $this->tally( $results, $item );
+			$results            = $this->tally( $results, $item );
 			$results['message'] = $item['message'];
 			return $results;
 		}
@@ -201,7 +201,7 @@ class WP_MCP_AI_Tool_Enrich_Place_Details implements WP_MCP_AI_Tool_Interface, W
 		foreach ( $places as $place ) {
 			$item               = $this->enrich( $place, $fields, $api_key, $dry_run );
 			$results['items'][] = $item;
-			$results             = $this->tally( $results, $item );
+			$results            = $this->tally( $results, $item );
 		}
 
 		$results['message'] = sprintf(
@@ -312,7 +312,7 @@ class WP_MCP_AI_Tool_Enrich_Place_Details implements WP_MCP_AI_Tool_Interface, W
 				}
 				if ( in_array( 'website', $fields, true ) && ! get_post_meta( $id, '_place_website', true ) && ! empty( $details['website'] ) ) {
 					update_post_meta( $id, '_place_website', $details['website'] );
-					$added[]          = 'website';
+					$added[]         = 'website';
 					$item['website'] = $details['website'];
 				}
 				if ( in_array( 'price_level', $fields, true ) && ! get_post_meta( $id, '_place_price_level', true ) && isset( $details['price_level'] ) ) {

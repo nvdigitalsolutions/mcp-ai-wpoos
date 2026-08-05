@@ -138,32 +138,32 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['title'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Document title is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Document title is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['document_type'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Document type is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Document type is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Must have either file_url or file_data.
 		if ( empty( $arguments['file_url'] ) && empty( $arguments['file_data'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Either file_url or file_data must be provided.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Either file_url or file_data must be provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Must have either product_id or registration_id.
 		if ( empty( $arguments['product_id'] ) && empty( $arguments['registration_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Either product_id or registration_id must be provided.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Either product_id or registration_id must be provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -171,9 +171,9 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! empty( $arguments['product_id'] ) ) {
 			$product = get_post( $arguments['product_id'] );
 			if ( ! $product || 'mcp_ai_reg_product' !== $product->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Invalid product ID.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Invalid product ID.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -181,9 +181,9 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! empty( $arguments['registration_id'] ) ) {
 			$registration = get_post( $arguments['registration_id'] );
 			if ( ! $registration || 'mcp_ai_registration' !== $registration->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Invalid registration ID.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Invalid registration ID.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -196,9 +196,9 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 			// Handle base64 upload.
 			$upload_result = $this->handle_base64_upload( $arguments['file_data'], $arguments['file_name'] );
 			if ( is_wp_error( $upload_result ) ) {
-				return array(
-					'success' => false,
-					'error'   => $upload_result->get_error_message(),
+				return new WP_Error(
+					'tool_error',
+					$upload_result->get_error_message()
 				);
 			}
 			$file_url = $upload_result['url'];
@@ -215,9 +215,9 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 		$document_id = wp_insert_post( $document_data );
 
 		if ( is_wp_error( $document_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $document_id->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$document_id->get_error_message()
 			);
 		}
 

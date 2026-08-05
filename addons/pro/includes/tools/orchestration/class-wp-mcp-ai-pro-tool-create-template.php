@@ -109,18 +109,18 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 
 		// Validate required fields.
 		if ( empty( $template_name ) || empty( $description ) || empty( $markdown_template ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required fields: template_name, description, and markdown_template are required',
+			return new WP_Error(
+				'tool_error',
+				'Missing required fields: template_name, description, and markdown_template are required'
 			);
 		}
 
 		// Validate category.
 		$valid_categories = array( 'research', 'content', 'data_analysis', 'development', 'marketing', 'custom' );
 		if ( ! in_array( $category, $valid_categories, true ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Invalid category. Must be one of: ' . implode( ', ', $valid_categories ),
+			return new WP_Error(
+				'tool_error',
+				'Invalid category. Must be one of: ' . implode( ', ', $valid_categories )
 			);
 		}
 
@@ -133,9 +133,9 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 			$existing_template = get_post( $template_id );
 
 			if ( ! $existing_template || 'mcp_task_template' !== $existing_template->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => 'Template not found.',
+				return new WP_Error(
+					'tool_error',
+					'Template not found.'
 				);
 			}
 
@@ -145,9 +145,9 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {
-				return array(
-					'success' => false,
-					'error'   => 'You do not have permission to update this template.',
+				return new WP_Error(
+					'tool_error',
+					'You do not have permission to update this template.'
 				);
 			}
 
@@ -186,18 +186,18 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 
 			$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
 			if ( ! $handler ) {
-				return array(
-					'success' => false,
-					'error'   => 'CCT handler not available. Please enable JetEngine.',
+				return new WP_Error(
+					'tool_error',
+					'CCT handler not available. Please enable JetEngine.'
 				);
 			}
 
 			if ( $is_update ) {
 				$result_id = $handler->update_item( $template_id, $template_data );
 				if ( ! $result_id ) {
-					return array(
-						'success' => false,
-						'error'   => 'Failed to update template in CCT',
+					return new WP_Error(
+						'tool_error',
+						'Failed to update template in CCT'
 					);
 				}
 				$template_id = $template_id;
@@ -205,9 +205,9 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 				$template_data['metadata'] = wp_json_encode( array( 'created_at' => current_time( 'mysql' ) ) );
 				$template_id               = $handler->update_item( null, $template_data );
 				if ( ! $template_id ) {
-					return array(
-						'success' => false,
-						'error'   => 'Failed to create template in CCT',
+					return new WP_Error(
+						'tool_error',
+						'Failed to create template in CCT'
 					);
 				}
 			}
@@ -224,9 +224,9 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 				);
 
 				if ( is_wp_error( $result_id ) ) {
-					return array(
-						'success' => false,
-						'error'   => $result_id->get_error_message(),
+					return new WP_Error(
+						'tool_error',
+						$result_id->get_error_message()
 					);
 				}
 
@@ -248,9 +248,9 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 				$template_id = wp_insert_post( $post_data );
 
 				if ( is_wp_error( $template_id ) ) {
-					return array(
-						'success' => false,
-						'error'   => $template_id->get_error_message(),
+					return new WP_Error(
+						'tool_error',
+						$template_id->get_error_message()
 					);
 				}
 
