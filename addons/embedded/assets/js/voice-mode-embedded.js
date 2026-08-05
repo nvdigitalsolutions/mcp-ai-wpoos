@@ -6,11 +6,13 @@
  *
  * Features:
  *   - Push-to-Talk (PTT) button with hold/release behavior
+ *   - Keyboard accessibility (Spacebar hold-to-talk)
  *   - Real-time waveform visualization
  *   - Live transcription overlay
  *   - Multi-backend STT (whisper.cpp WASM, Transformers.js, Gemma 4)
  *   - Voice Activity Detection for auto-start/stop
  *   - Transcript injection into the embedded LLM chat pipeline
+ *   - Voice Tool Calling Bridge — AI can execute tools from spoken commands
  *
  * @package NV_oOS_Embedded
  * @since   1.2.0
@@ -37,11 +39,16 @@
 	class EmbeddedVoiceMode {
 		/**
 		 * @param {Object} options
-		 * @param {HTMLElement} options.container     Chat container element.
-		 * @param {Object}      options.config        Embedded client configuration.
-		 * @param {Function}    options.onTranscript  (text) => void — transcript ready.
-		 * @param {Function}    options.onStateChange (state) => void — state changed.
-		 * @param {Function}    options.onError       (error) => void — error occurred.
+		 * @param {HTMLElement} options.container       Chat container element.
+		 * @param {Object}      options.config          Embedded client configuration.
+		 * @param {Function}    options.onTranscript    (text) => void — transcript ready.
+		 * @param {Function}    options.onStateChange   (state) => void — state changed.
+		 * @param {Function}    options.onError         (error) => void — error occurred.
+		 * @param {Object}      [options.webllmClient]  WebLLM function calling client (for tool calling).
+		 * @param {Object}      [options.toolAdapter]   Tool adapter (for tool execution).
+		 * @param {Array}       [options.tools]         Available WordPress tools.
+		 * @param {Function}    [options.onToolCall]    (toolName, args) => void — tool invoked.
+		 * @param {Function}    [options.onAIResponse]  (text) => void — final AI response after tools.
 		 */
 		constructor(options) {
 			options = options || {};
@@ -73,11 +80,23 @@
 			/** PTT button pressed state. */
 			this._pttPressed = false;
 
-			/** Transcription buffer for interim results. */
+		/** Transcription buffer for interim results. */
 			this._transcriptionBuffer = '';
 
 			/** Waveform animation ID. */
 			this._waveformAnimationId = null;
+
+			/** Voice Tool Calling Bridge (v1.3.0). */
+			this.toolBridge = null;
+			this._enableToolCalling = !!(
+				options.webllmClient &&
+				options.toolAdapter &&
+				options.tools &&
+				options.tools.length
+			);
+
+			/** Keyboard PTT state. */
+			this._keyboardPTTActive = false;
 		}
 
 		/**
@@ -137,6 +156,33 @@
 				console.error('[NV oOS Embedded] Audio capture error:', err);
 				self._showError('Microphone error: ' + err.message);
 			};
+
+			// Set up voice tool calling bridge if enabled.
+			if (this._enableToolCalling && window.NV_oOS_VoiceToolCallingBridge) {
+				this.toolBridge = new window.NV_oOS_VoiceToolCallingBridge({
+					webllmClient: options.webllmClient,
+					toolAdapter: options.toolAdapter,
+					tools: options.tools,
+					onResponse: function (text) {
+						self._setMode(MODE_OFF);
+						if (typeof options.onAIResponse === 'function') {
+							options.onAIResponse(text);
+						}
+					},
+					onToolCall: function (toolName, args) {
+						self._setStatus('Running: ' + toolName + '...');
+						if (typeof options.onToolCall === 'function') {
+							options.onToolCall(toolName, args);
+						}
+					},
+					onProgress: function (status) {
+						self._setStatus(status);
+					},
+					onError: function (err) {
+						self._showError('AI error: ' + err.message);
+					},
+				});
+			}
 
 			this._initialized = true;
 		}
@@ -279,6 +325,23 @@
 				self.stopPTT();
 			});
 
+			// Keyboard: Spacebar hold-to-talk (WCAG 2.1).
+			pttButton.addEventListener('keydown', function (e) {
+				if (e.code === 'Space' && !self._keyboardPTTActive) {
+					e.preventDefault();
+					self._keyboardPTTActive = true;
+					self.startPTT();
+				}
+			});
+
+			pttButton.addEventListener('keyup', function (e) {
+				if (e.code === 'Space' && self._keyboardPTTActive) {
+					e.preventDefault();
+					self._keyboardPTTActive = false;
+					self.stopPTT();
+				}
+			});
+
 			pttWrap.appendChild(pttButton);
 			this.container.appendChild(pttWrap);
 
@@ -343,7 +406,20 @@
 				// Show transcription in overlay.
 				this._showTranscription(text);
 
-				// Fire callback.
+				if (!text) {
+					return;
+				}
+
+				// If tool calling is enabled, route through the bridge.
+				// The bridge sends the transcript to WebLLM with tools.
+				// The AI decides: direct response or tool execution.
+				if (this.toolBridge) {
+					this._setMode(MODE_PROCESSING);
+					await this.toolBridge.processTranscript(text);
+					return;
+				}
+
+				// Fire transcript callback (plain text mode).
 				if (typeof this.onTranscript === 'function') {
 					this.onTranscript(text);
 				}

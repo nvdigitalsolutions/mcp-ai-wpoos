@@ -29,6 +29,10 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-hea
 require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-healthcare-audit.php';
 require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-healthcare-capabilities.php';
 
+// OpenMed clinical NLP client (v1.4.0). Always loaded for health checks.
+// Configuration-gated — tools only register when OpenMed service is configured.
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-openmed-client.php';
+
 // PHI-acknowledged gate (multisite); single-site installs always pass.
 if ( ! WP_MCP_AI_Healthcare_Engine::phi_acknowledged() ) {
 	return;
@@ -64,5 +68,19 @@ if ( $wp_mcp_ai_vitals_enabled ) {
 // --- Performance optimization (per-member autoload, reminder pruning, care-plan cap) ---
 require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-healthcare-optimization.php';
 WP_MCP_AI_Healthcare_Optimization::init();
+
+// --- OpenMed clinical NLP tools (v1.4.0) ---
+// Registered via wp_mcp_ai_register_tools action.
+// Tools gate themselves on OpenMed client availability at execution time.
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-tool-deidentify-health-record.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-tool-extract-clinical-entities.php';
+
+add_action(
+	'wp_mcp_ai_register_tools',
+	function ( $registry ) {
+		$registry->register_tool( new WP_MCP_AI_Tool_Deidentify_Health_Record() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Extract_Clinical_Entities() );
+	}
+);
 
 unset( $wp_mcp_ai_vitals_enabled, $wp_mcp_ai_settings );
