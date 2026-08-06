@@ -1,5 +1,60 @@
 # oOS – Changelog
 
+## [1.1.46] - 2026-08-06
+
+### Added — Comprehensive Backup & Restore (Proposal 020)
+
+- **Export Manager** (`includes/admin/export/class-wp-mcp-ai-export-manager.php`, 512 lines) — orchestrates JSON-based export/import across all registered providers with chunked file I/O, progress reporting, and integrity verification. (PRs #5805, #5807)
+- **8 Base Export Providers** — modular providers for Core Settings (258 lines), Assistants (285 lines), CPTs (319 lines), Custom Tables (394 lines), Federation (253 lines), Addon Options (337 lines), and Toolkit Options (282 lines). Each implements `WP_MCP_AI_Export_Provider_Interface`. (PR #5805)
+- **3 Pro Export Providers** — JetEngine CCTs (329 lines), License keys (190 lines), and Remote Sites (324 lines). (PR #5807)
+- **Advanced Settings UI** — Backup & Restore section in Settings → Advanced with provider checkboxes, export/import buttons, and progress feedback. `class-wp-mcp-ai-section-advanced.php` expanded by 638 lines. (PR #5805)
+- **Export README** (`includes/admin/export/README.md`, 202 lines) — subsystem architecture, provider contract, adding new providers, security model.
+- **Proposal 020** — proposal (308 lines) and implementation plan (1,249 lines) in `docs/project/proposals/`. (PR #5805)
+
+### Added — GitHub-Based Plugin Updater
+
+- **Plugin Updater** (`includes/class-wp-mcp-ai-plugin-updater.php`, 772 lines) — fetches release metadata from GitHub Releases API, compares versions, downloads and installs updates via `Plugin_Upgrader`. Full-build distribution update support with Pro addon awareness. (PRs #5800–#5804)
+- **Base-to-Complete Upgrade Path** — Settings → Advanced now offers a one-click upgrade from base-only to the complete package when a full build release is available on GitHub. (PR #5803)
+- **Pro Addon Update Support** — updater detects and updates the Pro addon alongside the base plugin when bundled in a complete package. Hides redundant Pro updater UI when already included. (PRs #5801, #5802)
+- **Safe Update Mechanism** — core plugin updates use WordPress `Plugin_Upgrader` for proper filesystem handling; Pro updates use direct copy with rollback support. Nonce-scoped update actions. (PR #5802)
+- **WPCS Cleanup** — indentation, alignment, and inline comment fixes in updater files; phpcs:ignore annotation for pre-existing nonce warning. (PR #5804)
+
+### Added — Abilities API Selective Adoption (Proposal 019)
+
+- **Abilities Framework** (`includes/abilities/`) — new subsystem for registering machine-readable plugin operations with JSON Schema contracts. (PR #5799)
+  - `WP_MCP_AI_Ability_Registrar` (188 lines) — ability registration, discovery, and lifecycle.
+  - `WP_MCP_AI_Ability_Bridge` (235 lines) — bridges abilities to the tool registry for MCP/AI agent discovery.
+  - `WP_MCP_AI_Ability_Category_Registrar` (92 lines) — hierarchical ability grouping.
+  - `WP_MCP_AI_Ability_Security_Bridge` (289 lines) — capability-based access control for abilities.
+  - `abilities-init.php` (49 lines) — bootstrap integration.
+- **Tool-Ability Interface** (`includes/interfaces/interface-wp-mcp-ai-tool-ability.php`, 61 lines) — contract for tools that expose their capabilities as discoverable abilities.
+- **Abilities Registry Reference** (`docs/reference/abilities-registry.md`, 106 lines) — usage guide and API reference.
+- **Proposal 019** — proposal (220 lines), implementation plan (452 lines), and appendix (580 lines) in `docs/project/proposals/`. (PR #5799)
+- **5 Test Files** in `tests/abilities/` — backward compatibility (139 lines), bridge (279 lines), registrar (190 lines), category registrar (96 lines), mock tool (158 lines).
+- **Abilities README** (`includes/abilities/README.md`, 33 lines) — subsystem overview.
+
+### Fixed — Status Page (Pro)
+
+- **Fatal Error Fix** — missing methods in `class-wp-mcp-ai-pro-status-ajax.php` causing REST endpoint fatal errors now resolved. (PR #5806)
+- **JS Errors & i18n** — status page JavaScript errors fixed; text domain consistency corrected across status dashboard. `pro-status-page.js` (32 lines changed), `pro-status-dashboard-page.php` (12 lines changed). (PR #5806)
+
+### Added — Knowledge Base Auto-Build
+
+- **CI Workflow** — GitHub Actions automatically builds `knowledge-base.zip` when playbook files change, ensuring the packaged knowledge base stays current with the profession/profession registry. (PR #5797)
+
+### Changed — PHPCS Cleanup & Canonical Envelope Compliance
+
+- **Parse Error Fixes** — remaining parse errors from the canonical envelope conversion resolved across tool files. (PR #5798)
+- **Text Domain Mismatches** — corrected `mcp-ai-wpoos` vs `mcp-ai-wpoos-pro` text domain usage across Pro tool files. (PR #5798)
+- **WPCS Formatting** — indentation, alignment, and inline comment fixes applied to 100+ files across base, Pro, and core tool directories. (PRs #5798, #5804)
+- **OOS Bridge Wave 2** — `includes/bootstrap/oos-bridge-wave2.php` updated with new tool registry integrations. (PR #5799)
+
+### Versioning
+
+- Bumped to **1.1.46** across all version-bearing files. Pro addon: **1.1.29**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
 ## [1.1.45] - 2026-08-05
 
 ### Added — Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR) — Proposal 018

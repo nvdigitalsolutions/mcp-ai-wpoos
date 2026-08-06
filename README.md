@@ -11,8 +11,8 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.45
-**Release Date:** 2026-08-05
+**Version:** 1.1.46
+**Release Date:** 2026-08-06
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
@@ -148,16 +148,15 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-### ✨ What's New at a Glance (v1.1.45)
+### ✨ What's New at a Glance (v1.1.46)
 
-- 📄 **Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR).** New `WP_MCP_AI_Self_Hosted_OCR_Client` (640 lines) supports both Baidu Unlimited-OCR (93.23% OmniDocBench, MIT) and DeepSeek-OCR via vLLM with OpenAI-compatible REST APIs. Zero per-page API costs, documents never leave your server. Pro tools: `pro_unlimited_ocr` (dedicated long-horizon tool with structured output, table/form extraction, Paper Store integration) and `pro_batch_ocr` (Action Scheduler async batch processing). Structured extraction service (373 lines) for block/table/form-field parsing. Embedded backend registration + OCR health dashboard. Admin settings UI with Test Connection buttons. Base `extract_image_text` and Pro `pro_document_ocr` now include `unlimited_ocr` and `deepseek_ocr` provider options. (PR #5795, Proposal 018)
-- 🎙️ **Embedded Addon v0.2.0.** Backend registry expanded with voice tool calling, OpenMed healthcare tools, and new MCP abilities. OCR document ability registered via WordPress Abilities API for AI agent discovery.
-- 🏥 **AI Transparency & SGI Compliance (Proposal 017).** AI transparency and SGI compliance infrastructure integrated.
-- 📚 **Comic Reader Addon v0.2.0.** Modern comic book reader and creator updated with enhanced CBR/CBZ/CB7/CBT format support.
-- 🕸️ **Graphify Ecosystem.** Standalone plugins released: nvoos-graphify v1.0.1, nvoos-graphify-ai v1.0.0, nvoos-graphify-ai-platform v1.0.0.
-- 🤖 **Build & Release Automation.** Auto-build nvdigital-oos WP.org packages on every release.
-- 🐛 **CCT Stability & API Key Fixes** — see [v1.1.44 release notes](#-latest-updates-v1144--august-2026) below.
-- 🛡️ **Security Hardening (Proposals 016+017)** — see [v1.1.44 release notes](#-latest-updates-v1144--august-2026) below.
+- 💾 **Comprehensive Backup & Restore (Proposal 020).** New modular export system with 11 providers (8 base + 3 Pro) covering Core Settings, Assistants, CPTs, Custom Tables, Federation, Addon/Toolkit Options, JetEngine CCTs, Licenses, and Remote Sites. JSON-based export/import with chunked file I/O and progress reporting. Admin UI in Settings → Advanced. (PRs #5805, #5807)
+- 🔄 **GitHub-Based Plugin Updater.** New `WP_MCP_AI_Plugin_Updater` (772 lines) fetches releases from GitHub Releases API and installs updates via WordPress `Plugin_Upgrader`. Base-to-complete upgrade path in Settings → Advanced. Pro addon update support with rollback. Nonce-scoped actions. (PRs #5800–#5804)
+- 🔌 **Abilities API Selective Adoption (Proposal 019).** New `includes/abilities/` framework — Registrar, Bridge, Category Registrar, and Security Bridge for machine-readable plugin operations with JSON Schema contracts. Tool-ability interface for MCP/AI agent discovery. 5 test files. (PR #5799)
+- 🐛 **Status Page Fixes.** Fatal error in Pro status REST endpoint resolved. JS errors and i18n text domain consistency fixed on the status dashboard. (PR #5806)
+- 📦 **Knowledge Base Auto-Build.** CI auto-builds `knowledge-base.zip` when playbook files change. (PR #5797)
+- 🧹 **PHPCS Cleanup.** Parse error fixes from canonical envelope conversion, text domain mismatch corrections, and WPCS formatting across 100+ tool files. (PRs #5798, #5804)
+- 📄 **Self-Hosted OCR & More** — see [v1.1.45 release notes](#-latest-updates-v1145--august-2026) below.
 
 ### ✨ What's New at a Glance (v1.1.43)
 
@@ -566,17 +565,29 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.45 — August 2026)
+## 🆕 Latest Updates (v1.1.46 — August 2026)
 
-### August 5, 2026 — Self-Hosted OCR, Embedded v0.2.0, AI Transparency, Graphify, Build Automation 📄🎙️🏥🕸️🤖
+### August 5–6, 2026 — Backup & Restore, Plugin Updater, Abilities API, Status Page Fixes, PHPCS Cleanup
 
-- ✅ **Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR) — Proposal 018 (17 files, +4,087 lines).** New unified vLLM client class supports both Baidu Unlimited-OCR (3B, MIT, 93.23% OmniDocBench) and DeepSeek-OCR (~3B, MIT) via self-hosted GPU infrastructure. Both models share the same integration pattern (vLLM + OpenAI-compatible REST API + NGramPerReqLogitsProcessor). New Pro tools: `pro_unlimited_ocr` (dedicated long-horizon OCR with structured output modes — text/structured/raw, table extraction, form field detection, Paper Store persistence) and `pro_batch_ocr` (Action Scheduler batch processing, sync up to 10 docs, async up to 100). Structured extraction service with `<|det|>` marker parsing, table/form-field extraction. Existing `extract_image_text` (Base) and `pro_document_ocr` (Pro) tools now include `unlimited_ocr` and `deepseek_ocr` as provider enum values. Admin settings: two new endpoint URL fields with AJAX Test Connection buttons. OCR client: 640 lines with encode/fetch/image OCR/multi-page methods, model-specific defaults, post-processing pipeline.
-- ✅ **Embedded Addon v0.2.0 — Backend Registry, Voice, OpenMed, MCP Abilities.** Embedded backend registry expanded. Voice tool calling support added. OpenMed healthcare tools integrated. New OCR document ability registered via `wp_register_ability()` for AI agent discovery through the WordPress Abilities API. OCR health dashboard page with connection status, model info, requirements table, and Docker deployment guide.
-- ✅ **AI Transparency & SGI Compliance — Proposal 017.** AI transparency and SGI compliance infrastructure integrated into the plugin framework.
+- ✅ **Comprehensive Backup & Restore — Proposal 020 (14 files, +3,660 lines).** New modular export system with export manager (512 lines) and 11 export providers (8 base + 3 Pro). Base providers: Core Settings (258 lines), Assistants (285 lines), CPTs (319 lines), Custom Tables (394 lines), Federation (253 lines), Addon Options (337 lines), Toolkit Options (282 lines). Pro providers: JetEngine CCTs (329 lines), License keys (190 lines), Remote Sites (324 lines). All implement `WP_MCP_AI_Export_Provider_Interface` with `export()` and `import()` methods. JSON-based export/import with chunked file I/O and progress reporting. Admin UI in Settings → Advanced expanded by 638 lines with provider checkboxes, export/import buttons, and progress feedback. Subsystem architecture documented in `includes/admin/export/README.md` (202 lines). Proposal 020 includes proposal (308 lines) and implementation plan (1,249 lines). (PRs #5805, #5807)
+- ✅ **GitHub-Based Plugin Updater — 5 PRs, +772 lines.** New `WP_MCP_AI_Plugin_Updater` class fetches release metadata from the GitHub Releases API, compares versions against installed, downloads ZIP artifacts, and installs updates via WordPress `Plugin_Upgrader`. Base-to-complete upgrade path added to Settings → Advanced — one-click upgrade from base-only to complete package. Pro addon update support detects and updates the Pro addon alongside the base plugin when bundled; hides redundant Pro updater UI when already included. Core updates use `Plugin_Upgrader`; Pro updates use direct copy with rollback. Nonce-scoped update actions with proper capability checks. WPCS formatting and phpcs:ignore annotations for pre-existing nonce warnings in updater files. (PRs #5800–#5804)
+- ✅ **Abilities API Selective Adoption — Proposal 019 (11 files, +2,364 lines).** New `includes/abilities/` framework introducing machine-readable plugin operations with JSON Schema contracts for AI agent and MCP tool discovery. Registrar (188 lines) for ability registration/discovery/lifecycle. Bridge (235 lines) connecting abilities to the tool registry for MCP and AI agent discovery. Category Registrar (92 lines) for hierarchical ability grouping. Security Bridge (289 lines) providing capability-based access control per ability. New `WP_MCP_AI_Tool_Ability_Interface` (61 lines) — contract for tools exposing discoverable abilities. Bootstrap integration at `abilities-init.php` (49 lines). 5 PHPUnit test files: backward compatibility (139 lines), bridge (279 lines), registrar (190 lines), category registrar (96 lines), mock tool (158 lines). Reference documentation at `docs/reference/abilities-registry.md` (106 lines). Folder README at `includes/abilities/README.md` (33 lines). Proposal 019 includes proposal (220 lines), implementation plan (452 lines), and appendix (580 lines). OOS Bridge Wave 2 updated with new tool registry integrations. (PR #5799)
+- ✅ **Status Page Fixes — 2 files, +108 lines.** Fatal error in Pro status REST endpoint resolved — missing methods in `class-wp-mcp-ai-pro-status-ajax.php` causing 500 errors on status API calls. JavaScript errors on the status dashboard page fixed with proper i18n text domain consistency. `pro-status-page.js` (32 lines changed) and `pro-status-dashboard-page.php` (12 lines changed). (PR #5806)
+- ✅ **Knowledge Base Auto-Build.** CI workflow auto-builds `knowledge-base.zip` when playbook files change, ensuring the packaged knowledge base stays current with the profession registry. (PR #5797)
+- ✅ **PHPCS Cleanup & Canonical Envelope Compliance.** Remaining parse errors from the canonical envelope conversion resolved across tool files. Text domain mismatches (`mcp-ai-wpoos` vs `mcp-ai-wpoos-pro`) corrected across Pro tool files. WPCS indentation, alignment, and inline comment fixes applied to 100+ files across base, Pro, and core tool directories. (PRs #5798, #5804)
+- 📦 **Versioning** — bumped to **1.1.46** across all version-bearing files. Pro addon: 1.1.29. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**. Knowledge base: **311 professions** (12 industry categories).
+
+## 🆕 Previous Updates (v1.1.45 — August 2026)
+
+### August 5, 2026 — Self-Hosted OCR, Embedded v0.2.0, AI Transparency, Graphify, Build Automation
+
+- ✅ **Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR) — Proposal 018 (17 files, +4,087 lines).** New unified vLLM client class supports both Baidu Unlimited-OCR (3B, MIT, 93.23% OmniDocBench) and DeepSeek-OCR (~3B, MIT) via self-hosted GPU infrastructure. Both models share the same integration pattern (vLLM + OpenAI-compatible REST API + NGramPerReqLogitsProcessor). New Pro tools: `pro_unlimited_ocr` (dedicated long-horizon OCR with structured output modes — text/structured/raw, table extraction, form field detection, Paper Store persistence) and `pro_batch_ocr` (Action Scheduler batch processing, sync up to 10 docs, async up to 100). Structured extraction service with marker parsing, table/form-field extraction. Existing `extract_image_text` (Base) and `pro_document_ocr` (Pro) tools now include `unlimited_ocr` and `deepseek_ocr` as provider enum values. Admin settings: two new endpoint URL fields with AJAX Test Connection buttons. OCR client: 640 lines.
+- ✅ **Embedded Addon v0.2.0.** Backend registry expanded with voice tool calling, OpenMed healthcare tools, and new MCP abilities. OCR document ability registered via `wp_register_ability()` for AI agent discovery. OCR health dashboard page.
+- ✅ **AI Transparency & SGI Compliance — Proposal 017.** AI transparency and SGI compliance infrastructure integrated.
 - ✅ **Comic Reader Addon v0.2.0.** Updated with enhanced format support and reading interface improvements.
-- ✅ **Graphify Ecosystem Releases.** Three standalone plugins released: nvoos-graphify v1.0.1, nvoos-graphify-ai v1.0.0, nvoos-graphify-ai-platform v1.0.0.
-- ✅ **Build & Release Automation.** Auto-build workflow for nvdigital-oos WP.org packages triggers on every release. (PR #5794)
-- 📦 **Versioning** — bumped to **1.1.45** across all version-bearing files. Pro addon: 1.1.28. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**. Knowledge base: **311 professions** (12 industry categories).
+- ✅ **Graphify Ecosystem.** Standalone plugins: nvoos-graphify v1.0.1, nvoos-graphify-ai v1.0.0, nvoos-graphify-ai-platform v1.0.0.
+- ✅ **Build & Release Automation.** Auto-build nvdigital-oos WP.org packages on every release. (PR #5794)
+- 📦 **Versioning** — bumped to **1.1.45** across all version-bearing files. Pro addon: 1.1.28. Tool count: ~265 base + ~1,237 Pro (~1,502 total). Provider count: **15** providers. Addon count: **27**. Knowledge base: **311 professions** (12 industry categories).
 
 ## 🆕 Previous Updates (v1.1.44 — August 2026)
 

@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **August 4, 2026** · Version: **2.12**
+> Last reviewed: **August 6, 2026** · Version: **2.13**
 
 ### Related Files
 
@@ -364,11 +364,11 @@ Stateless core — sessions/initialize/initialized retired (SEP-2567, SEP-2575).
 
 Recursive descent parser with inline YAML, nested objects, flow sequences. Trust tiers: unverified / machine-confirmed / human-reviewed. New okf_validate_attestation tool. Full v0.1 backward compat.
 
-### Security Hardening v1.1.43–v1.1.45
+### Security Hardening v1.1.43–v1.1.46
 
 SSRF across 7 providers. SQL table-name validation. Auth gating (A2A cards, Chat SPA endpoints). IP-based guest rate-limiting. safe_unserialize helper. Proposal 016 (277 autoload optimizations, phpcs sweep, 8 findings). Proposal 017 (12 polling/queue/load-balancing weaknesses). Deferred items #5755 (post meta, term, REST filtering). Phase 3 operational (audit logger, CSP, posture signals).
 
-### Architecture (v1.1.43–v1.1.45)
+### Architecture (v1.1.43–v1.1.46)
 
 Pro Module Registry (625-line init decomposed to PSR-4). PlatformFlushInterface (last WP ref extracted from nvoos/core). ICP System (7-dimension scoring). CCT stability (mutex lock, FlowHub guard, base-plugin graceful degradation). Veo/Gemini fixes (async context, API key resolution).
 
@@ -385,6 +385,29 @@ Backend registry expanded with voice tool calling, OpenMed healthcare tools, and
 ### AI Transparency & SGI Compliance (v1.1.45)
 
 AI transparency and SGI compliance infrastructure (Proposal 017) integrated into the plugin framework — part of ongoing regulatory alignment for AI-powered operations.
+
+### Backup & Restore — Modular Export System (v1.1.46)
+
+New comprehensive backup and restore subsystem in `includes/admin/export/` with an export manager (`WP_MCP_AI_Export_Manager`, 512 lines) orchestrating JSON-based export/import across 11 modular export providers (8 base + 3 Pro). Each provider implements `WP_MCP_AI_Export_Provider_Interface` with `export()` and `import()` methods. Base providers: Core Settings (258 lines), Assistants (285 lines), CPTs (319 lines), Custom Tables (394 lines), Federation (253 lines), Addon Options (337 lines), Toolkit Options (282 lines). Pro providers: JetEngine CCTs (329 lines), License keys (190 lines), Remote Sites (324 lines). Admin UI in Settings → Advanced with provider checkboxes, export/import buttons, and progress feedback. Subsystem README at `includes/admin/export/README.md` (202 lines). Proposal 020 reference: `docs/project/proposals/020-comprehensive-backup-restore-proposal.md`.
+
+### Plugin Updater — GitHub-Based Auto-Update (v1.1.46)
+
+New auto-update system for full-build (GitHub-sourced) distributions via `WP_MCP_AI_Plugin_Updater` (772 lines in `includes/`). Fetches release metadata from GitHub Releases API, compares semantic versions, downloads ZIP artifacts, and installs via WordPress `Plugin_Upgrader`. Base-to-complete upgrade path: Settings → Advanced offers one-click upgrade from base-only to complete package. Pro addon awareness: detects bundled Pro, updates it alongside base, hides redundant Pro updater UI. Safe update pattern: `Plugin_Upgrader` for core, direct copy with rollback for Pro. Nonce-scoped update actions with `current_user_can( 'install_plugins' )` capability checks. Initialised in `includes/bootstrap/loader.php` after the updater class is loaded.
+
+### Abilities API — Machine-Readable Plugin Operations (v1.1.46)
+
+New framework in `includes/abilities/` for registering machine-readable plugin operations with JSON Schema contracts, enabling AI agent and MCP tool discovery:
+- `WP_MCP_AI_Ability_Registrar` (188 lines) — ability registration, discovery, and lifecycle.
+- `WP_MCP_AI_Ability_Bridge` (235 lines) — bridges abilities to the tool registry for MCP/AI agent discovery.
+- `WP_MCP_AI_Ability_Category_Registrar` (92 lines) — hierarchical ability grouping.
+- `WP_MCP_AI_Ability_Security_Bridge` (289 lines) — capability-based access control per ability.
+- `WP_MCP_AI_Tool_Ability_Interface` (61 lines, `includes/interfaces/`) — contract for tools exposing discoverable abilities.
+- Bootstrap via `abilities-init.php` (49 lines). Test suite in `tests/abilities/` (5 files, 862 lines total).
+- Reference: `docs/reference/abilities-registry.md`, Proposal 019 in `docs/project/proposals/019-abilities-api-selective-adoption-*.md`.
+
+### Status Page Fixes (v1.1.46)
+
+Pro status REST endpoint fatal error resolved (missing methods in `class-wp-mcp-ai-pro-status-ajax.php`). JS errors and i18n text domain consistency fixed on the status dashboard (`pro-status-page.js`, `pro-status-dashboard-page.php`).
 
 ### Framework-Agnostic Core — lib/core (v1.1.42)
 
