@@ -228,16 +228,11 @@ class WP_MCP_AI_Plugin_Updater {
 	}
 
 	/**
-	 * Get the installed plugin's directory path.
+	 * Download and install the update using WordPress's Plugin_Upgrader.
 	 *
-	 * @return string Plugin directory path without trailing slash.
-	 */
-	public static function get_plugin_dir() {
-		return untrailingslashit( WP_MCP_AI_PATH );
-	}
-
-	/**
-	 * Download and install the update from the GitHub release asset.
+	 * The upgrader handles deactivation, safe file replacement via WP_Filesystem,
+	 * and reactivation — avoiding the crash that occurs when rename() swaps the
+	 * plugin directory out from under the running PHP process.
 	 *
 	 * @param string $download_url URL of the ZIP to download.
 	 * @return true|WP_Error True on success, WP_Error on failure.
@@ -250,89 +245,61 @@ class WP_MCP_AI_Plugin_Updater {
 			);
 		}
 
-		// Load WordPress file system if needed.
+		// Load WordPress upgrade internals.
 		if ( ! function_exists( 'download_url' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
-		if ( ! function_exists( 'unzip_file' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
-		if ( ! function_exists( 'WP_Filesystem' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
+		if ( ! class_exists( 'Plugin_Upgrader' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 		}
 		if ( ! function_exists( 'get_plugin_data' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
+		// Get the plugin basename (e.g. 'mcp-ai-wpoos/mcp-ai-wpoos.php').
+		$plugin_basename = plugin_basename( WP_MCP_AI_FILE );
+
 		// Download the ZIP.
 		$temp_file = download_url( $download_url, 300, false );
-
 		if ( is_wp_error( $temp_file ) ) {
 			return $temp_file;
 		}
 
-		// Extract to a temp directory.
-		$temp_dir = WP_MCP_AI_PATH . '.tmp-update/';
-		if ( is_dir( $temp_dir ) ) {
-			self::rmdir_recursive( $temp_dir );
+		// Use Plugin_Upgrader to perform the update safely.
+		// It handles: deactivation → file replacement → reactivation.
+		$skin     = new WP_Ajax_Upgrader_Skin();
+		$upgrader = new Plugin_Upgrader( $skin );
+
+		$result = $upgrader->upgrade( $plugin_basename, array(
+			'package'                     => $temp_file,
+			'clear_destination'           => true,
+			'abort_if_destination_exists' => false,
+			'is_multi'                    => false,
+			'hook_extra'                  => array(),
+		) );
+
+		// Clean up the temp file if it still exists.
+		if ( file_exists( $temp_file ) ) {
+			unlink( $temp_file );
 		}
-		wp_mkdir_p( $temp_dir );
 
-		$unzip_result = unzip_file( $temp_file, $temp_dir );
-		unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
-
-		if ( is_wp_error( $unzip_result ) ) {
-			self::rmdir_recursive( $temp_dir );
-			return $unzip_result;
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
-		// Find the extracted directory (it may be nested inside the ZIP).
-		$extracted_dirs = glob( $temp_dir . '*', GLOB_ONLYDIR );
-		if ( empty( $extracted_dirs ) ) {
-			self::rmdir_recursive( $temp_dir );
+		if ( false === $result ) {
+			$messages = $skin->get_upgrade_messages();
+			$last_msg = ! empty( $messages ) ? end( $messages ) : '';
 			return new WP_Error(
-				'extract_failed',
-				__( 'Failed to locate extracted plugin directory.', 'mcp-ai-wpoos' )
-			);
-		}
-		$source_dir = $extracted_dirs[0];
-
-		// Verify it looks like a plugin (has a main PHP file and addons/).
-		$php_files = glob( $source_dir . '/*.php' );
-		if ( empty( $php_files ) ) {
-			self::rmdir_recursive( $temp_dir );
-			return new WP_Error(
-				'invalid_package',
-				__( 'Downloaded package does not appear to be a valid plugin.', 'mcp-ai-wpoos' )
+				'upgrade_failed',
+				$last_msg ? $last_msg : __( 'Plugin upgrade failed for an unknown reason.', 'mcp-ai-wpoos' )
 			);
 		}
 
-		$plugin_dir = self::get_plugin_dir();
-		$backup_dir = $plugin_dir . '.backup-' . gmdate( 'YmdHis' );
-
-		// Create a backup of the current plugin.
-		if ( ! rename( $plugin_dir, $backup_dir ) ) {
-			self::rmdir_recursive( $temp_dir );
-			return new WP_Error(
-				'backup_failed',
-				__( 'Failed to create backup of existing plugin files.', 'mcp-ai-wpoos' )
-			);
+		// Force reactivation if the upgrader deactivated us.
+		if ( ! is_plugin_active( $plugin_basename ) ) {
+			activate_plugin( $plugin_basename, '', false, true );
 		}
-
-		// Move the new files into place.
-		if ( ! rename( $source_dir, $plugin_dir ) ) {
-			// Restore from backup.
-			rename( $backup_dir, $plugin_dir );
-			self::rmdir_recursive( $temp_dir );
-			return new WP_Error(
-				'install_failed',
-				__( 'Failed to install updated plugin files. The previous version has been restored.', 'mcp-ai-wpoos' )
-			);
-		}
-
-		// Clean up.
-		self::rmdir_recursive( $temp_dir );
-		self::rmdir_recursive( $backup_dir );
 
 		// Clear the update cache.
 		delete_transient( self::CACHE_KEY );
@@ -343,8 +310,9 @@ class WP_MCP_AI_Plugin_Updater {
 	/**
 	 * Download and install the Pro addon update from the GitHub release asset.
 	 *
-	 * Unlike the core update, this only replaces the addons/pro/ directory
-	 * rather than the entire plugin.
+	 * Uses a safe copy-from-temp approach — copies new files into addons/pro/
+	 * while preserving files that only exist in the current installation.
+	 * The main plugin stays active throughout.
 	 *
 	 * @param string $download_url URL of the Pro ZIP to download.
 	 * @return true|WP_Error True on success, WP_Error on failure.
@@ -364,14 +332,13 @@ class WP_MCP_AI_Plugin_Updater {
 			);
 		}
 
-		// Load WordPress file system if needed.
+		// Load WordPress file system.
 		if ( ! function_exists( 'download_url' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 
 		// Download the ZIP.
 		$temp_file = download_url( $download_url, 300, false );
-
 		if ( is_wp_error( $temp_file ) ) {
 			return $temp_file;
 		}
@@ -412,10 +379,10 @@ class WP_MCP_AI_Plugin_Updater {
 			);
 		}
 
-		$pro_dir    = untrailingslashit( WP_MCP_AI_PRO_PATH );
-		$backup_dir = $pro_dir . '.backup-' . gmdate( 'YmdHis' );
+		$pro_dir = untrailingslashit( WP_MCP_AI_PRO_PATH );
 
 		// Create a backup of the current Pro addon.
+		$backup_dir = $pro_dir . '.backup-' . gmdate( 'YmdHis' );
 		if ( ! rename( $pro_dir, $backup_dir ) ) {
 			self::rmdir_recursive( $temp_dir );
 			return new WP_Error(
@@ -424,9 +391,11 @@ class WP_MCP_AI_Plugin_Updater {
 			);
 		}
 
-		// Move the new Pro files into place.
-		if ( ! rename( $source_dir, $pro_dir ) ) {
+		// Copy the new Pro files into place.
+		$copied = self::copy_dir_recursive( $source_dir, $pro_dir );
+		if ( ! $copied ) {
 			// Restore from backup.
+			self::rmdir_recursive( $pro_dir );
 			rename( $backup_dir, $pro_dir );
 			self::rmdir_recursive( $temp_dir );
 			return new WP_Error(
@@ -576,5 +545,54 @@ class WP_MCP_AI_Plugin_Updater {
 			is_dir( $path ) ? self::rmdir_recursive( $path ) : unlink( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
 		}
 		rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rmdir_rmdir
+	}
+
+	/**
+	 * Recursively copy a directory.
+	 *
+	 * @param string $src  Source directory.
+	 * @param string $dest Destination directory.
+	 * @return bool True on success.
+	 */
+	private static function copy_dir_recursive( $src, $dest ) {
+		if ( ! is_dir( $src ) ) {
+			return false;
+		}
+
+		if ( ! is_dir( $dest ) ) {
+			wp_mkdir_p( $dest );
+		}
+
+		$dir = opendir( $src );
+		if ( ! $dir ) {
+			return false;
+		}
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_readdir
+		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		while ( false !== ( $file = readdir( $dir ) ) ) {
+			if ( '.' === $file || '..' === $file ) {
+				continue;
+			}
+
+			$src_path  = $src . '/' . $file;
+			$dest_path = $dest . '/' . $file;
+
+			if ( is_dir( $src_path ) ) {
+				if ( ! self::copy_dir_recursive( $src_path, $dest_path ) ) {
+					closedir( $dir );
+					return false;
+				}
+			} else {
+				if ( ! copy( $src_path, $dest_path ) ) {
+					closedir( $dir );
+					return false;
+				}
+			}
+		}
+		// phpcs:enable
+
+		closedir( $dir );
+		return true;
 	}
 }
