@@ -100,7 +100,7 @@ class WP_MCP_AI_Plugin_Updater {
 					'Accept'     => 'application/vnd.github+json',
 					'User-Agent' => 'WP-MCP-AI/' . WP_MCP_AI_VERSION,
 				),
-				'timeout'  => 15,
+				'timeout' => 15,
 			)
 		);
 
@@ -136,12 +136,12 @@ class WP_MCP_AI_Plugin_Updater {
 		}
 
 		$result = array(
-			// Strip common tag prefixes: 'v', 'nvdigital-oos-v', 'nvdigital-open-operator-system-oos-v'
-			'latest_version'  => preg_replace( '/^(nvdigital-(?:open-operator-system-)?oos-)?v/i', '', $data['tag_name'] ),
-			'assets'          => isset( $data['assets'] ) ? $data['assets'] : array(),
-			'release_notes'   => isset( $data['body'] ) ? $data['body'] : '',
-			'published_at'    => isset( $data['published_at'] ) ? $data['published_at'] : '',
-			'checked_at'      => time(),
+			// Strip common tag prefixes: 'v', 'nvdigital-oos-v', etc.
+				'latest_version' => preg_replace( '/^(nvdigital-(?:open-operator-system-)?oos-)?v/i', '', $data['tag_name'] ),
+			'assets'             => isset( $data['assets'] ) ? $data['assets'] : array(),
+			'release_notes'      => isset( $data['body'] ) ? $data['body'] : '',
+			'published_at'       => isset( $data['published_at'] ) ? $data['published_at'] : '',
+			'checked_at'         => time(),
 		);
 
 		set_transient( self::CACHE_KEY, $result, self::CACHE_TTL );
@@ -281,17 +281,20 @@ class WP_MCP_AI_Plugin_Updater {
 		$skin     = new WP_Ajax_Upgrader_Skin();
 		$upgrader = new Plugin_Upgrader( $skin );
 
-		$result = $upgrader->upgrade( $plugin_basename, array(
-			'package'                     => $temp_file,
-			'clear_destination'           => true,
-			'abort_if_destination_exists' => false,
-			'is_multi'                    => false,
-			'hook_extra'                  => array(),
-		) );
+		$result = $upgrader->upgrade(
+			$plugin_basename,
+			array(
+				'package'                     => $temp_file,
+				'clear_destination'           => true,
+				'abort_if_destination_exists' => false,
+				'is_multi'                    => false,
+				'hook_extra'                  => array(),
+			)
+		);
 
 		// Clean up the temp file if it still exists.
 		if ( file_exists( $temp_file ) ) {
-			unlink( $temp_file );
+			unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- temp file cleanup after upgrader.
 		}
 
 		if ( is_wp_error( $result ) ) {
@@ -394,7 +397,7 @@ class WP_MCP_AI_Plugin_Updater {
 
 		// Create a backup of the current Pro addon.
 		$backup_dir = $pro_dir . '.backup-' . gmdate( 'YmdHis' );
-		if ( ! rename( $pro_dir, $backup_dir ) ) {
+		if ( ! rename( $pro_dir, $backup_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- backup before update.
 			self::rmdir_recursive( $temp_dir );
 			return new WP_Error(
 				'backup_failed',
@@ -407,7 +410,7 @@ class WP_MCP_AI_Plugin_Updater {
 		if ( ! $copied ) {
 			// Restore from backup.
 			self::rmdir_recursive( $pro_dir );
-			rename( $backup_dir, $pro_dir );
+			rename( $backup_dir, $pro_dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- restore from backup.
 			self::rmdir_recursive( $temp_dir );
 			return new WP_Error(
 				'install_failed',
@@ -605,16 +608,19 @@ class WP_MCP_AI_Plugin_Updater {
 		$skin     = new WP_Ajax_Upgrader_Skin();
 		$upgrader = new Plugin_Upgrader( $skin );
 
-		$result = $upgrader->upgrade( $plugin_basename, array(
-			'package'                     => $temp_file,
-			'clear_destination'           => true,
-			'abort_if_destination_exists' => false,
-			'is_multi'                    => false,
-			'hook_extra'                  => array(),
-		) );
+		$result = $upgrader->upgrade(
+			$plugin_basename,
+			array(
+				'package'                     => $temp_file,
+				'clear_destination'           => true,
+				'abort_if_destination_exists' => false,
+				'is_multi'                    => false,
+				'hook_extra'                  => array(),
+			)
+		);
 
 		if ( file_exists( $temp_file ) ) {
-			unlink( $temp_file );
+			unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- temp file cleanup after upgrade.
 		}
 
 		if ( is_wp_error( $result ) ) {
@@ -713,7 +719,7 @@ class WP_MCP_AI_Plugin_Updater {
 			$path = $dir . '/' . $file;
 			is_dir( $path ) ? self::rmdir_recursive( $path ) : unlink( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
 		}
-		rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rmdir_rmdir
+		rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rmdir_rmdir, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- cleanup after update.
 	}
 
 	/**
@@ -739,6 +745,7 @@ class WP_MCP_AI_Plugin_Updater {
 
 		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_readdir
 		// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		// phpcs:disable Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
 		while ( false !== ( $file = readdir( $dir ) ) ) {
 			if ( '.' === $file || '..' === $file ) {
 				continue;
@@ -752,11 +759,9 @@ class WP_MCP_AI_Plugin_Updater {
 					closedir( $dir );
 					return false;
 				}
-			} else {
-				if ( ! copy( $src_path, $dest_path ) ) {
+			} elseif ( ! copy( $src_path, $dest_path ) ) {
 					closedir( $dir );
 					return false;
-				}
 			}
 		}
 		// phpcs:enable

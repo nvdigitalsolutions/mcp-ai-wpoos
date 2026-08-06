@@ -31,6 +31,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			 */
 		public function enqueue_admin_assets( $hook_suffix ) {
 			// Only on our plugin's settings page.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only page slug detection, no state change.
 			$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
 			if ( 'wp-mcp-ai-dashboard' !== $page ) {
 				return;
@@ -2294,7 +2295,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			if ( class_exists( 'WP_MCP_AI_Plugin_Updater' ) ) :
 				?>
 			<div class="wp-mcp-ai-plugin-updates-section" style="margin-top: 50px;">
-			<?php if ( $is_github_build ) : ?>
+				<?php if ( $is_github_build ) : ?>
 				<!-- FULL/GITHUB BUILD: update check -->
 				<h3><?php esc_html_e( 'Plugin Updates', 'mcp-ai-wpoos' ); ?></h3>
 				<p class="description">
@@ -2340,17 +2341,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 			</div>
 
-			<?php
-			$update_checking   = __( 'Checking for updates...', 'mcp-ai-wpoos' );
-			$update_updating   = __( 'Updating plugin...', 'mcp-ai-wpoos' );
-			$update_confirm    = __( 'This will download and install the latest version of the complete plugin from GitHub. A backup will be created before updating. Continue?', 'mcp-ai-wpoos' );
-			$update_uptodate   = __( 'You are running the latest version.', 'mcp-ai-wpoos' );
-			$update_available  = __( 'Update available!', 'mcp-ai-wpoos' );
-			$update_error      = __( 'An error occurred.', 'mcp-ai-wpoos' );
-			$update_ajax_error = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+					<?php
+					$update_checking   = __( 'Checking for updates...', 'mcp-ai-wpoos' );
+					$update_updating   = __( 'Updating plugin...', 'mcp-ai-wpoos' );
+					$update_confirm    = __( 'This will download and install the latest version of the complete plugin from GitHub. A backup will be created before updating. Continue?', 'mcp-ai-wpoos' );
+					$update_uptodate   = __( 'You are running the latest version.', 'mcp-ai-wpoos' );
+					$update_available  = __( 'Update available!', 'mcp-ai-wpoos' );
+					$update_error      = __( 'An error occurred.', 'mcp-ai-wpoos' );
+					$update_ajax_error = __( 'AJAX error: ', 'mcp-ai-wpoos' );
 
-			ob_start();
-			?>
+					ob_start();
+					?>
 			jQuery(document).ready(function($) {
 				var updateNonce = <?php echo wp_json_encode( $update_nonce ); ?>;
 
@@ -2451,10 +2452,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					});
 				});
 			});
-			<?php
-			$update_js = ob_get_clean();
-			wp_print_inline_script_tag( $update_js );
-			?>
+					<?php
+					$update_js = ob_get_clean();
+					wp_print_inline_script_tag( $update_js );
+					?>
 		<?php else : ?>
 			<!-- BASE-ONLY BUILD: upgrade path to complete version -->
 			<h3><?php esc_html_e( 'Complete Version Available', 'mcp-ai-wpoos' ); ?></h3>
@@ -2497,7 +2498,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			</div>
 
 			<?php
-			$complete_checking = __( 'Checking availability...', 'mcp-ai-wpoos' );
+			$complete_checking  = __( 'Checking availability...', 'mcp-ai-wpoos' );
 			$complete_upgrading = __( 'Installing complete version...', 'mcp-ai-wpoos' );
 			$complete_confirm   = __( 'This will download and install the complete plugin build from GitHub, which includes the Pro addon and all toolkits. The plugin will be deactivated and reactivated during the upgrade. Continue?', 'mcp-ai-wpoos' );
 
@@ -2604,20 +2605,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			<p></p>
 		</div>
 	</div>
-		<?php
-		// Only show Pro updates when Pro is a standalone plugin (not bundled
-		// inside the main plugin directory). The complete package update covers
-		// both base and Pro together, so a separate Pro update is redundant.
-		$pro_is_standalone = defined( 'WP_MCP_AI_PRO_VERSION' )
-			&& defined( 'WP_MCP_AI_PRO_PATH' )
-			&& 0 !== strpos( untrailingslashit( WP_MCP_AI_PRO_PATH ), untrailingslashit( WP_MCP_AI_PATH ) );
+				<?php
+				// Only show Pro updates when Pro is a standalone plugin (not bundled
+				// inside the main plugin directory). The complete package update covers
+				// both base and Pro together, so a separate Pro update is redundant.
+				$pro_is_standalone = defined( 'WP_MCP_AI_PRO_VERSION' )
+				&& defined( 'WP_MCP_AI_PRO_PATH' )
+				&& 0 !== strpos( untrailingslashit( WP_MCP_AI_PRO_PATH ), untrailingslashit( WP_MCP_AI_PATH ) );
 
-		if ( $is_github_build && $pro_is_standalone ) :
-			?>
+				if ( $is_github_build && $pro_is_standalone ) :
+					?>
 		<div class="wp-mcp-ai-pro-updates-section" style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd;">
 			<h3><?php esc_html_e( 'Pro Addon Updates', 'mcp-ai-wpoos' ); ?></h3>
 			<p class="description">
-				<?php esc_html_e( 'Check for and install Pro addon updates from GitHub releases. The Pro addon provides advanced AI toolkits and integrations.', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Check for and install Pro addon updates from GitHub releases. The Pro addon provides advanced AI toolkits and integrations.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<div class="wp-mcp-ai-pro-update-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
@@ -2659,15 +2660,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			</div>
 		</div>
 
-		<?php
-		$pro_update_checking  = __( 'Checking for Pro updates...', 'mcp-ai-wpoos' );
-		$pro_update_updating  = __( 'Updating Pro addon...', 'mcp-ai-wpoos' );
-		$pro_update_confirm   = __( 'This will download and install the latest version of the Pro addon from GitHub. A backup will be created before updating. Continue?', 'mcp-ai-wpoos' );
-		$pro_update_uptodate  = __( 'Pro addon is up to date.', 'mcp-ai-wpoos' );
-		$pro_update_available = __( 'Pro addon update available!', 'mcp-ai-wpoos' );
+					<?php
+					$pro_update_checking  = __( 'Checking for Pro updates...', 'mcp-ai-wpoos' );
+					$pro_update_updating  = __( 'Updating Pro addon...', 'mcp-ai-wpoos' );
+					$pro_update_confirm   = __( 'This will download and install the latest version of the Pro addon from GitHub. A backup will be created before updating. Continue?', 'mcp-ai-wpoos' );
+					$pro_update_uptodate  = __( 'Pro addon is up to date.', 'mcp-ai-wpoos' );
+					$pro_update_available = __( 'Pro addon update available!', 'mcp-ai-wpoos' );
 
-		ob_start();
-		?>
+					ob_start();
+					?>
 		jQuery(document).ready(function($) {
 			// Auto-check Pro on page load.
 			checkProUpdates(true);
@@ -2766,12 +2767,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				});
 			});
 		});
-		<?php
-		$pro_update_js = ob_get_clean();
-		wp_print_inline_script_tag( $pro_update_js );
-		?>
-	<?php endif; ?>
-	<?php endif; // Close class_exists( 'WP_MCP_AI_Plugin_Updater' ) ?>
+					<?php
+					$pro_update_js = ob_get_clean();
+					wp_print_inline_script_tag( $pro_update_js );
+					?>
+			<?php endif; ?>
+	<?php endif; // Close class_exists( 'WP_MCP_AI_Plugin_Updater' ). ?>
 </div>
 
 			<?php
