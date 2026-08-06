@@ -39,9 +39,15 @@ class WP_MCP_AI_Plugin_Updater {
 	const CACHE_TTL = 12 * HOUR_IN_SECONDS;
 
 	/**
-	 * The asset filename pattern for the complete package.
+	 * The asset filename pattern for the complete package (replaces base in-place).
 	 */
 	const ASSET_COMPLETE = 'nvdigital-open-operator-system-oos-complete';
+
+	/**
+	 * The asset filename pattern for the full build (same folder structure as base,
+	 * used when upgrading from base to complete).
+	 */
+	const ASSET_FULL = 'wp-mcp-ai-';
 
 	/**
 	 * The asset filename pattern for the Pro addon package.
@@ -51,15 +57,10 @@ class WP_MCP_AI_Plugin_Updater {
 	/**
 	 * Initialize the updater.
 	 *
-	 * Only hooks in when this is the full/GitHub build, not the
-	 * WordPress.org base-only version.
+	 * Always hooks AJAX handlers — base-only installs see an upgrade path,
+	 * full/GitHub builds see update checks.
 	 */
 	public static function init() {
-		// Only active for the full build (not WordPress.org base-only).
-		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
-			return;
-		}
-
 		// AJAX: check for core plugin updates.
 		add_action( 'wp_ajax_wp_mcp_ai_check_plugin_update', array( __CLASS__, 'ajax_check_update' ) );
 
@@ -71,6 +72,12 @@ class WP_MCP_AI_Plugin_Updater {
 
 		// AJAX: start Pro addon update.
 		add_action( 'wp_ajax_wp_mcp_ai_start_pro_update', array( __CLASS__, 'ajax_start_pro_update' ) );
+
+		// AJAX: upgrade from base to complete.
+		add_action( 'wp_ajax_wp_mcp_ai_upgrade_to_complete', array( __CLASS__, 'ajax_upgrade_to_complete' ) );
+
+		// AJAX: check complete version availability.
+		add_action( 'wp_ajax_wp_mcp_ai_check_complete', array( __CLASS__, 'ajax_check_complete' ) );
 	}
 
 	/**
@@ -151,21 +158,25 @@ class WP_MCP_AI_Plugin_Updater {
 	private static function find_asset_url( $assets, $pattern ) {
 		foreach ( $assets as $asset ) {
 			$name = isset( $asset['name'] ) ? $asset['name'] : '';
-			// Match pattern but exclude the sibling packages (e.g. match 'pro'
-			// but not 'pro-extension' or 'complete' when looking for 'pro').
-			if ( false !== strpos( $name, $pattern ) && false !== strpos( $name, '.zip' ) ) {
-				// Ensure we're matching a standalone package, not a substring.
-				// 'pro' should match '...-pro-1.0.0.zip' but NOT '...-complete-1.0.0.zip'.
-				$base = basename( $name, '.zip' );
-				if ( self::ASSET_COMPLETE === $pattern ) {
-					if ( false !== strpos( $base, self::ASSET_COMPLETE ) ) {
-						return $asset['browser_download_url'];
-					}
-				} elseif ( self::ASSET_PRO === $pattern ) {
-					// Match '-pro-' but not '-pro-something-' and not 'complete'.
-					if ( false !== strpos( $base, self::ASSET_PRO . '-' ) && false === strpos( $base, 'complete' ) ) {
-						return $asset['browser_download_url'];
-					}
+			if ( false === strpos( $name, '.zip' ) ) {
+				continue;
+			}
+			$base = basename( $name, '.zip' );
+
+			if ( self::ASSET_FULL === $pattern ) {
+				// Match 'wp-mcp-ai-{version}-full' — the full build with same folder
+				// structure as base (used for base→complete upgrades).
+				if ( 0 === strpos( $base, self::ASSET_FULL ) && false !== strpos( $base, '-full' ) ) {
+					return $asset['browser_download_url'];
+				}
+			} elseif ( self::ASSET_COMPLETE === $pattern ) {
+				if ( false !== strpos( $base, self::ASSET_COMPLETE ) ) {
+					return $asset['browser_download_url'];
+				}
+			} elseif ( self::ASSET_PRO === $pattern ) {
+				// Match '-pro-' but not '-pro-something-' and not 'complete'.
+				if ( false !== strpos( $base, self::ASSET_PRO . '-' ) && false === strpos( $base, 'complete' ) ) {
+					return $asset['browser_download_url'];
 				}
 			}
 		}
@@ -524,6 +535,164 @@ class WP_MCP_AI_Plugin_Updater {
 				'message' => sprintf(
 					/* translators: %s: new version number */
 					__( 'Pro addon updated to version %s. Please reload the page.', 'mcp-ai-wpoos' ),
+					$check['latest']
+				),
+			)
+		);
+	}
+
+	/**
+	 * Check if the complete version is available from GitHub.
+	 *
+	 * Used for base-only installs to show the upgrade path.
+	 *
+	 * @return array|WP_Error Array with version info, or WP_Error on failure.
+	 */
+	public static function check_complete_availability() {
+		$release = self::fetch_latest_release();
+		if ( is_wp_error( $release ) ) {
+			return $release;
+		}
+
+		$download_url = self::find_asset_url( $release['assets'], self::ASSET_FULL );
+
+		return array(
+			'installed'    => WP_MCP_AI_VERSION,
+			'latest'       => $release['latest_version'],
+			'available'    => ! empty( $download_url ),
+			'download_url' => $download_url,
+			'published_at' => $release['published_at'],
+			'checked_at'   => $release['checked_at'],
+		);
+	}
+
+	/**
+	 * Upgrade from base to complete version.
+	 *
+	 * Downloads the full build ZIP (wp-mcp-ai-{version}-full.zip) which has
+	 * the same folder structure as the base plugin, so Plugin_Upgrader can
+	 * replace it in-place.
+	 *
+	 * @param string $download_url URL of the full build ZIP.
+	 * @return true|WP_Error True on success, WP_Error on failure.
+	 */
+	public static function upgrade_to_complete( $download_url ) {
+		if ( empty( $download_url ) ) {
+			return new WP_Error(
+				'no_download_url',
+				__( 'No download URL found for the complete build.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Load WordPress upgrade internals.
+		if ( ! function_exists( 'download_url' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if ( ! class_exists( 'Plugin_Upgrader' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+		}
+		if ( ! function_exists( 'get_plugin_data' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$plugin_basename = plugin_basename( WP_MCP_AI_FILE );
+
+		$temp_file = download_url( $download_url, 300, false );
+		if ( is_wp_error( $temp_file ) ) {
+			return $temp_file;
+		}
+
+		$skin     = new WP_Ajax_Upgrader_Skin();
+		$upgrader = new Plugin_Upgrader( $skin );
+
+		$result = $upgrader->upgrade( $plugin_basename, array(
+			'package'                     => $temp_file,
+			'clear_destination'           => true,
+			'abort_if_destination_exists' => false,
+			'is_multi'                    => false,
+			'hook_extra'                  => array(),
+		) );
+
+		if ( file_exists( $temp_file ) ) {
+			unlink( $temp_file );
+		}
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( false === $result ) {
+			$messages = $skin->get_upgrade_messages();
+			$last_msg = ! empty( $messages ) ? end( $messages ) : '';
+			return new WP_Error(
+				'upgrade_failed',
+				$last_msg ? $last_msg : __( 'Upgrade to complete version failed.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Force reactivation if the upgrader deactivated us.
+		if ( ! is_plugin_active( $plugin_basename ) ) {
+			activate_plugin( $plugin_basename, '', false, true );
+		}
+
+		// Clear the update cache.
+		delete_transient( self::CACHE_KEY );
+
+		return true;
+	}
+
+	/**
+	 * AJAX handler: check complete version availability (for base-only installs).
+	 */
+	public static function ajax_check_complete() {
+		check_ajax_referer( 'wp_mcp_ai_plugin_update', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$result = self::check_complete_availability();
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: upgrade from base to complete version.
+	 */
+	public static function ajax_upgrade_to_complete() {
+		check_ajax_referer( 'wp_mcp_ai_plugin_update', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		// Force a fresh check (bypass cache).
+		delete_transient( self::CACHE_KEY );
+		$check = self::check_complete_availability();
+
+		if ( is_wp_error( $check ) ) {
+			wp_send_json_error( array( 'message' => $check->get_error_message() ) );
+		}
+
+		if ( empty( $check['available'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Complete version is not available for download.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$result = self::upgrade_to_complete( $check['download_url'] );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: %s: new version number */
+					__( 'Upgraded to complete version %s. The plugin now includes all Pro toolkits and addons. Please reload the page.', 'mcp-ai-wpoos' ),
 					$check['latest']
 				),
 			)
