@@ -13,6 +13,7 @@
 
 	var refreshTimer = null;
 	var uptimeChart = null;
+	var refreshRequest = null;
 
 	/**
 	 * Initialize the status dashboard.
@@ -25,6 +26,19 @@
 		if (dashboard.refreshInterval > 0) {
 			refreshTimer = setInterval(loadStatusData, dashboard.refreshInterval);
 		}
+
+		// Clear timers and abort pending requests on page unload
+		// to prevent "Transition was skipped" AbortError.
+		$(window).on('beforeunload', function () {
+			if (refreshTimer) {
+				clearInterval(refreshTimer);
+				refreshTimer = null;
+			}
+			if (refreshRequest) {
+				refreshRequest.abort();
+				refreshRequest = null;
+			}
+		});
 
 		// Refresh button.
 		$('.wp-mcp-ai-status-refresh-btn').on('click', function () {
@@ -49,7 +63,11 @@
 	 * Load status data via AJAX.
 	 */
 	function loadStatusData() {
-		$.ajax({
+		// Abort any pending request before starting a new one.
+		if (refreshRequest) {
+			refreshRequest.abort();
+		}
+		refreshRequest = $.ajax({
 			url: dashboard.ajaxUrl,
 			type: 'POST',
 			data: {
@@ -65,6 +83,9 @@
 			},
 			error: function () {
 				showError(dashboard.strings.error);
+			},
+			complete: function () {
+				refreshRequest = null;
 			}
 		});
 	}
@@ -89,7 +110,7 @@
 		// Update last refreshed text.
 		var lastText = dashboard.strings.never;
 		if (data.last_checked > 0) {
-			lastText = dashboard.strings.lastChecked + ' ' + data.last_checked_text + ' ' + dashboard.strings.timeAgo.replace('%s', '');
+			lastText = dashboard.strings.lastChecked + ': ' + data.last_checked_text;
 		}
 		$('.wp-mcp-ai-status-last-refreshed').text(lastText);
 
@@ -319,14 +340,15 @@
 		}
 		var minutes = Math.floor(seconds / 60);
 		if (minutes < 60) {
-			return minutes + ' ' + dashboard.strings.timeAgo.replace('%s', dashboard.strings.timeAgo.indexOf('minute') > -1 ? 'min' : 'min');
+			return minutes + ' ' + dashboard.strings.minAbbr + ' ' + dashboard.strings.ago;
 		}
 		var hours = Math.floor(minutes / 60);
 		if (hours < 24) {
-			return hours + ' ' + dashboard.strings.timeAgo.replace('%s', 'hr');
+			return hours + ' ' + dashboard.strings.hrAbbr + ' ' + dashboard.strings.ago;
 		}
 		var days = Math.floor(hours / 24);
-		return days + ' ' + dashboard.strings.timeAgo.replace('%s', 'day' + (days > 1 ? 's' : ''));
+		var dayLabel = days === 1 ? dashboard.strings.daySingular : dashboard.strings.dayPlural;
+		return days + ' ' + dayLabel + ' ' + dashboard.strings.ago;
 	}
 
 	/**
