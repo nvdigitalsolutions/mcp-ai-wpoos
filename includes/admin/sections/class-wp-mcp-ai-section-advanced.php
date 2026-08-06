@@ -3809,14 +3809,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</p>
 				</div>
 
-				<!-- Export/Import Section -->
+				<!-- Backup & Restore Section (Enhanced with Provider Selection) -->
 				<div class="wp-mcp-ai-card" style="background: #fff; border: 1px solid #ccd0d4; padding: 15px; margin: 20px 0;">
 					<h4 style="margin-top: 0;">
 						<span class="dashicons dashicons-database-export"></span>
 						<?php esc_html_e( 'Backup & Restore', 'mcp-ai-wpoos' ); ?>
 					</h4>
 					<p>
-						<strong><?php esc_html_e( 'Current Settings:', 'mcp-ai-wpoos' ); ?></strong>
+						<strong><?php esc_html_e( 'Core Settings:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						printf(
 							/* translators: %d: Number of settings fields */
@@ -3830,15 +3830,46 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<?php esc_html_e( '(automatic backups from recent saves)', 'mcp-ai-wpoos' ); ?>
 					</p>
 
+					<?php if ( class_exists( 'WP_MCP_AI_Export_Manager' ) ) : ?>
+						<?php $export_manager = WP_MCP_AI_Export_Manager::instance(); ?>
+						<?php $export_providers = $export_manager->get_available_providers(); ?>
+
+						<div id="wp-mcp-ai-export-providers" style="margin: 15px 0;">
+							<p><strong><?php esc_html_e( 'Select data to export:', 'mcp-ai-wpoos' ); ?></strong></p>
+							<?php foreach ( $export_providers as $provider ) : ?>
+								<?php $provider->render_checkbox( 'core_settings' === $provider->get_id() ); ?>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+
+					<!-- Password protection (optional) -->
+					<div style="margin: 15px 0;">
+						<label>
+							<input type="checkbox" id="wp-mcp-ai-export-encrypt" />
+							<?php esc_html_e( 'Password-protect export file (AES-256-CBC)', 'mcp-ai-wpoos' ); ?>
+						</label>
+						<input type="password" id="wp-mcp-ai-export-password" class="regular-text"
+							style="display: none; margin-top: 5px; max-width: 300px;"
+							placeholder="<?php esc_attr_e( 'Enter passphrase...', 'mcp-ai-wpoos' ); ?>"
+							autocomplete="new-password" />
+					</div>
+
 					<div style="margin: 15px 0;">
 						<button type="button" id="wp-mcp-ai-export-settings" class="button button-primary">
 							<span class="dashicons dashicons-download"></span>
-							<?php esc_html_e( 'Export Settings (JSON)', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Export Selected (JSON)', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<button type="button" id="wp-mcp-ai-export-all" class="button button-secondary">
+							<?php esc_html_e( 'Export All', 'mcp-ai-wpoos' ); ?>
 						</button>
 						<p class="description" style="margin: 5px 0 0 0;">
-							<?php esc_html_e( 'Download all plugin settings as a JSON file for backup or migration to another site.', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Download selected data as a JSON file for backup or migration. Providers marked with', 'mcp-ai-wpoos' ); ?>
+							<span class="dashicons dashicons-warning" style="color: #d63638; vertical-align: middle;"></span>
+							<?php esc_html_e( 'contain API keys or tokens — secure the export file.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</div>
+
+					<hr>
 
 					<div style="margin: 15px 0;">
 						<label for="wp-mcp-ai-import-file" style="display: inline-block; margin-right: 10px;">
@@ -3846,6 +3877,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							<?php esc_html_e( 'Import Settings:', 'mcp-ai-wpoos' ); ?>
 						</label>
 						<input type="file" id="wp-mcp-ai-import-file" accept=".json,application/json" />
+						<input type="password" id="wp-mcp-ai-import-password" class="regular-text"
+							style="display: none; margin-top: 5px; max-width: 300px;"
+							placeholder="<?php esc_attr_e( 'Decryption passphrase (if file is encrypted)...', 'mcp-ai-wpoos' ); ?>"
+							autocomplete="new-password" />
 						<button type="button" id="wp-mcp-ai-import-settings" class="button button-secondary" disabled>
 							<?php esc_html_e( 'Upload & Import', 'mcp-ai-wpoos' ); ?>
 						</button>
@@ -3853,6 +3888,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							<?php esc_html_e( 'Import settings from a previously exported JSON file. Current settings will be backed up before import.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</div>
+
+					<!-- Import Results -->
+					<div id="wp-mcp-ai-import-results" style="display: none; margin: 15px 0;"></div>
 				</div>
 
 				<!-- Cache Management Section -->
@@ -3913,23 +3951,55 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$sm_checking       = __( 'Checking...', 'mcp-ai-wpoos' );
 			$sm_health_failed  = __( 'Health check failed.', 'mcp-ai-wpoos' );
 			$sm_check_health   = __( 'Check Settings Health', 'mcp-ai-wpoos' );
+			$sm_select_type    = __( 'Please select at least one data type to export.', 'mcp-ai-wpoos' );
+			$sm_enter_password = __( 'Please enter a passphrase for encryption.', 'mcp-ai-wpoos' );
 
 			ob_start();
 			?>
 			jQuery(document).ready(function($) {
 				const nonce = <?php echo wp_json_encode( $sm_nonce ); ?>;
 
-				// Enable import button when file is selected.
+				// Enable import button when file is selected, show password field.
 				$('#wp-mcp-ai-import-file').on('change', function() {
 					$('#wp-mcp-ai-import-settings').prop('disabled', !this.files.length);
+					$('#wp-mcp-ai-import-password').show();
 				});
 
-				// Export settings.
+				// Export settings with provider selection.
 				$('#wp-mcp-ai-export-settings').on('click', function() {
-					window.location.href = ajaxurl + '?action=wp_mcp_ai_export_settings&nonce=' + nonce;
+					var selected = [];
+					$('.wp-mcp-ai-export-provider-checkbox:checked').each(function() {
+						selected.push($(this).val());
+					});
+					if (selected.length === 0) {
+						alert(<?php echo wp_json_encode( $sm_select_type ); ?>);
+						return;
+					}
+					var url = ajaxurl + '?action=wp_mcp_ai_export_settings&nonce=' + nonce
+						+ '&providers=' + selected.join(',');
+					if ($('#wp-mcp-ai-export-encrypt').is(':checked')) {
+						var pw = $('#wp-mcp-ai-export-password').val();
+						if (!pw) {
+							alert(<?php echo wp_json_encode( $sm_enter_password ); ?>);
+							return;
+						}
+						url += '&password=' + encodeURIComponent(pw);
+					}
+					window.location.href = url;
 				});
 
-				// Import settings.
+				// Export all (all checkboxes).
+				$('#wp-mcp-ai-export-all').on('click', function() {
+					$('.wp-mcp-ai-export-provider-checkbox').prop('checked', true);
+					$('#wp-mcp-ai-export-settings').trigger('click');
+				});
+
+				// Toggle password field.
+				$('#wp-mcp-ai-export-encrypt').on('change', function() {
+					$('#wp-mcp-ai-export-password').toggle(this.checked);
+				});
+
+				// Import settings (enhanced with password and result display).
 				$('#wp-mcp-ai-import-settings').on('click', function() {
 					const fileInput = document.getElementById('wp-mcp-ai-import-file');
 					if (!fileInput.files.length) {
@@ -3945,6 +4015,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					formData.append('action', 'wp_mcp_ai_import_settings');
 					formData.append('nonce', nonce);
 					formData.append('settings_file', fileInput.files[0]);
+					var pw = $('#wp-mcp-ai-import-password').val();
+					if (pw) {
+						formData.append('password', pw);
+					}
 
 					$(this).prop('disabled', true).text(<?php echo wp_json_encode( $sm_importing ); ?>);
 
@@ -3956,19 +4030,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						contentType: false,
 						success: function(response) {
 							if (response.success) {
+								var msg = response.data.message;
+								// Display per-provider results if available.
+								if (response.data.results) {
+									var resultsHtml = '<ul style="margin: 8px 0 0 0; padding-left: 20px;">';
+									$.each(response.data.results, function(id, r) {
+										var icon = r.success ? '✅' : '❌';
+										resultsHtml += '<li>' + icon + ' ' + r.message + '</li>';
+									});
+									resultsHtml += '</ul>';
+									$('#wp-mcp-ai-import-results').html(resultsHtml).slideDown();
+								}
 								$('#wp-mcp-ai-settings-management-message')
 									.removeClass('notice-error')
 									.addClass('notice-success')
-									.find('p').text(response.data.message + ' (' + response.data.imported_count + ' fields)');
+									.find('p').html(msg);
 								$('#wp-mcp-ai-settings-management-message').slideDown();
 								setTimeout(function() {
 									window.location.reload();
-								}, 2000);
+								}, 3000);
 							} else {
+								var errMsg = response.data.message || <?php echo wp_json_encode( $sm_import_failed ); ?>;
+								if (response.data.errors) {
+									errMsg += '\n' + response.data.errors.join('\n');
+								}
 								$('#wp-mcp-ai-settings-management-message')
 									.removeClass('notice-success')
 									.addClass('notice-error')
-									.find('p').text(response.data.message || <?php echo wp_json_encode( $sm_import_failed ); ?>);
+									.find('p').text(errMsg);
 								$('#wp-mcp-ai-settings-management-message').slideDown();
 								$('#wp-mcp-ai-import-settings').prop('disabled', false).text(<?php echo wp_json_encode( $sm_upload_import ); ?>);
 							}
