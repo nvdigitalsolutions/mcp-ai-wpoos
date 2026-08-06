@@ -613,3 +613,6 @@ class WP_MCP_AI_Optional_Components {
 
 // Initialize the optional components manager.
 WP_MCP_AI_Optional_Components::init();
+
+// Initialize the plugin updater (GitHub releases for full builds).
+WP_MCP_AI_Plugin_Updater::init();
