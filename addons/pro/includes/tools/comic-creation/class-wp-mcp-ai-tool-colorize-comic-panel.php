@@ -52,15 +52,15 @@ class WP_MCP_AI_Tool_Colorize_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'panel_id'       => array(
+				'panel_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the `mcp_ai_comic_panel` post to colorize.', 'mcp-ai-wpoos-pro' ),
 				),
-				'image_id'       => array(
+				'image_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of a WordPress attachment/image to colorize. Used when panel_id is not provided.', 'mcp-ai-wpoos-pro' ),
 				),
-				'color_palette'  => array(
+				'color_palette' => array(
 					'type'        => 'string',
 					'description' => __( 'Color palette description (e.g., "muted pastels", "vibrant superhero", "noir blacks and reds", "watercolor soft").', 'mcp-ai-wpoos-pro' ),
 				),
@@ -213,11 +213,11 @@ class WP_MCP_AI_Tool_Colorize_Comic_Panel implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'success' => true,
 			'data'    => array(
-				'panel_id'       => $panel_id,
-				'image_id'       => $source_image_id,
-				'original_url'   => esc_url( $source_image_url ),
-				'colorized_url'  => esc_url( $colorized_url ),
-				'color_palette'  => esc_html( $color_palette ),
+				'panel_id'      => $panel_id,
+				'image_id'      => $source_image_id,
+				'original_url'  => esc_url( $source_image_url ),
+				'colorized_url' => esc_url( $colorized_url ),
+				'color_palette' => esc_html( $color_palette ),
 			),
 		);
 	}

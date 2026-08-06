@@ -340,7 +340,7 @@ class WP_MCP_AI_Asset_Inventory {
 			$catch_flags = PHP_VERSION_ID >= 80200
 				? RecursiveIteratorIterator::CATCH_GET_CHILD
 				: 0;
-			$iterator = new RecursiveIteratorIterator(
+			$iterator    = new RecursiveIteratorIterator(
 				new RecursiveDirectoryIterator( $path, RecursiveDirectoryIterator::SKIP_DOTS ),
 				RecursiveIteratorIterator::SELF_FIRST,
 				$catch_flags

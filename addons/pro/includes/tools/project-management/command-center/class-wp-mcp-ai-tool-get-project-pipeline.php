@@ -152,9 +152,9 @@ class WP_MCP_AI_Tool_Get_Project_Pipeline implements WP_MCP_AI_Tool_Interface, W
 		if ( $projects_query->have_posts() ) {
 			while ( $projects_query->have_posts() ) {
 				$projects_query->the_post();
-				$project_id  = get_the_ID();
-				$status      = get_post_meta( $project_id, '_project_status', true );
-				$status      = $status ? sanitize_key( $status ) : 'planning';
+				$project_id = get_the_ID();
+				$status     = get_post_meta( $project_id, '_project_status', true );
+				$status     = $status ? sanitize_key( $status ) : 'planning';
 
 				if ( ! isset( $all_projects[ $status ] ) ) {
 					$all_projects[ $status ] = array();
@@ -189,20 +189,20 @@ class WP_MCP_AI_Tool_Get_Project_Pipeline implements WP_MCP_AI_Tool_Interface, W
 				if ( class_exists( 'WP_MCP_AI_PM_Engine' ) ) {
 					$task_count = WP_MCP_AI_PM_Engine::count_tasks( $proj['id'] );
 				}
-				$proj['task_count'] = $task_count;
+				$proj['task_count']    = $task_count;
 				$projects_with_tasks[] = $proj;
 			}
 
 			$pipeline[] = array(
-				'stage'      => $stage_slug,
-				'label'      => isset( $stage_def['label'] ) ? $stage_def['label'] : $stage_slug,
-				'count'      => count( $projects_with_tasks ),
-				'probability' => isset( $stage_def['probability'] ) ? (float) $stage_def['probability'] : 0.0,
+				'stage'        => $stage_slug,
+				'label'        => isset( $stage_def['label'] ) ? $stage_def['label'] : $stage_slug,
+				'count'        => count( $projects_with_tasks ),
+				'probability'  => isset( $stage_def['probability'] ) ? (float) $stage_def['probability'] : 0.0,
 				'is_completed' => isset( $stage_def['is_completed'] ) ? (bool) $stage_def['is_completed'] : false,
 				'is_cancelled' => isset( $stage_def['is_cancelled'] ) ? (bool) $stage_def['is_cancelled'] : false,
 				'is_archived'  => isset( $stage_def['is_archived'] ) ? (bool) $stage_def['is_archived'] : false,
-				'color'      => isset( $stage_def['color'] ) ? $stage_def['color'] : '',
-				'projects'   => $projects_with_tasks,
+				'color'        => isset( $stage_def['color'] ) ? $stage_def['color'] : '',
+				'projects'     => $projects_with_tasks,
 			);
 		}
 

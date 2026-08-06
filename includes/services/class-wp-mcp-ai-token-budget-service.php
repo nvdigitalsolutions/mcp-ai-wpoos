@@ -72,7 +72,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gpt-4.1'                   => 1000000,
 		'gpt-4.1-mini'              => 1000000,
 		'gpt-4.1-nano'              => 1000000,
-		'gpt-4.1'                    => 128000,
+		'gpt-4.1'                   => 128000,
 		'gpt-4o-mini'               => 128000,
 		'gpt-4-turbo'               => 128000,
 		'gpt-4'                     => 8192,
@@ -104,7 +104,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gemini-2.5-flash-image'    => 1048576,
 		'gemini-2.5-flash'          => 1048576,
 		'gemini-2.0-flash-image'    => 1048576,
-		'gemini-2.5-flash'            => 2097152,
+		'gemini-2.5-flash'          => 2097152,
 		'gemini-1.5-flash'          => 1048576,
 		'imagen-3'                  => 8192,
 		// DeepSeek.
@@ -244,7 +244,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		$model = is_string( $model ) ? strtolower( trim( $model ) ) : '';
 
 		$encoding_map = array(
-			'gpt-4.1'         => 'o200k_base',
+			'gpt-4.1'        => 'o200k_base',
 			'gpt-4.1'        => 'o200k_base',
 			'gpt-5'          => 'o200k_base',
 			'o1'             => 'o200k_base',
@@ -803,7 +803,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		if ( $is_openai ) {
 			// Suggest OpenAI models with higher limits.
 			$openai_alternatives = array(
-				'gpt-4.1'       => 30000,    // Tier 1.
+				'gpt-4.1'      => 30000,    // Tier 1.
 				'gpt-4.1-mini' => 400000,   // Future model.
 				'gpt-4.1'      => 300000,   // Future model.
 				'gpt-5-mini'   => 500000,   // Future model.

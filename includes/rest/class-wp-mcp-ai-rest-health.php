@@ -136,11 +136,11 @@ class WP_MCP_AI_REST_Health {
 	private static function check_php() {
 		return array(
 			'status'        => 'healthy',
-			'version'        => PHP_VERSION,
-			'memory_limit'   => ini_get( 'memory_limit' ),
-			'max_execution'  => ini_get( 'max_execution_time' ),
-			'ext_amqp'       => extension_loaded( 'amqp' ),
-			'ext_redis'      => extension_loaded( 'redis' ),
+			'version'       => PHP_VERSION,
+			'memory_limit'  => ini_get( 'memory_limit' ),
+			'max_execution' => ini_get( 'max_execution_time' ),
+			'ext_amqp'      => extension_loaded( 'amqp' ),
+			'ext_redis'     => extension_loaded( 'redis' ),
 		);
 	}
 
@@ -163,9 +163,9 @@ class WP_MCP_AI_REST_Health {
 
 			if ( isset( $health['status'] ) && 'healthy' === $health['status'] ) {
 				return array(
-					'status'   => 'healthy',
-					'message'  => 'RabbitMQ connection is healthy.',
-					'host'     => isset( $health['connection']['host'] ) ? $health['connection']['host'] : 'unknown',
+					'status'  => 'healthy',
+					'message' => 'RabbitMQ connection is healthy.',
+					'host'    => isset( $health['connection']['host'] ) ? $health['connection']['host'] : 'unknown',
 				);
 			}
 
@@ -225,12 +225,12 @@ class WP_MCP_AI_REST_Health {
 		);
 
 		if ( class_exists( 'WP_MCP_AI_Job_Queue_Manager' ) ) {
-			$queue_stats = WP_MCP_AI_Job_Queue_Manager::get_queue_stats();
+			$queue_stats               = WP_MCP_AI_Job_Queue_Manager::get_queue_stats();
 			$stats['concurrent_queue'] = $queue_stats;
 		}
 
 		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
-			$dlq_stats = WP_MCP_AI_Dead_Letter_Queue::get_stats();
+			$dlq_stats                  = WP_MCP_AI_Dead_Letter_Queue::get_stats();
 			$stats['dead_letter_queue'] = array(
 				'total'     => $dlq_stats['total'],
 				'active'    => $dlq_stats['active'],

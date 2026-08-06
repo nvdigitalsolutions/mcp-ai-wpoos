@@ -144,7 +144,7 @@ class WP_MCP_AI_Paper_Git_Sync {
 			'Paper Store auto-commit — %s',
 			gmdate( 'Y-m-d H:i:s' )
 		);
-		$result = $this->run_git( $root_path, array( 'commit', '-m', $message ) );
+		$result  = $this->run_git( $root_path, array( 'commit', '-m', $message ) );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}

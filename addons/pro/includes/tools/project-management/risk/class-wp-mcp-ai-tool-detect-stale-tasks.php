@@ -49,18 +49,18 @@ class WP_MCP_AI_Tool_Detect_Stale_Tasks implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'days'        => array(
+				'days'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of days without modification to consider a task stale (default: 14, min: 3, max: 90).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 14,
 					'minimum'     => 3,
 					'maximum'     => 90,
 				),
-				'project_id'  => array(
+				'project_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional project ID to scope detection to a single project.', 'mcp-ai-wpoos-pro' ),
 				),
-				'auto_flag'   => array(
+				'auto_flag'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, automatically sets _pm_stale meta on detected stale tasks (default: false).', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -173,7 +173,7 @@ class WP_MCP_AI_Tool_Detect_Stale_Tasks implements WP_MCP_AI_Tool_Interface, WP_
 		// Enrich with project title.
 		foreach ( $stale_tasks as &$task ) {
 			if ( ! empty( $task['project_id'] ) ) {
-				$project_title = get_the_title( $task['project_id'] );
+				$project_title         = get_the_title( $task['project_id'] );
 				$task['project_title'] = $project_title ? $project_title : '';
 			} else {
 				$task['project_title'] = '';
@@ -186,7 +186,7 @@ class WP_MCP_AI_Tool_Detect_Stale_Tasks implements WP_MCP_AI_Tool_Interface, WP_
 		if ( $auto_flag ) {
 			foreach ( $stale_tasks as $task ) {
 				update_post_meta( $task['id'], '_pm_stale', true );
-				$flagged_count++;
+				++$flagged_count;
 			}
 		}
 

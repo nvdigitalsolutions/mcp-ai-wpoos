@@ -209,19 +209,19 @@ class WP_MCP_AI_Action_Safety_Profile {
 	 */
 	public static function get_necessity_levels() {
 		return array(
-			self::NECESSITY_ESSENTIAL    => array(
+			self::NECESSITY_ESSENTIAL   => array(
 				'label'       => __( 'Essential', 'mcp-ai-wpoos' ),
 				'description' => __( 'User explicitly requested; task cannot be completed without it.', 'mcp-ai-wpoos' ),
 			),
-			self::NECESSITY_HELPFUL      => array(
+			self::NECESSITY_HELPFUL     => array(
 				'label'       => __( 'Helpful', 'mcp-ai-wpoos' ),
 				'description' => __( 'Aids the task but not strictly required for a useful answer.', 'mcp-ai-wpoos' ),
 			),
-			self::NECESSITY_OPTIONAL     => array(
+			self::NECESSITY_OPTIONAL    => array(
 				'label'       => __( 'Optional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Could add value but likely overkill for the current task.', 'mcp-ai-wpoos' ),
 			),
-			self::NECESSITY_UNNECESSARY  => array(
+			self::NECESSITY_UNNECESSARY => array(
 				'label'       => __( 'Unnecessary', 'mcp-ai-wpoos' ),
 				'description' => __( 'Redundant, overeager, or not aligned with user intent.', 'mcp-ai-wpoos' ),
 			),
@@ -297,17 +297,17 @@ class WP_MCP_AI_Action_Safety_Profile {
 		if ( self::NECESSITY_UNNECESSARY === $necessity ) {
 			if ( $irreversibility >= self::IRREVERSIBILITY_HIGH ) {
 				return array(
-					'verdict'            => self::VERDICT_BLOCK,
-					'risk_score'         => $risk_score,
-					'reason'             => __( 'Action is unnecessary and irreversible — blocked.', 'mcp-ai-wpoos' ),
-					'requires_approval'  => true,
+					'verdict'           => self::VERDICT_BLOCK,
+					'risk_score'        => $risk_score,
+					'reason'            => __( 'Action is unnecessary and irreversible — blocked.', 'mcp-ai-wpoos' ),
+					'requires_approval' => true,
 				);
 			}
 			return array(
-				'verdict'            => self::VERDICT_SKIP,
-				'risk_score'         => $risk_score,
-				'reason'             => __( 'Action is unnecessary — skipped to save tokens and avoid overeager behavior.', 'mcp-ai-wpoos' ),
-				'requires_approval'  => false,
+				'verdict'           => self::VERDICT_SKIP,
+				'risk_score'        => $risk_score,
+				'reason'            => __( 'Action is unnecessary — skipped to save tokens and avoid overeager behavior.', 'mcp-ai-wpoos' ),
+				'requires_approval' => false,
 			);
 		}
 
@@ -315,25 +315,25 @@ class WP_MCP_AI_Action_Safety_Profile {
 		if ( self::NECESSITY_OPTIONAL === $necessity ) {
 			if ( $irreversibility <= self::IRREVERSIBILITY_LOW ) {
 				return array(
-					'verdict'            => self::VERDICT_WARN,
-					'risk_score'         => $risk_score,
-					'reason'             => __( 'Action is optional but low-risk — allowed with warning.', 'mcp-ai-wpoos' ),
-					'requires_approval'  => false,
+					'verdict'           => self::VERDICT_WARN,
+					'risk_score'        => $risk_score,
+					'reason'            => __( 'Action is optional but low-risk — allowed with warning.', 'mcp-ai-wpoos' ),
+					'requires_approval' => false,
 				);
 			}
 			if ( $irreversibility >= self::IRREVERSIBILITY_HIGH ) {
 				return array(
-					'verdict'            => self::VERDICT_BLOCK,
-					'risk_score'         => $risk_score,
-					'reason'             => __( 'Action is optional and high-risk — blocked.', 'mcp-ai-wpoos' ),
-					'requires_approval'  => true,
+					'verdict'           => self::VERDICT_BLOCK,
+					'risk_score'        => $risk_score,
+					'reason'            => __( 'Action is optional and high-risk — blocked.', 'mcp-ai-wpoos' ),
+					'requires_approval' => true,
 				);
 			}
 			return array(
-				'verdict'            => self::VERDICT_APPROVAL_REQUIRED,
-				'risk_score'         => $risk_score,
-				'reason'             => __( 'Action is optional with moderate risk — requires human approval.', 'mcp-ai-wpoos' ),
-				'requires_approval'  => true,
+				'verdict'           => self::VERDICT_APPROVAL_REQUIRED,
+				'risk_score'        => $risk_score,
+				'reason'            => __( 'Action is optional with moderate risk — requires human approval.', 'mcp-ai-wpoos' ),
+				'requires_approval' => true,
 			);
 		}
 
@@ -344,51 +344,51 @@ class WP_MCP_AI_Action_Safety_Profile {
 					? self::VERDICT_WARN
 					: self::VERDICT_ALLOW;
 				return array(
-					'verdict'            => $verdict,
-					'risk_score'         => $risk_score,
-					'reason'             => __( 'Action is helpful and within acceptable risk bounds.', 'mcp-ai-wpoos' ),
-					'requires_approval'  => false,
+					'verdict'           => $verdict,
+					'risk_score'        => $risk_score,
+					'reason'            => __( 'Action is helpful and within acceptable risk bounds.', 'mcp-ai-wpoos' ),
+					'requires_approval' => false,
 				);
 			}
 			if ( $irreversibility >= self::IRREVERSIBILITY_PERMANENT ) {
 				return array(
-					'verdict'            => self::VERDICT_BLOCK,
-					'risk_score'         => $risk_score,
-					'reason'             => __( 'Action is helpful but permanently irreversible — blocked.', 'mcp-ai-wpoos' ),
-					'requires_approval'  => true,
+					'verdict'           => self::VERDICT_BLOCK,
+					'risk_score'        => $risk_score,
+					'reason'            => __( 'Action is helpful but permanently irreversible — blocked.', 'mcp-ai-wpoos' ),
+					'requires_approval' => true,
 				);
 			}
 			return array(
-				'verdict'            => self::VERDICT_APPROVAL_REQUIRED,
-				'risk_score'         => $risk_score,
-				'reason'             => __( 'Action is helpful but high-risk — requires human approval.', 'mcp-ai-wpoos' ),
-				'requires_approval'  => true,
+				'verdict'           => self::VERDICT_APPROVAL_REQUIRED,
+				'risk_score'        => $risk_score,
+				'reason'            => __( 'Action is helpful but high-risk — requires human approval.', 'mcp-ai-wpoos' ),
+				'requires_approval' => true,
 			);
 		}
 
 		// Essential actions: allowed up to high irreversibility, HITL for permanent.
 		if ( $irreversibility >= self::IRREVERSIBILITY_PERMANENT ) {
 			return array(
-				'verdict'            => self::VERDICT_APPROVAL_REQUIRED,
-				'risk_score'         => $risk_score,
-				'reason'             => __( 'Action is essential but permanently irreversible — requires human approval.', 'mcp-ai-wpoos' ),
-				'requires_approval'  => true,
+				'verdict'           => self::VERDICT_APPROVAL_REQUIRED,
+				'risk_score'        => $risk_score,
+				'reason'            => __( 'Action is essential but permanently irreversible — requires human approval.', 'mcp-ai-wpoos' ),
+				'requires_approval' => true,
 			);
 		}
 		if ( $irreversibility >= self::IRREVERSIBILITY_HIGH ) {
 			return array(
-				'verdict'            => self::VERDICT_WARN,
-				'risk_score'         => $risk_score,
-				'reason'             => __( 'Action is essential but high-risk — allowed with warning.', 'mcp-ai-wpoos' ),
-				'requires_approval'  => false,
+				'verdict'           => self::VERDICT_WARN,
+				'risk_score'        => $risk_score,
+				'reason'            => __( 'Action is essential but high-risk — allowed with warning.', 'mcp-ai-wpoos' ),
+				'requires_approval' => false,
 			);
 		}
 
 		return array(
-			'verdict'            => self::VERDICT_ALLOW,
-			'risk_score'         => $risk_score,
-			'reason'             => __( 'Action is essential and within safe bounds — allowed.', 'mcp-ai-wpoos' ),
-			'requires_approval'  => false,
+			'verdict'           => self::VERDICT_ALLOW,
+			'risk_score'        => $risk_score,
+			'reason'            => __( 'Action is essential and within safe bounds — allowed.', 'mcp-ai-wpoos' ),
+			'requires_approval' => false,
 		);
 	}
 

@@ -133,10 +133,10 @@ class WP_MCP_AI_Tool_Assess_Project_Risk implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Get project metadata.
-		$project_status   = get_post_meta( $project_id, '_project_status', true );
-		$project_start    = get_post_meta( $project_id, '_project_start_date', true );
-		$project_end      = get_post_meta( $project_id, '_project_end_date', true );
-		$assigned_to      = get_post_meta( $project_id, '_project_assigned_to', true );
+		$project_status = get_post_meta( $project_id, '_project_status', true );
+		$project_start  = get_post_meta( $project_id, '_project_start_date', true );
+		$project_end    = get_post_meta( $project_id, '_project_end_date', true );
+		$assigned_to    = get_post_meta( $project_id, '_project_assigned_to', true );
 		if ( ! is_array( $assigned_to ) ) {
 			$assigned_to = array();
 		}
@@ -152,41 +152,41 @@ class WP_MCP_AI_Tool_Assess_Project_Risk implements WP_MCP_AI_Tool_Interface, WP
 			)
 		);
 
-		$total_tasks       = count( $tasks );
-		$blocked_count     = 0;
-		$stale_count       = 0;
-		$overdue_count     = 0;
-		$completed_count   = 0;
-		$unassigned_count  = 0;
-		$reassigned_count  = 0;
-		$stale_threshold   = time() - ( 14 * DAY_IN_SECONDS );
-		$now               = time();
+		$total_tasks      = count( $tasks );
+		$blocked_count    = 0;
+		$stale_count      = 0;
+		$overdue_count    = 0;
+		$completed_count  = 0;
+		$unassigned_count = 0;
+		$reassigned_count = 0;
+		$stale_threshold  = time() - ( 14 * DAY_IN_SECONDS );
+		$now              = time();
 
 		foreach ( $tasks as $task ) {
-			$status     = get_post_meta( $task->ID, '_task_status', true );
-			$due_date   = get_post_meta( $task->ID, '_task_due_date', true );
-			$assigned   = get_post_meta( $task->ID, '_task_assigned_to', true );
-			$modified   = strtotime( $task->post_modified );
+			$status   = get_post_meta( $task->ID, '_task_status', true );
+			$due_date = get_post_meta( $task->ID, '_task_due_date', true );
+			$assigned = get_post_meta( $task->ID, '_task_assigned_to', true );
+			$modified = strtotime( $task->post_modified );
 
 			if ( 'blocked' === $status ) {
-				$blocked_count++;
+				++$blocked_count;
 			}
 			if ( 'completed' === $status || 'cancelled' === $status ) {
-				$completed_count++;
+				++$completed_count;
 			}
 			if ( $modified < $stale_threshold && ! in_array( $status, array( 'completed', 'cancelled' ), true ) ) {
-				$stale_count++;
+				++$stale_count;
 			}
 			if ( $due_date && strtotime( $due_date ) < $now && ! in_array( $status, array( 'completed', 'cancelled' ), true ) ) {
-				$overdue_count++;
+				++$overdue_count;
 			}
 			if ( ! $assigned && ! in_array( $status, array( 'completed', 'cancelled' ), true ) ) {
-				$unassigned_count++;
+				++$unassigned_count;
 			}
 			// Check for reassignments via _task_previous_assignee meta.
 			$previous_assignee = get_post_meta( $task->ID, '_task_previous_assignee', true );
 			if ( $previous_assignee ) {
-				$reassigned_count++;
+				++$reassigned_count;
 			}
 		}
 
@@ -195,11 +195,11 @@ class WP_MCP_AI_Tool_Assess_Project_Risk implements WP_MCP_AI_Tool_Interface, WP
 		// ── Dimension 1: Schedule Slippage ──
 		$schedule_slippage = 0;
 		if ( $project_start && $project_end ) {
-			$total_days      = max( 1, ( strtotime( $project_end ) - strtotime( $project_start ) ) / DAY_IN_SECONDS );
-			$elapsed_days    = max( 0, ( $now - strtotime( $project_start ) ) / DAY_IN_SECONDS );
+			$total_days        = max( 1, ( strtotime( $project_end ) - strtotime( $project_start ) ) / DAY_IN_SECONDS );
+			$elapsed_days      = max( 0, ( $now - strtotime( $project_start ) ) / DAY_IN_SECONDS );
 			$expected_progress = $total_days > 0 ? min( 1, $elapsed_days / $total_days ) : 0;
 			$actual_progress   = $total_tasks > 0 ? $completed_count / $total_tasks : 0;
-			$schedule_slippage  = round( max( 0, $expected_progress - $actual_progress ) * 100, 1 );
+			$schedule_slippage = round( max( 0, $expected_progress - $actual_progress ) * 100, 1 );
 		}
 
 		// ── Dimension 2: Scope Creep (tasks created after project start) ──
@@ -208,7 +208,7 @@ class WP_MCP_AI_Tool_Assess_Project_Risk implements WP_MCP_AI_Tool_Interface, WP
 			$new_task_count = 0;
 			foreach ( $tasks as $task ) {
 				if ( strtotime( $task->post_date ) > strtotime( $project_start ) + ( 30 * DAY_IN_SECONDS ) ) {
-					$new_task_count++;
+					++$new_task_count;
 				}
 			}
 			$scope_creep = $total_tasks > 0 ? round( ( $new_task_count / $total_tasks ) * 100, 1 ) : 0;

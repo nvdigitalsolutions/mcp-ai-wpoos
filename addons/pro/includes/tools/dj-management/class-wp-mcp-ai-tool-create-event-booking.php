@@ -146,13 +146,13 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 		$required_fields = array( 'event_name', 'event_type', 'event_date', 'start_time', 'end_time', 'venue_name', 'client_name', 'client_email' );
 		foreach ( $required_fields as $field ) {
 			if ( empty( $arguments[ $field ] ) ) {
-				return array(
-					'success' => false,
-					'error'   => sprintf(
+				return new WP_Error(
+					'tool_error',
+					sprintf(
 						/* translators: %s: field name */
 						__( 'Required field "%s" is missing.', 'mcp-ai-wpoos-pro' ),
 						$field
-					),
+					)
 				);
 			}
 		}
@@ -167,9 +167,9 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 			$existing_booking = get_post( $booking_id );
 
 			if ( ! $existing_booking || 'dj_booking' !== $existing_booking->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Event booking not found.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Event booking not found.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -179,9 +179,9 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'You do not have permission to update this event booking.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'You do not have permission to update this event booking.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -207,9 +207,9 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 
 		// Validate email.
 		if ( ! is_email( $client_email ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid email address.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid email address.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -231,9 +231,9 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 			$result = wp_update_post( $post_data );
 
 			if ( is_wp_error( $result ) ) {
-				return array(
-					'success' => false,
-					'error'   => $result->get_error_message(),
+				return new WP_Error(
+					'tool_error',
+					$result->get_error_message()
 				);
 			}
 		} else {
@@ -248,9 +248,9 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 			$booking_id = wp_insert_post( $post_data );
 
 			if ( is_wp_error( $booking_id ) ) {
-				return array(
-					'success' => false,
-					'error'   => $booking_id->get_error_message(),
+				return new WP_Error(
+					'tool_error',
+					$booking_id->get_error_message()
 				);
 			}
 		}

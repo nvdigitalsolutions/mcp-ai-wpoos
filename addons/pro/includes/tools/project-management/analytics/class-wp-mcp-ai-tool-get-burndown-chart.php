@@ -194,7 +194,7 @@ class WP_MCP_AI_Tool_Get_Burndown_Chart implements WP_MCP_AI_Tool_Interface, WP_
 				if ( ! isset( $completion_dates[ $day_key ] ) ) {
 					$completion_dates[ $day_key ] = 0;
 				}
-				$completion_dates[ $day_key ]++;
+				++$completion_dates[ $day_key ];
 			}
 		}
 
@@ -227,14 +227,14 @@ class WP_MCP_AI_Tool_Get_Burndown_Chart implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'success'       => true,
-			'project_id'    => $project_id,
-			'sprint_id'     => $sprint_id ? $sprint_id : null,
-			'start_date'    => $start_date,
-			'end_date'      => $end_date,
-			'total_tasks'   => $total_tasks,
-			'total_days'    => $total_days,
-			'sprint_days'   => $sprint_days,
+			'success'     => true,
+			'project_id'  => $project_id,
+			'sprint_id'   => $sprint_id ? $sprint_id : null,
+			'start_date'  => $start_date,
+			'end_date'    => $end_date,
+			'total_tasks' => $total_tasks,
+			'total_days'  => $total_days,
+			'sprint_days' => $sprint_days,
 		);
 	}
 }

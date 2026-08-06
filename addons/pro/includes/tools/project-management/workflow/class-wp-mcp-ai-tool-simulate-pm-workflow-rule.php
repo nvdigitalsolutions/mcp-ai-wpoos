@@ -152,8 +152,8 @@ class WP_MCP_AI_Tool_Simulate_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interfa
 		}
 
 		return array(
-			'success' => true,
-			'message' => sprintf(
+			'success'    => true,
+			'message'    => sprintf(
 				/* translators: 1: total scanned, 2: total matches */
 				__( 'Simulation complete: %1$d entities scanned, %2$d matched.', 'mcp-ai-wpoos-pro' ),
 				$result['total_scanned'],

@@ -265,15 +265,15 @@ class WP_MCP_AI_Tool_Connect_To_EHR implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$response = wp_remote_post(
 			$conn['token_url'],
 			array(
-				'timeout'             => 30,
-				'reject_unsafe_urls'  => true,
-				'redirection'         => 0,
-				'headers'             => array(
+				'timeout'            => 30,
+				'reject_unsafe_urls' => true,
+				'redirection'        => 0,
+				'headers'            => array(
 					'Accept'        => 'application/json',
 					'Content-Type'  => 'application/x-www-form-urlencoded',
 					'Authorization' => 'Basic ' . base64_encode( $conn['client_id'] . ':' . $conn['client_secret'] ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 				),
-				'body'                => array(
+				'body'               => array(
 					'grant_type' => 'client_credentials',
 					'scope'      => $conn['scope'],
 				),

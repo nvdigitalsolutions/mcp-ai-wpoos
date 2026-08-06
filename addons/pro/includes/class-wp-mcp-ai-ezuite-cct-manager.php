@@ -1796,7 +1796,7 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		 * @since 1.9.3
 		 *
 		 * @param \Jet_Engine\Modules\Custom_Content_Types\Module $module CCT module instance.
-		 * @param string                                            $slug   CCT slug.
+		 * @param string                                          $slug   CCT slug.
 		 * @return int Number of duplicate rows removed.
 		 */
 		protected static function maybe_cleanup_duplicate_ccts( $module, $slug ) {

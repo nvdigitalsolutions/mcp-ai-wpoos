@@ -386,7 +386,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 			self::$low_necessity_count[ $session_id ] = 0;
 		}
 
-		self::$low_necessity_count[ $session_id ]++;
+		++self::$low_necessity_count[ $session_id ];
 
 		return self::$low_necessity_count[ $session_id ] >= self::MAX_LOW_NECESSITY_ITERATIONS;
 	}

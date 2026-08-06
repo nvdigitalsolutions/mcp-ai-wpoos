@@ -157,12 +157,12 @@ class WP_MCP_AI_CRM_Web_Form_Listener {
 		}
 
 		$arguments = array(
-			'channel'         => $channel,
-			'message_body'    => wp_json_encode( $lead_data ),
-			'sender_name'     => trim( $lead_data['first_name'] . ' ' . $lead_data['last_name'] ),
-			'sender_email'    => $lead_data['email'],
-			'sender_phone'    => $lead_data['phone'],
-			'source'          => $source,
+			'channel'      => $channel,
+			'message_body' => wp_json_encode( $lead_data ),
+			'sender_name'  => trim( $lead_data['first_name'] . ' ' . $lead_data['last_name'] ),
+			'sender_email' => $lead_data['email'],
+			'sender_phone' => $lead_data['phone'],
+			'source'       => $source,
 		);
 
 		$tool    = new WP_MCP_AI_Tool_Extract_Lead_From_Message();

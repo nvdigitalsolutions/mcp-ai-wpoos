@@ -132,7 +132,7 @@ class WP_MCP_AI_Tool_Paper_Store_Search implements WP_MCP_AI_Tool_Interface, WP_
 			}
 
 			// Get all matching first, then filter by text (LIKE on title/description).
-			$query = $query->limit( $limit * 2 ); // Fetch more to account for post-filtering.
+			$query   = $query->limit( $limit * 2 ); // Fetch more to account for post-filtering.
 			$records = $query->get();
 
 			foreach ( $records as $record ) {
@@ -166,9 +166,9 @@ class WP_MCP_AI_Tool_Paper_Store_Search implements WP_MCP_AI_Tool_Interface, WP_
 		return $this->format_success_response(
 			$summary,
 			array(
-				'query'       => esc_html( $query_str ),
-				'count'       => count( $all_results ),
-				'results'     => $all_results,
+				'query'   => esc_html( $query_str ),
+				'count'   => count( $all_results ),
+				'results' => $all_results,
 			)
 		);
 	}

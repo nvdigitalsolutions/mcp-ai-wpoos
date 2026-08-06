@@ -112,16 +112,16 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['document_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Document ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Document ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['action'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Action is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Action is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -131,9 +131,9 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 		// Verify document exists.
 		$document = get_post( $document_id );
 		if ( ! $document || 'mcp_ai_reg_document' !== $document->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Document not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Document not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -143,9 +143,9 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 			return $this->create_new_version( $document_id, $document, $arguments );
 		}
 
-		return array(
-			'success' => false,
-			'error'   => __( 'Invalid action specified.', 'mcp-ai-wpoos-pro' ),
+		return new WP_Error(
+			'tool_error',
+			__( 'Invalid action specified.', 'mcp-ai-wpoos-pro' )
 		);
 	}
 
@@ -213,16 +213,16 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 	private function create_new_version( $document_id, $document, $arguments ) {
 		// Validate required arguments for creating version.
 		if ( empty( $arguments['new_version'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'New version number is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'New version number is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['file_url'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'File URL is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'File URL is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

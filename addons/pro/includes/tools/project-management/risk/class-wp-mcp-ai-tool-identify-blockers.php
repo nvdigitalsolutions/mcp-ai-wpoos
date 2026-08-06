@@ -157,17 +157,17 @@ class WP_MCP_AI_Tool_Identify_Blockers implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$tasks = get_posts( $query_args );
 
-		$explicit_blockers  = array();
-		$implicit_blockers  = array();
-		$now                = time();
+		$explicit_blockers = array();
+		$implicit_blockers = array();
+		$now               = time();
 
 		// First pass: collect all tasks and their dependencies.
-		$all_task_deps  = array();
+		$all_task_deps   = array();
 		$all_task_status = array();
 
 		foreach ( $tasks as $task ) {
-			$tid    = $task->ID;
-			$status = get_post_meta( $tid, '_task_status', true );
+			$tid                     = $task->ID;
+			$status                  = get_post_meta( $tid, '_task_status', true );
 			$all_task_status[ $tid ] = $status;
 
 			$deps = get_post_meta( $tid, '_task_dependencies', true );
@@ -179,11 +179,11 @@ class WP_MCP_AI_Tool_Identify_Blockers implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Second pass: classify blockers.
 		foreach ( $tasks as $task ) {
-			$tid         = $task->ID;
-			$status      = isset( $all_task_status[ $tid ] ) ? $all_task_status[ $tid ] : '';
-			$priority    = get_post_meta( $tid, '_task_priority', true );
+			$tid             = $task->ID;
+			$status          = isset( $all_task_status[ $tid ] ) ? $all_task_status[ $tid ] : '';
+			$priority        = get_post_meta( $tid, '_task_priority', true );
 			$task_project_id = absint( get_post_meta( $tid, '_task_project_id', true ) );
-			$project_title    = $task_project_id ? get_the_title( $task_project_id ) : '';
+			$project_title   = $task_project_id ? get_the_title( $task_project_id ) : '';
 
 			// Explicit blockers: status=blocked.
 			if ( 'blocked' === $status ) {
@@ -192,16 +192,16 @@ class WP_MCP_AI_Tool_Identify_Blockers implements WP_MCP_AI_Tool_Interface, WP_M
 				$block_duration  = max( 0, (int) ceil( ( $now - $block_since ) / DAY_IN_SECONDS ) );
 
 				$explicit_blockers[] = array(
-					'task_id'            => $tid,
-					'title'              => $task->post_title,
-					'project_id'         => $task_project_id ? $task_project_id : null,
-					'project_title'      => $project_title ? $project_title : '',
-					'is_explicit'        => true,
-					'is_implicit'        => false,
+					'task_id'             => $tid,
+					'title'               => $task->post_title,
+					'project_id'          => $task_project_id ? $task_project_id : null,
+					'project_title'       => $project_title ? $project_title : '',
+					'is_explicit'         => true,
+					'is_implicit'         => false,
 					'block_duration_days' => $block_duration,
-					'blocking_task_ids'  => array(),
-					'status'             => $status,
-					'priority'           => $priority ? $priority : 'medium',
+					'blocking_task_ids'   => array(),
+					'status'              => $status,
+					'priority'            => $priority ? $priority : 'medium',
 				);
 			}
 
@@ -218,16 +218,16 @@ class WP_MCP_AI_Tool_Identify_Blockers implements WP_MCP_AI_Tool_Interface, WP_M
 
 				if ( ! empty( $unmet_deps ) ) {
 					$implicit_blockers[] = array(
-						'task_id'            => $tid,
-						'title'              => $task->post_title,
-						'project_id'         => $task_project_id ? $task_project_id : null,
-						'project_title'      => $project_title ? $project_title : '',
-						'is_explicit'        => false,
-						'is_implicit'        => true,
+						'task_id'             => $tid,
+						'title'               => $task->post_title,
+						'project_id'          => $task_project_id ? $task_project_id : null,
+						'project_title'       => $project_title ? $project_title : '',
+						'is_explicit'         => false,
+						'is_implicit'         => true,
 						'block_duration_days' => null,
-						'blocking_task_ids'  => $unmet_deps,
-						'status'             => $status,
-						'priority'           => $priority ? $priority : 'medium',
+						'blocking_task_ids'   => $unmet_deps,
+						'status'              => $status,
+						'priority'            => $priority ? $priority : 'medium',
 					);
 				}
 			}

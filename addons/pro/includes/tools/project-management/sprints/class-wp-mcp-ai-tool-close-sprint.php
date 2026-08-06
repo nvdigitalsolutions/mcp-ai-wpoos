@@ -183,19 +183,19 @@ class WP_MCP_AI_Tool_Close_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		$query = new WP_Query( $query_args );
 
-		$completed_count   = 0;
-		$incomplete_count  = 0;
-		$moved_to_backlog  = array();
+		$completed_count  = 0;
+		$incomplete_count = 0;
+		$moved_to_backlog = array();
 
 		if ( $query->have_posts() ) {
 			foreach ( $query->posts as $task_id ) {
 				$task_status = get_post_meta( $task_id, '_task_status', true );
 
 				if ( 'completed' === $task_status ) {
-					$completed_count++;
+					++$completed_count;
 					// Keep sprint assignment for completed tasks (historical record).
 				} else {
-					$incomplete_count++;
+					++$incomplete_count;
 					// Move incomplete tasks back to backlog.
 					delete_post_meta( $task_id, '_task_sprint_id' );
 					update_post_meta( $task_id, '_task_status', 'backlog' );
@@ -204,7 +204,7 @@ class WP_MCP_AI_Tool_Close_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 		}
 
-		$total_tasks   = $completed_count + $incomplete_count;
+		$total_tasks    = $completed_count + $incomplete_count;
 		$completion_pct = $total_tasks > 0 ? round( ( $completed_count / $total_tasks ) * 100, 1 ) : 0;
 
 		// Calculate velocity: completed tasks per sprint day.
@@ -212,17 +212,17 @@ class WP_MCP_AI_Tool_Close_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Build metrics.
 		$sprint_result = array(
-			'sprint_id'         => $sprint_id,
-			'sprint_title'      => $sprint->post_title,
-			'status'            => 'completed',
-			'completed_count'   => $completed_count,
-			'incomplete_count'  => $incomplete_count,
-			'total_tasks'       => $total_tasks,
-			'completion_pct'    => $completion_pct,
-			'velocity'          => $velocity,
-			'sprint_days'       => $sprint_days,
-			'moved_to_backlog'  => $moved_to_backlog,
-			'closed_at'         => current_time( 'mysql' ),
+			'sprint_id'        => $sprint_id,
+			'sprint_title'     => $sprint->post_title,
+			'status'           => 'completed',
+			'completed_count'  => $completed_count,
+			'incomplete_count' => $incomplete_count,
+			'total_tasks'      => $total_tasks,
+			'completion_pct'   => $completion_pct,
+			'velocity'         => $velocity,
+			'sprint_days'      => $sprint_days,
+			'moved_to_backlog' => $moved_to_backlog,
+			'closed_at'        => current_time( 'mysql' ),
 		);
 
 		// Save metrics as sprint meta.

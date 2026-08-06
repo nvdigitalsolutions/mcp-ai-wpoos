@@ -223,17 +223,17 @@ class WP_MCP_AI_Tool_Plan_Sprint implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$remaining_capacity = $velocity_target > 0 ? max( 0, $velocity_target - count( $planned_task_ids ) ) : null;
 
 		return array(
-			'success'           => true,
-			'message'           => sprintf(
+			'success'            => true,
+			'message'            => sprintf(
 				/* translators: 1: planned count, 2: sprint title */
 				__( 'Planned %1$d task(s) into sprint: %2$s', 'mcp-ai-wpoos-pro' ),
 				count( $planned_task_ids ),
 				$sprint->post_title
 			),
-			'sprint_id'         => $sprint_id,
-			'planned_count'     => count( $planned_task_ids ),
-			'planned_task_ids'  => $planned_task_ids,
-			'velocity_target'   => $velocity_target > 0 ? $velocity_target : null,
+			'sprint_id'          => $sprint_id,
+			'planned_count'      => count( $planned_task_ids ),
+			'planned_task_ids'   => $planned_task_ids,
+			'velocity_target'    => $velocity_target > 0 ? $velocity_target : null,
 			'remaining_capacity' => $remaining_capacity,
 		);
 	}

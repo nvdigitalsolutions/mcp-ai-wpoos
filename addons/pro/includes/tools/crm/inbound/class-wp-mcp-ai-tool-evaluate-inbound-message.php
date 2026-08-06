@@ -358,7 +358,7 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 		// --- Step 4: Score lead ---
 		if ( $contact_id && class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
 			$classification_intent = ( is_array( $classification ) && isset( $classification['intent'] ) ) ? $classification['intent'] : '';
-			$score = WP_MCP_AI_CRM_Engine::calculate_lead_score(
+			$score                 = WP_MCP_AI_CRM_Engine::calculate_lead_score(
 				array(
 					'fit'        => 40,
 					'intent'     => in_array( $classification_intent, array( 'demo_request', 'pricing_inquiry' ), true ) ? 80 : 30,
@@ -391,8 +391,8 @@ class WP_MCP_AI_Tool_Evaluate_Inbound_Message implements WP_MCP_AI_Tool_Interfac
 
 		// --- Step 6: Auto-reply (if enabled) ---
 		if ( ! empty( $arguments['auto_reply'] ) && $contact_id ) {
-			$intent                           = ( is_array( $classification ) && isset( $classification['intent'] ) ) ? $classification['intent'] : 'general';
-			$auto_msg                         = sprintf(
+			$intent   = ( is_array( $classification ) && isset( $classification['intent'] ) ) ? $classification['intent'] : 'general';
+			$auto_msg = sprintf(
 				/* translators: %s: intent type */
 				__( 'Thanks for reaching out! Our team will get back to you shortly. (Auto-reply for: %s)', 'mcp-ai-wpoos-pro' ),
 				$intent

@@ -312,7 +312,7 @@ class WP_MCP_AI_Toolkit_CCT_Store extends WP_MCP_AI_Tenant_Repository implements
 			return null;
 		}
 
-		$type_id      = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
+		$type_id       = isset( $record['id'] ) ? absint( $record['id'] ) : 0;
 		$this->factory = new \Jet_Engine\Modules\Custom_Content_Types\Factory( $args, $fields, $type_id );
 
 		return $this->factory;
@@ -423,7 +423,7 @@ class WP_MCP_AI_Toolkit_CCT_Store extends WP_MCP_AI_Tenant_Repository implements
 			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$item_data           = $data;
+		$item_data               = $data;
 		$item_data['cct_status'] = 'publish';
 
 		// Stamp tenant ownership when tenant context is active.
@@ -496,7 +496,7 @@ class WP_MCP_AI_Toolkit_CCT_Store extends WP_MCP_AI_Tenant_Repository implements
 			return new WP_Error( 'cct_not_available', __( 'JetEngine CCT is not available', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$update_data       = $data;
+		$update_data        = $data;
 		$update_data['_ID'] = absint( $item_id );
 
 		$result = $handler->update_item( $update_data );

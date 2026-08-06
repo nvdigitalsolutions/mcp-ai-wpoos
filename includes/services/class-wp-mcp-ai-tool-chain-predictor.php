@@ -63,7 +63,7 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 	/**
 	 * Constructor
 	 *
-	 * @param WP_MCP_AI_Tool_Registry|null                $registry           Tool registry.
+	 * @param WP_MCP_AI_Tool_Registry|null                 $registry           Tool registry.
 	 * @param WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null $acceptance_tracker Acceptance tracker.
 	 */
 	public function __construct( $registry = null, WP_MCP_AI_Tool_Chain_Acceptance_Tracker|null $acceptance_tracker = null ) {

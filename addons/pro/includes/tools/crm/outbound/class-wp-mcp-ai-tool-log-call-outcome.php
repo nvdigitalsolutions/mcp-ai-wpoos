@@ -124,8 +124,8 @@ class WP_MCP_AI_Tool_Log_Call_Outcome implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'unavailable', self::get_unavailable_reason() );
 		}
 
-		$lead_id     = absint( $arguments['lead_id'] );
-		$p           = get_post( $lead_id );
+		$lead_id = absint( $arguments['lead_id'] );
+		$p       = get_post( $lead_id );
 		if ( ! $p ) {
 			return new WP_Error( 'not_found', __( 'Lead not found.', 'mcp-ai-wpoos-pro' ) );
 		}

@@ -777,7 +777,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 			'role'    => 'assistant',
 			'content' => $content,
 		);
-		$history = WP_MCP_AI_Webhook_Context_Manager::trim_history_after_response( $history, $max_history, 'teams' );
+		$history   = WP_MCP_AI_Webhook_Context_Manager::trim_history_after_response( $history, $max_history, 'teams' );
 		set_transient( $history_key, $history, self::CONVERSATION_HISTORY_TTL );
 
 		WP_MCP_AI_Logger::log_event(

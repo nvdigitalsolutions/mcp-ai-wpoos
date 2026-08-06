@@ -88,9 +88,9 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 
 		// Validate template_id.
 		if ( ! $template_id ) {
-			return array(
-				'success' => false,
-				'error'   => 'template_id is required',
+			return new WP_Error(
+				'tool_error',
+				'template_id is required'
 			);
 		}
 
@@ -101,17 +101,17 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 		if ( $use_cct ) {
 			$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
 			if ( ! $handler ) {
-				return array(
-					'success' => false,
-					'error'   => 'CCT handler not available',
+				return new WP_Error(
+					'tool_error',
+					'CCT handler not available'
 				);
 			}
 
 			$template = $handler->get_item( $template_id );
 			if ( ! $template ) {
-				return array(
-					'success' => false,
-					'error'   => 'Template not found',
+				return new WP_Error(
+					'tool_error',
+					'Template not found'
 				);
 			}
 
@@ -121,9 +121,9 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 		} else {
 			$template = get_post( $template_id );
 			if ( ! $template || 'mcp_task_template' !== $template->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => 'Template not found',
+				return new WP_Error(
+					'tool_error',
+					'Template not found'
 				);
 			}
 
@@ -144,10 +144,9 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 		$unreplaced_placeholders = array_unique( $matches[1] ?? array() );
 
 		if ( ! empty( $unreplaced_placeholders ) ) {
-			return array(
-				'success'                 => false,
-				'error'                   => 'Missing required variables: ' . implode( ', ', $unreplaced_placeholders ),
-				'unreplaced_placeholders' => $unreplaced_placeholders,
+			return new WP_Error(
+				'tool_error',
+				'Missing required variables: ' . implode( ', ', $unreplaced_placeholders ),
 			);
 		}
 
@@ -184,9 +183,9 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 		if ( $use_cct ) {
 			$plan_handler = WP_MCP_AI_Task_Plans_CCT::get_item_handler();
 			if ( ! $plan_handler ) {
-				return array(
-					'success' => false,
-					'error'   => 'Task Plans CCT handler not available',
+				return new WP_Error(
+					'tool_error',
+					'Task Plans CCT handler not available'
 				);
 			}
 
@@ -217,9 +216,9 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 			$plan_id = wp_insert_post( $post_data );
 
 			if ( is_wp_error( $plan_id ) ) {
-				return array(
-					'success' => false,
-					'error'   => $plan_id->get_error_message(),
+				return new WP_Error(
+					'tool_error',
+					$plan_id->get_error_message()
 				);
 			}
 

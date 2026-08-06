@@ -180,7 +180,7 @@ class WP_MCP_AI_Tool_Get_My_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
-		$query = new WP_Query( $query_args );
+		$query            = new WP_Query( $query_args );
 		$tasks_by_project = array();
 		$task_list        = array();
 
@@ -210,7 +210,7 @@ class WP_MCP_AI_Tool_Get_My_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				// Group by project.
 				$group_key = $project_id ? $project_id : 0;
 				if ( ! isset( $tasks_by_project[ $group_key ] ) ) {
-					$project_title = '';
+					$project_title  = '';
 					$project_status = '';
 					if ( $project_id ) {
 						$project_title  = get_the_title( $project_id );
@@ -227,7 +227,7 @@ class WP_MCP_AI_Tool_Get_My_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				}
 
 				$tasks_by_project[ $group_key ]['tasks'][] = $task;
-				$task_list[] = $task;
+				$task_list[]                               = $task;
 			}
 			wp_reset_postdata();
 		}

@@ -171,9 +171,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if data store is available.
 		if ( ! $this->data_store ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'CRM data store not available. Please ensure toolkit is enabled.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'CRM data store not available. Please ensure toolkit is enabled.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -199,9 +199,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 				return $this->search_contacts( $arguments );
 
 			default:
-				return array(
-					'success' => false,
-					'error'   => __( 'Invalid action. Must be one of: create, read, update, delete, list, search.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Invalid action. Must be one of: create, read, update, delete, list, search.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -214,9 +214,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function create_contact( $arguments ) {
 		if ( empty( $arguments['contact_data'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Contact data is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact data is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -224,9 +224,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Validate required fields.
 		if ( empty( $contact_data['email'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Email is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Email is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -236,9 +236,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 
 		$email_valid = $validator->is_email( $contact_data['email'] );
 		if ( is_wp_error( $email_valid ) ) {
-			return array(
-				'success' => false,
-				'error'   => $email_valid->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$email_valid->get_error_message()
 			);
 		}
 
@@ -246,9 +246,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! empty( $contact_data['phone'] ) ) {
 			$phone_valid = $validator->is_phone_number( $contact_data['phone'] );
 			if ( is_wp_error( $phone_valid ) ) {
-				return array(
-					'success' => false,
-					'error'   => $phone_valid->get_error_message(),
+				return new WP_Error(
+					'tool_error',
+					$phone_valid->get_error_message()
 				);
 			}
 		}
@@ -257,9 +257,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 		$contact_id = $this->data_store->create_item( $contact_data );
 
 		if ( is_wp_error( $contact_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $contact_id->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$contact_id->get_error_message()
 			);
 		}
 
@@ -279,9 +279,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function read_contact( $arguments ) {
 		if ( empty( $arguments['contact_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Contact ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -289,9 +289,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 		$contact    = $this->data_store->get_item( $contact_id );
 
 		if ( is_wp_error( $contact ) ) {
-			return array(
-				'success' => false,
-				'error'   => $contact->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$contact->get_error_message()
 			);
 		}
 
@@ -310,16 +310,16 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function update_contact( $arguments ) {
 		if ( empty( $arguments['contact_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Contact ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['contact_data'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Contact data is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact data is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -332,9 +332,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 			$validator   = new WP_MCP_AI_Validator_Service();
 			$email_valid = $validator->is_email( $contact_data['email'] );
 			if ( is_wp_error( $email_valid ) ) {
-				return array(
-					'success' => false,
-					'error'   => $email_valid->get_error_message(),
+				return new WP_Error(
+					'tool_error',
+					$email_valid->get_error_message()
 				);
 			}
 		}
@@ -345,9 +345,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 			$validator   = new WP_MCP_AI_Validator_Service();
 			$phone_valid = $validator->is_phone_number( $contact_data['phone'] );
 			if ( is_wp_error( $phone_valid ) ) {
-				return array(
-					'success' => false,
-					'error'   => $phone_valid->get_error_message(),
+				return new WP_Error(
+					'tool_error',
+					$phone_valid->get_error_message()
 				);
 			}
 		}
@@ -356,9 +356,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 		$result = $this->data_store->update_item( $contact_id, $contact_data );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$result->get_error_message()
 			);
 		}
 
@@ -377,9 +377,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function delete_contact( $arguments ) {
 		if ( empty( $arguments['contact_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Contact ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Contact ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -387,9 +387,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 		$result     = $this->data_store->delete_item( $contact_id );
 
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$result->get_error_message()
 			);
 		}
 
@@ -434,9 +434,9 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function search_contacts( $arguments ) {
 		if ( empty( $arguments['search_query'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Search query is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Search query is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

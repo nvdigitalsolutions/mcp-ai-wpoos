@@ -460,7 +460,7 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 		$date        = ! empty( $row->measurement_date ) ? $row->measurement_date : '';
 		$time        = ! empty( $row->measurement_time ) ? $row->measurement_time : '00:00';
 		$effective   = $date . 'T' . $time . ':00Z';
-		$row_id = ! empty( $row->{'_ID'} ) ? (int) $row->{'_ID'} : 0;
+		$row_id      = ! empty( $row->{'_ID'} ) ? (int) $row->{'_ID'} : 0;
 		$subject_ref = array( 'reference' => 'Patient/member-' . $member_id );
 
 		$category = array(

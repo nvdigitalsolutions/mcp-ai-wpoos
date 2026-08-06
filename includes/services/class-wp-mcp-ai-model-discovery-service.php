@@ -89,9 +89,9 @@ class WP_MCP_AI_Model_Discovery_Service {
 
 				if ( ! isset( $catalog[ $model_id ] ) ) {
 					$diff['additions'][] = array(
-						'provider'  => $provider,
-						'model_id'  => $model_id,
-						'remote'    => $remote_meta,
+						'provider' => $provider,
+						'model_id' => $model_id,
+						'remote'   => $remote_meta,
 					);
 					continue;
 				}
@@ -186,10 +186,10 @@ class WP_MCP_AI_Model_Discovery_Service {
 			return;
 		}
 
-		$local_in    = isset( $local['cost_per_1k_input_tokens'] ) ? (float) $local['cost_per_1k_input_tokens'] : null;
-		$local_out   = isset( $local['cost_per_1k_output_tokens'] ) ? (float) $local['cost_per_1k_output_tokens'] : null;
-		$remote_in   = isset( $remote['cost_per_1k_input_tokens'] ) ? (float) $remote['cost_per_1k_input_tokens'] : null;
-		$remote_out  = isset( $remote['cost_per_1k_output_tokens'] ) ? (float) $remote['cost_per_1k_output_tokens'] : null;
+		$local_in   = isset( $local['cost_per_1k_input_tokens'] ) ? (float) $local['cost_per_1k_input_tokens'] : null;
+		$local_out  = isset( $local['cost_per_1k_output_tokens'] ) ? (float) $local['cost_per_1k_output_tokens'] : null;
+		$remote_in  = isset( $remote['cost_per_1k_input_tokens'] ) ? (float) $remote['cost_per_1k_input_tokens'] : null;
+		$remote_out = isset( $remote['cost_per_1k_output_tokens'] ) ? (float) $remote['cost_per_1k_output_tokens'] : null;
 
 		if ( null === $remote_in && null === $remote_out ) {
 			return;
@@ -204,13 +204,13 @@ class WP_MCP_AI_Model_Discovery_Service {
 		}
 		if ( $changed ) {
 			$diff['price_changes'][] = array(
-				'provider'   => $provider,
-				'model_id'   => $model_id,
-				'local'      => array(
+				'provider' => $provider,
+				'model_id' => $model_id,
+				'local'    => array(
 					'input_per_1k'  => $local_in,
 					'output_per_1k' => $local_out,
 				),
-				'remote'     => array(
+				'remote'   => array(
 					'input_per_1k'  => $remote_in,
 					'output_per_1k' => $remote_out,
 				),
@@ -227,13 +227,13 @@ class WP_MCP_AI_Model_Discovery_Service {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$enabled  = array();
 		$keys     = array(
-			'openai'      => 'openai_api_key',
-			'anthropic'   => 'anthropic_api_key',
-			'gemini'      => 'gemini_api_key',
-			'huggingface' => 'huggingface_api_key',
-			'nvidia'      => 'nvidia_api_key',
-			'cloudflare'  => 'cloudflare_api_token',
-			'deepseek'    => 'deepseek_api_key',
+			'openai'       => 'openai_api_key',
+			'anthropic'    => 'anthropic_api_key',
+			'gemini'       => 'gemini_api_key',
+			'huggingface'  => 'huggingface_api_key',
+			'nvidia'       => 'nvidia_api_key',
+			'cloudflare'   => 'cloudflare_api_token',
+			'deepseek'     => 'deepseek_api_key',
 			'openrouter'   => 'openrouter_api_key',
 			'digitalocean' => 'digitalocean_api_key',
 			'baseten'      => 'baseten_api_key',

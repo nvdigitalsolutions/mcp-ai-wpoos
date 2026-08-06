@@ -208,8 +208,8 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		 * @return array|WP_Error API response or error.
 		 */
 		public function make_request( $endpoint, $method = 'GET', $data = array(), $options = array() ) {
-			$client_id = $this->get_client_id();
-			$key       = $this->get_key();
+			$client_id  = $this->get_client_id();
+			$key        = $this->get_key();
 			$start_time = microtime( true );
 
 			if ( empty( $client_id ) || empty( $key ) ) {

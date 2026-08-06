@@ -145,27 +145,27 @@ class WP_MCP_AI_Tool_Get_Project_Timeline implements WP_MCP_AI_Tool_Interface, W
 
 		if ( empty( $tasks ) ) {
 			return array(
-				'success'      => true,
-				'project_id'   => $project_id,
-				'timeline'     => array(),
+				'success'       => true,
+				'project_id'    => $project_id,
+				'timeline'      => array(),
 				'critical_path' => array(),
 			);
 		}
 
 		// Build task map and dependency graph.
-		$task_map       = array();
-		$task_data      = array();
-		$dependencies   = array(); // task_id => array of dependency task IDs.
-		$in_degree      = array(); // For topological sort / critical path.
+		$task_map     = array();
+		$task_data    = array();
+		$dependencies = array(); // task_id => array of dependency task IDs.
+		$in_degree    = array(); // For topological sort / critical path.
 
 		foreach ( $tasks as $task ) {
-			$tid          = $task->ID;
+			$tid              = $task->ID;
 			$task_map[ $tid ] = $task;
 
-			$start_date = get_post_meta( $tid, '_task_start_date', true );
-			$due_date   = get_post_meta( $tid, '_task_due_date', true );
-			$status     = get_post_meta( $tid, '_task_status', true );
-			$priority   = get_post_meta( $tid, '_task_priority', true );
+			$start_date   = get_post_meta( $tid, '_task_start_date', true );
+			$due_date     = get_post_meta( $tid, '_task_due_date', true );
+			$status       = get_post_meta( $tid, '_task_status', true );
+			$priority     = get_post_meta( $tid, '_task_priority', true );
 			$is_milestone = get_post_meta( $tid, '_task_is_milestone', true );
 
 			// Fall back start date if not set.
@@ -183,20 +183,20 @@ class WP_MCP_AI_Tool_Get_Project_Timeline implements WP_MCP_AI_Tool_Interface, W
 			if ( ! is_array( $deps ) ) {
 				$deps = array();
 			}
-			$deps = array_map( 'absint', $deps );
+			$deps                 = array_map( 'absint', $deps );
 			$dependencies[ $tid ] = $deps;
 			$in_degree[ $tid ]    = count( $deps );
 
 			$task_data[ $tid ] = array(
-				'id'             => $tid,
-				'title'          => $task->post_title,
-				'start_date'     => $start_date,
-				'end_date'       => $due_date ? $due_date : '',
-				'status'         => $status ? $status : 'todo',
-				'priority'       => $priority ? $priority : 'medium',
-				'dependencies'   => $deps,
-				'is_milestone'   => ! empty( $is_milestone ),
-				'duration_days'  => $duration_days,
+				'id'               => $tid,
+				'title'            => $task->post_title,
+				'start_date'       => $start_date,
+				'end_date'         => $due_date ? $due_date : '',
+				'status'           => $status ? $status : 'todo',
+				'priority'         => $priority ? $priority : 'medium',
+				'dependencies'     => $deps,
+				'is_milestone'     => ! empty( $is_milestone ),
+				'duration_days'    => $duration_days,
 				'is_critical_path' => false,
 			);
 		}
@@ -218,13 +218,13 @@ class WP_MCP_AI_Tool_Get_Project_Timeline implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		while ( ! empty( $queue ) ) {
-			$tid = array_shift( $queue );
+			$tid          = array_shift( $queue );
 			$topo_order[] = $tid;
 
 			// Find tasks that depend on this one.
 			foreach ( $dependencies as $other_tid => $deps ) {
 				if ( in_array( $tid, $deps, true ) ) {
-					$in_deg[ $other_tid ]--;
+					--$in_deg[ $other_tid ];
 					if ( 0 === $in_deg[ $other_tid ] ) {
 						$queue[] = $other_tid;
 					}
@@ -234,7 +234,7 @@ class WP_MCP_AI_Tool_Get_Project_Timeline implements WP_MCP_AI_Tool_Interface, W
 
 		// Forward pass: compute earliest start/finish.
 		foreach ( $topo_order as $tid ) {
-			$td   = $task_data[ $tid ];
+			$td       = $task_data[ $tid ];
 			$start_ts = strtotime( $td['start_date'] );
 
 			// Earliest start depends on dependencies' earliest finish.
@@ -245,7 +245,7 @@ class WP_MCP_AI_Tool_Get_Project_Timeline implements WP_MCP_AI_Tool_Interface, W
 				}
 			}
 
-			$duration_secs          = $td['duration_days'] * DAY_IN_SECONDS;
+			$duration_secs           = $td['duration_days'] * DAY_IN_SECONDS;
 			$earliest_finish[ $tid ] = $earliest_start + $duration_secs;
 		}
 
@@ -283,7 +283,7 @@ class WP_MCP_AI_Tool_Get_Project_Timeline implements WP_MCP_AI_Tool_Interface, W
 				$slack = $latest_finish[ $tid ] - $earliest_finish[ $tid ];
 				if ( abs( $slack ) <= DAY_IN_SECONDS ) { // Within 1 day tolerance.
 					$task_data[ $tid ]['is_critical_path'] = true;
-					$critical_path_ids[] = $tid;
+					$critical_path_ids[]                   = $tid;
 				}
 			}
 		}

@@ -127,9 +127,9 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Media Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -138,27 +138,27 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 		$template_ids  = isset( $arguments['template_ids'] ) && is_array( $arguments['template_ids'] ) ? array_map( 'absint', $arguments['template_ids'] ) : array();
 
 		if ( empty( $collection_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Collection ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Collection ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Verify collection exists.
 		$collection = get_post( $collection_id );
 		if ( ! $collection || 'mcp_ai_media_coll' !== $collection->post_type || 'publish' !== $collection->post_status ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid collection ID or collection is not published.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid collection ID or collection is not published.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Get collection items.
 		$items = get_post_meta( $collection_id, '_mcp_ai_collection_items', true );
 		if ( ! is_array( $items ) || empty( $items ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Collection has no items.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Collection has no items.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -167,9 +167,9 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 			// Use collection's assigned templates.
 			$template_ids = get_post_meta( $collection_id, '_mcp_ai_collection_templates', true );
 			if ( ! is_array( $template_ids ) || empty( $template_ids ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Collection has no assigned templates. Provide template_ids or assign templates to the collection.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Collection has no assigned templates. Provide template_ids or assign templates to the collection.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -179,9 +179,9 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 		$apply_tool = $registry->get_tool( 'apply_media_template' );
 
 		if ( ! $apply_tool ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Apply Media Template tool is not available.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Apply Media Template tool is not available.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

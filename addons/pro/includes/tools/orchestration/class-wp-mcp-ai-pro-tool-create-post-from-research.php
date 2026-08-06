@@ -356,14 +356,14 @@ class WP_MCP_AI_Pro_Tool_Create_Post_From_Research implements WP_MCP_AI_Tool_Int
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => $this->get_name(),
-			'description'          => $this->get_description(),
-			'input_schema'         => $this->get_parameters_schema(),
-			'required_capability'  => $this->get_required_capability(),
-			'category'             => array( 'research', 'content', 'orchestration' ),
-			'toolkit'              => 'orchestration',
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'input_schema'          => $this->get_parameters_schema(),
+			'required_capability'   => $this->get_required_capability(),
+			'category'              => array( 'research', 'content', 'orchestration' ),
+			'toolkit'               => 'orchestration',
 			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
-			'risk_level'           => 'medium',
+			'risk_level'            => 'medium',
 		);
 	}
 }

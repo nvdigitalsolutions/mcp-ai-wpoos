@@ -165,7 +165,7 @@ class WP_MCP_AI_Tool_Get_Resource_Utilization implements WP_MCP_AI_Tool_Interfac
 				if ( ! isset( $assignee_tasks[ $assignee_id ] ) ) {
 					$assignee_tasks[ $assignee_id ] = 0;
 				}
-				$assignee_tasks[ $assignee_id ]++;
+				++$assignee_tasks[ $assignee_id ];
 			}
 
 			$total_tasks = count( $project_task_ids );
@@ -199,9 +199,9 @@ class WP_MCP_AI_Tool_Get_Resource_Utilization implements WP_MCP_AI_Tool_Interfac
 		}
 
 		return array(
-			'success'      => true,
-			'project_id'   => $project_id ? $project_id : null,
-			'utilization'  => $utilization,
+			'success'     => true,
+			'project_id'  => $project_id ? $project_id : null,
+			'utilization' => $utilization,
 		);
 	}
 }

@@ -184,10 +184,10 @@ class WP_MCP_AI_Media_Blueprints_Page {
 			'wp-mcp-ai-media-blueprints',
 			'wpMcpAiMediaBlueprints',
 			array(
-				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'editUrl'      => admin_url( 'post.php?action=edit&post=0' ),
-				'nonce'        => wp_create_nonce( 'wp_mcp_ai_media_bp' ),
-				'i18n'         => array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'editUrl' => admin_url( 'post.php?action=edit&post=0' ),
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_media_bp' ),
+				'i18n'    => array(
 					'installing'    => __( 'Installing...', 'mcp-ai-wpoos-pro' ),
 					'installed'     => __( 'Installed!', 'mcp-ai-wpoos-pro' ),
 					'error'         => __( 'Error installing blueprint.', 'mcp-ai-wpoos-pro' ),

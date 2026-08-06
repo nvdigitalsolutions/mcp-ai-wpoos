@@ -88,7 +88,7 @@ class WP_MCP_AI_Speculative_Tool_Executor {
 	/**
 	 * Constructor.
 	 *
-	 * @param WP_MCP_AI_Tool_Registry|null       $registry  Tool registry instance.
+	 * @param WP_MCP_AI_Tool_Registry|null        $registry  Tool registry instance.
 	 * @param WP_MCP_AI_Tool_Chain_Predictor|null $predictor Tool chain predictor instance.
 	 */
 	public function __construct( $registry = null, $predictor = null ) {
@@ -160,8 +160,8 @@ class WP_MCP_AI_Speculative_Tool_Executor {
 				break;
 			}
 
-			$tool_slug   = sanitize_key( $prediction['tool_slug'] );
-			$arguments   = isset( $prediction['arguments'] ) && is_array( $prediction['arguments'] )
+			$tool_slug        = sanitize_key( $prediction['tool_slug'] );
+			$arguments        = isset( $prediction['arguments'] ) && is_array( $prediction['arguments'] )
 				? $prediction['arguments']
 				: array();
 			$predicted_result = array_key_exists( 'predicted_result', $prediction )
@@ -407,11 +407,11 @@ class WP_MCP_AI_Speculative_Tool_Executor {
 			return array();
 		}
 
-		$sanitized       = array();
-		$allowed_keys    = array( 'assistant_id', 'user_id', 'task_type', 'capabilities', 'session_id' );
-		$integer_keys    = array( 'assistant_id', 'user_id' );
-		$array_keys      = array( 'capabilities' );
-		$string_keys     = array( 'task_type', 'session_id' );
+		$sanitized    = array();
+		$allowed_keys = array( 'assistant_id', 'user_id', 'task_type', 'capabilities', 'session_id' );
+		$integer_keys = array( 'assistant_id', 'user_id' );
+		$array_keys   = array( 'capabilities' );
+		$string_keys  = array( 'task_type', 'session_id' );
 
 		foreach ( $allowed_keys as $key ) {
 			if ( ! array_key_exists( $key, $context ) ) {

@@ -202,14 +202,14 @@ class WP_MCP_AI_Tool_Forecast_Completion implements WP_MCP_AI_Tool_Interface, WP
 			if ( ! isset( $weekly_completed[ $week_start ] ) ) {
 				$weekly_completed[ $week_start ] = 0;
 			}
-			$weekly_completed[ $week_start ]++;
+			++$weekly_completed[ $week_start ];
 		}
 
 		// Calculate average weekly velocity (last 4 weeks).
 		krsort( $weekly_completed );
-		$recent_weeks  = array_slice( $weekly_completed, 0, 4, true );
-		$velocity_sum  = array_sum( $recent_weeks );
-		$week_count    = count( $recent_weeks );
+		$recent_weeks    = array_slice( $weekly_completed, 0, 4, true );
+		$velocity_sum    = array_sum( $recent_weeks );
+		$week_count      = count( $recent_weeks );
 		$weekly_velocity = $week_count > 0 ? round( $velocity_sum / $week_count, 1 ) : 0;
 
 		// If no velocity data, fall back to a conservative estimate.
@@ -226,15 +226,15 @@ class WP_MCP_AI_Tool_Forecast_Completion implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Calculate dates.
-		$weeks_needed          = $remaining_count / max( 1, $weekly_velocity );
-		$days_expected         = (int) ceil( $weeks_needed * 7 );
-		$days_optimistic       = (int) ceil( $weeks_needed * 5 ); // 5-day optimistic weeks.
-		$days_pessimistic      = (int) ceil( $weeks_needed * 10 ); // 10-day pessimistic weeks.
+		$weeks_needed     = $remaining_count / max( 1, $weekly_velocity );
+		$days_expected    = (int) ceil( $weeks_needed * 7 );
+		$days_optimistic  = (int) ceil( $weeks_needed * 5 ); // 5-day optimistic weeks.
+		$days_pessimistic = (int) ceil( $weeks_needed * 10 ); // 10-day pessimistic weeks.
 
-		$today                 = time();
-		$expected_date         = gmdate( 'Y-m-d', $today + ( $days_expected * DAY_IN_SECONDS ) );
-		$optimistic_date       = gmdate( 'Y-m-d', $today + ( $days_optimistic * DAY_IN_SECONDS ) );
-		$pessimistic_date      = gmdate( 'Y-m-d', $today + ( $days_pessimistic * DAY_IN_SECONDS ) );
+		$today            = time();
+		$expected_date    = gmdate( 'Y-m-d', $today + ( $days_expected * DAY_IN_SECONDS ) );
+		$optimistic_date  = gmdate( 'Y-m-d', $today + ( $days_optimistic * DAY_IN_SECONDS ) );
+		$pessimistic_date = gmdate( 'Y-m-d', $today + ( $days_pessimistic * DAY_IN_SECONDS ) );
 
 		return array(
 			'success'          => true,

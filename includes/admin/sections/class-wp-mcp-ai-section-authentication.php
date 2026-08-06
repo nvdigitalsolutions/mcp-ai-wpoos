@@ -175,9 +175,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 
 				// Guest token scope description (1.2.0).
 				'_guest_scope_info'                    => array(
-					'type'        => 'html',
-					'label'       => __( 'Guest Token Scope', 'mcp-ai-wpoos' ),
-					'html'        => '<div class="notice notice-info inline"><p>' .
+					'type'  => 'html',
+					'label' => __( 'Guest Token Scope', 'mcp-ai-wpoos' ),
+					'html'  => '<div class="notice notice-info inline"><p>' .
 						esc_html__( 'Guest tokens have read-only access to public assistants and chat endpoints. They cannot execute write-capable tools, access transcripts, manage assistants, or perform administrative operations. Each tool enforces its own capability check independent of guest status.', 'mcp-ai-wpoos' ) .
 						'</p></div>',
 				),
@@ -215,11 +215,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				// ========================================
 				// OAUTH & DESTRUCTIVE OPS (1.2.0)
 				// ========================================
-				'_heading_oauth_dcr'                        => array(
+				'_heading_oauth_dcr'                   => array(
 					'type'  => 'heading',
 					'label' => __( 'OAuth & Client Registration', 'mcp-ai-wpoos' ),
 				),
-				'oauth_disable_open_registration'          => array(
+				'oauth_disable_open_registration'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Disable Open OAuth Client Registration', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Require admin approval for new OAuth client registrations', 'mcp-ai-wpoos' ),
@@ -227,11 +227,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'default'        => true,
 				),
 
-				'_heading_destructive_ops'                 => array(
+				'_heading_destructive_ops'             => array(
 					'type'  => 'heading',
 					'label' => __( 'Destructive Operations', 'mcp-ai-wpoos' ),
 				),
-				'require_confirm_destructive_ops'          => array(
+				'require_confirm_destructive_ops'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Require Confirmation for Destructive Tools', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Require explicit confirmation before executing destructive operations', 'mcp-ai-wpoos' ),

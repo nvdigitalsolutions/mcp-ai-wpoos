@@ -444,7 +444,7 @@ class WP_MCP_AI_Tool_Trace_Memory_Provenance implements WP_MCP_AI_Tool_Interface
 					if ( '' === $nid || isset( $visited[ $nid ] ) ) {
 						continue;
 					}
-					$visited[ $nid ]  = true;
+					$visited[ $nid ] = true;
 					$next_frontier[] = $nid;
 
 					// Only surface memory nodes — wing / room / agent

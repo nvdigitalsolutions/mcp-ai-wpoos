@@ -111,16 +111,16 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['product_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Product ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Product ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['country'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Country is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Country is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -130,9 +130,9 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 		// Verify product exists.
 		$product = get_post( $product_id );
 		if ( ! $product || 'mcp_ai_reg_product' !== $product->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Product not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Product not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

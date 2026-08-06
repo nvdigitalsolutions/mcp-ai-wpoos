@@ -118,13 +118,13 @@ class WP_MCP_AI_Paper_Markdown_Yaml_Driver implements WP_MCP_AI_Paper_Driver_Int
 
 		// Auto-set type from filename directory if not in frontmatter.
 		if ( empty( $record['type'] ) ) {
-			$parent_dir       = basename( dirname( $file_path ) );
-			$record['type']   = sanitize_key( $parent_dir );
+			$parent_dir     = basename( dirname( $file_path ) );
+			$record['type'] = sanitize_key( $parent_dir );
 		}
 
 		// Parse tags from comma-separated string or YAML list.
 		if ( isset( $record['tags'] ) && is_string( $record['tags'] ) ) {
-			$tags = array_map( 'trim', explode( ',', $record['tags'] ) );
+			$tags           = array_map( 'trim', explode( ',', $record['tags'] ) );
 			$record['tags'] = array_filter( $tags );
 		}
 
@@ -369,7 +369,7 @@ class WP_MCP_AI_Paper_Markdown_Yaml_Driver implements WP_MCP_AI_Paper_Driver_Int
 
 				// Inline list: [item1, item2].
 				if ( preg_match( '/^\[(.*)\]$/', $value, $lm ) ) {
-					$items = array_map(
+					$items          = array_map(
 						function ( $item ) {
 							return trim( trim( $item ), '"\'' );
 						},
@@ -384,7 +384,7 @@ class WP_MCP_AI_Paper_Markdown_Yaml_Driver implements WP_MCP_AI_Paper_Driver_Int
 					$result[ $key ] = strpos( $value, '.' ) !== false ? (float) $value : (int) $value;
 				} else {
 					// Strip surrounding quotes.
-					$value = trim( $value, '"\' ' );
+					$value          = trim( $value, '"\' ' );
 					$result[ $key ] = sanitize_text_field( $value );
 				}
 			}
@@ -402,8 +402,8 @@ class WP_MCP_AI_Paper_Markdown_Yaml_Driver implements WP_MCP_AI_Paper_Driver_Int
 	 * @return array
 	 */
 	private function parse_yaml_list( string $yaml ): array {
-		$items  = array();
-		$lines  = explode( "\n", $yaml );
+		$items = array();
+		$lines = explode( "\n", $yaml );
 
 		foreach ( $lines as $line ) {
 			$line = trim( $line );
@@ -442,7 +442,7 @@ class WP_MCP_AI_Paper_Markdown_Yaml_Driver implements WP_MCP_AI_Paper_Driver_Int
 
 		// Tags as YAML inline list.
 		if ( ! empty( $record['tags'] ) && is_array( $record['tags'] ) ) {
-			$quoted = array_map(
+			$quoted  = array_map(
 				function ( $tag ) {
 					return '"' . $tag . '"';
 				},

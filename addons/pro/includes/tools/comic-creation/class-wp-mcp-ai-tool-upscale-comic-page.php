@@ -52,15 +52,15 @@ class WP_MCP_AI_Tool_Upscale_Comic_Page implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'image_id'  => array(
+				'image_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of a WordPress attachment/image to upscale.', 'mcp-ai-wpoos-pro' ),
 				),
-				'panel_id'  => array(
+				'panel_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of a `mcp_ai_comic_panel` post whose generated image should be upscaled.', 'mcp-ai-wpoos-pro' ),
 				),
-				'scale'     => array(
+				'scale'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Scale factor for upscaling (2 for 2x, 4 for 4x).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 2, 4 ),
@@ -184,7 +184,7 @@ class WP_MCP_AI_Tool_Upscale_Comic_Page implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		if ( ! $source_width ) {
-			$source_width  = 800;
+			$source_width = 800;
 		}
 		if ( ! $source_height ) {
 			$source_height = 1200;
@@ -197,14 +197,14 @@ class WP_MCP_AI_Tool_Upscale_Comic_Page implements WP_MCP_AI_Tool_Interface, WP_
 			'comic_upscale_started',
 			'Starting comic page upscale',
 			array(
-				'panel_id'       => $panel_id,
-				'image_id'       => $source_image_id,
-				'scale'          => $scale,
-				'original_width' => $source_width,
+				'panel_id'        => $panel_id,
+				'image_id'        => $source_image_id,
+				'scale'           => $scale,
+				'original_width'  => $source_width,
 				'original_height' => $source_height,
-				'new_width'      => $new_width,
-				'new_height'     => $new_height,
-				'user_id'        => $user_id,
+				'new_width'       => $new_width,
+				'new_height'      => $new_height,
+				'user_id'         => $user_id,
 			)
 		);
 
@@ -224,12 +224,12 @@ class WP_MCP_AI_Tool_Upscale_Comic_Page implements WP_MCP_AI_Tool_Interface, WP_
 			'comic_upscaled',
 			'Comic page upscaled successfully',
 			array(
-				'panel_id'  => $panel_id,
-				'image_id'  => $source_image_id,
-				'scale'     => $scale,
-				'new_width' => $new_width,
+				'panel_id'   => $panel_id,
+				'image_id'   => $source_image_id,
+				'scale'      => $scale,
+				'new_width'  => $new_width,
 				'new_height' => $new_height,
-				'user_id'   => $user_id,
+				'user_id'    => $user_id,
 			)
 		);
 
@@ -237,20 +237,20 @@ class WP_MCP_AI_Tool_Upscale_Comic_Page implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'success' => true,
 			'data'    => array(
-				'panel_id'         => $panel_id,
-				'image_id'         => $source_image_id,
-				'original_url'     => esc_url( $source_image_url ),
-				'upscaled_url'     => esc_url( $upscaled_url ),
-				'scale'            => $scale,
+				'panel_id'            => $panel_id,
+				'image_id'            => $source_image_id,
+				'original_url'        => esc_url( $source_image_url ),
+				'upscaled_url'        => esc_url( $upscaled_url ),
+				'scale'               => $scale,
 				'original_dimensions' => array(
 					'width'  => $source_width,
 					'height' => $source_height,
 				),
-				'new_dimensions'   => array(
+				'new_dimensions'      => array(
 					'width'  => $new_width,
 					'height' => $new_height,
 				),
-				'print_dpi_300'    => array(
+				'print_dpi_300'       => array(
 					'width_inches'  => round( $new_width / 300, 2 ),
 					'height_inches' => round( $new_height / 300, 2 ),
 				),

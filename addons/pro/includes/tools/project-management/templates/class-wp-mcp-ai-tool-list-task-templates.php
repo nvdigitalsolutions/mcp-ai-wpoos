@@ -155,8 +155,8 @@ class WP_MCP_AI_Tool_List_Task_Templates implements WP_MCP_AI_Tool_Interface, WP
 				$category   = get_post_meta( $template_id, '_template_category', true );
 
 				// Count checkbox items in content.
-				$content      = get_the_content();
-				$checkbox_ct  = preg_match_all( '/^\s*-\s*\[[ xX]\]\s*.+$/m', $content );
+				$content       = get_the_content();
+				$checkbox_ct   = preg_match_all( '/^\s*-\s*\[[ xX]\]\s*.+$/m', $content );
 				$display_count = $checkbox_ct > 0 ? $checkbox_ct : ( absint( $task_count ) ? absint( $task_count ) : 0 );
 
 				$templates[] = array(

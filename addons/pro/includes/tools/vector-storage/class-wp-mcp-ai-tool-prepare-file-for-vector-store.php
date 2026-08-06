@@ -108,26 +108,26 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check capability.
 		if ( ! current_user_can( 'upload_files' ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'You do not have permission to process files.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'You do not have permission to process files.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate attachment ID.
 		$attachment_id = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
 		if ( ! $attachment_id ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid attachment ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid attachment ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		$file_path = get_attached_file( $attachment_id );
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'File not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'File not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -182,13 +182,13 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 				)
 			);
 
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'tool_error',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'File preparation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$e->getMessage()
-				),
+				)
 			);
 		}
 	}
@@ -264,13 +264,13 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 			return $this->convert_presentation( $file_path, $output_format, $attachment_id );
 		}
 
-		return array(
-			'success' => false,
-			'error'   => sprintf(
+		return new WP_Error(
+			'tool_error',
+			sprintf(
 				/* translators: %s: file extension */
 				__( 'Conversion not yet implemented for %s format.', 'mcp-ai-wpoos-pro' ),
 				$file_ext
-			),
+			)
 		);
 	}
 
@@ -287,9 +287,9 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 	private function convert_spreadsheet( $file_path, $file_ext, $output_format, $preserve_structure, $attachment_id ) {
 		// Check if excel_data_import tool exists.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Excel_Data_Import' ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Excel processing tool not available. Please ensure pro plugin is fully activated.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Excel processing tool not available. Please ensure pro plugin is fully activated.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -305,9 +305,9 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 			);
 
 			if ( ! isset( $excel_result['success'] ) || ! $excel_result['success'] ) {
-				return array(
-					'success' => false,
-					'error'   => isset( $excel_result['error'] ) ? $excel_result['error'] : __( 'Failed to extract Excel data.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					isset( $excel_result['error'] ) ? $excel_result['error'] : __( 'Failed to extract Excel data.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -328,9 +328,9 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 			$new_attachment_id = $this->create_attachment_from_file( $new_file_path, $new_filename );
 
 			if ( ! $new_attachment_id ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Failed to create attachment for converted file.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Failed to create attachment for converted file.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -350,13 +350,13 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 			);
 
 		} catch ( Exception $e ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'tool_error',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Spreadsheet conversion failed: %s', 'mcp-ai-wpoos-pro' ),
 					$e->getMessage()
-				),
+				)
 			);
 		}
 	}
@@ -418,10 +418,9 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 	private function convert_presentation( $file_path, $output_format, $attachment_id ) {
 		// For now, recommend manual conversion.
 		// Full PPTX parsing requires additional libraries.
-		return array(
-			'success'        => false,
-			'error'          => __( 'PPTX conversion requires manual export. Please export as PDF with notes or use a converter tool.', 'mcp-ai-wpoos-pro' ),
-			'recommendation' => __( 'Export presentation to PDF format with speaker notes for best vector store results.', 'mcp-ai-wpoos-pro' ),
+		return new WP_Error(
+			'tool_error',
+			__( 'PPTX conversion requires manual export. Please export as PDF with notes or use a converter tool.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -517,9 +516,9 @@ class WP_MCP_AI_Tool_Prepare_File_For_Vector_Store implements WP_MCP_AI_Tool_Int
 		$new_attachment_id = $this->create_attachment_from_file( $new_file_path, $new_filename );
 
 		if ( ! $new_attachment_id ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Failed to create optimized file attachment.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Failed to create optimized file attachment.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
