@@ -272,6 +272,41 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $incidents_page;
 			// Note: Class instantiates itself at the bottom of the file.
 		}
+
+		// Register Pro export providers for Backup & Restore.
+		add_action(
+			'wp_mcp_ai_register_export_providers',
+			function ( $manager ) {
+				// Remote Sites provider — the primary user-facing backup feature.
+				$remote_sites_provider = WP_MCP_AI_PRO_PATH . 'includes/export/class-wp-mcp-ai-export-provider-remote-sites.php';
+				if ( file_exists( $remote_sites_provider ) ) {
+					require_once $remote_sites_provider;
+					if ( class_exists( 'WP_MCP_AI_Export_Provider_Remote_Sites' ) ) {
+						$manager->register( new WP_MCP_AI_Export_Provider_Remote_Sites() );
+					}
+				}
+
+				// Pro License provider.
+				$license_provider = WP_MCP_AI_PRO_PATH . 'includes/export/class-wp-mcp-ai-export-provider-license.php';
+				if ( file_exists( $license_provider ) ) {
+					require_once $license_provider;
+					if ( class_exists( 'WP_MCP_AI_Export_Provider_License' ) ) {
+						$manager->register( new WP_MCP_AI_Export_Provider_License() );
+					}
+				}
+
+				// JetEngine CCT provider — only if JetEngine is active.
+				if ( class_exists( 'Jet_Engine' ) ) {
+					$jetengine_provider = WP_MCP_AI_PRO_PATH . 'includes/export/class-wp-mcp-ai-export-provider-jetengine-ccts.php';
+					if ( file_exists( $jetengine_provider ) ) {
+						require_once $jetengine_provider;
+						if ( class_exists( 'WP_MCP_AI_Export_Provider_JetEngine_CCTs' ) ) {
+							$manager->register( new WP_MCP_AI_Export_Provider_JetEngine_CCTs() );
+						}
+					}
+				}
+			}
+		);
 	}
 }
 
