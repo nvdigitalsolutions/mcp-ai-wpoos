@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-relevance-search.
  *
  * @since 2.4.0 Added configurable orderby/order and TF-IDF relevance.
  */
-class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Relevance_Search;
 
@@ -722,5 +722,90 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 		arsort( $fused, SORT_NUMERIC );
 		return $fused;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return string
+	 */
+	public function get_ability_identifier() {
+		return 'search-content';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return string
+	 */
+	public function get_ability_category() {
+		return 'nvoos-content';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return array
+	 */
+	public function get_output_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'results'     => array(
+					'type'        => 'array',
+					'description' => 'Array of matching post objects.',
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'ID'        => array(
+								'type'        => 'integer',
+								'description' => 'The post ID.',
+							),
+							'title'     => array(
+								'type'        => 'string',
+								'description' => 'The post title.',
+							),
+							'post_type' => array(
+								'type'        => 'string',
+								'description' => 'The post type.',
+							),
+							'excerpt'   => array(
+								'type'        => 'string',
+								'description' => 'The post excerpt.',
+							),
+							'permalink' => array(
+								'type'        => 'string',
+								'description' => 'The post URL.',
+							),
+							'date'      => array(
+								'type'        => 'string',
+								'description' => 'The post date.',
+							),
+						),
+					),
+				),
+				'total_count' => array(
+					'type'        => 'integer',
+					'description' => 'Total number of results.',
+				),
+				'message'     => array(
+					'type'        => 'string',
+					'description' => 'Human-readable summary.',
+				),
+			),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return bool
+	 */
+	public function is_public_ability() {
+		return true;
 	}
 }
