@@ -29,10 +29,14 @@ cd "$ROOT_DIR"
 # ---------------------------------------------------------------------------
 VERSION="${1:-}"
 if [ -z "$VERSION" ]; then
-    echo "❌ Error: Version argument is required."
-    echo "   Usage: $0 <version>"
-    echo "   Example: $0 1.1.21"
-    exit 1
+    # Auto-detect version from plugin header when no argument is passed.
+    if [ -f "$ROOT_DIR/mcp-ai-wpoos.php" ]; then
+        VERSION=$(grep -E "^\s*\*\s*Version:" "$ROOT_DIR/mcp-ai-wpoos.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+    fi
+    if [ -z "$VERSION" ]; then
+        VERSION="dev"
+    fi
+    echo "ℹ️  Version auto-detected: $VERSION"
 fi
 
 echo "=========================================="
