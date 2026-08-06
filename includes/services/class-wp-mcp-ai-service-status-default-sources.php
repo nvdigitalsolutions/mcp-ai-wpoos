@@ -370,10 +370,14 @@ class WP_MCP_AI_Service_Status_Queue_Health implements Interface_WP_MCP_AI_Servi
 		$depth      = 0;
 		$oldest_age = 0;
 
-		if ( class_exists( 'WP_MCP_AI_Job_Queue_Manager' ) ) {
-			$queue      = WP_MCP_AI_Job_Queue_Manager::get_instance();
-			$depth      = $queue->get_queue_depth();
-			$oldest_age = $queue->get_oldest_job_age();
+		if ( class_exists( 'WP_MCP_AI_Job_Queue_Manager' ) && method_exists( 'WP_MCP_AI_Job_Queue_Manager', 'get_instance' ) ) {
+			$queue = WP_MCP_AI_Job_Queue_Manager::get_instance();
+			if ( method_exists( $queue, 'get_queue_depth' ) ) {
+				$depth = $queue->get_queue_depth();
+			}
+			if ( method_exists( $queue, 'get_oldest_job_age' ) ) {
+				$oldest_age = $queue->get_oldest_job_age();
+			}
 		}
 
 		if ( $depth > self::MAX_DEPTH || $oldest_age > self::MAX_AGE ) {
