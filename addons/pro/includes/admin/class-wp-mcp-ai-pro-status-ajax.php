@@ -63,40 +63,60 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Ajax' ) ) {
 				);
 			}
 
-			$registry = WP_MCP_AI_Service_Status_Registry::get_instance();
-			$status   = $registry->get_status();
-			$sources  = $registry->get_sources();
-
-			// Enrich with source metadata.
-			$enriched = array();
-			foreach ( $status as $slug => $data ) {
-				$source = $sources[ $slug ] ?? null;
-
-				$enriched[ $slug ] = array_merge(
-					$data,
-					array(
-						'name'   => $source ? $source->get_name() : $slug,
-						'group'  => $source ? $source->get_group() : 'unknown',
-						'public' => $source ? $source->is_public() : false,
-					)
+			if ( ! class_exists( 'WP_MCP_AI_Service_Status_Registry' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Service Status Registry is not available.', 'mcp-ai-wpoos-pro' ) ),
+					500
 				);
 			}
 
-			$overall    = $registry->compute_overall_status( $enriched );
-			$last_check = (int) get_option( WP_MCP_AI_Service_Status_Registry::LAST_CHECK_KEY, 0 );
-			$history    = $registry->get_uptime_history( 30 );
+			try {
+				$registry = WP_MCP_AI_Service_Status_Registry::get_instance();
+				$status   = $registry->get_status();
+				$sources  = $registry->get_sources();
 
-			wp_send_json_success(
-				array(
-					'overall'           => $overall,
-					'components'        => $enriched,
-					'last_checked'      => $last_check,
-					'last_checked_text' => $last_check > 0
-						? human_time_diff( $last_check )
-						: __( 'Never', 'mcp-ai-wpoos-pro' ),
-					'history'           => $history,
-				)
-			);
+				// Enrich with source metadata.
+				$enriched = array();
+				foreach ( $status as $slug => $data ) {
+					if ( ! is_array( $data ) ) {
+						continue;
+					}
+					$source = $sources[ $slug ] ?? null;
+
+					$enriched[ $slug ] = array_merge(
+						$data,
+						array(
+							'name'   => $source ? $source->get_name() : $slug,
+							'group'  => $source ? $source->get_group() : 'unknown',
+							'public' => $source ? $source->is_public() : false,
+						)
+					);
+				}
+
+				$overall    = $registry->compute_overall_status( $enriched );
+				$last_check = (int) get_option( WP_MCP_AI_Service_Status_Registry::LAST_CHECK_KEY, 0 );
+				$history    = $registry->get_uptime_history( 30 );
+
+				wp_send_json_success(
+					array(
+						'overall'           => $overall,
+						'components'        => $enriched,
+						'last_checked'      => $last_check,
+						'last_checked_text' => $last_check > 0
+							? human_time_diff( $last_check )
+							: __( 'Never', 'mcp-ai-wpoos-pro' ),
+						'history'           => $history,
+					)
+				);
+			} catch ( \Throwable $e ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Failed to load status data.', 'mcp-ai-wpoos-pro' ),
+						'debug'   => WP_DEBUG ? $e->getMessage() : null,
+					),
+					500
+				);
+			}
 		}
 
 		/**

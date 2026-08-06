@@ -154,14 +154,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Dashboard_Page' ) ) {
 						'private'            => __( 'Private', 'mcp-ai-wpoos-pro' ),
 						'confirmToggle'      => __( 'Toggle this component\'s public visibility?', 'mcp-ai-wpoos-pro' ),
 						'lastChecked'        => __( 'Last checked', 'mcp-ai-wpoos-pro' ),
-						/* translators: %s: time duration like "5 minutes" */
-						'timeAgo'            => __( '%s ago', 'mcp-ai-wpoos-pro' ),
 						'justNow'            => __( 'Just now', 'mcp-ai-wpoos-pro' ),
 						'never'              => __( 'Never', 'mcp-ai-wpoos-pro' ),
 						'noComponents'       => __( 'No service components are registered. Add status sources via the wp_mcp_ai_service_status_sources filter.', 'mcp-ai-wpoos-pro' ),
 						'publicStatusUrl'    => rest_url( 'mcp-ai/v1/status' ),
 						'viewPublicPage'     => __( 'View Public Status Page', 'mcp-ai-wpoos-pro' ),
 						'runHealthCheck'     => __( 'Run Health Check Now', 'mcp-ai-wpoos-pro' ),
+						/* translators: Used as suffix for relative time, e.g. "5 min ago" */
+						'ago'                => __( 'ago', 'mcp-ai-wpoos-pro' ),
+						/* translators: Abbreviation for minutes */
+						'minAbbr'            => _x( 'min', 'abbreviation for minutes', 'mcp-ai-wpoos-pro' ),
+						/* translators: Abbreviation for hours */
+						'hrAbbr'             => _x( 'hr', 'abbreviation for hours', 'mcp-ai-wpoos-pro' ),
+						/* translators: Singular: 1 day */
+						'daySingular'        => __( 'day', 'mcp-ai-wpoos-pro' ),
+						/* translators: Plural: 2+ days */
+						'dayPlural'          => __( 'days', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
