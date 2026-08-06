@@ -2288,8 +2288,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			<?php
 			// Only show for full/GitHub builds (not WordPress.org base-only).
 			$is_github_build = ! ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION );
+			$update_nonce = wp_create_nonce( 'wp_mcp_ai_plugin_update' );
+
 			if ( $is_github_build && class_exists( 'WP_MCP_AI_Plugin_Updater' ) ) :
-				$update_nonce = wp_create_nonce( 'wp_mcp_ai_plugin_update' );
 				?>
 			<div class="wp-mcp-ai-plugin-updates-section" style="margin-top: 50px;">
 				<h3><?php esc_html_e( 'Plugin Updates', 'mcp-ai-wpoos' ); ?></h3>
@@ -2454,7 +2455,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		<?php endif; ?>
 
 		<!-- PRO ADDON UPDATES SECTION -->
-		<?php if ( $is_github_build && defined( 'WP_MCP_AI_PRO_VERSION' ) ) : ?>
+		<?php
+		// Only show Pro updates when Pro is a standalone plugin (not bundled
+		// inside the main plugin directory). The complete package update covers
+		// both base and Pro together, so a separate Pro update is redundant.
+		$pro_is_standalone = defined( 'WP_MCP_AI_PRO_VERSION' )
+			&& defined( 'WP_MCP_AI_PRO_PATH' )
+			&& 0 !== strpos( untrailingslashit( WP_MCP_AI_PRO_PATH ), untrailingslashit( WP_MCP_AI_PATH ) );
+
+		if ( $is_github_build && $pro_is_standalone ) :
+			?>
 		<div class="wp-mcp-ai-pro-updates-section" style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd;">
 			<h3><?php esc_html_e( 'Pro Addon Updates', 'mcp-ai-wpoos' ); ?></h3>
 			<p class="description">

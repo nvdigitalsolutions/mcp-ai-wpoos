@@ -129,7 +129,8 @@ class WP_MCP_AI_Plugin_Updater {
 		}
 
 		$result = array(
-			'latest_version'  => ltrim( $data['tag_name'], 'vV' ),
+			// Strip common tag prefixes: 'v', 'nvdigital-oos-v', 'nvdigital-open-operator-system-oos-v'
+			'latest_version'  => preg_replace( '/^(nvdigital-(?:open-operator-system-)?oos-)?v/i', '', $data['tag_name'] ),
 			'assets'          => isset( $data['assets'] ) ? $data['assets'] : array(),
 			'release_notes'   => isset( $data['body'] ) ? $data['body'] : '',
 			'published_at'    => isset( $data['published_at'] ) ? $data['published_at'] : '',
