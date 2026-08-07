@@ -438,6 +438,9 @@ class WP_MCP_AI_Plugin_Updater {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
+		// Force a fresh check — bypass the 12h cache so the user sees live data.
+		delete_transient( self::CACHE_KEY );
+
 		$result = self::check_for_update();
 
 		if ( is_wp_error( $result ) ) {
@@ -495,6 +498,9 @@ class WP_MCP_AI_Plugin_Updater {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
+
+		// Force a fresh check — bypass the 12h cache so the user sees live data.
+		delete_transient( self::CACHE_KEY );
 
 		$result = self::check_for_pro_update();
 
