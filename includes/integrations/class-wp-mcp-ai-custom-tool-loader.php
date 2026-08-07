@@ -52,6 +52,11 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 			if ( ! file_exists( $this->custom_tools_dir ) ) {
 				wp_mkdir_p( $this->custom_tools_dir );
 
+				// Bail if directory creation failed (e.g. uploads/ not writable).
+				if ( ! is_dir( $this->custom_tools_dir ) ) {
+					return;
+				}
+
 				// Add index.php to prevent directory listing.
 				$index_file = $this->custom_tools_dir . '/index.php';
 				if ( ! file_exists( $index_file ) ) {
@@ -306,6 +311,11 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 
 			// Create template content.
 			$template = $this->get_tool_template_content( $class_name, $tool_name );
+
+			// Ensure custom tools directory is writable before writing.
+			if ( ! is_dir( $this->custom_tools_dir ) ) {
+				return new WP_Error( 'wp_mcp_ai_dir_missing', __( 'Custom tools directory does not exist.', 'mcp-ai-wpoos' ) );
+			}
 
 			// Write the file.
 			$result = file_put_contents( $filepath, $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem not available in this REST/cron/tool execution context.

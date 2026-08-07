@@ -282,6 +282,85 @@ function wp_mcp_ai_deferred_flush_rewrite_rules(): void {
 }
 add_action( 'admin_init', 'wp_mcp_ai_deferred_flush_rewrite_rules', 99 );
 
+if ( ! function_exists( 'wp_mcp_ai_auto_detect_env_keys' ) ) {
+	/**
+	 * Auto-detect API keys from environment variables on first activation.
+	 *
+	 * Docker and CI environments often pass API keys via environment variables
+	 * (OPENAI_API_KEY, GEMINI_API_KEY, etc.). This function reads those vars
+	 * and populates plugin settings so AI providers work immediately after
+	 * activation without manual admin UI configuration.
+	 *
+	 * Never overwrites existing settings. Runs once per site (flag:
+	 * wp_mcp_ai_env_keys_checked).
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_auto_detect_env_keys(): void {
+		if ( get_option( 'wp_mcp_ai_env_keys_checked', false ) ) {
+			return;
+		}
+
+		// Map plugin setting keys to environment variable names.
+		// Each setting key maps to an ordered list of env vars — the first
+		// non-empty value wins.
+		$env_key_map = array(
+			'openai_api_key'        => array( 'OPENAI_API_KEY' ),
+			'gemini_api_key'        => array( 'GEMINI_API_KEY', 'GOOGLE_API_KEY' ),
+			'anthropic_api_key'     => array( 'ANTHROPIC_API_KEY' ),
+			'deepseek_api_key'      => array( 'DEEPSEEK_API_KEY' ),
+			'brave_search_api_key'  => array( 'BRAVE_API_KEY', 'BRAVE_SEARCH_API_KEY' ),
+			'tavily_api_key'        => array( 'TAVILY_API_KEY' ),
+			'perplexity_api_key'    => array( 'PERPLEXITY_API_KEY' ),
+			'lm_studio_api_key'     => array( 'LM_STUDIO_API_KEY' ),
+			'nvidia_api_key'        => array( 'NVIDIA_API_KEY' ),
+			'huggingface_api_key'   => array( 'HUGGINGFACE_API_KEY', 'HF_API_KEY' ),
+			'cloudflare_api_token'  => array( 'CLOUDFLARE_API_TOKEN' ),
+			'kimi_api_key'          => array( 'KIMI_API_KEY' ),
+			'digitalocean_api_key'  => array( 'DIGITALOCEAN_API_KEY' ),
+			'stability_api_key'     => array( 'STABILITY_API_KEY' ),
+			'mubert_api_key'        => array( 'MUBERT_API_KEY' ),
+			'exa_api_key'           => array( 'EXA_API_KEY' ),
+			'crawl4ai_api_key'      => array( 'CRAWL4AI_API_KEY' ),
+			'removebg_api_key'      => array( 'REMOVEBG_API_KEY' ),
+			'google_maps_api_key'   => array( 'GOOGLE_MAPS_API_KEY' ),
+			'ita_tariff_api_key'    => array( 'ITA_TARIFF_API_KEY' ),
+		);
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$updated  = false;
+
+		foreach ( $env_key_map as $setting_key => $env_vars ) {
+			// Never overwrite an existing configuration.
+			if ( ! empty( $settings[ $setting_key ] ) ) {
+				continue;
+			}
+
+			foreach ( $env_vars as $env_var ) {
+				// phpcs:ignore WordPress.PHP.DisallowGetEnv.Usage -- Intentionally reading server environment for auto-configuration.
+				$val = getenv( $env_var );
+				if ( $val && is_string( $val ) && '' !== trim( $val ) ) {
+					$settings[ $setting_key ] = sanitize_text_field( trim( $val ) );
+
+					// Also store as a standalone option so wp_mcp_ai_get_api_key()
+					// picks it up immediately (the Api_Key_Store will auto-migrate
+					// plaintext to encrypted on first read).
+					update_option( 'wp_mcp_ai_' . $setting_key, $settings[ $setting_key ], false );
+
+					$updated = true;
+					break;
+				}
+			}
+		}
+
+		if ( $updated ) {
+			update_option( 'wp_mcp_ai_settings', $settings );
+		}
+
+		update_option( 'wp_mcp_ai_env_keys_checked', true );
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**
 	 * Plugin activation handler.
@@ -458,6 +537,10 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 				WP_MCP_AI_Job_Store::create_table();
 			}
 		}
+
+		// Auto-detect API keys from environment variables (Docker/CI).
+		// Runs once per site; never overwrites existing manual configuration.
+		wp_mcp_ai_auto_detect_env_keys();
 
 		// Record the activated version so re-activations (e.g. after plugin
 		// updates) can skip heavy one-time setup work.
