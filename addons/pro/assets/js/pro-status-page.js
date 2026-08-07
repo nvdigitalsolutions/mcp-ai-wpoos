@@ -8,24 +8,66 @@
  * @since 1.2.0
  */
 
-(function ($, dashboard) {
+	(function ($, dashboard) {
 	'use strict';
 
 	var refreshTimer = null;
+	var historyTimer = null;
 	var uptimeChart = null;
 	var refreshRequest = null;
+	var historyRequest = null;
 
 	/**
 	 * Initialize the status dashboard.
 	 */
 	function init() {
-		// Initial data load.
+		// Initial data load — status and history are fetched independently.
 		loadStatusData();
+		loadHistoryData();
 
-		// Set up auto-refresh.
+		// Set up auto-refresh for status grid (5 min).
 		if (dashboard.refreshInterval > 0) {
 			refreshTimer = setInterval(loadStatusData, dashboard.refreshInterval);
 		}
+
+		// Set up auto-refresh for uptime chart (1 hour).
+		if (dashboard.historyInterval > 0) {
+			historyTimer = setInterval(loadHistoryData, dashboard.historyInterval);
+		}
+
+		// Pause polling when the tab is hidden; resume on return.
+		// This prevents idle-tab connections from piling up on Cloudways
+		// shared MySQL (max_connections exhaustion).
+		document.addEventListener('visibilitychange', function () {
+			if (document.hidden) {
+				if (refreshTimer) {
+					clearInterval(refreshTimer);
+					refreshTimer = null;
+				}
+				if (historyTimer) {
+					clearInterval(historyTimer);
+					historyTimer = null;
+				}
+				if (refreshRequest) {
+					refreshRequest.abort();
+					refreshRequest = null;
+				}
+				if (historyRequest) {
+					historyRequest.abort();
+					historyRequest = null;
+				}
+			} else {
+				// Tab is visible again — refresh immediately, then resume polling.
+				loadStatusData();
+				loadHistoryData();
+				if (dashboard.refreshInterval > 0) {
+					refreshTimer = setInterval(loadStatusData, dashboard.refreshInterval);
+				}
+				if (dashboard.historyInterval > 0) {
+					historyTimer = setInterval(loadHistoryData, dashboard.historyInterval);
+				}
+			}
+		});
 
 		// Clear timers and abort pending requests on page unload
 		// to prevent "Transition was skipped" AbortError.
@@ -34,15 +76,24 @@
 				clearInterval(refreshTimer);
 				refreshTimer = null;
 			}
+			if (historyTimer) {
+				clearInterval(historyTimer);
+				historyTimer = null;
+			}
 			if (refreshRequest) {
 				refreshRequest.abort();
 				refreshRequest = null;
+			}
+			if (historyRequest) {
+				historyRequest.abort();
+				historyRequest = null;
 			}
 		});
 
 		// Refresh button.
 		$('.wp-mcp-ai-status-refresh-btn').on('click', function () {
 			loadStatusData();
+			loadHistoryData();
 		});
 
 		// Health check button.
@@ -76,7 +127,14 @@
 			},
 			success: function (response) {
 				if (response.success && response.data) {
-					renderStatus(response.data);
+					// Throttled responses carry only the cached components
+					// snapshot; render what we have without clearing the
+					// overall status or last-checked text.
+					if (response.data.throttled) {
+						renderComponentGrid(response.data.components || {});
+					} else {
+						renderStatus(response.data);
+					}
 				} else {
 					showError(response.data && response.data.message ? response.data.message : dashboard.strings.error);
 				}
@@ -117,8 +175,7 @@
 		// Render component grid.
 		renderComponentGrid(data.components || {});
 
-		// Render uptime chart.
-		renderUptimeChart(data.history || {});
+		// Uptime chart is fetched independently via loadHistoryData().
 	}
 
 	/**
@@ -273,10 +330,40 @@
 				$btn.prop('disabled', false).html(originalText);
 				if (response.success) {
 					loadStatusData();
+					loadHistoryData();
 				}
 			},
 			error: function () {
 				$btn.prop('disabled', false).html(originalText);
+			}
+		});
+	}
+
+	/**
+	 * Load uptime history data via AJAX (separate from status grid).
+	 *
+	 * The 30-day uptime chart changes at most hourly (on rollup cron),
+	 * so this is fetched independently on a longer interval to keep
+	 * the frequent status-grid polling lightweight.
+	 */
+	function loadHistoryData() {
+		if (historyRequest) {
+			historyRequest.abort();
+		}
+		historyRequest = $.ajax({
+			url: dashboard.ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'wp_mcp_ai_status_history',
+				nonce: dashboard.nonce
+			},
+			success: function (response) {
+				if (response.success && response.data && response.data.history) {
+					renderUptimeChart(response.data.history);
+				}
+			},
+			complete: function () {
+				historyRequest = null;
 			}
 		});
 	}

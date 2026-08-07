@@ -118,13 +118,149 @@ if ( ! has_action( 'wp_mcp_ai_process_delegation', 'wp_mcp_ai_process_delegation
 	add_action( 'wp_mcp_ai_process_delegation', 'wp_mcp_ai_process_delegation_handler', 10, 1 );
 }
 
-if ( ! has_action( 'wp_mcp_ai_delegation_watchdog', 'wp_mcp_ai_delegation_watchdog_handler' ) ) {
-	add_action( 'wp_mcp_ai_delegation_watchdog', 'wp_mcp_ai_delegation_watchdog_handler' );
+// ── Consolidated five_minute_tick handler ────────────────────────────────
+// Replaces four independent cron hooks (health_check_cron, maintenance_monitor_cron,
+// maintenance_reminder_cron, delegation_watchdog) that each spawned a separate PHP
+// process and MySQL connection every 5 minutes. A single handler dispatches to each
+// sub-system within one process, cutting per-cycle connections by ~75%.
+//
+// A transient lock prevents overlapping runs when WP-Cron fires the hook while
+// a previous run is still in progress (e.g. during plugin updates or heavy load).
+
+if ( ! has_action( 'wp_mcp_ai_five_minute_tick', 'wp_mcp_ai_five_minute_tick_handler' ) ) {
+	add_action( 'wp_mcp_ai_five_minute_tick', 'wp_mcp_ai_five_minute_tick_handler' );
 }
 
-// Ensure delegation watchdog runs every 5 minutes to recover stale delegations.
-if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_ensure_delegation_watchdog_scheduled' ) ) {
-	add_action( 'plugins_loaded', 'wp_mcp_ai_ensure_delegation_watchdog_scheduled', 26 );
+if ( ! function_exists( 'wp_mcp_ai_five_minute_tick_handler' ) ) {
+	/**
+	 * Consolidated 5-minute cron handler.
+	 *
+	 * Dispatches to health checks, maintenance transitions + reminders,
+	 * and the delegation watchdog — all within a single PHP process.
+	 *
+	 * @since 1.3.0
+	 * @return void
+	 */
+	function wp_mcp_ai_five_minute_tick_handler() {
+		// Prevent overlapping runs (transient lock, 4-minute TTL).
+		if ( get_transient( 'wp_mcp_ai_five_minute_tick_lock' ) ) {
+			return;
+		}
+		set_transient( 'wp_mcp_ai_five_minute_tick_lock', 1, 4 * MINUTE_IN_SECONDS );
+
+		try {
+			// 1. Service status health checks.
+			if ( class_exists( 'WP_MCP_AI_Service_Status_Registry' ) ) {
+				WP_MCP_AI_Service_Status_Registry::get_instance()->run_health_checks();
+			}
+
+			// 2. Maintenance window transitions (scheduled → in_progress, in_progress → completed).
+			if ( class_exists( 'WP_MCP_AI_Maintenance_CPT' ) ) {
+				WP_MCP_AI_Maintenance_CPT::process_transitions();
+			}
+
+			// 3. Maintenance pre-window reminders.
+			if ( class_exists( 'WP_MCP_AI_Maintenance_CPT' ) ) {
+				WP_MCP_AI_Maintenance_CPT::process_reminders();
+			}
+
+			// 4. Delegation watchdog — recovers stale delegations.
+			if ( class_exists( 'WP_MCP_AI_Agent_Communication_Service' ) ) {
+				// Lazy-load the service file only when needed.
+				if ( ! method_exists( 'WP_MCP_AI_Agent_Communication_Service', 'watchdog_scan_stale_delegations' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-agent-communication-service.php';
+				}
+				WP_MCP_AI_Agent_Communication_Service::watchdog_scan_stale_delegations();
+			}
+
+			/**
+			 * Fires after the consolidated five-minute tick completes.
+			 *
+			 * Extension point for add-ons that need per-cycle work
+			 * without registering their own cron hook.
+			 *
+			 * @since 1.3.0
+			 */
+			do_action( 'wp_mcp_ai_five_minute_tick_completed' );
+		} catch ( \Throwable $e ) {
+			if ( function_exists( 'wp_mcp_ai_log_error' ) ) {
+				wp_mcp_ai_log_error(
+					'Consolidated five_minute_tick handler failed.',
+					array( 'exception' => $e->getMessage() )
+				);
+			}
+		} finally {
+			delete_transient( 'wp_mcp_ai_five_minute_tick_lock' );
+		}
+	}
+}
+
+// ── Migration: clean up legacy per-feature cron hooks ─────────────────────
+// Sites upgrading from pre-1.3.0 will have orphan events for the old
+// individual hooks. Unschedule them on every plugin load until they are gone.
+
+if ( ! function_exists( 'wp_mcp_ai_migrate_legacy_five_minute_crons' ) ) {
+	/**
+	 * One-time migration: unschedule legacy per-feature five_minutes hooks.
+	 *
+	 * Called once on plugins_loaded; removes itself after the migration
+	 * completes so it does not run on every request.
+	 *
+	 * @since 1.3.0
+	 * @return void
+	 */
+	function wp_mcp_ai_migrate_legacy_five_minute_crons() {
+		$legacy_hooks = array(
+			'wp_mcp_ai_health_check_cron',
+			'wp_mcp_ai_maintenance_monitor_cron',
+			'wp_mcp_ai_maintenance_reminder_cron',
+			'wp_mcp_ai_delegation_watchdog',
+		);
+
+		$remaining = false;
+		foreach ( $legacy_hooks as $hook ) {
+			$timestamp = wp_next_scheduled( $hook );
+			if ( $timestamp ) {
+				wp_unschedule_event( $timestamp, $hook );
+				$remaining = true;
+			}
+		}
+
+		// Remove this migration callback once all legacy hooks are cleared.
+		if ( ! $remaining ) {
+			remove_action( 'plugins_loaded', __FUNCTION__, 27 );
+		}
+	}
+}
+if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_migrate_legacy_five_minute_crons' ) ) {
+	add_action( 'plugins_loaded', 'wp_mcp_ai_migrate_legacy_five_minute_crons', 27 );
+}
+
+// ── Ensure the consolidated hook is scheduled ─────────────────────────────
+
+if ( ! function_exists( 'wp_mcp_ai_ensure_five_minute_tick_scheduled' ) ) {
+	/**
+	 * Schedule the consolidated five-minute cron event on every plugin load.
+	 *
+	 * Idempotent — wp_next_scheduled() guards against duplicates.
+	 * This replaces the four legacy per-feature hooks that were previously
+	 * scheduled independently.
+	 *
+	 * @since 1.3.0
+	 * @return void
+	 */
+	function wp_mcp_ai_ensure_five_minute_tick_scheduled() {
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_five_minute_tick' ) ) {
+			wp_schedule_event(
+				time() + 5 * MINUTE_IN_SECONDS,
+				'five_minutes',
+				'wp_mcp_ai_five_minute_tick'
+			);
+		}
+	}
+}
+if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_ensure_five_minute_tick_scheduled' ) ) {
+	add_action( 'plugins_loaded', 'wp_mcp_ai_ensure_five_minute_tick_scheduled', 26 );
 }
 
 if ( ! function_exists( 'wp_mcp_ai_model_catalog_discovery_handler' ) ) {
@@ -256,41 +392,7 @@ if ( ! function_exists( 'wp_mcp_ai_process_delegation_handler' ) ) {
 	}
 }
 
-if ( ! function_exists( 'wp_mcp_ai_ensure_delegation_watchdog_scheduled' ) ) {
-	/**
-	 * Ensure the delegation watchdog scan runs every 5 minutes.
-	 *
-	 * The watchdog detects delegations whose WP-Cron event was consumed
-	 * without the delegation being processed, and re-schedules them.
-	 *
-	 * @since 1.2.0
-	 * @return void
-	 */
-	function wp_mcp_ai_ensure_delegation_watchdog_scheduled() {
-		if ( ! wp_next_scheduled( 'wp_mcp_ai_delegation_watchdog' ) ) {
-			wp_schedule_event( time() + 5 * MINUTE_IN_SECONDS, 'five_minutes', 'wp_mcp_ai_delegation_watchdog' );
-		}
-	}
-}
-
-if ( ! function_exists( 'wp_mcp_ai_delegation_watchdog_handler' ) ) {
-	/**
-	 * Cron job handler for the delegation watchdog scanner.
-	 *
-	 * Scans Cron Manager for pending delegations that have no associated
-	 * WP-Cron event and re-schedules them.
-	 *
-	 * @since 1.2.0
-	 * @return void
-	 */
-	function wp_mcp_ai_delegation_watchdog_handler() {
-		if ( ! class_exists( 'WP_MCP_AI_Agent_Communication_Service' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-agent-communication-service.php';
-		}
-		WP_MCP_AI_Agent_Communication_Service::watchdog_scan_stale_delegations();
-	}
-}
-
+// Initialize async tool executor during plugin bootstrap (registers its cron hook handler).
 if ( ! has_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor' ) ) {
 	add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor', 5 );
 }

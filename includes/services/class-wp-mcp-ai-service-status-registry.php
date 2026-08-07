@@ -60,7 +60,19 @@ class WP_MCP_AI_Service_Status_Registry {
 	 * @since 1.2.0
 	 * @var int
 	 */
-	const MAX_CACHE_AGE = 360;
+	const MAX_CACHE_AGE = 900;
+
+	/**
+	 * Transient key for status cache freshness flag.
+	 *
+	 * Set after each cron-driven health check; checked by get_status()
+	 * to avoid triggering a full check on AJAX reads. TTL matches
+	 * MAX_CACHE_AGE so the flag expires alongside the cache.
+	 *
+	 * @since 1.3.0
+	 * @var string
+	 */
+	const CACHE_FRESH_KEY = 'wp_mcp_ai_status_cache_fresh';
 
 	/**
 	 * Singleton instance.
@@ -90,7 +102,10 @@ class WP_MCP_AI_Service_Status_Registry {
 	 * @since 1.2.0
 	 */
 	private function __construct() {
-		add_action( 'wp_mcp_ai_health_check_cron', array( $this, 'run_health_checks' ) );
+		// Cron callbacks are now dispatched from the consolidated
+		// wp_mcp_ai_five_minute_tick handler (includes/bootstrap/cron.php)
+		// to reduce per-cycle PHP processes and MySQL connections.
+		// Hourly/daily jobs remain on their own hooks.
 		add_action( 'wp_mcp_ai_uptime_rollup_cron', array( $this, 'rollup_uptime_history' ) );
 		add_action( 'wp_mcp_ai_status_history_cleanup', array( $this, 'cleanup_history' ) );
 	}
@@ -181,6 +196,7 @@ class WP_MCP_AI_Service_Status_Registry {
 
 		update_option( self::OPTION_KEY, $results, false );
 		update_option( self::LAST_CHECK_KEY, time(), false );
+		set_transient( self::CACHE_FRESH_KEY, 1, self::MAX_CACHE_AGE );
 
 		/**
 		 * Fires after all health checks have completed.
@@ -209,6 +225,15 @@ class WP_MCP_AI_Service_Status_Registry {
 			return $this->run_health_checks();
 		}
 
+		// Fast path: freshness transient avoids two get_option() calls
+		// on every AJAX poll when the cron job keeps the cache warm.
+		if ( get_transient( self::CACHE_FRESH_KEY ) ) {
+			$status = get_option( self::OPTION_KEY, array() );
+			if ( is_array( $status ) && ! empty( $status ) ) {
+				return $status;
+			}
+		}
+
 		$last_check = (int) get_option( self::LAST_CHECK_KEY, 0 );
 		$cache_age  = time() - $last_check;
 
@@ -222,6 +247,23 @@ class WP_MCP_AI_Service_Status_Registry {
 		}
 
 		return $status;
+	}
+
+	/**
+	 * Get the cached status snapshot WITHOUT triggering a refresh.
+	 *
+	 * This is the safe read path for AJAX polling endpoints (Pro Status
+	 * dashboard, public status REST endpoint) that must never spawn a
+	 * health check on the request thread. Returns an empty array when
+	 * no cache exists — callers should handle the fallback gracefully.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array<string, array> Map of slug => health check result, or empty array.
+	 */
+	public function get_cached_status() {
+		$status = get_option( self::OPTION_KEY, array() );
+		return is_array( $status ) ? $status : array();
 	}
 
 	/**
@@ -334,7 +376,12 @@ class WP_MCP_AI_Service_Status_Registry {
 	 * @return void
 	 */
 	public function rollup_uptime_history() {
-		$status  = $this->get_status();
+		// Read cached status directly — never trigger a health check from
+		// the rollup cron, which would cause cascading refreshes.
+		$status = get_option( self::OPTION_KEY, array() );
+		if ( ! is_array( $status ) ) {
+			$status = array();
+		}
 		$history = get_option( self::HISTORY_KEY, array() );
 		if ( ! is_array( $history ) ) {
 			$history = array();
