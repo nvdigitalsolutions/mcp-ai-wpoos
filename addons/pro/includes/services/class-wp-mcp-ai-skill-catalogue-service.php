@@ -183,6 +183,16 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 				'manifest_path'  => '',
 				'last_refreshed' => 0,
 			),
+			array(
+				'id'             => 'google-skills',
+				'label'          => 'Google Agent Skills',
+				'type'           => 'github',
+				'owner'          => 'google',
+				'repo'           => 'skills',
+				'ref'            => 'main',
+				'manifest_path'  => '',
+				'last_refreshed' => 0,
+			),
 		);
 	}
 
