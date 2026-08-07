@@ -213,6 +213,16 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 				'manifest_path'  => '',
 				'last_refreshed' => 0,
 			),
+			array(
+				'id'             => 'cloudflare-skills',
+				'label'          => 'Cloudflare Agent Skills',
+				'type'           => 'github',
+				'owner'          => 'cloudflare',
+				'repo'           => 'skills',
+				'ref'            => 'main',
+				'manifest_path'  => '',
+				'last_refreshed' => 0,
+			),
 		);
 	}
 
