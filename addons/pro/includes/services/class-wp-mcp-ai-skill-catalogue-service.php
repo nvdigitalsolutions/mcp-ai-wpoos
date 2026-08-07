@@ -233,6 +233,16 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 				'manifest_path'  => '',
 				'last_refreshed' => 0,
 			),
+			array(
+				'id'             => 'brave-search-skills',
+				'label'          => 'Brave Search Skills',
+				'type'           => 'github',
+				'owner'          => 'brave',
+				'repo'           => 'brave-search-skills',
+				'ref'            => 'main',
+				'manifest_path'  => '',
+				'last_refreshed' => 0,
+			),
 		);
 	}
 
