@@ -193,6 +193,16 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 				'manifest_path'  => '',
 				'last_refreshed' => 0,
 			),
+			array(
+				'id'             => 'openai-skills',
+				'label'          => 'OpenAI Agent Skills',
+				'type'           => 'github',
+				'owner'          => 'openai',
+				'repo'           => 'skills',
+				'ref'            => 'main',
+				'manifest_path'  => '',
+				'last_refreshed' => 0,
+			),
 		);
 	}
 
