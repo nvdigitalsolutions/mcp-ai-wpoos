@@ -153,6 +153,36 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 				'manifest_path'  => '',
 				'last_refreshed' => 0,
 			),
+			array(
+				'id'             => 'awesome-agent-skills',
+				'label'          => 'Awesome Agent Skills (VoltAgent)',
+				'type'           => 'github',
+				'owner'          => 'VoltAgent',
+				'repo'           => 'awesome-agent-skills',
+				'ref'            => 'main',
+				'manifest_path'  => '',
+				'last_refreshed' => 0,
+			),
+			array(
+				'id'             => 'wsmits-agent-skills',
+				'label'          => 'Agent Skills (WesleySmits)',
+				'type'           => 'github',
+				'owner'          => 'WesleySmits',
+				'repo'           => 'agent-skills',
+				'ref'            => 'main',
+				'manifest_path'  => '',
+				'last_refreshed' => 0,
+			),
+			array(
+				'id'             => 'pm-skills',
+				'label'          => 'PM Skills (phuryn)',
+				'type'           => 'github',
+				'owner'          => 'phuryn',
+				'repo'           => 'pm-skills',
+				'ref'            => 'main',
+				'manifest_path'  => '',
+				'last_refreshed' => 0,
+			),
 		);
 	}
 

@@ -138,7 +138,12 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 
 		// Handle catalogue source updates (separate nonce).
 		if ( isset( $_POST['wp_mcp_ai_skill_catalogues_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_skill_catalogues_nonce'] ) ), 'wp_mcp_ai_skill_catalogues' ) ) {
-			$this->save_catalogues();
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+			if ( isset( $_POST['restore_defaults'] ) && '1' === $_POST['restore_defaults'] ) {
+				$this->restore_default_catalogues();
+			} else {
+				$this->save_catalogues();
+			}
 		}
 
 		// Get active tab.
@@ -677,10 +682,37 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-skill-manager&tab=browse' ) ); ?>" class="button">
 						<?php esc_html_e( 'Browse skills →', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
+					<button type="submit" name="restore_defaults" value="1" class="button" style="margin-left:10px;" onclick="return confirm('<?php echo esc_js( __( 'This will replace all current catalogue sources with the default set. Any custom sources you added will be lost. Continue?', 'mcp-ai-wpoos-pro' ) ); ?>');">
+						<span class="dashicons dashicons-backup" style="margin-top: 3px;"></span>
+						<?php esc_html_e( 'Restore Default Catalogues', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
 				</p>
 			</form>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Restore catalogue sources to the built-in defaults.
+	 *
+	 * Nonce verification is performed in render_page() before this method runs.
+	 *
+	 * @since 1.11.0
+	 * @return void
+	 */
+	private function restore_default_catalogues() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Skill_Catalogue_Service' ) ) {
+			return;
+		}
+
+		$defaults = WP_MCP_AI_Skill_Catalogue_Service::get_default_sources();
+		WP_MCP_AI_Skill_Catalogue_Service::instance()->save_sources( $defaults );
+
+		wp_safe_redirect( add_query_arg( 'catalogues-updated', 'true', admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=catalogues' ) ) );
+		exit;
 	}
 
 	/**
@@ -700,8 +732,9 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified in render_page() before calling this method.
-		$raw = isset( $_POST['catalogues'] ) && is_array( $_POST['catalogues'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['catalogues'] ) ) : array();
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		// phpcs:disable WordPressVIPMinimum.Security.ProperEscapingFunction.hrefSrcEscUrl, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Individual string values sanitised in the loop below.
+		$raw = isset( $_POST['catalogues'] ) && is_array( $_POST['catalogues'] ) ? wp_unslash( $_POST['catalogues'] ) : array();
+		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPressVIPMinimum.Security.ProperEscapingFunction.hrefSrcEscUrl, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		$cleaned = array();
 		foreach ( $raw as $entry ) {
@@ -712,19 +745,19 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 				continue;
 			}
 			// Skip rows that are completely empty (e.g. the trailing add-row left blank).
-			$id    = isset( $entry['id'] ) ? (string) $entry['id'] : '';
-			$owner = isset( $entry['owner'] ) ? (string) $entry['owner'] : '';
-			$repo  = isset( $entry['repo'] ) ? (string) $entry['repo'] : '';
+			$id    = isset( $entry['id'] ) ? sanitize_text_field( (string) $entry['id'] ) : '';
+			$owner = isset( $entry['owner'] ) ? sanitize_text_field( (string) $entry['owner'] ) : '';
+			$repo  = isset( $entry['repo'] ) ? sanitize_text_field( (string) $entry['repo'] ) : '';
 			if ( '' === trim( $id ) && '' === trim( $owner ) && '' === trim( $repo ) ) {
 				continue;
 			}
 			$cleaned[] = array(
 				'id'    => $id,
-				'label' => isset( $entry['label'] ) ? (string) $entry['label'] : '',
+				'label' => isset( $entry['label'] ) ? sanitize_text_field( (string) $entry['label'] ) : '',
 				'type'  => 'github',
 				'owner' => $owner,
 				'repo'  => $repo,
-				'ref'   => isset( $entry['ref'] ) ? (string) $entry['ref'] : 'main',
+				'ref'   => isset( $entry['ref'] ) ? sanitize_text_field( (string) $entry['ref'] ) : 'main',
 			);
 		}
 
