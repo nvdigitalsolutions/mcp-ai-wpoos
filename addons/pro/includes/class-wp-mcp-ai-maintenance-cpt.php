@@ -6,9 +6,11 @@
  * Each post represents a planned maintenance window with start/end times,
  * affected services, notification channels, and banner display settings.
  *
- * Status transitions are driven by the `wp_mcp_ai_maintenance_monitor_cron`
- * cron job (every minute) which transitions scheduled → in_progress when the
- * start time arrives, and in_progress → completed when the end time passes.
+ * Status transitions are driven by the consolidated
+ * `wp_mcp_ai_five_minute_tick` cron job (every 5 minutes) which calls
+ * {@see WP_MCP_AI_Maintenance_CPT::process_transitions()} and
+ * {@see WP_MCP_AI_Maintenance_CPT::process_reminders()} within a single
+ * PHP process.
  *
  * @package   WP_MCP_AI_Pro
  * @since     1.3.0
@@ -87,8 +89,10 @@ if ( ! class_exists( 'WP_MCP_AI_Maintenance_CPT' ) ) {
 		public static function init(): void {
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
-			add_action( self::MONITOR_HOOK, array( __CLASS__, 'process_transitions' ) );
-			add_action( self::REMINDER_HOOK, array( __CLASS__, 'process_reminders' ) );
+
+			// Cron callbacks are now dispatched from the consolidated
+			// wp_mcp_ai_five_minute_tick handler (includes/bootstrap/cron.php)
+			// to reduce per-cycle PHP processes and MySQL connections.
 
 			// Fire action hooks on status transitions.
 			add_action( 'post_updated', array( __CLASS__, 'on_post_updated' ), 10, 3 );
@@ -211,7 +215,7 @@ if ( ! class_exists( 'WP_MCP_AI_Maintenance_CPT' ) ) {
 		/**
 		 * Process scheduled → in_progress and in_progress → completed transitions.
 		 *
-		 * Called by wp_mcp_ai_maintenance_monitor_cron (every minute).
+		 * Called from wp_mcp_ai_five_minute_tick (every 5 minutes).
 		 *
 		 * @since 1.3.0
 		 *
@@ -242,7 +246,7 @@ if ( ! class_exists( 'WP_MCP_AI_Maintenance_CPT' ) ) {
 		/**
 		 * Process pre-maintenance reminders.
 		 *
-		 * Called by wp_mcp_ai_maintenance_reminder_cron (every 5 minutes).
+		 * Called from wp_mcp_ai_five_minute_tick (every 5 minutes).
 		 *
 		 * @since 1.3.0
 		 *
@@ -376,14 +380,15 @@ if ( ! class_exists( 'WP_MCP_AI_Maintenance_CPT' ) ) {
 		 * @since 1.3.0
 		 *
 		 * @param string $status Status slug.
+		 * @param int    $limit  Maximum number of posts to return (default 50).
 		 * @return WP_Post[]
 		 */
-		private static function get_windows_by_status( string $status ): array {
+		private static function get_windows_by_status( string $status, int $limit = 50 ): array {
 			return get_posts(
 				array(
 					'post_type'      => self::POST_TYPE,
 					'post_status'    => 'publish',
-					'posts_per_page' => 50,
+					'posts_per_page' => $limit,
 					'meta_key'       => '_mcp_ai_maintenance_status',
 					'meta_value'     => $status,
 					'orderby'        => 'date',
@@ -420,7 +425,7 @@ if ( ! class_exists( 'WP_MCP_AI_Maintenance_CPT' ) ) {
 		 * @return WP_Post|null
 		 */
 		public static function get_active_window(): ?WP_Post {
-			$windows = self::get_windows_by_status( self::STATUS_IN_PROGRESS );
+			$windows = self::get_windows_by_status( self::STATUS_IN_PROGRESS, 1 );
 			return ! empty( $windows ) ? $windows[0] : null;
 		}
 
@@ -433,7 +438,7 @@ if ( ! class_exists( 'WP_MCP_AI_Maintenance_CPT' ) ) {
 		 * @return WP_Post[]
 		 */
 		public static function get_upcoming_windows( int $limit = 5 ): array {
-			return self::get_windows_by_status( self::STATUS_SCHEDULED );
+			return self::get_windows_by_status( self::STATUS_SCHEDULED, $limit );
 		}
 	}
 

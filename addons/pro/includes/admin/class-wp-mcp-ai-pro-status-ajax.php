@@ -42,6 +42,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Ajax' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_status_refresh', array( $this, 'handle_refresh' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_status_health_check', array( $this, 'handle_health_check' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_status_toggle_public', array( $this, 'handle_toggle_public' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_status_history', array( $this, 'handle_history' ) );
 		}
 
 		/**
@@ -70,10 +71,29 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Ajax' ) ) {
 				);
 			}
 
+			// Per-user throttle: prevent rapid-fire polling from hammering MySQL.
+			// Each admin user can trigger at most one refresh per 60 seconds.
+			$throttle_key = 'wp_mcp_ai_status_refresh_throttle_' . get_current_user_id();
+			if ( get_transient( $throttle_key ) ) {
+				// Return the cached snapshot without any processing.
+				$registry = WP_MCP_AI_Service_Status_Registry::get_instance();
+				$cached   = $registry->get_cached_status();
+				wp_send_json_success(
+					array(
+						'throttled'  => true,
+						'components' => $cached,
+					)
+				);
+			}
+			set_transient( $throttle_key, 1, 60 );
+
 			try {
 				$registry = WP_MCP_AI_Service_Status_Registry::get_instance();
-				$status   = $registry->get_status();
-				$sources  = $registry->get_sources();
+
+				// Use cache-only read — never trigger a health check on the AJAX
+				// request thread. The five_minute_tick cron keeps the cache warm.
+				$status  = $registry->get_cached_status();
+				$sources = $registry->get_sources();
 
 				// Enrich with source metadata.
 				$enriched = array();
@@ -95,7 +115,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Ajax' ) ) {
 
 				$overall    = $registry->compute_overall_status( $enriched );
 				$last_check = (int) get_option( WP_MCP_AI_Service_Status_Registry::LAST_CHECK_KEY, 0 );
-				$history    = $registry->get_uptime_history( 30 );
 
 				wp_send_json_success(
 					array(
@@ -105,13 +124,60 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Ajax' ) ) {
 						'last_checked_text' => $last_check > 0
 							? human_time_diff( $last_check )
 							: __( 'Never', 'mcp-ai-wpoos-pro' ),
-						'history'           => $history,
 					)
 				);
 			} catch ( \Throwable $e ) {
 				wp_send_json_error(
 					array(
 						'message' => __( 'Failed to load status data.', 'mcp-ai-wpoos-pro' ),
+						'debug'   => WP_DEBUG ? $e->getMessage() : null,
+					),
+					500
+				);
+			}
+		}
+
+		/**
+		 * Handle uptime history request (separate from status refresh).
+		 *
+		 * The 30-day uptime chart data changes at most hourly (on rollup),
+		 * so it is fetched independently from the component status grid.
+		 * This keeps the frequent polling endpoint lightweight.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @return void
+		 */
+		public function handle_history(): void {
+			check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos-pro' ) ),
+					403
+				);
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Service_Status_Registry' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Service Status Registry is not available.', 'mcp-ai-wpoos-pro' ) ),
+					500
+				);
+			}
+
+			try {
+				$registry = WP_MCP_AI_Service_Status_Registry::get_instance();
+				$history  = $registry->get_uptime_history( 30 );
+
+				wp_send_json_success(
+					array(
+						'history' => $history,
+					)
+				);
+			} catch ( \Throwable $e ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Failed to load uptime history.', 'mcp-ai-wpoos-pro' ),
 						'debug'   => WP_DEBUG ? $e->getMessage() : null,
 					),
 					500

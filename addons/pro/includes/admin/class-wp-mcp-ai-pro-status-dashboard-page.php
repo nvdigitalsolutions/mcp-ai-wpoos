@@ -138,7 +138,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Status_Dashboard_Page' ) ) {
 				array(
 					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 					'nonce'           => wp_create_nonce( self::NONCE_ACTION ),
-					'refreshInterval' => 60000, // 60 seconds.
+					'refreshInterval' => 300000, // 5 minutes — matches cron refresh cycle.
+					'historyInterval' => 3600000, // 1 hour — chart data changes at most hourly.
 					'strings'         => array(
 						'loading'            => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
 						'error'              => __( 'Error loading status data.', 'mcp-ai-wpoos-pro' ),
