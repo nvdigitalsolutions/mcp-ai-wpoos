@@ -1,12 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.45
-**Last Updated:** August 5, 2026
+**Version:** 1.1.46
+**Last Updated:** August 6, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (August 2026)
 
+- **v1.1.46** (August 6): Comprehensive Backup & Restore with 11 modular export providers (8 base + 3 Pro). GitHub-based Plugin Updater (772 lines) with base-to-complete upgrade path. Abilities API selective adoption (includes/abilities/ framework, 5 classes, 5 test files) for AI agent discovery. Status Page fixes (fatal error in REST, JS errors, i18n). Knowledge base auto-build CI. PHPCS cleanup across 100+ files (parse errors, text domain, WPCS formatting).
 - **v1.1.42** (July 29): Security infrastructure (7 classes: Request Guard, Security Posture with 21 signals, Destructive Ops Gate, URL Guard, Concurrency Guard, Cost Tracker, API Key Store). Site Health checks. Production hardening guide. CORS/rate limiting/error verbosity/body size enforcement with dashboard posture signals. nvoos/core framework-agnostic engine (32 contracts + 21 WP adapters, 109 tools migrated, 5 parity gaps closed). Status page & incident communication (Pro) with 4 AI tools. 21 coding-time agent skills + 6 BMAD agent definitions. Algorave addon (9 tools). Critical bug fixes (request guard param order, nonce query param auth). 13 new security unit tests. Addon count: 27.
 - **v1.1.43** (August 1): MCP 2026-07-28 stateless core upgrade. Security v1.1.43 hardening (SSRF/CSRF/SQL/XSS across 16 files). OKF v0.2 trust-signal support (recursive descent parser, trust tiers, new validation tool). ICP System (Pro CRM Phase G, 7-dimension scoring). Pro Module Registry PSR-4. Hexagonal architecture purity (PlatformFlushInterface). 7 playbook/profession sync fixes. Phase 3 operational security hardening. WPCS 3.4.1 (CVE-2026-45293). Addon count: 27. Knowledge base: 311 professions.
 - **v1.1.45** (August 5): Self-hosted OCR (Unlimited-OCR + DeepSeek-OCR) — 17 files, +4,087 lines. New unified vLLM client, Pro tools (`pro_unlimited_ocr`, `pro_batch_ocr`), structured extraction service, Embedded OCR backend + health dashboard, admin settings UI. Embedded addon v0.2.0 (voice, OpenMed, MCP abilities). AI transparency & SGI compliance. Comic Reader v0.2.0. Graphify standalone plugins v1.0.1. Build/release automation.
