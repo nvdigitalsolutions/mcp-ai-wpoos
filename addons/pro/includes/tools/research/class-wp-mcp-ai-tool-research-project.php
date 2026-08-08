@@ -753,7 +753,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 
 			case 'gemini':
 				// Use Gemini Pro for research.
-				$model = isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-pro';
+				$model = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
 				return $model;
 
 			case 'ollama':
