@@ -148,6 +148,13 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
+### ✨ What's New at a Glance (v1.1.48)
+
+- 🛒 **Shopify Sync Toolkit — 7 Bug Fixes.** Fatal error (`graphql_query()` → `graphql()`) on Admin API connection test. Dead code in `list_by_status` replaced with direct `SELECT COUNT(*)` query. Always-zero analytics count now uses actual API response edges instead of empty array. Duplicate `get_option()` call and redundant `$sync_mode` assignment removed. Infinite loop risk in `truncate()` eliminated — paginated while-loop replaced with direct `DELETE FROM {table}`. Double DB query per upsert halved via by-ref `&$operation` output parameter. Missing `orderby`/`order` schema parameters added with sanitization passthrough. (PR #5815)
+- 🔒 **PHPCS CVE-2026-67434.** `squizlabs/php_codesniffer` bumped 3.13.4 → 3.13.6 across 3 `composer.lock` files. Resolves arbitrary code execution via crafted ruleset XML. Dev dependency only — no functional impact.
+- 📚 **Default Skill Catalogues.** Brave Search Skills and all 22 WordPress Agent Skills added to the default skill catalogue for new assistants out of the box.
+- 🛠️ **NVoOS Graphify Standalone Plugins.** 3 new standalone plugin ZIPs in `plugins/` directory: Graphify v1.0.1, Graphify AI Platform v1.0.0, and Graphify AI v1.0.0.
+
 ### ✨ What's New at a Glance (v1.1.47)
 
 - 🛢️ **MySQL Connection Exhaustion Fix (Cloudways).** Cron system overhaul with unified concurrency limits, per-process memory caps, and staggered offset scheduling to prevent connection-pool saturation. Activation bootstrap now uses connection throttling. Service status registry hardened. Pro status page JS, AJAX handler, and dashboard improvements. 7 files, +438/-89 lines. (PR #5809)
@@ -157,14 +164,7 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - 📦 **Knowledge Base Auto-Build.** CI auto-builds `knowledge-base.zip` when playbook files change. (PR #5797)
 - 🧹 **PHPCS Cleanup.** Parse error fixes from canonical envelope conversion, text domain mismatch corrections, and WPCS formatting across 100+ tool files. (PRs #5798, #5804)
 - 📄 **Self-Hosted OCR & More** — see [v1.1.45 release notes](#-latest-updates-v1145--august-2026) below.
-
-### ✨ What's New at a Glance (v1.1.48)
-
-- 🛒 **Shopify Sync Toolkit — 7 Bug Fixes.** Fatal error (`graphql_query()` → `graphql()`) on Admin API connection test. Dead code in `list_by_status` replaced with direct `SELECT COUNT(*)` query. Always-zero analytics count now uses actual API response edges instead of empty array. Duplicate `get_option()` call and redundant `$sync_mode` assignment removed. Infinite loop risk in `truncate()` eliminated — paginated while-loop replaced with direct `DELETE FROM {table}`. Double DB query per upsert halved via by-ref `&$operation` output parameter. Missing `orderby`/`order` schema parameters added with sanitization passthrough. (PR #5815)
-- 🔒 **PHPCS CVE-2026-67434.** `squizlabs/php_codesniffer` bumped 3.13.4 → 3.13.6 across 3 `composer.lock` files. Resolves arbitrary code execution via crafted ruleset XML. Dev dependency only — no functional impact.
-- 📚 **Default Skill Catalogues.** Brave Search Skills and all 22 WordPress Agent Skills added to the default skill catalogue for new assistants out of the box.
-- 🛠️ **NVoOS Graphify Standalone Plugins.** 3 new standalone plugin ZIPs in `plugins/` directory: Graphify v1.0.1, Graphify AI Platform v1.0.0, and Graphify AI v1.0.0.
-
+- 
 ### ✨ What's New at a Glance (v1.1.43)
 
 - 🔒 **Security Hardening v1.1.43 (16 files).** SSRF protection across 7 provider connection handlers + A2A agent URL. SQL table-name validation against injection. A2A per-assistant agent cards now auth-gated. Chat SPA /config and /manifest endpoints require authentication (no longer public). Missing args schemas on 7 REST endpoints. Guest rate-limiting now IP-based (DoS vector closed). 3 tool capability mismatches corrected. Centralized defense-in-depth capability gate in Tool Registry. PHP object injection prevention via `safe_unserialize` helper.
