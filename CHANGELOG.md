@@ -1,5 +1,29 @@
 # oOS – Changelog
 
+## [1.1.47] - 2026-08-07
+
+### Fixed — MySQL Connection Exhaustion on Cloudways (PR #5809)
+
+- **Cron System Overhaul** (`includes/bootstrap/cron.php`, +182/-?? lines) — unified concurrency limits, per-process memory caps, and staggered offset scheduling to prevent connection-pool saturation on Cloudways and similar hosts with restrictive MySQL connection limits. Cron jobs no longer spawn unbounded parallel processes — each cron hook now respects a concurrency ceiling and memory budget before forking additional workers. (PR #5809)
+- **Activation Bootstrap** (`includes/bootstrap/activation.php`, +89/-?? lines) — resource-aware activation with connection throttling. Database operations during activation now use batched queries with explicit connection release to avoid exhausting shared-hosting connection pools. (PR #5809)
+- **Service Status Registry** (`includes/class-wp-mcp-ai-service-status-registry.php`, +53/-?? lines) — enhanced health-check resilience with transient caching to reduce database round-trips during status polling. (PR #5809)
+- **Maintenance CPT** (`addons/pro/includes/class-wp-mcp-ai-maintenance-cpt.php`) — streamlined resource usage during maintenance window operations. (PR #5809)
+- **Pro Status Page** (`addons/pro/assets/js/pro-status-page.js`, +99 lines; `addons/pro/includes/admin/class-wp-mcp-ai-pro-status-ajax.php`, +74 lines; `addons/pro/includes/admin/class-wp-mcp-ai-pro-status-dashboard-page.php`) — status page JS improvements, AJAX handler enhancements, and dashboard page fixes for Pro. (PR #5809)
+
+### Fixed — Update Checker Cache Bust (PR #5810)
+
+- **Plugin Updater** (`includes/class-wp-mcp-ai-plugin-updater.php`, +6 lines) — `ajax_check_update()` and `ajax_check_pro_update()` now delete cached release data before fetching. Clicking 'Check for Updates' always returns live GitHub Releases data instead of the stale 12-hour cache. (PR #5810)
+
+### Fixed — Mermaid Security Vulnerabilities
+
+- **npm Audit Fix** (`addons/canvas-toolkit/`) — mermaid 11.15.0 → 11.16.1 to resolve 5 CVEs: GHSA-3rrr-jr9j-h3q3 (Architecture diagram prototype pollution), GHSA-6x64-9x62-f2gx (CSS injection on sibling elements), GHSA-rhh3-jpg6-66xh (Radar diagram DoS), GHSA-2v8p-3f2j-5mp7 (XY Chart infinite loop DoS), GHSA-c4c3-pg64-4m4v (Config API prototype pollution). Transitive bumps: dompurify 3.4.12 → 3.4.13, nanoid 3.3.16 → 3.3.18. Canvas toolkit dist bundle regenerated (1,219 lines changed). Zero functional impact — mermaid mode is an unused stub not yet implemented.
+
+### Versioning
+
+- Bumped to **1.1.47** across all version-bearing files. Pro addon: **1.1.27**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
 ## [1.1.46] - 2026-08-06
 
 ### Added — Comprehensive Backup & Restore (Proposal 020)

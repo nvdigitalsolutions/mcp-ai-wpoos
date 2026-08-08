@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.46
+Stable tag: 1.1.47
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,29 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.47 - August 7, 2026 =
+
+Bumped to 1.1.47 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+
+**MySQL Connection Exhaustion Fix, Update Cache Bust, Mermaid Security Fixes**
+
+* **MySQL Connection Exhaustion (Cloudways).** Cron system overhaul with unified concurrency limits, per-process memory caps, and staggered offset scheduling to prevent connection-pool saturation on Cloudways and similar hosts with MySQL connection limits. Activation bootstrap updated with connection throttling. Service status registry hardened for transient health-check failures. Maintenance CPT streamlined. Pro status page JS, AJAX handler, and dashboard improvements (7 files, +438/-89).
+* **Update Checker Cache Bust.** Both ajax_check_update() and ajax_check_pro_update() now clear the cached release data before fetching, so clicking 'Check for Updates' always returns live data instead of stale 12h cache.
+* **Mermaid Security Fixes.** npm audit fix: mermaid 11.15.0 → 11.16.1 resolves 5 CVEs (prototype pollution, CSS injection, DoS). Transitive bumps: dompurify 3.4.13, nanoid 3.3.18. Zero functional impact (mermaid mode not yet implemented).
+
+= 1.1.46 - August 6, 2026 =
+
+Bumped to 1.1.46 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+
+**Backup & Restore, Plugin Updater, Abilities API, Status Page Fixes, PHPCS Cleanup**
+
+* **Comprehensive Backup & Restore (Proposal 020).** New modular export system with export manager and 11 export providers (8 base + 3 Pro). JSON-based export/import with chunked file I/O and progress reporting. Admin UI in Settings → Advanced.
+* **GitHub-Based Plugin Updater.** New WP_MCP_AI_Plugin_Updater fetches releases from GitHub Releases API, compares versions, and installs updates via WordPress Plugin_Upgrader. Base-to-complete upgrade path in Settings → Advanced. Pro addon update support with rollback.
+* **Abilities API Selective Adoption (Proposal 019).** New includes/abilities/ framework: Registrar, Bridge, Category Registrar, and Security Bridge for machine-readable plugin operations with JSON Schema contracts. Tool-ability interface for MCP/AI agent discovery. 5 test files.
+* **Status Page Fixes.** Fatal error in Pro status REST endpoint resolved. JS errors and i18n text domain consistency fixed on the status dashboard.
+* **Knowledge Base Auto-Build.** CI auto-builds knowledge-base.zip when playbook files change.
+* **PHPCS Cleanup.** Parse error fixes from canonical envelope conversion, text domain mismatch corrections, and WPCS formatting across 100+ tool files.
 
 = 1.1.45 - August 5, 2026 =
 
