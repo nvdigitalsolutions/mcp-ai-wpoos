@@ -2,8 +2,8 @@
 name: mcp-ai-wpoos-plugin
 description: "Complete operational guide for the NV oOS (Open Operator System) WordPress plugin in Docker/WSL2 — setup, assistant creation, credential tokens, MCP tool calling, API key auto-detection, env var bridging, common fixes, and IGCSE study configuration. Use when setting up the plugin for the first time, creating assistants programmatically, generating MCP bridge tokens, troubleshooting Docker path issues, bridging API keys, or calling tools via JSON-RPC over HTTP."
 plugin: mcp-ai-wpoos
-plugin-version: 1.1.48
-plugin-version-tested: 1.1.48
+plugin-version: 1.1.49
+plugin-version-tested: 1.1.49
 last-updated: 2026-08-08
 ---
 

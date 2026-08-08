@@ -1,5 +1,23 @@
 # oOS – Changelog
 
+## [1.1.49] - 2026-08-08
+
+### Fixed — Gemini Model Resolution (PR #5817)
+
+- **Gemini Client** (`includes/class-wp-mcp-ai-gemini-client.php`, 2 lines) — model resolution now uses the correct settings key instead of the deprecated fallback. The old `gemini-pro` fallback model has been removed; all Gemini model lookups now go through the canonical provider settings path.
+
+### Fixed — Update Reactivation & Release ZIP Cleanup (PR #5816)
+
+- **Plugin Updater** (`includes/class-wp-mcp-ai-plugin-updater.php`, +152/-18 lines) — update reactivation flow fixed; plugin now correctly handles post-update reactivation. Nonce-scoped update actions hardened.
+- **Release ZIP Cleanup** — `.distignore` and `.gitattributes` updated to exclude development-only files (`.agents/`, `.context/`, `.github/`, IDE configs) from release ZIPs. `bin/build-plugin-zip.sh` updated with new exclusion rules.
+- **OCR & Tool Cleanup** — minor fixes in OCR service, research report generator, research project tool, video analysis service, and 5 image-analysis tools.
+
+### Versioning
+
+- Bumped to **1.1.49** across all version-bearing files. Pro addon: **1.1.28**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
 ## [1.1.48] - 2026-08-08
 
 ### Fixed — Shopify Sync Toolkit (7 fixes)

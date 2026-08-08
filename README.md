@@ -11,8 +11,8 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.47
-**Release Date:** 2026-08-07
+**Version:** 1.1.49
+**Release Date:** 2026-08-08
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
@@ -157,6 +157,13 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - 📦 **Knowledge Base Auto-Build.** CI auto-builds `knowledge-base.zip` when playbook files change. (PR #5797)
 - 🧹 **PHPCS Cleanup.** Parse error fixes from canonical envelope conversion, text domain mismatch corrections, and WPCS formatting across 100+ tool files. (PRs #5798, #5804)
 - 📄 **Self-Hosted OCR & More** — see [v1.1.45 release notes](#-latest-updates-v1145--august-2026) below.
+
+### ✨ What's New at a Glance (v1.1.48)
+
+- 🛒 **Shopify Sync Toolkit — 7 Bug Fixes.** Fatal error (`graphql_query()` → `graphql()`) on Admin API connection test. Dead code in `list_by_status` replaced with direct `SELECT COUNT(*)` query. Always-zero analytics count now uses actual API response edges instead of empty array. Duplicate `get_option()` call and redundant `$sync_mode` assignment removed. Infinite loop risk in `truncate()` eliminated — paginated while-loop replaced with direct `DELETE FROM {table}`. Double DB query per upsert halved via by-ref `&$operation` output parameter. Missing `orderby`/`order` schema parameters added with sanitization passthrough. (PR #5815)
+- 🔒 **PHPCS CVE-2026-67434.** `squizlabs/php_codesniffer` bumped 3.13.4 → 3.13.6 across 3 `composer.lock` files. Resolves arbitrary code execution via crafted ruleset XML. Dev dependency only — no functional impact.
+- 📚 **Default Skill Catalogues.** Brave Search Skills and all 22 WordPress Agent Skills added to the default skill catalogue for new assistants out of the box.
+- 🛠️ **NVoOS Graphify Standalone Plugins.** 3 new standalone plugin ZIPs in `plugins/` directory: Graphify v1.0.1, Graphify AI Platform v1.0.0, and Graphify AI v1.0.0.
 
 ### ✨ What's New at a Glance (v1.1.43)
 
@@ -576,9 +583,23 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.47 — August 2026)
+## 🆕 Latest Updates (v1.1.49 — August 2026)
 
-### August 7, 2026 — MySQL Connection Exhaustion Fix, Update Cache Bust, Mermaid Security
+### August 8, 2026 — Gemini Model Fix, Update Reactivation, Release ZIP Cleanup
+
+- ✅ **Gemini Model Resolution Fix — PR #5817 (1 file, 2 lines).** `includes/class-wp-mcp-ai-gemini-client.php` — model resolution now uses the correct settings key instead of the deprecated fallback. The old `gemini-pro` model fallback has been removed; all Gemini model lookups now go through the canonical provider settings path. (PR #5817)
+- ✅ **Update Reactivation & Release ZIP Cleanup — PR #5816 (68 files, +164/-18 lines).** `includes/class-wp-mcp-ai-plugin-updater.php` (+152/-18 lines) — update reactivation flow fixed; plugin now correctly handles post-update reactivation. Nonce-scoped update actions hardened. `.distignore` and `.gitattributes` updated to exclude development-only files (`.agents/`, `.context/`, `.github/`, IDE configs, test fixtures) from release ZIPs. `bin/build-plugin-zip.sh` updated with new exclusion rules. Minor fixes in OCR service, research report generator, research project tool, video analysis service, and 5 image-analysis tools. (PR #5816)
+- 📦 **Versioning** — bumped to **1.1.49** across all version-bearing files. Pro addon: 1.1.28. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
+
+### August 8, 2026 — Shopify Sync Toolkit Fixes, PHPCS Security, Skill Catalogues (v1.1.48)
+
+- ✅ **Shopify Sync Toolkit — 7 Fixes (PR #5815, 6 files).** Fatal error fix: `graphql_query()` → `graphql()` in Admin API connection test. Dead `list_by_status` code removed — replaced two broken `per_page => 1` loops with a direct `SELECT COUNT(*) WHERE status = %s`. Always-zero analytics count now uses `count($edges)` from the actual API response. Duplicate `get_option()` call and redundant `$sync_mode` assignment removed. Infinite loop risk eliminated — paginated `truncate()` while-loop replaced with direct `DELETE FROM {table}` SQL. Double DB query per upsert halved — `upsert()` now accepts a by-reference `&$operation` output parameter. Missing `orderby`/`order` schema parameters added with sanitization passthrough.
+- ✅ **PHPCS CVE-2026-67434.** `squizlabs/php_codesniffer` bumped 3.13.4 → 3.13.6 in all 3 `composer.lock` files. Resolves arbitrary code execution via crafted ruleset XML. Dev dependency only — no functional impact.
+- ✅ **Default Skill Catalogues.** Brave Search Skills and all 22 WordPress Agent Skills added to default skill catalogue for new assistants out of the box.
+- ✅ **NVoOS Graphify Standalone Plugins.** 3 new standalone plugin ZIPs in `plugins/` directory: Graphify v1.0.1, Graphify AI Platform v1.0.0, and Graphify AI v1.0.0.
+- 📦 **Versioning** — bumped to **1.1.48** across all version-bearing files. Pro addon: 1.1.28. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
+
+### August 7, 2026 — MySQL Connection Exhaustion Fix, Update Cache Bust, Mermaid Security (v1.1.47)
 
 - ✅ **MySQL Connection Exhaustion Fix (Cloudways) — PR #5809 (7 files, +438/-89 lines).** Cron system overhaul in `includes/bootstrap/cron.php` — unified concurrency limits, per-process memory caps, and staggered offset scheduling prevent connection-pool saturation on Cloudways and similar hosts with restrictive MySQL connection limits. Each cron hook now respects a concurrency ceiling and memory budget before forking additional workers. Activation bootstrap (`includes/bootstrap/activation.php`) updated with resource-aware connection throttling — batched queries with explicit connection release during activation. Service status registry (`includes/class-wp-mcp-ai-service-status-registry.php`) hardened with transient caching to reduce database round-trips during status polling. Maintenance CPT streamlined. Pro status page: JS improvements (+99 lines), AJAX handler enhancements (+74 lines), dashboard fixes. (PR #5809)
 - ✅ **Update Checker Cache Bust — PR #5810 (1 file, +6 lines).** `ajax_check_update()` and `ajax_check_pro_update()` in `includes/class-wp-mcp-ai-plugin-updater.php` now delete cached release data before fetching from the GitHub Releases API. Manual "Check for Updates" clicks always return live data instead of the stale 12-hour TTL cache.

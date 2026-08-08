@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.48
+Stable tag: 1.1.49
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,25 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.49 - August 8, 2026 =
+
+Bumped to 1.1.49 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+
+**Gemini Model Resolution Fix, Update Reactivation, Release ZIP Cleanup**
+
+* **Gemini Model Resolution Fix.** Gemini client now uses the correct settings key for model resolution; deprecated `gemini-pro` fallback removed. (PR #5817)
+* **Update Reactivation Fix.** Plugin updater now correctly reactivates the plugin after update. Nonce-scoped update actions hardened. Dev files (`.agents/`, `.context/`, `.github/`, IDE configs) excluded from release ZIPs via `.distignore` and `.gitattributes`. (PR #5816)
+
+= 1.1.48 - August 8, 2026 =
+
+Bumped to 1.1.48 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+
+**Shopify Sync Toolkit Fixes, PHPCS Security, Default Skill Catalogues**
+
+* **Shopify Sync Toolkit (7 fixes).** Fatal error fix: `graphql_query()` → `graphql()`. Dead code removed. Always-zero analytics count fixed. Duplicate settings fetch removed. Infinite loop risk eliminated via direct DELETE SQL. Double DB query per upsert resolved. Missing `orderby`/`order` schema parameters added.
+* **PHPCS Security (CVE-2026-67434).** `squizlabs/php_codesniffer` bumped 3.13.4 → 3.13.6 across all composer.lock files. Arbitrary code execution via crafted ruleset XML. Dev dependency only — no functional impact.
+* **Default Skill Catalogues.** Brave Search Skills and WordPress Agent Skills (22 patterns) added to the default skill catalogue for new assistants out of the box.
 
 = 1.1.47 - August 7, 2026 =
 
