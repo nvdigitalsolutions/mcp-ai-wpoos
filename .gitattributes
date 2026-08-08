@@ -106,6 +106,7 @@ addons/pro/assets/vendor/** -text
 .npmrc                      export-ignore
 .idea/                      export-ignore
 .vscode/                    export-ignore
+.zap-rules.tsv              export-ignore
 
 # Code-style / lint configs (dev-only)
 phpcs.xml.dist              export-ignore

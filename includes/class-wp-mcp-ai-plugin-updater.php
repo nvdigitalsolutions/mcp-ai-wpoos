@@ -246,9 +246,14 @@ class WP_MCP_AI_Plugin_Updater {
 	 * plugin directory out from under the running PHP process.
 	 *
 	 * @param string $download_url URL of the ZIP to download.
+	 * @param array  $check        Optional. Update check result from check_for_update()
+	 *                             with 'latest' and 'download_url' keys. Used to
+	 *                             temporarily register the plugin in the update_plugins
+	 *                             transient so WordPress's Plugin_Upgrader doesn't
+	 *                             reject the upgrade.
 	 * @return true|WP_Error True on success, WP_Error on failure.
 	 */
-	public static function install_update( $download_url ) {
+	public static function install_update( $download_url, $check = array() ) {
 		if ( empty( $download_url ) ) {
 			return new WP_Error(
 				'no_download_url',
@@ -276,6 +281,17 @@ class WP_MCP_AI_Plugin_Updater {
 			return $temp_file;
 		}
 
+		// Temporarily register this plugin in the update_plugins transient.
+		// Plugin_Upgrader::upgrade() checks get_site_transient( 'update_plugins' )
+		// and rejects upgrades for plugins not listed there. Since we manage our
+		// own updates through GitHub releases (not WordPress.org), we must inject
+		// our plugin entry so the upgrader proceeds.
+		$prev_plugins_transient = self::inject_plugin_into_update_transient(
+			$plugin_basename,
+			$temp_file,
+			isset( $check['latest'] ) ? $check['latest'] : ''
+		);
+
 		// Use Plugin_Upgrader to perform the update safely.
 		// It handles: deactivation → file replacement → reactivation.
 		$skin     = new WP_Ajax_Upgrader_Skin();
@@ -291,6 +307,9 @@ class WP_MCP_AI_Plugin_Updater {
 				'hook_extra'                  => array(),
 			)
 		);
+
+		// Restore the original update_plugins transient.
+		self::restore_update_transient( $prev_plugins_transient );
 
 		// Clean up the temp file if it still exists.
 		if ( file_exists( $temp_file ) ) {
@@ -310,9 +329,21 @@ class WP_MCP_AI_Plugin_Updater {
 			);
 		}
 
-		// Force reactivation if the upgrader deactivated us.
+		// Force reactivation if the upgrader did not reactivate us.
+		// Plugin_Upgrader normally reactivates after file replacement, but
+		// if something prevents that (e.g. PHP error in new code), try again.
 		if ( ! is_plugin_active( $plugin_basename ) ) {
-			activate_plugin( $plugin_basename, '', false, true );
+			$activated = activate_plugin( $plugin_basename, '', false, false );
+			if ( is_wp_error( $activated ) ) {
+				return new WP_Error(
+					'reactivation_failed',
+					sprintf(
+						/* translators: %s: error message from activate_plugin() */
+						__( 'Plugin updated but failed to reactivate: %s', 'mcp-ai-wpoos' ),
+						$activated->get_error_message()
+					)
+				);
+			}
 		}
 
 		// Clear the update cache.
@@ -472,7 +503,7 @@ class WP_MCP_AI_Plugin_Updater {
 			wp_send_json_error( array( 'message' => __( 'No update available.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$result = self::install_update( $check['download_url'] );
+		$result = self::install_update( $check['download_url'], $check );
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -583,9 +614,10 @@ class WP_MCP_AI_Plugin_Updater {
 	 * replace it in-place.
 	 *
 	 * @param string $download_url URL of the full build ZIP.
+	 * @param array  $check        Optional. Availability check result with 'latest' key.
 	 * @return true|WP_Error True on success, WP_Error on failure.
 	 */
-	public static function upgrade_to_complete( $download_url ) {
+	public static function upgrade_to_complete( $download_url, $check = array() ) {
 		if ( empty( $download_url ) ) {
 			return new WP_Error(
 				'no_download_url',
@@ -611,6 +643,15 @@ class WP_MCP_AI_Plugin_Updater {
 			return $temp_file;
 		}
 
+		// Temporarily register this plugin in the update_plugins transient
+		// (same rationale as install_update — Plugin_Upgrader::upgrade()
+		// requires the plugin to be listed in the transient).
+		$prev_plugins_transient = self::inject_plugin_into_update_transient(
+			$plugin_basename,
+			$temp_file,
+			isset( $check['latest'] ) ? $check['latest'] : ''
+		);
+
 		$skin     = new WP_Ajax_Upgrader_Skin();
 		$upgrader = new Plugin_Upgrader( $skin );
 
@@ -624,6 +665,9 @@ class WP_MCP_AI_Plugin_Updater {
 				'hook_extra'                  => array(),
 			)
 		);
+
+		// Restore the original update_plugins transient.
+		self::restore_update_transient( $prev_plugins_transient );
 
 		if ( file_exists( $temp_file ) ) {
 			unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- temp file cleanup after upgrade.
@@ -642,9 +686,21 @@ class WP_MCP_AI_Plugin_Updater {
 			);
 		}
 
-		// Force reactivation if the upgrader deactivated us.
+		// Force reactivation if the upgrader did not reactivate us.
+		// Plugin_Upgrader normally reactivates after file replacement, but
+		// if something prevents that (e.g. PHP error in new code), try again.
 		if ( ! is_plugin_active( $plugin_basename ) ) {
-			activate_plugin( $plugin_basename, '', false, true );
+			$activated = activate_plugin( $plugin_basename, '', false, false );
+			if ( is_wp_error( $activated ) ) {
+				return new WP_Error(
+					'reactivation_failed',
+					sprintf(
+						/* translators: %s: error message from activate_plugin() */
+						__( 'Upgraded to complete version but failed to reactivate: %s', 'mcp-ai-wpoos' ),
+						$activated->get_error_message()
+					)
+				);
+			}
 		}
 
 		// Clear the update cache.
@@ -694,7 +750,7 @@ class WP_MCP_AI_Plugin_Updater {
 			wp_send_json_error( array( 'message' => __( 'Complete version is not available for download.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$result = self::upgrade_to_complete( $check['download_url'] );
+		$result = self::upgrade_to_complete( $check['download_url'], $check );
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -775,4 +831,84 @@ class WP_MCP_AI_Plugin_Updater {
 		closedir( $dir );
 		return true;
 	}
+
+	/**
+	 * Temporarily inject a plugin entry into the update_plugins transient.
+	 *
+	 * Plugin_Upgrader::upgrade() checks get_site_transient( 'update_plugins' )
+	 * and refuses to upgrade plugins not listed there. Since we manage our own
+	 * updates via GitHub releases, we inject our plugin so the upgrader proceeds.
+	 *
+	 * Call restore_update_transient() with the return value after the upgrade.
+	 *
+	 * @param string $plugin_basename Plugin basename (e.g. 'mcp-ai-wpoos/mcp-ai-wpoos.php').
+	 * @param string $package_url     URL or local path to the update ZIP.
+	 * @param string $new_version     The version being installed.
+	 * @return stdClass|null Previous update_plugins transient value (or null if unchanged).
+	 */
+	private static function inject_plugin_into_update_transient( $plugin_basename, $package_url, $new_version ) {
+		$prev = get_site_transient( 'update_plugins' );
+
+		$transient = $prev;
+		if ( ! is_object( $transient ) ) {
+			$transient = new stdClass();
+		}
+		if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
+			$transient->response = array();
+		}
+
+		$transient->response[ $plugin_basename ] = (object) array(
+			'slug'        => dirname( $plugin_basename ),
+			'plugin'      => $plugin_basename,
+			'new_version' => $new_version,
+			'package'     => $package_url,
+			'url'         => '',
+		);
+
+		// Preserve last_checked so it doesn't trigger another background check.
+		if ( ! isset( $transient->last_checked ) && isset( $prev->last_checked ) ) {
+			$transient->last_checked = $prev->last_checked;
+		}
+
+		set_site_transient( 'update_plugins', $transient );
+
+		return $prev;
+	}
+
+	/**
+	 * Restore the update_plugins transient to its previous state.
+	 *
+	 * Removes our injected entry if the original didn't have one, or
+	 * restores the original object entirely.
+	 *
+	 * @param stdClass|null $previous Previous transient value from inject_plugin_into_update_transient().
+	 */
+	private static function restore_update_transient( $previous ) {
+		if ( null === $previous ) {
+			delete_site_transient( 'update_plugins' );
+			return;
+		}
+
+		// If our injected entry is still there, remove it.
+		$plugin_basename = plugin_basename( WP_MCP_AI_FILE );
+		if ( isset( $previous->response[ $plugin_basename ] ) ) {
+			// Original had an entry — keep it.
+			set_site_transient( 'update_plugins', $previous );
+		} else {
+			// Original didn't have our entry — fetch current and remove ours.
+			$current = get_site_transient( 'update_plugins' );
+			if ( is_object( $current ) && isset( $current->response[ $plugin_basename ] ) ) {
+				unset( $current->response[ $plugin_basename ] );
+				if ( empty( $current->response ) ) {
+					// If response is now empty, restore the full original.
+					$current = $previous;
+				}
+				set_site_transient( 'update_plugins', $current );
+			} else {
+				// Our entry is already gone (upgrader may have cleared it).
+				set_site_transient( 'update_plugins', $previous );
+			}
+		}
+	}
+
 }

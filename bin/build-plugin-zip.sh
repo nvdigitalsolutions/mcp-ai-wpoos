@@ -338,6 +338,8 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'assets/examples' \
         --exclude 'assets/csv-templates' \
         --exclude 'examples' \
+        --exclude 'jest.setup.js' \
+        --exclude '.zap-rules.tsv' \
         --exclude '*.map' \
         --exclude 'vendor/*/Test' \
         --exclude 'vendor/*/Tests' \
@@ -822,6 +824,11 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
         --exclude 'assets/examples' \
+        --exclude 'assets/csv-templates' \
+        --exclude 'examples' \
+        --exclude '/lib' \
+        --exclude 'jest.setup.js' \
+        --exclude '.zap-rules.tsv' \
         --exclude 'addons/pro/assets/vendor/facebook-nodejs-business-sdk' \
         --exclude 'addons/pro/assets/vendor/canvas' \
         --exclude 'addons/pro/assets/vendor/sharp/node_modules/@img' \
