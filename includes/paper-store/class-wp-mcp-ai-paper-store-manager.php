@@ -122,22 +122,24 @@ class WP_MCP_AI_Paper_Store_Manager {
 
 		// Ensure root directory exists.
 		if ( ! is_dir( $this->root_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Managed flat-file store root directory.
-			mkdir( $this->root_path, 0755, true );
+			wp_mkdir_p( $this->root_path );
 		}
 
-		// Place .htaccess to deny direct HTTP access.
-		$htaccess = trailingslashit( $this->root_path ) . '.htaccess';
-		if ( ! file_exists( $htaccess ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Managed security file creation.
-			file_put_contents( $htaccess, "Deny from all\n" );
-		}
+		// Only create security files if the root directory was created.
+		if ( is_dir( $this->root_path ) ) {
+			// Place .htaccess to deny direct HTTP access.
+			$htaccess = trailingslashit( $this->root_path ) . '.htaccess';
+			if ( ! file_exists( $htaccess ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Managed security file creation.
+				file_put_contents( $htaccess, "Deny from all\n" );
+			}
 
-		// Place index.php for silence.
-		$index_php = trailingslashit( $this->root_path ) . 'index.php';
-		if ( ! file_exists( $index_php ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Managed security file creation.
-			file_put_contents( $index_php, "<?php\n// Silence is golden.\n" );
+			// Place index.php for silence.
+			$index_php = trailingslashit( $this->root_path ) . 'index.php';
+			if ( ! file_exists( $index_php ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Managed security file creation.
+				file_put_contents( $index_php, "<?php\n// Silence is golden.\n" );
+			}
 		}
 
 		// Register default JSON driver.
@@ -177,8 +179,7 @@ class WP_MCP_AI_Paper_Store_Manager {
 
 		// Ensure collection directory exists.
 		if ( ! is_dir( $collection_dir ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Managed flat-file store directory.
-			mkdir( $collection_dir, 0755, true );
+			wp_mkdir_p( $collection_dir );
 		}
 
 		$index = new WP_MCP_AI_Paper_Index( $collection, $collection_dir, $this->indexes_path );
