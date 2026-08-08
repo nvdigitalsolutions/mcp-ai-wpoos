@@ -369,7 +369,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$client = new WP_MCP_AI_Self_Hosted_OCR_Client();
 
 			// Temporarily set the endpoint URL so test_connection can use it.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings                               = WP_MCP_AI_Admin_Settings::get_settings();
 			$settings['unlimited_ocr_endpoint_url'] = $endpoint_url;
 
 			// Use a direct HTTP test matching the LM Studio pattern for consistency.
@@ -408,8 +408,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			$body = wp_remote_retrieve_body( $response );
-			$data = json_decode( $body, true );
+			$body       = wp_remote_retrieve_body( $response );
+			$data       = json_decode( $body, true );
 			$model_list = isset( $data['data'] ) ? wp_list_pluck( $data['data'], 'id' ) : array();
 
 			wp_send_json_success(
@@ -476,8 +476,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			$body = wp_remote_retrieve_body( $response );
-			$data = json_decode( $body, true );
+			$body       = wp_remote_retrieve_body( $response );
+			$data       = json_decode( $body, true );
 			$model_list = isset( $data['data'] ) ? wp_list_pluck( $data['data'], 'id' ) : array();
 
 			wp_send_json_success(
@@ -4345,9 +4345,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_get_models_for_provider() {
 			// Verify nonce for security.
 			// Accept nonce from either admin model selector or professional selector widget.
-			$nonce_actions    = array( 'wp-mcp-ai-model-selector', 'wp-mcp-ai-professional-selector' );
-			$nonce_valid      = false;
-			$matched_nonce    = '';
+			$nonce_actions = array( 'wp-mcp-ai-model-selector', 'wp-mcp-ai-professional-selector' );
+			$nonce_valid   = false;
+			$matched_nonce = '';
 
 			foreach ( $nonce_actions as $nonce_action ) {
 				if ( check_ajax_referer( $nonce_action, 'nonce', false ) ) {

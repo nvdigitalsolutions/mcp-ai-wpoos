@@ -717,7 +717,7 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 			'role'    => 'assistant',
 			'content' => $content,
 		);
-		$history = WP_MCP_AI_Webhook_Context_Manager::trim_history_after_response( $history, $max_history, 'twitter' );
+		$history   = WP_MCP_AI_Webhook_Context_Manager::trim_history_after_response( $history, $max_history, 'twitter' );
 		set_transient( $history_key, $history, self::CONVERSATION_HISTORY_TTL );
 	}
 

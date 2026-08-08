@@ -38,6 +38,37 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'none' );
 
 	/**
+	 * Fields within a connection array that contain secrets.
+	 *
+	 * Used by the export/import provider to identify which values
+	 * need decryption on export and re-encryption on import.
+	 *
+	 * @since 1.2.0
+	 * @var array<string>
+	 */
+	const CREDENTIAL_FIELDS = array(
+		'api_key',
+		'api_secret',
+		'client_secret',
+		'bot_token',
+		'password',
+		'access_token',
+		'access_token_secret',
+		'refresh_token',
+		'webhook_secret',
+		'private_key',
+		'mesh_inbound_api_key',
+		'consumer_key',
+		'consumer_secret',
+		'app_password',
+		'auth_code',
+		'bearer_token',
+		'signing_secret',
+		'public_key',
+		'encryption_key',
+	);
+
+	/**
 	 * Prefix that marks values encrypted with the modern AES-256-CBC scheme.
 	 *
 	 * Legacy values (XOR cipher) lack this prefix and are still readable by
@@ -75,6 +106,22 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Plaintext — re-encrypt on next save.
 		return false;
+	}
+
+	/**
+	 * Check whether a connection field name is a credential field.
+	 *
+	 * Used by the export/import system to identify which connection
+	 * fields contain secrets that must be decrypted on export and
+	 * re-encrypted on import.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $field_name Field key within a connection array.
+	 * @return bool
+	 */
+	public static function is_credential_field( string $field_name ): bool {
+		return in_array( $field_name, self::CREDENTIAL_FIELDS, true );
 	}
 
 	/**

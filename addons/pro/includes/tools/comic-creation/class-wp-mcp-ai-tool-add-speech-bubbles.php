@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Add_Speech_Bubbles implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// --- Sanitize all arguments at entry (Gate 1) ---
-		$panel_id = isset( $arguments['panel_id'] ) ? absint( $arguments['panel_id'] ) : 0;
+		$panel_id    = isset( $arguments['panel_id'] ) ? absint( $arguments['panel_id'] ) : 0;
 		$bubbles_raw = isset( $arguments['bubbles'] ) ? $arguments['bubbles'] : '';
 
 		// Validate panel.
@@ -213,9 +213,9 @@ class WP_MCP_AI_Tool_Add_Speech_Bubbles implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'success' => true,
 			'data'    => array(
-				'panel_id'      => $panel_id,
-				'bubble_count'  => count( $sanitized_bubbles ),
-				'bubbles'       => $sanitized_bubbles,
+				'panel_id'     => $panel_id,
+				'bubble_count' => count( $sanitized_bubbles ),
+				'bubbles'      => $sanitized_bubbles,
 			),
 		);
 	}

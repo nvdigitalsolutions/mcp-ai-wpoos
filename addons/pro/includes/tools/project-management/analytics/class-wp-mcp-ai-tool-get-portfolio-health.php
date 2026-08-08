@@ -127,10 +127,10 @@ class WP_MCP_AI_Tool_Get_Portfolio_Health implements WP_MCP_AI_Tool_Interface, W
 
 		// Build the dimension breakdown in the requested structure.
 		$dimension_breakdown = array(
-			'schedule_variance'   => isset( $health['schedule_variance'] ) ? $health['schedule_variance'] : 100,
+			'schedule_variance'    => isset( $health['schedule_variance'] ) ? $health['schedule_variance'] : 100,
 			'task_completion_rate' => isset( $health['completion_rate'] ) ? $health['completion_rate'] : 100,
-			'blocker_count'       => isset( $health['total_blocked_tasks'] ) ? $health['total_blocked_tasks'] : 0,
-			'overdue_task_ratio'  => isset( $health['total_overdue_tasks'] ) && isset( $health['total_open_tasks'] ) && $health['total_open_tasks'] > 0
+			'blocker_count'        => isset( $health['total_blocked_tasks'] ) ? $health['total_blocked_tasks'] : 0,
+			'overdue_task_ratio'   => isset( $health['total_overdue_tasks'] ) && isset( $health['total_open_tasks'] ) && $health['total_open_tasks'] > 0
 				? round( ( $health['total_overdue_tasks'] / $health['total_open_tasks'] ) * 100, 1 )
 				: 0,
 			'resource_utilization' => isset( $health['at_risk_count'] ) && isset( $health['total_projects'] ) && $health['total_projects'] > 0

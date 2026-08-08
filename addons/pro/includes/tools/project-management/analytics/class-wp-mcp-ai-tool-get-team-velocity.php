@@ -191,9 +191,9 @@ class WP_MCP_AI_Tool_Get_Team_Velocity implements WP_MCP_AI_Tool_Interface, WP_M
 			if ( ! $completed_date ) {
 				continue;
 			}
-			$completed_ts  = strtotime( $completed_date );
-			$week_start    = gmdate( 'Y-m-d', strtotime( 'monday this week', $completed_ts ) );
-			$points        = $use_points ? floatval( get_post_meta( $task->ID, '_task_story_points', true ) ) : 0;
+			$completed_ts = strtotime( $completed_date );
+			$week_start   = gmdate( 'Y-m-d', strtotime( 'monday this week', $completed_ts ) );
+			$points       = $use_points ? floatval( get_post_meta( $task->ID, '_task_story_points', true ) ) : 0;
 
 			if ( ! isset( $weekly_data[ $week_start ] ) ) {
 				$weekly_data[ $week_start ] = array(
@@ -201,7 +201,7 @@ class WP_MCP_AI_Tool_Get_Team_Velocity implements WP_MCP_AI_Tool_Interface, WP_M
 					'points_completed' => 0,
 				);
 			}
-			$weekly_data[ $week_start ]['tasks_completed']++;
+			++$weekly_data[ $week_start ]['tasks_completed'];
 			if ( $use_points && $points > 0 ) {
 				$weekly_data[ $week_start ]['points_completed'] += $points;
 			}
@@ -214,15 +214,15 @@ class WP_MCP_AI_Tool_Get_Team_Velocity implements WP_MCP_AI_Tool_Interface, WP_M
 		$weeks = array_slice( $weekly_data, 0, $periods, true );
 
 		// Build result with rolling average.
-		$velocity      = array();
-		$task_sum      = 0;
-		$point_sum     = 0;
-		$period_count  = 0;
+		$velocity     = array();
+		$task_sum     = 0;
+		$point_sum    = 0;
+		$period_count = 0;
 
 		// Iterate in chronological order for rolling average.
 		$chrono_weeks = array_reverse( $weeks, true );
 		foreach ( $chrono_weeks as $week_start => $data ) {
-			$period_count++;
+			++$period_count;
 			$task_sum  += $data['tasks_completed'];
 			$point_sum += $data['points_completed'];
 

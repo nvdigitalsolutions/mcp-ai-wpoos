@@ -96,9 +96,9 @@ class WP_MCP_AI_Pro_Tool_Calculate_Orchestration_Capacity {
 				return $this->analyze_current_load( $arguments );
 
 			default:
-				return array(
-					'success' => false,
-					'error'   => 'Invalid mode. Use: calculate_capacity, predict_wait_time, or analyze_current',
+				return new WP_Error(
+					'tool_error',
+					'Invalid mode. Use: calculate_capacity, predict_wait_time, or analyze_current'
 				);
 		}
 	}
@@ -111,9 +111,9 @@ class WP_MCP_AI_Pro_Tool_Calculate_Orchestration_Capacity {
 	 */
 	private function calculate_capacity( $arguments ) {
 		if ( ! isset( $arguments['arrival_rate'] ) || ! isset( $arguments['service_time'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Missing required arguments: arrival_rate and service_time',
+			return new WP_Error(
+				'tool_error',
+				'Missing required arguments: arrival_rate and service_time'
 			);
 		}
 
@@ -121,9 +121,9 @@ class WP_MCP_AI_Pro_Tool_Calculate_Orchestration_Capacity {
 		$w      = floatval( $arguments['service_time'] ); // Hours per session.
 
 		if ( $lambda <= 0 || $w <= 0 ) {
-			return array(
-				'success' => false,
-				'error'   => 'arrival_rate and service_time must be positive numbers',
+			return new WP_Error(
+				'tool_error',
+				'arrival_rate and service_time must be positive numbers'
 			);
 		}
 

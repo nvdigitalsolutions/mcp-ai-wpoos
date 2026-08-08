@@ -369,8 +369,8 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 
 		/**
 		 * Test the connection by executing a minimal viewer query.
-	 *
-	 * @return array|WP_Error Test result array or WP_Error on failure.
+		 *
+		 * @return array|WP_Error Test result array or WP_Error on failure.
 		 */
 		public function test_connection() {
 			$result = $this->graphql( '{ viewer { id } }' );
@@ -428,8 +428,8 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 			}
 
 			// ── Rolling window counter ──
-			$count    = get_transient( $key );
-			$max      = apply_filters( 'wp_mcp_ai_upwork_rate_limit', self::RATE_LIMIT_PER_MINUTE );
+			$count = get_transient( $key );
+			$max   = apply_filters( 'wp_mcp_ai_upwork_rate_limit', self::RATE_LIMIT_PER_MINUTE );
 
 			if ( false === $count ) {
 				return true;
@@ -455,7 +455,7 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 		 * @since 2.12.0
 		 */
 		private function track_request() {
-			$key  = 'wp_mcp_ai_upwork_rl_' . md5( $this->connection_id ?: 'default' );
+			$key   = 'wp_mcp_ai_upwork_rl_' . md5( $this->connection_id ?: 'default' );
 			$count = get_transient( $key );
 
 			if ( false === $count ) {

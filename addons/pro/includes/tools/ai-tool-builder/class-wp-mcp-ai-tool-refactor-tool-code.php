@@ -129,32 +129,32 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 			// Security: Validate PHP file extension.
 			$extension = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
 			if ( 'php' !== $extension ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Only PHP files (.php) are allowed.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Only PHP files (.php) are allowed.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
 			// Security: Resolve canonical path to prevent directory traversal attacks.
 			$resolved = realpath( $file_path );
 			if ( false === $resolved ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'File not found or not accessible.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'File not found or not accessible.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
 			// Security: Restrict to the WordPress content directory (plugins, themes, etc.).
 			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'File must be in the WordPress content directory.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'File must be in the WordPress content directory.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -166,9 +166,9 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		if ( empty( $code ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Either code or file_path must be provided.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Either code or file_path must be provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -182,9 +182,9 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 		// Get AI service.
 		$ai_service = $this->get_ai_service( $arguments, $context );
 		if ( is_wp_error( $ai_service ) ) {
-			return array(
-				'success' => false,
-				'error'   => $ai_service->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$ai_service->get_error_message()
 			);
 		}
 
@@ -192,13 +192,13 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 		$ai_response = $ai_service->generate( $prompt );
 
 		if ( is_wp_error( $ai_response ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'tool_error',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Refactoring failed: %s', 'mcp-ai-wpoos-pro' ),
 					$ai_response->get_error_message()
-				),
+				)
 			);
 		}
 
@@ -206,9 +206,9 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 		$refactored = $this->parse_refactoring_response( $ai_response );
 
 		if ( is_wp_error( $refactored ) ) {
-			return array(
-				'success' => false,
-				'error'   => $refactored->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$refactored->get_error_message()
 			);
 		}
 
@@ -226,9 +226,9 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 		if ( $apply_changes && ! empty( $file_path ) ) {
 			// Enforce that the user can manage the site before writing files.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'You do not have permission to apply file changes.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'You do not have permission to apply file changes.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 

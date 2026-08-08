@@ -106,6 +106,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+.zap-rules.tsv
 
 # Binary files
 *.node

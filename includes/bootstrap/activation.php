@@ -262,6 +262,105 @@ add_action( 'admin_init', 'wp_mcp_ai_migrate_credentials_to_split' );
  */
 add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
 
+/**
+ * Deferred rewrite-rules flush on admin_init.
+ *
+ * Flush_rewrite_rules() is too heavy to run inside the activation hook,
+ * especially during an AJAX plugin update where it can exhaust MySQL
+ * connections and trigger cascading Varnish purge storms on Cloudways.
+ * Instead, the activation hook sets a transient and we flush here on the
+ * next admin page load.
+ *
+ * @since 1.3.0
+ * @return void
+ */
+function wp_mcp_ai_deferred_flush_rewrite_rules(): void {
+	if ( get_transient( 'wp_mcp_ai_flush_rewrite_rules' ) ) {
+		delete_transient( 'wp_mcp_ai_flush_rewrite_rules' );
+		flush_rewrite_rules();
+	}
+}
+add_action( 'admin_init', 'wp_mcp_ai_deferred_flush_rewrite_rules', 99 );
+
+if ( ! function_exists( 'wp_mcp_ai_auto_detect_env_keys' ) ) {
+	/**
+	 * Auto-detect API keys from environment variables on first activation.
+	 *
+	 * Docker and CI environments often pass API keys via environment variables
+	 * (OPENAI_API_KEY, GEMINI_API_KEY, etc.). This function reads those vars
+	 * and populates plugin settings so AI providers work immediately after
+	 * activation without manual admin UI configuration.
+	 *
+	 * Never overwrites existing settings. Runs once per site (flag:
+	 * wp_mcp_ai_env_keys_checked).
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_auto_detect_env_keys(): void {
+		if ( get_option( 'wp_mcp_ai_env_keys_checked', false ) ) {
+			return;
+		}
+
+		// Map plugin setting keys to environment variable names.
+		// Each setting key maps to an ordered list of env vars — the first
+		// non-empty value wins.
+		$env_key_map = array(
+			'openai_api_key'        => array( 'OPENAI_API_KEY' ),
+			'gemini_api_key'        => array( 'GEMINI_API_KEY', 'GOOGLE_API_KEY' ),
+			'anthropic_api_key'     => array( 'ANTHROPIC_API_KEY' ),
+			'deepseek_api_key'      => array( 'DEEPSEEK_API_KEY' ),
+			'brave_search_api_key'  => array( 'BRAVE_API_KEY', 'BRAVE_SEARCH_API_KEY' ),
+			'tavily_api_key'        => array( 'TAVILY_API_KEY' ),
+			'perplexity_api_key'    => array( 'PERPLEXITY_API_KEY' ),
+			'lm_studio_api_key'     => array( 'LM_STUDIO_API_KEY' ),
+			'nvidia_api_key'        => array( 'NVIDIA_API_KEY' ),
+			'huggingface_api_key'   => array( 'HUGGINGFACE_API_KEY', 'HF_API_KEY' ),
+			'cloudflare_api_token'  => array( 'CLOUDFLARE_API_TOKEN' ),
+			'kimi_api_key'          => array( 'KIMI_API_KEY' ),
+			'digitalocean_api_key'  => array( 'DIGITALOCEAN_API_KEY' ),
+			'stability_api_key'     => array( 'STABILITY_API_KEY' ),
+			'mubert_api_key'        => array( 'MUBERT_API_KEY' ),
+			'exa_api_key'           => array( 'EXA_API_KEY' ),
+			'crawl4ai_api_key'      => array( 'CRAWL4AI_API_KEY' ),
+			'removebg_api_key'      => array( 'REMOVEBG_API_KEY' ),
+			'google_maps_api_key'   => array( 'GOOGLE_MAPS_API_KEY' ),
+			'ita_tariff_api_key'    => array( 'ITA_TARIFF_API_KEY' ),
+		);
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$updated  = false;
+
+		foreach ( $env_key_map as $setting_key => $env_vars ) {
+			// Never overwrite an existing configuration.
+			if ( ! empty( $settings[ $setting_key ] ) ) {
+				continue;
+			}
+
+			foreach ( $env_vars as $env_var ) {
+				// phpcs:ignore WordPress.PHP.DisallowGetEnv.Usage -- Intentionally reading server environment for auto-configuration.
+				$val = getenv( $env_var );
+				if ( $val && is_string( $val ) && '' !== trim( $val ) ) {
+					$settings[ $setting_key ] = sanitize_text_field( trim( $val ) );
+
+					// Also store as a standalone option so wp_mcp_ai_get_api_key()
+					// picks it up immediately (the Api_Key_Store will auto-migrate
+					// plaintext to encrypted on first read).
+					update_option( 'wp_mcp_ai_' . $setting_key, $settings[ $setting_key ], false );
+
+					$updated = true;
+					break;
+				}
+			}
+		}
+
+		if ( $updated ) {
+			update_option( 'wp_mcp_ai_settings', $settings );
+		}
+
+		update_option( 'wp_mcp_ai_env_keys_checked', true );
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**
 	 * Plugin activation handler.
@@ -288,6 +387,13 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 	 * @return void
 	 */
 	function wp_mcp_ai_activate_single_site() {
+		// Determine if this is a fresh activation (no prior version stored)
+		// or a re-activation after an update. Heavy operations like table
+		// creation and flush_rewrite_rules are skipped on re-activation
+		// to prevent overwhelming the database during AJAX update requests.
+		$stored_version = get_option( 'wp_mcp_ai_activated_version', '' );
+		$is_fresh       = empty( $stored_version );
+
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
@@ -315,9 +421,11 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, $discovery_interval, 'wp_mcp_ai_model_catalog_discovery' );
 		}
 
-		// Schedule service status health check cron (every 5 minutes).
-		if ( ! wp_next_scheduled( 'wp_mcp_ai_health_check_cron' ) ) {
-			wp_schedule_event( time(), 'five_minutes', 'wp_mcp_ai_health_check_cron' );
+		// Schedule the consolidated five_minute_tick cron (replaces four
+		// legacy per-feature hooks: health_check_cron, maintenance_monitor_cron,
+		// maintenance_reminder_cron, and delegation_watchdog).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_five_minute_tick' ) ) {
+			wp_schedule_event( time(), 'five_minutes', 'wp_mcp_ai_five_minute_tick' );
 		}
 
 		// Schedule uptime history rollup cron (hourly).
@@ -328,16 +436,6 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// Schedule status history cleanup cron (daily).
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_status_history_cleanup' ) ) {
 			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_status_history_cleanup' );
-		}
-
-		// Schedule maintenance monitor cron (runs every 5 minutes).
-		if ( ! wp_next_scheduled( 'wp_mcp_ai_maintenance_monitor_cron' ) ) {
-			wp_schedule_event( time(), 'five_minutes', 'wp_mcp_ai_maintenance_monitor_cron' );
-		}
-
-		// Schedule maintenance reminder cron (runs every 5 minutes).
-		if ( ! wp_next_scheduled( 'wp_mcp_ai_maintenance_reminder_cron' ) ) {
-			wp_schedule_event( time(), 'five_minutes', 'wp_mcp_ai_maintenance_reminder_cron' );
 		}
 
 		// Install default multi-agent orchestration system on first activation.
@@ -380,7 +478,14 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// Note: We intentionally do not call WP_MCP_AI_Assistant_CPT::register_post_type() here
 		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).
 		// The post type will be registered on the next page load via the init hook.
-		flush_rewrite_rules();
+		//
+		// Defer flush_rewrite_rules() to avoid heavy DB writes during the activation
+		// hook (which fires on EVERY plugin update/reactivation, not just fresh installs).
+		// On Cloudways and similar hosts, flush_rewrite_rules() inside an AJAX update
+		// request can exhaust MySQL connections and trigger cascading failures with
+		// Varnish purge storms. Instead, set a transient and flush on the next
+		// admin_init.
+		set_transient( 'wp_mcp_ai_flush_rewrite_rules', true, HOUR_IN_SECONDS );
 
 		// Create slash command audit table.
 		if ( file_exists( WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php' ) ) {
@@ -432,6 +537,14 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 				WP_MCP_AI_Job_Store::create_table();
 			}
 		}
+
+		// Auto-detect API keys from environment variables (Docker/CI).
+		// Runs once per site; never overwrites existing manual configuration.
+		wp_mcp_ai_auto_detect_env_keys();
+
+		// Record the activated version so re-activations (e.g. after plugin
+		// updates) can skip heavy one-time setup work.
+		update_option( 'wp_mcp_ai_activated_version', WP_MCP_AI_VERSION );
 	}
 }
 
@@ -488,9 +601,9 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 		}
 
 		// Unschedule service status cron jobs.
-		$timestamp = wp_next_scheduled( 'wp_mcp_ai_health_check_cron' );
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_five_minute_tick' );
 		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, 'wp_mcp_ai_health_check_cron' );
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_five_minute_tick' );
 		}
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_uptime_rollup_cron' );
 		if ( $timestamp ) {
@@ -501,14 +614,21 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 			wp_unschedule_event( $timestamp, 'wp_mcp_ai_status_history_cleanup' );
 		}
 
-		// Unschedule maintenance cron jobs.
-		$timestamp = wp_next_scheduled( 'wp_mcp_ai_maintenance_monitor_cron' );
-		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, 'wp_mcp_ai_maintenance_monitor_cron' );
-		}
-		$timestamp = wp_next_scheduled( 'wp_mcp_ai_maintenance_reminder_cron' );
-		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, 'wp_mcp_ai_maintenance_reminder_cron' );
+		// Unschedule legacy five_minutes cron hooks (migration safety net).
+		// These are also cleared by wp_mcp_ai_migrate_legacy_five_minute_crons()
+		// on plugins_loaded, but deactivation runs on a different code path
+		// (the plugin may be deactivated without a full page load).
+		$legacy_five_minute_hooks = array(
+			'wp_mcp_ai_health_check_cron',
+			'wp_mcp_ai_maintenance_monitor_cron',
+			'wp_mcp_ai_maintenance_reminder_cron',
+			'wp_mcp_ai_delegation_watchdog',
+		);
+		foreach ( $legacy_five_minute_hooks as $hook ) {
+			$timestamp = wp_next_scheduled( $hook );
+			if ( $timestamp ) {
+				wp_unschedule_event( $timestamp, $hook );
+			}
 		}
 
 		// Clear the security audit log purge cron.
@@ -535,11 +655,13 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 		 * that lack a dedicated cleanup path.
 		 */
 		$cleanup_hooks = array(
+			'wp_mcp_ai_five_minute_tick',
 			'wp_mcp_ai_health_check_cron',
 			'wp_mcp_ai_uptime_rollup_cron',
 			'wp_mcp_ai_status_history_cleanup',
 			'wp_mcp_ai_maintenance_monitor_cron',
 			'wp_mcp_ai_maintenance_reminder_cron',
+			'wp_mcp_ai_delegation_watchdog',
 			'wp_mcp_ai_check_license',
 			'wp_mcp_ai_audit_trail_prune',
 			'wp_mcp_ai_approval_cleanup',
@@ -713,11 +835,13 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 		 * wp_clear_scheduled_hook() removes all events for a given hook.
 		 */
 		$cron_hooks = array(
+			'wp_mcp_ai_five_minute_tick',
 			'wp_mcp_ai_health_check_cron',
 			'wp_mcp_ai_uptime_rollup_cron',
 			'wp_mcp_ai_status_history_cleanup',
 			'wp_mcp_ai_maintenance_monitor_cron',
 			'wp_mcp_ai_maintenance_reminder_cron',
+			'wp_mcp_ai_delegation_watchdog',
 			'wp_mcp_ai_cleanup_gemini_files',
 			'wp_mcp_ai_cleanup_openai_files',
 			'wp_mcp_ai_cleanup_temp_files',

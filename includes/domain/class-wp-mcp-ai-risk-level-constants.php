@@ -101,9 +101,9 @@ class WP_MCP_AI_Risk_Level_Constants {
 	 */
 	public static function get_risk_level_description( $level ) {
 		$descriptions = array(
-			self::RISK_INFO        => __( 'Read-only, no modifications', 'mcp-ai-wpoos' ),
-			self::RISK_STANDARD    => __( 'Normal CRUD operations', 'mcp-ai-wpoos' ),
-			self::RISK_DESTRUCTIVE => __( 'Destructive operations, use with caution', 'mcp-ai-wpoos' ),
+			self::RISK_INFO         => __( 'Read-only, no modifications', 'mcp-ai-wpoos' ),
+			self::RISK_STANDARD     => __( 'Normal CRUD operations', 'mcp-ai-wpoos' ),
+			self::RISK_DESTRUCTIVE  => __( 'Destructive operations, use with caution', 'mcp-ai-wpoos' ),
 			self::RISK_IRREVERSIBLE => __( 'Irreversible — cannot be undone, requires human approval', 'mcp-ai-wpoos' ),
 		);
 
@@ -118,9 +118,9 @@ class WP_MCP_AI_Risk_Level_Constants {
 	 */
 	public static function get_risk_level_color( $level ) {
 		$colors = array(
-			self::RISK_INFO        => '#28a745', // Green.
-			self::RISK_STANDARD    => '#ffc107', // Yellow.
-			self::RISK_DESTRUCTIVE => '#dc3545', // Red.
+			self::RISK_INFO         => '#28a745', // Green.
+			self::RISK_STANDARD     => '#ffc107', // Yellow.
+			self::RISK_DESTRUCTIVE  => '#dc3545', // Red.
 			self::RISK_IRREVERSIBLE => '#6f42c1', // Purple — most severe.
 		);
 

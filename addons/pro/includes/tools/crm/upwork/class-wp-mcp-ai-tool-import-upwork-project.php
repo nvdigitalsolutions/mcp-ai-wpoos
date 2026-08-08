@@ -215,11 +215,11 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 		// Include client info from API response.
 		$client_name = '';
 		if ( ! empty( $api_data['client']['location']['country'] ) ) {
-			$client_name = $api_data['client']['location']['country'];
-			$spent       = ! empty( $api_data['client']['totalSpent']['amount'] )
+			$client_name  = $api_data['client']['location']['country'];
+			$spent        = ! empty( $api_data['client']['totalSpent']['amount'] )
 				? '$' . number_format( (float) $api_data['client']['totalSpent']['amount'], 0 )
 				: '';
-			$hires       = isset( $api_data['client']['totalHires'] ) ? (int) $api_data['client']['totalHires'] : 0;
+			$hires        = isset( $api_data['client']['totalHires'] ) ? (int) $api_data['client']['totalHires'] : 0;
 			$description .= sprintf(
 				/* translators: 1: country, 2: spend, 3: hires */
 				__( 'Client: %1$s | Spent: %2$s | Hires: %3$d', 'mcp-ai-wpoos-pro' ) . "\n",
@@ -232,7 +232,7 @@ class WP_MCP_AI_Tool_Import_Upwork_Project implements WP_MCP_AI_Tool_Interface, 
 		// Include Upwork job URL.
 		$upwork_url = '';
 		if ( ! empty( $job_id ) ) {
-			$upwork_url  = 'https://www.upwork.com/jobs/' . $job_id;
+			$upwork_url   = 'https://www.upwork.com/jobs/' . $job_id;
 			$description .= sprintf(
 				/* translators: %s: Upwork job URL */
 				__( 'Upwork URL: %s', 'mcp-ai-wpoos-pro' ) . "\n",

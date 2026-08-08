@@ -62,7 +62,7 @@ class WP_MCP_AI_Model_Service {
 			}
 		}
 
-		$models   = array();
+		$models = array();
 
 		// Extract capability requirements.
 		$capability_flags    = isset( $args['capability_flags'] ) ? $args['capability_flags'] : array();
@@ -259,7 +259,7 @@ class WP_MCP_AI_Model_Service {
 		$models['gpt-4.1-2025-04-14'] = 'GPT-4.1 (Apr 2025)';
 
 		// GPT-4o series (multimodal - vision capable) - retiring Feb 2026 from ChatGPT, API still available.
-		$models['gpt-4.1']            = 'GPT-4o (Retiring)';
+		$models['gpt-4.1']           = 'GPT-4o (Retiring)';
 		$models['gpt-4o-mini']       = 'GPT-4o Mini';
 		$models['gpt-4o-2024-11-20'] = 'GPT-4o (Nov 2024)';
 		$models['gpt-4o-2024-08-06'] = 'GPT-4o (Aug 2024)';
@@ -314,8 +314,8 @@ class WP_MCP_AI_Model_Service {
 		$models['claude-3-7-sonnet-20250219'] = 'Claude 3.7 Sonnet (Feb 2025)';
 
 		// Claude 3.5 series (legacy - for backward compatibility).
-		$models['claude-sonnet-5'] = 'Claude 3.5 Sonnet (Legacy)';
-		$models['claude-3-5-haiku-20241022']  = 'Claude 3.5 Haiku (Legacy)';
+		$models['claude-sonnet-5']           = 'Claude 3.5 Sonnet (Legacy)';
+		$models['claude-3-5-haiku-20241022'] = 'Claude 3.5 Haiku (Legacy)';
 
 		// Claude 3 series (legacy).
 		$models['claude-haiku-4-5'] = 'Claude 3 Haiku (Legacy)';
@@ -376,7 +376,7 @@ class WP_MCP_AI_Model_Service {
 		$models['gemini-exp-1121'] = 'Gemini Exp 1121';
 
 		// Gemini 1.5 series (legacy - for backward compatibility).
-		$models['gemini-2.5-flash']   = 'Gemini 1.5 Pro (Legacy)';
+		$models['gemini-2.5-flash'] = 'Gemini 1.5 Pro (Legacy)';
 		$models['gemini-1.5-flash'] = 'Gemini 1.5 Flash (Legacy)';
 
 		// Gemma 4 models (Google's latest open models - multimodal).

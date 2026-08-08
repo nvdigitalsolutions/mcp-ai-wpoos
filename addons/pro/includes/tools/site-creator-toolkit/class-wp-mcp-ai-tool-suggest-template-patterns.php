@@ -123,9 +123,9 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check capabilities.
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Permission denied. User must have edit_posts capability.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Permission denied. User must have edit_posts capability.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -145,9 +145,9 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 
 		// Validate required fields.
 		if ( empty( $site_type ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Site type is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Site type is required.', 'mcp-ai-wpoos' )
 			);
 		}
 

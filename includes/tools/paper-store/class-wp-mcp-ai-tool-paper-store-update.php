@@ -102,8 +102,8 @@ class WP_MCP_AI_Tool_Paper_Store_Update implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
-		$collection  = sanitize_key( $arguments['collection'] );
-		$record_id   = sanitize_key( $arguments['record_id'] );
+		$collection = sanitize_key( $arguments['collection'] );
+		$record_id  = sanitize_key( $arguments['record_id'] );
 
 		if ( empty( $collection ) || empty( $record_id ) ) {
 			return new WP_Error( 'missing_params', __( 'Collection and record_id are required.', 'mcp-ai-wpoos' ) );

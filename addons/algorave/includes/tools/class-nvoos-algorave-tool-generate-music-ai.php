@@ -87,9 +87,9 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 		$provider = sanitize_text_field( $arguments['provider'] ?? '' );
 
 		if ( empty( $prompt ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'A text prompt describing the desired music is required.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'A text prompt describing the desired music is required.', 'nvoos-algorave' )
 			);
 		}
 
@@ -100,9 +100,9 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 		}
 
 		if ( empty( $provider ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No AI music provider configured. Set one in Algorave Settings → AI Music Generation, or specify the "provider" parameter.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'No AI music provider configured. Set one in Algorave Settings → AI Music Generation, or specify the "provider" parameter.', 'nvoos-algorave' )
 			);
 		}
 
@@ -110,9 +110,9 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 		$api_key = $settings['ai_api_key'] ?? '';
 
 		if ( empty( $api_key ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No API key configured for the AI music provider. Set one in Algorave Settings → AI Music Generation.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'No API key configured for the AI music provider. Set one in Algorave Settings → AI Music Generation.', 'nvoos-algorave' )
 			);
 		}
 
@@ -125,13 +125,13 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 				return $this->generate_with_replicate( $prompt, $duration, $api_key );
 
 			default:
-				return array(
-					'success' => false,
-					'error'   => sprintf(
+				return new WP_Error(
+					'tool_error',
+					sprintf(
 						/* translators: %s: provider name */
 						__( 'Unsupported AI music provider: %s', 'nvoos-algorave' ),
 						$provider
-					),
+					)
 				);
 		}
 	}
@@ -175,9 +175,9 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return array(
-				'success' => false,
-				'error'   => $response->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$response->get_error_message()
 			);
 		}
 
@@ -185,14 +185,14 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 		$body = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== $code ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'tool_error',
+				sprintf(
 					/* translators: 1: HTTP status code, 2: response body */
 					__( 'Lyria API returned status %1$d: %2$s', 'nvoos-algorave' ),
 					$code,
 					wp_trim_words( $body, 50 )
-				),
+				)
 			);
 		}
 
@@ -238,9 +238,9 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return array(
-				'success' => false,
-				'error'   => $response->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$response->get_error_message()
 			);
 		}
 
@@ -248,14 +248,14 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 		$body = wp_remote_retrieve_body( $response );
 
 		if ( $code < 200 || $code >= 300 ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'tool_error',
+				sprintf(
 					/* translators: 1: HTTP status code, 2: response body */
 					__( 'Replicate API returned status %1$d: %2$s', 'nvoos-algorave' ),
 					$code,
 					wp_trim_words( $body, 50 )
-				),
+				)
 			);
 		}
 

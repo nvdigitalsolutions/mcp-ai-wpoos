@@ -283,7 +283,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Determine which model/service to use.
-		$model = isset( $generation_args['model'] ) ? $generation_args['model'] : '';
+		$model    = isset( $generation_args['model'] ) ? $generation_args['model'] : '';
 		$use_omni = ( 'gemini-omni-flash' === $model || 'omni' === $model );
 
 		if ( $use_omni ) {

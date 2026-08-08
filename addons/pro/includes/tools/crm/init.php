@@ -58,7 +58,7 @@ if ( $is_enabled && ! $is_base ) {
 
 	// ---- Phase G: ICP (Ideal Customer Profile) Module ----
 	// Load ICP Profile data store and scoring engine before tools.
-	$_icp_dir = $crm_engine_dir . 'icp/';
+	$_icp_dir   = $crm_engine_dir . 'icp/';
 	$_icp_files = array(
 		'class-wp-mcp-ai-icp-profile.php',
 		'class-wp-mcp-ai-icp-scorer.php',

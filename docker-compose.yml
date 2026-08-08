@@ -16,6 +16,11 @@
 #   default  — WordPress + MySQL + plugin seed (full dev env)
 #   tools    — on-demand WP-CLI container
 #
+# Windows/WSL2: Docker Desktop runs inside the WSL2 VM.
+# Volume mounts use relative paths (.) which Docker Desktop
+# translates automatically.  If you need an absolute path,
+# use WSL format (/mnt/c/...) not Windows drive letters.
+#
 # What the seed installs (idempotent, runs every start):
 #   Core:    WooCommerce, Elementor, Rank Math, WPCode,
 #            Simple JWT Login, JetFormBuilder

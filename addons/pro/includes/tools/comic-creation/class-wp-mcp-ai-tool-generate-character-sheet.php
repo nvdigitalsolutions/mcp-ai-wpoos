@@ -53,19 +53,19 @@ class WP_MCP_AI_Tool_Generate_Character_Sheet implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'name'         => array(
+				'name'        => array(
 					'type'        => 'string',
 					'description' => __( 'The character name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'  => array(
+				'description' => array(
 					'type'        => 'string',
 					'description' => __( 'Physical description of the character (appearance, clothing, distinctive features).', 'mcp-ai-wpoos-pro' ),
 				),
-				'style_notes'  => array(
+				'style_notes' => array(
 					'type'        => 'string',
 					'description' => __( 'Art style direction for the character (e.g., "manga", "american comic", "realistic digital painting").', 'mcp-ai-wpoos-pro' ),
 				),
-				'pose'         => array(
+				'pose'        => array(
 					'type'        => 'string',
 					'description' => __( 'Pose or stance for the character reference (e.g., "standing hero pose", "action stance", "neutral front-facing").', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'neutral front-facing character reference sheet',
@@ -165,8 +165,8 @@ class WP_MCP_AI_Tool_Generate_Character_Sheet implements WP_MCP_AI_Tool_Interfac
 
 		// TODO: Integrate with actual AI image generation API (DALL-E, Gemini Imagen, etc.)
 		// For now, produce a simulated result.
-		$image_url       = $this->generate_simulated_character_image( $name, $description, $style_notes, $pose );
-		$attachment_id   = $this->simulate_image_attachment( $name, $user_id );
+		$image_url     = $this->generate_simulated_character_image( $name, $description, $style_notes, $pose );
+		$attachment_id = $this->simulate_image_attachment( $name, $user_id );
 
 		// Create character post.
 		$post_data = array(

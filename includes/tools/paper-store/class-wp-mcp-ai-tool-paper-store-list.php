@@ -80,7 +80,7 @@ class WP_MCP_AI_Tool_Paper_Store_List implements WP_MCP_AI_Tool_Interface, WP_MC
 					'default'     => 0,
 				),
 			),
-			'required'  => array( 'collection' ),
+			'required'   => array( 'collection' ),
 		);
 	}
 
@@ -145,12 +145,12 @@ class WP_MCP_AI_Tool_Paper_Store_List implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Gate 2 — Escape at exit.
 		$result = array(
-			'collection'  => esc_html( $collection ),
-			'total'       => $total,
-			'count'       => count( $records ),
-			'records'     => $records,
-			'offset'      => $offset,
-			'limit'       => $limit,
+			'collection' => esc_html( $collection ),
+			'total'      => $total,
+			'count'      => count( $records ),
+			'records'    => $records,
+			'offset'     => $offset,
+			'limit'      => $limit,
 		);
 
 		return $this->format_success_response( $summary, $result );

@@ -108,9 +108,9 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['name'] ) || empty( $arguments['email'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Client name and email are required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Client name and email are required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -118,9 +118,9 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 		$email = sanitize_email( $arguments['email'] );
 
 		if ( ! is_email( $email ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid email address.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid email address.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -134,9 +134,9 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 			$existing_client = get_post( $client_id );
 
 			if ( ! $existing_client || 'dj_client' !== $existing_client->post_type ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Client profile not found.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Client profile not found.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -146,9 +146,9 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'You do not have permission to update this client profile.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'You do not have permission to update this client profile.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -165,10 +165,9 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 			);
 
 			if ( ! empty( $existing ) ) {
-				return array(
-					'success'   => false,
-					'error'     => __( 'Client with this email already exists.', 'mcp-ai-wpoos-pro' ),
-					'client_id' => $existing[0]->ID,
+				return new WP_Error(
+					'tool_error',
+					__( 'Client with this email already exists.', 'mcp-ai-wpoos-pro' ),
 				);
 			}
 		}
@@ -191,9 +190,9 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 			$result = wp_update_post( $post_data );
 
 			if ( is_wp_error( $result ) ) {
-				return array(
-					'success' => false,
-					'error'   => $result->get_error_message(),
+				return new WP_Error(
+					'tool_error',
+					$result->get_error_message()
 				);
 			}
 		} else {
@@ -208,9 +207,9 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 			$client_id = wp_insert_post( $post_data );
 
 			if ( is_wp_error( $client_id ) ) {
-				return array(
-					'success' => false,
-					'error'   => $client_id->get_error_message(),
+				return new WP_Error(
+					'tool_error',
+					$client_id->get_error_message()
 				);
 			}
 		}

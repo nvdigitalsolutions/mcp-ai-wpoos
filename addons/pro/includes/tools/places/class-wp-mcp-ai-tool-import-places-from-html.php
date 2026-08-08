@@ -599,9 +599,9 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Try to locate hts-cache for URL map building.
-		$cache_dir     = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
-		$parent_cache  = $dir . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'hts-cache';
-		$parent_cache  = realpath( $parent_cache );
+		$cache_dir    = $dir . DIRECTORY_SEPARATOR . 'hts-cache';
+		$parent_cache = $dir . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'hts-cache';
+		$parent_cache = realpath( $parent_cache );
 
 		if ( is_dir( $cache_dir ) ) {
 			$this->httrack_cache_dir = $cache_dir;
@@ -1023,7 +1023,7 @@ class WP_MCP_AI_Tool_Import_Places_From_Html implements WP_MCP_AI_Tool_Interface
 			$real_html = @file_get_contents( $redirect_target );
 			if ( false !== $real_html ) {
 				$html = $real_html;
-				$doc = new DOMDocument();
+				$doc  = new DOMDocument();
 				@$doc->loadHTML( mb_convert_encoding( $real_html, 'HTML-ENTITIES', 'UTF-8' ) );
 				$xpath = new DOMXPath( $doc );
 			}

@@ -101,14 +101,14 @@ trait WP_MCP_AI_Tool_Safety_Profile {
 		$irreversibility = $this->get_irreversibility_score();
 
 		return array(
-			'irreversibility_score'          => $irreversibility,
-			'minimum_necessity'              => $this->get_minimum_necessity(),
-			'requires_approval_by_default'   => $irreversibility >= WP_MCP_AI_Action_Safety_Profile::IRREVERSIBILITY_HIGH,
-			'is_irreversible'                => in_array( 'irreversible', $flags, true ),
-			'has_financial_impact'           => in_array( 'financial-impact', $flags, true ),
+			'irreversibility_score'           => $irreversibility,
+			'minimum_necessity'               => $this->get_minimum_necessity(),
+			'requires_approval_by_default'    => $irreversibility >= WP_MCP_AI_Action_Safety_Profile::IRREVERSIBILITY_HIGH,
+			'is_irreversible'                 => in_array( 'irreversible', $flags, true ),
+			'has_financial_impact'            => in_array( 'financial-impact', $flags, true ),
 			'involves_external_communication' => in_array( 'external-communication', $flags, true ),
-			'destroys_data'                  => in_array( 'data-destruction', $flags, true ),
-			'changes_access_control'         => in_array( 'access-control-change', $flags, true ),
+			'destroys_data'                   => in_array( 'data-destruction', $flags, true ),
+			'changes_access_control'          => in_array( 'access-control-change', $flags, true ),
 		);
 	}
 }

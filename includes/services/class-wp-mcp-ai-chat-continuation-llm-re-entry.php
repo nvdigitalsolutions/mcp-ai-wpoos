@@ -136,13 +136,13 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_LLM_Re_Entry' ) ) {
 			// Buffer the chat:resumed frame so the SSE channel can deliver it.
 			if ( '' !== $session_id && class_exists( 'WP_MCP_AI_Chat_Session_Frame_Buffer' ) ) {
 				$frame_data = array(
-					'session_id'    => $session_id,
-					'job_id'        => $job_id,
-					'tool_call_id'  => $tool_call_id,
-					'assistant_id'  => $assistant_id,
-					'message'       => $assistant_text,
+					'session_id'      => $session_id,
+					'job_id'          => $job_id,
+					'tool_call_id'    => $tool_call_id,
+					'assistant_id'    => $assistant_id,
+					'message'         => $assistant_text,
 					'terminal_status' => $terminal_status,
-					'ts'            => time(),
+					'ts'              => time(),
 				);
 
 				/**

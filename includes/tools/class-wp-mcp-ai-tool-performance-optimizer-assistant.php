@@ -526,7 +526,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 				continue;
 			}
 					$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
-			$plugins[]   = array(
+			$plugins[]           = array(
 				'name'    => $plugin_data['Name'],
 				'version' => $plugin_data['Version'],
 			);

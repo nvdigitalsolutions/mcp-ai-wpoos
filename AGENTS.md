@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **August 5, 2026** · Version: **1.10**
+> Last reviewed: **August 6, 2026** · Version: **1.11**
 
 ### Related Files
 
@@ -29,7 +29,7 @@ These are the AI assistants that human maintainers invoke when working on the re
 | **GitHub Copilot** | GitHub / OpenAI | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | IDE completions, Copilot Chat, PR reviews | Inline suggestions, chat Q&A, PR summaries |
 | **GitHub Custom Agents** | GitHub | [`.github/agents/*.agent.md`](.github/agents/) | Auto-discovered by GitHub Copilot Coding Agent and compatible runtimes | Role-specific agents (14 in this repo — reviewers, writers per subsystem, plus `addon-maintainer`, `toolkit-spa-maintainer` parameterised per addon, and `acp` for Agent Client Protocol). See each `*.agent.md` for scope. |
 | **Zed Agent Profiles** | Zed Industries | [`.zed/settings.json`](.zed/settings.json) + [`.zed/README.md`](.zed/README.md) | Selected from the Agent Panel profile picker | Native Zed mirror of the `examples/agents/` roster (14 profiles) — same scopes, mapped to Zed's tool registry |
-| **Zed Agent Skills** | Zed Industries | [`.agents/skills/*.md`](.agents/skills/) | Auto-discovered by Zed agent panel | 21 coding-time WordPress development skills (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text) — distinct from runtime bundled skills |
+| **Zed Agent Skills** | Zed Industries | [`.agents/skills/*.md`](.agents/skills/) | Auto-discovered by Zed agent panel | 22 coding-time WordPress development skills (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, mcp-ai-wpoos-plugin, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text) — distinct from runtime bundled skills |
 | **OpenAI Codex** | OpenAI | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox tasks | Sandbox-based code generation and testing |
 
 ### Internal BMAD Agents (GSD × BMAD Workflow)
@@ -63,7 +63,7 @@ Independent of the coding-time agents above, the plugin also exposes **Agent Ski
 | **Skill packs** | Curated, named bundles of related skills (e.g. "WordPress Developer") addressable as a single install unit via the Skill Manager admin UI. |
 | **Reference** | [`docs/features/agent-skills.md`](docs/features/agent-skills.md) (full Phases 1–4 narrative) and [`docs/features/okf-integration.md`](docs/features/okf-integration.md) (OKF skill conformance).
 
-**Coding-time skills (`.agents/skills/`) vs runtime skills:** The `.agents/skills/` directory contains 21 coding-time agent skills auto-discovered by the Zed editor. These are distinct from the runtime Agent Skills (45 base + 28+ Pro bundled skills loaded by NV oOS assistants at runtime). The `.agents/skills/` files are WordPress plugin development patterns that guide coding agents, while the runtime skills (`includes/bundled-skills/`) are SKILL.md files loaded by AI assistants during conversations.
+**Coding-time skills (`.agents/skills/`) vs runtime skills:** The `.agents/skills/` directory contains 22 coding-time agent skills auto-discovered by the Zed editor. These are distinct from the runtime Agent Skills (45 base + 28+ Pro bundled skills loaded by NV oOS assistants at runtime). The `.agents/skills/` files are WordPress plugin development patterns that guide coding agents, while the runtime skills (`includes/bundled-skills/`) are SKILL.md files loaded by AI assistants during conversations.
 
 When extending Agent Skills, see §6 ("Updating Agent Configuration") below for the file-update checklist.
 

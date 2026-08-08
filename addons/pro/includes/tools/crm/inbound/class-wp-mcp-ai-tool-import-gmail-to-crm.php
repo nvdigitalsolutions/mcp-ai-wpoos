@@ -153,10 +153,10 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $uid || ! user_can( $uid, 'edit_posts' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ); }
 
-		$query           = sanitize_text_field( $arguments['query'] ?? '' );
-		$max_results     = min( 25, max( 1, absint( $arguments['max_results'] ?? 10 ) ) );
-		$auto_reply      = ! empty( $arguments['auto_reply'] );
-		$connection_id   = sanitize_text_field( $arguments['connection_id'] ?? '' );
+		$query            = sanitize_text_field( $arguments['query'] ?? '' );
+		$max_results      = min( 25, max( 1, absint( $arguments['max_results'] ?? 10 ) ) );
+		$auto_reply       = ! empty( $arguments['auto_reply'] );
+		$connection_id    = sanitize_text_field( $arguments['connection_id'] ?? '' );
 		$use_history_sync = ! empty( $arguments['use_history_sync'] );
 
 		if ( '' === $query ) {
@@ -682,7 +682,7 @@ class WP_MCP_AI_Tool_Import_Gmail_To_CRM implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Collect all new message IDs and thread IDs from history.
-		$msg_map  = array(); // message_id => thread_id.
+		$msg_map        = array(); // message_id => thread_id.
 		$new_history_id = isset( $body['historyId'] ) ? $body['historyId'] : $start_history_id;
 
 		foreach ( $body['history'] as $history_entry ) {

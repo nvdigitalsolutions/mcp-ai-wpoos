@@ -127,7 +127,7 @@ class WP_MCP_AI_Tool_Get_PM_KPIs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$active_projects = WP_MCP_AI_PM_Engine::count_projects();
 
 		// Count open tasks.
-		$open_tasks = WP_MCP_AI_PM_Engine::count_tasks( 0, '' );
+		$open_tasks    = WP_MCP_AI_PM_Engine::count_tasks( 0, '' );
 		$blocked_tasks = WP_MCP_AI_PM_Engine::count_tasks( 0, 'blocked' );
 
 		// Get upcoming events (next 7 days).
@@ -138,7 +138,7 @@ class WP_MCP_AI_Tool_Get_PM_KPIs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$upcoming_events = count( $upcoming_deadlines );
 
 		// Count overdue tasks (due date before today, not completed).
-		$overdue_args = array(
+		$overdue_args  = array(
 			'post_type'      => 'mcp_ai_task',
 			'post_status'    => 'publish',
 			'posts_per_page' => -1,
@@ -162,20 +162,20 @@ class WP_MCP_AI_Tool_Get_PM_KPIs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$overdue_tasks = $overdue_query->found_posts;
 
 		// Count tasks completed this week.
-		$week_start = gmdate( 'Y-m-d', strtotime( 'monday this week' ) );
-		$week_end   = gmdate( 'Y-m-d', strtotime( 'sunday this week' ) );
-		$completed_week_args = array(
+		$week_start           = gmdate( 'Y-m-d', strtotime( 'monday this week' ) );
+		$week_end             = gmdate( 'Y-m-d', strtotime( 'sunday this week' ) );
+		$completed_week_args  = array(
 			'post_type'      => 'mcp_ai_task',
 			'post_status'    => 'publish',
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
 			'meta_query'     => array(
 				array(
-					'key'     => '_task_status',
-					'value'   => 'completed',
+					'key'   => '_task_status',
+					'value' => 'completed',
 				),
 			),
-			'date_query' => array(
+			'date_query'     => array(
 				array(
 					'column' => 'post_modified',
 					'after'  => $week_start,
@@ -184,7 +184,7 @@ class WP_MCP_AI_Tool_Get_PM_KPIs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			),
 		);
 		$completed_week_query = new WP_Query( $completed_week_args );
-		$completed_this_week = $completed_week_query->found_posts;
+		$completed_this_week  = $completed_week_query->found_posts;
 
 		// Determine portfolio health label.
 		$score = isset( $health['score'] ) ? (float) $health['score'] : 100;

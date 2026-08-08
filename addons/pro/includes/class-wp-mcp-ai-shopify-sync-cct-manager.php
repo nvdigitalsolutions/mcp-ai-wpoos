@@ -1087,21 +1087,46 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @return int
 		 */
 		public function get_row_count() {
-					global $wpdb;
-					$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+				global $wpdb;
+				$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
 
-					// Bail gracefully if the table doesn't exist (CCT not created yet).
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-					$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+				// Bail gracefully if the table doesn't exist (CCT not created yet).
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			if ( ! $table_exists ) {
 				return 0;
 			}
 
-					// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-					$count = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
-					// phpcs:enable
+				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$count = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+				// phpcs:enable
 
-					return absint( $count );
+				return absint( $count );
+		}
+
+		/**
+		 * Get the row count for a specific status value.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param string $status Status value to filter by.
+		 * @return int Row count.
+		 */
+		public function get_row_count_by_status( $status ) {
+			global $wpdb;
+			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( ! $table_exists ) {
+				return 0;
+			}
+
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE `status` = %s", sanitize_text_field( $status ) ) );
+			// phpcs:enable
+
+			return absint( $count );
 		}
 
 		/**
@@ -1203,10 +1228,12 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 *
 		 * @since 1.3.0
 		 *
-		 * @param array $shopify_row Mapped Shopify data row.
+		 * @param array  $shopify_row Mapped Shopify data row.
+		 * @param string $operation   Output parameter set to 'inserted',
+		 *                            'updated', or 'skipped'.
 		 * @return int|WP_Error CCT item ID or WP_Error.
 		 */
-		public function upsert( $shopify_row ) {
+		public function upsert( $shopify_row, &$operation = null ) {
 			$available = $this->is_cct_available();
 			if ( is_wp_error( $available ) ) {
 				return $available;
@@ -1246,6 +1273,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				$new_hash = isset( $shopify_row['sync_hash'] ) ? $shopify_row['sync_hash'] : '';
 				$old_hash = isset( $existing['sync_hash'] ) ? $existing['sync_hash'] : '';
 				if ( $new_hash === $old_hash ) {
+					$operation = 'skipped';
 					return absint( $existing['_ID'] );
 				}
 
@@ -1269,6 +1297,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				 */
 				do_action( 'wp_mcp_ai_shopify_sync_item_updated', absint( $existing['_ID'] ), $shopify_row, $this->connection_id );
 
+				$operation = 'updated';
 				return absint( $existing['_ID'] );
 			}
 
@@ -1298,6 +1327,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 			 */
 			do_action( 'wp_mcp_ai_shopify_sync_item_created', absint( $result ), $shopify_row, $this->connection_id );
 
+			$operation = 'inserted';
 			return absint( $result );
 		}
 
@@ -1342,7 +1372,8 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				$rows = $this->map_bulk_item_to_cct_rows( $jsonl_item, $effective_mapping );
 
 				foreach ( $rows as $row ) {
-					$result = $this->upsert( $row );
+					$operation = '';
+					$result    = $this->upsert( $row, $operation );
 
 					if ( is_wp_error( $result ) ) {
 						++$errors;
@@ -1361,49 +1392,45 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 								)
 							);
 						}
+						continue;
+					}
+
+					// Upsert now returns the operation via output parameter.
+					if ( 'skipped' === $operation ) {
+						++$skipped;
+					} elseif ( 'inserted' === $operation ) {
+						++$inserted;
+						if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+							WP_MCP_AI_Sync_Log_Manager::log_item(
+								'shopify_sync',
+								$run_id,
+								'upsert',
+								$row['sku'],
+								array(
+									'sku'           => $row['sku'],
+									'title'         => isset( $row['product_title'] ) ? $row['product_title'] : '',
+									'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
+									'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
+									'operation'     => 'inserted',
+								)
+							);
+						}
 					} else {
-						// Determine if inserted, updated, or skipped.
-						// upsert returns the existing ID for skips/updates.
-						$existing = $this->get_cached_item_by_variant_id(
-							$row['shopify_variant_id'],
-							isset( $row['location_id'] ) ? $row['location_id'] : ''
-						);
-						if ( $existing && isset( $existing['sync_hash'] ) && $existing['sync_hash'] === $row['sync_hash'] ) {
-							++$skipped;
-						} elseif ( $result > 0 ) {
-							++$updated;
-							if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
-								WP_MCP_AI_Sync_Log_Manager::log_item(
-									'shopify_sync',
-									$run_id,
-									'upsert',
-									$row['sku'],
-									array(
-										'sku'           => $row['sku'],
-										'title'         => isset( $row['product_title'] ) ? $row['product_title'] : '',
-										'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
-										'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
-										'operation'     => 'updated',
-									)
-								);
-							}
-						} else {
-							++$inserted;
-							if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
-								WP_MCP_AI_Sync_Log_Manager::log_item(
-									'shopify_sync',
-									$run_id,
-									'upsert',
-									$row['sku'],
-									array(
-										'sku'           => $row['sku'],
-										'title'         => isset( $row['product_title'] ) ? $row['product_title'] : '',
-										'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
-										'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
-										'operation'     => 'inserted',
-									)
-								);
-							}
+						++$updated;
+						if ( class_exists( 'WP_MCP_AI_Sync_Log_Manager' ) && ! empty( $run_id ) ) {
+							WP_MCP_AI_Sync_Log_Manager::log_item(
+								'shopify_sync',
+								$run_id,
+								'upsert',
+								$row['sku'],
+								array(
+									'sku'           => $row['sku'],
+									'title'         => isset( $row['product_title'] ) ? $row['product_title'] : '',
+									'variant_title' => isset( $row['variant_title'] ) ? $row['variant_title'] : '',
+									'available_qty' => isset( $row['available_qty'] ) ? $row['available_qty'] : 0,
+									'operation'     => 'updated',
+								)
+							);
 						}
 					}
 				}
@@ -1443,19 +1470,22 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				);
 			}
 
-			// Delete rows directly via the CCT DB layer. The Item_Handler
-			// delete path enforces an interactive capability check and calls
-			// wp_die() on failure, which would kill background sync requests.
-			$items = $this->get_cached_items( array( 'per_page' => 100 ) );
-
-			while ( ! empty( $items ) ) {
-				foreach ( $items as $item ) {
-					if ( ! empty( $item['_ID'] ) ) {
-						$factory->db->delete( array( '_ID' => absint( $item['_ID'] ) ) );
-					}
-				}
-				$items = $this->get_cached_items( array( 'per_page' => 100 ) );
+			// Delete all rows directly via SQL for safety and performance.
+			// The Item_Handler delete path enforces an interactive capability
+			// check and calls wp_die() on failure, which would kill background
+			// sync requests.  A paginated fetch-then-delete loop also risks an
+			// infinite loop if the DB layer returns the same first page after
+			// deletions.
+			global $wpdb;
+			$table = $wpdb->prefix . 'jet_cct_' . $this->cct_slug;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( ! $table_exists ) {
+				return true;
 			}
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->query( "DELETE FROM `{$table}`" );
+			// phpcs:enable
 
 			return true;
 		}
@@ -1669,11 +1699,9 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 				return $bulk_result;
 			}
 
-				$settings = get_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array() );
-				$mapping  = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
+				$mapping = isset( $settings['field_mapping'] ) ? $settings['field_mapping'] : array();
 			if ( empty( $mapping ) ) {
-				$sync_mode = isset( $settings['sync_mode'] ) ? $settings['sync_mode'] : 'full';
-				$mapping   = $this->get_default_field_mapping( $sync_mode );
+				$mapping = $this->get_default_field_mapping( $sync_mode );
 			}
 
 				$items = isset( $bulk_result['items'] ) ? $bulk_result['items'] : array();
@@ -2781,7 +2809,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @since 1.9.3
 		 *
 		 * @param \Jet_Engine\Modules\Custom_Content_Types\Module $module CCT module instance.
-		 * @param string                                            $slug   CCT slug.
+		 * @param string                                          $slug   CCT slug.
 		 * @return int Number of duplicate rows removed.
 		 */
 		protected static function maybe_cleanup_duplicate_ccts( $module, $slug ) {

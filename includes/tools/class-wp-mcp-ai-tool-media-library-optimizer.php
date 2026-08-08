@@ -266,7 +266,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 					),
 				)
 			);
-			$result['optimization_opportunities'] = array_slice( $optimization_opportunities, 0, 20 );
+			$result['optimization_opportunities']          = array_slice( $optimization_opportunities, 0, 20 );
 		} else {
 			$result['optimization_opportunities'] = array_slice( $optimization_opportunities, 0, 20 );
 		}
@@ -537,7 +537,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 					),
 				)
 			);
-			$result['unused_media'] = array_slice( $unused, 0, 20 );
+			$result['unused_media']          = array_slice( $unused, 0, 20 );
 		} else {
 			$result['unused_media'] = array_slice( $unused, 0, 100 );
 		}

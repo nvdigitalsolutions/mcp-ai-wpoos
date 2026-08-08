@@ -3,7 +3,7 @@
  * Plugin Name: NV Digital Open Operator System (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: AI Assistant framework with 13 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama). Includes 250+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top. Framework-agnostic OOS core extracted for cross-platform use (Laravel, Craft CMS adapters).
- * Version: 1.1.45
+ * Version: 1.1.49
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.10
@@ -128,3 +128,64 @@ function wp_mcp_ai_load_textdomain() {
 		dirname( plugin_basename( WP_MCP_AI_FILE ) ) . '/languages/'
 	);
 }
+
+// ---------------------------------------------------------------------------
+// Export Provider Registration (Backup & Restore)
+// ---------------------------------------------------------------------------
+
+/**
+ * Register core export providers for the Backup & Restore feature.
+ *
+ * Fires on admin_init so providers are available when the Settings
+ * Management page renders. Addons hook into the same action to
+ * register their own providers.
+ *
+ * @since 1.2.0
+ *
+ * @return void
+ */
+function wp_mcp_ai_register_export_providers(): void {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	if ( ! class_exists( 'WP_MCP_AI_Export_Manager' ) ) {
+		// Autoload will handle this, but ensure the file is discoverable.
+		$export_dir = WP_MCP_AI_PATH . 'includes/admin/export/';
+		require_once $export_dir . 'interface-wp-mcp-ai-export-provider.php';
+		require_once $export_dir . 'class-wp-mcp-ai-export-provider-base.php';
+		require_once $export_dir . 'class-wp-mcp-ai-export-manager.php';
+		require_once $export_dir . 'class-wp-mcp-ai-export-provider-core-settings.php';
+		require_once $export_dir . 'class-wp-mcp-ai-export-provider-toolkit-options.php';
+		require_once $export_dir . 'class-wp-mcp-ai-export-provider-addon-options.php';
+		require_once $export_dir . 'class-wp-mcp-ai-export-provider-assistants.php';
+		require_once $export_dir . 'class-wp-mcp-ai-export-provider-cpts.php';
+		require_once $export_dir . 'class-wp-mcp-ai-export-provider-custom-tables.php';
+		require_once $export_dir . 'class-wp-mcp-ai-export-provider-federation.php';
+	}
+
+	$manager = WP_MCP_AI_Export_Manager::instance();
+
+	// Core providers (always available).
+	$manager->register( new WP_MCP_AI_Export_Provider_Core_Settings() );
+	$manager->register( new WP_MCP_AI_Export_Provider_Toolkit_Options() );
+	$manager->register( new WP_MCP_AI_Export_Provider_Addon_Options() );
+	$manager->register( new WP_MCP_AI_Export_Provider_Assistants() );
+	$manager->register( new WP_MCP_AI_Export_Provider_CPTs() );
+	$manager->register( new WP_MCP_AI_Export_Provider_Custom_Tables() );
+	$manager->register( new WP_MCP_AI_Export_Provider_Federation() );
+
+	/**
+	 * Fires when export providers are being registered.
+	 *
+	 * Addons should hook here to register their own providers
+	 * via $manager->register().
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_MCP_AI_Export_Manager $manager The export manager instance.
+	 */
+	do_action( 'wp_mcp_ai_register_export_providers', $manager );
+}
+
+add_action( 'admin_init', 'wp_mcp_ai_register_export_providers', 20 );

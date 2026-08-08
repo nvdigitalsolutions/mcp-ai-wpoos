@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns a single WordPress post with its metadata and taxonomy terms.
  */
-class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -219,5 +219,125 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			'requires-capability', // Requires 'read' capability.
 			'cacheable',           // Results can be cached.
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return string
+	 */
+	public function get_ability_identifier() {
+		return 'get-post';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return string
+	 */
+	public function get_ability_category() {
+		return 'nvoos-content';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return array
+	 */
+	public function get_output_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'ID'             => array(
+					'type'        => 'integer',
+					'description' => 'The post ID.',
+				),
+				'post_type'      => array(
+					'type'        => 'string',
+					'description' => 'The post type slug.',
+				),
+				'title'          => array(
+					'type'        => 'string',
+					'description' => 'The post title.',
+				),
+				'content'        => array(
+					'type'        => 'string',
+					'description' => 'The post content (HTML).',
+				),
+				'excerpt'        => array(
+					'type'        => 'string',
+					'description' => 'The post excerpt.',
+				),
+				'status'         => array(
+					'type'        => 'string',
+					'description' => 'The post status.',
+				),
+				'author_id'      => array(
+					'type'        => 'integer',
+					'description' => 'The author user ID.',
+				),
+				'date'           => array(
+					'type'        => 'string',
+					'description' => 'The post date (W3C format).',
+				),
+				'modified'       => array(
+					'type'        => 'string',
+					'description' => 'The last modified date (W3C format).',
+				),
+				'slug'           => array(
+					'type'        => 'string',
+					'description' => 'The post slug.',
+				),
+				'parent_id'      => array(
+					'type'        => 'integer',
+					'description' => 'The parent post ID.',
+				),
+				'menu_order'     => array(
+					'type'        => 'integer',
+					'description' => 'The menu order.',
+				),
+				'comment_status' => array(
+					'type'        => 'string',
+					'description' => 'The comment status.',
+				),
+				'permalink'      => array(
+					'type'        => 'string',
+					'description' => 'The post permalink.',
+				),
+				'edit_link'      => array(
+					'type'        => 'string',
+					'description' => 'The admin edit link.',
+				),
+				'meta'           => array(
+					'type'        => 'object',
+					'description' => 'Post meta fields (if include_meta=true).',
+				),
+				'taxonomies'     => array(
+					'type'        => 'object',
+					'description' => 'Taxonomy terms (if include_taxonomies=true).',
+				),
+				'message'        => array(
+					'type'        => 'string',
+					'description' => 'Human-readable summary.',
+				),
+				'summary'        => array(
+					'type'        => 'string',
+					'description' => 'Human-readable summary.',
+				),
+			),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return bool
+	 */
+	public function is_public_ability() {
+		return true;
 	}
 }

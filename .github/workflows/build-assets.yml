@@ -38,6 +38,7 @@ on:
       - 'bin/build-plugin-zip.sh'
       - 'bin/build-addon-zips.sh'
       - 'bin/build-wordpress-org-from-base.sh'
+      - 'bin/build-optional-components.sh'
       - 'bin/rebuild-all-zips.sh'
       - 'bin/review-zips.sh'
       - 'src/tma-template-builder/**'
@@ -46,6 +47,8 @@ on:
       - 'webpack.config.tma.js'
       - 'src/workflow-builder/**'
       - 'webpack.config.workflow.js'
+      # Knowledge base files (profession playbooks & data)
+      - 'includes/knowledge-base/**'
   pull_request:
     branches:
       - main
@@ -62,6 +65,7 @@ on:
       - 'bin/build-plugin-zip.sh'
       - 'bin/build-addon-zips.sh'
       - 'bin/build-wordpress-org-from-base.sh'
+      - 'bin/build-optional-components.sh'
       - 'bin/rebuild-all-zips.sh'
       - 'bin/review-zips.sh'
       - 'src/tma-template-builder/**'
@@ -70,6 +74,8 @@ on:
       - 'webpack.config.tma.js'
       - 'src/workflow-builder/**'
       - 'webpack.config.workflow.js'
+      # Knowledge base files (profession playbooks & data)
+      - 'includes/knowledge-base/**'
   workflow_dispatch:
 
 permissions:
@@ -142,6 +148,20 @@ jobs:
             ls -lh build/toolkit-addons/*.zip
           fi
 
+      - name: Build knowledge-base optional component
+        run: |
+          echo "📚 Building knowledge-base ZIP from current playbook files..."
+          VERSION=$(grep -E "^\s*\*\s*Version:" mcp-ai-wpoos.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+          if [ -z "$VERSION" ]; then
+            VERSION="dev"
+          fi
+          echo "   Version: $VERSION"
+          chmod +x bin/build-optional-components.sh
+          ./bin/build-optional-components.sh "$VERSION"
+          echo ""
+          echo "📦 Optional component ZIPs:"
+          ls -lh build/optional-components/*.zip 2>/dev/null || echo "   (none)"
+
       - name: Check for changes
         id: check_changes
         run: |
@@ -162,6 +182,10 @@ jobs:
           git add -f addons/pro/build/tma-woo-shop/ 2>/dev/null || true
           git add -f addons/pro/build/tma-shopify-jewelry/ 2>/dev/null || true
           git add -f addons/pro/build/workflow-builder/ 2>/dev/null || true
+          # Also commit optional component ZIPs (knowledge-base, vectorizer)
+          if [ -d "build/optional-components" ] && [ -n "$(ls -A build/optional-components/*.zip 2>/dev/null)" ]; then
+            git add -f build/optional-components/*.zip 2>/dev/null || true
+          fi
           
           # Check if anything changed
           if git diff --staged --quiet; then
@@ -213,6 +237,10 @@ jobs:
               git checkout --ours build/toolkit-addons/*.zip 2>/dev/null || true
               git add -f build/toolkit-addons/*.zip 2>/dev/null || true
             fi
+            if [ -d "build/optional-components" ] && [ -n "$(ls -A build/optional-components/*.zip 2>/dev/null)" ]; then
+              git checkout --ours build/optional-components/*.zip 2>/dev/null || true
+              git add -f build/optional-components/*.zip 2>/dev/null || true
+            fi
             git rebase --continue || {
               echo "❌ Failed to resolve rebase conflicts"
               git rebase --abort
@@ -230,6 +258,7 @@ jobs:
           path: |
             build/*.zip
             build/toolkit-addons/*.zip
+            build/optional-components/*.zip
             assets/**/*.min.css
             assets/**/*.min.js
           retention-days: 7
@@ -280,6 +309,20 @@ jobs:
                   comment += `\n`;
                 }
               }
+
+              // List optional component ZIPs (build/optional-components/*.zip).
+              if (fs.existsSync('build/optional-components')) {
+                const optionalZips = fs.readdirSync('build/optional-components').filter(f => f.endsWith('.zip'));
+                if (optionalZips.length > 0) {
+                  comment += `### 📚 Optional Components (${optionalZips.length})\n\n`;
+                  for (const zip of optionalZips) {
+                    const stats = fs.statSync(`build/optional-components/${zip}`);
+                    const sizeMB = (stats.size / 1024 / 1024).toFixed(2);
+                    comment += `- \`build/optional-components/${zip}\` (${sizeMB} MB)\n`;
+                  }
+                  comment += `\n`;
+                }
+              }
             }
             
             comment += `\n---\n`;
@@ -325,6 +368,19 @@ jobs:
             echo "| Package | Size |" >> $GITHUB_STEP_SUMMARY
             echo "|---------|------|" >> $GITHUB_STEP_SUMMARY
             for zip in build/toolkit-addons/*.zip; do
+              name=$(basename "$zip")
+              size=$(du -h "$zip" | cut -f1)
+              echo "| $name | $size |" >> $GITHUB_STEP_SUMMARY
+            done
+          fi
+
+          if [ -d "build/optional-components" ] && [ "$(ls -A build/optional-components/*.zip 2>/dev/null)" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📚 Optional Components (On-Demand Downloads)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Package | Size |" >> $GITHUB_STEP_SUMMARY
+            echo "|---------|------|" >> $GITHUB_STEP_SUMMARY
+            for zip in build/optional-components/*.zip; do
               name=$(basename "$zip")
               size=$(du -h "$zip" | cut -f1)
               echo "| $name | $size |" >> $GITHUB_STEP_SUMMARY

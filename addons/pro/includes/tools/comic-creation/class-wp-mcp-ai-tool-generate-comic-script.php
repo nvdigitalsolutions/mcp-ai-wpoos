@@ -53,11 +53,11 @@ class WP_MCP_AI_Tool_Generate_Comic_Script implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'premise'    => array(
+				'premise'     => array(
 					'type'        => 'string',
 					'description' => __( 'The story premise or core idea for the comic (e.g., "A detective in a cyberpunk city discovers a conspiracy").', 'mcp-ai-wpoos-pro' ),
 				),
-				'genre'      => array(
+				'genre'       => array(
 					'type'        => 'string',
 					'description' => __( 'The genre of the comic.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'superhero', 'sci-fi', 'fantasy', 'horror', 'mystery', 'romance', 'slice-of-life', 'action', 'comedy', 'noir', 'western', 'historical' ),
@@ -70,12 +70,12 @@ class WP_MCP_AI_Tool_Generate_Comic_Script implements WP_MCP_AI_Tool_Interface, 
 					'maximum'     => 60,
 					'default'     => 12,
 				),
-				'style'      => array(
+				'style'       => array(
 					'type'        => 'string',
 					'description' => __( 'Art style description for the comic.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'modern digital comic',
 				),
-				'title'      => array(
+				'title'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional title for the comic script.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -140,12 +140,12 @@ class WP_MCP_AI_Tool_Generate_Comic_Script implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// --- Sanitize all arguments at entry (Gate 1) ---
-		$premise    = isset( $arguments['premise'] ) ? sanitize_textarea_field( $arguments['premise'] ) : '';
-		$premise    = trim( $premise );
-		$genre      = isset( $arguments['genre'] ) ? sanitize_text_field( $arguments['genre'] ) : 'sci-fi';
+		$premise     = isset( $arguments['premise'] ) ? sanitize_textarea_field( $arguments['premise'] ) : '';
+		$premise     = trim( $premise );
+		$genre       = isset( $arguments['genre'] ) ? sanitize_text_field( $arguments['genre'] ) : 'sci-fi';
 		$panel_count = isset( $arguments['panel_count'] ) ? absint( $arguments['panel_count'] ) : 12;
-		$style      = isset( $arguments['style'] ) ? sanitize_text_field( $arguments['style'] ) : 'modern digital comic';
-		$title      = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$style       = isset( $arguments['style'] ) ? sanitize_text_field( $arguments['style'] ) : 'modern digital comic';
+		$title       = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
 
 		// Validate required fields.
 		if ( '' === $premise ) {
@@ -265,7 +265,7 @@ class WP_MCP_AI_Tool_Generate_Comic_Script implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Structured script content.
 	 */
 	private function generate_simulated_script( $premise, $genre, $panel_count, $style ) {
-		$scenes = array();
+		$scenes           = array();
 		$panels_per_scene = max( 1, (int) ceil( $panel_count / 3 ) );
 
 		for ( $s = 1; $s <= 3; $s++ ) {
@@ -316,13 +316,13 @@ class WP_MCP_AI_Tool_Generate_Comic_Script implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		return array(
-			'title'       => '',
-			'premise'     => $premise,
-			'genre'       => $genre,
-			'art_style'   => $style,
+			'title'        => '',
+			'premise'      => $premise,
+			'genre'        => $genre,
+			'art_style'    => $style,
 			'total_panels' => $panel_count,
-			'scenes'      => $scenes,
-			'characters'  => array(
+			'scenes'       => $scenes,
+			'characters'   => array(
 				array(
 					'name'        => __( 'Protagonist', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'The main character driving the story forward.', 'mcp-ai-wpoos-pro' ),

@@ -196,18 +196,18 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 		// Check if places management is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_places_management'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Places Management is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Places Management is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Check if Turf.js is available.
 		$turf_available = $this->check_turf_availability();
 		if ( ! $turf_available ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Turf.js is not available. Please ensure the package is installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Turf.js is not available. Please ensure the package is installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -217,9 +217,9 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 		// Get source coordinates.
 		$source_coords = $this->get_coordinates_from_arguments( $arguments, 'place_id', 'coordinates' );
 		if ( ! $source_coords ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid or missing source location. Provide either place_id or coordinates.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Invalid or missing source location. Provide either place_id or coordinates.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -250,16 +250,16 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 				break;
 
 			default:
-				return array(
-					'success' => false,
-					'error'   => __( 'Unsupported geospatial operation.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Unsupported geospatial operation.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 
 		if ( isset( $result['error'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => $result['error'],
+			return new WP_Error(
+				'tool_error',
+				$result['error']
 			);
 		}
 

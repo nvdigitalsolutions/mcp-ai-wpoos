@@ -41,7 +41,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'Users', 'wp-mcp-ai-core' );
+		return __( 'Users', 'mcp-ai-wpoos-core' );
 	}
 
 	/**
@@ -50,7 +50,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query WordPress users. Supports getting user details by ID, listing users by role, and getting current user information.', 'wp-mcp-ai-core' );
+		return __( 'Query WordPress users. Supports getting user details by ID, listing users by role, and getting current user information.', 'mcp-ai-wpoos-core' );
 	}
 
 	/**
@@ -64,42 +64,42 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 			'properties' => array(
 				'action'   => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: get, list, current, search.', 'wp-mcp-ai-core' ),
+					'description' => __( 'The action to perform: get, list, current, search.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'get', 'list', 'current', 'search' ),
 					'default'     => 'current',
 				),
 				'user_id'  => array(
 					'type'        => 'integer',
-					'description' => __( 'User ID for get action.', 'wp-mcp-ai-core' ),
+					'description' => __( 'User ID for get action.', 'mcp-ai-wpoos-core' ),
 				),
 				'role'     => array(
 					'type'        => 'string',
-					'description' => __( 'Filter users by role (e.g., administrator, editor, author).', 'wp-mcp-ai-core' ),
+					'description' => __( 'Filter users by role (e.g., administrator, editor, author).', 'mcp-ai-wpoos-core' ),
 				),
 				'per_page' => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of users to return. Default: 10. Max: 100.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Number of users to return. Default: 10. Max: 100.', 'mcp-ai-wpoos-core' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
 				'page'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-core' ),
 					'default'     => 1,
 				),
 				'search'   => array(
 					'type'        => 'string',
-					'description' => __( 'Search term to filter users.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Search term to filter users.', 'mcp-ai-wpoos-core' ),
 				),
 				'orderby'  => array(
 					'type'        => 'string',
-					'description' => __( 'Field to order by. Default: display_name.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Field to order by. Default: display_name.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'ID', 'display_name', 'login', 'email', 'registered' ),
 					'default'     => 'display_name',
 				),
 				'order'    => array(
 					'type'        => 'string',
-					'description' => __( 'Order direction. Default: ASC.', 'wp-mcp-ai-core' ),
+					'description' => __( 'Order direction. Default: ASC.', 'mcp-ai-wpoos-core' ),
 					'enum'        => array( 'ASC', 'DESC' ),
 					'default'     => 'ASC',
 				),
@@ -143,7 +143,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-core' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-core' )
 				);
 		}
 	}
@@ -159,7 +159,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( empty( $arguments['user_id'] ) ) {
 			return new WP_Error(
 				'missing_user_id',
-				__( 'User ID is required for get action.', 'wp-mcp-ai-core' )
+				__( 'User ID is required for get action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -171,7 +171,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( $requesting_user_id !== $target_user_id && ! user_can( $requesting_user_id, 'list_users' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to view this user.', 'wp-mcp-ai-core' )
+				__( 'You do not have permission to view this user.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -180,7 +180,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! $user ) {
 			return new WP_Error(
 				'user_not_found',
-				__( 'User not found.', 'wp-mcp-ai-core' )
+				__( 'User not found.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -199,7 +199,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! $user_id ) {
 			return new WP_Error(
 				'not_logged_in',
-				__( 'No user is currently logged in.', 'wp-mcp-ai-core' )
+				__( 'No user is currently logged in.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -208,7 +208,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! $user ) {
 			return new WP_Error(
 				'user_not_found',
-				__( 'User not found.', 'wp-mcp-ai-core' )
+				__( 'User not found.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -229,7 +229,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( ! user_can( $requesting_user_id, 'list_users' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to list users.', 'wp-mcp-ai-core' )
+				__( 'You do not have permission to list users.', 'mcp-ai-wpoos-core' )
 			);
 		}
 
@@ -275,7 +275,7 @@ class WP_MCP_AI_Core_Tool_Users implements WP_MCP_AI_Core_Tool_Interface, WP_MCP
 		if ( empty( $arguments['search'] ) ) {
 			return new WP_Error(
 				'missing_search_term',
-				__( 'Search term is required for search action.', 'wp-mcp-ai-core' )
+				__( 'Search term is required for search action.', 'mcp-ai-wpoos-core' )
 			);
 		}
 

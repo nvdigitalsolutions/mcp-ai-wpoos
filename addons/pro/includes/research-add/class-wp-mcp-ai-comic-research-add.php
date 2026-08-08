@@ -95,54 +95,54 @@ class WP_MCP_AI_Comic_Research_Add extends WP_MCP_AI_Research_Add_Base {
 	 */
 	private function get_comics_schema() {
 		return array(
-			'comic_title'        => array(
+			'comic_title'          => array(
 				'title'       => __( 'Comic Title', 'mcp-ai-wpoos-pro' ),
 				'type'        => 'text',
 				'width'       => '100%',
 				'is_required' => true,
 			),
-			'comic_style'        => array(
+			'comic_style'          => array(
 				'title'       => __( 'Art Style', 'mcp-ai-wpoos-pro' ),
 				'type'        => 'select',
 				'width'       => '50%',
 				'is_required' => true,
 			),
-			'series_name'        => array(
+			'series_name'          => array(
 				'title' => __( 'Series Name', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '50%',
 			),
-			'issue_number'       => array(
+			'issue_number'         => array(
 				'title' => __( 'Issue Number', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '50%',
 			),
-			'reading_direction'  => array(
+			'reading_direction'    => array(
 				'title' => __( 'Reading Direction', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'select',
 				'width' => '50%',
 			),
-			'page_layout'        => array(
+			'page_layout'          => array(
 				'title' => __( 'Page Layout', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'select',
 				'width' => '50%',
 			),
-			'description'        => array(
+			'description'          => array(
 				'title' => __( 'Synopsis / Description', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'textarea',
 				'width' => '100%',
 			),
-			'panels_count'       => array(
+			'panels_count'         => array(
 				'title' => __( 'Total Panels', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'number',
 				'width' => '50%',
 			),
-			'page_count'         => array(
+			'page_count'           => array(
 				'title' => __( 'Page Count', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'number',
 				'width' => '50%',
 			),
-			'status'             => array(
+			'status'               => array(
 				'title' => __( 'Status', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'select',
 				'width' => '50%',
@@ -162,34 +162,34 @@ class WP_MCP_AI_Comic_Research_Add extends WP_MCP_AI_Research_Add_Base {
 	 */
 	private function get_panels_schema() {
 		return array(
-			'panel_number'       => array(
+			'panel_number'         => array(
 				'title'       => __( 'Panel Number', 'mcp-ai-wpoos-pro' ),
 				'type'        => 'number',
 				'width'       => '50%',
 				'is_required' => true,
 			),
-			'comic_id'           => array(
+			'comic_id'             => array(
 				'title'       => __( 'Comic ID', 'mcp-ai-wpoos-pro' ),
 				'type'        => 'number',
 				'width'       => '50%',
 				'is_required' => true,
 			),
-			'panel_image_url'    => array(
+			'panel_image_url'      => array(
 				'title' => __( 'Panel Image URL', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '100%',
 			),
-			'speech_bubbles'     => array(
+			'speech_bubbles'       => array(
 				'title' => __( 'Speech Bubbles', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'textarea',
 				'width' => '100%',
 			),
-			'panel_layout'       => array(
+			'panel_layout'         => array(
 				'title' => __( 'Panel Layout', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'select',
 				'width' => '50%',
 			),
-			'panel_style'        => array(
+			'panel_style'          => array(
 				'title' => __( 'Panel Style', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'select',
 				'width' => '50%',
@@ -414,7 +414,7 @@ class WP_MCP_AI_Comic_Research_Add extends WP_MCP_AI_Research_Add_Base {
 				break;
 
 			case 'characters':
-				$traits = isset( $item['personality_traits'] ) ? $item['personality_traits'] : '';
+				$traits         = isset( $item['personality_traits'] ) ? $item['personality_traits'] : '';
 				$traits_display = mb_strlen( $traits ) > 30 ? mb_substr( $traits, 0, 30 ) . '...' : $traits;
 				?>
 				<td><?php echo esc_html( $item['id'] ); ?></td>

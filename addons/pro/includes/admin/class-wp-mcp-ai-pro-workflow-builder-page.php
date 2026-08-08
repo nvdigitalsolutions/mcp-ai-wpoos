@@ -1255,8 +1255,8 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 				'messages'     => $messages,
 				'stream'       => false,
 				'context'      => array(
-					'source'      => 'workflow_builder_agent_node',
-					'agent_id'    => $agent_id,
+					'source'   => 'workflow_builder_agent_node',
+					'agent_id' => $agent_id,
 				),
 			)
 		);

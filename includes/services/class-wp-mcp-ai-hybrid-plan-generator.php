@@ -80,7 +80,7 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 	 *
 	 * @since 1.5.0
 	 *
-	 * @param WP_MCP_AI_Agent_Team_Orchestrator|null      $orchestrator    Agent team orchestrator.
+	 * @param WP_MCP_AI_Agent_Team_Orchestrator|null       $orchestrator    Agent team orchestrator.
 	 * @param WP_MCP_AI_Orchestration_Depth_Scheduler|null $depth_scheduler Depth scheduler.
 	 */
 	public function __construct( $orchestrator = null, $depth_scheduler = null ) {
@@ -114,7 +114,7 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 		}
 
 		// ---- Stage 1: parallel proposal collection ---------------------------------
-		$planners   = $this->get_available_planners();
+		$planners = $this->get_available_planners();
 
 		if ( empty( $planners ) ) {
 			return new WP_Error(
@@ -140,7 +140,7 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 		}
 
 		// ---- Stage 3: dependency graph & parallel groups ---------------------------
-		$dependencies   = $this->build_dependency_graph( $merged['subtasks'] );
+		$dependencies    = $this->build_dependency_graph( $merged['subtasks'] );
 		$parallel_groups = $this->identify_parallel_groups( $merged['subtasks'], $dependencies );
 
 		$task_id = $this->generate_task_id();
@@ -226,9 +226,9 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 
 			foreach ( $query->posts as $post_id ) {
 				$planners[] = array(
-					'id'    => absint( $post_id ),
-					'name'  => get_the_title( $post_id ),
-					'role'  => sanitize_text_field( $role ),
+					'id'   => absint( $post_id ),
+					'name' => get_the_title( $post_id ),
+					'role' => sanitize_text_field( $role ),
 				);
 			}
 		}
@@ -237,13 +237,13 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 		if ( empty( $planners ) ) {
 			foreach ( $planning_roles as $role ) {
 				$planners[] = array(
-					'id'    => 0,
-					'name'  => sprintf(
+					'id'   => 0,
+					'name' => sprintf(
 						/* translators: %s: role name */
 						__( 'Default %s', 'mcp-ai-wpoos' ),
 						ucfirst( $role )
 					),
-					'role'  => sanitize_text_field( $role ),
+					'role' => sanitize_text_field( $role ),
 				);
 			}
 		}
@@ -330,11 +330,11 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 			}
 			foreach ( $prop['subtasks'] as $pos => $subtask ) {
 				$all_subtasks[] = array(
-					'description'  => $this->normalise_subtask( $subtask ),
-					'source'       => $prop['planner_id'],
-					'source_name'  => $prop['planner_name'],
-					'source_role'  => $prop['planner_role'],
-					'position'     => (int) $pos,
+					'description' => $this->normalise_subtask( $subtask ),
+					'source'      => $prop['planner_id'],
+					'source_name' => $prop['planner_name'],
+					'source_role' => $prop['planner_role'],
+					'position'    => (int) $pos,
 				);
 			}
 		}
@@ -367,8 +367,8 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 						$existing['source_role'] = $candidate['source_role'];
 					}
 					$existing['agreement_count'] = ( $existing['agreement_count'] ?? 1 ) + 1;
-					$found = true;
-					$matched++;
+					$found                       = true;
+					++$matched;
 					break;
 				}
 			}
@@ -402,11 +402,11 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 		// Assign average position as sort key.
 		$ordered = array();
 		foreach ( $unique as $u ) {
-			$key                         = $this->subtask_fingerprint( $u['description'] );
-			$u['consensus_position']     = isset( $position_map[ $key ] ) && $position_counts[ $key ] > 0
+			$key                     = $this->subtask_fingerprint( $u['description'] );
+			$u['consensus_position'] = isset( $position_map[ $key ] ) && $position_counts[ $key ] > 0
 				? $position_map[ $key ] / $position_counts[ $key ]
 				: PHP_INT_MAX;
-			$ordered[] = $u;
+			$ordered[]               = $u;
 		}
 
 		usort(
@@ -426,7 +426,7 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 		// Higher confidence when many proposals agree and few subtasks are unique.
 		$merge_confidence = 1.0;
 		if ( $total > 0 ) {
-			$agreement_ratio   = $matched > 0 ? $matched / $total : 0;
+			$agreement_ratio    = $matched > 0 ? $matched / $total : 0;
 			$uniqueness_penalty = count( $ordered ) / min( max( count( $proposals ), 1 ), self::MAX_PROPOSALS );
 			$merge_confidence   = ( $agreement_ratio * 0.6 ) + ( ( 1 - $uniqueness_penalty ) * 0.4 );
 			$merge_confidence   = max( 0.0, min( 1.0, $merge_confidence ) );
@@ -658,9 +658,34 @@ class WP_MCP_AI_Hybrid_Plan_Generator {
 	 */
 	private function tokenize( $text ) {
 		$stop_words = array(
-			'a', 'an', 'the', 'is', 'are', 'be', 'to', 'of', 'in', 'for',
-			'on', 'with', 'and', 'or', 'by', 'at', 'from', 'this', 'that',
-			'it', 'as', 'we', 'our', 'will', 'can', 'should', 'must', 'need',
+			'a',
+			'an',
+			'the',
+			'is',
+			'are',
+			'be',
+			'to',
+			'of',
+			'in',
+			'for',
+			'on',
+			'with',
+			'and',
+			'or',
+			'by',
+			'at',
+			'from',
+			'this',
+			'that',
+			'it',
+			'as',
+			'we',
+			'our',
+			'will',
+			'can',
+			'should',
+			'must',
+			'need',
 		);
 
 		// Strip non-alpha characters and collapse whitespace.

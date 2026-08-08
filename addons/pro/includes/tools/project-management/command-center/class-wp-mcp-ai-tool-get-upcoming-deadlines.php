@@ -143,11 +143,11 @@ class WP_MCP_AI_Tool_Get_Upcoming_Deadlines implements WP_MCP_AI_Tool_Interface,
 		$enriched = array();
 		foreach ( $deadlines as $item ) {
 			$entry = array(
-				'id'            => isset( $item['id'] ) ? absint( $item['id'] ) : 0,
-				'title'         => isset( $item['title'] ) ? $item['title'] : '',
-				'type'          => isset( $item['type'] ) ? $item['type'] : 'task',
-				'due_date'      => isset( $item['due_date'] ) ? $item['due_date'] : '',
-				'days_until'    => isset( $item['days_until'] ) ? (int) $item['days_until'] : 0,
+				'id'         => isset( $item['id'] ) ? absint( $item['id'] ) : 0,
+				'title'      => isset( $item['title'] ) ? $item['title'] : '',
+				'type'       => isset( $item['type'] ) ? $item['type'] : 'task',
+				'due_date'   => isset( $item['due_date'] ) ? $item['due_date'] : '',
+				'days_until' => isset( $item['days_until'] ) ? (int) $item['days_until'] : 0,
 			);
 
 			if ( 'task' === $entry['type'] ) {
@@ -163,12 +163,12 @@ class WP_MCP_AI_Tool_Get_Upcoming_Deadlines implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Categorize as overdue, today, this week, or later.
-		$now = time();
-		$overdue      = array();
-		$today        = array();
-		$this_week    = array();
-		$later        = array();
-		$week_end     = strtotime( 'sunday this week 23:59:59' );
+		$now       = time();
+		$overdue   = array();
+		$today     = array();
+		$this_week = array();
+		$later     = array();
+		$week_end  = strtotime( 'sunday this week 23:59:59' );
 
 		foreach ( $enriched as $item ) {
 			$due_ts = ! empty( $item['due_date'] ) ? strtotime( $item['due_date'] ) : 0;
@@ -191,14 +191,14 @@ class WP_MCP_AI_Tool_Get_Upcoming_Deadlines implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'success'      => true,
-			'count'        => count( $enriched ),
-			'days'         => $days,
-			'overdue'      => $overdue,
-			'today'        => $today,
-			'this_week'    => $this_week,
-			'later'        => $later,
-			'deadlines'    => $enriched,
+			'success'   => true,
+			'count'     => count( $enriched ),
+			'days'      => $days,
+			'overdue'   => $overdue,
+			'today'     => $today,
+			'this_week' => $this_week,
+			'later'     => $later,
+			'deadlines' => $enriched,
 		);
 	}
 }

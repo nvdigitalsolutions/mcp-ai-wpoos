@@ -1639,7 +1639,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		}
 
 		global $wpdb;
-		$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+		$slug = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
 
 		// Defense-in-depth: validate the slug is a safe alphanumeric string
 		// before interpolating into a table name. The slug is currently a

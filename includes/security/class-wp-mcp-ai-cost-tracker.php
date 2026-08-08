@@ -48,26 +48,71 @@ if ( ! class_exists( 'WP_MCP_AI_Cost_Tracker' ) ) {
 		 */
 		const MODEL_PRICING = array(
 			// OpenAI.
-			'gpt-4o'             => array( 'input' => 2.50, 'output' => 10.00 ),
-			'gpt-4o-mini'        => array( 'input' => 0.15, 'output' => 0.60 ),
-			'gpt-4-turbo'        => array( 'input' => 10.00, 'output' => 30.00 ),
-			'gpt-4'              => array( 'input' => 30.00, 'output' => 60.00 ),
-			'gpt-3.5-turbo'      => array( 'input' => 0.50, 'output' => 1.50 ),
-			'o1'                 => array( 'input' => 15.00, 'output' => 60.00 ),
-			'o1-mini'            => array( 'input' => 1.10, 'output' => 4.40 ),
-			'o3-mini'            => array( 'input' => 1.10, 'output' => 4.40 ),
+			'gpt-4o'            => array(
+				'input'  => 2.50,
+				'output' => 10.00,
+			),
+			'gpt-4o-mini'       => array(
+				'input'  => 0.15,
+				'output' => 0.60,
+			),
+			'gpt-4-turbo'       => array(
+				'input'  => 10.00,
+				'output' => 30.00,
+			),
+			'gpt-4'             => array(
+				'input'  => 30.00,
+				'output' => 60.00,
+			),
+			'gpt-3.5-turbo'     => array(
+				'input'  => 0.50,
+				'output' => 1.50,
+			),
+			'o1'                => array(
+				'input'  => 15.00,
+				'output' => 60.00,
+			),
+			'o1-mini'           => array(
+				'input'  => 1.10,
+				'output' => 4.40,
+			),
+			'o3-mini'           => array(
+				'input'  => 1.10,
+				'output' => 4.40,
+			),
 			// Anthropic.
-			'claude-3-opus'      => array( 'input' => 15.00, 'output' => 75.00 ),
-			'claude-3.5-sonnet'  => array( 'input' => 3.00, 'output' => 15.00 ),
-			'claude-3.5-haiku'   => array( 'input' => 0.80, 'output' => 4.00 ),
+			'claude-3-opus'     => array(
+				'input'  => 15.00,
+				'output' => 75.00,
+			),
+			'claude-3.5-sonnet' => array(
+				'input'  => 3.00,
+				'output' => 15.00,
+			),
+			'claude-3.5-haiku'  => array(
+				'input'  => 0.80,
+				'output' => 4.00,
+			),
 			// Gemini.
-			'gemini-1.5-pro'     => array( 'input' => 1.25, 'output' => 5.00 ),
-			'gemini-1.5-flash'   => array( 'input' => 0.075, 'output' => 0.30 ),
+			'gemini-1.5-pro'    => array(
+				'input'  => 1.25,
+				'output' => 5.00,
+			),
+			'gemini-1.5-flash'  => array(
+				'input'  => 0.075,
+				'output' => 0.30,
+			),
 			// Image generation (flat cost per image).
-			'dall-e-3'           => array( 'per_image_1024' => 0.040, 'per_image_1792x1024' => 0.080 ),
-			'dall-e-2'           => array( 'per_image_1024' => 0.020 ),
+			'dall-e-3'          => array(
+				'per_image_1024'      => 0.040,
+				'per_image_1792x1024' => 0.080,
+			),
+			'dall-e-2'          => array( 'per_image_1024' => 0.020 ),
 			// Default fallback.
-			'default'            => array( 'input' => 5.00, 'output' => 20.00 ),
+			'default'           => array(
+				'input'  => 5.00,
+				'output' => 20.00,
+			),
 		);
 
 		/**
@@ -88,7 +133,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cost_Tracker' ) ) {
 				} else {
 					$estimate = 0.04;
 				}
-				$count  = isset( $arguments['n'] ) ? absint( $arguments['n'] ) : 1;
+				$count = isset( $arguments['n'] ) ? absint( $arguments['n'] ) : 1;
 				return $estimate * max( 1, $count );
 			}
 
@@ -239,7 +284,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cost_Tracker' ) ) {
 			}
 
 			if ( null !== $assistant_id ) {
-				$key  = (string) absint( $assistant_id );
+				$key   = (string) absint( $assistant_id );
 				$total = 0.0;
 				foreach ( $spend as $day ) {
 					$total += isset( $day[ $key ] ) ? (float) $day[ $key ] : 0.0;

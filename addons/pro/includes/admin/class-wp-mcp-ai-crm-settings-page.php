@@ -1104,8 +1104,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 		// ---- Phase G: ICP (Ideal Customer Profile) Module ----
 		$tools[ __( 'Phase G — ICP &amp; Lead Scoring (2 tools)', 'mcp-ai-wpoos-pro' ) ] = array(
-			'compute_icp_score'   => __( 'Compute ICP Score', 'mcp-ai-wpoos-pro' ),
-			'manage_icp_profile'  => __( 'Manage ICP Profile', 'mcp-ai-wpoos-pro' ),
+			'compute_icp_score'  => __( 'Compute ICP Score', 'mcp-ai-wpoos-pro' ),
+			'manage_icp_profile' => __( 'Manage ICP Profile', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $tools;

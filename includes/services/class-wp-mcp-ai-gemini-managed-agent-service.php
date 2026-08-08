@@ -170,13 +170,13 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 			);
 		}
 
-		$session_id  = $this->generate_session_id();
+		$session_id    = $this->generate_session_id();
 		$system_prompt = isset( $args['system_prompt'] ) ? sanitize_textarea_field( $args['system_prompt'] ) : '';
-		$tool_slugs   = isset( $args['tool_slugs'] ) ? (array) $args['tool_slugs'] : array();
-		$working_dir  = isset( $args['working_dir'] ) ? sanitize_text_field( $args['working_dir'] ) : '/workspace';
-		$model        = isset( $args['model'] ) ? sanitize_text_field( $args['model'] ) : self::DEFAULT_MODEL;
-		$max_iter     = isset( $args['max_iterations'] ) ? absint( $args['max_iterations'] ) : 10;
-		$timeout      = isset( $args['timeout'] ) ? absint( $args['timeout'] ) : self::DEFAULT_TIMEOUT;
+		$tool_slugs    = isset( $args['tool_slugs'] ) ? (array) $args['tool_slugs'] : array();
+		$working_dir   = isset( $args['working_dir'] ) ? sanitize_text_field( $args['working_dir'] ) : '/workspace';
+		$model         = isset( $args['model'] ) ? sanitize_text_field( $args['model'] ) : self::DEFAULT_MODEL;
+		$max_iter      = isset( $args['max_iterations'] ) ? absint( $args['max_iterations'] ) : 10;
+		$timeout       = isset( $args['timeout'] ) ? absint( $args['timeout'] ) : self::DEFAULT_TIMEOUT;
 
 		if ( $timeout > self::MAX_TIMEOUT ) {
 			$timeout = self::MAX_TIMEOUT;
@@ -191,17 +191,17 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 
 		// Build the agent creation payload.
 		$payload = array(
-			'displayName'   => 'NV oOS Agent',
-			'systemPrompt'  => $system_prompt,
-			'model'         => $model,
-			'tools'         => $tools,
-			'config'        => array(
-				'maxIterations'   => $max_iter,
-				'timeoutSeconds'  => $timeout,
+			'displayName'  => 'NV oOS Agent',
+			'systemPrompt' => $system_prompt,
+			'model'        => $model,
+			'tools'        => $tools,
+			'config'       => array(
+				'maxIterations'    => $max_iter,
+				'timeoutSeconds'   => $timeout,
 				'workingDirectory' => $working_dir,
-				'codeExecution'   => array(
-					'enabled'    => true,
-					'languages'  => self::SUPPORTED_LANGUAGES,
+				'codeExecution'    => array(
+					'enabled'   => true,
+					'languages' => self::SUPPORTED_LANGUAGES,
 				),
 			),
 		);
@@ -430,7 +430,7 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 	public function list_sessions() {
 		global $wpdb;
 
-		$prefix    = self::SESSION_PREFIX;
+		$prefix     = self::SESSION_PREFIX;
 		$transients = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
@@ -509,7 +509,7 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 			return $definitions;
 		}
 
-		$registry = WP_MCP_AI_Tool_Registry::instance();
+		$registry  = WP_MCP_AI_Tool_Registry::instance();
 		$all_tools = $registry->get_tools();
 
 		foreach ( $tool_slugs as $slug ) {
@@ -614,7 +614,7 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 			$error_code    = 'wp_mcp_ai_agent_request_failed';
 
 			if ( isset( $data['error']['message'] ) ) {
-				$api_error = $data['error']['message'];
+				$api_error     = $data['error']['message'];
 				$error_message = $api_error;
 
 				if ( false !== stripos( $api_error, 'not found' ) ) {

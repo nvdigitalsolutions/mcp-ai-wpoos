@@ -52,15 +52,15 @@ class WP_MCP_AI_Tool_Apply_Comic_Style implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'panel_id'   => array(
+				'panel_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the `mcp_ai_comic_panel` post to apply style to.', 'mcp-ai-wpoos-pro' ),
 				),
-				'image_id'   => array(
+				'image_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of a WordPress attachment/image to style. Used when panel_id is not provided.', 'mcp-ai-wpoos-pro' ),
 				),
-				'style'      => array(
+				'style'    => array(
 					'type'        => 'string',
 					'description' => __( 'Art style preset to apply.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'manga', 'american-comic', 'noir', 'silver-age', 'golden-age', 'euro-comic', 'webtoon', 'watercolor', 'pulp', 'ligne-claire' ),

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides basic site metadata and content statistics.
  */
-class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -133,5 +133,85 @@ class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MC
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return string
+	 */
+	public function get_ability_identifier() {
+		return 'get-site-summary';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return string
+	 */
+	public function get_ability_category() {
+		return 'nvoos-site';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return array
+	 */
+	public function get_output_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'message'          => array(
+					'type'        => 'string',
+					'description' => 'Human-readable site summary.',
+				),
+				'summary'          => array(
+					'type'        => 'string',
+					'description' => 'Human-readable site summary.',
+				),
+				'site_name'        => array(
+					'type'        => 'string',
+					'description' => 'The site name.',
+				),
+				'site_description' => array(
+					'type'        => 'string',
+					'description' => 'The site tagline/description.',
+				),
+				'site_url'         => array(
+					'type'        => 'string',
+					'description' => 'The site home URL.',
+				),
+				'admin_email'      => array(
+					'type'        => 'string',
+					'description' => 'The admin email address.',
+				),
+				'posts_published'  => array(
+					'type'        => 'integer',
+					'description' => 'Number of published posts.',
+				),
+				'pages_published'  => array(
+					'type'        => 'integer',
+					'description' => 'Number of published pages.',
+				),
+				'total_users'      => array(
+					'type'        => 'integer',
+					'description' => 'Total registered users.',
+				),
+			),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return bool
+	 */
+	public function is_public_ability() {
+		return true;
 	}
 }

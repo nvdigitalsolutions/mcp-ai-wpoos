@@ -175,7 +175,7 @@ class WP_MCP_AI_Tool_Breakdown_Comic_Panels implements WP_MCP_AI_Tool_Interface,
 			$panels       = isset( $scene['panels'] ) ? $scene['panels'] : array();
 
 			foreach ( $panels as $panel ) {
-				$panel_order++;
+				++$panel_order;
 
 				$panel_title = sprintf(
 					/* translators: %d: panel order number */

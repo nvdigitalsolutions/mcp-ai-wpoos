@@ -320,14 +320,14 @@ class WP_MCP_AI_Tool_Create_PM_Workflow_Rule implements WP_MCP_AI_Tool_Interface
 		do_action( 'wp_mcp_ai_pm_workflow_rule_created', $rule_id, $arguments );
 
 		return array(
-			'success'     => true,
-			'message'     => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: %s: rule title */
 				__( 'Workflow rule created: %s', 'mcp-ai-wpoos-pro' ),
 				$title
 			),
-			'rule_id'     => $rule_id,
-			'rule'        => array(
+			'rule_id' => $rule_id,
+			'rule'    => array(
 				'id'           => $rule_id,
 				'title'        => $title,
 				'trigger_type' => $trigger_type,

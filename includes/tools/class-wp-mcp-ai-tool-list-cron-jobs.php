@@ -19,7 +19,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows users to list all scheduled WordPress cron jobs.
  */
-class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Ability_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
@@ -199,5 +199,106 @@ class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return string
+	 */
+	public function get_ability_identifier() {
+		return 'list-cron-jobs';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return string
+	 */
+	public function get_ability_category() {
+		return 'nvoos-system';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return array
+	 */
+	public function get_output_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'jobs'    => array(
+					'type'        => 'array',
+					'description' => 'Array of scheduled cron jobs.',
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'job_id'               => array(
+								'type'        => 'string',
+								'description' => 'Unique job identifier.',
+							),
+							'hook'                 => array(
+								'type'        => 'string',
+								'description' => 'WordPress hook name.',
+							),
+							'schedule'             => array(
+								'type'        => 'string',
+								'description' => 'Schedule type (single, hourly, daily, etc.).',
+							),
+							'args'                 => array(
+								'type'        => 'array',
+								'description' => 'Hook arguments.',
+							),
+							'creator'              => array(
+								'type'        => 'string',
+								'description' => 'Display name of the job creator.',
+							),
+							'next_run'             => array(
+								'type'        => 'integer',
+								'description' => 'Unix timestamp of next run.',
+							),
+							'next_run_formatted'   => array(
+								'type'        => 'string',
+								'description' => 'Formatted next run date.',
+							),
+							'created_at'           => array(
+								'type'        => 'integer',
+								'description' => 'Unix timestamp of creation.',
+							),
+							'created_at_formatted' => array(
+								'type'        => 'string',
+								'description' => 'Formatted creation date.',
+							),
+							'first_timestamp'      => array(
+								'type'        => 'integer',
+								'description' => 'First execution timestamp.',
+							),
+						),
+					),
+				),
+				'count'   => array(
+					'type'        => 'integer',
+					'description' => 'Number of jobs returned.',
+				),
+				'message' => array(
+					'type'        => 'string',
+					'description' => 'Human-readable summary.',
+				),
+			),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @since 2.0.0
+	 * @return bool
+	 */
+	public function is_public_ability() {
+		return true;
 	}
 }

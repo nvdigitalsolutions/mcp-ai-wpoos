@@ -241,7 +241,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			}
 
 			// Prepare content for embedding.
-			$title   = get_the_title();
+			$title = get_the_title();
 
 			// Combine title and content for embedding.
 			$text_to_embed = $title . "\n\n" . WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post_id );
@@ -382,7 +382,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			}
 
 			// Prepare content for embedding.
-			$title   = get_the_title();
+			$title = get_the_title();
 
 			// Combine title and content for embedding.
 			$text_to_embed = $title . "\n\n" . WP_MCP_AI_Content_Format_Helper::extract_readable_text( $post_id );

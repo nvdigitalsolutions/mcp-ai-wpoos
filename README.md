@@ -11,8 +11,8 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.45
-**Release Date:** 2026-08-05
+**Version:** 1.1.49
+**Release Date:** 2026-08-08
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
@@ -148,17 +148,23 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-### ✨ What's New at a Glance (v1.1.45)
+### ✨ What's New at a Glance (v1.1.48)
 
-- 📄 **Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR).** New `WP_MCP_AI_Self_Hosted_OCR_Client` (640 lines) supports both Baidu Unlimited-OCR (93.23% OmniDocBench, MIT) and DeepSeek-OCR via vLLM with OpenAI-compatible REST APIs. Zero per-page API costs, documents never leave your server. Pro tools: `pro_unlimited_ocr` (dedicated long-horizon tool with structured output, table/form extraction, Paper Store integration) and `pro_batch_ocr` (Action Scheduler async batch processing). Structured extraction service (373 lines) for block/table/form-field parsing. Embedded backend registration + OCR health dashboard. Admin settings UI with Test Connection buttons. Base `extract_image_text` and Pro `pro_document_ocr` now include `unlimited_ocr` and `deepseek_ocr` provider options. (PR #5795, Proposal 018)
-- 🎙️ **Embedded Addon v0.2.0.** Backend registry expanded with voice tool calling, OpenMed healthcare tools, and new MCP abilities. OCR document ability registered via WordPress Abilities API for AI agent discovery.
-- 🏥 **AI Transparency & SGI Compliance (Proposal 017).** AI transparency and SGI compliance infrastructure integrated.
-- 📚 **Comic Reader Addon v0.2.0.** Modern comic book reader and creator updated with enhanced CBR/CBZ/CB7/CBT format support.
-- 🕸️ **Graphify Ecosystem.** Standalone plugins released: nvoos-graphify v1.0.1, nvoos-graphify-ai v1.0.0, nvoos-graphify-ai-platform v1.0.0.
-- 🤖 **Build & Release Automation.** Auto-build nvdigital-oos WP.org packages on every release.
-- 🐛 **CCT Stability & API Key Fixes** — see [v1.1.44 release notes](#-latest-updates-v1144--august-2026) below.
-- 🛡️ **Security Hardening (Proposals 016+017)** — see [v1.1.44 release notes](#-latest-updates-v1144--august-2026) below.
+- 🛒 **Shopify Sync Toolkit — 7 Bug Fixes.** Fatal error (`graphql_query()` → `graphql()`) on Admin API connection test. Dead code in `list_by_status` replaced with direct `SELECT COUNT(*)` query. Always-zero analytics count now uses actual API response edges instead of empty array. Duplicate `get_option()` call and redundant `$sync_mode` assignment removed. Infinite loop risk in `truncate()` eliminated — paginated while-loop replaced with direct `DELETE FROM {table}`. Double DB query per upsert halved via by-ref `&$operation` output parameter. Missing `orderby`/`order` schema parameters added with sanitization passthrough. (PR #5815)
+- 🔒 **PHPCS CVE-2026-67434.** `squizlabs/php_codesniffer` bumped 3.13.4 → 3.13.6 across 3 `composer.lock` files. Resolves arbitrary code execution via crafted ruleset XML. Dev dependency only — no functional impact.
+- 📚 **Default Skill Catalogues.** Brave Search Skills and all 22 WordPress Agent Skills added to the default skill catalogue for new assistants out of the box.
+- 🛠️ **NVoOS Graphify Standalone Plugins.** 3 new standalone plugin ZIPs in `plugins/` directory: Graphify v1.0.1, Graphify AI Platform v1.0.0, and Graphify AI v1.0.0.
 
+### ✨ What's New at a Glance (v1.1.47)
+
+- 🛢️ **MySQL Connection Exhaustion Fix (Cloudways).** Cron system overhaul with unified concurrency limits, per-process memory caps, and staggered offset scheduling to prevent connection-pool saturation. Activation bootstrap now uses connection throttling. Service status registry hardened. Pro status page JS, AJAX handler, and dashboard improvements. 7 files, +438/-89 lines. (PR #5809)
+- 🔄 **Update Checker Cache Bust.** Manual "Check for Updates" now clearss releases from GitHub Releases API and installs updates via WordPress `Plugin_Upgrader`. Base-to-complete upgrade path in Settings → Advanced. Pro addon update support with rollback. Nonce-scoped actions. (PRs #5800–#5804)
+- 🔌 **Abilities API Selective Adoption (Proposal 019).** New `includes/abilities/` framework — Registrar, Bridge, Category Registrar, and Security Bridge for machine-readable plugin operations with JSON Schema contracts. Tool-ability interface for MCP/AI agent discovery. 5 test files. (PR #5799)
+- 🐛 **Status Page Fixes.** Fatal error in Pro status REST endpoint resolved. JS errors and i18n text domain consistency fixed on the status dashboard. (PR #5806)
+- 📦 **Knowledge Base Auto-Build.** CI auto-builds `knowledge-base.zip` when playbook files change. (PR #5797)
+- 🧹 **PHPCS Cleanup.** Parse error fixes from canonical envelope conversion, text domain mismatch corrections, and WPCS formatting across 100+ tool files. (PRs #5798, #5804)
+- 📄 **Self-Hosted OCR & More** — see [v1.1.45 release notes](#-latest-updates-v1145--august-2026) below.
+- 
 ### ✨ What's New at a Glance (v1.1.43)
 
 - 🔒 **Security Hardening v1.1.43 (16 files).** SSRF protection across 7 provider connection handlers + A2A agent URL. SQL table-name validation against injection. A2A per-assistant agent cards now auth-gated. Chat SPA /config and /manifest endpoints require authentication (no longer public). Missing args schemas on 7 REST endpoints. Guest rate-limiting now IP-based (DoS vector closed). 3 tool capability mismatches corrected. Centralized defense-in-depth capability gate in Tool Registry. PHP object injection prevention via `safe_unserialize` helper.
@@ -331,6 +337,17 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - 📝 **Docs Fixes.** Broken links after Unix-theory reorganization resolved.
 - 💰 **June 2026 Model Pricing.** All 13 provider pricing updated.
 - 📋 **Plugin Restructuring Proposals v3.0.** Graphify-centric architecture spec and roadmap.
+- 🛡️ **Pro Toolkits Security Audit.** 9 HIGH-severity security findings fixed.
+- 📋 **Reviewer Onboarding Docs.** Complete reviewer documentation suite (`docs/project/FOR_REVIEWERS.md`).
+- 🐳 **Docker Dev Environments.** WordPress, Laravel, and Craft CMS Docker environments all fixed.
+- 🧪 **Test Infrastructure.** 95% of PHPUnit failures resolved across base, pro, and addon test suites.
+- 🔧 **Infrastructure Fixes.** TCPDF autoloader fix, Pro vendor files committed, puppeteer detection path fix, shallow clone recommendation.
+
+### ✨ What's New at a Glance (v1.1.25)
+
+- 🧩 **Unified Blueprint System.** 55 pre-built AI assistant blueprints across 25 toolkits.
+- ☁️ **Cloudways Pro Toolkit.** 60 AI tools for server and application management via Cloudways API v2.
+- 🏢 **CRM Toolkit Phases A–E Complete.** 70+ tools: lead management, multi-channel triage, sequences, command center, complcture spec and roadmap.
 - 🛡️ **Pro Toolkits Security Audit.** 9 HIGH-severity security findings fixed.
 - 📋 **Reviewer Onboarding Docs.** Complete reviewer documentation suite (`docs/project/FOR_REVIEWERS.md`).
 - 🐳 **Docker Dev Environments.** WordPress, Laravel, and Craft CMS Docker environments all fixed.
@@ -566,21 +583,47 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.45 — August 2026)
+## 🆕 Latest Updates (v1.1.49 — August 2026)
 
-### August 5, 2026 — Self-Hosted OCR, Embedded v0.2.0, AI Transparency, Graphify, Build Automation 📄🎙️🏥🕸️🤖
+### August 8, 2026 — Gemini Model Fix, Update Reactivation, Release ZIP Cleanup
 
-- ✅ **Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR) — Proposal 018 (17 files, +4,087 lines).** New unified vLLM client class supports both Baidu Unlimited-OCR (3B, MIT, 93.23% OmniDocBench) and DeepSeek-OCR (~3B, MIT) via self-hosted GPU infrastructure. Both models share the same integration pattern (vLLM + OpenAI-compatible REST API + NGramPerReqLogitsProcessor). New Pro tools: `pro_unlimited_ocr` (dedicated long-horizon OCR with structured output modes — text/structured/raw, table extraction, form field detection, Paper Store persistence) and `pro_batch_ocr` (Action Scheduler batch processing, sync up to 10 docs, async up to 100). Structured extraction service with `<|det|>` marker parsing, table/form-field extraction. Existing `extract_image_text` (Base) and `pro_document_ocr` (Pro) tools now include `unlimited_ocr` and `deepseek_ocr` as provider enum values. Admin settings: two new endpoint URL fields with AJAX Test Connection buttons. OCR client: 640 lines with encode/fetch/image OCR/multi-page methods, model-specific defaults, post-processing pipeline.
-- ✅ **Embedded Addon v0.2.0 — Backend Registry, Voice, OpenMed, MCP Abilities.** Embedded backend registry expanded. Voice tool calling support added. OpenMed healthcare tools integrated. New OCR document ability registered via `wp_register_ability()` for AI agent discovery through the WordPress Abilities API. OCR health dashboard page with connection status, model info, requirements table, and Docker deployment guide.
-- ✅ **AI Transparency & SGI Compliance — Proposal 017.** AI transparency and SGI compliance infrastructure integrated into the plugin framework.
-- ✅ **Comic Reader Addon v0.2.0.** Updated with enhanced format support and reading interface improvements.
-- ✅ **Graphify Ecosystem Releases.** Three standalone plugins released: nvoos-graphify v1.0.1, nvoos-graphify-ai v1.0.0, nvoos-graphify-ai-platform v1.0.0.
-- ✅ **Build & Release Automation.** Auto-build workflow for nvdigital-oos WP.org packages triggers on every release. (PR #5794)
-- 📦 **Versioning** — bumped to **1.1.45** across all version-bearing files. Pro addon: 1.1.28. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**. Knowledge base: **311 professions** (12 industry categories).
+- ✅ **Gemini Model Resolution Fix — PR #5817 (1 file, 2 lines).** `includes/class-wp-mcp-ai-gemini-client.php` — model resolution now uses the correct settings key instead of the deprecated fallback. The old `gemini-pro` model fallback has been removed; all Gemini model lookups now go through the canonical provider settings path. (PR #5817)
+- ✅ **Update Reactivation & Release ZIP Cleanup — PR #5816 (68 files, +164/-18 lines).** `includes/class-wp-mcp-ai-plugin-updater.php` (+152/-18 lines) — update reactivation flow fixed; plugin now correctly handles post-update reactivation. Nonce-scoped update actions hardened. `.distignore` and `.gitattributes` updated to exclude development-only files (`.agents/`, `.context/`, `.github/`, IDE configs, test fixtures) from release ZIPs. `bin/build-plugin-zip.sh` updated with new exclusion rules. Minor fixes in OCR service, research report generator, research project tool, video analysis service, and 5 image-analysis tools. (PR #5816)
+- 📦 **Versioning** — bumped to **1.1.49** across all version-bearing files. Pro addon: 1.1.28. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
 
-## 🆕 Previous Updates (v1.1.44 — August 2026)
+### August 8, 2026 — Shopify Sync Toolkit Fixes, PHPCS Security, Skill Catalogues (v1.1.48)
 
-### August 2–4, 2026 — CCT Stability, Proposal 016+017 Hardening, API Key Fixes, Docs 🐛🛡️🔑📝
+- ✅ **Shopify Sync Toolkit — 7 Fixes (PR #5815, 6 files).** Fatal error fix: `graphql_query()` → `graphql()` in Admin API connection test. Dead `list_by_status` code removed — replaced two broken `per_page => 1` loops with a direct `SELECT COUNT(*) WHERE status = %s`. Always-zero analytics count now uses `count($edges)` from the actual API response. Duplicate `get_option()` call and redundant `$sync_mode` assignment removed. Infinite loop risk eliminated — paginated `truncate()` while-loop replaced with direct `DELETE FROM {table}` SQL. Double DB query per upsert halved — `upsert()` now accepts a by-reference `&$operation` output parameter. Missing `orderby`/`order` schema parameters added with sanitization passthrough.
+- ✅ **PHPCS CVE-2026-67434.** `squizlabs/php_codesniffer` bumped 3.13.4 → 3.13.6 in all 3 `composer.lock` files. Resolves arbitrary code execution via crafted ruleset XML. Dev dependency only — no functional impact.
+- ✅ **Default Skill Catalogues.** Brave Search Skills and all 22 WordPress Agent Skills added to default skill catalogue for new assistants out of the box.
+- ✅ **NVoOS Graphify Standalone Plugins.** 3 new standalone plugin ZIPs in `plugins/` directory: Graphify v1.0.1, Graphify AI Platform v1.0.0, and Graphify AI v1.0.0.
+- 📦 **Versioning** — bumped to **1.1.48** across all version-bearing files. Pro addon: 1.1.28. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
+
+### August 7, 2026 — MySQL Connection Exhaustion Fix, Update Cache Bust, Mermaid Security (v1.1.47)
+
+- ✅ **MySQL Connection Exhaustion Fix (Cloudways) — PR #5809 (7 files, +438/-89 lines).** Cron system overhaul in `includes/bootstrap/cron.php` — unified concurrency limits, per-process memory caps, and staggered offset scheduling prevent connection-pool saturation on Cloudways and similar hosts with restrictive MySQL connection limits. Each cron hook now respects a concurrency ceiling and memory budget before forking additional workers. Activation bootstrap (`includes/bootstrap/activation.php`) updated with resource-aware connection throttling — batched queries with explicit connection release during activation. Service status registry (`includes/class-wp-mcp-ai-service-status-registry.php`) hardened with transient caching to reduce database round-trips during status polling. Maintenance CPT streamlined. Pro status page: JS improvements (+99 lines), AJAX handler enhancements (+74 lines), dashboard fixes. (PR #5809)
+- ✅ **Update Checker Cache Bust — PR #5810 (1 file, +6 lines).** `ajax_check_update()` and `ajax_check_pro_update()` in `includes/class-wp-mcp-ai-plugin-updater.php` now delete cached release data before fetching from the GitHub Releases API. Manual "Check for Updates" clicks always return live data instead of the stale 12-hour TTL cache.
+- ✅ **Mermaid Security Fixes (1 addon, 2 files).** npm audit fix in `addons/canvas-toolkit/`: mermaid 11.15.0 → 11.16.1 resolves 5 CVEs (GHSA-3rrr-jr9j-h3q3 prototype pollution, GHSA-6x64-9x62-f2gx CSS injection, GHSA-rhh3-jpg6-66xh radar DoS, GHSA-2v8p-3f2j-5mp7 XY Chart DoS, GHSA-c4c3-pg64-4m4v config prototype pollution). Transitive bumps: dompurify 3.4.12 → 3.4.13, nanoid 3.3.16 → 3.3.18. Canvas toolkit dist bundle regenerated. Zero functional impact — mermaid mode is an unused stub.
+- 📦 **Versioning** — bumped to **1.1.47** across all version-bearing files. Pro addon: 1.1.27. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
+
+## 🆕 Latest Updates (v1.1.46 — August 2026)
+
+### August 5–6, 2026 — Backup & Restore, Plugin Updater, Abilities API, Status Page Fixes, PHPCS Cleanup
+
+- ✅ **Comprehensive Backup & Restore — Proposal 020 (14 files, +3,660 lines).** New modular export system with export manager (512 lines) and 11 export providers (8 base + 3 Pro). Base providers: Core Settings (258 lines), Assistants (285 lines), CPTs (319 lines), Custom Tables (394 lines), Federation (253 lines), Addon Options (337 lines), Toolkit Options (282 lines). Pro providers: JetEngine CCTs (329 lines), License keys (190 lines), Remote Sites (324 lines). All implement `WP_MCP_AI_Export_Provider_Interface` with `export()` and `import()` methods. JSON-based export/import with chunked file I/O and progress reporting. Admin UI in Settings → Advanced expanded by 638 lines with provider checkboxes, export/import buttons, and progress feedback. Subsystem architecture documented in `includes/admin/export/README.md` (202 lines). Proposal 020 includes proposal (308 lines) and implementation plan (1,249 lines). (PRs #5805, #5807)
+- ✅ **GitHub-Based Plugin Updater — 5 PRs, +772 lines.** New `WP_MCP_AI_Plugin_Updater` class fetches release metadata from the GitHub Releases API, compares versions against installed, downloads ZIP artifacts, and installs updates via WordPress `Plugin_Upgrader`. Base-to-complete upgrade path added to Settings → Advanced — one-click upgrade from base-only to complete package. Pro addon update support detects and updates the Pro addon alongside the base plugin when bundled; hides redundant Pro updater UI when already included. Core updates use `Plugin_Upgrader`; Pro updates use direct copy with rollback. Nonce-scoped update actions with proper capability checks. WPCS formatting and phpcs:ignore annotations for pre-existing nonce warnings in updater files. (PRs #5800–#5804)
+- ✅ **Abilities API Selective Adoption — Proposal 019 (11 files, +2,364 lines).** New `includes/abilities/` framework introducing machine-readable plugin operations with JSON Schema contracts for AI agent and MCP tool discovery. Registrar (188 lines) for ability registration/discovery/lifecycle. Bridge (235 lines) connecting abilities to the tool registry for MCP and AI agent discovery. Category Registrar (92 lines) for hierarchical ability grouping. Security Bridge (289 lines) providing capability-based access control per ability. New `WP_MCP_AI_Tool_Ability_Interface` (61 lines) — contract for tools exposing discoverable abilities. Bootstrap integration at `abilities-init.php` (49 lines). 5 PHPUnit test files: backward compatibility (139 lines), bridge (279 lines), registrar (190 lines), category registrar (96 lines), mock tool (158 lines). Reference documentation at `docs/reference/abilities-registry.md` (106 lines). Folder README at `includes/abilities/README.md` (33 lines). Proposal 019 includes proposal (220 lines), implementation plan (452 lines), and appendix (580 lines). OOS Bridge Wave 2 updated with new tool registry integrations. (PR #5799)
+- ✅ **Status Page Fixes — 2 files, +108 lines.** Fatal error in Pro status REST endpoint resolved — missing methods in `class-wp-mcp-ai-pro-status-ajax.php` causing 500 errors on status API calls. JavaScript errors on the status dashboard page fixed with proper i18n text domain consistency. `pro-status-page.js` (32 lines changed) and `pro-status-dashboard-page.php` (12 lines changed). (PR #5806)
+- ✅ **Knowledge Base Auto-Build.** CI workflow auto-builds `knowledge-base.zip` when playbook files change, ensuring the packaged knowledge base stays current with the profession registry. (PR #5797)
+- ✅ **PHPCS Cleanup & Canonical Envelope Compliance.** Remaining parse errors from the canonical envelope conversion resolved across tool files. Text domain mismatches (`mcp-ai-wpoos` vs `mcp-ai-wpoos-pro`) corrected across Pro tool files. WPCS indentation, alignment, and inline comment fixes applied to 100+ files across base, Pro, and core tool directories. (PRs #5798, #5804)
+- 📦 **Versioning** — bumped to **1.1.46** across all version-bearing files. Pro addon: 1.1.29. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**. Knowledge base: **311 professions** (12 industry categories).
+
+## 🆕 Previous Updates (v1.1.45 — August 2026)
+
+### August 5, 2026 — Self-Hosted OCR, Embedded v0.2.0, AI Transparency, Graphify, Build Automation
+
+- ✅ **Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR) — Proposal 018 (17 files, +4,087 lines).** New unified vLLM client class supports both Baidu Unlimited-OCR (3B, MIT, 93.23% OmniDocBench) and DeepSeek-OCR (~3B, MIT) via self-hosted GPU infrastructure. Both models share the same integration pattern (vLLM + OpenAI-compatible REST API + NGramPerReqLogitsProcessor). New Pro tools: `pro_unlimited_ocr` (dedicated long-horizon OCR with structured output modes — text/structured/raw, table extraction, form field detection, Paper Store persistence) and `pro_batch_ocr` (Action Scheduler batch processing, sync up to 10 docs, async up to 100). Structured extraction service with marker parsing, table/form-field extraction. Existing `extract_image_text` (Base) and `pro_document_ocr` (Pro) tools now include `unlimited_ocr` and `deepseek_ocr` as provider enum values. Admin settings: two new endpoint URL fields with AJAX Test Connection buttons. OCR client: 640 lines.
+- ✅ **Embedded Addon v0.2.0.** Backend registry expanded with voice tool calling, OpenMed healthcare tools, and new MCP — CCT Stability, Proposal 016+017 Hardening, API Key Fixes, Docs 🐛🛡️🔑📝
 
 - ✅ **CCT Stability Fixes (4 PRs).** CCT duplicate registration race condition resolved with database-backed mutex lock (`wp_mcp_ai_cct_registration_mutex` option). FlowHub CCT duplicate registration corrected — second menu title entry removed, registration guard now checks for existing CCT before attempting re-registration. Base plugin fatal error when `lib/core/` is absent (`require_once` of non-existent `PlatformFlushInterface.php`) — now guarded with `file_exists()` check, plugin continues gracefully without core features.
 - ✅ **API Key & Provider Fixes (2 PRs).** Gemini API key resolution in video services (`generate_video_via_veo`, `generate_video_via_imagen`) restored after the v1.1.43 credential split moved keys to `wp_mcp_ai_credentials` option. Veo fallback chain now correctly forwards async context parameters (task ID, poll URL) between fallback attempts — fixes silent failures when primary model is unavailable. Omni API endpoint URL corrected. Audio completion hook registration fixed.
@@ -894,8 +937,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - 🚀 **Getting Started Wizard** - Guided 4-step onboarding (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`) that walks new users through provider setup and use-case selection. Selecting a preset (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, or General Purpose) seeds a fully-configured assistant with tools, system prompt, and tuned temperature — ready to use immediately.【F:includes/admin/class-wp-mcp-ai-onboarding-wizard.php†L1-L53】【F:assets/js/onboarding-wizard.js†L1-L303】
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
-- 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
-- 🔍 Search Media Library knowledge attachments with permission-aware download URLs
+- 🧰 Per-assistant defaults for model, tempetry categories, or create entire teams of specialists with one click. Includes back knowledge attachments with permission-aware download URLs
 - ⚡ Build reusable prompt shortcuts with optional tool targeting and inline descriptions so operators can trigger common tasks with one click.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
 - 🧊 Elementor widgets for embedding chat surfaces, onboarding content, and MCP dashboards inside Elementor
 
@@ -3540,6 +3582,30 @@ For security issues, please review our [Security Policy](SECURITY.md) and report
 
 - **GitHub Repository:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 - **Maintained by:** [NV Digital Solutions](https://nvdigitalsolutions.com/)
+- **License:** GPLv3 or later
+
+---
+
+## 📄 License
+
+NV oOS ships under a **three-tier license model**:
+
+| Component | License |
+|-----------|---------|
+| **Base plugin** (root + `includes/`) | [GPL-3.0-or-later](LICENSE) |
+| `addons/algorave/` | **AGPL-3.0-or-later** (bundles `@strudel/web` AGPL-3.0) |
+| `addons/pro/`, `addons/graphify/`, `addons/embedded/`, `addons/cornerstone3d/`, `addons/canvas/`, `addons/cloud-worker/`, `addons/fantasy-football/` | **Proprietary** — © NV Digital Solutions, all rights reserved |
+
+The base plugin's GPL-3 grant is in [LICENSE](LICENSE). Bundled third-party
+dependencies retain their upstream licenses; see [`CREDITS.md`](CREDITS.md)
+for the full attribution index.
+
+---
+
+**Thank you for using Open Operator System!**
+
+For the latest updates, documentation, and support, visit the [GitHub repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos).
+olutions](https://nvdigitalsolutions.com/)
 - **License:** GPLv3 or later
 
 ---

@@ -1602,7 +1602,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Handle settings export AJAX request.
 		 *
-		 * Exports all plugin settings as a JSON file for backup or migration.
+		 * Delegates to the Export Manager for provider-based export.
+		 * Supports ?providers=id1,id2 query param for selective export.
+		 * Supports ?password=... for encrypted export.
+		 *
+		 * @since 1.0.0
 		 */
 		public function handle_export_settings() {
 			check_ajax_referer( 'wp-mcp-ai-dashboard', 'nonce' );
@@ -1611,28 +1615,46 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
 			}
 
-			// Clear cache before export to ensure fresh data.
-			WP_MCP_AI_Admin_Settings::reset_settings_cache();
-			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
-			wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
+			// Determine which providers to export.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Split sanitized below.
+			$provider_ids = array();
+			if ( ! empty( $_GET['providers'] ) ) {
+				$provider_ids = explode( ',', sanitize_text_field( wp_unslash( $_GET['providers'] ) ) );
+				$provider_ids = array_map( 'sanitize_key', $provider_ids );
+			}
 
-			// Use get_settings() to export merged defaults + decrypted sensitive values,
-			// consistent with what the Backup & Restore UI displays (not raw get_option).
-			// get_settings() handles the credentials merge automatically.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			// Optional password for encrypted export.
+			$password = '';
+			if ( ! empty( $_GET['password'] ) ) {
+				$password = sanitize_text_field( wp_unslash( $_GET['password'] ) );
+			}
 
-			// Add export metadata.
-			$export_data = array(
-				'version'        => '1.0',
-				'exported_at'    => current_time( 'mysql' ),
-				'exported_by'    => wp_get_current_user()->user_login,
-				'site_url'       => get_site_url(),
-				'plugin_version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
-				'settings'       => $settings,
-			);
+			// Delegate to Export Manager if available.
+			if ( class_exists( 'WP_MCP_AI_Export_Manager' ) ) {
+				$manager = WP_MCP_AI_Export_Manager::instance();
+				$json    = $manager->export( $provider_ids, $password );
+			} else {
+				// Fallback: legacy export (core settings only).
+				WP_MCP_AI_Admin_Settings::reset_settings_cache();
+				wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+				wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
+				$settings = WP_MCP_AI_Admin_Settings::get_settings();
+				$json     = wp_json_encode(
+					array(
+						'version'        => '1.0',
+						'exported_at'    => current_time( 'mysql' ),
+						'exported_by'    => wp_get_current_user()->user_login,
+						'site_url'       => get_site_url(),
+						'plugin_version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
+						'settings'       => $settings,
+					),
+					JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+				);
+			}
 
-			// Create JSON with pretty print.
-			$json = wp_json_encode( $export_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+			if ( is_wp_error( $json ) ) {
+				wp_send_json_error( array( 'message' => $json->get_error_message() ) );
+			}
 
 			if ( false === $json ) {
 				wp_send_json_error( array( 'message' => __( 'Failed to encode settings as JSON.', 'mcp-ai-wpoos' ) ) );
@@ -1649,7 +1671,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			header( 'Pragma: no-cache' );
 			header( 'Expires: 0' );
 
-			// Output JSON for file download. JSON is already safely encoded via wp_json_encode() on line 1055.
+			// Output JSON for file download. JSON is already safely encoded via wp_json_encode().
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON output for file download, already encoded with wp_json_encode().
 			echo $json;
 			exit;
@@ -1658,7 +1680,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Handle settings import AJAX request.
 		 *
-		 * Imports settings from a JSON file.
+		 * Delegates to the Export Manager for provider-based import.
+		 * Supports legacy v1 format (auto-wrapped as core_settings).
+		 * Supports encrypted files via ?password=... POST field.
+		 *
+		 * @since 1.0.0
 		 */
 		public function handle_import_settings() {
 			check_ajax_referer( 'wp-mcp-ai-dashboard', 'nonce' );
@@ -1709,109 +1735,140 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				wp_send_json_error( array( 'message' => __( 'File content too large.', 'mcp-ai-wpoos' ) ) );
 			}
 
-			// Decode JSON.
-			$import_data = json_decode( $json_content, true );
+			// Optional password for encrypted import.
+			$password = '';
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+			if ( ! empty( $_POST['password'] ) ) {
+				$password = sanitize_text_field( wp_unslash( $_POST['password'] ) );
+			}
 
-			if ( null === $import_data || JSON_ERROR_NONE !== json_last_error() ) {
+			// Determine which providers to import (empty = all in file).
+			$provider_ids = array();
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+			if ( ! empty( $_POST['providers'] ) ) {
+				$provider_ids = explode( ',', sanitize_text_field( wp_unslash( $_POST['providers'] ) ) );
+				$provider_ids = array_map( 'sanitize_key', $provider_ids );
+			}
+
+			// Delegate to Export Manager if available.
+			if ( class_exists( 'WP_MCP_AI_Export_Manager' ) ) {
+				$manager = WP_MCP_AI_Export_Manager::instance();
+				$result  = $manager->import( $json_content, $provider_ids, $password );
+			} else {
+				// Fallback: legacy import (core settings only).
+				$import_data = json_decode( $json_content, true );
+				if ( null === $import_data || ! isset( $import_data['settings'] ) ) {
+					wp_send_json_error( array( 'message' => __( 'Invalid settings file structure.', 'mcp-ai-wpoos' ) ) );
+				}
+
+				// Legacy backup + sanitize + save logic.
+				$current_settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				$current_credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+				update_option(
+					'wp_mcp_ai_settings_backup_pre_import_' . time(),
+					array_merge( $current_settings, is_array( $current_credentials ) ? $current_credentials : array() ),
+					false
+				);
+
+				$sanitized_settings = $this->sanitize_settings( $import_data['settings'], '' );
+				$validation_errors  = $this->validate_merged_settings( $sanitized_settings, $current_settings );
+
+				if ( ! empty( $validation_errors ) ) {
+					wp_send_json_error(
+						array(
+							'message' => __( 'Settings validation failed:', 'mcp-ai-wpoos' ),
+							'errors'  => $validation_errors,
+						)
+					);
+				}
+
+				$import_credentials   = array();
+				$import_non_sensitive = array();
+				foreach ( $sanitized_settings as $key => $value ) {
+					if ( WP_MCP_AI_Admin_Settings_Base::is_sensitive_setting_key( $key ) ) {
+						$import_credentials[ $key ] = $value;
+					} else {
+						$import_non_sensitive[ $key ] = $value;
+					}
+				}
+
+				$final_credentials   = array_merge( is_array( $current_credentials ) ? $current_credentials : array(), $import_credentials );
+				$final_non_sensitive = array_merge( is_array( $current_settings ) ? $current_settings : array(), $import_non_sensitive );
+				$update_result       = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $final_non_sensitive, true );
+
+				if ( count( $final_credentials ) > 0 ) {
+					update_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, $final_credentials, false );
+				}
+
+				WP_MCP_AI_Admin_Settings::reset_settings_cache();
+				wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+				wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
+				delete_transient( 'wp_mcp_ai_settings_cache' );
+
+				wp_send_json_success(
+					array(
+						'message'        => __( 'Settings imported successfully!', 'mcp-ai-wpoos' ),
+						'imported_count' => count( $sanitized_settings ),
+					)
+				);
+				return;
+			}
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+			}
+
+			$results       = isset( $result['results'] ) ? $result['results'] : array();
+			$success_count = 0;
+			$error_count   = 0;
+			$messages      = array();
+
+			foreach ( $results as $pid => $r ) {
+				if ( ! empty( $r['success'] ) ) {
+					++$success_count;
+				} else {
+					++$error_count;
+					$messages[] = $r['message'];
+				}
+			}
+
+			if ( $error_count > 0 && 0 === $success_count ) {
 				wp_send_json_error(
 					array(
-						'message' => sprintf(
-						/* translators: %s: JSON error message */
-							__( 'Invalid JSON format: %s', 'mcp-ai-wpoos' ),
-							json_last_error_msg()
-						),
+						'message' => __( 'Import failed for all providers.', 'mcp-ai-wpoos' ),
+						'errors'  => $messages,
 					)
 				);
 			}
 
-			// Validate import data structure.
-			if ( ! isset( $import_data['settings'] ) || ! is_array( $import_data['settings'] ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid settings file structure.', 'mcp-ai-wpoos' ) ) );
-			}
-
-			// Backup current settings before import (include credentials).
-			$current_settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			$current_credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
-			update_option(
-				'wp_mcp_ai_settings_backup_pre_import_' . time(),
-				array_merge( $current_settings, is_array( $current_credentials ) ? $current_credentials : array() ),
-				false
+			$msg = sprintf(
+				/* translators: 1: number of successful imports, 2: number of failed imports */
+				_n(
+					'%1$d provider imported successfully.',
+					'%1$d providers imported successfully.',
+					$success_count,
+					'mcp-ai-wpoos'
+				),
+				$success_count
 			);
 
-			// Sanitize imported settings through section-based sanitization.
-			$sanitized_settings = $this->sanitize_settings( $import_data['settings'], '' );
-
-			// Validate the sanitized settings.
-			$validation_errors = $this->validate_merged_settings( $sanitized_settings, $current_settings );
-
-			if ( ! empty( $validation_errors ) ) {
-				wp_send_json_error(
-					array(
-						'message' => __( 'Settings validation failed:', 'mcp-ai-wpoos' ),
-						'errors'  => $validation_errors,
-					)
+			if ( $error_count > 0 ) {
+				$msg .= ' ' . sprintf(
+					/* translators: %d: number of failed imports */
+					_n(
+						'(%d provider had errors.)',
+						'(%d providers had errors.)',
+						$error_count,
+						'mcp-ai-wpoos'
+					),
+					$error_count
 				);
 			}
-
-			// Save imported settings — split sensitive from non-sensitive.
-			$import_credentials   = array();
-			$import_non_sensitive = array();
-			foreach ( $sanitized_settings as $key => $value ) {
-				if ( WP_MCP_AI_Admin_Settings_Base::is_sensitive_setting_key( $key ) ) {
-					$import_credentials[ $key ] = $value;
-				} else {
-					$import_non_sensitive[ $key ] = $value;
-				}
-			}
-
-			// Merge incoming credentials with existing — never wipe.
-			// Existing credentials take precedence for keys the user did NOT
-			// explicitly include in the import file.
-			if ( ! is_array( $current_credentials ) ) {
-				$current_credentials = array();
-			}
-			$final_credentials = array_merge( $current_credentials, $import_credentials );
-
-			// Merge non-sensitive settings with existing — never wipe settings
-			// that are absent from the import file. This mirrors the merge
-			// pattern used by handle_save_settings() for form-based saves.
-			if ( ! is_array( $current_settings ) ) {
-				$current_settings = array();
-			}
-			$final_non_sensitive = array_merge( $current_settings, $import_non_sensitive );
-
-			// Save non-sensitive settings (autoload=true).
-			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $final_non_sensitive, true );
-
-			// Save credentials (autoload=false).
-			if ( count( $final_credentials ) > 0 ) {
-				update_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, $final_credentials, false );
-			}
-
-			// update_option() returns false when the new value is the same as the
-			// existing value. This is not an error — it means the import didn't
-			// change anything (e.g., importing the same file twice). Only treat
-			// it as a failure when the incoming data genuinely differs from what
-			// is already stored.
-			if ( false === $update_result ) {
-				$existing_non_sensitive = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-				// phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual -- Loose comparison handles type coercion between DB-stored strings and import-supplied ints/bools.
-				if ( $final_non_sensitive != $existing_non_sensitive ) {
-					wp_send_json_error( array( 'message' => __( 'Failed to save imported settings.', 'mcp-ai-wpoos' ) ) );
-				}
-			}
-
-			// Clear all caches.
-			WP_MCP_AI_Admin_Settings::reset_settings_cache();
-			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
-			wp_cache_delete( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, 'options' );
-			delete_transient( 'wp_mcp_ai_settings_cache' );
 
 			wp_send_json_success(
 				array(
-					'message'        => __( 'Settings imported successfully!', 'mcp-ai-wpoos' ),
-					'imported_count' => count( $sanitized_settings ),
-					'imported_from'  => isset( $import_data['site_url'] ) ? esc_url( $import_data['site_url'] ) : 'unknown',
+					'message' => $msg,
+					'results' => $results,
 				)
 			);
 		}

@@ -492,7 +492,7 @@ class WP_MCP_AI_Media_Template_Presets {
 	 */
 	public static function get_collection_presets() {
 		return array(
-			'social_media_kit'     => array(
+			'social_media_kit'      => array(
 				'title'       => __( 'Social Media Kit', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Pre-configured collection with Instagram, Facebook, Twitter, and LinkedIn templates for consistent social media branding.', 'mcp-ai-wpoos-pro' ),
 				'category'    => 'social-media',
@@ -506,7 +506,7 @@ class WP_MCP_AI_Media_Template_Presets {
 				'operations'  => array( 'resize_graphic' ),
 				'templates'   => array( 'product_thumbnail', 'hero_banner', 'category_banner' ),
 			),
-			'branding_essentials'  => array(
+			'branding_essentials'   => array(
 				'title'       => __( 'Branding Essentials', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Logo watermark collection with three watermark positions: bottom-right, center, and subtle bottom-left.', 'mcp-ai-wpoos-pro' ),
 				'category'    => 'branding',
@@ -520,7 +520,7 @@ class WP_MCP_AI_Media_Template_Presets {
 				'operations'  => array( 'resize_graphic' ),
 				'templates'   => array( 'blog_featured_image', 'newsletter_header', 'email_signature' ),
 			),
-			'promotional_kit'      => array(
+			'promotional_kit'       => array(
 				'title'       => __( 'Promotional Kit', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Promotional banners, sale badges, and event posters for marketing campaigns.', 'mcp-ai-wpoos-pro' ),
 				'category'    => 'marketing',
@@ -676,8 +676,8 @@ class WP_MCP_AI_Media_Template_Presets {
 				'post_name'    => 'preset-' . $slug,
 				'post_author'  => 1,
 				'meta_input'   => array(
-					'_mcp_ai_collection_is_preset' => true,
-					'_mcp_ai_collection_preset_id' => $slug,
+					'_mcp_ai_collection_is_preset'        => true,
+					'_mcp_ai_collection_preset_id'        => $slug,
 					'_mcp_ai_collection_preset_templates' => wp_json_encode( $collection['templates'] ),
 				),
 			);

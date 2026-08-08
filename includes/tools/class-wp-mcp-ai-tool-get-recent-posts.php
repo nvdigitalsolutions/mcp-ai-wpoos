@@ -177,8 +177,8 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 				'content' => 2.0,
 				'excerpt' => 1.0,
 			);
-			$results = $this->rank_by_relevance( $results, $search, $field_weights, $algorithm );
-			$results = array_slice( $results, 0, $limit );
+			$results       = $this->rank_by_relevance( $results, $search, $field_weights, $algorithm );
+			$results       = array_slice( $results, 0, $limit );
 		}
 
 		$summary_text = sprintf(

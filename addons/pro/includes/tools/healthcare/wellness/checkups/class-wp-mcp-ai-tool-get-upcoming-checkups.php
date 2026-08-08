@@ -137,7 +137,7 @@ class WP_MCP_AI_Tool_Get_Upcoming_Checkups implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Calculate date range.
-		$now      = current_time( 'Y-m-d H:i' );
+		$now = current_time( 'Y-m-d H:i' );
 		// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
 		$end_date = date( 'Y-m-d H:i', strtotime( "+{$days} days", current_time( 'timestamp' ) ) );
 

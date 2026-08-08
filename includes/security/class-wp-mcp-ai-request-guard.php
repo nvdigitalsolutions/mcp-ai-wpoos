@@ -231,11 +231,11 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 		 * @return int Maximum nesting depth found.
 		 */
 		private static function measure_json_depth( $json ) {
-			$depth    = 0;
-			$max      = 0;
+			$depth     = 0;
+			$max       = 0;
 			$in_string = false;
-			$escape   = false;
-			$len      = strlen( $json );
+			$escape    = false;
+			$len       = strlen( $json );
 
 			for ( $i = 0; $i < $len; $i++ ) {
 				$char = $json[ $i ];
@@ -485,7 +485,7 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 
 		/**
 		 * Strip internal keys from a response data array.
-	 *
+		 *
 		 * @since 1.2.0
 		 *
 		 * @param array $data Response data.

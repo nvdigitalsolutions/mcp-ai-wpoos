@@ -154,9 +154,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['tool_name'] ) || empty( $arguments['description'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'tool_name and description are required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'tool_name and description are required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -189,23 +189,23 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 				// Directory doesn't exist yet — resolve the nearest existing ancestor and validate.
 				$resolved_dir = realpath( dirname( $output_dir ) );
 				if ( false === $resolved_dir ) {
-					return array(
-						'success' => false,
-						'error'   => __( 'Invalid output path: parent directory does not exist.', 'mcp-ai-wpoos-pro' ),
+					return new WP_Error(
+						'tool_error',
+						__( 'Invalid output path: parent directory does not exist.', 'mcp-ai-wpoos-pro' )
 					);
 				}
 			}
 
 			if ( ! defined( 'WP_CONTENT_DIR' ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'WordPress content directory is not defined.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 			if ( 0 !== strpos( wp_normalize_path( $resolved_dir ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Output path must be within the WordPress content directory.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'tool_error',
+					__( 'Output path must be within the WordPress content directory.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		} else {
@@ -221,13 +221,13 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 
 		// Check if file already exists.
 		if ( file_exists( $output_path ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'tool_error',
+				sprintf(
 					/* translators: %s: file path */
 					__( 'Tool file already exists: %s. Use a different tool_slug or delete the existing file.', 'mcp-ai-wpoos-pro' ),
 					$output_path
-				),
+				)
 			);
 		}
 
@@ -249,9 +249,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		$bytes_written = file_put_contents( $output_path, $scaffold );
 
 		if ( false === $bytes_written ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Failed to write tool scaffold file. Check directory permissions.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Failed to write tool scaffold file. Check directory permissions.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

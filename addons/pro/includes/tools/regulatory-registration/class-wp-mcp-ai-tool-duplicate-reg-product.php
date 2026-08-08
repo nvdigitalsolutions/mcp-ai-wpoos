@@ -118,9 +118,9 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['product_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Product ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Product ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -129,9 +129,9 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 		// Verify source product exists.
 		$source_product = get_post( $product_id );
 		if ( ! $source_product || 'mcp_ai_reg_product' !== $source_product->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Source product not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Source product not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -152,9 +152,9 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 		$new_product_id = wp_insert_post( $new_product_data );
 
 		if ( is_wp_error( $new_product_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $new_product_id->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$new_product_id->get_error_message()
 			);
 		}
 

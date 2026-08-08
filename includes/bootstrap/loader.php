@@ -352,6 +352,13 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-res
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-optional-components.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-optional-components.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-plugin-updater.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-plugin-updater.php';
+}
+
+// Initialize the plugin updater (GitHub releases for full builds).
+WP_MCP_AI_Plugin_Updater::init();
+
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 }
@@ -778,6 +785,7 @@ require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
 require_once WP_MCP_AI_PATH . 'includes/markup-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
+require_once WP_MCP_AI_PATH . 'includes/abilities/abilities-init.php';
 require_once WP_MCP_AI_PATH . 'includes/data/data-init.php';
 require_once WP_MCP_AI_PATH . 'includes/services/content-embedding-init.php';
 require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';

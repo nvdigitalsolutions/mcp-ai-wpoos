@@ -1,5 +1,129 @@
 # oOS – Changelog
 
+## [1.1.49] - 2026-08-08
+
+### Fixed — Gemini Model Resolution (PR #5817)
+
+- **Gemini Client** (`includes/class-wp-mcp-ai-gemini-client.php`, 2 lines) — model resolution now uses the correct settings key instead of the deprecated fallback. The old `gemini-pro` fallback model has been removed; all Gemini model lookups now go through the canonical provider settings path.
+
+### Fixed — Update Reactivation & Release ZIP Cleanup (PR #5816)
+
+- **Plugin Updater** (`includes/class-wp-mcp-ai-plugin-updater.php`, +152/-18 lines) — update reactivation flow fixed; plugin now correctly handles post-update reactivation. Nonce-scoped update actions hardened.
+- **Release ZIP Cleanup** — `.distignore` and `.gitattributes` updated to exclude development-only files (`.agents/`, `.context/`, `.github/`, IDE configs) from release ZIPs. `bin/build-plugin-zip.sh` updated with new exclusion rules.
+- **OCR & Tool Cleanup** — minor fixes in OCR service, research report generator, research project tool, video analysis service, and 5 image-analysis tools.
+
+### Versioning
+
+- Bumped to **1.1.49** across all version-bearing files. Pro addon: **1.1.28**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
+## [1.1.48] - 2026-08-08
+
+### Fixed — Shopify Sync Toolkit (7 fixes)
+
+- **Fatal Error Fix** (`class-wp-mcp-ai-tool-remote-shopify-connection.php`) — `graphql_query()` → `graphql()` method name. The `test_connection` action for Admin API connections was calling an undefined method, causing a fatal error on connection test.
+- **Dead Code Removed** (`class-wp-mcp-ai-pro-tool-shopify-sync-products.php`) — removed dead first pass of `list_by_status` status counting that was immediately overwritten. Replaced both broken loops (`per_page => 1`) with a new `get_row_count_by_status()` method that performs a direct `SELECT COUNT(*) WHERE status = %s`.
+- **Always-Zero Analytics Count** (`class-wp-mcp-ai-pro-tool-shopify-sync-orders.php`) — `total_orders_analyzed` used `count($orders)` on an empty array (always 0). Now uses `count($edges)` from the actual API response.
+- **Duplicate Settings Fetch** (`class-wp-mcp-ai-shopify-sync-cct-manager.php`) — removed redundant second `get_option()` call and duplicate `$sync_mode` assignment in `sync_from_bulk_operation()`. Both `build_bulk_query()` and `get_default_field_mapping()` now use the same single settings read.
+- **Infinite Loop Risk** (`class-wp-mcp-ai-shopify-sync-cct-manager.php`) — replaced `truncate()` paginated fetch-then-delete while loop with a direct `DELETE FROM {table}` SQL statement. Eliminates risk of infinite loop if JetEngine's DB layer returns the same first page after deletions.
+- **Double DB Query Per Upsert** (`class-wp-mcp-ai-shopify-sync-cct-manager.php`) — `upsert()` now accepts a by-reference `&$operation` output parameter (`'inserted'`, `'updated'`, `'skipped'`). `bulk_upsert_from_jsonl()` uses this instead of a redundant `get_cached_item_by_variant_id()` query after every upsert, cutting DB queries per sync item in half.
+- **Missing Schema Parameters** (`class-wp-mcp-ai-pro-tool-shopify-sync-products.php`) — added `orderby` and `order` parameters to match `shopify_sync_inventory` tool schema. Sanitization and passthrough wired in `execute()`.
+
+### Security — PHPCS CVE-2026-67434
+
+- Bumped `squizlabs/php_codesniffer` from 3.13.4 to 3.13.6 in `composer.lock`, `addons/pro/composer.lock`, and `addons/docs-hub/composer.lock`. Resolves CVE-2026-67434 (arbitrary code execution via crafted ruleset XML in PHP_CodeSniffer). No functional impact — dev dependency only.
+
+### Added — Default Skill Catalogues
+
+- **Brave Search Skills** added to the default skill catalogue (`wp_mcp_ai_settings['default_skill_catalogues']`). Enables Brave Search web and local search tools for new assistants out of the box.
+- **WordPress Agent Skills** added to the default skill catalogue. Enables all 22 WordPress-plugin-development agent skills for new assistants out of the box.
+
+### Versioning
+
+- Bumped to **1.1.48** across all version-bearing files. Pro addon: **1.1.28**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
+## [1.1.47] - 2026-08-07
+
+### Fixed — MySQL Connection Exhaustion on Cloudways (PR #5809)
+
+- **Cron System Overhaul** (`includes/bootstrap/cron.php`, +182/-?? lines) — unified concurrency limits, per-process memory caps, and staggered offset scheduling to prevent connection-pool saturation on Cloudways and similar hosts with restrictive MySQL connection limits. Cron jobs no longer spawn unbounded parallel processes — each cron hook now respects a concurrency ceiling and memory budget before forking additional workers. (PR #5809)
+- **Activation Bootstrap** (`includes/bootstrap/activation.php`, +89/-?? lines) — resource-aware activation with connection throttling. Database operations during activation now use batched queries with explicit connection release to avoid exhausting shared-hosting connection pools. (PR #5809)
+- **Service Status Registry** (`includes/class-wp-mcp-ai-service-status-registry.php`, +53/-?? lines) — enhanced health-check resilience with transient caching to reduce database round-trips during status polling. (PR #5809)
+- **Maintenance CPT** (`addons/pro/includes/class-wp-mcp-ai-maintenance-cpt.php`) — streamlined resource usage during maintenance window operations. (PR #5809)
+- **Pro Status Page** (`addons/pro/assets/js/pro-status-page.js`, +99 lines; `addons/pro/includes/admin/class-wp-mcp-ai-pro-status-ajax.php`, +74 lines; `addons/pro/includes/admin/class-wp-mcp-ai-pro-status-dashboard-page.php`) — status page JS improvements, AJAX handler enhancements, and dashboard page fixes for Pro. (PR #5809)
+
+### Fixed — Update Checker Cache Bust (PR #5810)
+
+- **Plugin Updater** (`includes/class-wp-mcp-ai-plugin-updater.php`, +6 lines) — `ajax_check_update()` and `ajax_check_pro_update()` now delete cached release data before fetching. Clicking 'Check for Updates' always returns live GitHub Releases data instead of the stale 12-hour cache. (PR #5810)
+
+### Fixed — Mermaid Security Vulnerabilities
+
+- **npm Audit Fix** (`addons/canvas-toolkit/`) — mermaid 11.15.0 → 11.16.1 to resolve 5 CVEs: GHSA-3rrr-jr9j-h3q3 (Architecture diagram prototype pollution), GHSA-6x64-9x62-f2gx (CSS injection on sibling elements), GHSA-rhh3-jpg6-66xh (Radar diagram DoS), GHSA-2v8p-3f2j-5mp7 (XY Chart infinite loop DoS), GHSA-c4c3-pg64-4m4v (Config API prototype pollution). Transitive bumps: dompurify 3.4.12 → 3.4.13, nanoid 3.3.16 → 3.3.18. Canvas toolkit dist bundle regenerated (1,219 lines changed). Zero functional impact — mermaid mode is an unused stub not yet implemented.
+
+### Versioning
+
+- Bumped to **1.1.47** across all version-bearing files. Pro addon: **1.1.27**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
+## [1.1.46] - 2026-08-06
+
+### Added — Comprehensive Backup & Restore (Proposal 020)
+
+- **Export Manager** (`includes/admin/export/class-wp-mcp-ai-export-manager.php`, 512 lines) — orchestrates JSON-based export/import across all registered providers with chunked file I/O, progress reporting, and integrity verification. (PRs #5805, #5807)
+- **8 Base Export Providers** — modular providers for Core Settings (258 lines), Assistants (285 lines), CPTs (319 lines), Custom Tables (394 lines), Federation (253 lines), Addon Options (337 lines), and Toolkit Options (282 lines). Each implements `WP_MCP_AI_Export_Provider_Interface`. (PR #5805)
+- **3 Pro Export Providers** — JetEngine CCTs (329 lines), License keys (190 lines), and Remote Sites (324 lines). (PR #5807)
+- **Advanced Settings UI** — Backup & Restore section in Settings → Advanced with provider checkboxes, export/import buttons, and progress feedback. `class-wp-mcp-ai-section-advanced.php` expanded by 638 lines. (PR #5805)
+- **Export README** (`includes/admin/export/README.md`, 202 lines) — subsystem architecture, provider contract, adding new providers, security model.
+- **Proposal 020** — proposal (308 lines) and implementation plan (1,249 lines) in `docs/project/proposals/`. (PR #5805)
+
+### Added — GitHub-Based Plugin Updater
+
+- **Plugin Updater** (`includes/class-wp-mcp-ai-plugin-updater.php`, 772 lines) — fetches release metadata from GitHub Releases API, compares versions, downloads and installs updates via `Plugin_Upgrader`. Full-build distribution update support with Pro addon awareness. (PRs #5800–#5804)
+- **Base-to-Complete Upgrade Path** — Settings → Advanced now offers a one-click upgrade from base-only to the complete package when a full build release is available on GitHub. (PR #5803)
+- **Pro Addon Update Support** — updater detects and updates the Pro addon alongside the base plugin when bundled in a complete package. Hides redundant Pro updater UI when already included. (PRs #5801, #5802)
+- **Safe Update Mechanism** — core plugin updates use WordPress `Plugin_Upgrader` for proper filesystem handling; Pro updates use direct copy with rollback support. Nonce-scoped update actions. (PR #5802)
+- **WPCS Cleanup** — indentation, alignment, and inline comment fixes in updater files; phpcs:ignore annotation for pre-existing nonce warning. (PR #5804)
+
+### Added — Abilities API Selective Adoption (Proposal 019)
+
+- **Abilities Framework** (`includes/abilities/`) — new subsystem for registering machine-readable plugin operations with JSON Schema contracts. (PR #5799)
+  - `WP_MCP_AI_Ability_Registrar` (188 lines) — ability registration, discovery, and lifecycle.
+  - `WP_MCP_AI_Ability_Bridge` (235 lines) — bridges abilities to the tool registry for MCP/AI agent discovery.
+  - `WP_MCP_AI_Ability_Category_Registrar` (92 lines) — hierarchical ability grouping.
+  - `WP_MCP_AI_Ability_Security_Bridge` (289 lines) — capability-based access control for abilities.
+  - `abilities-init.php` (49 lines) — bootstrap integration.
+- **Tool-Ability Interface** (`includes/interfaces/interface-wp-mcp-ai-tool-ability.php`, 61 lines) — contract for tools that expose their capabilities as discoverable abilities.
+- **Abilities Registry Reference** (`docs/reference/abilities-registry.md`, 106 lines) — usage guide and API reference.
+- **Proposal 019** — proposal (220 lines), implementation plan (452 lines), and appendix (580 lines) in `docs/project/proposals/`. (PR #5799)
+- **5 Test Files** in `tests/abilities/` — backward compatibility (139 lines), bridge (279 lines), registrar (190 lines), category registrar (96 lines), mock tool (158 lines).
+- **Abilities README** (`includes/abilities/README.md`, 33 lines) — subsystem overview.
+
+### Fixed — Status Page (Pro)
+
+- **Fatal Error Fix** — missing methods in `class-wp-mcp-ai-pro-status-ajax.php` causing REST endpoint fatal errors now resolved. (PR #5806)
+- **JS Errors & i18n** — status page JavaScript errors fixed; text domain consistency corrected across status dashboard. `pro-status-page.js` (32 lines changed), `pro-status-dashboard-page.php` (12 lines changed). (PR #5806)
+
+### Added — Knowledge Base Auto-Build
+
+- **CI Workflow** — GitHub Actions automatically builds `knowledge-base.zip` when playbook files change, ensuring the packaged knowledge base stays current with the profession/profession registry. (PR #5797)
+
+### Changed — PHPCS Cleanup & Canonical Envelope Compliance
+
+- **Parse Error Fixes** — remaining parse errors from the canonical envelope conversion resolved across tool files. (PR #5798)
+- **Text Domain Mismatches** — corrected `mcp-ai-wpoos` vs `mcp-ai-wpoos-pro` text domain usage across Pro tool files. (PR #5798)
+- **WPCS Formatting** — indentation, alignment, and inline comment fixes applied to 100+ files across base, Pro, and core tool directories. (PRs #5798, #5804)
+- **OOS Bridge Wave 2** — `includes/bootstrap/oos-bridge-wave2.php` updated with new tool registry integrations. (PR #5799)
+
+### Versioning
+
+- Bumped to **1.1.46** across all version-bearing files. Pro addon: **1.1.29**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
 ## [1.1.45] - 2026-08-05
 
 ### Added — Self-Hosted OCR (Unlimited-OCR + DeepSeek-OCR) — Proposal 018

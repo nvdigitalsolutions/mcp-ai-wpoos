@@ -125,9 +125,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['tool_class'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Tool class name is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Tool class name is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -160,9 +160,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 		// Get AI service.
 		$ai_service = $this->get_ai_service( $arguments, $context );
 		if ( is_wp_error( $ai_service ) ) {
-			return array(
-				'success' => false,
-				'error'   => $ai_service->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$ai_service->get_error_message()
 			);
 		}
 
@@ -170,13 +170,13 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 		$ai_response = $ai_service->generate( $prompt );
 
 		if ( is_wp_error( $ai_response ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'tool_error',
+				sprintf(
 					/* translators: %s: error message */
 					__( 'Test generation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$ai_response->get_error_message()
-				),
+				)
 			);
 		}
 
@@ -184,9 +184,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 		$test_code = $this->extract_php_code( $ai_response );
 
 		if ( is_wp_error( $test_code ) ) {
-			return array(
-				'success' => false,
-				'error'   => $test_code->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$test_code->get_error_message()
 			);
 		}
 
@@ -195,9 +195,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 
 		// Propagate path validation errors.
 		if ( is_wp_error( $output_path ) ) {
-			return array(
-				'success' => false,
-				'error'   => $output_path->get_error_message(),
+			return new WP_Error(
+				'tool_error',
+				$output_path->get_error_message()
 			);
 		}
 
@@ -205,9 +205,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 		$bytes_written = file_put_contents( $output_path, $test_code );
 
 		if ( false === $bytes_written ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Failed to write test file.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'tool_error',
+				__( 'Failed to write test file.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

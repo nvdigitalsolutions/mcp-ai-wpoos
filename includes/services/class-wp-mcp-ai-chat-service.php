@@ -176,8 +176,8 @@ class WP_MCP_AI_Chat_Service {
 
 			// Generate stable prompt_cache_key for OpenAI/DeepSeek/OpenRouter.
 			if ( ! empty( $options['system_prompt'] ) ) {
-				$assistant_id = isset( $assistant_config['ID'] ) ? (int) $assistant_config['ID'] : 0;
-				$prompt_prefix = substr( $options['system_prompt'], 0, 256 );
+				$assistant_id                = isset( $assistant_config['ID'] ) ? (int) $assistant_config['ID'] : 0;
+				$prompt_prefix               = substr( $options['system_prompt'], 0, 256 );
 				$options['prompt_cache_key'] = 'wp_mcp_ai_' . $assistant_id . '_' . md5( $prompt_prefix );
 			}
 		}
@@ -1300,7 +1300,7 @@ class WP_MCP_AI_Chat_Service {
 					'conversation_compression',
 					'Using sliding-window compressed conversation messages.',
 					array(
-						'original_count' => count( $messages ),
+						'original_count'   => count( $messages ),
 						'compressed_count' => count( $compressed ),
 					)
 				);
@@ -1358,11 +1358,11 @@ class WP_MCP_AI_Chat_Service {
 			);
 
 			if ( $savings['saved_tokens'] > 0 ) {
-				$message['content']   = $compressor->compress(
+				$message['content'] = $compressor->compress(
 					$message['content'],
 					array( 'aggressiveness' => $aggressiveness )
 				);
-				$total_saved         += $savings['saved_tokens'];
+				$total_saved       += $savings['saved_tokens'];
 
 				// Store original content for audit trail / transcript preservation.
 				if ( ! isset( $message['_original_content'] ) ) {

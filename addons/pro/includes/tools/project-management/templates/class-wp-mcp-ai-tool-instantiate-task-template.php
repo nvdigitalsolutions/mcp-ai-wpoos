@@ -232,20 +232,20 @@ class WP_MCP_AI_Tool_Instantiate_Task_Template implements WP_MCP_AI_Tool_Interfa
 		}
 
 		return array(
-			'success'       => true,
-			'message'       => sprintf(
+			'success'        => true,
+			'message'        => sprintf(
 				/* translators: 1: count of created tasks, 2: template title */
 				__( 'Created %1$d task(s) from template: %2$s', 'mcp-ai-wpoos-pro' ),
 				count( $task_ids ),
 				$template->post_title
 			),
-			'template_id'   => $template_id,
+			'template_id'    => $template_id,
 			'template_title' => $template->post_title,
-			'project_id'    => $project_id,
-			'created_count' => count( $task_ids ),
-			'task_ids'      => $task_ids,
-			'tasks'         => $tasks,
-			'errors'        => $errors,
+			'project_id'     => $project_id,
+			'created_count'  => count( $task_ids ),
+			'task_ids'       => $task_ids,
+			'tasks'          => $tasks,
+			'errors'         => $errors,
 		);
 	}
 

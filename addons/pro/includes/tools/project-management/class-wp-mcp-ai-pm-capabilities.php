@@ -138,7 +138,7 @@ class WP_MCP_AI_PM_Capabilities {
 		 *
 		 * @param array $map Default map.
 		 */
-		$filtered       = apply_filters( 'wp_mcp_ai_pm_capabilities', $map );
+		$filtered        = apply_filters( 'wp_mcp_ai_pm_capabilities', $map );
 		self::$map_cache = is_array( $filtered ) ? $filtered : $map;
 
 		return self::$map_cache;
@@ -174,20 +174,20 @@ class WP_MCP_AI_PM_Capabilities {
 	 */
 	public static function get_wp_capability( $pm_capability ) {
 		$wp_map = array(
-			'create_projects'  => 'edit_posts',
-			'edit_projects'    => 'edit_others_posts',
-			'delete_projects'  => 'delete_others_posts',
+			'create_projects'   => 'edit_posts',
+			'edit_projects'     => 'edit_others_posts',
+			'delete_projects'   => 'delete_others_posts',
 			'view_all_projects' => 'edit_posts',
-			'create_tasks'     => 'edit_posts',
-			'edit_tasks'       => 'edit_others_posts',
-			'delete_tasks'     => 'delete_others_posts',
-			'assign_tasks'     => 'edit_others_posts',
-			'manage_sprints'   => 'edit_posts',
-			'view_analytics'   => 'edit_posts',
-			'manage_workflows' => 'manage_options',
-			'manage_templates' => 'edit_posts',
-			'export_reports'   => 'edit_posts',
-			'manage_para'      => 'edit_posts',
+			'create_tasks'      => 'edit_posts',
+			'edit_tasks'        => 'edit_others_posts',
+			'delete_tasks'      => 'delete_others_posts',
+			'assign_tasks'      => 'edit_others_posts',
+			'manage_sprints'    => 'edit_posts',
+			'view_analytics'    => 'edit_posts',
+			'manage_workflows'  => 'manage_options',
+			'manage_templates'  => 'edit_posts',
+			'export_reports'    => 'edit_posts',
+			'manage_para'       => 'edit_posts',
 		);
 
 		return isset( $wp_map[ sanitize_key( $pm_capability ) ] )

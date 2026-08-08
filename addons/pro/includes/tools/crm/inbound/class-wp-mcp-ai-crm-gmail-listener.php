@@ -104,7 +104,7 @@ class WP_MCP_AI_CRM_Gmail_Listener {
 			$crm_settings = class_exists( 'WP_MCP_AI_CRM_Engine' )
 				? WP_MCP_AI_CRM_Engine::get_toolkit_settings()
 				: array();
-			$interval = isset( $crm_settings['integrations']['gmail_poll_interval'] )
+			$interval     = isset( $crm_settings['integrations']['gmail_poll_interval'] )
 				? absint( $crm_settings['integrations']['gmail_poll_interval'] )
 				: self::DEFAULT_INTERVAL;
 			// Clamp to reasonable bounds: 60s – 3600s.
@@ -190,11 +190,11 @@ class WP_MCP_AI_CRM_Gmail_Listener {
 			: array();
 
 		// Resolve default query and per-poll limits.
-		$default_query  = $crm_settings['integrations']['gmail_default_query'] ?? 'newer_than:7d is:unread';
-		$max_per_poll   = isset( $crm_settings['integrations']['gmail_max_per_poll'] )
+		$default_query    = $crm_settings['integrations']['gmail_default_query'] ?? 'newer_than:7d is:unread';
+		$max_per_poll     = isset( $crm_settings['integrations']['gmail_max_per_poll'] )
 			? absint( $crm_settings['integrations']['gmail_max_per_poll'] )
 			: 10;
-		$max_per_poll   = max( 1, min( 25, $max_per_poll ) );
+		$max_per_poll     = max( 1, min( 25, $max_per_poll ) );
 		$use_history_sync = ! empty( $crm_settings['integrations']['gmail_use_history_sync'] );
 
 		$user_context = array( 'user_id' => 0 ); // System context.
@@ -224,10 +224,10 @@ class WP_MCP_AI_CRM_Gmail_Listener {
 				if ( ! empty( $last_history_id ) ) {
 					// Delegate to incremental sync via import tool.
 					$args = array(
-						'query'           => $query,
-						'max_results'     => $max_per_poll,
-						'auto_reply'      => false,
-						'connection_id'   => $connection_id,
+						'query'            => $query,
+						'max_results'      => $max_per_poll,
+						'auto_reply'       => false,
+						'connection_id'    => $connection_id,
 						'use_history_sync' => true,
 					);
 				} else {
@@ -301,7 +301,7 @@ class WP_MCP_AI_CRM_Gmail_Listener {
 						&& ! empty( $conn['refresh_token'] )
 					) {
 						$conn['connection_id'] = $cid;
-						$connections[] = $conn;
+						$connections[]         = $conn;
 					}
 				}
 			}

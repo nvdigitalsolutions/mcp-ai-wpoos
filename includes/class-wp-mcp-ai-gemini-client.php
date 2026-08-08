@@ -1780,7 +1780,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $settings['default_gemini_model'];
 			}
 
-			return 'gemini-1.5-flash';
+			return 'gemini-2.5-flash';
 		}
 
 		/**

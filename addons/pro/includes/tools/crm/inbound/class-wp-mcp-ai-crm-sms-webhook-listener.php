@@ -136,7 +136,7 @@ class WP_MCP_AI_CRM_SMS_Webhook_Listener {
 
 		// Build the full URL (with https forced for Twilio).
 		$is_https = isset( $_SERVER['HTTPS'] ) && 'on' === $_SERVER['HTTPS'];
-		$url = ( $is_https ? 'https://' : 'http://' )
+		$url      = ( $is_https ? 'https://' : 'http://' )
 			. sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '' ) )
 			. sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
 
