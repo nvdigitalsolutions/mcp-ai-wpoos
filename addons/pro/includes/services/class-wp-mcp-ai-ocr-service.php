@@ -724,7 +724,8 @@ class WP_MCP_AI_OCR_Service {
 			),
 		);
 
-		$response = $client->generate_content( 'gemini-1.5-flash', $request, $settings );
+		$model    = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+		$response = $client->generate_content( $model, $request, $settings );
 
 		if ( is_wp_error( $response ) ) {
 			WP_MCP_AI_Logger::log_event(

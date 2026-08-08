@@ -904,7 +904,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 				return isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-4.1';
 
 			case 'gemini':
-				return isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.5-flash';
+				return isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
 
 			case 'anthropic':
 				return isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5';

@@ -218,7 +218,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		// Get model.
 		if ( empty( $model ) ) {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
-			$model    = isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.5-flash';
+			$model    = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
 		}
 
 		// Call API.
