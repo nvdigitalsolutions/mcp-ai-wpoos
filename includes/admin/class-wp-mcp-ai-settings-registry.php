@@ -140,12 +140,38 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 		/**
 		 * Get a setting value.
 		 *
+		 * Reads from both wp_mcp_ai_settings (non-secrets) and
+		 * wp_mcp_ai_credentials (API keys / secrets).  Credential values
+		 * take precedence so that a key present in both options returns
+		 * the canonical credential-store copy.
+		 *
 		 * @param string $key Setting key.
 		 * @param mixed  $default Default value.
 		 * @return mixed
 		 */
 		public static function get_setting( $key, $default = null ) {
-			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
+
+			if ( ! is_array( $settings ) ) {
+				$settings = array();
+			}
+			if ( ! is_array( $credentials ) ) {
+				$credentials = array();
+			}
+
+			// Merge credentials on top so sensitive keys are found.
+			if ( count( $credentials ) > 0 ) {
+				$settings = array_merge( $settings, $credentials );
+			}
+
+			// Decrypt encrypted values before returning.
+			if ( isset( $settings[ $key ] ) && class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
+				if ( WP_MCP_AI_Admin_Settings_Base::is_sensitive_setting_key( $key ) ) {
+					$settings[ $key ] = WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $settings[ $key ] );
+				}
+			}
+
 			return isset( $settings[ $key ] ) ? $settings[ $key ] : $default;
 		}
 
