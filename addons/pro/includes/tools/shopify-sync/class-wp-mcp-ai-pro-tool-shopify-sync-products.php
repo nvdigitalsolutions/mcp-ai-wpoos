@@ -108,6 +108,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Products implements WP_MCP_AI_Tool_Interfa
 					'minimum' => 1,
 					'maximum' => 100,
 				),
+				'orderby'       => array(
+					'type'        => 'string',
+					'description' => __( 'Sort order.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'product_title', 'available_qty', 'price', 'last_synced_at', 'sku', 'vendor' ),
+					'default'     => 'product_title',
+				),
+				'order'         => array(
+					'type'        => 'string',
+					'description' => __( 'Sort direction.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'asc', 'desc' ),
+					'default'     => 'asc',
+				),
 			),
 			'required'   => array( 'action' ),
 		);
@@ -151,6 +163,8 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Products implements WP_MCP_AI_Tool_Interfa
 		$search       = isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '';
 		$page         = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 		$per_page     = isset( $arguments['per_page'] ) ? min( absint( $arguments['per_page'] ), 100 ) : 25;
+		$orderby      = isset( $arguments['orderby'] ) ? sanitize_key( $arguments['orderby'] ) : 'product_title';
+		$order        = isset( $arguments['order'] ) ? sanitize_key( $arguments['order'] ) : 'asc';
 
 		// Capability.
 		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -174,7 +188,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Products implements WP_MCP_AI_Tool_Interfa
 
 		switch ( $action ) {
 			case 'search':
-				$items = $cct_manager->get_cached_items( compact( 'vendor', 'product_type', 'status', 'search', 'page', 'per_page' ) );
+				$items = $cct_manager->get_cached_items( compact( 'vendor', 'product_type', 'status', 'search', 'page', 'per_page', 'orderby', 'order' ) );
 				return array(
 					'success' => true,
 					'message' => sprintf(
@@ -243,24 +257,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Products implements WP_MCP_AI_Tool_Interfa
 				$statuses = array( 'ACTIVE', 'DRAFT', 'ARCHIVED' );
 				$counts   = array();
 				foreach ( $statuses as $s ) {
-					$items        = $cct_manager->get_cached_items(
-						array(
-							'status'   => $s,
-							'per_page' => 1,
-						)
-					);
-					$counts[ $s ] = $cct_manager->get_row_count(); // Approximate — refined in Phase 2.
-				}
-				// Use distinct product IDs for accurate counts.
-				$counts = array();
-				foreach ( $statuses as $s ) {
-					$all_for_status = $cct_manager->get_cached_items(
-						array(
-							'status'   => $s,
-							'per_page' => 1,
-						)
-					);
-					$counts[ $s ]   = count( $all_for_status );
+					$counts[ $s ] = $cct_manager->get_row_count_by_status( $s );
 				}
 				return array(
 					'success' => true,

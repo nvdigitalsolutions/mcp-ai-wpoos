@@ -322,7 +322,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Sync_Orders implements WP_MCP_AI_Tool_Interface
 			'success' => true,
 			'message' => __( 'Order analytics retrieved.', 'mcp-ai-wpoos-pro' ),
 			'data'    => array(
-				'total_orders_analyzed' => count( $orders ),
+				'total_orders_analyzed' => count( $edges ),
 				'total_revenue'         => round( $total_revenue, 2 ),
 				'currency'              => esc_html( $currency ),
 				'status_breakdown'      => $status_counts,

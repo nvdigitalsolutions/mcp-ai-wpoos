@@ -1,5 +1,32 @@
 # oOS – Changelog
 
+## [1.1.48] - 2026-08-08
+
+### Fixed — Shopify Sync Toolkit (7 fixes)
+
+- **Fatal Error Fix** (`class-wp-mcp-ai-tool-remote-shopify-connection.php`) — `graphql_query()` → `graphql()` method name. The `test_connection` action for Admin API connections was calling an undefined method, causing a fatal error on connection test.
+- **Dead Code Removed** (`class-wp-mcp-ai-pro-tool-shopify-sync-products.php`) — removed dead first pass of `list_by_status` status counting that was immediately overwritten. Replaced both broken loops (`per_page => 1`) with a new `get_row_count_by_status()` method that performs a direct `SELECT COUNT(*) WHERE status = %s`.
+- **Always-Zero Analytics Count** (`class-wp-mcp-ai-pro-tool-shopify-sync-orders.php`) — `total_orders_analyzed` used `count($orders)` on an empty array (always 0). Now uses `count($edges)` from the actual API response.
+- **Duplicate Settings Fetch** (`class-wp-mcp-ai-shopify-sync-cct-manager.php`) — removed redundant second `get_option()` call and duplicate `$sync_mode` assignment in `sync_from_bulk_operation()`. Both `build_bulk_query()` and `get_default_field_mapping()` now use the same single settings read.
+- **Infinite Loop Risk** (`class-wp-mcp-ai-shopify-sync-cct-manager.php`) — replaced `truncate()` paginated fetch-then-delete while loop with a direct `DELETE FROM {table}` SQL statement. Eliminates risk of infinite loop if JetEngine's DB layer returns the same first page after deletions.
+- **Double DB Query Per Upsert** (`class-wp-mcp-ai-shopify-sync-cct-manager.php`) — `upsert()` now accepts a by-reference `&$operation` output parameter (`'inserted'`, `'updated'`, `'skipped'`). `bulk_upsert_from_jsonl()` uses this instead of a redundant `get_cached_item_by_variant_id()` query after every upsert, cutting DB queries per sync item in half.
+- **Missing Schema Parameters** (`class-wp-mcp-ai-pro-tool-shopify-sync-products.php`) — added `orderby` and `order` parameters to match `shopify_sync_inventory` tool schema. Sanitization and passthrough wired in `execute()`.
+
+### Security — PHPCS CVE-2026-67434
+
+- Bumped `squizlabs/php_codesniffer` from 3.13.4 to 3.13.6 in `composer.lock`, `addons/pro/composer.lock`, and `addons/docs-hub/composer.lock`. Resolves CVE-2026-67434 (arbitrary code execution via crafted ruleset XML in PHP_CodeSniffer). No functional impact — dev dependency only.
+
+### Added — Default Skill Catalogues
+
+- **Brave Search Skills** added to the default skill catalogue (`wp_mcp_ai_settings['default_skill_catalogues']`). Enables Brave Search web and local search tools for new assistants out of the box.
+- **WordPress Agent Skills** added to the default skill catalogue. Enables all 22 WordPress-plugin-development agent skills for new assistants out of the box.
+
+### Versioning
+
+- Bumped to **1.1.48** across all version-bearing files. Pro addon: **1.1.28**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
 ## [1.1.47] - 2026-08-07
 
 ### Fixed — MySQL Connection Exhaustion on Cloudways (PR #5809)

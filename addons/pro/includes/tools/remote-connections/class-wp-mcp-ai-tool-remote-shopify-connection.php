@@ -222,7 +222,7 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 		if ( 'admin_api' === $api_mode ) {
 			// Test Admin GraphQL API via a simple shop query.
 			$query  = '{ shop { name myshopifyDomain plan { displayName } } }';
-			$result = $client->graphql_query( $query );
+			$result = $client->graphql( $query );
 
 			if ( is_wp_error( $result ) ) {
 				return array(
