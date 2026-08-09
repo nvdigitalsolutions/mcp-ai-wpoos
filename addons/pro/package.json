@@ -96,7 +96,8 @@
 		"uuid": ">=14.0.0",
 		"fast-uri": ">=4.1.2",
 		"@babel/plugin-transform-modules-systemjs": ">=7.29.4",
-		"js-yaml": "^4.3.0",
+		"nanoid": "^5.1.16",
+					"js-yaml": ">=5.0.0",
 		"svgo": ">=4.0.2",
 		"linkify-it": ">=5.0.2",
 		"mailparser": {
