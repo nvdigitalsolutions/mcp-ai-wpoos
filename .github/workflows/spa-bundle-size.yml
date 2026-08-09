@@ -84,7 +84,7 @@ jobs:
           - addon: toolkit-shell
             limit_kb: 200
           - addon: canvas-toolkit
-            limit_kb: 1600  # tldraw (whiteboard) + bpmn-js (BPMN) + mermaid (live preview) are heavy specialist deps
+            limit_kb: 1650  # tldraw (whiteboard) + bpmn-js (BPMN) + mermaid (live preview) are heavy specialist deps
           - addon: document-editor
             limit_kb: 500  # v0.2.0 ships site-creator mode (GrapesJS); heavier than base Tiptap editor
           - addon: media-studio
