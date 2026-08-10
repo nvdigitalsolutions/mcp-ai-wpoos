@@ -2611,7 +2611,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				// both base and Pro together, so a separate Pro update is redundant.
 				$pro_is_standalone = defined( 'WP_MCP_AI_PRO_VERSION' )
 				&& defined( 'WP_MCP_AI_PRO_PATH' )
-				&& 0 !== strpos( untrailingslashit( WP_MCP_AI_PRO_PATH ), untrailingslashit( WP_MCP_AI_PATH ) );
+				&& 0 !== strpos( trailingslashit( untrailingslashit( WP_MCP_AI_PRO_PATH ) ), trailingslashit( untrailingslashit( WP_MCP_AI_PATH ) ) );
 
 				if ( $is_github_build && $pro_is_standalone ) :
 					?>
