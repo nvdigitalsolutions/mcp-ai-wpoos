@@ -30,6 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.3.0
  */
 class WP_MCP_AI_OCR_Service {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * Minimum characters to consider PDF as having readable text.
@@ -137,6 +138,45 @@ class WP_MCP_AI_OCR_Service {
 			} else {
 				$image_path = $processed_image;
 			}
+		}
+
+		// Allow custom OCR implementation via filter.
+		/**
+		 * Filter to allow custom OCR text extraction.
+		 *
+		 * @param string|false $result Extracted text or false.
+		 * @param array        $params Extraction parameters (image_path, options).
+		 */
+		$filter_result = apply_filters(
+			'wp_mcp_ai_ocr_extract_text',
+			false,
+			array(
+				'image_path' => $image_path,
+				'options'    => $options,
+			)
+		);
+		if ( false !== $filter_result ) {
+			// Clean up preprocessed temp file if created.
+			if ( isset( $processed_image ) && ! is_wp_error( $processed_image ) && $processed_image !== $image_path ) {
+				@unlink( $processed_image );
+			}
+			return $filter_result;
+		}
+
+		// Try Media Worker sidecar first (automatic — no config needed with Docker).
+		$sidecar = $this->sidecar_request(
+			'/api/ocr/recognize',
+			array(
+				'image_path' => $image_path,
+				'language'   => isset( $options['language'] ) ? $options['language'] : 'eng',
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['text'] ) ) {
+			// Clean up preprocessed temp file if created.
+			if ( isset( $processed_image ) && ! is_wp_error( $processed_image ) && $processed_image !== $image_path ) {
+				@unlink( $processed_image );
+			}
+			return $sidecar['text'];
 		}
 
 		// Determine provider.

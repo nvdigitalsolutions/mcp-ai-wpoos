@@ -2705,3 +2705,9 @@ add_action(
 	},
 	100
 );
+
+// Load Media Worker Sidecar Settings Page (eager — registers admin_menu hook).
+$media_worker_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-worker-settings.php';
+if ( file_exists( $media_worker_page ) ) {
+	require_once $media_worker_page;
+}

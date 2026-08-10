@@ -34,6 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.0.0
  */
 class WP_MCP_AI_Video_Frame_Extractor_Service {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * Default number of frames to extract
@@ -151,11 +152,42 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 	 * @return array|WP_Error Array of frame file paths, or error.
 	 */
 	public function extract_frames( $video_path, $frame_count = null ) {
+		// Allow custom frame extraction via filter.
+		/**
+		 * Filter to allow custom video frame extraction.
+		 *
+		 * @param array|false $result Array of frame paths or false.
+		 * @param array       $params Extraction parameters.
+		 */
+		$filter_result = apply_filters(
+			'wp_mcp_ai_video_extract_frames',
+			false,
+			array(
+				'video_path'  => $video_path,
+				'frame_count' => $frame_count,
+			)
+		);
+		if ( false !== $filter_result ) {
+			return $filter_result;
+		}
+
+		// Try Media Worker sidecar first (automatic — no config needed with Docker).
+		$sidecar = $this->sidecar_request(
+			'/api/video/extract-frames',
+			array(
+				'video_path'  => $video_path,
+				'frame_count' => $frame_count,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['frames'] ) ) {
+			return $sidecar['frames'];
+		}
+
 		// Check FFmpeg availability.
 		if ( ! $this->is_ffmpeg_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffmpeg_not_found',
-				__( 'FFmpeg is not installed or not available. Please install FFmpeg to enable video frame extraction for OpenAI.', 'mcp-ai-wpoos-pro' ),
+				__( 'FFmpeg is not installed or not available. Configure the Media Worker sidecar or install FFmpeg to enable video frame extraction.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
