@@ -587,11 +587,14 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Try Media Worker sidecar.
-		$sidecar = $this->sidecar_request( '/api/data/analyze-geospatial', array(
-			'operation' => $operation,
-			'geojson'   => isset( $params['geojson'] ) ? $params['geojson'] : $params,
-			'params'    => $params,
-		) );
+		$sidecar = $this->sidecar_request(
+			'/api/data/analyze-geospatial',
+			array(
+				'operation' => $operation,
+				'geojson'   => isset( $params['geojson'] ) ? $params['geojson'] : $params,
+				'params'    => $params,
+			)
+		);
 		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['result'] ) ) {
 			return $sidecar;
 		}

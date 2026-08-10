@@ -275,12 +275,18 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Try Media Worker sidecar.
-		$sidecar = $this->sidecar_request( '/api/data/render-math', array(
-			'latex'   => $latex,
-			'options' => $arguments,
-		) );
+		$sidecar = $this->sidecar_request(
+			'/api/data/render-math',
+			array(
+				'latex'   => $latex,
+				'options' => $arguments,
+			)
+		);
 		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['html'] ) ) {
-			return array( 'html' => $sidecar['html'], 'latex' => $latex );
+			return array(
+				'html'  => $sidecar['html'],
+				'latex' => $latex,
+			);
 		}
 
 		// Default implementation note.
