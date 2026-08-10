@@ -112,11 +112,16 @@ class WP_MCP_AI_HTTP_Helper {
 	 * - IPv4: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
 	 * - IPv6: fc00::/7 (Unique Local Addresses)
 	 *
-	 * Common local LLM configurations are automatically supported:
+	 * For non-IP hostnames (e.g., Docker service names like "media-worker",
+	 * "host.docker.internal"), resolves the hostname via DNS and checks
+	 * whether the resolved IP belongs to a private range.
+	 *
+	 * Common configurations automatically supported:
 	 * - Ollama on localhost: localhost:11434
 	 * - Ollama on LAN: 192.168.1.100:11434
 	 * - LM Studio: 10.0.0.50:1234
 	 * - Crawl4AI: 172.16.0.10:8000
+	 * - Docker sidecars: media-worker:3100, host.docker.internal:3100
 	 *
 	 * @param string $host Host address to check (may include port).
 	 * @return bool True if the host is a loopback or private network address, false otherwise.
@@ -180,6 +185,28 @@ class WP_MCP_AI_HTTP_Helper {
 			// Fallback string check for common representations.
 			if ( in_array( $host, array( '::1', '0:0:0:0:0:0:0:1', '0000:0000:0000:0000:0000:0000:0000:0001' ), true ) ) {
 				return true;
+			}
+
+		// Not an IP address — resolve the hostname and check the resolved IP.
+		// phpcs:ignore Squiz.PHP.CommentedOutCode.Found -- guard for the block below, not commented-out code.
+		} else {
+			// Resolve hostname to IPv4 and check if it points to a private address.
+			// Handles Docker Compose service names ("media-worker"),
+			// Docker Desktop's host.docker.internal, and any other hostname
+			// that resolves to a private IP.
+			$resolved_ip = gethostbyname( $host );
+
+			// gethostbyname returns the host unchanged on resolution failure.
+			if ( $resolved_ip !== $host && filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+				if ( self::is_private_ipv4_address( $resolved_ip ) ) {
+					return true;
+				}
+
+				// Also check loopback (127.x.x.x) for completeness.
+				$parts = explode( '.', $resolved_ip );
+				if ( isset( $parts[0] ) && '127' === $parts[0] ) {
+					return true;
+				}
 			}
 		}
 
