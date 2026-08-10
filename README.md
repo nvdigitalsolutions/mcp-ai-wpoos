@@ -150,6 +150,19 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
+### ✨ What's New at a Glance (v1.1.50)
+
+- ⚙️ **Media Worker Sidecar.** Docker-based Node.js sidecar with 11 Express route handlers: browser (Puppeteer), code (sandboxed), data (ETL), document (generation), email (rendering), image (manipulation), ocr (Tesseract), pdf, social (cross-platform), video (transcoding), and workflow (pipeline orchestration). Queue module with concurrent processing and retry logic. Pro integration via `WP_MCP_AI_Media_Worker_Settings` + `Media_Worker_Client` trait for tool-to-sidecar communication. Docker DNS-to-IP loopback resolution for container networking. Pro services updated (Fluent FFmpeg, Language Detection, MJML, Nodemailer, OCR, Prettier, Video Frame Extractor). (PRs #5822, #5823)
+- 🐛 **Site Health Redeclaration Fix.** Fixed PHP fatal error from function redeclaration in `ensure_site_health_dependencies()` — now guarded with `function_exists()`. (PR #5824)
+- 🔒 **NPM Security Fixes.** nanoid, js-yaml, and dompurify vulnerabilities resolved across 11+ addon `package-lock.json` files. (PR #5821)
+- 🤖 **BMAD Agent Editing Conventions.** Developer and QA agent YAMLs updated with code editing conventions for consistent agent behavior across sessions. (PR #5825)
+- 🧹 **WPCS Formatting Cleanup.** Repository-wide PHPCS fixes: tabs, docblock formatting, and code style corrections across all PHP files. No functional changes.
+
+### ✨ What's New at a Glance (v1.1.49)
+
+- 🔧 **Gemini Model Resolution Fix.** Gemini client now uses the correct settings key instead of the deprecated `gemini-pro` fallback. All model lookups routed through the canonical provider settings path. (PR #5817)
+- 🔄 **Update Reactivation & Release ZIP Cleanup.** Plugin updater now correctly reactivates after update. Nonce-scoped update actions hardened. Dev files (`.agents/`, `.context/`, `.github/`, IDE configs, test fixtures) excluded from release ZIPs via `.distignore` and `.gitattributes`. (PR #5816)
+
 ### ✨ What's New at a Glance (v1.1.48)
 
 - 🛒 **Shopify Sync Toolkit — 7 Bug Fixes.** Fatal error (`graphql_query()` → `graphql()`) on Admin API connection test. Dead code in `list_by_status` replaced with direct `SELECT COUNT(*)` query. Always-zero analytics count now uses actual API response edges instead of empty array. Duplicate `get_option()` call and redundant `$sync_mode` assignment removed. Infinite loop risk in `truncate()` eliminated — paginated while-loop replaced with direct `DELETE FROM {table}`. Double DB query per upsert halved via by-ref `&$operation` output parameter. Missing `orderby`/`order` schema parameters added with sanitization passthrough. (PR #5815)
@@ -584,6 +597,17 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.50 — August 2026)
+
+### August 10, 2026 — Media Worker Sidecar, Site Health Fix, NPM Security, BMAD Agent Updates
+
+- ✅ **Media Worker Sidecar — PRs #5822, #5823 (132 files, +6,283/-2,779 lines).** New `addons/media-worker/` package providing a Docker-based Node.js sidecar that offloads heavy media processing from WordPress. Uses a service cascade pattern with Express routing across 11 handlers: browser (Puppeteer-based automation), code (sandboxed execution), data (transformation/ETL), document (generation/conversion), email (rendering/sending), image (manipulation/optimization), ocr (Tesseract-based), pdf (generation/manipulation), social (cross-platform posting), video (transcoding/extraction), and workflow (pipeline orchestration). Queue module (`src/queue.js`, 217 lines) with concurrent processing, retry logic, and Jest test suite. Pro integration: `WP_MCP_AI_Media_Worker_Settings` (256 lines) for admin configuration, `WP_MCP_AI_Media_Worker_Client` trait (219 lines) for tool-to-sidecar communication. Docker service name to private IP resolution in loopback detection (`includes/class-wp-mcp-ai-http-helper.php`). `docker-compose.yml` updated with media-worker service. Pro services updated (Fluent FFmpeg, Language Detection, MJML, Nodemailer, OCR, Prettier, Video Frame Extractor) and tools (export calendar ICS, analyze geospatial, generate health chart, render math equation). Documentation: deployment guide (280 lines) and proposal (237 lines).
+- ✅ **Site Health Redeclaration Fix — PR #5824 (1 file).** Fixed PHP fatal error from function redeclaration in `ensure_site_health_dependencies()` inside `includes/tools/class-wp-mcp-ai-tool-get-site-health.php`. Now guarded with `function_exists()`. (PR #5824)
+- ✅ **NPM Security Fixes — PR #5821 (12 files).** Resolved nanoid, js-yaml, and dompurify vulnerabilities across 11+ addon `package-lock.json` files (chat-spa, cloud-worker, comic-reader, docs-hub, document-editor, media-studio, pro/spa, pro/spa-v2, saas-controller, schedule-anything-spa, tenant-router, toolkit-shell). (PR #5821)
+- ✅ **BMAD Agent Editing Conventions — PR #5825 (2 files).** Developer and QA agent YAMLs (`.bmad/agents/nv-oos-developer.yaml`, `.bmad/agents/nv-oos-qa-engineer.yaml`) updated with code editing conventions for consistent agent behavior during file modifications. (PR #5825)
+- ✅ **WPCS Formatting Cleanup — repository-wide.** PHPCS fixes applied across all PHP files: tabs, docblock formatting, and code style corrections. No functional changes.
+- 📦 **Versioning** — bumped to **1.1.50** across all version-bearing files. Pro addon: 1.1.28. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
 
 ## 🆕 Latest Updates (v1.1.49 — August 2026)
 
