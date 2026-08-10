@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.49
+Stable tag: 1.1.50
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,18 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.50 - August 10, 2026 =
+
+Bumped to 1.1.50 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+
+**Media Worker Sidecar, Site Health Fix, NPM Security, BMAD Agent Updates**
+
+* **Media Worker Sidecar.** New Docker-based Node.js sidecar (`addons/media-worker/`) with 11 Express route handlers: browser (Puppeteer), code (sandboxed execution), data (ETL), document (generation), email (rendering), image (manipulation), ocr (Tesseract), pdf (generation), social (cross-platform), video (transcoding), and workflow (pipeline). Queue module with concurrent processing and retry logic. Pro integration via WP_MCP_AI_Media_Worker_Settings + Media_Worker_Client trait. Docker DNS-to-IP loopback resolution. Updated docker-compose.yml. Pro services updated (Fluent FFmpeg, Language Detection, MJML, Nodemailer, OCR, Prettier, Video Frame Extractor). (PRs #5822, #5823)
+* **Site Health Redeclaration Fix.** Fixed PHP fatal error from function redeclaration in ensure_site_health_dependencies(). Now guarded with function_exists(). (PR #5824)
+* **NPM Security Fixes.** Resolved nanoid, js-yaml, and dompurify vulnerabilities across 11+ addon package-lock.json files. (PR #5821)
+* **BMAD Agent Editing Conventions.** Developer and QA agent YAMLs updated with code editing conventions for consistent agent behavior. (PR #5825)
+* **WPCS Cleanup.** Repository-wide PHPCS fixes: tabs, docblock formatting, and code style corrections. No functional changes.
 
 = 1.1.49 - August 8, 2026 =
 
