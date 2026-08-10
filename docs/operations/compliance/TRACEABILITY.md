@@ -126,6 +126,7 @@ composer run build && wp plugin-check mcp-ai-wpoos.zip
 | v1.1.47 | August 7, 2026 | MySQL Connection Exhaustion fix (Cloudways): cron system overhaul with concurrency limits, per-process memory caps, and staggered scheduling. Activation bootstrap connection throttling. Service status registry transient caching. Update checker cache bust for manual refresh. Mermaid npm audit fix (5 CVEs resolved). Pro status page JS, AJAX, and dashboard improvements. |
 | v1.1.48 | August 8, 2026 | Shopify Sync toolkit fixes (7 fixes: fatal error, dead code, always-zero analytics, duplicate settings, infinite loop risk, double DB query, missing schema parameters). PHPCS CVE-2026-67434 bumped to 3.13.6. Default skill catalogues added (Brave Search, WordPress Agent Skills). |
 | v1.1.49 | August 8, 2026 | Gemini model resolution fix: use correct settings key and remove deprecated fallback. Update reactivation fix and dev file cleanup from release ZIPs. Plugin updater enhanced with nonce-scoped actions and distignore/gitattributes updates. |
+| v1.1.50 | August 10, 2026 | Media Worker Sidecar: Docker-based Node.js sidecar with 11 route handlers (browser, code, data, document, email, image, ocr, pdf, social, video, workflow). Queue module with concurrent processing. Pro integration (WP_MCP_AI_Media_Worker_Settings + Media_Worker_Client trait). Docker DNS-to-IP loopback resolution. Site Health redeclaration fix. NPM security fixes (nanoid, js-yaml, dompurify across 11+ addons). BMAD agent editing conventions. WPCS formatting cleanup. |
 
 
 ---

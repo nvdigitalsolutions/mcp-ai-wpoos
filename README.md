@@ -11,10 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.49
-**Release Date:** 2026-08-08
+**Version:** 1.1.50
+**Release Date:** 2026-08-10
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
+
+**🆕 v1.1.50 Highlights:** Media Worker Sidecar (Docker-based Node.js with 11 route handlers for image, video, PDF, OCR, email, social, browser, code, data, document & workflow processing). Site Health redeclaration fix. NPM security fixes (nanoid, js-yaml, dompurify). BMAD agent editing conventions. WPCS cleanup.
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  

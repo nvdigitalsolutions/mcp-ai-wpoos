@@ -1,5 +1,39 @@
 # oOS – Changelog
 
+## [1.1.50] - 2026-08-10
+
+### Added — Media Worker Sidecar (PRs #5822, #5823)
+
+- **Media Worker Package** (`addons/media-worker/`) — Docker-based Node.js sidecar that offloads heavy media processing from WordPress. Uses a service cascade pattern with Express routing. Includes 11 route handlers: browser (Puppeteer-based automation), code (sandboxed execution), data (transformation/ETL), document (generation/conversion), email (rendering/sending), image (manipulation/optimization), ocr (Tesseract-based), pdf (generation/manipulation), social (cross-platform posting), video (transcoding/extraction), and workflow (pipeline orchestration). (PR #5822)
+- **Queue Module** (`addons/media-worker/src/queue.js`, 217 lines) — job queue with concurrent processing, retry logic, and status tracking. Includes Jest test suite (`queue.test.js`, 108 lines). (PR #5822)
+- **Pro Integration** — `WP_MCP_AI_Media_Worker_Settings` (256 lines) for admin configuration; `WP_MCP_AI_Media_Worker_Client` trait (219 lines) for tool-to-sidecar communication; NPM integration filters updated for service discovery. (PR #5822)
+- **Loopback DNS Resolution** — Docker service names now resolve to private IPs in loopback detection, fixing connectivity issues when the media-worker runs in a separate container. `includes/class-wp-mcp-ai-http-helper.php` updated. (PR #5823)
+- **Docker Compose** — media-worker service added to `docker-compose.yml` with proper networking and volume mounts. (PR #5823)
+- **Documentation** — deployment guide (`docs/deployment/media-worker-docker-setup.md`, 280 lines) and proposal (`docs/project/proposals/media-worker-sidecar-proposal.md`, 237 lines). (PR #5822)
+- **Pro Service Updates** — Fluent FFmpeg, Language Detection, MJML, Nodemailer, OCR, Prettier, and Video Frame Extractor services updated to support sidecar dispatch. Tool updates: export calendar ICS, analyze geospatial, generate health chart, render math equation. (PR #5822)
+
+### Fixed — Site Health Redeclaration (PR #5824)
+
+- **Site Health Tool** (`includes/tools/class-wp-mcp-ai-tool-get-site-health.php`) — fixed PHP fatal error from function redeclaration in `ensure_site_health_dependencies()`. The function is now guarded with `function_exists()` to prevent conflicts when multiple code paths trigger site health checks. (PR #5824)
+
+### Fixed — NPM Security Alerts (PR #5821)
+
+- **nanoid, js-yaml, dompurify** — resolved npm audit vulnerabilities across 11+ addon `package-lock.json` files (chat-spa, cloud-worker, comic-reader, docs-hub, document-editor, media-studio, pro/spa, pro/spa-v2, saas-controller, schedule-anything-spa, tenant-router, toolkit-shell). (PR #5821)
+
+### Changed — BMAD Agent Editing Conventions (PR #5825)
+
+- **Developer & QA Agent YAMLs** (`.bmad/agents/nv-oos-developer.yaml`, `.bmad/agents/nv-oos-qa-engineer.yaml`) — added code editing conventions for consistent agent behavior during file modifications. (PR #5825)
+
+### Changed — WPCS Cleanup
+
+- Repository-wide PHPCS fixes: tabs, docblock formatting, and code style corrections applied across all PHP files. No functional changes.
+
+### Versioning
+
+- Bumped to **1.1.50** across all version-bearing files. Pro addon: **1.1.28**.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+- Provider count: **15** first-class language-model providers. Addon count: **27**.
+
 ## [1.1.49] - 2026-08-08
 
 ### Fixed — Gemini Model Resolution (PR #5817)
