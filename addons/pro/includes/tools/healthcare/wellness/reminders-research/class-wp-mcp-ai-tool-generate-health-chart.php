@@ -26,6 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * {@inheritdoc}
@@ -463,12 +464,19 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 		 * @param array       $config Chart configuration.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_chartjs_generate_image', false, $config );
-
-		if ( false === $result ) {
-			return array(
-				'error' => __( 'Chart image generation requires a Node.js service with chart rendering capability. Please implement the wp_mcp_ai_chartjs_generate_image filter. See docs/INTEGRATION_BEST_PRACTICES.md for implementation guide.', 'mcp-ai-wpoos-pro' ),
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
+
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request( '/api/data/render-chart', $config );
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['output_path'] ) ) {
+			return $sidecar;
+		}
+
+		return array(
+			'error' => __( 'Chart image generation requires a Node.js service. Configure the Media Worker sidecar or implement the wp_mcp_ai_chartjs_generate_image filter.', 'mcp-ai-wpoos-pro' ),
+		);
 
 		return $result;
 	}

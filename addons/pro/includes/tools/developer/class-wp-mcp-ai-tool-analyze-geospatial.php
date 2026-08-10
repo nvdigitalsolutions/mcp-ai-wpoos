@@ -26,6 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * {@inheritdoc}
@@ -581,12 +582,23 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 		 * @param array       $params Operation parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_turf_execute_operation', false, $operation, $params );
-
-		if ( false === $result ) {
-			return array(
-				'error' => __( 'Turf.js operations require client-side JavaScript or Node.js service. Please implement the wp_mcp_ai_turf_execute_operation filter. See docs/INTEGRATION_BEST_PRACTICES.md for client-side geospatial analysis patterns.', 'mcp-ai-wpoos-pro' ),
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
+
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request( '/api/data/analyze-geospatial', array(
+			'operation' => $operation,
+			'geojson'   => isset( $params['geojson'] ) ? $params['geojson'] : $params,
+			'params'    => $params,
+		) );
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['result'] ) ) {
+			return $sidecar;
+		}
+
+		return array(
+			'error' => __( 'Turf.js analysis requires a Node.js service. Configure the Media Worker sidecar or implement the wp_mcp_ai_turf_execute_operation filter.', 'mcp-ai-wpoos-pro' ),
+		);
 
 		return $result;
 	}

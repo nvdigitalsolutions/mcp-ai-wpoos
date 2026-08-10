@@ -28,6 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-math-response
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Media_Worker_Client;
 	use WP_MCP_AI_Tool_Math_Response;
 
 	/**
@@ -269,13 +270,23 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		 * @param array       $params Rendering parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_katex_render_equation', false, $params );
-
-		if ( false === $result ) {
-			// Default implementation note.
-			return array(
-				'error' => __( 'KaTeX rendering requires a Node.js service. Please implement the wp_mcp_ai_katex_render_equation filter or set up a Node.js microservice. See docs/INTEGRATION_BEST_PRACTICES.md for server-side rendering guide.', 'mcp-ai-wpoos-pro' ),
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
+
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request( '/api/data/render-math', array(
+			'latex'   => $latex,
+			'options' => $arguments,
+		) );
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['html'] ) ) {
+			return array( 'html' => $sidecar['html'], 'latex' => $latex );
+		}
+
+		// Default implementation note.
+		return array(
+			'error' => __( 'KaTeX rendering requires a Node.js service. Configure the Media Worker sidecar or implement the wp_mcp_ai_katex_render_equation filter.', 'mcp-ai-wpoos-pro' ),
+		);
 
 		return $result;
 	}
