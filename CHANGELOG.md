@@ -30,7 +30,7 @@
 
 ### Versioning
 
-- Bumped to **1.1.50** across all version-bearing files. Pro addon: **1.1.28**.
+- Bumped to **1.1.50** across all version-bearing files. Pro addon: **1.1.50**.
 - Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
 - Provider count: **15** first-class language-model providers. Addon count: **27**.
 

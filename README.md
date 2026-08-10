@@ -607,7 +607,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - ✅ **NPM Security Fixes — PR #5821 (12 files).** Resolved nanoid, js-yaml, and dompurify vulnerabilities across 11+ addon `package-lock.json` files (chat-spa, cloud-worker, comic-reader, docs-hub, document-editor, media-studio, pro/spa, pro/spa-v2, saas-controller, schedule-anything-spa, tenant-router, toolkit-shell). (PR #5821)
 - ✅ **BMAD Agent Editing Conventions — PR #5825 (2 files).** Developer and QA agent YAMLs (`.bmad/agents/nv-oos-developer.yaml`, `.bmad/agents/nv-oos-qa-engineer.yaml`) updated with code editing conventions for consistent agent behavior during file modifications. (PR #5825)
 - ✅ **WPCS Formatting Cleanup — repository-wide.** PHPCS fixes applied across all PHP files: tabs, docblock formatting, and code style corrections. No functional changes.
-- 📦 **Versioning** — bumped to **1.1.50** across all version-bearing files. Pro addon: 1.1.28. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
+- 📦 **Versioning** — bumped to **1.1.50** across all version-bearing files. Pro addon: 1.1.50. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
 
 ## 🆕 Latest Updates (v1.1.49 — August 2026)
 
