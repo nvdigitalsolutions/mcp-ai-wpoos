@@ -79,6 +79,50 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 	}
 
 	/**
+	 * Negotiate MCP protocol version with the client.
+	 *
+	 * Picks the highest version the server supports that the client also
+	 * supports. Defaults to 2024-11-05 for maximum backward compatibility
+	 * when the client provides no version information.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param array $params Client's initialize params.
+	 * @return string Negotiated protocol version.
+	 */
+	private function negotiate_protocol_version( $params ) {
+		$supported = array( '2026-07-28', '2025-06-18', '2025-03-26', '2024-11-05' );
+
+		$client_versions = array();
+
+		if ( isset( $params['protocolVersion'] ) && is_string( $params['protocolVersion'] ) ) {
+			$client_versions[] = $params['protocolVersion'];
+		}
+
+		if ( isset( $params['supportedProtocolVersions'] ) && is_array( $params['supportedProtocolVersions'] ) ) {
+			foreach ( $params['supportedProtocolVersions'] as $v ) {
+				if ( is_string( $v ) ) {
+					$client_versions[] = $v;
+				}
+			}
+		}
+
+		$client_versions = array_unique( $client_versions );
+
+		if ( empty( $client_versions ) ) {
+			return '2024-11-05';
+		}
+
+		foreach ( $supported as $server_version ) {
+			if ( in_array( $server_version, $client_versions, true ) ) {
+				return $server_version;
+			}
+		}
+
+		return '2024-11-05';
+	}
+
+	/**
 	 * Hook setup.
 	 */
 	public function init() {
@@ -484,8 +528,11 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 				$params       = isset( $payload['params'] ) && is_array( $payload['params'] ) ? $payload['params'] : array();
 				$assistant_id = isset( $params['assistant_id'] ) ? absint( $params['assistant_id'] ) : 0;
 
+				// Negotiate protocol version with the client.
+				$negotiated_version = $this->negotiate_protocol_version( $params );
+
 				$result = array(
-					'protocolVersion' => '2026-07-28',
+					'protocolVersion' => $negotiated_version,
 					'capabilities'    => array(
 						'tools'     => (object) array(),
 						'resources' => (object) array(
