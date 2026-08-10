@@ -81,7 +81,7 @@ class WP_MCP_AI_Media_Worker_Settings {
     }
 
     private function render_capabilities( $caps ) {
-        $rows = array('pdf_extraction'=>'PDF Extraction','pdf_generation'=>'PDF Generation','pdf_rendering'=>'PDF Rendering','document_excel'=>'Excel','document_word'=>'Word','document_ocr'=>'OCR','code_formatting'=>'Code Formatting','email'=>'Email','translation'=>'Translation','language_detection'=>'Language Detection','qrcode'=>'QR Code','math_rendering'=>'Math (KaTeX)','calendar_ics'=>'Calendar ICS','chart_rendering'=>'Charts (Chart.js)','geospatial'=>'Geospatial (Turf)','browser_automation'=>'Browser','image_optimization'=>'Image Optimization','video_processing'=>'Video Processing');
+        $rows = array('pdf_extraction'=>'PDF Extraction','pdf_generation'=>'PDF Generation','pdf_rendering'=>'PDF Rendering','document_excel'=>'Excel','document_word'=>'Word','document_ocr'=>'OCR','code_formatting'=>'Code Formatting','email'=>'Email (Nodemailer + MJML)','email_parsing'=>'Email Parsing','translation'=>'Translation','language_detection'=>'Language Detection','phone_formatting'=>'Phone Formatting','qrcode'=>'QR Code','math_rendering'=>'Math (KaTeX)','math_eval'=>'Math Evaluation','calendar_ics'=>'Calendar ICS','chart_rendering'=>'Charts (Chart.js)','geospatial'=>'Geospatial (Turf)','csv_processing'=>'CSV Processing','markdown'=>'Markdown','regression'=>'Regression','currency'=>'Currency','validation'=>'Validation','browser_automation'=>'Browser','image_optimization'=>'Image Optimization','video_processing'=>'Video Processing');
         echo '<table class="widefat striped" style="max-width:600px;"><thead><tr><th>Capability</th><th>Status</th></tr></thead><tbody>';
         foreach($rows as $k=>$l){ $a=isset($caps[$k])&&$caps[$k]; echo '<tr><td>'.esc_html($l).'</td><td>'.($a?'<span style="color:#46b450;">Available</span>':'<span style="color:#ccc;">Unavailable</span>').'</td></tr>'; }
         echo '</tbody></table>';
@@ -102,8 +102,8 @@ class WP_MCP_AI_Media_Worker_Settings {
     }
 
     public function ajax_test_connection() {
-        check_ajax_referer('wp_mcp_ai_media_worker_test','_wpnonce');
         if(!current_user_can('manage_options')) wp_send_json_error(array('message'=>'Permission denied.'));
+        check_ajax_referer('wp_mcp_ai_media_worker_test','_wpnonce');
         $url=$this->get_url();
         if(empty($url)) wp_send_json_error(array('message'=>'Sidecar URL not configured.'));
         $r=wp_remote_get(rtrim($url,'/').'/api/health',array('timeout'=>5));

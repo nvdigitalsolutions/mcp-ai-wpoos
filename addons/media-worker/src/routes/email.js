@@ -77,3 +77,32 @@ emailRouter.post('/compile-mjml', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// ── POST /parse — parse raw email (headers, body, attachments) ─
+emailRouter.post('/parse', async (req, res) => {
+  try {
+    const { source } = req.body || {};
+    if (!source) {
+      return res.status(400).json({ success: false, error: 'Missing source (raw email string)' });
+    }
+    const { simpleParser } = await import('mailparser');
+    const parsed = await simpleParser(source);
+    res.json({
+      success: true,
+      subject: parsed.subject,
+      from: parsed.from?.text,
+      to: parsed.to?.text,
+      cc: parsed.cc?.text,
+      date: parsed.date,
+      text: parsed.text,
+      html: parsed.html || null,
+      attachments: (parsed.attachments || []).map((a) => ({
+        filename: a.filename,
+        contentType: a.contentType,
+        size: a.size,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});

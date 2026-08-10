@@ -786,4 +786,23 @@ router.post('/batch', upload.array('files', 20), async (req, res) => {
   }
 });
 
+// ── POST /vectorize — raster to SVG (potrace) ───────────────
+router.post('/vectorize', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const { vectorizer } = await import('@neplex/vectorizer');
+    const result = await vectorizer({ input: req.file.buffer, output: 'svg' });
+    res.json({
+      success: true,
+      svg: result.toString(),
+      original_size: req.file.size,
+    });
+  } catch (err) {
+    console.error('[Vectorize]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export { router as imageRouter };

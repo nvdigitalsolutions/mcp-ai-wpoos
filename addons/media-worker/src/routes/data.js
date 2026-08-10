@@ -1,10 +1,19 @@
 /**
- * Data utilities — translation, language detection, QR codes.
+ * Data utilities — translation, language detection, QR codes, phone formatting,
+ * CSV processing, markdown, math evaluation, regression, currency, validation.
  *
  * Endpoints:
  *   POST /api/data/translate        — translate text (google-translate-api-x)
  *   POST /api/data/language-detect  — detect language (franc)
+ *   POST /api/data/phone-format     — format/validate phone (libphonenumber-js)
  *   POST /api/data/qrcode           — generate QR code (qrcode)
+ *   POST /api/data/csv-parse        — parse CSV string (csv-parse)
+ *   POST /api/data/csv-generate     — generate CSV from JSON (csv-stringify)
+ *   POST /api/data/markdown         — markdown → HTML (marked)
+ *   POST /api/data/math             — evaluate math expressions (mathjs)
+ *   POST /api/data/regression       — statistical regression (regression)
+ *   POST /api/data/currency         — currency conversion/format (currency.js)
+ *   POST /api/data/validate         — string validation (validator)
  */
 
 import { Router } from 'express';
@@ -68,12 +77,48 @@ dataRouter.post('/language-detect', async (req, res) => {
       name: langName,
       native: langNative,
     });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+  	} catch (err) {
+  		res.status(500).json({ success: false, error: err.message });
+  	}
+  });
 
-// ── POST /qrcode — generate QR code ────────────────────────
+  // ── POST /phone-format — format/validate phone number ───────
+  dataRouter.post('/phone-format', async (req, res) => {
+    try {
+      const { phone, country_code } = req.body || {};
+      if (!phone) {
+        return res.status(400).json({ success: false, error: 'Missing phone' });
+      }
+
+      const { parsePhoneNumber } = await import('libphonenumber-js');
+      const parsed = parsePhoneNumber(phone, (country_code || 'US').toUpperCase());
+
+      if (!parsed || !parsed.isValid()) {
+        return res.json({
+          success: true,
+          formatted: phone,
+          national: phone.replace(/[^0-9]/g, ''),
+          international: phone,
+          valid: false,
+          country: country_code || 'US',
+        });
+      }
+
+      res.json({
+        success: true,
+        formatted: parsed.formatInternational(),
+        national: parsed.formatNational(),
+        international: parsed.formatInternational(),
+        valid: true,
+        country: parsed.country || country_code,
+        type: parsed.getType(),
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // ── POST /qrcode — generate QR code ────────────────────────
 dataRouter.post('/qrcode', async (req, res) => {
   try {
     const { text, outputPath, options } = req.body || {};
@@ -191,6 +236,152 @@ dataRouter.post('/analyze-geospatial', async (req, res) => {
     const args = params || [];
     const result = fn(geojson, ...(Array.isArray(args) ? args : [args]));
     res.json({ success: true, operation, result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /csv-parse — parse CSV string to JSON ──────────────
+dataRouter.post('/csv-parse', async (req, res) => {
+  try {
+    const { csv, options } = req.body || {};
+    if (!csv) {
+      return res.status(400).json({ success: false, error: 'Missing csv' });
+    }
+    const { parse } = await import('csv-parse');
+    const records = [];
+    const parser = parse({
+      columns: options?.columns !== false,
+      skip_empty_lines: true,
+      trim: true,
+      ...options,
+    });
+    parser.write(csv);
+    parser.end();
+    for await (const record of parser) {
+      records.push(record);
+    }
+    res.json({ success: true, rows: records, count: records.length });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /csv-generate — generate CSV from JSON array ───────
+dataRouter.post('/csv-generate', async (req, res) => {
+  try {
+    const { data, columns, options } = req.body || {};
+    if (!data || !Array.isArray(data)) {
+      return res.status(400).json({ success: false, error: 'Missing data array' });
+    }
+    const { stringify } = await import('csv-stringify');
+    const csv = await new Promise((resolve, reject) => {
+      stringify(data, { header: true, columns: columns || undefined, ...options }, (err, output) => {
+        if (err) reject(err);
+        else resolve(output);
+      });
+    });
+    const outPath = tempFile('csv');
+    fs.writeFileSync(outPath, csv);
+    res.json({ success: true, csv, output_path: outPath, rows: data.length });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /markdown — convert Markdown to HTML ───────────────
+dataRouter.post('/markdown', async (req, res) => {
+  try {
+    const { text, options } = req.body || {};
+    if (!text) {
+      return res.status(400).json({ success: false, error: 'Missing text' });
+    }
+    const { marked } = await import('marked');
+    const html = await marked.parse(text, {
+      gfm: true,
+      breaks: false,
+      ...options,
+    });
+    res.json({ success: true, html, markdown: text });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /math — evaluate math expression ───────────────────
+dataRouter.post('/math', async (req, res) => {
+  try {
+    const { expression, scope } = req.body || {};
+    if (!expression) {
+      return res.status(400).json({ success: false, error: 'Missing expression' });
+    }
+    const mathjs = await import('mathjs');
+    const result = mathjs.evaluate(expression, scope || {});
+    res.json({ success: true, expression, result, formatted: mathjs.format(result, { precision: 14 }) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /regression — statistical regression analysis ──────
+dataRouter.post('/regression', async (req, res) => {
+  try {
+    const { data, type, options } = req.body || {};
+    if (!data || !Array.isArray(data)) {
+      return res.status(400).json({ success: false, error: 'Missing data array of [x,y] pairs' });
+    }
+    const regression = await import('regression');
+    const method = regression[type] || regression.linear;
+    const result = method(data, { order: options?.order || 2, precision: options?.precision || 4 });
+    res.json({
+      success: true,
+      type: type || 'linear',
+      equation: result.string,
+      points: result.points,
+      r2: result.r2,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /currency — format currencies ──────────────────────
+dataRouter.post('/currency', async (req, res) => {
+  try {
+    const { amount, format: fmt } = req.body || {};
+    if (amount === undefined) {
+      return res.status(400).json({ success: false, error: 'Missing amount' });
+    }
+    const currency = (await import('currency.js')).default;
+    const result = currency(amount, { fromCents: false });
+    res.json({
+      success: true,
+      amount,
+      formatted: fmt ? result.format() : result.toString(),
+      value: result.value,
+      intValue: result.intValue,
+      cents: result.cents(),
+      dollars: result.dollars(),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /validate — validate strings (email, URL, ISBN, etc.) ─
+dataRouter.post('/validate', async (req, res) => {
+  try {
+    const { value, type, options } = req.body || {};
+    if (!value || !type) {
+      return res.status(400).json({ success: false, error: 'Missing value or type' });
+    }
+    const validator = await import('validator');
+    const fn = validator.default[type] || validator[type];
+    if (typeof fn !== 'function') {
+      return res.status(400).json({ success: false, error: `Unknown validator: ${type}` });
+    }
+    const valid = fn(String(value), options);
+    res.json({ success: true, type, valid, value });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

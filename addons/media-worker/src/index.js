@@ -88,13 +88,21 @@ app.get('/api/health', (_req, res) => {
       // Utilities
       code_formatting: true,
       email: true,
+      email_parsing: true,
       translation: true,
       language_detection: true,
+      phone_formatting: true,
       qrcode: true,
       math_rendering: true,
+      math_eval: true,
       calendar_ics: true,
       chart_rendering: true,
       geospatial: true,
+      csv_processing: true,
+      markdown: true,
+      regression: true,
+      currency: true,
+      validation: true,
       browser_automation: true,
 
       // Social
@@ -106,16 +114,16 @@ app.get('/api/health', (_req, res) => {
       job_queue: !!process.env.REDIS_URL,
     },
     endpoints: {
-      image:    ['/api/image/generate', '/api/image/optimize', '/api/image/optimize-batch', '/api/image/providers'],
+      image:    ['/api/image/generate', '/api/image/optimize', '/api/image/optimize-batch', '/api/image/vectorize', '/api/image/providers'],
       video:    ['/api/video/generate', '/api/video/process', '/api/video/info', '/api/video/models', '/api/video/prediction/:id'],
       social:   ['/api/social/post', '/api/social/generate-content', '/api/social/accounts'],
       workflow: ['/api/workflow/social-package', '/api/workflow/brand-assets', '/api/workflow/video-pipeline', '/api/workflow/status'],
       pdf:      ['/api/pdf/extract', '/api/pdf/render', '/api/pdf/generate', '/api/pdf/merge', '/api/pdf/watermark'],
       document: ['/api/document/excel', '/api/document/word'],
       ocr:      ['/api/ocr/recognize'],
-      email:    ['/api/email/send', '/api/email/compile-mjml'],
+      email:    ['/api/email/send', '/api/email/compile-mjml', '/api/email/parse'],
       code:     ['/api/code/format', '/api/code/check-syntax'],
-      data:     ['/api/data/translate', '/api/data/language-detect', '/api/data/qrcode', '/api/data/render-math', '/api/data/generate-ics', '/api/data/render-chart', '/api/data/analyze-geospatial'],
+      data:     ['/api/data/translate', '/api/data/language-detect', '/api/data/phone-format', '/api/data/qrcode', '/api/data/csv-parse', '/api/data/csv-generate', '/api/data/markdown', '/api/data/math', '/api/data/render-math', '/api/data/regression', '/api/data/currency', '/api/data/validate', '/api/data/generate-ics', '/api/data/render-chart', '/api/data/analyze-geospatial'],
       browser:  ['/api/browser/screenshot', '/api/browser/pdf'],
     },
   });
@@ -147,7 +155,22 @@ app.listen(PORT, () => {
   console.log('  OCR:           ✅ tesseract.js');
   console.log('  Browser:       ✅ puppeteer (chromium)');
   console.log('  Code format:   ✅ prettier');
-  console.log('  Email:         ✅ nodemailer + mjml');
+  console.log('  Email:         ✅ nodemailer + mjml + mailparser');
+  console.log('');
+  console.log('[Design Worker] Data utilities:');
+  console.log('  Translate:     ✅ google-translate-api-x');
+  console.log('  Language:      ✅ franc + iso-639-1');
+  console.log('  Phone:         ✅ libphonenumber-js');
+  console.log('  QR Code:       ✅ qrcode');
+  console.log('  Math:          ✅ katex + mathjs');
+  console.log('  CSV:           ✅ csv-parse + csv-stringify');
+  console.log('  Markdown:      ✅ marked');
+  console.log('  Regression:    ✅ regression');
+  console.log('  Currency:      ✅ currency.js');
+  console.log('  Validation:    ✅ validator');
+  console.log('  Charts:        ✅ chart.js');
+  console.log('  Geospatial:    ✅ @turf/turf');
+  console.log('  Vectorize:     ✅ @neplex/vectorizer');
   console.log('');
   console.log('[Design Worker] Social platforms:');
   console.log('  Twitter:',   process.env.TWITTER_ACCESS_TOKEN ? '✅' : '❌');
