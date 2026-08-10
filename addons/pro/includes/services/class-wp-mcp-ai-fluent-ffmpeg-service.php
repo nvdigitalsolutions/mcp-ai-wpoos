@@ -33,6 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Fluent_FFmpeg_Service {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * Check if fluent-ffmpeg package is available
@@ -89,13 +90,24 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		 * @param array       $params Processing parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_fluent_ffmpeg_get_metadata', false, $params );
-
-		if ( false === $result ) {
-			// Fallback to basic FFprobe if filter not implemented.
-			return $this->fallback_get_metadata( $video_path );
+		if ( false !== $result ) {
+			return $result;
 		}
 
-		return $result;
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request(
+			'/api/video/process',
+			array(
+				'action'     => 'get_metadata',
+				'video_path' => $video_path,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['metadata'] ) ) {
+			return $sidecar['metadata'];
+		}
+
+		// Fallback to basic FFprobe if filter not implemented.
+		return $this->fallback_get_metadata( $video_path );
 	}
 
 	/**
@@ -137,19 +149,31 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		 * @param array       $params Processing parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_fluent_ffmpeg_extract_frames', false, $params );
-
-		if ( false === $result ) {
-			return new WP_Error(
-				'wp_mcp_ai_fluent_ffmpeg_not_configured',
-				__( 'Fluent-ffmpeg frame extraction requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_extract_frames filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
-				array(
-					'status'  => 501,
-					'package' => 'fluent-ffmpeg',
-				)
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
 
-		return $result;
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request(
+			'/api/video/process',
+			array(
+				'action'     => 'extract_frames',
+				'video_path' => $video_path,
+				'options'    => $options,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['frames'] ) ) {
+			return $sidecar['frames'];
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_fluent_ffmpeg_not_configured',
+			__( 'Fluent-ffmpeg frame extraction requires Node.js integration. Configure the Media Worker sidecar or implement the wp_mcp_ai_fluent_ffmpeg_extract_frames filter.', 'mcp-ai-wpoos-pro' ),
+			array(
+				'status'  => 501,
+				'package' => 'fluent-ffmpeg',
+			)
+		);
 	}
 
 	/**
@@ -190,19 +214,31 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		 * @param array        $params Processing parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_fluent_ffmpeg_generate_thumbnail', false, $params );
-
-		if ( false === $result ) {
-			return new WP_Error(
-				'wp_mcp_ai_fluent_ffmpeg_not_configured',
-				__( 'Fluent-ffmpeg thumbnail generation requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_generate_thumbnail filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
-				array(
-					'status'  => 501,
-					'package' => 'fluent-ffmpeg',
-				)
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
 
-		return $result;
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request(
+			'/api/video/process',
+			array(
+				'action'     => 'generate_thumbnail',
+				'video_path' => $video_path,
+				'options'    => $options,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['thumbnail'] ) ) {
+			return $sidecar['thumbnail'];
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_fluent_ffmpeg_not_configured',
+			__( 'Fluent-ffmpeg thumbnail generation requires Node.js integration. Configure the Media Worker sidecar or implement the wp_mcp_ai_fluent_ffmpeg_generate_thumbnail filter.', 'mcp-ai-wpoos-pro' ),
+			array(
+				'status'  => 501,
+				'package' => 'fluent-ffmpeg',
+			)
+		);
 	}
 
 	/**
@@ -247,19 +283,32 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		 * @param array        $params Processing parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_fluent_ffmpeg_transcode_video', false, $params );
-
-		if ( false === $result ) {
-			return new WP_Error(
-				'wp_mcp_ai_fluent_ffmpeg_not_configured',
-				__( 'Fluent-ffmpeg video transcoding requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_transcode_video filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
-				array(
-					'status'  => 501,
-					'package' => 'fluent-ffmpeg',
-				)
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
 
-		return $result;
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request(
+			'/api/video/process',
+			array(
+				'action'      => 'transcode_video',
+				'video_path'  => $video_path,
+				'output_path' => $output_path,
+				'options'     => $options,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['output_path'] ) ) {
+			return $sidecar['output_path'];
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_fluent_ffmpeg_not_configured',
+			__( 'Fluent-ffmpeg video transcoding requires Node.js integration. Configure the Media Worker sidecar or implement the wp_mcp_ai_fluent_ffmpeg_transcode_video filter.', 'mcp-ai-wpoos-pro' ),
+			array(
+				'status'  => 501,
+				'package' => 'fluent-ffmpeg',
+			)
+		);
 	}
 
 	/**
@@ -302,19 +351,32 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		 * @param array        $params Processing parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_fluent_ffmpeg_extract_audio', false, $params );
-
-		if ( false === $result ) {
-			return new WP_Error(
-				'wp_mcp_ai_fluent_ffmpeg_not_configured',
-				__( 'Fluent-ffmpeg audio extraction requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_extract_audio filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
-				array(
-					'status'  => 501,
-					'package' => 'fluent-ffmpeg',
-				)
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
 
-		return $result;
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request(
+			'/api/video/process',
+			array(
+				'action'      => 'extract_audio',
+				'video_path'  => $video_path,
+				'output_path' => $output_path,
+				'options'     => $options,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['output_path'] ) ) {
+			return $sidecar['output_path'];
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_fluent_ffmpeg_not_configured',
+			__( 'Fluent-ffmpeg audio extraction requires Node.js integration. Configure the Media Worker sidecar or implement the wp_mcp_ai_fluent_ffmpeg_extract_audio filter.', 'mcp-ai-wpoos-pro' ),
+			array(
+				'status'  => 501,
+				'package' => 'fluent-ffmpeg',
+			)
+		);
 	}
 
 	/**

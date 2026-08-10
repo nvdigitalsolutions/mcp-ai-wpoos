@@ -25,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.4.0
  */
 class WP_MCP_AI_Language_Detection_Service {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * Common ISO 639-1 code → language name map (PHP fallback).
@@ -143,6 +144,18 @@ class WP_MCP_AI_Language_Detection_Service {
 			return $result;
 		}
 
+		// Try Media Worker sidecar (automatic — no config needed with Docker).
+		$sidecar = $this->sidecar_request(
+			'/api/data/language-detect',
+			array(
+				'text' => $text,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['code'] ) ) {
+			$sidecar['source'] = 'media-worker';
+			return $sidecar;
+		}
+
 		// PHP heuristic fallback.
 		return $this->detect_language_php( $text );
 	}
@@ -212,6 +225,18 @@ class WP_MCP_AI_Language_Detection_Service {
 
 		if ( is_array( $result ) ) {
 			return $result;
+		}
+
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request(
+			'/api/data/phone-format',
+			array(
+				'phone'        => $phone,
+				'country_code' => $country_code,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['formatted'] ) ) {
+			return $sidecar;
 		}
 
 		// PHP fallback: strip non-digits and basic length check.

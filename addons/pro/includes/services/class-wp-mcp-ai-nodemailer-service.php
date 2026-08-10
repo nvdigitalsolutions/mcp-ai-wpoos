@@ -26,6 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Nodemailer_Service {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * Check if nodemailer is available.
@@ -44,13 +45,6 @@ class WP_MCP_AI_Nodemailer_Service {
 	 * @return array|WP_Error Result with success status or error.
 	 */
 	public function send_email( $email_data ) {
-		if ( ! $this->is_available() ) {
-			return new WP_Error(
-				'nodemailer_unavailable',
-				__( 'Nodemailer is not available. Please ensure Node.js and nodemailer package are installed.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
 		// Validate required fields.
 		if ( empty( $email_data['to'] ) ) {
 			return new WP_Error(
@@ -94,15 +88,20 @@ class WP_MCP_AI_Nodemailer_Service {
 
 		// Allow custom Node.js implementation via filter.
 		$result = apply_filters( 'wp_mcp_ai_nodemailer_send_email', false, $params );
-
-		if ( false === $result ) {
-			return new WP_Error(
-				'nodemailer_not_implemented',
-				__( 'Nodemailer email sending requires Node.js integration. Please implement the wp_mcp_ai_nodemailer_send_email filter.', 'mcp-ai-wpoos-pro' )
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
 
-		return $result;
+		// Try Media Worker sidecar (automatic — no config needed with Docker).
+		$sidecar = $this->sidecar_request( '/api/email/send', $params );
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['success'] ) ) {
+			return $sidecar;
+		}
+
+		return new WP_Error(
+			'nodemailer_not_implemented',
+			__( 'Nodemailer email sending requires Node.js integration. Configure the Media Worker sidecar or implement the wp_mcp_ai_nodemailer_send_email filter.', 'mcp-ai-wpoos-pro' )
+		);
 	}
 
 	/**
@@ -143,24 +142,28 @@ class WP_MCP_AI_Nodemailer_Service {
 	 * @return array|WP_Error Verification result or error.
 	 */
 	public function verify_connection( $smtp_config ) {
-		if ( ! $this->is_available() ) {
-			return new WP_Error(
-				'nodemailer_unavailable',
-				__( 'Nodemailer is not available.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
 		// Allow custom Node.js implementation via filter.
 		$result = apply_filters( 'wp_mcp_ai_nodemailer_verify_connection', false, $smtp_config );
-
-		if ( false === $result ) {
-			return new WP_Error(
-				'nodemailer_not_implemented',
-				__( 'Nodemailer connection verification requires Node.js integration. Please implement the wp_mcp_ai_nodemailer_verify_connection filter.', 'mcp-ai-wpoos-pro' )
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
 
-		return $result;
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request(
+			'/api/email/send',
+			array(
+				'action' => 'verify_connection',
+				'config' => $smtp_config,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['connected'] ) ) {
+			return $sidecar;
+		}
+
+		return new WP_Error(
+			'nodemailer_not_implemented',
+			__( 'Nodemailer connection verification requires Node.js integration. Configure the Media Worker sidecar or implement the wp_mcp_ai_nodemailer_verify_connection filter.', 'mcp-ai-wpoos-pro' )
+		);
 	}
 
 	/**
