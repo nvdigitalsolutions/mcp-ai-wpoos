@@ -11,6 +11,7 @@
 #
 # Access:   http://localhost:8000
 # Admin:    http://localhost:8000/wp-admin (admin / password)
+# Worker:   http://localhost:3100/api/health
 #
 # Profiles:
 #   default  — WordPress + MySQL + plugin seed (full dev env)
@@ -60,6 +61,9 @@ services:
         define( 'SCRIPT_DEBUG', true );
         define( 'WP_ENVIRONMENT_TYPE', 'development' );
         define( 'WP_MEMORY_LIMIT', '512M' );
+
+        /* ── Media Worker sidecar ── */
+        define( 'WP_MEDIA_WORKER_URL', 'http://media-worker:3100' );
 
         /* ── Plugin debug (must come after the plugin loads) ── */
         if ( ! defined( 'WP_MCP_AI_DEBUG' ) ) {
@@ -147,6 +151,9 @@ services:
         define( 'WP_ENVIRONMENT_TYPE', 'development' );
         define( 'WP_MEMORY_LIMIT', '512M' );
 
+        /* ── Media Worker sidecar ── */
+        define( 'WP_MEDIA_WORKER_URL', 'http://media-worker:3100' );
+
         /* ── Plugin debug (must come after the plugin loads) ── */
         if ( ! defined( 'WP_MCP_AI_DEBUG' ) ) {
             define( 'WP_MCP_AI_DEBUG', true );
@@ -198,6 +205,21 @@ services:
       retries: 20
       start_period: 30s
 
+  # ── Media Worker Sidecar (offloads NPM packages) ────────
+  media-worker:
+    build:
+      context: ./addons/media-worker
+      dockerfile: Dockerfile
+    container_name: oos-media-worker
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    environment:
+      NODE_ENV: development
+      PORT: "3100"
+    volumes:
+      - ./addons/media-worker/src:/app/src:ro
+
   # ── WP-CLI (on-demand only, not auto-started) ──────────
   wp-cli:
     image: wordpress:cli-php8.2
@@ -219,6 +241,9 @@ services:
         define( 'SCRIPT_DEBUG', true );
         define( 'WP_ENVIRONMENT_TYPE', 'development' );
         define( 'WP_MEMORY_LIMIT', '512M' );
+
+        /* ── Media Worker sidecar ── */
+        define( 'WP_MEDIA_WORKER_URL', 'http://media-worker:3100' );
 
         /* ── Plugin debug (must come after the plugin loads) ── */
         if ( ! defined( 'WP_MCP_AI_DEBUG' ) ) {
