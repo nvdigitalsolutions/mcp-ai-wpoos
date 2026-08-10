@@ -29,6 +29,9 @@ agent:
     - Post-release: tool execution success rate must be > 95% before marking Phase 8 complete
     - Backward compatibility must be verified — never assume it
     - Document any open issues clearly; do not silently skip failing checks
+    # Merge/refactor regressions — see also CLAUDE.md § Code Editing Conventions
+    - If the story involved file merges or deduplication: diff source vs target implementations; confirm no hooks, styles, or dependencies were lost
+    - Check for duplicate injection paths (hardcoded HTML + hook both producing the same element)
 
   nv_oos_assistant: the-seo-compliance-auditor
   model: GPT-4o-mini
@@ -61,14 +64,19 @@ agent:
     - CodeQL scan passes
     - PHPDoc blocks present on all new classes/methods
     - Security review complete:
-      - Input sanitized at entry (Gate 1 — sanitize_text_field, absint, wp_kses_post, esc_url_raw, sanitize_key)
-      - Output escaped at exit (Gate 2 — esc_html, esc_url, esc_attr, wp_kses, wp_json_encode)
-      - Capabilities checked before privileged operations
-      - Nonces verified for state-changing requests
-      - Tools return canonical envelope (success array or WP_Error — never array('success' => false))
+        - Input sanitized at entry (Gate 1 — sanitize_text_field, absint, wp_kses_post, esc_url_raw, sanitize_key)
+        - Output escaped at exit (Gate 2 — esc_html, esc_url, esc_attr, wp_kses, wp_json_encode)
+        - Capabilities checked before privileged operations
+        - Nonces verified for state-changing requests
+        - Tools return canonical envelope (success array or WP_Error — never array('success' => false))
     - Documentation updated if needed
     - Backward compatibility verified — any decomposed tool registers a deprecated alias via $registry->register_deprecated_alias()
     - Base vs Pro version gating correct
+    # Merge/refactor QA (if story involved file merges or deduplication)
+    - Diffed source vs target: no functions, hooks, styles, or inline scripts lost in merge
+    - No duplicate injection paths (e.g. hardcoded element + hook both producing the same DOM node)
+    - README line numbers and directory listings match current code after insertions/deletions
+    - No stale references to renamed or deleted files in docs or config
 
   post_release_monitoring_checklist:
     - No new PHP errors in first 48 hours post-deploy

@@ -29,6 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Prettier_Service {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * Check if Prettier package is available
@@ -92,19 +93,38 @@ class WP_MCP_AI_Prettier_Service {
 		 * @param array        $params Formatting parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_prettier_format_code', false, $params );
-
-		if ( false === $result ) {
-			return new WP_Error(
-				'wp_mcp_ai_prettier_not_configured',
-				__( 'Prettier code formatting requires Node.js integration. Please implement the wp_mcp_ai_prettier_format_code filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
-				array(
-					'status'  => 501,
-					'package' => 'prettier',
-				)
-			);
+		if ( false !== $result ) {
+			return $result;
 		}
 
-		return $result;
+		// Try Media Worker sidecar (automatic — no config needed with Docker).
+		$sidecar = $this->sidecar_request(
+			'/api/code/format',
+			array(
+				'code'    => $code,
+				'options' => $options,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['formatted'] ) ) {
+			return $sidecar['formatted'];
+		}
+
+		// Fall back to local Node.js (retained for non-Docker environments).
+		if ( $this->is_available() ) {
+			$local = apply_filters( 'wp_mcp_ai_prettier_format_code_local', false, $params );
+			if ( false !== $local ) {
+				return $local;
+			}
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_prettier_not_configured',
+			__( 'Prettier code formatting requires Node.js integration. Install Node.js locally or configure the Media Worker sidecar. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
+			array(
+				'status'  => 501,
+				'package' => 'prettier',
+			)
+		);
 	}
 
 	/**
@@ -136,13 +156,24 @@ class WP_MCP_AI_Prettier_Service {
 		 * @param array               $params Check parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_prettier_check_syntax', false, $params );
-
-		if ( false === $result ) {
-			// If not implemented, return true (no validation).
-			return true;
+		if ( false !== $result ) {
+			return $result;
 		}
 
-		return $result;
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request(
+			'/api/code/check-syntax',
+			array(
+				'code'   => $code,
+				'parser' => $parser,
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['valid'] ) ) {
+			return $sidecar['valid'];
+		}
+
+		// Not implemented — return true (no validation).
+		return true;
 	}
 
 	/**

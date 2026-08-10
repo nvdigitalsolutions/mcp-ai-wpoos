@@ -37,6 +37,11 @@ agent:
     - ABSPATH guard on every non-root PHP file
     - Context per story must remain lean (under 30% GSD rule)
     - Atomic commit per story with story ID in commit message
+    # Code editing process — see also CLAUDE.md § Code Editing Conventions
+    - When merging overlapping functions from two files: diff implementations side-by-side before cutting; never assume one is a superset
+    - When a UI element has multiple injection paths (hardcoded HTML + hook): verify no double-rendering; pick one source of truth
+    - After inserting/deleting lines: re-verify all line-number references in documentation
+    - Before deleting a file: diff it against its replacement; grep for require/include references; delete only after confirming merge completeness
 
   nv_oos_assistant: the-publisher
   model: GPT-4o-mini
@@ -52,11 +57,11 @@ agent:
   context_files:
     - .context/conventions.md
     - .context/security-checklist.md
-    - .context/tool-registry.md     # for tool stories
-    - .context/rest-api.md          # for REST endpoint stories
-    - .context/chat-ui.md           # for frontend stories
-    - .context/testing.md           # always for test stories
-    - .context/active/[feature].md  # current feature context
+    - .context/tool-registry.md # for tool stories
+    - .context/rest-api.md # for REST endpoint stories
+    - .context/chat-ui.md # for frontend stories
+    - .context/testing.md # always for test stories
+    - .context/active/[feature].md # current feature context
 
   implementation_workflow: |
     For each story:

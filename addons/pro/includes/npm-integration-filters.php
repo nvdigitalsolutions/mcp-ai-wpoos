@@ -274,9 +274,26 @@ function wp_mcp_ai_is_nodejs_available() {
 	static $available = null;
 
 	if ( null === $available ) {
-		// Use Process Service to check for Node.js availability.
+		// Check for local Node.js first.
 		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
-		$available       = $process_service->is_command_available( 'node' );
+		if ( $process_service->is_command_available( 'node' ) ) {
+			$available = true;
+			return $available;
+		}
+
+		// Check for Media Worker sidecar.
+		$sidecar_url = defined( 'WP_MEDIA_WORKER_URL' ) && WP_MEDIA_WORKER_URL
+			? WP_MEDIA_WORKER_URL
+			: get_option( 'wp_mcp_ai_media_worker_url', '' );
+		if ( ! empty( $sidecar_url ) ) {
+			$response = wp_remote_get( rtrim( $sidecar_url, '/' ) . '/api/health', array( 'timeout' => 3 ) );
+			if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+				$available = 'sidecar';
+				return $available;
+			}
+		}
+
+		$available = false;
 	}
 
 	return $available;
@@ -1078,15 +1095,13 @@ function wp_mcp_ai_npm_integration_admin_notice() {
 			
 			<?php if ( ! $nodejs_available ) : ?>
 			<p>
-				<?php
-				echo wp_kses_post(
-					sprintf(
-						/* translators: %s: link to Node.js download */
-						__( 'Node.js is not installed on your server. Some Pro features require Node.js to execute. Please install <a href="%s" target="_blank">Node.js</a> on your server.', 'mcp-ai-wpoos-pro' ),
-						'https://nodejs.org/'
-					)
-				);
-				?>
+				<?php esc_html_e( 'Node.js is not installed locally.', 'mcp-ai-wpoos-pro' ); ?>
+				<?php esc_html_e( 'The Media Worker sidecar can handle all Node.js operations remotely — configure it in Settings → Media Worker, or install Node.js locally.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			<?php elseif ( 'sidecar' === $nodejs_available ) : ?>
+			<p style="color:#46b450;">
+				<strong><?php esc_html_e( 'Media Worker Sidecar Active', 'mcp-ai-wpoos-pro' ); ?></strong>
+				&mdash; <?php esc_html_e( 'All Node.js operations are routed to the sidecar.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 			<?php endif; ?>
 			

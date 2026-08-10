@@ -236,21 +236,39 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 		};
 
-		// Always load update.php and register polyfills before any early-return check.
-		// When WP_Site_Health is already loaded (e.g. in an admin page or by another
-		// plugin), the functions it calls — such as wp_is_auto_update_forced_for_item()
-		// — may still be absent in REST API / non-admin request contexts because
-		// wp-admin/includes/update.php has not been required. Skipping this block
-		// caused a "Call to undefined function wp_is_auto_update_forced_for_item()"
-		// fatal when get_test_plugin_theme_auto_updates() was invoked.
+		// Load WordPress admin includes first so that native WordPress functions
+		// take precedence over polyfills.  Loading the real definitions avoids a
+		// "Cannot redeclare" fatal when a polyfill was defined before the
+		// corresponding core file was required.
+		//
+		// Pre-load update.php early — when WP_Site_Health already exists (e.g.
+		// admin page) the functions it calls (e.g. wp_is_auto_update_forced_for_item)
+		// may still be absent in REST / non-admin contexts. Without this early
+		// require, get_test_plugin_theme_auto_updates() would throw a "Call to
+		// undefined function" fatal.
 		if ( ! function_exists( 'wp_is_auto_update_forced_for_item' ) ) {
 			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/update.php' );
 		}
 
-		// Provide polyfills for WordPress admin functions that may not be available
-		// in certain contexts, especially when Site Health is accessed via REST API.
-		// These MUST be defined before loading class-wp-site-health.php because
-		// Site Health tests may call these functions during initialization.
+		// If WP_Site_Health is already loaded we only need the remaining polyfills
+		// below.  Skip the heavier admin-includes loading.
+		if ( ! class_exists( 'WP_Site_Health', false ) ) {
+			// Load WordPress admin includes in the order WordPress core loads them.
+			// This ensures all function dependencies are available for Site Health tests.
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/admin.php' );
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/file.php' );
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/template.php' );
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/plugin.php' );
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/theme.php' );
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/misc.php' );
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/update.php' );
+		}
+
+		// --- Polyfills --------------------------------------------------------
+		// Define lightweight fallbacks for WordPress admin functions that may
+		// still be unavailable, especially in REST API / CLI contexts.  Every
+		// polyfill is guarded by function_exists() so it only activates when
+		// the real function wasn't loaded by the includes above.
 
 		// Polyfill for wp_check_php_version() - introduced in WordPress 5.1.0.
 		if ( ! function_exists( 'wp_check_php_version' ) ) {
@@ -424,21 +442,6 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 				return $update_themes;
 			}
 		}
-
-		// If WP_Site_Health is already loaded all we needed were the polyfills above.
-		if ( class_exists( 'WP_Site_Health', false ) ) {
-			return true;
-		}
-
-		// Load WordPress admin includes in the order WordPress core loads them.
-		// This ensures all function dependencies are available for Site Health tests.
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/admin.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/file.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/template.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/plugin.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/theme.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/misc.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/update.php' );
 
 		// Now load the Site Health classes after polyfills are in place.
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health.php' );

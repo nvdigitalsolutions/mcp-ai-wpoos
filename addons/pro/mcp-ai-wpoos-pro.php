@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.28' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.1.50' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -2705,3 +2705,9 @@ add_action(
 	},
 	100
 );
+
+// Load Media Worker Sidecar Settings Page (eager — registers admin_menu hook).
+$media_worker_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-worker-settings.php';
+if ( file_exists( $media_worker_page ) ) {
+	require_once $media_worker_page;
+}

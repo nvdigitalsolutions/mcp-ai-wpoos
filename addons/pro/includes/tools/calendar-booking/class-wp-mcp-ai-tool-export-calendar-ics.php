@@ -29,6 +29,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-resp
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Media_Worker_Client;
 	use WP_MCP_AI_Tool_Document_Response;
 
 	/**
@@ -410,6 +411,15 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		 * @param array       $params Generation parameters.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_ics_generate_calendar', false, $params );
+		if ( false !== $result ) {
+			return $result;
+		}
+
+		// Try Media Worker sidecar.
+		$sidecar = $this->sidecar_request( '/api/data/generate-ics', $params );
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['ics'] ) ) {
+			return array( 'content' => $sidecar['ics'] );
+		}
 
 		if ( false === $result ) {
 			// Default implementation note.

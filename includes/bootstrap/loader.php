@@ -444,6 +444,9 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/traits/tr
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-object-access.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-object-access.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-client.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-client.php';
+}
 
 	// ---------------------------------------------------------------------------
 	// Transparency & Compliance (Proposal 017) — AI disclosure, consent, provenance

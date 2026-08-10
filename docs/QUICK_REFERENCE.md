@@ -1,12 +1,15 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.49
-**Last Updated:** August 8, 2026
+**Version:** 1.1.50
+**Last Updated:** August 10, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (August 2026)
 
+- **v1.1.50** (August 10): Media Worker Sidecar — Docker-based Node.js sidecar with 11 route handlers (browser, code, data, document, email, image, ocr, pdf, social, video, workflow). Queue module with concurrent processing. Pro integration (settings + client trait). Docker DNS-to-IP loopback resolution. Site Health redeclaration fix. NPM security fixes (nanoid, js-yaml, dompurify across 11+ addons). BMAD agent editing conventions. WPCS formatting cleanup.
+- **v1.1.49** (August 8): Gemini model resolution fix, update reactivation + release ZIP cleanup, OCR & tool cleanup.
+- **v1.1.48** (August 8): Shopify Sync toolkit fixes (7 fixes), PHPCS CVE-2026-67434, default skill catalogues (Brave Search, WordPress Agent Skills).
 - **v1.1.47** (August 7): MySQL Connection Exhaustion fix for Cloudways — cron system overhaul with concurrency limits + memory caps + staggered scheduling. Activation bootstrap connection throttling. Service status registry hardening. Update checker cache bust for manual refresh. Mermaid npm audit fix (5 CVEs resolved). Pro status page improvements (JS, AJAX, dashboard).
 - **v1.1.46** (August 6): Comprehensive Backup & Restore with 11 modular export providers (8 base + 3 Pro). GitHub-based Plugin Updater (772 lines) with base-to-complete upgrade path. Abilities API selective adoption (includes/abilities/ framework, 5 classes, 5 test files) for AI agent discovery. Status Page fixes (fatal error in REST, JS errors, i18n). Knowledge base auto-build CI. PHPCS cleanup across 100+ files (parse errors, text domain, WPCS formatting).
 - **v1.1.45** (August 5): Self-hosted OCR (Unlimited-OCR + DeepSeek-OCR) — 17 files, +4,087 lines. New unified vLLM client, Pro tools (`pro_unlimited_ocr`, `pro_batch_ocr`), structured extraction service, Embedded OCR backend + health dashboard, admin settings UI. Embedded addon v0.2.0 (voice, OpenMed, MCP abilities). AI transparency & SGI compliance. Comic Reader v0.2.0. Graphify standalone plugins v1.0.1. Build/release automation.
