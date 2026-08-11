@@ -655,7 +655,7 @@ class WP_MCP_AI_Job_Queue_Manager {
 	 * @since 1.1.37
 	 * @return int Active job count.
 	 */
-	private static function count_active_jobs() {
+	public static function count_active_jobs() {
 		if ( self::use_custom_table() ) {
 			global $wpdb;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
