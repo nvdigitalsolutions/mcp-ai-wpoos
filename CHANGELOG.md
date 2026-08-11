@@ -1,5 +1,45 @@
 # oOS – Changelog
 
+## [1.1.52] - 2026-08-11
+
+### Added — Paper Store Remote Site Support (PR #5835)
+
+- **Paper Store REST API** (`includes/rest/class-wp-mcp-ai-paper-store-rest.php`, 697 lines) — full CRUD REST controller at `mcp-ai/v1/paper-store` for remote site operations.
+- **Paper Store Remote Trait** (`includes/paper-store/trait-wp-mcp-ai-paper-store-remote.php`, 96 lines) — dispatches Paper Store operations through Remote Site Manager when `connection_id` is provided.
+- **All 8 Paper Store tools updated** — `paper_store_list`, `paper_store_read`, `paper_store_search`, `paper_store_write`, `paper_store_update`, `paper_store_delete`, `paper_store_import`, `paper_store_export` now accept optional `connection_id` parameter.
+- **`list_mcp_tools` Discovery Tool** (`includes/tools/class-wp-mcp-ai-tool-list-mcp-tools.php`, 234 lines) — enables AI agent self-discovery of available MCP tools, filterable by toolkit and search term.
+
+### Added — Remote Connection CPT Auto-Discovery (PR #5834)
+
+- **Auto-discover CPTs** in remote connection post type access controls — plugin-registered CPTs like `paper_store` now appear automatically in the admin table. No more manual slug entry, save, and reopen.
+- **`resolve_post_type_access()`** now mirrors the same discovery logic on form submission.
+- **Multi-Site Gateway Plan** (`docs/project/plans/multi-site-gateway-plan.md`, 1,429 lines) — comprehensive hub-and-spoke federation plan targeting v1.5.0+.
+
+### Added — Design System Tool Preset (PR #5837)
+
+- **Design System preset** (`design-system`) — 72 tools across 13 categories: WordPress content, image generation/analysis/processing, web search/research, charts, document generation (14 tools), Paper Store (8), video generation/processing, social media, AI/memory, and utility.
+- Added to `WP_MCP_AI_Tool_Presets_Helper::get_presets()` at `includes/helpers/class-wp-mcp-ai-tool-presets-helper.php`.
+
+### Added — Post-Install Integrity Check (PR #5833)
+
+- **Plugin Updater integrity verification** — after every update, `verify_installation_integrity()` checks 15 critical file paths against the plugin directory before reporting success.
+- **`VERIFY_FILES` safelist** — 15 critical paths loaded via `require_once` without `file_exists()` guards. Prevents silent update corruption on distributed filesystems (Cloudways).
+- **Guard REST require_once calls** — added `file_exists()` checks before 8 REST controller `require_once` calls in `class-wp-mcp-ai-rest.php`.
+
+### Fixed
+
+- **Pro addon update visibility** (PR #5832) — Pro addon update section now visible for wp.org base + standalone Pro installs.
+- **Docker chmod warnings** (PR #5831) — suppressed `chmod()` warnings during plugin install in Docker environments by checking filesystem constants.
+
+### Documentation
+
+- **3 new feature docs**: Paper Store (`docs/features/paper-store.md`), Remote Sites (`docs/features/remote-sites.md`), MCP Protocol Version Negotiation (`docs/reference/mcp-protocol-version-negotiation.md`).
+- **Updated docs**: Plugin Updater (integrity check), Tool Presets System (Design System preset), DOCUMENTATION_INDEX, QUICK_REFERENCE, README, CHANGELOG.
+
+### Versioning
+
+- Bumped to **1.1.52** across all version-bearing files.
+
 ## [1.1.51] - 2026-08-11
 
 ### Changed — Documentation Audit & Gap-Fill

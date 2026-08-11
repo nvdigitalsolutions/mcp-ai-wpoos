@@ -1,6 +1,6 @@
 # EU AI Act Compliance Mapping
 
-**Version:** 1.1.51
+**Version:** 1.1.52
 **Last Updated:** August 11, 2026
 **Status:** Self-assessment — not a legal certification
 **Regulation:** EU AI Act (Regulation 2024/1689), high-risk obligations effective August 2, 2026

@@ -1,8 +1,8 @@
 # Plugin Updater
 
-**Version:** 1.1.46+
+**Version:** 1.1.52+
 **Category:** Base feature
-**Class:** `WP_MCP_AI_Plugin_Updater` (772 lines)
+**Class:** `WP_MCP_AI_Plugin_Updater` (~850 lines)
 
 ## Overview
 
@@ -45,6 +45,32 @@ Access via **Settings → NV oOS → Advanced → Updates**.
 - "Update Now" button when a newer version is available
 - "Upgrade to Complete Package" for base-only installs
 - Pro addon status indicator
+
+### Post-Install Integrity Check (v1.1.52)
+
+After every update installation, the updater runs `verify_installation_integrity()` to confirm that critical plugin files exist on disk before reporting success. This prevents silent update corruption on distributed filesystems (e.g., Cloudways) where `unzip` can drop files without reporting errors.
+
+The integrity check uses a safelist (`VERIFY_FILES`) of 15 critical paths:
+
+```
+mcp-ai-wpoos.php
+includes/class-wp-mcp-ai-plugin.php
+includes/class-wp-mcp-ai-container.php
+includes/class-wp-mcp-ai-rest.php
+includes/rest/class-wp-mcp-ai-rest-controller-base.php
+includes/rest/class-wp-mcp-ai-rest-chat-controller.php
+includes/rest/class-wp-mcp-ai-rest-mcp-controller.php
+includes/rest/class-wp-mcp-ai-rest-tools-controller.php
+includes/rest/class-wp-mcp-ai-rest-token-manager.php
+includes/rest/class-wp-mcp-ai-rest-cost-manager.php
+includes/rest/class-wp-mcp-ai-rest-analytics-manager.php
+includes/rest/class-wp-mcp-ai-rest-authenticator.php
+includes/rest/class-wp-mcp-ai-rest-validator.php
+includes/rest/class-wp-mcp-ai-sse-handler.php
+includes/bridge/class-wp-mcp-ai-bridge.php
+```
+
+These are the files loaded via `require_once` without `file_exists()` guards in the main plugin bootstrap. If any are missing after an update, the plugin will fatal on the next request. The integrity check catches this before the update is reported as successful, returning a `WP_Error` listing the missing files.
 
 ## Hooks
 

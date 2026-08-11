@@ -19,7 +19,7 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.51 (August 2026)
+**Current version:** 1.1.52 (August 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,502 (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -150,7 +150,7 @@ The monorepo contains **25 addon directories** (27 entries in the inventory, inc
 
 The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](../operations/compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (19 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.27) resolved 1 Critical + 5 Warnings from code review. **Phase 3 operational security hardening** (July–August 2026, v1.1.38–v1.1.50) added 3 new security classes (audit logger, CSP headers, request guard enhancements), CORS posture signals, error-verbosity control, auth brute-force detection, body-size enforcement, asset-fingerprinting prevention, and OAuth hardening.
 
-### Still open / partially fixed (as of v1.1.51):
+### Still open / partially fixed (as of v1.1.52):
 | ID | Severity | Status | What |
 |---|---|---|---|
 | F-AUTHZ-01 | High | 🟡 Partial | Webhook routes with `__return_true` permission callbacks — 4 fixed (Telegram, agent-card ×2, Google Chat), remaining 5 are legitimately public GET-only verification endpoints (Twitter CRC, WhatsApp verify, Messenger verify, OPTIONS preflight). Documented with justification comments. |

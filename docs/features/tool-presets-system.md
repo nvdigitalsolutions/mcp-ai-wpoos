@@ -1,8 +1,9 @@
 # Tool Presets System
 
-**Status:** Stable — v1.1.40
+**Status:** Stable — v1.1.52
 **Category:** Pro Feature — Tool Management  
-**Introduced:** July 2026 (PRs #5660, #5662)  
+**Introduced:** July 2026 (PRs #5660, #5662)
+**Last Updated:** August 11, 2026 (Design System preset — PR #5837)
 
 ## Overview
 
@@ -50,6 +51,7 @@ Tools that have been "validated" (passed safety and capability checks) are autom
 | Commerce | WooCommerce Essentials, Shopify Management | Extended |
 | CRM | Lead Manager Essentials, Deal Pipeline | Extended + Specialist |
 | Knowledge | Paper Store Essentials, OKF Knowledge Access | Base + Essentials |
+| Design | Design System (72 tools, 13 categories) | Extended |
 | Development | Developer Copilot, Code Analysis | Base + Essentials |
 
 ### Tool Payload Cap
@@ -62,6 +64,28 @@ Selected tools display as clickable chips below the tool selector:
 - **+N overflow toggle** when more than 5 chips are selected.
 - **Click-to-remove** individual tools from the selection.
 - **Proper spacing** between chips for readability.
+
+## Design System Preset (v1.1.52)
+
+The **Design System** preset (`design-system`) was added in v1.1.52 (PR #5837). It bundles 72 tools across 13 categories for comprehensive design and content creation workflows:
+
+| Category | Tool Count | Key Tools |
+|----------|-----------|-----------|
+| WordPress Content | 9 | `create_post`, `save_post`, `get_recent_posts`, `search_content`, `search_attachments` |
+| Image Generation | 4 | `generate_openai_image`, `generate_gemini_image`, `edit_gemini_image`, `edit_openai_image` |
+| Image Analysis | 4 | `analyze_image`, `extract_image_text`, `generate_image_caption`, `generate_image_alt_text` |
+| Image Processing | 5 | `remove_background`, `resize_image`, `vectorize_image`, `optimize_image_sharp`, `create_image_variation` |
+| Web Search & Research | 5 | `web_search`, `deep_research`, `semantic_content_search`, `run_crawl4ai_job_validated`, `scrape_product_validated` |
+| Charts | 2 | `create_chart`, `create_chart_validated` |
+| Document Generation | 14 | `pro_pdf_document`, `pro_word_document`, `pro_excel_document`, `generate_pdf`, `generate_word`, `generate_excel`, `html_to_pdf`, `merge_pdfs`, `add_watermark_to_pdf`, `extract_pdf_text`, `ocr_pdf_text`, `pro_document_ocr`, `excel_data_import`, `excel_data_export`, `generate_invoice_pdf` |
+| Paper Store | 8 | All 8 `paper_store_*` CRUD + import/export tools |
+| Video Generation | 2 | `generate_sora_video`, `generate_veo_video` |
+| Video Processing | 5 | `extract_video_frames`, `trim_video`, `compress_video`, `convert_video_format`, `transcode_video` |
+| Social Media | 3 | `schedule_social_post`, `generate_social_captions`, `publish_to_social` |
+| AI & Memory | 6 | `create_text_embeddings`, `load_skill`, `retrieve_agent_memory`, `semantic_context_search`, `recall_memory`, `wake_up_context` |
+| Utility | 4 | `count_tokens`, `list_available_models`, `list_mcp_tools`, `submit_document_prompt` |
+
+This preset is ideal for assistants focused on brand asset creation, marketing content, and design workflows.
 
 ## SSE Adapter Fix
 

@@ -11,12 +11,14 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.51
+**Version:** 1.1.52
 **Release Date:** 2026-08-11
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.51 Highlights:** Orchestration & Harness Layer Gap Remediation — OWASP LLM Top 10 coverage 20%→60%, EU AI Act compliance 17%→67%. Output Guardrail, Citation Verifier, Model Integrity Verifier, Semantic Cache, Canary Deployment. MCP protocol version negotiation for Zed/Claude Desktop/Cursor compatibility. Security bumps (multer, nodemailer, sharp).
+**🆕 v1.1.52 Highlights:** Paper Store remote site support (8 tools + REST API + remote trait), `list_mcp_tools` discovery tool, remote connection CPT auto-discovery, Design System tool preset (72 tools, 13 categories), post-install integrity check, MCP protocol version negotiation for Zed/Claude Desktop/Cursor.
+
+**v1.1.51 Highlights:** Orchestration & Harness Layer Gap Remediation — OWASP LLM Top 10 coverage 20%→60%, EU AI Act compliance 17%→67%. Output Guardrail, Citation Verifier, Model Integrity Verifier, Semantic Cache, Canary Deployment. Security bumps (multer, nodemailer, sharp).
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -149,6 +151,15 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.52)
+
+- 📄 **Paper Store Remote Site Support.** All 8 Paper Store tools now accept an optional `connection_id` to proxy operations through Remote Site Manager. New REST API controller at `mcp-ai/v1/paper-store` (697 lines) enables remote CRUD. New `WP_MCP_AI_Paper_Store_Remote` trait handles dispatch. New `list_mcp_tools` discovery tool (234 lines) for AI agent self-discovery — filterable by toolkit and search term. (PR #5835)
+- 🔌 **Remote Connection CPT Auto-Discovery.** Plugin-registered custom post types (including `paper_store`) now appear automatically in remote connection post type access controls. No more manual slug entry. `resolve_post_type_access()` mirrors discovery logic on form submission. Multi-site gateway plan (1,429 lines) for hub-and-spoke federation targeting v1.5.0+. (PR #5834)
+- 🎨 **Design System Tool Preset.** New `design-system` preset with 72 tools across 13 categories: WordPress content, image generation/analysis/processing, web search/research, charts, document generation (14 tools), Paper Store (8), video generation/processing, social media, AI/memory, and utility. (PR #5837)
+- ✅ **Post-Install Integrity Check.** Plugin updater now verifies 15 critical file paths after every update before reporting success. Prevents silent corruption on distributed filesystems (Cloudways). REST controller `require_once` calls now guarded with `file_exists()` checks. (PR #5833)
+- 📚 **Documentation Catch-Up.** 3 new feature docs: Paper Store, Remote Sites & Connections, MCP Protocol Version Negotiation. Updated: Tool Presets System (Design System preset), Plugin Updater (integrity check), DOCUMENTATION_INDEX, QUICK_REFERENCE, README, CHANGELOG.
+- 🐛 **Fixes.** Pro addon update visibility for wp.org base + standalone Pro (PR #5832). Docker chmod warning suppression (PR #5831).
 
 ### ✨ What's New at a Glance (v1.1.51)
 
@@ -609,6 +620,19 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.52 — August 2026)
+
+### August 11, 2026 — Paper Store Remote, CPT Auto-Discovery, Design System Preset, Integrity Check
+
+- ✅ **Paper Store Remote Site Support — PR #5835 (13 files, +1,272/-73 lines).** All 8 Paper Store tools (`paper_store_list`, `paper_store_read`, `paper_store_search`, `paper_store_write`, `paper_store_update`, `paper_store_delete`, `paper_store_import`, `paper_store_export`) now accept an optional `connection_id` parameter to proxy operations through Remote Site Manager. New REST API controller at `mcp-ai/v1/paper-store` (697 lines) with full CRUD + search + import/export endpoints for remote site access. New `WP_MCP_AI_Paper_Store_Remote` trait (96 lines) handles HTTP dispatch and response normalization. New `list_mcp_tools` discovery tool (234 lines) enables AI agent self-discovery — returns all available MCP tools with JSON Schema parameter definitions, filterable by toolkit namespace and search term. (PR #5835)
+- ✅ **Remote Connection CPT Auto-Discovery — PR #5834 (1 file, +16/-4 lines).** Plugin-registered custom post types (including `paper_store`) now appear automatically in remote connection post type access controls via `get_post_types()`. Users no longer need to manually type each CPT slug, save, and reopen. `resolve_post_type_access()` mirrors the same discovery logic on form submission. Multi-Site Gateway plan (`docs/project/plans/multi-site-gateway-plan.md`, 1,429 lines) for hub-and-spoke federation targeting v1.5.0+. (PR #5834)
+- ✅ **Design System Tool Preset — PR #5837 (1 file, +108 lines).** New `design-system` preset in `WP_MCP_AI_Tool_Presets_Helper` with 72 tools across 13 categories: WordPress content (9), image generation (4), image analysis (4), image processing (5), web search/research (5), charts (2), document generation (14), Paper Store (8), video generation (2), video processing (5), social media (3), AI/memory (6), and utility (4). (PR #5837)
+- ✅ **Post-Install Integrity Check — PR #5833 (1 file, +74 lines).** `WP_MCP_AI_Plugin_Updater` now runs `verify_installation_integrity()` after every update, checking 15 critical file paths against the plugin directory before reporting success. Prevents silent update corruption on distributed filesystems (Cloudways) where `unzip` can drop files without errors. REST controller `require_once` calls now guarded with `file_exists()` checks. (PR #5833)
+- ✅ **Pro Update Visibility Fix — PR #5832 (1 file, +10 lines).** Pro addon update section now visible for wp.org base + standalone Pro plugin installs.
+- ✅ **Docker Chmod Suppression — PR #5831 (3 files).** Suppressed `chmod()` warnings during plugin install in Docker environments by checking filesystem constants.
+- 📚 **Documentation** — 3 new feature docs: Paper Store, Remote Sites & Connections, MCP Protocol Version Negotiation. Updated: Tool Presets System (Design System preset), Plugin Updater (integrity check), DOCUMENTATION_INDEX, QUICK_REFERENCE, README, CHANGELOG.
+- 📦 **Versioning** — bumped to **1.1.52** across all version-bearing files. Pro addon: 1.1.52. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
 
 ## 🆕 Latest Updates (v1.1.51 — August 2026)
 
