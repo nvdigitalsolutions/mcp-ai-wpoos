@@ -55,6 +55,34 @@ class WP_MCP_AI_Plugin_Updater {
 	const ASSET_PRO = 'nvdigital-open-operator-system-oos-pro';
 
 	/**
+	 * Critical files that MUST exist after a core plugin update.
+	 *
+	 * These are loaded via require_once without file_exists() guards in the
+	 * main plugin bootstrap. If any are missing after an update, the plugin
+	 * will fatal on the next request. We verify them post-install to catch
+	 * partial extractions (common on Cloudways/distributed filesystems).
+	 *
+	 * Paths are relative to the plugin root (WP_MCP_AI_PATH).
+	 */
+	const VERIFY_FILES = array(
+		'mcp-ai-wpoos.php',
+		'includes/class-wp-mcp-ai-plugin.php',
+		'includes/class-wp-mcp-ai-container.php',
+		'includes/class-wp-mcp-ai-rest.php',
+		'includes/rest/class-wp-mcp-ai-rest-controller-base.php',
+		'includes/rest/class-wp-mcp-ai-rest-chat-controller.php',
+		'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php',
+		'includes/rest/class-wp-mcp-ai-rest-tools-controller.php',
+		'includes/rest/class-wp-mcp-ai-rest-token-manager.php',
+		'includes/rest/class-wp-mcp-ai-rest-cost-manager.php',
+		'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php',
+		'includes/rest/class-wp-mcp-ai-rest-authenticator.php',
+		'includes/rest/class-wp-mcp-ai-rest-validator.php',
+		'includes/rest/class-wp-mcp-ai-sse-handler.php',
+		'includes/bridge/class-wp-mcp-ai-bridge.php',
+	);
+
+	/**
 	 * Initialize the updater.
 	 *
 	 * Always hooks AJAX handlers — base-only installs see an upgrade path,
@@ -344,6 +372,14 @@ class WP_MCP_AI_Plugin_Updater {
 					)
 				);
 			}
+		}
+
+		// Verify that all critical files were extracted correctly.
+		// On distributed filesystems (e.g. Cloudways), unzip can silently
+		// drop files without the upgrader reporting an error.
+		$integrity = self::verify_installation_integrity();
+		if ( is_wp_error( $integrity ) ) {
+			return $integrity;
 		}
 
 		// Clear the update cache.
@@ -703,6 +739,12 @@ class WP_MCP_AI_Plugin_Updater {
 			}
 		}
 
+		// Verify that all critical files were extracted correctly.
+		$integrity = self::verify_installation_integrity();
+		if ( is_wp_error( $integrity ) ) {
+			return $integrity;
+		}
+
 		// Clear the update cache.
 		delete_transient( self::CACHE_KEY );
 
@@ -763,6 +805,38 @@ class WP_MCP_AI_Plugin_Updater {
 					__( 'Upgraded to complete version %s. The plugin now includes all Pro toolkits and addons. Please reload the page.', 'mcp-ai-wpoos' ),
 					$check['latest']
 				),
+			)
+		);
+	}
+
+	/**
+	 * Verify that critical plugin files exist after an update.
+	 *
+	 * Checks the safelist in VERIFY_FILES against the plugin directory.
+	 * Returns a WP_Error listing any missing files, or true if all pass.
+	 *
+	 * @return true|WP_Error True if all files present, WP_Error with missing list otherwise.
+	 */
+	private static function verify_installation_integrity() {
+		$missing = array();
+
+		foreach ( self::VERIFY_FILES as $relative_path ) {
+			$absolute_path = WP_MCP_AI_PATH . $relative_path;
+			if ( ! file_exists( $absolute_path ) ) {
+				$missing[] = $relative_path;
+			}
+		}
+
+		if ( empty( $missing ) ) {
+			return true;
+		}
+
+		return new WP_Error(
+			'integrity_check_failed',
+			sprintf(
+				/* translators: %s: comma-separated list of missing file paths */
+				__( 'Update appears to be incomplete — the following required files are missing: %s. The update may have been partially extracted. Please try updating again.', 'mcp-ai-wpoos' ),
+				implode( ', ', $missing )
 			)
 		);
 	}
