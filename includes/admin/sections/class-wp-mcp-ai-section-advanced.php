@@ -2291,6 +2291,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			// full/GitHub builds see update checks.
 			$is_github_build = ! ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION );
 			$update_nonce    = wp_create_nonce( 'wp_mcp_ai_plugin_update' );
+			$update_error      = __( 'An error occurred.', 'mcp-ai-wpoos' );
+			$update_ajax_error = __( 'AJAX error: ', 'mcp-ai-wpoos' );
 
 			if ( class_exists( 'WP_MCP_AI_Plugin_Updater' ) ) :
 				?>
@@ -2347,8 +2349,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					$update_confirm    = __( 'This will download and install the latest version of the complete plugin from GitHub. A backup will be created before updating. Continue?', 'mcp-ai-wpoos' );
 					$update_uptodate   = __( 'You are running the latest version.', 'mcp-ai-wpoos' );
 					$update_available  = __( 'Update available!', 'mcp-ai-wpoos' );
-					$update_error      = __( 'An error occurred.', 'mcp-ai-wpoos' );
-					$update_ajax_error = __( 'AJAX error: ', 'mcp-ai-wpoos' );
 
 					ob_start();
 					?>
@@ -2609,11 +2609,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				// Only show Pro updates when Pro is a standalone plugin (not bundled
 				// inside the main plugin directory). The complete package update covers
 				// both base and Pro together, so a separate Pro update is redundant.
+				// Must work for both full builds ($is_github_build) and wp.org base
+				// installs with a separately installed Pro addon.
 				$pro_is_standalone = defined( 'WP_MCP_AI_PRO_VERSION' )
 				&& defined( 'WP_MCP_AI_PRO_PATH' )
 				&& 0 !== strpos( trailingslashit( untrailingslashit( WP_MCP_AI_PRO_PATH ) ), trailingslashit( untrailingslashit( WP_MCP_AI_PATH ) ) );
 
-				if ( $is_github_build && $pro_is_standalone ) :
+				if ( $pro_is_standalone ) :
 					?>
 		<div class="wp-mcp-ai-pro-updates-section" style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd;">
 			<h3><?php esc_html_e( 'Pro Addon Updates', 'mcp-ai-wpoos' ); ?></h3>
@@ -2670,6 +2672,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					ob_start();
 					?>
 		jQuery(document).ready(function($) {
+			var updateNonce = <?php echo wp_json_encode( $update_nonce ); ?>;
+
 			// Auto-check Pro on page load.
 			checkProUpdates(true);
 
