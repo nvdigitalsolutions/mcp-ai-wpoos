@@ -462,7 +462,33 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 				}
 			}
 
+			// Provider circuit breaker (1.2.0): skip HTTP when circuit is open.
+			if ( class_exists( 'WP_MCP_AI_Provider_Circuit_Breaker' ) && ! WP_MCP_AI_Provider_Circuit_Breaker::is_allowed( 'kimi' ) ) {
+				return new WP_Error(
+					'provider_circuit_open',
+					__( 'Kimi (Moonshot) API is temporarily unavailable due to repeated failures. Please try again shortly.', 'mcp-ai-wpoos' ),
+					array(
+						'status'      => 503,
+						'retry_after' => 60,
+					)
+				);
+			}
+
 			$response = wp_remote_post( $url, $request_args );
+
+			// Provider circuit breaker: track success/failure.
+			if ( class_exists( 'WP_MCP_AI_Provider_Circuit_Breaker' ) ) {
+				if ( is_wp_error( $response ) ) {
+					WP_MCP_AI_Provider_Circuit_Breaker::record_failure( 'kimi' );
+				} else {
+					$cb_status = wp_remote_retrieve_response_code( $response );
+					if ( $cb_status >= 500 ) {
+						WP_MCP_AI_Provider_Circuit_Breaker::record_failure( 'kimi' );
+					} else {
+						WP_MCP_AI_Provider_Circuit_Breaker::record_success( 'kimi' );
+					}
+				}
+			}
 
 			if ( is_wp_error( $response ) ) {
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
