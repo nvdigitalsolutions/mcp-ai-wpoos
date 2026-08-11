@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 10, 2026  
-**Plugin Version:** 1.1.50  
+**Last Updated:** August 11, 2026  
+**Plugin Version:** 1.1.52  
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,7 +9,9 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
-> **AUGUST 10, 2026 UPDATE (v1.1.50):** MEDIA WORKER SIDECAR — DOCKER-BASED NODE.JS SIDECAR WITH 11 ROUTE HANDLERS (IMAGE, VIDEO, PDF, OCR, EMAIL, SOCIAL, BROWSER, CODE, DATA, DOCUMENT, WORKFLOW). QUEUE MODULE WITH CONCURRENT PROCESSING. PRO INTEGRATION (SETTINGS + CLIENT TRAIT). DOCKER DNS-TO-IP LOOPBACK RESOLUTION. SITE HEALTH REDECLARATION FIX. NPM SECURITY FIXES (NANOID, JS-YAML, DOMPURIFY). BMAD AGENT EDITING CONVENTIONS. WPCS FORMATTING CLEANUP.
+> **AUGUST 11, 2026 UPDATE (v1.1.52):** PAPER STORE REMOTE SITE SUPPORT (8 TOOLS + REST API + REMOTE TRAIT), `list_mcp_tools` DISCOVERY TOOL, REMOTE CONNECTION CPT AUTO-DISCOVERY, DESIGN SYSTEM TOOL PRESET (72 TOOLS, 13 CATEGORIES), POST-INSTALL INTEGRITY CHECK (15 CRITICAL PATHS), MCP PROTOCOL VERSION NEGOTIATION (ZED/CLAUDE DESKTOP/CURSOR COMPATIBILITY), PRO UPDATE VISIBILITY FIX, DOCKER CHMOD SUPPRESSION, SECURITY BUMPS (MULTER, NODEMAILER, SHARP). 3 NEW FEATURE DOCS.
+>
+> **AUGUST 11, 2026 UPDATE (v1.1.51):** ORCHESTRATION & HARNESS GAP REMEDIATION — OWASP LLM TOP 10 COVERAGE 20%→60%, EU AI ACT COMPLIANCE 17%→67%. OUTPUT GUARDRAIL, CITATION VERIFIER, MODEL INTEGRITY VERIFIER, SEMANTIC CACHE, CANARY DEPLOYMENT, RED TEAMING SCRIPTS. WORKFLOW ENGINE V2 GA. DOCUMENTATION AUDIT & GAP-FILL (12 GAPS, 6 NEW FEATURE DOCS).
 >
 > **AUGUST 7, 2026 UPDATE (v1.1.47):** MYSQL CONNECTION EXHAUSTION FIX (CLOUDWAYS) — CRON OVERHAUL WITH CONCURRENCY LIMITS + MEMORY CAPS + STAGGERED SCHEDULING, ACTIVATION CONNECTION THROTTLING, SERVICE STATUS REGISTRY HARDENING, UPDATE CHECKER CACHE BUST, MERMAID NPM AUDIT FIX (5 CVEs), PRO STATUS PAGE IMPROVEMENTS
 >
@@ -605,10 +607,13 @@ n#### New Audit & Compliance Docs
 
 ## 🆕 August 2026 — Media Worker Sidecar, Backup & Restore, Plugin Updater, Abilities API, Self-Hosted OCR, SGI Transparency, Embedded v0.2.0, Documentation Audit
 
-### New and updated documents (August 1–11, 2026, v1.1.43–v1.1.51)
+### New and updated documents (August 1–11, 2026, v1.1.43–v1.1.52)
 
-#### New Feature Reference Docs (6 docs)
+#### New Feature Reference Docs (9 docs)
 
+- **[docs/features/paper-store.md](features/paper-store.md)** ⭐ **NEW** — Paper Store: collections, 8 CRUD tools, REST API, remote site support, discovery tool. (August 11, 2026)
+- **[docs/features/remote-sites.md](features/remote-sites.md)** ⭐ **NEW** — Remote Sites & Connections: connection management, CPT auto-discovery, remote operations. (August 11, 2026)
+- **[docs/reference/mcp-protocol-version-negotiation.md](reference/mcp-protocol-version-negotiation.md)** ⭐ **NEW** — MCP Protocol Version Negotiation: client compatibility, supported versions, implementation. (August 11, 2026)
 - **[docs/features/backup-restore.md](features/backup-restore.md)** ⭐ **NEW** — Comprehensive Backup & Restore with 11 modular export providers. (August 11, 2026)
 - **[docs/features/plugin-updater.md](features/plugin-updater.md)** ⭐ **NEW** — GitHub-based plugin updater, base-to-complete upgrade, Pro support, rollback. (August 11, 2026)
 - **[docs/features/abilities-api.md](features/abilities-api.md)** ⭐ **NEW** — Abilities API: registration, discovery, 5 categories (41 abilities), MCP bridge. (August 11, 2026)
@@ -624,6 +629,8 @@ n#### New Audit & Compliance Docs
 
 #### New Reference Docs
 
+- **[docs/reference/mcp-protocol-version-negotiation.md](reference/mcp-protocol-version-negotiation.md)** ⭐ **NEW** — MCP protocol version negotiation: client compatibility matrix, supported versions. (August 11, 2026)
+- **[docs/reference/orchestration/orchestration-harness-reference.md](reference/orchestration/orchestration-harness-reference.md)** ⭐ **NEW** — Orchestration & Harness Layer Reference: all layers A–J, OWASP coverage, EU AI Act mapping. (August 11, 2026)
 - **[docs/reference/abilities-registry.md](reference/abilities-registry.md)** ⭐ **NEW** — Auto-generated catalog of 41 WordPress Abilities. (August 6, 2026)
 - **[includes/abilities/README.md](../includes/abilities/README.md)** ⭐ **NEW** — Abilities API framework README. (August 6, 2026)
 
@@ -636,17 +643,20 @@ n#### New Audit & Compliance Docs
 - 020: Comprehensive Backup & Restore (proposal + implementation plan)
 - Embedded Addon Enhancement + Implementation plans (2 docs)
 - Media Worker Sidecar proposal + Sidecar Expansion plan (2 docs)
+- Multi-Site Gateway plan (1,429 lines — hub-and-spoke federation for v1.5.0+)
 
-Full listing in `docs/project/proposals/` — 16 new proposal documents.
+Full listing in `docs/project/proposals/` and `docs/project/plans/` — 18 new proposal/plan documents.
 
 #### Updated Core Docs
 
-- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.43–v1.1.51 sections, v1.1.46 gap filled, addon count updated.
-- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.43–v1.1.51 with full PR-level detail.
-- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.43–v1.1.51 entries, catalogue count expanded.
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.43–v1.1.52 sections, Design System preset, Paper Store remote, integrity check, MCP negotiation.
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.43–v1.1.52 with full PR-level detail.
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.43–v1.1.52 entries.
+- **[docs/features/tool-presets-system.md](features/tool-presets-system.md)** ⭐ **UPDATED** — Design System preset (72 tools, 13 categories).
+- **[docs/features/plugin-updater.md](features/plugin-updater.md)** ⭐ **UPDATED** — Post-install integrity check section.
 - **[docs/project/FOR_REVIEWERS.md](project/FOR_REVIEWERS.md)** ⭐ **UPDATED** — Addon count (24→27), Embedded v0.2.0, Media Worker.
 - **[docs/project/ADDON_INVENTORY.md](project/ADDON_INVENTORY.md)** ⭐ **UPDATED** — Media Worker as #27, Embedded version bumped.
-- **[MAINTAINER_MAP.md](../MAINTAINER_MAP.md)** ⭐ **UPDATED** — v1.1.51.
+- **[MAINTAINER_MAP.md](../MAINTAINER_MAP.md)** ⭐ **UPDATED** — v1.1.52.
 - **[.bmad/agents/*.yaml](../.bmad/agents/)** ⭐ **UPDATED** — Editing conventions for developer + QA agents.
 - **[docs/developer/architecture/ARCHITECTURE.md](developer/architecture/ARCHITECTURE.md)** ⭐ **UPDATED** — Refreshed.
 - **[docs/operations/security/SECURITY_POSTURE.md](operations/security/SECURITY_POSTURE.md)** ⭐ **UPDATED** — v1.1.43–v1.1.50 hardening.

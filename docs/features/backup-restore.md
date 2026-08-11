@@ -70,7 +70,7 @@ wp mcp-ai import --input=/tmp/nvoos-backup.json --providers=settings,assistants
 {
   "version": "1.0",
   "exported_at": "2026-08-11T12:00:00Z",
-  "plugin_version": "1.1.51",
+  "plugin_version": "1.1.52",
   "providers": {
     "core-settings": { ... },
     "assistants": [ ... ],
