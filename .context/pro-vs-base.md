@@ -1,7 +1,7 @@
 # NV oOS Pro vs Base Version Guide
 
 > **GSD Context File** — Load this when making decisions about Base vs Pro feature placement.
-> Last reviewed: July 13, 2026.
+> Last reviewed: August 12, 2026.
 
 ---
 

@@ -1,12 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.52
-**Last Updated:** August 11, 2026
+**Version:** 1.1.53
+**Last Updated:** August 12, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (August 2026)
 
+- **v1.1.53** (August 12): Shared Analytics Service (7 platform adapters, 5 DTOs, cross-platform normalization). Circuit breaker protection on all 15 AI provider clients. Concurrency guard, cost tracker, and backpressure wired into execution pipeline. 22 new design-* agent skills synced (bundled skills: 45→67). SSE backoff reset and rate-limit fixes. Load Guard fatal error fix. Documentation catch-up: CHANGELOG, README, CLAUDE.md, AGENTS.md, 6 .context/ files updated.
 - **v1.1.52** (August 11): Paper Store remote site support — 8 tools + REST API (697 lines) + remote trait, `list_mcp_tools` discovery tool. Remote connection CPT auto-discovery. Design System tool preset (72 tools, 13 categories). Post-install integrity check (15 critical paths). MCP protocol version negotiation for Zed/Claude Desktop/Cursor. Pro update visibility fix. Docker chmod suppression. Security bumps (multer, nodemailer, sharp). 3 new feature docs: Paper Store, Remote Sites, MCP Protocol Version Negotiation.
 - **v1.1.51** (August 11): Documentation audit & gap-fill — 12 gaps resolved across P0/P1/P2 tiers. DOCUMENTATION_INDEX updated with August 2026 section (7 versions, ~30 proposals). 6 new feature reference docs: Backup & Restore, Plugin Updater, Abilities API, Self-Hosted OCR, SGI Transparency, Embedded v0.2.0. FOR_REVIEWERS and ADDON_INVENTORY counts updated. README v1.1.46 gap filled.
 - **v1.1.50** (August 10): Media Worker Sidecar — Docker-based Node.js sidecar with 11 route handlers (browser, code, data, document, email, image, ocr, pdf, social, video, workflow). Queue module with concurrent processing. Pro integration (settings + client trait). Docker DNS-to-IP loopback resolution. Site Health redeclaration fix. NPM security fixes (nanoid, js-yaml, dompurify across 11+ addons). BMAD agent editing conventions. WPCS formatting cleanup.

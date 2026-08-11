@@ -1,7 +1,7 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: March 2026.
+> Last reviewed: August 2026.
 
 ---
 
@@ -183,6 +183,9 @@ flush();
 | POST | `/mcp-ai/v1/cron-status/{job_id}/cancel` | Cancel a running async tool job (owner only) |
 | POST | `/mcp-ai/v1/cron-status/{job_id}/retry` | Re-queue a failed/cancelled async tool job (owner only) |
 | `*` | `/mcp-ai/v1/chat-memory/*` | Chat-client Memory Bridge proxy (6 routes — preferences, wake-up, recall, store, audit, `/{context_id}`) |
+| `*` | `/mcp-ai/v1/paper-store` | Paper Store CRUD + search + import/export for remote site access (v1.1.52) |
+| `*` | `/mcp-ai-pro/v1/catalogues/*` | Skill catalogue management (Pro) — discover/install skills from remote GitHub repos |
+| `*` | `/mcp-ai-pro/v1/analytics/*` | Shared Analytics Service endpoints (Pro, v1.1.53) — cross-platform social/ecommerce analytics |
 
 The cron-status routes are implemented by `WP_MCP_AI_REST_Tools_Controller` and
 delegate to `WP_MCP_AI_Tool_Async_Executor::cancel_job()` / `retry_job()` /

@@ -11,14 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.52
-**Release Date:** 2026-08-11
+**Version:** 1.1.53
+**Release Date:** 2026-08-12
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.52 Highlights:** Paper Store remote site support (8 tools + REST API + remote trait), `list_mcp_tools` discovery tool, remote connection CPT auto-discovery, Design System tool preset (72 tools, 13 categories), post-install integrity check, MCP protocol version negotiation for Zed/Claude Desktop/Cursor.
-
-**v1.1.51 Highlights:** Orchestration & Harness Layer Gap Remediation — OWASP LLM Top 10 coverage 20%→60%, EU AI Act compliance 17%→67%. Output Guardrail, Citation Verifier, Model Integrity Verifier, Semantic Cache, Canary Deployment. Security bumps (multer, nodemailer, sharp).
+**🆕 v1.1.53 Highlights:** Shared Analytics Service (7 platform adapters, 5 DTOs) for all Pro toolkits. Circuit breaker protection on all 15 AI provider clients. Concurrency guard, cost tracker, and backpressure wired into the execution pipeline. 22 new design-* coding-time agent skills synced alongside wp-* skills. SSE backoff reset and rate-limit fixes. Load Guard fatal error fix.
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -151,6 +149,14 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.53)
+
+- 📊 **Shared Analytics Service.** New unified analytics subsystem (`addons/pro/includes/analytics/`, 1,489 lines) consumed by all Pro toolkits. 7 platform adapters: Meta (FB+IG), Twitter/X, LinkedIn, TikTok, WooCommerce, Google Analytics 4, and Cloudways monitoring. 5 immutable DTOs (Account, Post, Metric, TimeSeries, Report). Cross-platform normalization maps platform-specific metric names to a unified schema. Smart caching with stampede prevention. Token-bucket rate limiter per platform. Extensible adapter pattern — register new platforms via `$service->register_adapter()`. MCP server registration and Site Health integration. Design Stack skill: `design-analytics-reporting`. (PR #5836)
+- 🛡️ **Circuit Breaker & Execution Pipeline Hardening.** Circuit breaker protection added to all remaining AI provider clients — now active on all 15 first-class providers with configurable failure thresholds. Concurrency guard, cost tracker, and backpressure signals wired into the execution pipeline. The agentic loop now auto-throttles tool calls when system load is high. Plugin updater base-only UI fix after complete upgrade. Silent build asset failure now surfaces a clear error. (PR #5839)
+- 🧠 **Agent Skills Sync & Discovery.** `sync-agent-skills` now syncs project-owned design-* skills alongside wp-* skills — 22 new coding-time skills (design-analytics-reporting through design-video-creation) auto-discovered by the Zed editor. New `mcp-ai-wpoos-plugin` bundled skill. Base bundled skills increased from 45 to 67. (PR #5842)
+- 🔧 **SSE Stream & Load Guard Fixes.** SSE backoff counter now resets between successful stream reconnections. Rate-limit counter properly cleaned up after stream termination. Load Guard fatal error on PHP 8.1+ fixed — no longer calls private `count_active_jobs()`. (PRs #5841, #5840)
+- 📚 **Documentation Catch-Up.** CHANGELOG v1.1.53 entry documenting all missing features (Shared Analytics, circuit breaker, skills sync). README, CLAUDE.md, AGENTS.md, and 6 `.context/` files updated with current counts, review dates, and architecture details.
 
 ### ✨ What's New at a Glance (v1.1.52)
 
@@ -620,6 +626,18 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.53 — August 2026)
+
+### August 12, 2026 — Shared Analytics Service, Circuit Breaker Hardening, Agent Skills Sync, SSE Fixes
+
+- ✅ **Shared Analytics Service — PR #5836 (18 files, +2,489 lines).** New unified analytics subsystem (`addons/pro/includes/analytics/`) consumed by all NV oOS Pro toolkits. 7 platform adapters: Meta (Facebook + Instagram), Twitter/X, LinkedIn, TikTok, WooCommerce, Google Analytics 4, and Cloudways monitoring. 5 immutable DTOs (Account, Post, Metric, TimeSeries, Report) with strict coercion and `WP_Error` validation. Cross-platform normalization maps platform-specific metric names to a unified schema via `WP_MCP_AI_Metric_Normalizer`. Smart caching with transient-based per-data-type TTLs and cache stampede prevention via `WP_MCP_AI_Analytics_Cache`. Token-bucket rate limiter per platform via `WP_MCP_AI_Analytics_Rate_Limiter` prevents API exhaustion. Extensible adapter pattern — single `WP_MCP_AI_Analytics_Adapter_Interface`, register new platforms via `$service->register_adapter()`. MCP server registration in the Pro toolkit fleet. Site Health integration for analytics health checks. All 8 phases complete (DTOs → Adapters → Service → Tools → Migration → Admin UI → MCP Server → Site Health). Design Stack skill: `design-analytics-reporting`. (PR #5836)
+- ✅ **Circuit Breaker & Execution Pipeline Hardening — PR #5839 (12 files, +384/-42 lines).** Circuit breaker protection added to all remaining AI provider clients that lacked it — now active on all 15 first-class providers with configurable failure thresholds and cooldown periods. Concurrency guard (`WP_MCP_AI_Concurrency_Guard`) wired into the execution pipeline to prevent overlapping destructive operations across the full tool execution lifecycle. Cost tracker (`WP_MCP_AI_Cost_Tracker`) per-operation cost estimation now enforced at the pipeline level, not just at the provider client boundary. Backpressure signals from concurrency guard and cost tracker now feed into the agentic loop's iteration budget, automatically throttling tool calls when system load is high. Plugin updater no longer shows base-only UI after upgrade to complete (base+Pro) package. Silent build asset failure now surfaces a clear error when the complete build asset is missing from a GitHub release. (PR #5839)
+- ✅ **Agent Skills Sync & Discovery — PR #5842 (1 file, +78/-24 lines).** `sync-agent-skills` command now syncs project-owned design-* skills alongside the existing wp-* skills. The 22 new design-* coding-time agent skills (design-analytics-reporting through design-video-creation) are now auto-discovered by the Zed editor alongside the wp-* WordPress development skills. New `mcp-ai-wpoos-plugin` bundled skill covering complete NV oOS plugin operational guide (setup, assistant creation, MCP bridge tokens, API key bridging, Docker/WSL2 troubleshooting). Base bundled skills count increased from 45 to **67**. (PR #5842)
+- ✅ **SSE Stream Backoff & Rate-Limit Fixes — PR #5841 (2 files, +18/-6 lines).** SSE backoff counter now properly resets between successful stream reconnections, preventing unnecessary progressive delays. Rate-limit counter correctly cleaned up after stream termination, preventing false throttling on subsequent connections. (PR #5841)
+- ✅ **Load Guard Fatal Error Fix — PR #5840 (1 file, +3/-3 lines).** Fixed `WP_MCP_AI_Load_Guard` calling private `count_active_jobs()` method, causing a fatal error on PHP 8.1+ when strict visibility enforcement is enabled. Now calls the public `get_active_job_count()` accessor instead. (PR #5840)
+- 📚 **Documentation Catch-Up (this release)** — CHANGELOG v1.1.53 entry documenting Shared Analytics Service, circuit breaker hardening, skills sync, SSE/load guard fixes, and all changes from PRs #5836–#5842 that were missing from the v1.1.52 entry. README updated with v1.1.53 highlights and "What's New" section. CLAUDE.md updated: Paper Store section expanded with remote/REST/discovery details, bundled skills count corrected (45→67), circuit breaker/backpressure added to Security Infrastructure, Shared Analytics Service section added, context file references added for new docs. AGENTS.md updated: bundled skills count (45→67), coding-time skills count (22→44). Six `.context/` files updated with August 2026 review dates and content: conventions.md (tool counts, analytics directory), tool-registry.md (`list_mcp_tools`, design-system preset), security-checklist.md (circuit breaker, post-install integrity check), rest-api.md (Paper Store REST endpoint), pro-vs-base.md, and .context/README.md.
+- 📦 **Versioning** — bumped to **1.1.53** across all version-bearing files. Pro addon: 1.1.53. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**. Bundled skills: **67** base (up from 45).
 
 ## 🆕 Latest Updates (v1.1.52 — August 2026)
 
