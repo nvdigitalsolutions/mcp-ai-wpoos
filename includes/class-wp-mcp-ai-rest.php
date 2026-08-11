@@ -225,64 +225,91 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 
 			// Register Token Manager REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-token-manager.php';
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Token_Manager', 'register_routes' ) );
+			$token_manager_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-token-manager.php';
+			if ( file_exists( $token_manager_file ) ) {
+				require_once $token_manager_file;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Token_Manager', 'register_routes' ) );
+			}
 
 			// Register Cost Manager REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cost-manager.php';
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Cost_Manager', 'register_routes' ) );
+			$cost_manager_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cost-manager.php';
+			if ( file_exists( $cost_manager_file ) ) {
+				require_once $cost_manager_file;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Cost_Manager', 'register_routes' ) );
+			}
 
 			// Register Analytics Manager REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Analytics_Manager', 'register_routes' ) );
+			$analytics_manager_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
+			if ( file_exists( $analytics_manager_file ) ) {
+				require_once $analytics_manager_file;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Analytics_Manager', 'register_routes' ) );
+			}
 
 			// Register Slash Command REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-slash-command-controller.php';
-			add_action(
-				'rest_api_init',
-				function () {
-					$controller = new WP_MCP_AI_REST_Slash_Command_Controller();
-					$controller->register_routes();
-				}
-			);
+			$slash_command_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-slash-command-controller.php';
+			if ( file_exists( $slash_command_file ) ) {
+				require_once $slash_command_file;
+				add_action(
+					'rest_api_init',
+					function () {
+						$controller = new WP_MCP_AI_REST_Slash_Command_Controller();
+						$controller->register_routes();
+					}
+				);
+			}
 
 			// Register ACP Transport REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-jsonrpc-dispatcher.php';
-			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-manager.php';
-			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
-			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-server.php';
-			require_once WP_MCP_AI_PATH . 'includes/acp/transport/class-wp-mcp-ai-acp-transport-http.php';
+			$acp_dispatcher_file  = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-jsonrpc-dispatcher.php';
+			$acp_session_file     = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-manager.php';
+			$acp_bridge_file      = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
+			$acp_server_file      = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-server.php';
+			$acp_transport_file   = WP_MCP_AI_PATH . 'includes/acp/transport/class-wp-mcp-ai-acp-transport-http.php';
+			if ( file_exists( $acp_dispatcher_file ) && file_exists( $acp_session_file ) && file_exists( $acp_bridge_file ) && file_exists( $acp_server_file ) && file_exists( $acp_transport_file ) ) {
+				require_once $acp_dispatcher_file;
+				require_once $acp_session_file;
+				require_once $acp_bridge_file;
+				require_once $acp_server_file;
+				require_once $acp_transport_file;
 
-			add_action(
-				'rest_api_init',
-				function () {
-					// Only mount the ACP server if enabled in settings.
-					$settings = get_option( 'wp_mcp_ai_settings', array() );
-					if ( empty( $settings['enable_acp_server'] ) ) {
-						return;
+				add_action(
+					'rest_api_init',
+					function () {
+						// Only mount the ACP server if enabled in settings.
+						$settings = get_option( 'wp_mcp_ai_settings', array() );
+						if ( empty( $settings['enable_acp_server'] ) ) {
+							return;
+						}
+
+						$session_manager = new WP_MCP_AI_ACP_Session_Manager();
+						$session_bridge  = new WP_MCP_AI_ACP_Session_Bridge();
+						$dispatcher      = new WP_MCP_AI_ACP_JSONRPC_Dispatcher( $session_manager, $session_bridge );
+						$controller      = new WP_MCP_AI_ACP_Transport_HTTP( $dispatcher );
+						$controller->register_routes();
 					}
-
-					$session_manager = new WP_MCP_AI_ACP_Session_Manager();
-					$session_bridge  = new WP_MCP_AI_ACP_Session_Bridge();
-					$dispatcher      = new WP_MCP_AI_ACP_JSONRPC_Dispatcher( $session_manager, $session_bridge );
-					$controller      = new WP_MCP_AI_ACP_Transport_HTTP( $dispatcher );
-					$controller->register_routes();
-				}
-			);
+				);
+			}
 
 			// Register Health Check REST endpoint (load balancer / monitoring).
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-health.php';
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Health', 'register_routes' ) );
+			$health_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-health.php';
+			if ( file_exists( $health_file ) ) {
+				require_once $health_file;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Health', 'register_routes' ) );
+			}
 
 			// Register Voice REST endpoints (realtime voice sessions).
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-translate-client.php';
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-whisper-client.php';
-			$this->voice_controller = new WP_MCP_AI_REST_Voice_Controller();
-			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Client() );
-			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Translate_Client() );
-			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Whisper_Client() );
-			$this->voice_controller->register_provider( new WP_MCP_AI_Gemini_Live_Client() );
+			$voice_file       = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
+			$translate_file   = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-translate-client.php';
+			$whisper_file     = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-whisper-client.php';
+			if ( file_exists( $voice_file ) && file_exists( $translate_file ) && file_exists( $whisper_file ) ) {
+				require_once $voice_file;
+				require_once $translate_file;
+				require_once $whisper_file;
+				$this->voice_controller = new WP_MCP_AI_REST_Voice_Controller();
+				$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Client() );
+				$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Translate_Client() );
+				$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Whisper_Client() );
+				$this->voice_controller->register_provider( new WP_MCP_AI_Gemini_Live_Client() );
+			}
 
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
