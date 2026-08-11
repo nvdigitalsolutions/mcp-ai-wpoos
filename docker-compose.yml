@@ -62,6 +62,10 @@ services:
         define( 'WP_ENVIRONMENT_TYPE', 'development' );
         define( 'WP_MEMORY_LIMIT', '512M' );
 
+        /* ── Docker: skip chmod (named volumes don't support it) ── */
+        define( 'FS_CHMOD_DIR', ( 0755 & ~ umask() ) );
+        define( 'FS_CHMOD_FILE', ( 0644 & ~ umask() ) );
+
         /* ── Media Worker sidecar ── */
         define( 'WP_MEDIA_WORKER_URL', 'http://media-worker:3100' );
 
@@ -150,6 +154,10 @@ services:
         define( 'SCRIPT_DEBUG', true );
         define( 'WP_ENVIRONMENT_TYPE', 'development' );
         define( 'WP_MEMORY_LIMIT', '512M' );
+
+        /* ── Docker: skip chmod (named volumes don't support it) ── */
+        define( 'FS_CHMOD_DIR', ( 0755 & ~ umask() ) );
+        define( 'FS_CHMOD_FILE', ( 0644 & ~ umask() ) );
 
         /* ── Media Worker sidecar ── */
         define( 'WP_MEDIA_WORKER_URL', 'http://media-worker:3100' );
@@ -241,6 +249,10 @@ services:
         define( 'SCRIPT_DEBUG', true );
         define( 'WP_ENVIRONMENT_TYPE', 'development' );
         define( 'WP_MEMORY_LIMIT', '512M' );
+
+        /* ── Docker: skip chmod (named volumes don't support it) ── */
+        define( 'FS_CHMOD_DIR', ( 0755 & ~ umask() ) );
+        define( 'FS_CHMOD_FILE', ( 0644 & ~ umask() ) );
 
         /* ── Media Worker sidecar ── */
         define( 'WP_MEDIA_WORKER_URL', 'http://media-worker:3100' );
