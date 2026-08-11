@@ -2839,6 +2839,114 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'ff_generate_team_logo',
 				),
 			),
+
+			// =================================================================.
+			// DESIGN SYSTEM PRESET
+			// =================================================================.
+
+			'design-system'             => array(
+				'name'        => __( '🎨 Design System', 'mcp-ai-wpoos' ),
+				'description' => __( 'Comprehensive design and content creation toolkit: image generation, editing, analysis, document creation, video production, social media, web research, and WordPress content management', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// ── WordPress Content ──.
+					'create_post',
+					'save_post',
+					'get_recent_posts',
+					'search_content',
+					'get_site_health',
+					'get_environment_status',
+					'get_site_summary',
+					'get_user_info',
+					'search_attachments',
+
+					// ── Image Generation ──.
+					'generate_openai_image',
+					'generate_gemini_image',
+					'edit_gemini_image',
+					'edit_openai_image',
+
+					// ── Image Analysis ──.
+					'analyze_image',
+					'extract_image_text',
+					'generate_image_caption',
+					'generate_image_alt_text',
+
+					// ── Image Processing ──.
+					'remove_background',
+					'resize_image',
+					'vectorize_image',
+					'optimize_image_sharp',
+					'create_image_variation',
+
+					// ── Web Search & Research ──.
+					'web_search',
+					'deep_research',
+					'semantic_content_search',
+					'run_crawl4ai_job_validated',
+					'scrape_product_validated',
+
+					// ── Charts ──.
+					'create_chart',
+					'create_chart_validated',
+
+					// ── Document Generation ──.
+					'pro_pdf_document',
+					'pro_word_document',
+					'pro_excel_document',
+					'generate_pdf',
+					'generate_word',
+					'generate_excel',
+					'html_to_pdf',
+					'merge_pdfs',
+					'add_watermark_to_pdf',
+					'extract_pdf_text',
+					'ocr_pdf_text',
+					'pro_document_ocr',
+					'excel_data_import',
+					'excel_data_export',
+					'generate_invoice_pdf',
+
+					// ── Paper Store ──.
+					'paper_store_list',
+					'paper_store_read',
+					'paper_store_search',
+					'paper_store_write',
+					'paper_store_update',
+					'paper_store_delete',
+					'paper_store_import',
+					'paper_store_export',
+
+					// ── Video Generation ──.
+					'generate_sora_video',
+					'generate_veo_video',
+
+					// ── Video Processing ──.
+					'extract_video_frames',
+					'trim_video',
+					'compress_video',
+					'convert_video_format',
+					'transcode_video',
+
+					// ── Social Media ──.
+					'schedule_social_post',
+					'generate_social_captions',
+					'publish_to_social',
+
+					// ── AI & Memory ──.
+					'create_text_embeddings',
+					'load_skill',
+					'retrieve_agent_memory',
+					'semantic_context_search',
+					'recall_memory',
+					'wake_up_context',
+
+					// ── Utility ──.
+					'count_tokens',
+					'list_available_models',
+					'list_mcp_tools',
+					'submit_document_prompt',
+				),
+			),
 		);
 
 		/**
