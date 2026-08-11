@@ -519,6 +519,18 @@ This document provides a comprehensive index of all documentation available for 
 - **[CLAUDE.md](../CLAUDE.md)** ⭐ **UPDATED** — Security infrastructure section, framework-agnostic core section, context files, troubleshooting.
 - **[AGENTS.md](../AGENTS.md)** ⭐ **UPDATED** — Zed agent skills, coding-time vs runtime skills distinction, context-loading updates.
 - **[.github/copilot-instructions.md](../.github/copilot-instructions.md)** ⭐ **UPDATED** — Repository structure, key technologies, documentation count.
+n#### New Audit & Compliance Docs
+
+- **[docs/reference/orchestration/orchestration-harness-reference.md](reference/orchestration/orchestration-harness-reference.md)** ⭐ **NEW** — Authoritative reference for all 10 harness layers, orchestration, protocols, security, and 2026 standards alignment.
+- **[docs/operations/compliance/EU_AI_ACT_2026.md](operations/compliance/EU_AI_ACT_2026.md)** ⭐ **NEW** — EU AI Act compliance mapping (Articles 13-15, 50, 52).
+
+#### New Harness & Orchestration Classes (v1.1.51 gap remediation)
+
+- 6 new PHP classes: Output Guardrail (LLM05), Citation Verifier (LLM09), Model Integrity Verifier (LLM03), Semantic Cache, Canary Deployment, Red Teaming scripts.
+- Harness init updated to register Output Guardrail and Citation Verifier subscribers.
+- Harness profile expanded with `output_guard` and `citation_verify` sections.
+- Workflow Engine V2 graduated from feature-flag to GA (enabled by default).
+- Composer scripts: `security:red-team` and `security:red-team:php`.
 - **[.context/security-checklist.md](../.context/security-checklist.md)** ⭐ **UPDATED** — New security infrastructure class references.
 - **[.context/conventions.md](../.context/conventions.md)** ⭐ **UPDATED** — lib/core naming patterns.
 - **[MAINTAINER_MAP.md](../MAINTAINER_MAP.md)** ⭐ **UPDATED** — New directories, security docs, lib/core section.
@@ -545,6 +557,18 @@ This document provides a comprehensive index of all documentation available for 
 - **[.context/security-checklist.md](../.context/security-checklist.md)** ⭐ **UPDATED** — HMAC tokens, realpath containment, admin-post CSRF patterns.
 - **[.context/conventions.md](../.context/conventions.md)** ⭐ **UPDATED** — directory tree, tool counts.
 - **[.github/copilot-instructions.md](../.github/copilot-instructions.md)** ⭐ **UPDATED** — OKF architecture, tool counts.
+n#### New Audit & Compliance Docs
+
+- **[docs/reference/orchestration/orchestration-harness-reference.md](reference/orchestration/orchestration-harness-reference.md)** ⭐ **NEW** — Authoritative reference for all 10 harness layers, orchestration, protocols, security, and 2026 standards alignment.
+- **[docs/operations/compliance/EU_AI_ACT_2026.md](operations/compliance/EU_AI_ACT_2026.md)** ⭐ **NEW** — EU AI Act compliance mapping (Articles 13-15, 50, 52).
+
+#### New Harness & Orchestration Classes (v1.1.51 gap remediation)
+
+- 6 new PHP classes: Output Guardrail (LLM05), Citation Verifier (LLM09), Model Integrity Verifier (LLM03), Semantic Cache, Canary Deployment, Red Teaming scripts.
+- Harness init updated to register Output Guardrail and Citation Verifier subscribers.
+- Harness profile expanded with `output_guard` and `citation_verify` sections.
+- Workflow Engine V2 graduated from feature-flag to GA (enabled by default).
+- Composer scripts: `security:red-team` and `security:red-team:php`.
 
 
 ## 🆕 July 2026 — Content Format Awareness, Research Pipeline, Settings Credential Split, Model Catalog, Provider Parity, SSE Fixes
@@ -576,6 +600,56 @@ This document provides a comprehensive index of all documentation available for 
 - **[docs/ROADMAP.md](ROADMAP.md)** ⭐ **UPDATED** — v1.1.39 released section with capability snapshot update.
 - **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.39 section with full PR-level detail across 7 categories.
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
+
+---
+
+## 🆕 August 2026 — Media Worker Sidecar, Backup & Restore, Plugin Updater, Abilities API, Self-Hosted OCR, SGI Transparency, Embedded v0.2.0, Documentation Audit
+
+### New and updated documents (August 1–11, 2026, v1.1.43–v1.1.51)
+
+#### New Feature Reference Docs (6 docs)
+
+- **[docs/features/backup-restore.md](features/backup-restore.md)** ⭐ **NEW** — Comprehensive Backup & Restore with 11 modular export providers. (August 11, 2026)
+- **[docs/features/plugin-updater.md](features/plugin-updater.md)** ⭐ **NEW** — GitHub-based plugin updater, base-to-complete upgrade, Pro support, rollback. (August 11, 2026)
+- **[docs/features/abilities-api.md](features/abilities-api.md)** ⭐ **NEW** — Abilities API: registration, discovery, 5 categories (41 abilities), MCP bridge. (August 11, 2026)
+- **[docs/features/self-hosted-ocr.md](features/self-hosted-ocr.md)** ⭐ **NEW** — Self-hosted OCR: Unlimited-OCR + DeepSeek-OCR, vLLM config, Pro tools. (August 11, 2026)
+- **[docs/features/sgi-transparency-compliance.md](features/sgi-transparency-compliance.md)** ⭐ **NEW** — SGI Transparency & Compliance: AI transparency, SGI framework, chat UI. (August 11, 2026)
+- **[docs/features/embedded-addon-v020.md](features/embedded-addon-v020.md)** ⭐ **NEW** — Embedded Addon v0.2.0: voice tools, OpenMed, MCP abilities, OCR backend. (August 11, 2026)
+
+#### New Addon & Deployment Docs
+
+- **[addons/media-worker/README.md](../addons/media-worker/README.md)** ⭐ **NEW** — Media Worker sidecar README. (August 10, 2026)
+- **[docs/operations/deployment/media-worker-docker-setup.md](operations/deployment/media-worker-docker-setup.md)** ⭐ **NEW** — Media Worker Docker setup guide. (August 10, 2026)
+- **[addons/embedded/README.md](../addons/embedded/README.md)** ⭐ **NEW** — Embedded addon v0.2.0 top-level README. (August 5, 2026)
+
+#### New Reference Docs
+
+- **[docs/reference/abilities-registry.md](reference/abilities-registry.md)** ⭐ **NEW** — Auto-generated catalog of 41 WordPress Abilities. (August 6, 2026)
+- **[includes/abilities/README.md](../includes/abilities/README.md)** ⭐ **NEW** — Abilities API framework README. (August 6, 2026)
+
+#### New Proposals (16 proposals)
+
+- 016: Security Architecture Hardening (code review + implementation plan)
+- 017: Polling/Queue/Load Balancing Hardening + SGI Transparency Compliance (3 docs)
+- 018: Self-Hosted OCR Integration (proposal + implementation plan)
+- 019: Abilities API Selective Adoption (proposal + plan + appendix)
+- 020: Comprehensive Backup & Restore (proposal + implementation plan)
+- Embedded Addon Enhancement + Implementation plans (2 docs)
+- Media Worker Sidecar proposal + Sidecar Expansion plan (2 docs)
+
+Full listing in `docs/project/proposals/` — 16 new proposal documents.
+
+#### Updated Core Docs
+
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.43–v1.1.51 sections, v1.1.46 gap filled, addon count updated.
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.43–v1.1.51 with full PR-level detail.
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.43–v1.1.51 entries, catalogue count expanded.
+- **[docs/project/FOR_REVIEWERS.md](project/FOR_REVIEWERS.md)** ⭐ **UPDATED** — Addon count (24→27), Embedded v0.2.0, Media Worker.
+- **[docs/project/ADDON_INVENTORY.md](project/ADDON_INVENTORY.md)** ⭐ **UPDATED** — Media Worker as #27, Embedded version bumped.
+- **[MAINTAINER_MAP.md](../MAINTAINER_MAP.md)** ⭐ **UPDATED** — v1.1.51.
+- **[.bmad/agents/*.yaml](../.bmad/agents/)** ⭐ **UPDATED** — Editing conventions for developer + QA agents.
+- **[docs/developer/architecture/ARCHITECTURE.md](developer/architecture/ARCHITECTURE.md)** ⭐ **UPDATED** — Refreshed.
+- **[docs/operations/security/SECURITY_POSTURE.md](operations/security/SECURITY_POSTURE.md)** ⭐ **UPDATED** — v1.1.43–v1.1.50 hardening.
 
 ---
 

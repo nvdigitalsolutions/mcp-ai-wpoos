@@ -32,6 +32,8 @@ require_once __DIR__ . '/class-wp-mcp-ai-harness-trace-capture.php';
 require_once __DIR__ . '/class-wp-mcp-ai-harness-search-engine.php';
 require_once __DIR__ . '/class-wp-mcp-ai-harness-population.php';
 require_once __DIR__ . '/class-wp-mcp-ai-harness-auto-deploy.php';
+require_once __DIR__ . '/class-wp-mcp-ai-output-guardrail.php';
+require_once __DIR__ . '/class-wp-mcp-ai-citation-verifier.php';
 
 // Register the chat-client cue injector. Off by default at the profile
 // level — this is just the subscriber wiring.
@@ -44,6 +46,14 @@ WP_MCP_AI_Guardrails::register();
 // Register the Layer J necessity gate subscriber. Off by default at the
 // profile level — this is just the subscriber wiring.
 WP_MCP_AI_Necessity_Gate::register();
+
+// Register the output guardrail subscriber. Off by default at the
+// profile level — this is just the subscriber wiring.
+WP_MCP_AI_Output_Guardrail::register();
+
+// Register the citation verifier subscriber. Off by default at the
+// profile level — this is just the subscriber wiring.
+WP_MCP_AI_Citation_Verifier::register();
 
 // Register the Layer G cron. The handler is a no-op until at least one
 // assistant has `evals_enabled` populated and a generator is wired up
