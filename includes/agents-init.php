@@ -59,6 +59,23 @@ WP_MCP_AI_Security_Audit_Logger::register();
 // style, connect, image, font, frame, and object sources.
 WP_MCP_AI_CSP_Headers::register();
 
+// Register concurrency guard subscriber (1.1.44) — enforces per-operation-type
+// concurrent execution limits (image=3, video=1, music=2, etc.).
+// Priority 3 on wp_mcp_ai_before_tool_execution.
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-concurrency-guard-subscriber.php';
+WP_MCP_AI_Concurrency_Guard_Subscriber::register();
+
+// Register cost tracker subscriber (1.1.44) — enforces per-assistant
+// API cost budgets (estimate before, record after).
+// Priority 2 on wp_mcp_ai_before_tool_execution.
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-cost-tracker-subscriber.php';
+WP_MCP_AI_Cost_Tracker_Subscriber::register();
+
+// Register system load guard (1.2.0) — backpressure at REST entry point.
+// Checks aggregate system load across all queuing systems.
+require_once WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-load-guard.php';
+WP_MCP_AI_Load_Guard::register();
+
 /**
  * Get all available agent roles
  *

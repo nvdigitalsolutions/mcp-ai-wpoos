@@ -2745,7 +2745,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 * @param int $user_id User ID making the request (0 for guests).
 			 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
 			 */
-		protected function check_rate_limit( $user_id ) {
+			protected function check_rate_limit( $user_id ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			// Check if rate limiting is enabled.
@@ -5924,6 +5924,46 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Ensure agentic_loop is false for direct tools/call requests so
+			// the async orchestrator doesn't force-sync (Priority 5). This
+			// matches the behavior of execute_tool_call_internal() which sets
+			// agentic_loop => true only when called from the chat agentic loop.
+			if ( ! isset( $context['agentic_loop'] ) ) {
+				$context['agentic_loop'] = false;
+			}
+
+			// Orchestration Layer: Check if tool should execute asynchronously
+			// (1.1.44). Mirrors the async decision path in
+			// execute_tool_call_internal() for consistent behavior across the
+			// direct tools/call endpoint and the chat agentic loop.
+			$orchestrator = wp_mcp_ai_get_async_tool_orchestrator();
+			$should_async = $orchestrator->should_execute_async( $tool, $prepared_arguments, $context );
+
+			if ( $should_async ) {
+				$executor = wp_mcp_ai_get_async_tool_executor();
+				$job_id   = $executor->queue_tool( $tool_slug, $prepared_arguments, $context );
+
+				if ( ! is_wp_error( $job_id ) ) {
+					return rest_ensure_response(
+						array(
+							'assistant_id'     => $assistant_id,
+							'tool'             => $tool_slug,
+							'status'           => 'pending',
+							'job_id'           => $job_id,
+							'message'          => sprintf(
+								/* translators: 1: tool name, 2: job ID */
+								__( 'Tool "%1$s" is processing in the background (Job ID: %2$s).', 'mcp-ai-wpoos' ),
+								$tool->get_name(),
+								$job_id
+							),
+							'async'            => true,
+							'capability_flags' => $this->extract_capability_flags_from_tool( $tool ),
+						)
+					);
+				}
+				// Fall through: queueing failed → execute synchronously.
+			}
+
 			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
 			try {
 				try {
@@ -5932,6 +5972,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Destructive-ops gate: return the confirmation request as a
 					// WP_Error envelope (HTTP 428) through the normal pipeline.
 					return $wp_mcp_ai_gate_exception->to_wp_error();
+				} catch ( WP_MCP_AI_Concurrency_Limit_Reached $e ) {
+					// Concurrency guard (1.1.44): operation type at capacity.
+					return $e->to_wp_error();
+				} catch ( WP_MCP_AI_Cost_Budget_Exceeded $e ) {
+					// Cost tracker (1.1.44): assistant budget exceeded.
+					return $e->to_wp_error();
 				}
 
 				$wp_mcp_ai_tool_start = microtime( true );
@@ -11851,6 +11897,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Destructive-ops gate: return the confirmation request as a
 					// WP_Error envelope (HTTP 428) through the normal pipeline.
 					return $wp_mcp_ai_gate_exception->to_wp_error();
+				} catch ( WP_MCP_AI_Concurrency_Limit_Reached $e ) {
+					// Concurrency guard (1.1.44): operation type at capacity.
+					return $e->to_wp_error();
+				} catch ( WP_MCP_AI_Cost_Budget_Exceeded $e ) {
+					// Cost tracker (1.1.44): assistant budget exceeded.
+					return $e->to_wp_error();
 				}
 
 				$wp_mcp_ai_tool_start = microtime( true );

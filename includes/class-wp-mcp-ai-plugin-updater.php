@@ -631,12 +631,25 @@ class WP_MCP_AI_Plugin_Updater {
 		}
 
 		$download_url = self::find_asset_url( $release['assets'], self::ASSET_FULL );
+		$is_newer     = version_compare( $release['latest_version'], WP_MCP_AI_VERSION, '>' );
+
+		// Determine why the complete version is/isn't available for download.
+		if ( empty( $download_url ) ) {
+			$reason = $is_newer
+				? __( 'A newer version exists but no full-build download asset was found in the GitHub release. The complete build may not have been uploaded for this release yet.', 'mcp-ai-wpoos' )
+				: __( 'No full-build download asset found in the GitHub release.', 'mcp-ai-wpoos' );
+		} elseif ( ! $is_newer ) {
+			$reason = __( 'You are already running the latest version.', 'mcp-ai-wpoos' );
+		} else {
+			$reason = '';
+		}
 
 		return array(
 			'installed'    => WP_MCP_AI_VERSION,
 			'latest'       => $release['latest_version'],
-			'available'    => ! empty( $download_url ),
+			'available'    => ! empty( $download_url ) && $is_newer,
 			'download_url' => $download_url,
+			'reason'       => $reason,
 			'published_at' => $release['published_at'],
 			'checked_at'   => $release['checked_at'],
 		);
@@ -760,6 +773,10 @@ class WP_MCP_AI_Plugin_Updater {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
+
+		// Force a fresh check — bypass the 12h cache so the user sees live data,
+		// matching the behaviour of ajax_check_update().
+		delete_transient( self::CACHE_KEY );
 
 		$result = self::check_complete_availability();
 

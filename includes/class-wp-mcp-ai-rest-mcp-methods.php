@@ -188,6 +188,21 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$params = isset( $message['params'] ) ? $message['params'] : array();
 		$id     = isset( $message['id'] ) ? $message['id'] : null;
 
+		// Extract request-level priority from X-Priority header or _meta param.
+		// Propagated through context to async job queuing for SLA-aware dispatch.
+		// Supported values: realtime, high, normal, low, batch.
+		$header_priority = $request->get_header( 'X-Priority' );
+		if ( null !== $header_priority ) {
+			$priority = self::normalize_priority( $header_priority );
+		} elseif ( isset( $params['_meta']['priority'] ) ) {
+			$priority = self::normalize_priority( $params['_meta']['priority'] );
+		} else {
+			$priority = null;
+		}
+		if ( null !== $priority ) {
+			$request->set_param( '_priority', $priority );
+		}
+
 		// SEP-2243: Validate Mcp-Method header against body method.
 		$header_method = $request->get_header( 'Mcp-Method' );
 		if ( ! empty( $header_method ) && $header_method !== $method ) {
@@ -2097,5 +2112,22 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		foreach ( $security_headers as $name => $value ) {
 			$response->header( $name, $value );
 		}
+	}
+
+	/**
+	 * Normalize a raw priority string to a valid priority level.
+	 *
+	 * Accepts X-Priority header values and _meta.priority params.
+	 * Unrecognized values silently fall back to null (caller defaults to normal).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $raw Raw priority value.
+	 * @return string|null Normalized priority or null if unrecognized.
+	 */
+	protected static function normalize_priority( $raw ) {
+		$valid = array( 'realtime', 'high', 'normal', 'low', 'batch' );
+		$raw   = strtolower( trim( (string) $raw ) );
+		return in_array( $raw, $valid, true ) ? $raw : null;
 	}
 }
