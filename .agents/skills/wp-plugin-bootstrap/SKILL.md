@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-plugin-bootstrap
 description: Scaffolds and reviews the main entry-point PHP file of a WordPress plugin — header (with Requires Plugins for WP 6.5+), ABSPATH guard, file/path/url/version constants, Composer + PSR-4 with manual spl_autoload_register fallback, register_activation_hook requirements check, Plugin class instantiation on plugins_loaded, and the WP 6.7+ rule that translation functions must not trigger before after_setup_theme. Use when scaffolding a new plugin or reviewing its main file. Triggers on Plugin Name headers, register_activation_hook, Requires Plugins, spl_autoload_register, plugins_loaded, or composer.json at the plugin root.
 author: Soczó Kristóf
