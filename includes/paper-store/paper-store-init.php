@@ -23,6 +23,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-paper-index.php';
 require_once __DIR__ . '/class-wp-mcp-ai-paper-repository.php';
 require_once __DIR__ . '/class-wp-mcp-ai-paper-query.php';
 require_once __DIR__ . '/class-wp-mcp-ai-paper-store-manager.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-paper-store-remote.php';
 
 // Load tool classes.
 require_once WP_MCP_AI_PATH . 'includes/tools/paper-store/class-wp-mcp-ai-tool-paper-store-list.php';
@@ -31,6 +32,9 @@ require_once WP_MCP_AI_PATH . 'includes/tools/paper-store/class-wp-mcp-ai-tool-p
 require_once WP_MCP_AI_PATH . 'includes/tools/paper-store/class-wp-mcp-ai-tool-paper-store-write.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/paper-store/class-wp-mcp-ai-tool-paper-store-update.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/paper-store/class-wp-mcp-ai-tool-paper-store-delete.php';
+
+// Load Paper Store REST API controller (for remote connection support).
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-paper-store-rest.php';
 
 /**
  * Register Paper Store tools with the tool registry.

@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Paper_Store_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Paper_Store_Remote;
 
 	/**
 	 * {@inheritdoc}
@@ -50,29 +51,30 @@ class WP_MCP_AI_Tool_Paper_Store_Search implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'query'      => array(
+				'query'         => array(
 					'type'        => 'string',
 					'description' => __( 'Search query string. Matches against title, description, and tag values.', 'mcp-ai-wpoos' ),
 				),
-				'collection' => array(
+				'collection'    => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Limit search to a specific collection. If omitted, searches all collections.', 'mcp-ai-wpoos' ),
 				),
-				'tags'       => array(
+				'tags'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Filter results by tag.', 'mcp-ai-wpoos' ),
 				),
-				'status'     => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Filter by status.', 'mcp-ai-wpoos' ),
 				),
-				'limit'      => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum results. Default 20. Max 100.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
+				'connection_id' => $this->get_connection_id_schema(),
 			),
 			'required'   => array( 'query' ),
 		);
@@ -94,11 +96,29 @@ class WP_MCP_AI_Tool_Paper_Store_Search implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
-		$query_str  = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
-		$collection = isset( $arguments['collection'] ) ? sanitize_key( $arguments['collection'] ) : null;
-		$tag        = isset( $arguments['tags'] ) ? sanitize_text_field( $arguments['tags'] ) : null;
-		$status     = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : null;
-		$limit      = isset( $arguments['limit'] ) ? min( absint( $arguments['limit'] ), 100 ) : 20;
+		$query_str     = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+		$collection    = isset( $arguments['collection'] ) ? sanitize_key( $arguments['collection'] ) : null;
+		$tag           = isset( $arguments['tags'] ) ? sanitize_text_field( $arguments['tags'] ) : null;
+		$status        = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : null;
+		$limit         = isset( $arguments['limit'] ) ? min( absint( $arguments['limit'] ), 100 ) : 20;
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
+
+		// Remote dispatch.
+		if ( ! empty( $connection_id ) ) {
+			$query_args = array( 'q' => $query_str );
+			if ( ! empty( $collection ) ) {
+				$query_args['collection'] = $collection;
+			}
+			if ( ! empty( $tag ) ) {
+				$query_args['tag'] = $tag;
+			}
+			if ( ! empty( $status ) ) {
+				$query_args['status'] = $status;
+			}
+			$query_args['limit'] = $limit;
+			$endpoint            = 'mcp-ai/v1/paper-store/search?' . http_build_query( $query_args );
+			return $this->execute_remote( $connection_id, $endpoint, 'GET' );
+		}
 
 		if ( empty( $query_str ) ) {
 			return new WP_Error( 'missing_query', __( 'Search query is required.', 'mcp-ai-wpoos' ) );

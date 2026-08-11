@@ -1669,6 +1669,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_User_Info'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
 				'WP_MCP_AI_Tool_Get_Site_Summary'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
 				'WP_MCP_AI_Tool_Count_Tokens'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-count-tokens.php',
+				'WP_MCP_AI_Tool_List_MCP_Tools'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-mcp-tools.php',
 				'WP_MCP_AI_Tool_Load_Skill'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-load-skill.php',
 				// OpenAI API Integration - Phase 1 Tools.
 				'WP_MCP_AI_Tool_List_OpenAI_Files'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-openai-files.php',
@@ -1988,9 +1989,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			// configurations (e.g. xdebug.scream, custom error handlers).
 			// A leaked warning corrupts MCP JSON-RPC HTTP responses when
 			// this runs during a tools/list or tools/call request.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; failure handled below.
-			set_error_handler( '__return_true' );
-			$content = file_get_contents( $status_file );
+			set_error_handler( '__return_true' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Deliberate suppression for local file read, not debug code.
+			$content = file_get_contents( $status_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; failure handled below.
 			restore_error_handler();
 			if ( false === $content ) {
 				return $status_labels;

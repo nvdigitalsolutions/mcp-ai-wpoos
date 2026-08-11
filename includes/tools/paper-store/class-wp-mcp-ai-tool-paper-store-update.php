@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Paper_Store_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Paper_Store_Remote;
 
 	/**
 	 * {@inheritdoc}
@@ -47,40 +48,41 @@ class WP_MCP_AI_Tool_Paper_Store_Update implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'collection'  => array(
+				'collection'    => array(
 					'type'        => 'string',
 					'description' => __( 'Collection name.', 'mcp-ai-wpoos' ),
 				),
-				'record_id'   => array(
+				'record_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'The ID of the record to update.', 'mcp-ai-wpoos' ),
 				),
-				'title'       => array(
+				'title'         => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. New title.', 'mcp-ai-wpoos' ),
 				),
-				'description' => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. New description.', 'mcp-ai-wpoos' ),
 				),
-				'tags'        => array(
+				'tags'          => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Optional. New tags (replaces all existing tags).', 'mcp-ai-wpoos' ),
 				),
-				'status'      => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. New status.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'published', 'draft', 'archived' ),
 				),
-				'body'        => array(
+				'body'          => array(
 					'type'        => 'object',
 					'description' => __( 'Optional. New body content (replaces existing body).', 'mcp-ai-wpoos' ),
 				),
-				'meta'        => array(
+				'meta'          => array(
 					'type'        => 'object',
 					'description' => __( 'Optional. New metadata (merges with existing meta).', 'mcp-ai-wpoos' ),
 				),
+				'connection_id' => $this->get_connection_id_schema(),
 			),
 			'required'   => array( 'collection', 'record_id' ),
 		);
@@ -102,11 +104,51 @@ class WP_MCP_AI_Tool_Paper_Store_Update implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
-		$collection = sanitize_key( $arguments['collection'] );
-		$record_id  = sanitize_key( $arguments['record_id'] );
+		$collection    = sanitize_key( $arguments['collection'] );
+		$record_id     = sanitize_key( $arguments['record_id'] );
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 
 		if ( empty( $collection ) || empty( $record_id ) ) {
 			return new WP_Error( 'missing_params', __( 'Collection and record_id are required.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Remote dispatch.
+		if ( ! empty( $connection_id ) ) {
+			$remote_body = array();
+			if ( isset( $arguments['title'] ) ) {
+				$remote_body['title'] = sanitize_text_field( $arguments['title'] );
+			}
+			if ( isset( $arguments['description'] ) ) {
+				$remote_body['description'] = sanitize_text_field( $arguments['description'] );
+			}
+			if ( isset( $arguments['status'] ) ) {
+				$remote_body['status'] = sanitize_key( $arguments['status'] );
+			}
+			if ( isset( $arguments['body'] ) ) {
+				$remote_body['body'] = $arguments['body'];
+			}
+			if ( isset( $arguments['meta'] ) && is_array( $arguments['meta'] ) ) {
+				$remote_body['meta'] = $arguments['meta'];
+			}
+			if ( isset( $arguments['tags'] ) && is_array( $arguments['tags'] ) ) {
+				$tags = array();
+				foreach ( $arguments['tags'] as $tag ) {
+					$tag = sanitize_text_field( $tag );
+					if ( ! empty( $tag ) ) {
+						$tags[] = $tag;
+					}
+				}
+				$remote_body['tags'] = $tags;
+			}
+			if ( empty( $remote_body ) ) {
+				return new WP_Error( 'no_changes', __( 'No fields provided to update.', 'mcp-ai-wpoos' ) );
+			}
+			return $this->execute_remote(
+				$connection_id,
+				'mcp-ai/v1/paper-store/' . $collection . '/' . $record_id,
+				'PUT',
+				$remote_body
+			);
 		}
 
 		if ( ! current_user_can( 'edit_posts' ) ) {

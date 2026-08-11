@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Paper_Store_Write implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Paper_Store_Remote;
 
 	/**
 	 * {@inheritdoc}
@@ -49,40 +50,41 @@ class WP_MCP_AI_Tool_Paper_Store_Write implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'collection'  => array(
+				'collection'    => array(
 					'type'        => 'string',
 					'description' => __( 'Collection name (e.g. "knowledge", "prompts").', 'mcp-ai-wpoos' ),
 				),
-				'id'          => array(
+				'id'            => array(
 					'type'        => 'string',
 					'description' => __( 'Unique record ID (slug). Lowercase, no spaces. e.g. "dior-sauvage".', 'mcp-ai-wpoos' ),
 				),
-				'title'       => array(
+				'title'         => array(
 					'type'        => 'string',
 					'description' => __( 'Human-readable title for the record.', 'mcp-ai-wpoos' ),
 				),
-				'description' => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Short description or summary of the record.', 'mcp-ai-wpoos' ),
 				),
-				'tags'        => array(
+				'tags'          => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Optional. Array of tag strings for categorisation.', 'mcp-ai-wpoos' ),
 				),
-				'status'      => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Record status. Defaults to "published".', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'published', 'draft', 'archived' ),
 				),
-				'body'        => array(
+				'body'          => array(
 					'type'        => 'object',
 					'description' => __( 'Optional. Free-form body content for the record. Any JSON-serialisable value.', 'mcp-ai-wpoos' ),
 				),
-				'meta'        => array(
+				'meta'          => array(
 					'type'        => 'object',
 					'description' => __( 'Optional. Arbitrary metadata key-value pairs.', 'mcp-ai-wpoos' ),
 				),
+				'connection_id' => $this->get_connection_id_schema(),
 			),
 			'required'   => array( 'collection', 'id', 'title' ),
 		);
@@ -104,13 +106,14 @@ class WP_MCP_AI_Tool_Paper_Store_Write implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
-		$collection  = sanitize_key( $arguments['collection'] );
-		$id          = sanitize_key( $arguments['id'] );
-		$title       = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$description = isset( $arguments['description'] ) ? sanitize_text_field( $arguments['description'] ) : '';
-		$status      = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'published';
-		$body        = isset( $arguments['body'] ) ? $arguments['body'] : null;
-		$meta        = isset( $arguments['meta'] ) && is_array( $arguments['meta'] ) ? $arguments['meta'] : null;
+		$collection    = sanitize_key( $arguments['collection'] );
+		$id            = sanitize_key( $arguments['id'] );
+		$title         = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$description   = isset( $arguments['description'] ) ? sanitize_text_field( $arguments['description'] ) : '';
+		$status        = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'published';
+		$body          = isset( $arguments['body'] ) ? $arguments['body'] : null;
+		$meta          = isset( $arguments['meta'] ) && is_array( $arguments['meta'] ) ? $arguments['meta'] : null;
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 
 		// Sanitize tags.
 		$tags = array();
@@ -121,6 +124,29 @@ class WP_MCP_AI_Tool_Paper_Store_Write implements WP_MCP_AI_Tool_Interface, WP_M
 					$tags[] = $tag;
 				}
 			}
+		}
+
+		// Remote dispatch.
+		if ( ! empty( $connection_id ) ) {
+			$remote_body = array(
+				'id'          => $id,
+				'title'       => $title,
+				'description' => $description,
+				'tags'        => $tags,
+				'status'      => $status,
+			);
+			if ( null !== $body ) {
+				$remote_body['body'] = $body;
+			}
+			if ( null !== $meta ) {
+				$remote_body['meta'] = $meta;
+			}
+			return $this->execute_remote(
+				$connection_id,
+				'mcp-ai/v1/paper-store/' . $collection,
+				'POST',
+				$remote_body
+			);
 		}
 
 		if ( empty( $collection ) || empty( $id ) || empty( $title ) ) {
