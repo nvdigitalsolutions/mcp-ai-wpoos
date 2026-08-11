@@ -21,6 +21,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 trait WP_MCP_AI_REST_MCP_Methods {
 
 	/**
+	 * Supported MCP protocol versions in descending order (newest first).
+	 *
+	 * Used for version negotiation during initialize / server/discover.
+	 * When a client connects, the server picks the highest version both
+	 * parties support. Falls back to 2024-11-05 when the client provides
+	 * no version information, for maximum backward compatibility.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @return array Supported versions, newest first.
+	 */
+	protected function get_supported_protocol_versions() {
+		return array(
+			'2026-07-28',
+			'2025-06-18',
+			'2025-03-26',
+			'2024-11-05',
+		);
+	}
+
+	/**
 	 * Handle MCP protocol requests using JSON-RPC 2.0 format.
 	 *
 	 * This endpoint implements the Model Context Protocol (MCP) specification,
@@ -418,8 +439,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			}
 		}
 
+		$negotiated_version = $this->negotiate_protocol_version( $params );
+
 		$response = array(
-			'protocolVersion' => '2026-07-28',
+			'protocolVersion' => $negotiated_version,
 			'capabilities'    => array(
 				'tools'     => array( 'listChanged' => true ),
 				'resources' => array(
@@ -501,6 +524,54 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	}
 
 	/**
+	 * Negotiate the MCP protocol version with the client.
+	 *
+	 * Picks the highest version the server supports that the client also
+	 * supports, using the client's protocolVersion and optional
+	 * supportedProtocolVersions array from the initialize/discover params.
+	 * Defaults to 2024-11-05 for maximum backward compatibility when the
+	 * client provides no version information (e.g. older Zed, Claude Desktop).
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param array $params Client's initialize/discover params.
+	 * @return string Negotiated protocol version.
+	 */
+	protected function negotiate_protocol_version( $params ) {
+		// Collect all versions the client claims to support.
+		$client_versions = array();
+
+		if ( isset( $params['protocolVersion'] ) && is_string( $params['protocolVersion'] ) ) {
+			$client_versions[] = $params['protocolVersion'];
+		}
+
+		if ( isset( $params['supportedProtocolVersions'] ) && is_array( $params['supportedProtocolVersions'] ) ) {
+			foreach ( $params['supportedProtocolVersions'] as $v ) {
+				if ( is_string( $v ) ) {
+					$client_versions[] = $v;
+				}
+			}
+		}
+
+		$client_versions = array_unique( $client_versions );
+
+		if ( empty( $client_versions ) ) {
+			// No version info from client — default to 2024-11-05 for max compatibility.
+			return '2024-11-05';
+		}
+
+		// Pick the highest version both support (server list is newest-first).
+		foreach ( $this->get_supported_protocol_versions() as $server_version ) {
+			if ( in_array( $server_version, $client_versions, true ) ) {
+				return $server_version;
+			}
+		}
+
+		// No overlap — fall back to oldest widely-supported version.
+		return '2024-11-05';
+	}
+
+	/**
 	 * Handle MCP initialize request (legacy, pre-2026-07-28).
 	 *
 	 * Deprecated in favor of mcp_server_discover() per MCP 2026-07-28.
@@ -552,8 +623,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			}
 		}
 
+		$negotiated_version = $this->negotiate_protocol_version( $params );
+
 		$response = array(
-			'protocolVersion' => '2026-07-28',
+			'protocolVersion' => $negotiated_version,
 			'capabilities'    => array(
 				'tools'     => array( 'listChanged' => true ),
 				'resources' => array(
