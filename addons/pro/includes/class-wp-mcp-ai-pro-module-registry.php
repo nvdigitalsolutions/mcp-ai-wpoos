@@ -396,6 +396,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				}
 			);
 
+			$this->add_module(
+				'analytics_service',
+				'Shared Analytics Service',
+				array(),
+				array(),
+				function () use ( $p ) {
+					require_once $p . 'analytics/init.php';
+				}
+			);
+
 			// ── Tier 2: Utility classes ─────────────────────────────────
 			$this->add_module(
 				'product_type_helper',
@@ -509,6 +519,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					new WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers();
 					require_once $p . 'admin/class-wp-mcp-ai-pro-toolkit-mcp-servers-page.php';
 					new WP_MCP_AI_Pro_Toolkit_MCP_Servers_Page();
+				}
+			);
+
+			$this->add_module(
+				'admin_analytics_service',
+				'Analytics Service Admin',
+				array( 'analytics_service' ),
+				array( 'context' => 'admin' ),
+				function () use ( $p ) {
+					require_once $p . 'admin/class-wp-mcp-ai-analytics-service-page.php';
+					new WP_MCP_AI_Analytics_Service_Page();
 				}
 			);
 
