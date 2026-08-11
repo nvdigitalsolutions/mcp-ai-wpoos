@@ -271,7 +271,31 @@ Located in `includes/slash-commands/commands/`.
 
 ### Paper Store
 
-Flat-file storage layer (`includes/paper-store/`) for structured content management with Markdown+YAML drivers. Provides a lightweight, Git-friendly alternative to CPT-based storage for documentation, knowledge bases, and configuration artifacts. Pro addon (`addons/pro/includes/paper-store/`) adds a Markdown+YAML driver (via `symfony/yaml`), Git sync (`WP_MCP_AI_Pro_Paper_Store_Git_Sync`), admin UI, and import/export tools.
+Flat-file JSON document store (`includes/paper-store/`) for structured content management with collection-based organization. Provides persistent, queryable storage for AI agents with full CRUD + search + import/export via 8 MCP tools. Records carry structured metadata (title, description, tags, status, body, meta) stored as JSON files under `wp-content/uploads/mcp-ai-paper-store/`.
+
+- **8 MCP tools**: `paper_store_list`, `paper_store_read`, `paper_store_search`, `paper_store_write`, `paper_store_update`, `paper_store_delete`, `paper_store_import`, `paper_store_export`. All 8 tools accept an optional `connection_id` parameter to proxy operations through Remote Site Manager for cross-site Paper Store federation.
+- **REST API** (`WP_MCP_AI_Paper_Store_REST`, 697 lines): Full CRUD controller at `mcp-ai/v1/paper-store` for remote site access — list collections, search, CRUD per collection, import/export endpoints. Requires standard NV oOS auth (nonce, bearer, or guest token).
+- **Remote trait** (`WP_MCP_AI_Paper_Store_Remote`, 96 lines): Handles HTTP dispatch through Remote Site Manager when `connection_id` is provided. Connection validation, REST endpoint construction, response normalization, error passthrough.
+- **`list_mcp_tools` discovery tool** (234 lines): Enables AI agent self-discovery of all available MCP tools. Returns tool names, descriptions, and JSON Schema parameter definitions. Filterable by toolkit namespace and search term.
+- **Pro addon** (`addons/pro/includes/paper-store/`) adds a Markdown+YAML driver (via `symfony/yaml`), Git sync (`WP_MCP_AI_Pro_Paper_Store_Git_Sync`), admin UI, and import/export tools.
+- **Remote Sites integration**: `remote_wp_connection` tool lists Paper Store actions as available operations on remote sites. CPT auto-discovery ensures `paper_store` post type appears in remote connection access controls.
+- Reference: `docs/features/paper-store.md`, `docs/features/remote-sites.md`.
+
+### Shared Analytics Service (Pro, v1.1.53)
+
+Unified analytics subsystem (`addons/pro/includes/analytics/`, 1,489 lines) consumed by all NV oOS Pro toolkits. Provides a single, consistent analytics surface across social media, e-commerce, and infrastructure platforms.
+
+- **7 platform adapters**: Meta (Facebook + Instagram), Twitter/X, LinkedIn, TikTok, WooCommerce, Google Analytics 4, Cloudways monitoring — all implementing `WP_MCP_AI_Analytics_Adapter_Interface`.
+- **5 immutable DTOs**: Account, Post, Metric, TimeSeries, Report — strict coercion, `WP_Error` validation failures, no unchecked casts.
+- **Cross-platform normalization**: `WP_MCP_AI_Metric_Normalizer` maps platform-specific metric names to a unified schema.
+- **Smart caching**: `WP_MCP_AI_Analytics_Cache` — transient-based with per-data-type TTLs and cache stampede prevention via double-checked locking.
+- **Rate limit coordination**: `WP_MCP_AI_Analytics_Rate_Limiter` — token-bucket per platform prevents API exhaustion.
+- **Singleton facade**: `WP_MCP_AI_Analytics_Service::instance()` — register adapters, fetch cross-platform reports, invalidate caches.
+- **Admin UI**: Settings page for per-platform connection configuration.
+- **MCP server registration**: Analytics tools registered in the Pro toolkit MCP server fleet.
+- **Site Health integration**: Analytics-specific health checks in the WordPress Site Health dashboard.
+- **Entry point**: `init.php` bootstraps on `plugins_loaded` priority 20.
+- Reference: `addons/pro/includes/analytics/README.md`.
 
 ### OKF Engine (Open Knowledge Format v0.1)
 
@@ -281,7 +305,7 @@ Google's vendor-neutral, Apache 2.0-licensed knowledge format (`includes/okf/`) 
 - **Reader** (`WP_MCP_AI_OKF_Reader`) — bundle navigation, concept reading, cross-link traversal (up to N hops), and search by type/tag.
 - **Writer** (`WP_MCP_AI_OKF_Writer`) — atomic concept creation/deletion via `WP_MCP_AI_Filesystem_Service`, index.md regeneration, conformance validation per spec §9.
 - **6 MCP tools** in `includes/tools/okf/`: `okf_read_concept`, `okf_browse`, `okf_traverse`, `okf_search`, `okf_write_concept` (`edit_posts`), `okf_delete_concept` (`delete_posts`). Follow the two-gate sanitisation rule and canonical return envelope.
-- **Skill conformance:** All 41 bundled skills (`includes/bundled-skills/`) include `type: Skill` in YAML frontmatter — the single required field for OKF v0.1 conformance.
+- **Skill conformance:** All 67 bundled skills (`includes/bundled-skills/`) include `type: Skill` in YAML frontmatter — the single required field for OKF v0.1 conformance.
 - **Bootstrap:** `includes/bootstrap/loader.php` loads `okf-init.php` at priority 32 (after Paper Store at 30).
 - **Bundle root:** `wp-content/uploads/mcp-ai-wpoos/knowledge/` (skill-knowledge, site-knowledge, external-bundles).
 - **Events:** `wp_mcp_ai_okf_bundle_initialized`, `wp_mcp_ai_okf_concept_saved`, `wp_mcp_ai_okf_concept_deleted`.
@@ -308,7 +332,7 @@ Client can close connection to interrupt. Job cancellation supported.
 
 Portable behaviour packages (`SKILL.md` files) that any NV oOS assistant can load on demand. Per the [agentskills.io](https://agentskills.io/specification) spec: a Markdown body with a small YAML frontmatter (`name`, `description`, optional metadata).
 
-- **Discovery — base bundled skills:** `includes/bundled-skills/{slug}/SKILL.md`. Copied to `wp-content/uploads/mcp-ai-skills/` on first activation.
+- **Discovery — base bundled skills:** `includes/bundled-skills/{slug}/SKILL.md`. **67 bundled skills** (up from 45 in v1.1.52): 22 new design-* skills (analytics-reporting, brand-kit, campaign-orchestration, color-systems, content-calendar, content-research, deep-research, document-generation, email-marketing, image-generation, image-optimization, media-workflow, pro-schedule-manager, pro-workflow-builder, product-photography, product-research, seo-content, social-content, social-publishing, typography, video-creation, web-research), plus new `mcp-ai-wpoos-plugin` operational guide skill. Copied to `wp-content/uploads/mcp-ai-skills/` on first activation.
 - **Discovery — Pro bundled skills:** `addons/pro/includes/bundled-skills/{slug}/SKILL.md`. The 28+ WordPress-developer skills curated from `Lonsdale201/wp-agent-skills` live here.
 - **Third-party attribution:** any new bundled skill curated from an upstream catalogue must add an entry to the corresponding `THIRD_PARTY_NOTICES.md` (`includes/bundled-skills/THIRD_PARTY_NOTICES.md` or `addons/pro/includes/bundled-skills/THIRD_PARTY_NOTICES.md`) with attribution + license text.
 - **Progressive disclosure:** assistants with the "Use progressive disclosure" checkbox enabled receive only a short `# Available Skills` catalogue (name + description) in their system prompt. The base-plugin `load_skill({ name })` tool returns the full SKILL.md only when the model decides a skill applies.
@@ -341,16 +365,20 @@ Stay-on-target jailbreak prevention that runs before every AI provider request:
 - **Agent capability boundary** (`WP_MCP_AI_Agent_Capability_Boundary`) — enforces per-assistant guardrails at the framework level, before the prompt reaches the provider.
 - All guardrails are opt-in per assistant and configurable in the Orchestration → Guardrails admin tab.
 
-### Security Infrastructure (v1.1.42)
+### Security Infrastructure (v1.1.42+, hardened v1.1.53)
 
-Seven new security infrastructure classes in `includes/security/` that operate across the full option set:
+Seven security infrastructure classes in `includes/security/` that operate across the full option set, plus circuit breaker protection on all 15 AI provider clients:
 - **Request Guard** (`WP_MCP_AI_Request_Guard`) — SSE connection slot limits, JSON depth enforcement (configurable max), request body size enforcement (configurable cap), error verbosity filtering (Safe/Moderate/Debug tiers), asset version stripping (`?ver=` query string removal). Hooks into `rest_dispatch_request` (WP >= 6.5 signature: 5 params).
 - **Security Posture** (`WP_MCP_AI_Security_Posture`) — computes a weighted 0-100 security posture score from 21 signals (HTTPS, HSTS, root key, audit log, rate limiting, security headers, CORS restricted, error verbosity safe, auth brute-force protection, body size limited, 2FA consistency, IP-whitelist consistency, prompt-injection detector, PII filter, and more). Returns A-F grade + top-3 quick wins. Cached (5-min TTL). Filter: `wp_mcp_ai_security_posture_signals`.
 - **Destructive Ops Gate** (`WP_MCP_AI_Destructive_Ops_Gate`) — confirmation gate for bulk-delete, mass-email, and other irreversible operations. Credential token expiry enforcement.
 - **URL Guard** (`WP_MCP_AI_URL_Guard`) — validates and sanitizes URLs before outbound requests.
-- **Concurrency Guard** (`WP_MCP_AI_Concurrency_Guard`) — prevents overlapping destructive operations within the same session.
-- **Cost Tracker** (`WP_MCP_AI_Cost_Tracker`) — per-operation cost estimation and budget enforcement.
+- **Concurrency Guard** (`WP_MCP_AI_Concurrency_Guard`) — prevents overlapping destructive operations within the same session. Wired into the execution pipeline (v1.1.53) to auto-throttle tool calls when system load is high.
+- **Cost Tracker** (`WP_MCP_AI_Cost_Tracker`) — per-operation cost estimation and budget enforcement. Now enforced at the execution pipeline level, not just the provider client boundary (v1.1.53).
 - **API Key Store** (`WP_MCP_AI_Api_Key_Store`) — encrypted at-rest storage for third-party API keys with key rotation support.
+- **Circuit breaker protection** (v1.1.53) — all 15 first-class AI provider clients now have circuit breaker protection with configurable failure thresholds and cooldown periods, preventing cascading failures during provider outages.
+- **Backpressure** (v1.1.53) — signals from the concurrency guard and cost tracker feed into the agentic loop's iteration budget, automatically throttling tool calls when system load is high.
+- **Post-install integrity check** (v1.1.52) — `WP_MCP_AI_Plugin_Updater` verifies 15 critical file paths after every update before reporting success. Prevents silent corruption on distributed filesystems (Cloudways).
+- **REST require_once guards** (v1.1.52) — all REST controller `require_once` calls in `class-wp-mcp-ai-rest.php` now guarded with `file_exists()` checks.
 - **Site Health integration** — WordPress Site Health checks for cron configuration and security posture.
 - **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.
 
@@ -528,16 +556,20 @@ test(scope): brief description
 | `.context/testing.md` | Writing PHPUnit tests |
 | `.context/pro-vs-base.md` | Base vs Pro decisions |
 | `docs/reference/hooks/hooks-reference.md` | Working with plugin hooks |
-| `docs/features/llm-harness.md` | Working on LLM Harnessing (Layers A–H) |
+| `docs/features/llm-harness.md` | Working on LLM Harnessing (Layers A–J) |
 | `docs/features/memory/chat-client-integration.md` | Working on Chat-client Memory Bridge / Drawer |
 | `docs/features/agent-skills.md` | Working on Agent Skills bundling / curation / catalogues |
 | `docs/features/context-window-management.md` | Working on context-window validation / tiktoken / tool capping |
+| `docs/features/paper-store.md` | Working on Paper Store tools, REST API, or remote dispatch |
+| `docs/features/remote-sites.md` | Working on Remote Site Manager, connections, or CPT auto-discovery |
+| `docs/reference/mcp-protocol-version-negotiation.md` | Working on MCP protocol compatibility / client negotiation |
 | `docs/features/pro-toolkit-optimization.md` | Working on Pro toolkit optimization classes |
 | `docs/features/dietpi-pro-toolkit.md` | Working on DietPi server management tools |
 | `docs/operations/production-hardening-guide.md` | Working on production security hardening (WAF, OAuth, DICOM) |
 | `docs/developer/api-key-encryption.md` | Working on API key storage/encryption |
 | `docs/developer/dicom-phi-handling.md` | Working on DICOM/healthcare PHI handling |
 | `docs/reference/admin/security-settings.md` | Working on security admin settings |
+| `addons/pro/includes/analytics/README.md` | Working on Shared Analytics Service / platform adapters |
 
 ## OpenAI Schema Compatibility
 

@@ -1,5 +1,60 @@
 # oOS – Changelog
 
+## [1.1.53] - 2026-08-12
+
+### Added — Shared Analytics Service (PR #5836)
+
+- **Shared Analytics Service** (`addons/pro/includes/analytics/`, 1,489 lines) — unified analytics subsystem consumed by all NV oOS Pro toolkits.
+- **7 platform adapters**: Meta (Facebook + Instagram), Twitter/X, LinkedIn, TikTok, WooCommerce, Google Analytics 4, Cloudways monitoring.
+- **5 immutable DTOs**: Account, Post, Metric, TimeSeries, Report with strict coercion and `WP_Error` validation.
+- **Cross-platform normalization**: Platform-specific metric names mapped to unified schema via `WP_MCP_AI_Metric_Normalizer`.
+- **Smart caching**: Transient-based with per-data-type TTLs and cache stampede prevention via `WP_MCP_AI_Analytics_Cache`.
+- **Rate limit coordination**: Token-bucket per platform via `WP_MCP_AI_Analytics_Rate_Limiter` prevents API exhaustion.
+- **Extensible adapter pattern**: Single `WP_MCP_AI_Analytics_Adapter_Interface` — register new platforms via `$service->register_adapter()`.
+- **MCP server registration**: Analytics tools registered in the Pro toolkit MCP server fleet.
+- **Site Health integration**: Analytics health checks in the WordPress Site Health dashboard.
+- **Design Stack skill**: [`design-analytics-reporting`](.agents/skills/design-analytics-reporting/SKILL.md) — track, measure, and report on marketing performance.
+
+### Added — Circuit Breaker & Execution Pipeline Hardening (PR #5839)
+
+- **Circuit breaker protection** — added to all remaining AI provider clients that lacked it (7 providers). All 15 first-class providers now have circuit breaker protection with configurable failure thresholds and cooldown periods.
+- **Concurrency guard** — wired into the execution pipeline to prevent overlapping destructive operations across the full tool execution lifecycle.
+- **Cost tracker integration** — per-operation cost estimation now enforced at the execution pipeline level, not just at the provider client boundary.
+- **Backpressure wiring** — backpressure signals from the concurrency guard and cost tracker now feed into the agentic loop's iteration budget, automatically throttling tool calls when system load is high.
+- **Plugin updater base-only UI fix** — plugin updater no longer shows base-only UI after upgrade to the complete (base+Pro) package.
+- **Silent build asset failure fix** — plugin updater now surfaces a clear error when the complete build asset is missing from a GitHub release, instead of silently failing.
+
+### Added — Agent Skills Sync & Discovery (PR #5842)
+
+- **Project-owned skills sync** — `sync-agent-skills` now syncs project-owned design-* skills alongside the wp-* skills. The 22 new design-* coding-time skills (design-analytics-reporting through design-video-creation) are now auto-discovered by the Zed editor alongside the existing wp-* WordPress development skills.
+- **mcp-ai-wpoos-plugin skill** — new bundled skill covering complete NV oOS plugin operational guide (setup, assistant creation, MCP bridge tokens, API key bridging, Docker/WSL2 troubleshooting).
+- **Bundled skills count** — base bundled skills increased from 45 to **67** (22 new design-* + mcp-ai-wpoos-plugin).
+
+### Added — Shared Infrastructure & Tool Discovery
+
+- **`list_mcp_tools` discovery tool** (234 lines) — enables AI agent self-discovery of all available MCP tools with JSON Schema parameter definitions. Filterable by toolkit namespace and search term. Returned alongside Paper Store remote support in PR #5835.
+- **Paper Store actions in `remote_wp_connection`** — the `remote_wp_connection` tool now lists Paper Store operations as available actions on remote sites.
+
+### Fixed
+
+- **SSE stream backoff reset** (PR #5841) — fixed backoff counter not resetting between successful stream reconnections, causing unnecessary delays.
+- **SSE rate-limit counter leak** (PR #5841) — fixed rate-limit counter not being cleaned up after stream termination, causing false throttling on subsequent connections.
+- **Load Guard fatal error** (PR #5840) — fixed `WP_MCP_AI_Load_Guard` calling private `count_active_jobs()` method, causing a fatal error on PHP 8.1+ when strict visibility enforcement is enabled.
+
+### Documentation Catch-Up (this release)
+
+- **CHANGELOG** — added comprehensive v1.1.53 entry documenting Shared Analytics Service, circuit breaker hardening, skills sync, and all fixes from PRs #5836–#5842 that were missing from the v1.1.52 entry.
+- **README** — updated version to 1.1.53, refreshed "What's New" with Shared Analytics, circuit breaker, and skills sync highlights.
+- **CLAUDE.md** — updated Paper Store section with remote/REST/discovery details; updated bundled skills count (45→67); added circuit breaker/backpressure to Security Infrastructure; added Shared Analytics Service section; added context file references for new docs.
+- **AGENTS.md** — updated bundled skills count (45→67) and coding-time skills count (22→44).
+- **`.context/` files** — updated review dates to August 2026 across conventions.md, tool-registry.md, security-checklist.md, rest-api.md, and pro-vs-base.md. Added `list_mcp_tools`, design-system preset, circuit breaker, post-install integrity check, and Paper Store REST endpoint documentation.
+
+### Versioning
+
+- Bumped to **1.1.53** across all version-bearing files.
+
+---
+
 ## [1.1.52] - 2026-08-11
 
 ### Added — Paper Store Remote Site Support (PR #5835)

@@ -2,7 +2,7 @@
 
 > **GSD Context File** — Load this at the start of every AI development session.
 > This checklist must be applied to **every code change** without exception.
-> Last reviewed: July 2026.
+> Last reviewed: August 2026.
 
 ---
 
@@ -297,9 +297,12 @@ The plugin ships 7 security infrastructure classes in `includes/security/`. When
 ### Other Guards
 
 - `WP_MCP_AI_URL_Guard` — URL validation/sanitization before outbound requests
-- `WP_MCP_AI_Concurrency_Guard` — prevents overlapping destructive operations
-- `WP_MCP_AI_Cost_Tracker` — per-operation cost estimation and budget enforcement
+- `WP_MCP_AI_Concurrency_Guard` — prevents overlapping destructive operations; wired into execution pipeline (v1.1.53) to auto-throttle tool calls under load
+- `WP_MCP_AI_Cost_Tracker` — per-operation cost estimation and budget enforcement; enforced at pipeline level (v1.1.53)
 - `WP_MCP_AI_Api_Key_Store` — encrypted at-rest API key storage
+- **Circuit breaker protection** (v1.1.53) — all 15 AI provider clients have configurable failure thresholds and cooldown periods
+- **Post-install integrity check** (v1.1.52) — verifies 15 critical file paths after every plugin update
+- **REST require_once guards** (v1.1.52) — `file_exists()` checks before all REST controller `require_once` calls
 
 Reference: `includes/security/README.md`, `docs/operations/production-hardening-guide.md`.
 
