@@ -114,30 +114,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Session_Stream_Controller' ) ) {
 		}
 
 		/**
-		 * Permission callback.
-		 *
-		 * Accepts nonce, bearer token, or guest token — identical to the
-		 * /chat-client permission matrix.
-		 *
-		 * @param WP_REST_Request $request REST request.
-		 *
-		 * @return true|WP_Error
-		 */
-		/**
 		 * Permission callback with rate limiting.
 		 *
-		 * Limits to 3 concurrent SSE streams per IP address to prevent
-		 * PHP-FPM worker exhaustion.
+		 * Accepts nonce, bearer token, or guest token — identical to the
+		 * /chat-client permission matrix. Limits to 3 concurrent SSE streams
+		 * per IP address to prevent PHP-FPM worker exhaustion.
+		 *
+		 * If the rate-limit counter is bumped but authentication subsequently
+		 * fails, the counter is decremented so the slot is returned immediately.
 		 *
 		 * @param WP_REST_Request $request REST request.
 		 *
 		 * @return true|WP_Error
 		 */
 		public function permissions_check( WP_REST_Request $request ) {
-			$ip = $request->get_header( 'X-Forwarded-For' );
-			if ( empty( $ip ) && isset( $_SERVER['REMOTE_ADDR'] ) ) {
-				$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-			}
+			$ip             = $this->get_client_ip( $request );
+			$counter_bumped = false;
 
 			// Rate limit: max 3 concurrent streams per IP.
 			if ( ! empty( $ip ) ) {
@@ -156,9 +148,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Session_Stream_Controller' ) ) {
 				}
 
 				set_transient( $key, $count + 1, MINUTE_IN_SECONDS );
+				$counter_bumped = true;
 			}
 
-			return $this->permissions_check_authenticated( $request );
+			$auth_result = $this->permissions_check_authenticated( $request );
+
+			// If auth fails after we bumped the counter, release the slot
+			// immediately — the stream callback will never execute.
+			if ( is_wp_error( $auth_result ) && $counter_bumped && ! empty( $ip ) ) {
+				$this->decrement_stream_counter( $ip );
+			}
+
+			return $auth_result;
 		}
 
 		/**
@@ -174,133 +175,189 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Session_Stream_Controller' ) ) {
 		 * @return void Streams SSE events and exits.
 		 */
 		public function handle_stream( WP_REST_Request $request ) {
-			$session_id = WP_MCP_AI_Chat_Session_Frame_Buffer::sanitize_session_id(
-				(string) $request->get_param( 'session_id' )
-			);
+			$ip = $this->get_client_ip( $request );
 
-			if ( '' === $session_id ) {
-				$this->sse_handler->send_sse_headers();
-				$this->sse_handler->send_sse_event(
-					'chat:error',
-					array( 'error' => __( 'Invalid session identifier.', 'mcp-ai-wpoos' ) )
+			try {
+				$session_id = WP_MCP_AI_Chat_Session_Frame_Buffer::sanitize_session_id(
+					(string) $request->get_param( 'session_id' )
 				);
-				$this->sse_handler->send_sse_done();
-				$this->sse_handler->finish();
-				return;
-			}
 
-			// Parse Last-Event-ID from header (preferred) or query param (fallback
-			// for transports that strip headers).
-			$last_event_id = 0;
-			$header_value  = $request->get_header( 'last_event_id' );
-			if ( null === $header_value && isset( $_SERVER['HTTP_LAST_EVENT_ID'] ) ) {
-				$header_value = sanitize_text_field( wp_unslash( $_SERVER['HTTP_LAST_EVENT_ID'] ) );
-			}
-			if ( null === $header_value ) {
-				$header_value = $request->get_param( 'last_event_id' );
-			}
-			if ( is_scalar( $header_value ) ) {
-				$last_event_id = max( 0, (int) $header_value );
-			}
-
-			$this->sse_handler->send_sse_headers();
-
-			// Extend execution time: 30 min ceiling keeps sessions bounded.
-			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( ( self::MAX_TICKS * self::POLL_INTERVAL ) + 60 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort.
-			}
-			if ( function_exists( 'ignore_user_abort' ) ) {
-				ignore_user_abort( true );
-			}
-
-			$event_id_seq = $last_event_id;
-			$tick_count   = 0;
-			$start_time   = time();
-			$max_duration = (int) apply_filters(
-				'wp_mcp_ai_sse_max_duration',
-				(int) \WP_MCP_AI_Settings_Registry::get_setting( 'sse_max_duration_seconds', self::DEFAULT_MAX_DURATION )
-			);
-
-			/**
-			 * Fires when a chat-session SSE stream is established.
-			 *
-			 * @since 1.9.4
-			 *
-			 * @param string $session_id    Chat session identifier.
-			 * @param int    $last_event_id Last-Event-ID from the client (0 if fresh).
-			 */
-			do_action( 'wp_mcp_ai_chat_session_stream_opened', $session_id, $last_event_id );
-
-			// Replay any frames the client missed.
-			$replay_frames = WP_MCP_AI_Chat_Session_Frame_Buffer::get_frames_since( $session_id, $last_event_id );
-			foreach ( $replay_frames as $frame ) {
-				++$event_id_seq;
-				$this->emit_frame( $frame['event'], $frame['data'], $event_id_seq );
-			}
-
-			// Main polling loop.
-			while ( $tick_count < self::MAX_TICKS ) {
-				if ( function_exists( 'connection_aborted' ) && connection_aborted() ) {
-					break;
-				}
-
-				// Force reconnect after max duration.
-				if ( ( time() - $start_time ) >= $max_duration ) {
-					++$event_id_seq;
-					$this->sse_handler->send_sse_event_with_id(
-						'chat:reconnect',
-						array(
-							'retry'  => 3000,
-							'reason' => 'max_duration_reached',
-						),
-						(string) $event_id_seq
+				if ( '' === $session_id ) {
+					$this->sse_handler->send_sse_headers();
+					$this->sse_handler->send_sse_event(
+						'chat:error',
+						array( 'error' => __( 'Invalid session identifier.', 'mcp-ai-wpoos' ) )
 					);
-					break;
+					$this->sse_handler->send_sse_done();
+					return;
 				}
 
-				sleep( self::POLL_INTERVAL );
-				++$tick_count;
+				// Parse Last-Event-ID from header (preferred) or query param (fallback
+				// for transports that strip headers).
+				$last_event_id = 0;
+				$header_value  = $request->get_header( 'last_event_id' );
+				if ( null === $header_value && isset( $_SERVER['HTTP_LAST_EVENT_ID'] ) ) {
+					$header_value = sanitize_text_field( wp_unslash( $_SERVER['HTTP_LAST_EVENT_ID'] ) );
+				}
+				if ( null === $header_value ) {
+					$header_value = $request->get_param( 'last_event_id' );
+				}
+				if ( is_scalar( $header_value ) ) {
+					$last_event_id = max( 0, (int) $header_value );
+				}
 
-				// Pick up any frames pushed since the last tick.
-				$new_frames = WP_MCP_AI_Chat_Session_Frame_Buffer::get_frames_since( $session_id, $event_id_seq );
-				foreach ( $new_frames as $frame ) {
+				$this->sse_handler->send_sse_headers();
+
+				// Extend execution time: 30 min ceiling keeps sessions bounded.
+				if ( function_exists( 'set_time_limit' ) ) {
+					@set_time_limit( ( self::MAX_TICKS * self::POLL_INTERVAL ) + 60 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort.
+				}
+				if ( function_exists( 'ignore_user_abort' ) ) {
+					ignore_user_abort( true );
+				}
+
+				$event_id_seq = $last_event_id;
+				$tick_count   = 0;
+				$start_time   = time();
+				$max_duration = (int) apply_filters(
+					'wp_mcp_ai_sse_max_duration',
+					(int) \WP_MCP_AI_Settings_Registry::get_setting( 'sse_max_duration_seconds', self::DEFAULT_MAX_DURATION )
+				);
+
+				/**
+				 * Fires when a chat-session SSE stream is established.
+				 *
+				 * @since 1.9.4
+				 *
+				 * @param string $session_id    Chat session identifier.
+				 * @param int    $last_event_id Last-Event-ID from the client (0 if fresh).
+				 */
+				do_action( 'wp_mcp_ai_chat_session_stream_opened', $session_id, $last_event_id );
+
+				// Replay any frames the client missed.
+				$replay_frames = WP_MCP_AI_Chat_Session_Frame_Buffer::get_frames_since( $session_id, $last_event_id );
+				foreach ( $replay_frames as $frame ) {
 					++$event_id_seq;
 					$this->emit_frame( $frame['event'], $frame['data'], $event_id_seq );
 				}
 
-				// Heartbeat ping.
-				if ( 0 === $tick_count % self::PING_EVERY_N_TICKS ) {
-					++$event_id_seq;
-					$this->sse_handler->send_sse_event_with_id(
-						'ping',
-						array(
-							'session_id' => $session_id,
-							'ts'         => time(),
-						),
-						(string) $event_id_seq
-					);
+				// Main polling loop.
+				while ( $tick_count < self::MAX_TICKS ) {
+					if ( function_exists( 'connection_aborted' ) && connection_aborted() ) {
+						break;
+					}
+
+					// Force reconnect after max duration.
+					if ( ( time() - $start_time ) >= $max_duration ) {
+						++$event_id_seq;
+						$this->sse_handler->send_sse_event_with_id(
+							'chat:reconnect',
+							array(
+								'retry'  => 3000,
+								'reason' => 'max_duration_reached',
+							),
+							(string) $event_id_seq
+						);
+						break;
+					}
+
+					sleep( self::POLL_INTERVAL );
+					++$tick_count;
+
+					// Pick up any frames pushed since the last tick.
+					$new_frames = WP_MCP_AI_Chat_Session_Frame_Buffer::get_frames_since( $session_id, $event_id_seq );
+					foreach ( $new_frames as $frame ) {
+						++$event_id_seq;
+						$this->emit_frame( $frame['event'], $frame['data'], $event_id_seq );
+					}
+
+					// Heartbeat ping.
+					if ( 0 === $tick_count % self::PING_EVERY_N_TICKS ) {
+						++$event_id_seq;
+						$this->sse_handler->send_sse_event_with_id(
+							'ping',
+							array(
+								'session_id' => $session_id,
+								'ts'         => time(),
+							),
+							(string) $event_id_seq
+						);
+					}
 				}
+
+				$this->sse_handler->send_sse_done();
+
+				/**
+				 * Fires when a chat-session SSE stream closes (max ticks reached or
+				 * connection aborted).
+				 *
+				 * @since 1.9.4
+				 *
+				 * @param string $session_id Chat session identifier.
+				 * @param int    $tick_count Number of polling ticks completed.
+				 */
+				do_action( 'wp_mcp_ai_chat_session_stream_closed', $session_id, $tick_count );
+			} finally {
+				// Decrement the per-IP rate-limit counter regardless of how the
+				// stream exits (natural end, max duration, connection abort,
+				// invalid session, or unhandled exception).
+				if ( ! empty( $ip ) ) {
+					$this->decrement_stream_counter( $ip );
+				}
+				$this->sse_handler->finish();
 			}
-
-			$this->sse_handler->send_sse_done();
-
-			/**
-			 * Fires when a chat-session SSE stream closes (max ticks reached or
-			 * connection aborted).
-			 *
-			 * @since 1.9.4
-			 *
-			 * @param string $session_id Chat session identifier.
-			 * @param int    $tick_count Number of polling ticks completed.
-			 */
-			do_action( 'wp_mcp_ai_chat_session_stream_closed', $session_id, $tick_count );
-
-			$this->sse_handler->finish();
 		}
 
 		// -----------------------------------------------------------------------
 		// Private helpers
 		// -----------------------------------------------------------------------
+
+		/**
+		 * Extract the client IP address from the request.
+		 *
+		 * Prefers X-Forwarded-For (for reverse-proxy setups), falls back to
+		 * REMOTE_ADDR.  Returns an empty string when neither is available.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 *
+		 * @return string Client IP address, or empty string.
+		 */
+		private function get_client_ip( WP_REST_Request $request ) {
+			$ip = $request->get_header( 'X-Forwarded-For' );
+			if ( ! empty( $ip ) ) {
+				return sanitize_text_field( wp_unslash( $ip ) );
+			}
+
+			if ( isset( $_SERVER['REMOTE_ADDR'] ) ) {
+				return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
+			}
+
+			return '';
+		}
+
+		/**
+		 * Decrement the per-IP stream counter, flooring at zero.
+		 *
+		 * Called from `finally` blocks and auth-failure paths so that the
+		 * rate-limit slot held by this request is released as soon as the
+		 * stream ends (or never starts).
+		 *
+		 * @param string $ip Client IP address.
+		 *
+		 * @return void
+		 */
+		private function decrement_stream_counter( $ip ) {
+			if ( empty( $ip ) ) {
+				return;
+			}
+
+			$key   = 'wp_mcp_ai_sse_streams_' . md5( $ip );
+			$count = (int) get_transient( $key );
+
+			if ( $count > 0 ) {
+				set_transient( $key, $count - 1, MINUTE_IN_SECONDS );
+			}
+		}
 
 		/**
 		 * Emit a single SSE frame with a monotonic ID.
