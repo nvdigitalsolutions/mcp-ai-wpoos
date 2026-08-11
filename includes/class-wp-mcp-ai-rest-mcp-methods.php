@@ -981,6 +981,18 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// Convert REST response to MCP format.
 		$data = $result instanceof WP_REST_Response ? $result->get_data() : $result;
 
+		// Handle async tool execution: poll for completion when the tool was
+		// queued asynchronously (e.g. EZuite ERP, video generation). Without
+		// this, the pending response (status/job_id, no "result" key) would
+		// hit the guard below and return a misleading internal error.
+		if ( $this->is_mcp_async_tool_result( $data ) ) {
+			$async_result = $this->mcp_wait_for_async_tool( $data['job_id'], $tool_name );
+			if ( is_wp_error( $async_result ) ) {
+				return $async_result;
+			}
+			$data = array( 'result' => $async_result );
+		}
+
 		// Guard against missing 'result' key.
 		if ( ! isset( $data['result'] ) ) {
 			return new WP_Error(
@@ -1017,6 +1029,105 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					'text' => $text_content,
 				),
 			),
+		);
+	}
+
+	/**
+	 * Check if a REST response from handle_tool_request is an async/pending result.
+	 *
+	 * When the async orchestrator queues a tool for background execution,
+	 * handle_tool_request returns {status: "pending", job_id: "…", async: true}
+	 * instead of the normal {result: …} envelope. This detects that case so
+	 * mcp_tools_call can poll for completion.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param array $data Response data from handle_tool_request.
+	 * @return bool True if the response is an async pending result.
+	 */
+	protected function is_mcp_async_tool_result( $data ) {
+		return is_array( $data )
+			&& isset( $data['async'] )
+			&& $data['async']
+			&& ! empty( $data['job_id'] );
+	}
+
+	/**
+	 * Poll for completion of an async tool job.
+	 *
+	 * Mirrors the pattern in WP_MCP_AI_Chat_Service::wait_for_async_tool_completion
+	 * so direct MCP tools/call requests get the same behaviour as the chat client.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param string $job_id   Async job identifier.
+	 * @param string $tool_name Tool name for error messages.
+	 * @return array|WP_Error Final tool result or error.
+	 */
+	protected function mcp_wait_for_async_tool( $job_id, $tool_name ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+		}
+
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+
+		$max_polls     = apply_filters( 'wp_mcp_ai_async_max_polls', 120 );
+		$poll_interval = apply_filters( 'wp_mcp_ai_async_poll_interval', 3 );
+		$poll_count    = 0;
+
+		$required_time = ( $max_polls * $poll_interval ) + 60;
+		if ( function_exists( 'set_time_limit' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			@set_time_limit( $required_time );
+		}
+
+		while ( $poll_count < $max_polls ) {
+			$job_status = $executor->get_result( $job_id );
+
+			if ( is_wp_error( $job_status ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_async_tool_failed',
+					sprintf(
+						/* translators: 1: tool name, 2: error message */
+						__( '%1$s failed: %2$s', 'mcp-ai-wpoos' ),
+						$tool_name,
+						$job_status->get_error_message()
+					)
+				);
+			}
+
+			$status = isset( $job_status['status'] ) ? $job_status['status'] : 'unknown';
+
+			if ( 'completed' === $status ) {
+				return isset( $job_status['result'] ) ? $job_status['result'] : array();
+			}
+
+			if ( 'failed' === $status ) {
+				$error_msg = isset( $job_status['error'] ) ? $job_status['error'] : __( 'Unknown error', 'mcp-ai-wpoos' );
+				return new WP_Error(
+					'wp_mcp_ai_async_tool_failed',
+					sprintf(
+						/* translators: 1: tool name, 2: error message */
+						__( '%1$s failed: %2$s', 'mcp-ai-wpoos' ),
+						$tool_name,
+						$error_msg
+					)
+				);
+			}
+
+			// Still pending — wait before next poll.
+			sleep( $poll_interval );
+			++$poll_count;
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_async_tool_timeout',
+			sprintf(
+				/* translators: 1: tool name, 2: job ID */
+				__( '%1$s did not complete within the expected time (job: %2$s).', 'mcp-ai-wpoos' ),
+				$tool_name,
+				$job_id
+			)
 		);
 	}
 
