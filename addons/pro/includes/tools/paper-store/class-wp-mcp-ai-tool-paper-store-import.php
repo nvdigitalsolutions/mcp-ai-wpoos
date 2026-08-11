@@ -24,6 +24,7 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
  */
 class WP_MCP_AI_Tool_Paper_Store_Import implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Paper_Store_Remote;
 
 	/**
 	 * {@inheritdoc}
@@ -53,20 +54,21 @@ class WP_MCP_AI_Tool_Paper_Store_Import implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'collection' => array(
+				'collection'    => array(
 					'type'        => 'string',
 					'description' => __( 'Target collection name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'records'    => array(
+				'records'       => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'object' ),
 					'description' => __( 'Array of record objects to import. Each must have "id" and "title".', 'mcp-ai-wpoos-pro' ),
 				),
-				'overwrite'  => array(
+				'overwrite'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Overwrite existing records with matching IDs. Default true.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
+				'connection_id' => $this->get_connection_id_schema(),
 			),
 			'required'   => array( 'collection', 'records' ),
 		);
@@ -88,12 +90,26 @@ class WP_MCP_AI_Tool_Paper_Store_Import implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
-		$collection = sanitize_key( $arguments['collection'] );
-		$overwrite  = isset( $arguments['overwrite'] ) ? (bool) $arguments['overwrite'] : true;
-		$records    = isset( $arguments['records'] ) && is_array( $arguments['records'] ) ? $arguments['records'] : array();
+		$collection    = sanitize_key( $arguments['collection'] );
+		$overwrite     = isset( $arguments['overwrite'] ) ? (bool) $arguments['overwrite'] : true;
+		$records       = isset( $arguments['records'] ) && is_array( $arguments['records'] ) ? $arguments['records'] : array();
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 
 		if ( empty( $collection ) || empty( $records ) ) {
 			return new WP_Error( 'missing_params', __( 'Collection and records are required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Remote dispatch.
+		if ( ! empty( $connection_id ) ) {
+			return $this->execute_remote(
+				$connection_id,
+				'mcp-ai/v1/paper-store/' . $collection . '/import',
+				'POST',
+				array(
+					'records'   => $records,
+					'overwrite' => $overwrite,
+				)
+			);
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -109,12 +125,12 @@ class WP_MCP_AI_Tool_Paper_Store_Import implements WP_MCP_AI_Tool_Interface, WP_
 
 		foreach ( $records as $record ) {
 			if ( ! is_array( $record ) || empty( $record['id'] ) ) {
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
 			if ( ! $overwrite && $repo->exists( sanitize_key( $record['id'] ) ) ) {
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
@@ -126,7 +142,7 @@ class WP_MCP_AI_Tool_Paper_Store_Import implements WP_MCP_AI_Tool_Interface, WP_
 					'error' => $result->get_error_message(),
 				);
 			} else {
-				$imported++;
+				++$imported;
 			}
 		}
 

@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Paper_Store_Delete implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Paper_Store_Remote;
 
 	/**
 	 * {@inheritdoc}
@@ -47,14 +48,15 @@ class WP_MCP_AI_Tool_Paper_Store_Delete implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'collection' => array(
+				'collection'    => array(
 					'type'        => 'string',
 					'description' => __( 'Collection name.', 'mcp-ai-wpoos' ),
 				),
-				'record_id'  => array(
+				'record_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'The ID of the record to delete.', 'mcp-ai-wpoos' ),
 				),
+				'connection_id' => $this->get_connection_id_schema(),
 			),
 			'required'   => array( 'collection', 'record_id' ),
 		);
@@ -76,8 +78,18 @@ class WP_MCP_AI_Tool_Paper_Store_Delete implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
-		$collection = sanitize_key( $arguments['collection'] );
-		$record_id  = sanitize_key( $arguments['record_id'] );
+		$collection    = sanitize_key( $arguments['collection'] );
+		$record_id     = sanitize_key( $arguments['record_id'] );
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
+
+		// Remote dispatch.
+		if ( ! empty( $connection_id ) ) {
+			return $this->execute_remote(
+				$connection_id,
+				'mcp-ai/v1/paper-store/' . $collection . '/' . $record_id,
+				'DELETE'
+			);
+		}
 
 		if ( empty( $collection ) || empty( $record_id ) ) {
 			return new WP_Error( 'missing_params', __( 'Collection and record_id are required.', 'mcp-ai-wpoos' ) );
