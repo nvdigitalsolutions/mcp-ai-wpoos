@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-content-research
 description: Convert research findings into WordPress draft posts. Covers create_post_from_research for transforming Paper Store research records or raw data into publishable content. Use for blog posts, buying guides, brand spotlights, and any content built from research.
 ---

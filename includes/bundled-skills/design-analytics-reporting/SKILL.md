@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-analytics-reporting
 description: Track, measure, and report on marketing performance — social media analytics, e-commerce sales data, campaign ROI, product velocity, and audience insights. Covers metric definitions, reporting templates, and data-driven decision frameworks.
 ---

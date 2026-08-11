@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-pro-schedule-manager
 description: Manage NV oOS Pro Schedules — create, update, delete, list, dry-run, view run history, and plan schedules from workflows. Covers all 7 Pro Schedule Manager MCP tools with usage patterns, cross-references to wp-plugin-cron and wp-action-scheduler for underlying scheduling infrastructure, and operational troubleshooting. Use when managing schedules via the Pro Schedule Manager, planning recurring tasks, debugging schedule failures, or integrating workflow outputs with scheduled execution.
 author: Design Stack

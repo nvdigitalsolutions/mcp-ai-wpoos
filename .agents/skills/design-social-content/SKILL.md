@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-social-content
 description: Create platform-optimized social media content — captions, hashtags, headlines, calls-to-action. Covers tone-of-voice, character limits, hook writing, A/B testing variants, and content repurposing across platforms. MCP bridge provides AI analysis tools for image context; the Design Stack media worker handles AI-assisted content generation.
 ---

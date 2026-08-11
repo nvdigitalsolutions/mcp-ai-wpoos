@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-color-systems
 description: Design and implement color systems for brands, websites, and design projects. Covers color theory, palette generation, accessibility contrast ratios (WCAG), CSS custom properties, dark mode, and color psychology. Integrates with AI tools for palette extraction and generation.
 ---

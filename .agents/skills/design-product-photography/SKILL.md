@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-product-photography
 description: Define product photography standards for e-commerce — shot types, composition, lighting, consistency rules, AI-assisted generation, and platform-specific variants. Covers the full product imagery pipeline from concept to published asset.
 ---

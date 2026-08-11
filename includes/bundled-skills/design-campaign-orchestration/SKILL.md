@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-campaign-orchestration
 description: Plan and orchestrate monthly marketing campaigns — theme selection, product prioritization, weekly content structures, recurring posts, promotions, and presentation generation. Covers the full campaign lifecycle from planning to delivery.
 ---

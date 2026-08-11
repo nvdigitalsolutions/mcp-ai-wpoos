@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-product-research
 description: Research products via AI tools, cross-reference live stock, generate WooCommerce-ready copy, and extract marketing angles. Covers the full product research-to-copy pipeline. Integrates with remote_wp_connection for stock checks and paper_store for optional persistence.
 ---

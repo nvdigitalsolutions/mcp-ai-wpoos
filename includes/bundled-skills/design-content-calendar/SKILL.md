@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-content-calendar
 description: Plan, organize, and schedule content across platforms. Covers editorial strategy, content pillars, posting cadence, seasonal planning, and WordPress-to-social calendar integration. Use for content strategy and scheduling workflows.
 ---

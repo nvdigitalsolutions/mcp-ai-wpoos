@@ -101,6 +101,30 @@ foreach ( glob( $bundled_dir . '/*', GLOB_ONLYDIR ) as $src_dir ) {
 			$skill_ok = false;
 			break;
 		}
+
+		// Ensure SKILL.md has `type: Skill` in its frontmatter (OKF v0.1
+		// conformance — the single required field).
+		if ( 'SKILL.md' === $filename ) {
+			$content   = file_get_contents( $dst_file );
+			$has_type  = ( false !== strpos( $content, "\ntype: Skill\n" ) );
+			$has_delim = ( 0 === strpos( $content, "---\n" ) );
+
+			if ( ! $has_type ) {
+				if ( $has_delim ) {
+					// Inject type: Skill as the first frontmatter key.
+					$content = preg_replace(
+						'/^(---\n)/',
+						"\$1type: Skill\n",
+						$content,
+						1
+					);
+					file_put_contents( $dst_file, $content );
+					echo "  ⚠  Injected missing `type: Skill` into {$skill_name}/SKILL.md\n";
+				} else {
+					fwrite( STDERR, "  ⚠  Warning: {$skill_name}/SKILL.md has no frontmatter — cannot inject type: Skill.\n" );
+				}
+			}
+		}
 	}
 
 	if ( $skill_ok ) {

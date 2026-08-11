@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-pro-workflow-builder
 description: Design and execute DAG-based automation workflows using the NV oOS Pro Workflow Builder — a ReactFlow visual builder for chaining tool calls, agent runs, and actions into repeatable automation pipelines. Covers the visual builder UI, 9 preset categories, node types (trigger, tool, action, agent, condition, delay, parallel, merge, loop, approval), DAG execution engine (Kahn's algorithm), scheduling via Pro Schedule Manager, template variable syntax, and best practices. Use when designing workflows in the builder, debugging DAG execution failures, or choosing between a workflow-builder schedule and raw tool chaining.
 author: Design Stack
