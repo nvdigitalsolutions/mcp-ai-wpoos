@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-brand-kit
 description: Create and manage comprehensive brand identity kits — logos, color palettes, typography, imagery style, brand guidelines, and asset generation. Covers AI-assisted logo generation (MCP Gemini primary, media worker fallback), brand strategy, and WordPress integration for brand asset management.
 ---

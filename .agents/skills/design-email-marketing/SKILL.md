@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-email-marketing
 description: Design and write email marketing campaigns — newsletters, promotional sequences, abandoned cart recovery, welcome flows, and SMS reminders. Covers copywriting, segmentation, timing, and integration with the monthly campaign calendar. Platform-agnostic by default; adapts to available sending tools.
 ---

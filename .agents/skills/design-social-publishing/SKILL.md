@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-social-publishing
 description: Publish and schedule content to social media platforms (Twitter/X, Facebook, Instagram, LinkedIn) via the MCP bridge schedule_social_post tool as primary. The Design Stack media worker API is the fallback for advanced platform management. Covers platform-specific formatting, media attachment, scheduling, and WordPress-to-social publishing workflows.
 ---

@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-video-creation
 description: Create and process videos using AI generation (Runway, Pika, Replicate) and FFmpeg processing. MCP bridge provides frame extraction (extract_video_frames); the Design Stack media worker handles full FFmpeg processing (resize, trim, compress, GIF, format conversion). Covers social-media-optimized video output.
 ---

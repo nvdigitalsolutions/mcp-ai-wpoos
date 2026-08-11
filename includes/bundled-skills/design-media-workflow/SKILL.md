@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-media-workflow
 description: End-to-end media pipeline automation — from AI generation through optimization to social publishing. Covers workflow design, WordPress integration, Redis job queuing, batch processing, multi-site pipelines, and orchestration. MCP bridge tools are the primary interface for individual operations; the Design Stack media worker handles batch and advanced processing.
 ---
