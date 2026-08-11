@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.50
-**Release Date:** 2026-08-10
+**Version:** 1.1.51
+**Release Date:** 2026-08-11
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.50 Highlights:** Media Worker Sidecar (Docker-based Node.js with 11 route handlers for image, video, PDF, OCR, email, social, browser, code, data, document & workflow processing). Site Health redeclaration fix. NPM security fixes (nanoid, js-yaml, dompurify). BMAD agent editing conventions. WPCS cleanup.
+**🆕 v1.1.51 Highlights:** Orchestration & Harness Layer Gap Remediation — OWASP LLM Top 10 coverage 20%→60%, EU AI Act compliance 17%→67%. Output Guardrail, Citation Verifier, Model Integrity Verifier, Semantic Cache, Canary Deployment. MCP protocol version negotiation for Zed/Claude Desktop/Cursor compatibility. Security bumps (multer, nodemailer, sharp).
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -149,6 +149,12 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.51)
+
+- 🏗️ **Orchestration & Harness Layer Gap Remediation.** Comprehensive audit of AI orchestration and LLM harnessing against August 2026 industry standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF, MCP/A2A protocols, OpenTelemetry GenAI). OWASP LLM Top 10 coverage: 20% → 60%. EU AI Act compliance: 17% → 67%. 6 new classes: Output Guardrail (OWASP LLM05 — validates LLM responses for sensitive info/unsafe content), Citation Verifier (OWASP LLM09 — cross-references claims against sources), Model Integrity Verifier (OWASP LLM03 — supply chain security with blocked model list), Semantic Cache (two-tier: exact + embedding-based prompt caching), Canary Deployment (progressive model rollout with auto-rollback). Workflow Engine V2 graduated from feature-flag to GA. Red Teaming scripts (shell + PHP) for OWASP-aligned adversarial probes. 3 new docs: Orchestration & Harness Reference, EU AI Act Compliance Mapping, OWASP LLM Top 10 coverage matrix. (PR #5830)
+- 🔄 **MCP Protocol Version Negotiation.** Older clients (Zed, Claude Desktop, Cursor) rejected the hardcoded `2026-07-28` protocol version. Server now negotiates the highest version both client and server support, falling back to `2024-11-05` when the client provides no version information. 2 files, +123 lines. (PR #5829)
+- 🔒 **Security Bumps — Media Worker.** multer 1.4.5-lts.1 → 2.2.0 (DoS vulns patched, 1.x deprecated). nodemailer 8.0.5 → 9.0.5 (GHSA-p6gq-j5cr-w38f raw bypass fixed). sharp 0.33.0 → 0.35.3 (libvips CVEs CVE-2026-33327 etc.). No code changes — APIs are unchanged across all three bumps. (PR #5828)
 
 ### ✨ What's New at a Glance (v1.1.50)
 
@@ -603,6 +609,15 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.51 — August 2026)
+
+### August 11, 2026 — Orchestration Gap Remediation, MCP Version Negotiation, Media Worker Security Bumps
+
+- ✅ **Orchestration & Harness Layer Gap Remediation — PR #5830 (28 files, +3,295/-29 lines).** Comprehensive audit of AI orchestration and LLM harnessing subsystem against August 2026 industry standards — OWASP LLM Top 10, EU AI Act, NIST AI RMF, MCP/A2A protocols, and OpenTelemetry GenAI conventions. OWASP LLM Top 10 coverage: 20% → 60%. EU AI Act compliance: 17% → 67%. Six new classes: `WP_MCP_AI_Output_Guardrail` (338 lines, OWASP LLM05 — validates LLM responses for PII, credentials, unsafe content before downstream consumption), `WP_MCP_AI_Citation_Verifier` (295 lines, OWASP LLM09 — cross-references claims against source documents to detect hallucinations), `WP_MCP_AI_Model_Integrity_Verifier` (274 lines, OWASP LLM03 — supply chain security with blocked model list and TLS verification), `WP_MCP_AI_Semantic_Cache` (289 lines, two-tier prompt caching: exact-match + embedding-based similarity), `WP_MCP_AI_Canary_Deployment` (404 lines, progressive model rollout with automatic rollback on threshold breach). Workflow Engine V2 graduated from feature-flag to GA release. Red Teaming scripts: `bin/red-team.php` (160 lines, 9 probe categories) and `bin/red-team.sh` (172 lines, 6 attack vectors). Harness init registers Output Guardrail + Citation Verifier by default. Three new docs: Orchestration & Harness Reference (202 lines covering all 10 layers A–J, protocols, security, observability, and 2026 standards alignment), EU AI Act Compliance Mapping (Articles 13–15, 50, 52), and OWASP LLM Top 10 coverage matrix. OWASP coverage: 20% → 60% | EU AI Act: 17% → 67% | Overall: ~65% → ~82%. All PHPCS checks pass with zero errors. (PR #5830)
+- ✅ **MCP Protocol Version Negotiation — PR #5829 (2 files, +123/-3 lines).** Older MCP clients (Zed, Claude Desktop, Cursor) rejected the hardcoded `2026-07-28` protocol version. `class-wp-mcp-ai-rest-mcp-methods.php` (+77 lines) and `class-wp-mcp-ai-toolkit-mcp-rest-controller.php` (+49 lines) now negotiate the highest version both server and client support, falling back to `2024-11-05` when the client provides no version information. Maintains full backward compatibility. (PR #5829)
+- ✅ **Security Bumps — Media Worker — PR #5828 (2 files, +11,728/-3 lines).** multer 1.4.5-lts.1 → 2.2.0 (deprecated 1.x line with multiple DoS vulns patched). nodemailer 8.0.5 → 9.0.5 (GHSA-p6gq-j5cr-w38f: raw header bypass fixed in 9.0.1). sharp 0.33.0 → 0.35.3 (libvips CVE-2026-33327 and related CVEs fixed in 0.35.0). No code changes required — all three packages maintain backward-compatible APIs across the version bumps. (PR #5828)
+- 📦 **Versioning** — bumped to **1.1.51** across all version-bearing files. Pro addon: 1.1.51. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**.
 
 ## 🆕 Latest Updates (v1.1.50 — August 2026)
 
