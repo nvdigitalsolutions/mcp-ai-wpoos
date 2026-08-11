@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-security-audit
 description: Audits WordPress plugin or theme PHP code for the most common security mistakes — missing nonce checks, capability checks, input sanitization, output escaping, unslashing, SQL preparation, AJAX nopriv exposure, file/path traversal, and unsafe redirects. Use when reviewing pull requests, before releasing a plugin, when the user asks "is this secure", or when handling code that touches $_GET / $_POST / $_REQUEST / $_COOKIE / $_FILES / $_SERVER, admin-ajax / admin-post, REST endpoints, options, user meta, custom DB queries, or file uploads.
 author: Soczó Kristóf

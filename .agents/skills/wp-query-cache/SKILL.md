@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-query-cache
 description: Review and implement WordPress query-cache usage on WP 6.9+, especially direct interaction with query cache groups now using salted cache helpers. Covers wp_cache_get_salted, wp_cache_set_salted, wp_cache_get_multiple_salted, wp_cache_get_last_changed, affected query groups like post-queries, term-queries, user-queries, comment-queries, site-queries, and why plugins should usually use WP_Query APIs instead of writing query cache entries directly. Use when optimizing expensive reads, persistent object cache behavior, or cache invalidation bugs.
 author: Soczó Kristóf

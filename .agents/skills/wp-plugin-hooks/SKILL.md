@@ -1,6 +1,7 @@
 ---
+type: Skill
 name: wp-plugin-hooks
-description: "Design custom action/filter hooks emitted by a plugin: action vs filter semantics, prefixed names, docblocks, parameter stability, *_ref_array forwarding, and deprecated hook migration. Use when adding, reviewing, evolving, or deprecating a public hook surface. Triggers on do_action, apply_filters, apply_filters_deprecated, do_action_deprecated, apply_filters_ref_array, do_action_ref_array, did_action, did_filter, or hook @since docblocks."
+description: Design custom action/filter hooks emitted by a plugin: action vs filter semantics, prefixed names, docblocks, parameter stability, *_ref_array forwarding, and deprecated hook migration. Use when adding, reviewing, evolving, or deprecating a public hook surface. Triggers on do_action, apply_filters, apply_filters_deprecated, do_action_deprecated, apply_filters_ref_array, do_action_ref_array, did_action, did_filter, or hook @since docblocks.
 author: Soczó Kristóf
 contact: mailto:lonsdale201@hotmail.com
 plugin: wordpress
