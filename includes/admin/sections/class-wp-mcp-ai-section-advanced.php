@@ -2538,15 +2538,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$('#wp-mcp-ai-complete-version').text(response.data.latest);
 								if (response.data.available) {
 									$('#wp-mcp-ai-upgrade-row').show();
+									$msg.hide();
 								} else {
 									$('#wp-mcp-ai-upgrade-row').hide();
+									// Show reason when available but explain why not.
+									if (response.data.reason) {
+										$msg.removeClass('notice-success notice-error').addClass('notice-warning').show()
+											.find('p').text(response.data.reason);
+									} else if (!silent) {
+										$msg.removeClass('notice-error').addClass('notice-success').show()
+											.find('p').text(<?php echo wp_json_encode( __( 'You are running the latest version.', 'mcp-ai-wpoos' ) ); ?>);
+									}
 								}
 							} else {
 								$('#wp-mcp-ai-complete-version').text('—');
-								if (!silent) {
-									var errMsg = response.data && response.data.message ? response.data.message : <?php echo wp_json_encode( $update_error ); ?>;
-									$msg.removeClass('notice-success').addClass('notice-error').show().find('p').text(errMsg);
-								}
+								var errMsg = response.data && response.data.message ? response.data.message : <?php echo wp_json_encode( $update_error ); ?>;
+								$msg.removeClass('notice-success').addClass('notice-error').show().find('p').text(errMsg);
 							}
 						},
 						error: function() {
