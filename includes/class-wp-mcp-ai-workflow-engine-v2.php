@@ -33,7 +33,7 @@ class WP_MCP_AI_Workflow_Engine_V2 {
 	 * @return bool
 	 */
 	public static function is_enabled() {
-		return (bool) apply_filters( 'wp_mcp_ai_workflow_v2_enabled', false );
+		return (bool) apply_filters( 'wp_mcp_ai_workflow_v2_enabled', true );
 	}
 
 	/**

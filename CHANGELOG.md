@@ -1,5 +1,42 @@
 # oOS – Changelog
 
+## [1.1.51] - 2026-08-11
+
+### Changed — Documentation Audit & Gap-Fill
+
+- **Documentation Audit (Past 10 Days).** Comprehensive audit of all changes from v1.1.43 through v1.1.50 against the documentation surface (README, CHANGELOG, QUICK_REFERENCE, FOR_REVIEWERS, DOCUMENTATION_INDEX, ADDON_INVENTORY, MAINTAINER_MAP, and ~30 feature/reference docs). Identified and resolved 12 gaps across P0/P1/P2 priority tiers.
+- **DOCUMENTATION_INDEX.md** — added August 2026 section indexing all new/updated docs from v1.1.43–v1.1.50 (7 versions, ~30 proposals, new addons, feature docs).
+- **README.md** — added missing "What's New at a Glance (v1.1.46)" section covering Backup & Restore, Plugin Updater, Abilities API, and 6 new default skill catalogues.
+- **ADDON_INVENTORY.md** — added Media Worker sidecar as addon #27; bumped addon count from 26 to 27.
+- **FOR_REVIEWERS.md** — updated addon count (24→27), Embedded version (0.1.0→0.2.0), tool count estimates, and added Media Worker to review tiers.
+- **QUICK_REFERENCE.md** — expanded v1.1.48 skill catalogue entry from 2 to all 6 catalogues (Brave Search, WordPress, Cloudflare, Google Workspace, OpenAI, Google).
+
+### Added — New Feature Reference Docs (6 docs)
+
+- **Backup & Restore** (`docs/features/backup-restore.md`) — architecture, 11 modular export providers (8 base + 3 Pro), admin UI, CLI usage, and import/export workflow.
+- **Plugin Updater** (`docs/features/plugin-updater.md`) — GitHub-based update mechanism, base-to-complete upgrade path, Pro addon support, cache busting, and rollback.
+- **Abilities API** (`docs/features/abilities-api.md`) — registration, discovery, 5 categories (41 abilities), MCP adapter bridge, and tool-ability interface.
+- **Self-Hosted OCR** (`docs/features/self-hosted-ocr.md`) — Unlimited-OCR + DeepSeek-OCR setup, vLLM configuration, Pro tools usage, and batch OCR.
+- **SGI Transparency & Compliance** (`docs/features/sgi-transparency-compliance.md`) — AI transparency infrastructure, SGI compliance, traceability, and chat transparency UI.
+- **Embedded Addon v0.2.0** (`docs/features/embedded-addon-v020.md`) — voice tool calling, OpenMed healthcare, MCP abilities, backend registry, and self-hosted OCR integration.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
+### Versioning
+
+- Bumped to **1.1.51** across all version-bearing files.
+
 ## [1.1.50] - 2026-08-10
 
 ### Added — Media Worker Sidecar (PRs #5822, #5823)
@@ -28,6 +65,19 @@
 
 - Repository-wide PHPCS fixes: tabs, docblock formatting, and code style corrections applied across all PHP files. No functional changes.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.50** across all version-bearing files. Pro addon: **1.1.50**.
@@ -45,6 +95,19 @@
 - **Plugin Updater** (`includes/class-wp-mcp-ai-plugin-updater.php`, +152/-18 lines) — update reactivation flow fixed; plugin now correctly handles post-update reactivation. Nonce-scoped update actions hardened.
 - **Release ZIP Cleanup** — `.distignore` and `.gitattributes` updated to exclude development-only files (`.agents/`, `.context/`, `.github/`, IDE configs) from release ZIPs. `bin/build-plugin-zip.sh` updated with new exclusion rules.
 - **OCR & Tool Cleanup** — minor fixes in OCR service, research report generator, research project tool, video analysis service, and 5 image-analysis tools.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -73,6 +136,19 @@
 - **Brave Search Skills** added to the default skill catalogue (`wp_mcp_ai_settings['default_skill_catalogues']`). Enables Brave Search web and local search tools for new assistants out of the box.
 - **WordPress Agent Skills** added to the default skill catalogue. Enables all 22 WordPress-plugin-development agent skills for new assistants out of the box.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.48** across all version-bearing files. Pro addon: **1.1.28**.
@@ -96,6 +172,19 @@
 ### Fixed — Mermaid Security Vulnerabilities
 
 - **npm Audit Fix** (`addons/canvas-toolkit/`) — mermaid 11.15.0 → 11.16.1 to resolve 5 CVEs: GHSA-3rrr-jr9j-h3q3 (Architecture diagram prototype pollution), GHSA-6x64-9x62-f2gx (CSS injection on sibling elements), GHSA-rhh3-jpg6-66xh (Radar diagram DoS), GHSA-2v8p-3f2j-5mp7 (XY Chart infinite loop DoS), GHSA-c4c3-pg64-4m4v (Config API prototype pollution). Transitive bumps: dompurify 3.4.12 → 3.4.13, nanoid 3.3.16 → 3.3.18. Canvas toolkit dist bundle regenerated (1,219 lines changed). Zero functional impact — mermaid mode is an unused stub not yet implemented.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -152,6 +241,19 @@
 - **WPCS Formatting** — indentation, alignment, and inline comment fixes applied to 100+ files across base, Pro, and core tool directories. (PRs #5798, #5804)
 - **OOS Bridge Wave 2** — `includes/bootstrap/oos-bridge-wave2.php` updated with new tool registry integrations. (PR #5799)
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.46** across all version-bearing files. Pro addon: **1.1.29**.
@@ -192,6 +294,19 @@
 ### Docs & Proposals
 
 - **Proposal 018** — Unlimited-OCR & DeepSeek-OCR integration proposal (367 lines) and implementation plan (668 lines) in `docs/project/proposals/`. (PR #5795)
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -242,6 +357,19 @@
 - **fast-uri** `>=3.1.2`/`>=3.1.3` → `>=3.1.4` across 3 package.json files. Resolves CVE-2026-16221 (host confusion via literal backslash authority delimiter). (PR #5787)
 - **ip-address** `>=10.2.0` → `>=10.4.0` across 3 package.json files. Resolves IPv4-mapped/NAT64 IPv6 SSRF bypass and CIDR suffix special-use classification suppression. (PR #5787)
 - All 11 package-lock.json files regenerated to resolve patched versions.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -301,6 +429,19 @@
 ### Dependency Updates
 
 - WPCS bumped to 3.4.1 for CVE-2026-45293. Phpactor LSP replaces Intelephense. (PR #5760, #5757)
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -364,6 +505,19 @@
 
 - **npm security sweep** — brace-expansion overrides across all addons, js-yaml and postcss security overrides, regenerated all npm lock files. (PR #5739, #5742)
 - **undici pinned to 7.x** for Node 20 compatibility in canvas-toolkit. (PR #5743)
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -480,6 +634,19 @@
 
 - Validated tool slug now correctly matches assistant allowlist (PR #5680).
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.40** across all version-bearing files.
@@ -525,6 +692,19 @@
 - **svgo** >=4.0.2 in pro, >=3.3.4 in saas-controller — fixes removeScripts bypass leaving executable scripts intact. (PR #5736)
 - **linkify-it** >=5.0.2 in pro, saas-controller, pro/assets/spa — fixes CVE-2026-59887 (quadratic-complexity DoS via mailto validator). (PR #5736)
 - **markdown-it** >=14.2.0 override in pro/assets/spa — aligns with root override, enables linkify-it 6.x. (PR #5736)
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -591,6 +771,19 @@
 
 - Comprehensive OpenMed integration plan v2 with industry best practices (PR #5641).
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.40** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`.
@@ -650,6 +843,19 @@
 ### Security
 
 - **OWASP ZAP DAST** — all 7 medium findings triaged as IGNORE (false positives).
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -759,6 +965,19 @@
 
 - FlowHub and Shopify toolkit docs updated for v1.1.36 features.
 - README version and release date updated.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -943,6 +1162,19 @@
 - **Agent context sync** — AGENTS.md, CLAUDE.md, .context/pro-vs-base.md updated.
 - **CHANGELOG v1.1.36 section**.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.36** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`.
@@ -1063,6 +1295,19 @@
 ### Housekeeping
 
 - Stale `build/toolkit-addons` directory and build artifacts removed.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -1190,6 +1435,19 @@
 
 - Stale `build/toolkit-addons` directory and build artifacts removed.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.34** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, `CHANGELOG.md`, `DOCUMENTATION_INDEX.md`, `QUICK_REFERENCE.md`, and `ROADMAP.md`.
@@ -1283,6 +1541,19 @@
 - nvoos-graphify standalone ZIP built at v1.0.0 (353,998 bytes).
 - nvoos-graphify-ai ZIP built at v1.0.0-dev (316,367 bytes).
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.33** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, and `CHANGELOG.md`.
@@ -1370,6 +1641,19 @@
 - Security overrides added to 8 addon `package.json` files (PR #5425).
 - `phpoffice/phpspreadsheet` lock synced 5.7.0 → 5.8.0 to match `^5.8` constraint (PR #5429).
 - `@typescript-eslint/parser` bumped to match eslint-plugin peer constraint (PR #5425).
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -3369,6 +3653,19 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 - `docs/reference/hooks/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
 - `docs/features/agent-skills.md` updated end-to-end with the Phases 1–4 narrative.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to 1.1.14 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
@@ -3420,6 +3717,19 @@ The repo can now be cloned and used as a production WordPress plugin without an 
 
 - README.md and readme.txt updated with a v1.1.13 section summarising the changes above. README's older "GPT-Image-1" mentions now note that `gpt-image-2` is the new default.
 - File-header citations to the upstream MemPalace project added across the agent-memory subsystem so source attribution matches the documentation.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 

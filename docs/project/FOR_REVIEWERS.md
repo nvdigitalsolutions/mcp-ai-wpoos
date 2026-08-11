@@ -14,15 +14,15 @@ Architecturally, the project has undergone a major framework extraction: the AI 
 The repo is a **monorepo** containing:
 - The **base plugin** (GPLv3, ships to WordPress.org) — `mcp-ai-wpoos.php` + `includes/`
 - A **Pro addon** (commercial/proprietary) — `addons/pro/`
-- **24 additional addons** (various licenses) — `addons/*/`
+- **25 additional addons** (various licenses) — `addons/*/`
 - The **extracted AI engine** (framework-agnostic, Hexagonal Architecture) — `lib/core/`
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.50 (August 2026)
+**Current version:** 1.1.51 (August 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,500 (~263 base + ~1,232 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,502 (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 
@@ -96,7 +96,7 @@ core/
 
 ## 4. Addon Inventory (Production vs Experimental)
 
-The monorepo contains **24 addon directories** (26 entries in the inventory, including 2 reference-only Cloudflare Workers). See [ADDON_INVENTORY.md](ADDON_INVENTORY.md) for full details including license, version, and dependencies.
+The monorepo contains **25 addon directories** (27 entries in the inventory, including 2 reference-only Cloudflare Workers). See [ADDON_INVENTORY.md](ADDON_INVENTORY.md) for full details including license, version, and dependencies.
 
 ### Production (actively maintained — review priority)
 
@@ -108,7 +108,7 @@ The monorepo contains **24 addon directories** (26 entries in the inventory, inc
 | **Docs Hub** | 0.3.9 | GPLv3 | React SPA documentation browser (GitBook-style Markdown rendering). |
 | **Algorave** | 1.0.7 | AGPL-3.0 | Live-coding music. Tone.js/Strudel, MIDI export, audio visualization. ⚠️ Has 1 partially-fixed High finding (F-AI-01). |
 | **Fantasy Football** | 0.1.0 | Proprietary | ESPN/Yahoo Fantasy Sports API. Team management, player research, trade analysis, AI logo generation. |
-| **Embedded** | 0.1.0 | Proprietary | Server-side llama.cpp GGUF inference + client-side WebLLM/WebGPU + P2P WebChat (WebRTC). |
+| **Embedded** | 0.2.0 | Proprietary | Server-side llama.cpp GGUF inference + client-side WebLLM/WebGPU + P2P WebChat (WebRTC). Voice tool calling, OpenMed healthcare tools, MCP abilities. |
 | **Canvas** | 0.1.0 | Proprietary | Platform-specific Tesseract PDF OCR binaries. |
 | **Cornerstone3D** | 0.1.0 | Proprietary | Pre-built Cornerstone3D ESM bundles for DICOM medical imaging. |
 | **SaaS Controller** | 0.1.0 | Proprietary | Cloudflare Workers + D1 + KV + AI Gateway deployment toolkit. One-click wizard, Plan/Apply, drift detector. |
@@ -116,6 +116,7 @@ The monorepo contains **24 addon directories** (26 entries in the inventory, inc
 | **Comic Reader** | 0.2.0 | GPLv3 | CBR/CBZ/CB7/CBT comic reader & AI-powered creator. React reading interface. |
 | **Funiq Bridge** | 1.0.0 | GPLv3 | Payload CMS → WordPress bridge for Funiq React PWA. REST API, CPTs, taxonomies, React admin SPA. |
 | **LibreChat** | 0.1.0 | GPLv3 | Sandboxed Python/JavaScript code interpreter, TTS/STT speech services, web search reranker. |
+| **Media Worker** | 0.1.0 | GPLv3 | Docker-based Node.js sidecar. 11 route handlers (image, video, pdf, ocr, email, social, code, data, document, browser, workflow). Queue module with concurrent processing. |
 
 ### Experimental (works but limited testing)
 
@@ -147,9 +148,9 @@ The monorepo contains **24 addon directories** (26 entries in the inventory, inc
 
 ## 5. Known Issues (What Needs Attention)
 
-The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](../operations/compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (19 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.27) resolved 1 Critical + 5 Warnings from code review. **Phase 3 operational security hardening** (July–August 2026, v1.1.38–v1.1.43) added 3 new security classes (audit logger, CSP headers, request guard enhancements), CORS posture signals, error-verbosity control, auth brute-force detection, body-size enforcement, asset-fingerprinting prevention, and OAuth hardening.
+The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](../operations/compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (19 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.27) resolved 1 Critical + 5 Warnings from code review. **Phase 3 operational security hardening** (July–August 2026, v1.1.38–v1.1.50) added 3 new security classes (audit logger, CSP headers, request guard enhancements), CORS posture signals, error-verbosity control, auth brute-force detection, body-size enforcement, asset-fingerprinting prevention, and OAuth hardening.
 
-### Still open / partially fixed (as of v1.1.43):
+### Still open / partially fixed (as of v1.1.51):
 | ID | Severity | Status | What |
 |---|---|---|---|
 | F-AUTHZ-01 | High | 🟡 Partial | Webhook routes with `__return_true` permission callbacks — 4 fixed (Telegram, agent-card ×2, Google Chat), remaining 5 are legitimately public GET-only verification endpoints (Twitter CRC, WhatsApp verify, Messenger verify, OPTIONS preflight). Documented with justification comments. |

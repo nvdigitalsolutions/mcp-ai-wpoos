@@ -173,13 +173,19 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 ### ✨ What's New at a Glance (v1.1.47)
 
 - 🛢️ **MySQL Connection Exhaustion Fix (Cloudways).** Cron system overhaul with unified concurrency limits, per-process memory caps, and staggered offset scheduling to prevent connection-pool saturation. Activation bootstrap now uses connection throttling. Service status registry hardened. Pro status page JS, AJAX handler, and dashboard improvements. 7 files, +438/-89 lines. (PR #5809)
-- 🔄 **Update Checker Cache Bust.** Manual "Check for Updates" now clearss releases from GitHub Releases API and installs updates via WordPress `Plugin_Upgrader`. Base-to-complete upgrade path in Settings → Advanced. Pro addon update support with rollback. Nonce-scoped actions. (PRs #5800–#5804)
+- 🔄 **Update Checker Cache Bust.** Manual "Check for Updates" now clears cached release data and fetches live from GitHub Releases API. (PR #5810)
+- 🔒 **Mermaid Security Fixes.** npm audit fix in canvas-toolkit: mermaid 11.15.0 → 11.16.1 resolves 5 CVEs (prototype pollution, CSS injection, DoS). (PR #5812)
+
+### ✨ What's New at a Glance (v1.1.46)
+
+- 💾 **Comprehensive Backup & Restore (Proposal 020).** 11 modular export providers (8 base + 3 Pro) with JSON-based export/import. Admin UI with provider checkboxes and progress feedback. Covers settings, assistants, CPTs, custom tables, federation, addon options, toolkit options, JetEngine CCTs, license keys, and remote sites. +3,660 lines. (PRs #5805, #5807)
+- 🔄 **GitHub-Based Plugin Updater.** New `WP_MCP_AI_Plugin_Updater` class fetches releases from GitHub API, installs via WordPress `Plugin_Upgrader`. Base-to-complete upgrade path in Settings → Advanced. Pro addon update support with rollback. Cache bust on manual check. +772 lines. (PRs #5800–#5804)
 - 🔌 **Abilities API Selective Adoption (Proposal 019).** New `includes/abilities/` framework — Registrar, Bridge, Category Registrar, and Security Bridge for machine-readable plugin operations with JSON Schema contracts. Tool-ability interface for MCP/AI agent discovery. 5 test files. (PR #5799)
+- 📚 **6 New Default Skill Catalogues.** Brave Search Skills, WordPress Agent Skills, Cloudflare Agent Skills, Google Workspace CLI, OpenAI Agent Skills, and Google Agent Skills added to default skill catalogue for new assistants out of the box.
 - 🐛 **Status Page Fixes.** Fatal error in Pro status REST endpoint resolved. JS errors and i18n text domain consistency fixed on the status dashboard. (PR #5806)
 - 📦 **Knowledge Base Auto-Build.** CI auto-builds `knowledge-base.zip` when playbook files change. (PR #5797)
 - 🧹 **PHPCS Cleanup.** Parse error fixes from canonical envelope conversion, text domain mismatch corrections, and WPCS formatting across 100+ tool files. (PRs #5798, #5804)
-- 📄 **Self-Hosted OCR & More** — see [v1.1.45 release notes](#-latest-updates-v1145--august-2026) below.
-- 
+
 ### ✨ What's New at a Glance (v1.1.43)
 
 - 🔒 **Security Hardening v1.1.43 (16 files).** SSRF protection across 7 provider connection handlers + A2A agent URL. SQL table-name validation against injection. A2A per-assistant agent cards now auth-gated. Chat SPA /config and /manifest endpoints require authentication (no longer public). Missing args schemas on 7 REST endpoints. Guest rate-limiting now IP-based (DoS vector closed). 3 tool capability mismatches corrected. Centralized defense-in-depth capability gate in Tool Registry. PHP object injection prevention via `safe_unserialize` helper.

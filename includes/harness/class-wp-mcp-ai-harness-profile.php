@@ -89,6 +89,16 @@ class WP_MCP_AI_Harness_Profile {
 				'auto_skip'                         => true,
 				'require_approval_for_irreversible' => true,
 			),
+			'output_guard'     => array(
+				'enabled'    => false,
+				'mode'       => 'warn',
+				'strictness' => 'medium',
+			),
+			'citation_verify'  => array(
+				'enabled'              => false,
+				'min_similarity'       => 0.3,
+				'annotate_unverified'  => true,
+			),
 			'evals_enabled'    => array(),
 			'verifiers'        => array(),
 			'trace_capture'    => array(
