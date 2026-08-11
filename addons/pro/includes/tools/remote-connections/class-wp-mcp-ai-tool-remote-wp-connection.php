@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access and manage remote WordPress, WooCommerce, and JetEngine Custom Content Type (CCT) sites. Supports reading posts, pages, media, products, orders, JetEngine CCT records, and other data, plus creating, updating, and deleting content when the connection allows it. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections. NOTE: Write operations (create/update/delete) require the connection to have those operations explicitly enabled by the site administrator.', 'mcp-ai-wpoos-pro' );
+		return __( 'Access and manage remote WordPress, WooCommerce, JetEngine Custom Content Type (CCT), and Paper Store sites. Supports reading posts, pages, media, products, orders, JetEngine CCT records, Paper Store collections and records, and other data, plus creating, updating, and deleting content when the connection allows it. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections. NOTE: Write operations (create/update/delete) require the connection to have those operations explicitly enabled by the site administrator. NOTE: Paper Store operations (list_paper_store_collections, search_paper_store) allow you to browse and search the remote site\'s Paper Store knowledge base through the same WordPress connections.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -158,6 +158,8 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 						'create_jetengine_cct_item',
 						'update_jetengine_cct_item',
 						'delete_jetengine_cct_item',
+						'list_paper_store_collections',
+						'search_paper_store',
 					),
 					'default'     => 'list_connections',
 				),
@@ -257,6 +259,22 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'string',
 					'description' => __( 'Sort direction for JetEngine CCT queries: ASC or DESC (default: DESC).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'ASC', 'DESC' ),
+				),
+				'collection'         => array(
+					'type'        => 'string',
+					'description' => __( 'Paper Store collection name (e.g. "knowledge", "prompts", "product-research"). Required for list_paper_store_collections and search_paper_store actions.', 'mcp-ai-wpoos-pro' ),
+				),
+				'query'              => array(
+					'type'        => 'string',
+					'description' => __( 'Search query string for search_paper_store action. Matches against record titles, descriptions, and tags.', 'mcp-ai-wpoos-pro' ),
+				),
+				'paper_tags'         => array(
+					'type'        => 'string',
+					'description' => __( 'Optional tag filter for search_paper_store action.', 'mcp-ai-wpoos-pro' ),
+				),
+				'paper_status'       => array(
+					'type'        => 'string',
+					'description' => __( 'Optional status filter for search_paper_store action (published, draft, archived).', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'action' ),
@@ -487,6 +505,12 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 			case 'delete_jetengine_cct_item':
 				return $this->delete_jetengine_cct_item( $connection, $arguments );
+
+			case 'list_paper_store_collections':
+				return $this->list_paper_store_collections( $connection );
+
+			case 'search_paper_store':
+				return $this->search_paper_store( $connection, $arguments );
 
 			default:
 				return new WP_Error(
@@ -2537,6 +2561,104 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				$item_id,
 				$cct_slug
 			),
+		);
+	}
+
+	/**
+	 * List Paper Store collections on the remote site.
+	 *
+	 * Calls GET /wp-json/mcp-ai/v1/paper-store on the remote WordPress site.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Collection listing or error.
+	 */
+	protected function list_paper_store_collections( $connection ) {
+		$endpoint = 'mcp-ai/v1/paper-store';
+		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'GET' );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( ! is_array( $result ) || ! isset( $result['collections'] ) ) {
+			return array(
+				'summary'     => __( 'Retrieved Paper Store collections from remote site.', 'mcp-ai-wpoos-pro' ),
+				'collections' => is_array( $result ) ? $result : array(),
+			);
+		}
+
+		return array(
+			'summary'     => sprintf(
+				/* translators: %d: number of collections */
+				__( 'Found %d Paper Store collection(s) on remote site.', 'mcp-ai-wpoos-pro' ),
+				count( $result['collections'] )
+			),
+			'collections' => $result['collections'],
+			'count'       => count( $result['collections'] ),
+		);
+	}
+
+	/**
+	 * Search Paper Store records on the remote site.
+	 *
+	 * Calls GET /wp-json/mcp-ai/v1/paper-store/search on the remote site.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Must include 'query'; optionally 'collection', 'paper_tags', 'paper_status'.
+	 * @return array|WP_Error Search results or error.
+	 */
+	protected function search_paper_store( $connection, $arguments ) {
+		if ( empty( $arguments['query'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_query',
+				__( 'query is required for search_paper_store action.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$endpoint = 'mcp-ai/v1/paper-store/search';
+		$params   = array( 'q' => sanitize_text_field( $arguments['query'] ) );
+
+		if ( ! empty( $arguments['collection'] ) ) {
+			$params['collection'] = sanitize_text_field( $arguments['collection'] );
+		}
+
+		if ( ! empty( $arguments['paper_tags'] ) ) {
+			$params['tags'] = sanitize_text_field( $arguments['paper_tags'] );
+		}
+
+		if ( ! empty( $arguments['paper_status'] ) ) {
+			$status = sanitize_key( $arguments['paper_status'] );
+			if ( in_array( $status, array( 'published', 'draft', 'archived' ), true ) ) {
+				$params['status'] = $status;
+			}
+		}
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'GET', $params );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( ! is_array( $result ) || ! isset( $result['records'] ) ) {
+			return array(
+				'summary' => __( 'No Paper Store records found matching your query on the remote site.', 'mcp-ai-wpoos-pro' ),
+				'records' => array(),
+				'count'   => 0,
+			);
+		}
+
+		return array(
+			'summary' => sprintf(
+				/* translators: %d: number of records found */
+				__( 'Found %d Paper Store record(s) matching your query on the remote site.', 'mcp-ai-wpoos-pro' ),
+				count( $result['records'] )
+			),
+			'records' => $result['records'],
+			'count'   => count( $result['records'] ),
 		);
 	}
 }
