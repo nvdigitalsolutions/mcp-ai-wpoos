@@ -631,11 +631,12 @@ class WP_MCP_AI_Plugin_Updater {
 		}
 
 		$download_url = self::find_asset_url( $release['assets'], self::ASSET_FULL );
+		$is_newer     = version_compare( $release['latest_version'], WP_MCP_AI_VERSION, '>' );
 
 		return array(
 			'installed'    => WP_MCP_AI_VERSION,
 			'latest'       => $release['latest_version'],
-			'available'    => ! empty( $download_url ),
+			'available'    => ! empty( $download_url ) && $is_newer,
 			'download_url' => $download_url,
 			'published_at' => $release['published_at'],
 			'checked_at'   => $release['checked_at'],

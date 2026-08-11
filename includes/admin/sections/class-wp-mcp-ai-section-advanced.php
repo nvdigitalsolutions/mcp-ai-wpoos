@@ -2289,8 +2289,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			<?php
 			// Show for all builds (base and full). Base-only sees upgrade path,
 			// full/GitHub builds see update checks.
-			$is_github_build = ! ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION );
-			$update_nonce    = wp_create_nonce( 'wp_mcp_ai_plugin_update' );
+			//
+			// Detect GitHub/complete build by checking if the Pro addon
+			// directory exists (addons/pro/mcp-ai-wpoos-pro.php). This is
+			// more reliable than WP_MCP_AI_BASE_VERSION which persists even
+			// after upgrading from base → complete since mcp-ai-wpoos-base.php
+			// unconditionally defines the constant.
+			$pro_addon_file     = WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php';
+			$is_github_build    = file_exists( $pro_addon_file );
+			$is_base_only_build = ! $is_github_build && defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;
+			$update_nonce       = wp_create_nonce( 'wp_mcp_ai_plugin_update' );
 			$update_error      = __( 'An error occurred.', 'mcp-ai-wpoos' );
 			$update_ajax_error = __( 'AJAX error: ', 'mcp-ai-wpoos' );
 
