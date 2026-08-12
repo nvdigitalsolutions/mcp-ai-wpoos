@@ -102,13 +102,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'MCP method name to invoke.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
-							'enum'              => array(
-								'initialize',
-								'tools/list',
-								'tools/call',
-								'resources/list',
-								'prompts/list',
-							),
+							'validate_callback' => array( $this, 'validate_mcp_method' ),
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'params'  => array(
@@ -318,6 +312,57 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			),
 			true
 		);
+	}
+
+	/**
+	 * Validate the MCP method name for the /mcp endpoint.
+	 *
+	 * Performs structural validation only. The previous strict enum allowed
+	 * five methods and rejected everything else with an HTTP 400 before the
+	 * request ever reached the JSON-RPC handler. That broke standard MCP
+	 * client handshakes: clients such as Hermes, Claude Desktop, and Zed
+	 * send `ping`, `notifications/initialized`, `notifications/cancelled`,
+	 * `resources/read`, and `prompts/get` during a normal session.
+	 *
+	 * Unknown-but-well-formed method names now pass through to the handler,
+	 * which answers with a spec-compliant JSON-RPC -32601 "method not found"
+	 * error (see WP_MCP_AI_REST_MCP_Methods::route_mcp_method()).
+	 *
+	 * @since 1.1.52
+	 *
+	 * @param string          $value   Raw method name from the request.
+	 * @param WP_REST_Request $request Current REST request.
+	 * @param string          $param   Parameter name.
+	 * @return true|WP_Error True when the method name is structurally valid.
+	 */
+	public function validate_mcp_method( $value, $request, $param ) {
+		unset( $request, $param ); // Context only; not used for structural checks.
+
+		if ( ! is_string( $value ) || '' === $value ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_method',
+				__( 'The MCP method name must be a non-empty string.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( strlen( $value ) > 200 ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_method',
+				__( 'The MCP method name exceeds the maximum length of 200 characters.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( ! preg_match( '/^[a-z0-9_\-\/.]+$/i', $value ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_method',
+				__( 'The MCP method name contains characters that are not allowed.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		return true;
 	}
 
 	/**

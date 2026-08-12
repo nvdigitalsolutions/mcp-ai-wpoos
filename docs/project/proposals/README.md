@@ -30,6 +30,7 @@ This directory contains proposals, research, and implementation status for major
 - **Layer I Guardrails** — Jailbreak prevention (v1.1.29, Jun 12)
 
 ### 🚧 Currently In Progress
+- **Hermes Agent Fleet Operator** — External-operator governance for Hermes (or any MCP/A2A host) managing multiple NV oOS sites (see [`024-hermes-agent-fleet-operator-implementation-plan.md`](./024-hermes-agent-fleet-operator-implementation-plan.md))
 - **Cross-Platform Extraction Phase 3** — ~22% tool migration (43/195 base); Pro tools pending
 - **Laravel-Scale Deployment Architecture** — Central Octane orchestrator proposal under review (see [`laravel-scale-deployment-architecture.md`](./laravel-scale-deployment-architecture.md))
 - **Graphify Release Readiness** — Plugin Check compliance audit in progress (see [`nvoos-graphify-release-readiness.md`](./nvoos-graphify-release-readiness.md))
