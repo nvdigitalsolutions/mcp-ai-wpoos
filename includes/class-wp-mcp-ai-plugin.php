@@ -246,6 +246,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			if ( class_exists( 'WP_MCP_AI_Site_Health' ) ) {
 				new WP_MCP_AI_Site_Health();
 			}
+			if ( class_exists( 'WP_MCP_AI_Site_Health_Connection_Pool' ) ) {
+				WP_MCP_AI_Site_Health_Connection_Pool::register();
+			}
 
 			// Disable wp-auth-check in Elementor editor to prevent JavaScript errors.
 			add_action( 'admin_enqueue_scripts', array( $this, 'disable_auth_check_in_elementor' ), 20 );

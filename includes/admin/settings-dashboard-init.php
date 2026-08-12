@@ -157,6 +157,14 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.a2a' ) );
 
+		// RabbitMQ section — always register so settings are saved, but
+		// its admin UI is conditionally shown inside the Orchestration
+		// section's view navigation (see WP_MCP_AI_Section_Orchestration::render()).
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_exists -- Minimal I/O guard before instantiation.
+		if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-rabbitmq.php' ) ) {
+			WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_RabbitMQ() );
+		}
+
 		// Performance section is only available with Pro addon.
 		$performance_section = $container->get( 'section.performance' );
 		if ( null !== $performance_section ) {
@@ -187,11 +195,11 @@ function wp_mcp_ai_init_settings_dashboard() {
 				// Register the Form Submissions dashboard section.
 				WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.form_submissions' ) );
 				// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
-
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );.
-
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );.
+		// phpcs:disable Squiz.PHP.CommentedOutCode.Found, Squiz.Commenting.InlineComment.InvalidEndChar -- Deprecated registrations retained for documentation.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );
+		// phpcs:enable Squiz.PHP.CommentedOutCode.Found, Squiz.Commenting.InlineComment.InvalidEndChar
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "NV oOS" menu item.
@@ -214,9 +222,10 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// Initialize integration admin pages.
 		// Note: Plugin integrations (JetEngine, WooCommerce, Elementor) now use sections instead of standalone page.
 		// Note: External tools integration (Gmail, Crawl4AI, etc.) now uses sections instead of standalone page.
-		// $GLOBALS['wp_mcp_ai_admin_plugins']     = $container->get( 'admin.plugins_integration' );.
-
-		// $GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = $container->get( 'admin.gmail_crawl_integration' );.
+		// phpcs:disable Squiz.PHP.CommentedOutCode.Found -- Retained as documentation of deprecated admin pages.
+		// $GLOBALS['wp_mcp_ai_admin_plugins']     = $container->get( 'admin.plugins_integration' );
+		// $GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = $container->get( 'admin.gmail_crawl_integration' );
+		// phpcs:enable Squiz.PHP.CommentedOutCode.Found
 
 		// Initialize the custom filters applicator.
 		// This applies saved filter values to WordPress filters.

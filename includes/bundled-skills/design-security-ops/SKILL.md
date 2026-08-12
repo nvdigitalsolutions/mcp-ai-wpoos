@@ -1,6 +1,6 @@
 ---
 name: design-security-ops
-description: Manage the NV oOS Pro Toolkit Security Operations system — audit events, security training, maintenance windows, and incident records. Covers the full security ops lifecycle: audit logging, incident detection/response, maintenance scheduling, and compliance training tracking. Use when working with security audit trails, investigating incidents, scheduling maintenance windows, managing security training programs, or troubleshooting security operations data.
+description: "Manage the NV oOS Pro Toolkit Security Operations system — audit events, security training, maintenance windows, and incident records. Covers the full security ops lifecycle: audit logging, incident detection/response, maintenance scheduling, and compliance training tracking. Use when working with security audit trails, investigating incidents, scheduling maintenance windows, managing security training programs, or troubleshooting security operations data."
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill

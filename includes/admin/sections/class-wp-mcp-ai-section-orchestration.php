@@ -1328,7 +1328,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'wp-mcp-ai-orch-teams',
 				);
 				foreach ( $style_handles as $handle ) {
-					wp_register_style( $handle, false );
+					wp_register_style( $handle, false, array(), WP_MCP_AI_VERSION );
 					wp_enqueue_style( $handle );
 				}
 
@@ -1365,6 +1365,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			<?php esc_html_e( 'Observability', 'mcp-ai-wpoos' ); ?>
 </a>
 			<?php
+			// Conditionally show RabbitMQ tab if the AMQP extension is loaded
+			// or RabbitMQ is already configured.
+			$show_rabbitmq = extension_loaded( 'amqp' )
+				|| defined( 'WP_MCP_AI_RABBITMQ_ENABLED' )
+				|| ! empty( WP_MCP_AI_Settings_Registry::get_setting( 'rabbitmq_enabled', false ) );
+			if ( $show_rabbitmq && file_exists( WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-rabbitmq.php' ) ) :
+				?>
+<a href="<?php echo esc_url( $this->get_view_url( 'rabbitmq' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'rabbitmq' === $active_view ? 'active' : '' ); ?>">
+<span class="dashicons dashicons-networking"></span>
+				<?php esc_html_e( 'RabbitMQ', 'mcp-ai-wpoos' ); ?>
+</a>
+				<?php
+			endif;
+
 			// Conditionally show Agents tab if agent roles are enabled.
 			$enable_agent_roles = WP_MCP_AI_Settings_Registry::get_setting( 'enable_agent_roles', true );
 			if ( $enable_agent_roles ) :
@@ -1478,6 +1492,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
 						echo '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					}
+					break;
+				case 'rabbitmq':
+					$this->render_rabbitmq_view();
 					break;
 				case 'dspark':
 					$this->render_dspark_efficiency_view();
@@ -4039,6 +4056,38 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			);
 
 			return isset( $icons[ $status ] ) ? $icons[ $status ] : 'info';
+		}
+
+
+		/**
+		 * Render RabbitMQ configuration view.
+		 *
+		 * Delegates to WP_MCP_AI_Section_RabbitMQ::render() which outputs the
+		 * status widget (AMQP extension, connection test) and all RabbitMQ
+		 * settings fields (host, port, credentials, queues, retry, dead letter).
+		 *
+		 * @since 1.3.0
+		 */
+		private function render_rabbitmq_view() {
+			if ( ! file_exists( WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-rabbitmq.php' ) ) {
+				echo '<div class="notice notice-error inline"><p>';
+				esc_html_e( 'RabbitMQ section is not available.', 'mcp-ai-wpoos' );
+				echo '</p></div>';
+				return;
+			}
+
+			try {
+				$rabbitmq_section = new WP_MCP_AI_Section_RabbitMQ();
+				$rabbitmq_section->render();
+			} catch ( Exception $e ) {
+				echo '<div class="notice notice-error inline"><p>';
+				printf(
+					/* translators: %s: error message */
+					esc_html__( 'Failed to render RabbitMQ section: %s', 'mcp-ai-wpoos' ),
+					esc_html( $e->getMessage() )
+				);
+				echo '</p></div>';
+			}
 		}
 
 		/**

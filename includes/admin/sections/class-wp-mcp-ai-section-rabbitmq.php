@@ -271,10 +271,60 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 
 	/**
 	 * Render section content.
+	 *
+	 * Outputs the status widget (AMQP extension check, connection test
+	 * button) followed by the settings fields grouped into Connection,
+	 * Queue, Execution, and Reliability sections.
 	 */
 	public function render() {
 		$this->render_status_widget();
-		parent::render();
+
+		$fields        = $this->get_fields();
+		$field_groups  = $this->get_field_groups();
+		$rendered_keys = array();
+
+		foreach ( $field_groups as $group ) {
+			// Render group heading as a full-width separator row.
+			?>
+			<tr class="wp-mcp-ai-settings-group-header">
+				<td colspan="2">
+					<h3><?php echo esc_html( $group['title'] ); ?></h3>
+					<?php if ( ! empty( $group['description'] ) ) : ?>
+						<p class="description"><?php echo esc_html( $group['description'] ); ?></p>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<?php
+
+			foreach ( $group['fields'] as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$this->render_field( $key, $fields[ $key ] );
+					$rendered_keys[] = $key;
+				}
+			}
+		}
+
+		// Render any fields not covered by a group (safety net).
+		foreach ( $fields as $key => $field ) {
+			if ( ! in_array( $key, $rendered_keys, true ) ) {
+				$this->render_field( $key, $field );
+			}
+		}
+	}
+
+	/**
+	 * Suppress standalone wrapper rendering.
+	 *
+	 * The RabbitMQ settings are rendered inline as a view inside the
+	 * Orchestration section (see WP_MCP_AI_Section_Orchestration::
+	 * render_rabbitmq_view()). This override prevents the dashboard from
+	 * rendering a duplicate section block.
+	 *
+	 * The section is still registered with WP_MCP_AI_Settings_Registry
+	 * so that its fields participate in the save/sanitize loop.
+	 */
+	public function render_wrapper() {
+		// No-op: rendered inline by the Orchestration section.
 	}
 
 	/**

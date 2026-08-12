@@ -520,6 +520,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'rabbitmq_retry_delay'                  => 1000,
 				'rabbitmq_dead_letter_enabled'          => true,
 				'rabbitmq_dead_letter_ttl'              => 86400,
+				'queue_worker_dedicated'                => false,
 				'mailjet_api_key'                       => '',
 				'mailjet_api_secret'                    => '',
 				'mailjet_from_email'                    => '',
