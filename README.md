@@ -44,13 +44,13 @@
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
-- [⚠️ Warranty & Safe Use](#warranty--safe-use)
+- [⚠️ Warranty & Safe Use](#-warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
   - [🌱 Beginner 3-Step Install (Try it on Your PC)](#-beginner-3-step-install-try-it-on-your-pc)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
+- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
@@ -126,7 +126,7 @@
 | `lib/core/` | Framework-agnostic AI orchestration engine (nvoos/core): 32 domain contracts, 21 WordPress adapters, ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry — PHP 8.1+ |
 | `addons/` | 27 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Graphify, Comic Reader, Funiq Bridge, AI Platform, Algorave, Cornerstone3D, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router, Page Agent, Crocoblock DS, LibreChat, Status Page) |
 | `assets/` | Frontend JS/CSS, images, CSV templates, examples |
-| `.agents/skills/` | 21 coding-time agent skills for Zed editor (WordPress plugin development patterns) |
+| `.agents/skills/` | 44 coding-time agent skills for Zed editor (WordPress plugin development patterns + design-* skills) |
 | `.bmad/` | 6 BMAD workflow agent YAML definitions + team composition config |
 | `.context/` | Subsystem context files (8 topics + 5 templates) for agent session loading |
 | `plugins/` | Standalone plugins: NVOOS Graphify, NVOOS Graphify AI, NVOOS Graphify AI Platform |
@@ -148,7 +148,7 @@
 
 ## 🧩 Overview
 
-Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, and Hugging Face.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
 ### ✨ What's New at a Glance (v1.1.53)
 
@@ -391,17 +391,6 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 - 🧩 **Unified Blueprint System.** 55 pre-built AI assistant blueprints across 25 toolkits.
 - ☁️ **Cloudways Pro Toolkit.** 60 AI tools for server and application management via Cloudways API v2.
-- 🏢 **CRM Toolkit Phases A–E Complete.** 70+ tools: lead management, multi-channel triage, sequences, command center, complcture spec and roadmap.
-- 🛡️ **Pro Toolkits Security Audit.** 9 HIGH-severity security findings fixed.
-- 📋 **Reviewer Onboarding Docs.** Complete reviewer documentation suite (`docs/project/FOR_REVIEWERS.md`).
-- 🐳 **Docker Dev Environments.** WordPress, Laravel, and Craft CMS Docker environments all fixed.
-- 🧪 **Test Infrastructure.** 95% of PHPUnit failures resolved across base, pro, and addon test suites.
-- 🔧 **Infrastructure Fixes.** TCPDF autoloader fix, Pro vendor files committed, puppeteer detection path fix, shallow clone recommendation.
-
-### ✨ What's New at a Glance (v1.1.25)
-
-- 🧩 **Unified Blueprint System.** 55 pre-built AI assistant blueprints across 25 toolkits.
-- ☁️ **Cloudways Pro Toolkit.** 60 AI tools for server and application management via Cloudways API v2.
 - 🏢 **CRM Toolkit Phases A–E Complete.** 70+ tools: lead management, multi-channel triage, sequences, command center, compliance.
 - 💬 **Chat UI Enhancements.** 7 features: profile card, stop generation, feedback, code copy, dark mode, prompts, search.
 - 📂 **Unix-Theory Tool Reorganisation Phase 4–5 Complete.**
@@ -436,11 +425,11 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/reference/EXTERNAL_SERVICES.md) for all 20 services.  
 
-The plugin works standalone with **~195 base tools** and optionally extends through the **Pro addon**, which adds **~830+ Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,025+ built-in tools** (~195 base + ~830+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+The plugin works standalone with **~265 base tools** and optionally extends through the **Pro addon**, which adds **~1,237 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,502 built-in tools** (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~195 tools) works standalone. The full version requires the Pro addon and provides ~1,025+ total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~265 tools) works standalone. The full version requires the Pro addon and provides ~1,502 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
-**Addon Ecosystem:** NV oOS ships a growing family of 24 installable addons: **Pro** (`addons/pro/` — ~830+ additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **AI Platform** (`addons/ai-platform/` — AI platform admin dashboard + CPTs), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Page Agent** (`addons/page-agent/` — AI-powered browser page control copilot), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Graphify** (`plugins/nvoos-graphify/` — visual knowledge graph), **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/` — AI providers + chat + RAG), **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
+**Addon Ecosystem:** NV oOS ships a growing family of 27 installable addons: **Pro** (`addons/pro/` — ~1,237 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **AI Platform** (`addons/ai-platform/` — AI platform admin dashboard + CPTs), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Page Agent** (`addons/page-agent/` — AI-powered browser page control copilot), **Algorave**, **Cornerstone3D**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Graphify** (`plugins/nvoos-graphify/` — visual knowledge graph), **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/` — AI providers + chat + RAG), **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -505,7 +494,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
 - **15 language-model providers** — OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, Flowhub
-- **~990 tool classes** (~195 base + ~795 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
+- **~1,502 tool classes** (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **36 REST controllers** (16 base + 20 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
@@ -1018,7 +1007,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🚀 Features
 
-> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details.
+> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details.
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
@@ -1026,7 +1015,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - 🚀 **Getting Started Wizard** - Guided 4-step onboarding (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`) that walks new users through provider setup and use-case selection. Selecting a preset (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, or General Purpose) seeds a fully-configured assistant with tools, system prompt, and tuned temperature — ready to use immediately.【F:includes/admin/class-wp-mcp-ai-onboarding-wizard.php†L1-L53】【F:assets/js/onboarding-wizard.js†L1-L303】
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
-- 🧰 Per-assistant defaults for model, tempetry categories, or create entire teams of specialists with one click. Includes back knowledge attachments with permission-aware download URLs
+- 🧰 Per-assistant defaults for model, temperature, system prompt, and knowledge attachments with permission-aware download URLs
 - ⚡ Build reusable prompt shortcuts with optional tool targeting and inline descriptions so operators can trigger common tasks with one click.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
 - 🧊 Elementor widgets for embedding chat surfaces, onboarding content, and MCP dashboards inside Elementor
 
@@ -1547,11 +1536,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all ~990 tools (~195 base + ~795 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+2. You now have the **complete version** with all ~1,502 tools (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
 
-- ✅ The full codebase — all ~990 built-in tools ready to use (~195 base + ~795 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- ✅ The full codebase — all ~1,502 built-in tools ready to use (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -1581,14 +1570,14 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 **What works WITHOUT JetEngine:**
 - ✅ All core AI assistant features
 - ✅ Chat interface and conversations
-- ✅ ~201 base tools (more with optional third-party plugins)
+- ✅ ~265 base tools (more with optional third-party plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
 - ✅ OpenAI/Gemini/Anthropic/Ollama/Hugging Face/Cloudflare integrations
 
 **What requires JetEngine:**
 - ❌ Server-side chat transcript storage (chat history only in browser without it)
-- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#optional-tools-dependencies))
+- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies))
 
 ---
 
@@ -1613,7 +1602,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
 - `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
 
-**✅ Still Works:** All core features, MCP server, ~201 base tools, AI conversations
+**✅ Still Works:** All core features, MCP server, ~265 base tools, AI conversations
 
 [Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
@@ -1713,15 +1702,15 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 | **WPCode** | Freemium | 1 | Code snippet management |
 | **Simple JWT Login** | Free | 1 | JWT token generation |
 
-**Total Impact:** Without these plugins, you lose **13 tools** but retain **74 core tools** and all essential AI assistant functionality.
+**Total Impact:** Without these plugins, you lose **13 tools** but retain **~265 base tools** and all essential AI assistant functionality.
 
 ---
 
 ### Base Version (Default)
 
-**NV oOS runs in Base Version mode by default**, providing 95 essential tools that work with vanilla WordPress without requiring any third-party plugins:
+**NV oOS runs in Base Version mode by default**, providing ~265 essential tools that work with vanilla WordPress without requiring any third-party plugins:
 
-**Base Version includes 95 essential tools that work with vanilla WordPress:**
+**Base Version includes ~265 essential tools that work with vanilla WordPress:**
 - Content management (search, save posts, attachments)
 - AI media generation (images via OpenAI/Gemini, speech, transcription, video)
 - Research tools (web search, weather, disaster alerts)
@@ -1734,7 +1723,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - Google Maps Platform tools
 
 **Base Version excludes 31 tools requiring third-party plugins or external APIs:**
-- **Third-party WordPress plugins** (13 tools) - See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details
+- **Third-party WordPress plugins** (13 tools) - See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details
   - WooCommerce tools (3)
   - JetEngine/JetFormBuilder tools (5)
   - Elementor tools (2)
@@ -1768,7 +1757,7 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 - Advanced workflows requiring external APIs
 - Need server-side chat transcript storage (requires JetEngine)
 
-📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
+📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 
 
 ---
@@ -1780,12 +1769,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (13 providers, ~990 tool classes, 36 REST controllers)
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,502 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~990 tools documented (~195 base + ~795 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,502 tools documented (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
@@ -1879,7 +1868,7 @@ A dedicated router transparently forwards chat completions to the active provide
 - Streaming automatically disabled when tools are present for reliable execution
 - Full backward compatibility with non-tool scenarios
 - Connect via JSON-RPC endpoint (recommended) or SSE streaming
-- See [LM Studio setup guide](#-lm-studio-setup) for configuration details
+- See [LM Studio setup guide](#lm-studio-setup) for configuration details
 
 ### Provider Priority List & Automatic Fallback
 
@@ -2323,7 +2312,7 @@ Sites that enable the Simple JWT Login integration can now reuse those bearer to
 
 NV oOS works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
 
-**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#sse-streaming-support) section for details.
+**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#-sse-streaming-support) section for details.
 
 ### Quick Start
 
@@ -2812,9 +2801,9 @@ Developers can extend or replace these prompts with filters such as `wp_mcp_ai_a
 
 **Agent Skills** ([agentskills.io](https://agentskills.io/specification)) are reusable, portable behaviour packages that extend any assistant without touching its system prompt. Each skill is a `SKILL.md` file — a standard Markdown document with a small YAML frontmatter block — that lives in `wp-content/uploads/mcp-ai-skills/{skill-name}/SKILL.md`. When an assistant loads a skill, its instructions are automatically injected into the conversation context so the model knows exactly when and how to use that capability.
 
-### 45 Pre-Built Skills (Base Plugin)
+### 67 Pre-Built Skills (Base Plugin)
 
-The **base plugin** ships with 45 pre-built skills that are automatically installed to `wp-content/uploads/mcp-ai-skills/` on first activation. No Pro add-on is required — they are available on every install out of the box. The skills include 24 general-purpose tools (document handling, design, testing), 20 WordPress developer skills (security, APIs, plugin patterns), and the new UI/UX Pro Max design system skill.
+The **base plugin** ships with 67 pre-built skills that are automatically installed to `wp-content/uploads/mcp-ai-skills/` on first activation. No Pro add-on is required — they are available on every install out of the box. The skills include 24 general-purpose tools (document handling, design, testing), 22 WordPress developer skills (security, APIs, plugin patterns), 21 design-* skills (analytics through video creation), and the bundled mcp-ai-wpoos-plugin skill.
 
 | Skill slug | What it does |
 |---|---|
@@ -3213,8 +3202,8 @@ See [`packages/README.md`](packages/README.md) for a full package listing and AP
 - Validate cross-version compatibility (PHP 7.4–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
 
 ### Manual smoke tests
-- Follow the scenarios in [## ✅ Manual QA Scenarios](#manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
-- For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#logging).
+- Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
+- For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#-logging).
 
 ---
 
@@ -3411,7 +3400,7 @@ However, certain features require third-party plugins (sold separately). The plu
 - **Rank Math SEO** (1 tool) – SEO analysis and schema data access
 - **WPCode** (1 tool) – Code snippet management and automation
 
-**📖 See the complete breakdown:** [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
+**📖 See the complete breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 
 ### How It Works
 
@@ -3523,7 +3512,7 @@ When encountering problems, please:
 
 - [ ] Check the [troubleshooting guide](docs/getting-started/installation-setup/deployment-troubleshooting.md)
 - [ ] Enable logging in Settings → NV oOS to capture detailed errors
-- [ ] Review the [common issues section](#-common-issues) below
+- [ ] Review the [common issues section](#common-issues) below
 - [ ] Search [existing GitHub issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
 - [ ] Test with a default assistant to isolate configuration issues
 
@@ -3693,28 +3682,4 @@ for the full attribution index.
 
 **Thank you for using Open Operator System!**
 
-For the latest updates, documentation, and support, visit the [GitHub repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos).
-olutions](https://nvdigitalsolutions.com/)
-- **License:** GPLv3 or later
 
----
-
-## 📄 License
-
-NV oOS ships under a **three-tier license model**:
-
-| Component | License |
-|-----------|---------|
-| **Base plugin** (root + `includes/`) | [GPL-3.0-or-later](LICENSE) |
-| `addons/algorave/` | **AGPL-3.0-or-later** (bundles `@strudel/web` AGPL-3.0) |
-| `addons/pro/`, `addons/graphify/`, `addons/embedded/`, `addons/cornerstone3d/`, `addons/canvas/`, `addons/cloud-worker/`, `addons/fantasy-football/` | **Proprietary** — © NV Digital Solutions, all rights reserved |
-
-The base plugin's GPL-3 grant is in [LICENSE](LICENSE). Bundled third-party
-dependencies retain their upstream licenses; see [`CREDITS.md`](CREDITS.md)
-for the full attribution index.
-
----
-
-**Thank you for using Open Operator System!**
-
-For the latest updates, documentation, and support, visit the [GitHub repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos).
