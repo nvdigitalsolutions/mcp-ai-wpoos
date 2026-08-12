@@ -29,7 +29,12 @@ addons/media-worker/
 ## Quick Start (Standalone)
 
 ```bash
+# Monorepo:
 cd addons/media-worker
+docker build -t media-worker .
+docker run -p 3100:3100 media-worker
+
+# Standalone repo (this folder is the repo root):
 docker build -t media-worker .
 docker run -p 3100:3100 media-worker
 ```
@@ -79,5 +84,13 @@ Or configure via **Settings → Media Worker** in the WordPress admin.
 
 ## Documentation
 
-- [Sidecar Architecture & Implementation Report](../../docs/project/proposals/media-worker-sidecar-proposal.md)
-- [Docker Setup Guide](../../docs/operations/deployment/media-worker-docker-setup.md)
+- [Sidecar Architecture & Implementation Report](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/media-worker-sidecar-proposal.md)
+- [Docker Setup Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/operations/deployment/media-worker-docker-setup.md)
+
+## Repository Sync
+
+This folder is mirrored one-way to the standalone repo
+[nvdigitalsolutions/mcp-ai-wpoos-media-worker](https://github.com/nvdigitalsolutions/mcp-ai-wpoos-media-worker)
+via the `sync-media-worker.yml` git-subtree GitHub Action. Changes committed
+directly to the standalone repo are overwritten by the next sync — contribute
+changes through the monorepo instead.
