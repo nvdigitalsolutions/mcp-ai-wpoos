@@ -355,7 +355,7 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Check if iSAMS is configured.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['isams_api_url'] ) || empty( $settings['isams_api_key'] ) ) {
 			return null;
 		}
