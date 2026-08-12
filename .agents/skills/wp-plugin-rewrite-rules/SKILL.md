@@ -1,16 +1,17 @@
 ---
-type: Skill
 name: wp-plugin-rewrite-rules
-description: Design and review custom WordPress URL rewrites: add_rewrite_rule, add_rewrite_tag, query_vars, CPT/taxonomy rewrite slugs, add_rewrite_endpoint, soft vs hard flushes, rewrite_rules cache behavior, and the rule that flush_rewrite_rules() must not run on every request. Use for custom pretty URLs, CPT permalink 404s, endpoint rewrites, and code containing flush_rewrite_rules or add_rewrite_rule.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.5 - 6.9
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-rewrite-rules
-source-license: MIT
+description: "Design and review custom WordPress URL rewrites: add_rewrite_rule, add_rewrite_tag, query_vars, CPT/taxonomy rewrite slugs, add_rewrite_endpoint, soft vs hard flushes, rewrite_rules cache behavior, and the rule that flush_rewrite_rules() must not run on every request. Use for custom pretty URLs, CPT permalink 404s, endpoint rewrites, and code containing flush_rewrite_rules or add_rewrite_rule."
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.5 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-rewrite-rules"
+  source-license: MIT
 ---
 # WordPress plugin: rewrite rules & flush
 

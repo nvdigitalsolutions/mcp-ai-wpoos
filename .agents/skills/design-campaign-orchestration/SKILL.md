@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-campaign-orchestration
 description: Produces complete monthly marketing campaign plans — themes, product selection, weekly content structures, recurring posts, promotions, and presentation decks. Use when the task asks to "plan this month's content", "orchestrate a campaign", "build a marketing plan", "select products for promotion", "create a campaign calendar", or "monthly SOP". Covers the full 7-step campaign lifecycle from theme selection to presentation delivery.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Campaign Orchestration

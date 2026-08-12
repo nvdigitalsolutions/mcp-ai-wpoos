@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-security-ops
 description: Manage the NV oOS Pro Toolkit Security Operations system — audit events, security training, maintenance windows, and incident records. Covers the full security ops lifecycle: audit logging, incident detection/response, maintenance scheduling, and compliance training tracking. Use when working with security audit trails, investigating incidents, scheduling maintenance windows, managing security training programs, or troubleshooting security operations data.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-12
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit Security Operations

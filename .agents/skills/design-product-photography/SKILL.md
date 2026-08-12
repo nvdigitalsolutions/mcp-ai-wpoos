@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-product-photography
 description: Define product photography standards for e-commerce — shot types, composition, lighting, consistency rules, AI-assisted generation, and platform-specific variants. Covers the full product imagery pipeline from concept to published asset. Use when you need to plan product photoshoots, create photography briefs, set image standards for an e-commerce catalog, generate AI product lifestyle shots, or ensure visual consistency across hundreds of products.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Product Photography

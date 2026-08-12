@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-project-management
 description: Manage the NV oOS Pro Toolkit Project Management system — projects, tasks, events, sprints, task plans, task templates, and PM workflow rules. Covers complete project lifecycle (planning → active → completed), task tracking with priorities and effort estimation, sprint planning, event scheduling with attendees, and template-driven task plan generation. Use when managing projects, creating or tracking tasks, planning sprints, scheduling events, generating task plans from templates, assigning work to team members, or troubleshooting project management data.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-12
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit Project Management

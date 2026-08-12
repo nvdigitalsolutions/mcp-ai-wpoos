@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-color-systems
 description: Produces accessible color palettes and CSS design-token implementations for brands and websites. Use when the task asks for "color palette", "brand colors", "color scheme", "WCAG contrast", "dark mode colors", "design tokens", or "CSS custom properties for colors". Covers color theory, WCAG 2.2 contrast compliance, dark mode, AI palette extraction, and color psychology.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Color Systems

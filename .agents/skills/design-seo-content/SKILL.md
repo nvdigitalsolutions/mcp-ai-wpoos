@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-seo-content
 description: Optimize WooCommerce product pages, category pages, and site content for search engines. Covers keyword research, meta tags, product descriptions, schema markup, internal linking, and local SEO. Use when writing product titles/descriptions, conducting keyword research, auditing pages for SEO gaps, setting up internal linking, adding schema markup, or optimizing for local search visibility.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # SEO Content Optimization

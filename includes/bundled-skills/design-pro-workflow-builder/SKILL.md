@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-pro-workflow-builder
 description: Design and execute DAG-based automation workflows using the NV oOS Pro Workflow Builder — a ReactFlow visual builder for chaining tool calls, agent runs, and actions into repeatable pipelines. Covers the visual builder UI, 9 preset categories, 10 node types, Kahn's algorithm execution engine, scheduling via Pro Schedule Manager, template variable syntax, and best practices. Use when designing workflows, debugging DAG execution failures, choosing between a workflow schedule and raw tool chaining, or building CRM/PM automation pipelines with toolkit_cpt nodes.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-11
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-11"
 ---
 
 # NV oOS Pro Workflow Builder

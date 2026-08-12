@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-crm
 description: Manage the NV oOS Pro Toolkit CRM — leads, deals, companies, contacts, customers, activities, and support tickets. Covers the complete sales pipeline from lead capture through qualification, deal management, and post-conversion customer tracking with BANT/MEDDIC scoring, activity logging, and workflow automation. Use when working with CRM records, managing pipeline stages, qualifying leads, creating company profiles, logging calls/emails/meetings, or troubleshooting CRM data issues.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-12
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit CRM

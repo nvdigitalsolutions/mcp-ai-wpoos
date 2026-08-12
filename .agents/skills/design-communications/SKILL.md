@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-communications
 description: Manage multi-channel communications — SMS, email, WhatsApp messages and contacts. Covers message tracking, contact management, delivery status, and media attachments. Use when working with channel messages, managing contacts, tracking communication threads, or troubleshooting message delivery.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-12
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit Communications

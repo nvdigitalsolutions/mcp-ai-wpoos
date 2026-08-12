@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-team-management
 description: Manage organizational teams and professional roles in the NV oOS Pro Toolkit. Covers team creation, profession definitions, role assignments, and organizational structure. Use when setting up teams, defining professional roles, assigning users to teams, or managing organizational hierarchy.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-12
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit Team Management

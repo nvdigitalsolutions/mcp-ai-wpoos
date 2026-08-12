@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-brand-kit
 description: Produces complete brand identity systems — logos (AI-generated via Gemini), color palettes, typography, imagery guidelines, and WordPress-based brand asset libraries. Use when the task asks for "brand kit", "logo design", "brand guidelines", "brand identity", "visual identity", "brand colors", or "brand assets". Covers AI-assisted logo generation, asset sizing, brand archetypes, and WordPress brand page structure.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Brand Kit Design

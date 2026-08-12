@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-document-generation
 description: Generate professional documents — PDF, Word (.docx), Excel (.xlsx), and invoices — from natural language descriptions or structured data. Covers AI-powered and simple document creation, HTML-to-PDF conversion, PDF extraction/OCR, merging, watermarking, and data export. Use when you need to create campaign decks, reports, proposals, invoices, spreadsheets, or any shareable document — especially for Step 7 monthly presentations, campaign briefs, and analytics reports.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Document Generation

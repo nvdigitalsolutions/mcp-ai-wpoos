@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-typography
 description: Design and implement typography systems for web and brand projects. Covers font pairing, type scales, variable fonts, web font loading strategies (font-display, subsetting), CSS typography best practices, and WordPress theme typography integration. Use when selecting fonts, building type scales, loading web fonts, configuring theme.json typography, or fixing font performance issues.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Typography Systems

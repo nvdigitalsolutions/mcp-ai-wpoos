@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-vault
 description: Manage encrypted vault storage for sensitive information — passwords, secure notes, payment cards, digital identities, and folder organization. Use when storing, retrieving, or organizing credentials, managing secrets, or working with encrypted data.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-12
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit Vault

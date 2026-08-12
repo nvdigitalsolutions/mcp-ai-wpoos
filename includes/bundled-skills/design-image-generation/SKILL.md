@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-image-generation
 description: Generate images using AI models — Gemini, DALL·E, Stable Diffusion, Midjourney, Flux, Leonardo, Ideogram, and more. MCP bridge tools are primary; the Design Stack media worker is the fallback for advanced providers. Covers prompt engineering, model selection, size/aspect ratios, style parameters, batch generation, multi-site awareness, and WordPress integration. Use when you need to create hero images, social graphics, product mockups, brand illustrations, or any visual asset for marketing, social media, or e-commerce.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # AI Image Generation

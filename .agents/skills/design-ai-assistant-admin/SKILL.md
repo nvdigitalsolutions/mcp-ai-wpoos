@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-ai-assistant-admin
 description: Manage AI assistant configurations and peer-to-peer mesh network connections in the NV oOS Pro Toolkit. Covers assistant creation, model configuration, provider setup, peer discovery, mesh networking, and cross-assistant communication. Use when creating or editing AI assistants, configuring model providers, setting up peer connections, managing mesh network topology, or debugging assistant behavior.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-12
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit AI Assistant Administration

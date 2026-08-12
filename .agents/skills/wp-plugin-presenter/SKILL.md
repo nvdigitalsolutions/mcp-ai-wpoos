@@ -1,16 +1,17 @@
 ---
-type: Skill
 name: wp-plugin-presenter
 description: Design and review native presenter classes in WordPress plugins without requiring better-data - converting DTOs or domain objects into REST arrays, admin table rows, JS config payloads, email variables, and public view models with allowlisted fields, context methods, redaction by default, locale/date/number formatting, no DTO mutation, and correct WordPress escaping boundaries. Use when adding FooPresenter, response mappers, admin-row arrays, wp_send_json payloads, rest_ensure_response data, wp_add_inline_script config, or when code returns raw DTOs, WP_Post, WC_Order, get_object_vars, json_encode, or unescaped HTML from controllers.
-author: Soczo Kristof
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.3 - 6.9
-php-min: 7.4
-last-updated: 2026-04-29
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-presenter
-source-license: MIT
 license: MIT
+metadata:
+  type: Skill
+  author: Soczo Kristof
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.3 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-29"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-presenter"
+  source-license: MIT
 ---
 # WordPress plugin: native presenters
 

@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-pro-schedule-manager
 description: Manage NV oOS Pro Schedules — create, update, delete, list, dry-run, view run history, and plan schedules from workflows. Covers all 7 Pro Schedule Manager MCP tools with usage patterns, cross-references, and operational troubleshooting. Use when creating recurring tasks, debugging schedule failures, pausing vs deleting schedules, converting Action Scheduler jobs to managed schedules, or bridging workflow outputs to timed execution.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-11
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-11"
 ---
 
 # NV oOS Pro Schedule Manager

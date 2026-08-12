@@ -1,12 +1,14 @@
 ---
-type: Skill
 name: design-services
 description: Manage service components and approval workflows in the NV oOS Pro Toolkit. Covers service component registration, dependency tracking, approval request lifecycle, and workflow approval gates. Use when registering service components, tracking service dependencies, managing approval requests, or configuring workflow approval nodes.
-author: Design Stack
-plugin: nv-oos-pro
-plugin-version-tested: latest
-php-min: 7.4
-last-updated: 2026-08-12
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
+  author: Design Stack
+  plugin: nv-oos-pro
+  plugin-version-tested: latest
+  php-min: "7.4"
+  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit Services & Approvals
