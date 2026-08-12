@@ -13,6 +13,8 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
+import { validatePublicUrl } from '../utils/safe-url.js';
 
 export const pdfRouter = Router();
 
@@ -103,14 +105,14 @@ pdfRouter.post('/generate', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing html or url' });
     }
 
-    const puppeteer = (await import('puppeteer')).default;
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    });
+    // SSRF guard: user-supplied URLs must be publicly routable.
+    if (url) {
+      validatePublicUrl(url);
+    }
 
+    const browser = await launchHardenedBrowser();
     const page = await browser.newPage();
+    await hardenPage(page);
 
     if (url) {
       await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
@@ -121,6 +123,7 @@ pdfRouter.post('/generate', async (req, res) => {
     const pdfOpts = {
       format: options?.format || 'A4',
       printBackground: options?.printBackground !== false,
+      landscape: options?.landscape || false,
       margin: options?.margin || { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
       ...options,
     };
@@ -132,7 +135,9 @@ pdfRouter.post('/generate', async (req, res) => {
     const stats = fs.statSync(outPath);
     res.json({ success: true, output_path: outPath, size: stats.size, pages: 'see file' });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    if (browser) await browser.close().catch(() => {});
+    res.status(err.status && err.status >= 400 && err.status < 600 ? err.status : 500)
+      .json({ success: false, error: err.message });
   }
 });
 
