@@ -75,7 +75,7 @@
 - [🧊 Elementor Widgets](#-elementor-widgets)
 
 ### Performance & Optimization
-- [⚡ Message Bundling](#-message-bundling)
+- [⚡ Message Bundling](#message-bundling)
 - [🎯 Agentic Loop Token Management](#-agentic-loop-token-management)
 - [🔄 Chat Performance Optimizations](#-chat-performance-optimizations)
 - [🌐 Mesh Compute Routing](#-mesh-compute-routing)
@@ -93,7 +93,7 @@
 ### Assistant Management
 - [🛠 Assistant Editor Overview](#-assistant-editor-overview)
 - [📊 Assistant Storage: CPT vs CCT](#-assistant-storage-cpt-vs-cct)
-- [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
+- [⚡ Assistant Tool Shortcuts](#assistant-tool-shortcuts)
 - [🧠 Agent Skills](#-agent-skills)
 - [👔 Professional & Team Layers](#-professional--team-layers)
 - [🧵 REST Chat Payloads & Attachments](#-rest-chat-payloads--attachments)
@@ -114,7 +114,7 @@
 - [🧾 Logging](#-logging)
 - [🧾 JetEngine REST Endpoint Report Helper](#-jetengine-rest-endpoint-report-helper)
 - [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies)
-- [✅ Manual QA Scenarios](#-manual-qa-scenarios)
+- [✅ Manual QA Scenarios](#manual-qa-scenarios)
 
 ---
 
@@ -3202,7 +3202,7 @@ See [`packages/README.md`](packages/README.md) for a full package listing and AP
 - Validate cross-version compatibility (PHP 7.4–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
 
 ### Manual smoke tests
-- Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
+- Follow the scenarios in [## ✅ Manual QA Scenarios](#manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
 - For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#-logging).
 
 ---
