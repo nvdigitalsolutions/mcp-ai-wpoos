@@ -4,11 +4,6 @@ description: Manage NV oOS Pro Schedules — create, update, delete, list, dry-r
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
-  author: Design Stack
-  plugin: nv-oos-pro
-  plugin-version-tested: latest
-  php-min: "7.4"
-  last-updated: "2026-08-11"
 ---
 
 # NV oOS Pro Schedule Manager

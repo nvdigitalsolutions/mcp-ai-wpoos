@@ -4,11 +4,6 @@ description: Manage organizational teams and professional roles in the NV oOS Pr
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
-  author: Design Stack
-  plugin: nv-oos-pro
-  plugin-version-tested: latest
-  php-min: "7.4"
-  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit Team Management

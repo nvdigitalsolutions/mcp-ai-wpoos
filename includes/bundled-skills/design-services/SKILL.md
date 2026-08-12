@@ -4,11 +4,6 @@ description: Manage service components and approval workflows in the NV oOS Pro 
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
-  author: Design Stack
-  plugin: nv-oos-pro
-  plugin-version-tested: latest
-  php-min: "7.4"
-  last-updated: "2026-08-12"
 ---
 
 # NV oOS Pro Toolkit Services & Approvals
