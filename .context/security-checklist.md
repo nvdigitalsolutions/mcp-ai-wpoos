@@ -3,6 +3,7 @@
 > **GSD Context File** — Load this at the start of every AI development session.
 > This checklist must be applied to **every code change** without exception.
 > Last reviewed: August 2026.
+> **v1.1.54 updates**: PostCSS CVE-2026-69153 resolved, API key merged-settings enforced in 20 research tools, plugin updater integrity check v2 (stat cache fix).
 
 ---
 
@@ -301,6 +302,8 @@ The plugin ships 7 security infrastructure classes in `includes/security/`. When
 - `WP_MCP_AI_Cost_Tracker` — per-operation cost estimation and budget enforcement; enforced at pipeline level (v1.1.53)
 - `WP_MCP_AI_Api_Key_Store` — encrypted at-rest API key storage
 - **Circuit breaker protection** (v1.1.53) — all 15 AI provider clients have configurable failure thresholds and cooldown periods
+- **PostCSS CVE-2026-69153** (v1.1.54) — `postcss` minimum bumped to 8.5.23; affects CSS build chain across addons
+- **API key merged-settings** (v1.1.54) — 20 research tools now use `get_merged_credentials()` honoring per-assistant/provider overrides
 - **Post-install integrity check** (v1.1.52) — verifies 15 critical file paths after every plugin update
 - **REST require_once guards** (v1.1.52) — `file_exists()` checks before all REST controller `require_once` calls
 

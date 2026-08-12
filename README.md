@@ -11,10 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.53
+**Version:** 1.1.54
 **Release Date:** 2026-08-12
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
+
+**🆕 v1.1.54 Highlights:** PostCSS CVE-2026-69153 fix. MCP async tool response handling fix. Plugin updater integrity check v2 (phantom bridge + stat cache). API key merged-settings fix across 20 research tools. 29 design-* coding-time agent skills created/enhanced (7 new pro-toolkit skills, 8,000+ lines). OKF YAML frontmatter compliance for all 44 skills. README TOC anchor fixes for emoji/symbol rendering.
 
 **🆕 v1.1.53 Highlights:** Shared Analytics Service (7 platform adapters, 5 DTOs) for all Pro toolkits. Circuit breaker protection on all 15 AI provider clients. Concurrency guard, cost tracker, and backpressure wired into the execution pipeline. 22 new design-* coding-time agent skills synced alongside wp-* skills. SSE backoff reset and rate-limit fixes. Load Guard fatal error fix.
 
@@ -149,6 +151,17 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.54)
+
+- 🔒 **PostCSS CVE-2026-69153.** `postcss` minimum bumped to 8.5.23 in `package.json` overrides across 2 addons. Resolves a high-severity CVE in the CSS post-processor chain. (PR #5850)
+- 🐛 **MCP Async Tool Response Handling.** `tools/call` endpoint now correctly handles async tool responses — the response handler was dropping results for tools that return promises or deferred execution. +111 lines. (PR #5845)
+- 🔧 **Plugin Updater Integrity Check v2.** Follow-up hardening to the post-install integrity check (v1.1.52): fixed phantom `bridge/` file false-positive from stat cache, cleared PHP `clearstatcache()` after each file check, and handled main-file rename edge case. (PR #5846)
+- 🔑 **API Key Merged-Settings Fix (Research Tools).** `deep_research`, `web_search`, and 18 other research tools were reading API keys from the global option instead of the merged provider-specific settings. Now uses `get_merged_credentials()` so per-assistant and per-provider API key overrides take effect. 20 files, +37/-33 lines. (PR #5852)
+- 🧠 **Design Skills Audit & Enhancement.** All 22 `design-*` skills comprehensively enhanced with detailed operational instructions, cross-references, and tool-calling patterns. 7 new pro-toolkit skills created: `design-ai-assistant-admin`, `design-crm`, `design-project-management`, `design-communications`, `design-services`, `design-team-management`, `design-vault`, and `design-security-ops`. Total: 29 enhanced/created skills, ~8,000 lines of agent-facing content. (PR #5847)
+- 📋 **OKF YAML Frontmatter Compliance.** Added missing `type: Skill` frontmatter to all 22 `design-*` skills (PR #5844). Fixed YAML frontmatter spec compliance for 9 design skills — removed duplicate/invalid top-level keys that violated the OKF v0.2 schema. (PR #5849)
+- 📚 **README TOC Anchor Fixes.** Fixed broken TOC anchor links caused by Unicode emoji rendering differences (VS16-based emojis like 🪲🐛 and U+26xx/U+27xx symbols like ⚠️⚡) across GitHub's markdown renderer. (PR #5853)
+- 🧹 **Stale Build Artifacts.** Removed 30 stale v1.1.52 build artifacts from the repository. (PR #5851)
 
 ### ✨ What's New at a Glance (v1.1.53)
 
@@ -615,6 +628,29 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.54 — August 2026)
+
+### August 12, 2026 — Security Fixes, Async MCP, Skill Enhancements, README Maintenance
+
+- ✅ **PostCSS CVE-2026-69153 — PR #5850 (2 files, +4/-4 lines).** `postcss` minimum version bumped to 8.5.23 in `package.json` overrides across affected addons. The CVE (high severity) allowed crafted CSS to trigger unexpected behavior in the PostCSS plugin chain. No functional changes — version constraint only. (PR #5850)
+- ✅ **MCP Async Tool Response Handling — PR #5845 (1 file, +111 lines).** Fixed `tools/call` endpoint dropping async tool responses. The handler was not waiting for deferred/promise-based tool execution results, causing silent failures for long-running tools (video generation, deep research, batch OCR). Now correctly awaits and serializes async results. (PR #5845)
+- ✅ **Plugin Updater Integrity Check v2 — PR #5846 (1 file, +16/-2 lines).** Follow-up hardening to the v1.1.52 post-install integrity check: fixed a false-positive on the `bridge/` directory path caused by stale PHP stat cache, added `clearstatcache()` after every file check to force fresh filesystem reads, and handled a main-file rename edge case where the old filename persisted in cache. (PR #5846)
+- ✅ **API Key Merged-Settings Fix for Research Tools — PR #5852 (20 files, +37/-33 lines).** `deep_research`, `web_search`, `semantic_content_search`, `semantic_context_search`, `retrieve_agent_memory`, `recall_memory`, `wake_up_context`, and 13 other tools were reading API keys from `get_option('wp_mcp_ai_api_key')` directly instead of using the merged credentials system. This meant per-assistant and per-provider API key overrides were silently ignored for all research operations. All 20 tools now use `WP_MCP_AI_Credentials_Manager::get_merged_credentials()`, which respects the provider → assistant → global fallback chain. (PR #5852)
+- ✅ **Design Skills Audit & Enhancement — PR #5847 (61 files, +7,971/-57 lines).** Comprehensive enhancement of all 22 existing `design-*` coding-time agent skills with detailed operational instructions, multi-step workflow guidance, cross-references to related skills, and specific MCP tool-calling patterns. 7 new pro-toolkit skills created:
+  - `design-ai-assistant-admin` — manage AI assistants, model configs, provider setup, peer mesh networking
+  - `design-crm` — complete CRM pipeline (leads, deals, companies, contacts, BANT/MEDDIC scoring)
+  - `design-project-management` — projects, tasks, sprints, events, task plans, PM workflows
+  - `design-communications` — multi-channel messaging (SMS, email, WhatsApp), contacts, delivery tracking
+  - `design-services` — service components, dependency tracking, approval workflows
+  - `design-team-management` — organizational teams, professions, role assignments
+  - `design-vault` — encrypted vault for passwords, secure notes, payment cards, digital identities
+  - `design-security-ops` — security operations, audit logging, posture management
+  Total coding-time skills: **44** (22 wp-* + 22 design-*). (PR #5847)
+- ✅ **OKF YAML Frontmatter Compliance — PRs #5844, #5849 (65 files combined).** Added missing `type: Skill` frontmatter field to all 22 `design-*` skills — required by the OKF v0.2 trust-signal specification for concept categorization (PR #5844, +68 lines in 45 files). Fixed YAML frontmatter spec compliance violations in 9 design skills where duplicate top-level keys and invalid field structures violated the OKF v0.2 schema (PR #5849, -100 lines in 20 files). All 44 skills now pass OKF v0.2 frontmatter validation.
+- ✅ **README TOC Anchor Fixes — PR #5853 (2 files).** Fixed broken TOC anchor links caused by Unicode emoji rendering differences between GitHub's markdown parser and the anchor generator. VS16-based emojis (🪲🐛🛒📊) and U+26xx/U+27xx symbols (⚠️⚡✅) now generate correct, clickable anchor links in the Table of Contents. (PR #5853)
+- ✅ **Stale Build Artifacts Removal — PR #5851 (30 files).** Removed stale v1.1.52 build ZIPs and compiled assets that were superseded by v1.1.53 builds. (PR #5851)
+- 📦 **Versioning** — bumped to **1.1.54** across all version-bearing files. Pro addon: 1.1.54. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15** first-class language-model providers. Addon count: **27**. Bundled skills: **67** base. Total coding-time agent skills: **44** (22 wp-* + 22 design-*).
 
 ## 🆕 Latest Updates (v1.1.53 — August 2026)
 
