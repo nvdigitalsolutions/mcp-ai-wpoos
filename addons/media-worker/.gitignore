@@ -4,6 +4,7 @@
 # Local environment files.
 .env
 .env.*
+!.env.example
 
 # Runtime output and scratch files.
 /output/

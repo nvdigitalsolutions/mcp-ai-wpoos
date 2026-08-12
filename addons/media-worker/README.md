@@ -82,10 +82,35 @@ define( 'WP_MEDIA_WORKER_URL', 'http://media-worker:3100' );
 
 Or configure via **Settings → Media Worker** in the WordPress admin.
 
+## Security Model (v2.2.0+)
+
+The worker is designed to sit behind network isolation (Docker sidecar) or —
+with these controls — on a managed public host like Cloudways Velocity:
+
+- **Auth:** every `/api/*` route requires an `X-Site-Token` header matching
+  the `WORKER_API_TOKEN` env var (timing-safe compare). The WordPress plugin
+  sends this automatically (`WP_MEDIA_WORKER_TOKEN` constant or the
+  `wp_mcp_ai_media_worker_token` option). `/api/health` stays public and
+  minimal; `/api/health/full` is authenticated.
+- **SSRF guard:** user-supplied URLs are validated (protocol allowlist,
+  private/reserved-range blocklist incl. IPv6 and obfuscated forms, DNS
+  resolution checks) before any fetch or Puppeteer navigation.
+- **Puppeteer:** Chromium runs **with its sandbox** (`--no-sandbox` is
+  stripped even if passed via `PUPPETEER_ARGS`); rendered-page requests are
+  intercepted and re-validated; downloads denied; launches capped.
+- **Rate limiting:** global + per-route-group limits, env-tunable.
+- **Hardening:** Helmet headers, restricted CORS (`ALLOWED_ORIGINS`), 10 MB
+  JSON body limit, structured request logs (no secrets), no stack traces in
+  production responses, graceful shutdown.
+
+All environment variables are documented in [.env.example](.env.example).
+
 ## Documentation
 
 - [Sidecar Architecture & Implementation Report](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/media-worker-sidecar-proposal.md)
 - [Docker Setup Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/operations/deployment/media-worker-docker-setup.md)
+- [Cloudways Velocity Setup Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/operations/deployment/media-worker-velocity-setup.md)
+- [Cloud Deployment & Security Plan](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/024-media-worker-cloud-deployment-security-implementation-plan.md)
 
 ## Repository Sync
 
