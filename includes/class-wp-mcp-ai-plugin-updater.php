@@ -65,7 +65,7 @@ class WP_MCP_AI_Plugin_Updater {
 	 * Paths are relative to the plugin root (WP_MCP_AI_PATH).
 	 */
 	const VERIFY_FILES = array(
-		'mcp-ai-wpoos.php',
+		'nvdigital-open-operator-system-oos.php',
 		'includes/class-wp-mcp-ai-plugin.php',
 		'includes/class-wp-mcp-ai-container.php',
 		'includes/class-wp-mcp-ai-rest.php',
@@ -79,7 +79,9 @@ class WP_MCP_AI_Plugin_Updater {
 		'includes/rest/class-wp-mcp-ai-rest-authenticator.php',
 		'includes/rest/class-wp-mcp-ai-rest-validator.php',
 		'includes/rest/class-wp-mcp-ai-sse-handler.php',
-		'includes/bridge/class-wp-mcp-ai-bridge.php',
+		'includes/bridge/bridge-init.php',
+		'includes/bridge/class-wp-mcp-ai-wp70-bridge.php',
+		'includes/bridge/class-wp-mcp-ai-credential-resolver.php',
 	);
 
 	/**
@@ -373,6 +375,12 @@ class WP_MCP_AI_Plugin_Updater {
 				);
 			}
 		}
+
+		// Clear PHP's stat cache before verifying integrity.
+		// The Plugin_Upgrader deleted and recreated files within this same
+		// PHP process, so file_exists() may return stale results from the
+		// old inodes unless we force a fresh stat of the filesystem.
+		clearstatcache( true );
 
 		// Verify that all critical files were extracted correctly.
 		// On distributed filesystems (e.g. Cloudways), unzip can silently
@@ -751,6 +759,12 @@ class WP_MCP_AI_Plugin_Updater {
 				);
 			}
 		}
+
+		// Clear PHP's stat cache before verifying integrity.
+		// The Plugin_Upgrader deleted and recreated files within this same
+		// PHP process, so file_exists() may return stale results from the
+		// old inodes unless we force a fresh stat of the filesystem.
+		clearstatcache( true );
 
 		// Verify that all critical files were extracted correctly.
 		$integrity = self::verify_installation_integrity();
