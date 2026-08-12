@@ -805,7 +805,6 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @return array|WP_Error
 	 */
 	protected function mcp_tools_list( $params, WP_REST_Request $request ) {
-		unset( $request ); // Required by MCP protocol method signature.
 		$assistant_id = 0;
 
 		// Check if assistant_id is provided in params.
@@ -903,6 +902,22 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				continue;
 			}
 		}
+
+		/**
+		 * Filter the tools exposed to the current MCP client.
+		 *
+		 * External-operator integrations (e.g. the fleet-operator addon)
+		 * scope tools/list to a per-credential allowlist via this filter.
+		 * Integrations MUST pair it with enforcement on tools/call (see the
+		 * wp_mcp_ai_pre_execute_tool filter) so tools hidden here cannot be
+		 * invoked by guessing their name.
+		 *
+		 * @since 1.1.52
+		 *
+		 * @param array           $mcp_tools MCP-format tool entries.
+		 * @param WP_REST_Request $request   Current REST request.
+		 */
+		$mcp_tools = apply_filters( 'wp_mcp_ai_mcp_tools_list', $mcp_tools, $request );
 
 		/**
 		 * Filter the cache TTL (in milliseconds) for the tools/list response.
