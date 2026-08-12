@@ -200,15 +200,22 @@ trait WP_MCP_AI_Media_Worker_Client {
 	/**
 	 * Get a lightweight site token for sidecar authentication.
 	 *
-	 * Defaults to a hash of home_url() via wp_hash(), which internally uses
-	 * WordPress auth salts (AUTH_KEY / SECURE_AUTH_KEY). If salts are rotated,
-	 * the default token will change and must be re-synced with the sidecar.
-	 * Set the wp_mcp_ai_media_worker_token option to a stable shared secret
-	 * to avoid this coupling.
+	 * Priority:
+	 *   1. WP_MEDIA_WORKER_TOKEN constant (set in wp-config.php, must match
+	 *      the worker's WORKER_API_TOKEN environment variable).
+	 *   2. wp_mcp_ai_media_worker_token option (set via admin UI).
+	 *   3. wp_hash( home_url() ) fallback, derived from the WordPress auth
+	 *      salts (AUTH_KEY / SECURE_AUTH_KEY). If salts are rotated, this
+	 *      default changes and must be re-synced with the sidecar, so a
+	 *      stable constant or option is preferred for cloud deployments.
 	 *
 	 * @return string Token string.
 	 */
 	protected function get_sidecar_token() {
+		if ( defined( 'WP_MEDIA_WORKER_TOKEN' ) && WP_MEDIA_WORKER_TOKEN ) {
+			return WP_MEDIA_WORKER_TOKEN;
+		}
+
 		$token = get_option( 'wp_mcp_ai_media_worker_token', '' );
 		if ( ! empty( $token ) ) {
 			return $token;

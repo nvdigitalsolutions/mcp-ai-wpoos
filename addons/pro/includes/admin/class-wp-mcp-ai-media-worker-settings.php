@@ -57,16 +57,24 @@ class WP_MCP_AI_Media_Worker_Settings {
 	 * Render the settings page.
 	 */
 	public function render() {
-		$url          = $this->get_url();
-		$token        = get_option( self::OPTION_TOKEN, '' );
-		$has_constant = defined( 'WP_MEDIA_WORKER_URL' ) && WP_MEDIA_WORKER_URL;
-		$health       = $this->get_cached_health();
+		$url                = $this->get_url();
+		$token              = get_option( self::OPTION_TOKEN, '' );
+		$has_constant       = defined( 'WP_MEDIA_WORKER_URL' ) && WP_MEDIA_WORKER_URL;
+		$has_token_constant = defined( 'WP_MEDIA_WORKER_TOKEN' ) && WP_MEDIA_WORKER_TOKEN;
+		$insecure_url       = ( is_ssl() && $url && 0 === strpos( $url, 'http://' ) );
+		$health             = $this->get_cached_health();
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Media Worker Sidecar', 'mcp-ai-wpoos-pro' ); ?></h1>
 			<div class="notice notice-info"><p><?php esc_html_e( 'The Media Worker sidecar offloads heavy NPM-package operations (PDF, OCR, video, email, code formatting) from WordPress to a dedicated Node.js container. When available, service classes route to the sidecar via HTTP. When unavailable, existing local fallbacks continue to work.', 'mcp-ai-wpoos-pro' ); ?></p></div>
 			<?php if ( $has_constant ) : ?>
 				<div class="notice notice-success inline"><p><strong><?php esc_html_e( 'Docker Mode:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'URL set via WP_MEDIA_WORKER_URL constant.', 'mcp-ai-wpoos-pro' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( $has_token_constant ) : ?>
+				<div class="notice notice-success inline"><p><strong><?php esc_html_e( 'Auth Token:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Set via WP_MEDIA_WORKER_TOKEN constant.', 'mcp-ai-wpoos-pro' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( $insecure_url ) : ?>
+				<div class="notice notice-error inline"><p><strong><?php esc_html_e( 'Insecure URL:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'The sidecar URL uses plain HTTP while this site uses HTTPS. The auth token would be sent in cleartext — use an HTTPS URL (e.g. a Cloudways Velocity app URL).', 'mcp-ai-wpoos-pro' ); ?></p></div>
 			<?php endif; ?>
 			<div class="card" style="max-width:800px;margin-bottom:20px;">
 				<h2><?php esc_html_e( 'Connection Status', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -95,8 +103,8 @@ class WP_MCP_AI_Media_Worker_Settings {
 							<td><input type="url" id="mw_url" name="wp_mcp_ai_media_worker_url" value="<?php echo esc_attr( $url ); ?>" class="regular-text" placeholder="http://media-worker:3100" <?php echo $has_constant ? 'readonly style="background:#f0f0f0;"' : ''; ?>>
 							<p class="description"><?php echo $has_constant ? esc_html__( 'Set by WP_MEDIA_WORKER_URL constant.', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Base URL of the Media Worker sidecar.', 'mcp-ai-wpoos-pro' ); ?></p></td></tr>
 						<tr><th><label for="mw_token"><?php esc_html_e( 'Auth Token', 'mcp-ai-wpoos-pro' ); ?></label></th>
-							<td><input type="text" id="mw_token" name="wp_mcp_ai_media_worker_token" value="<?php echo esc_attr( $token ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Optional shared secret', 'mcp-ai-wpoos-pro' ); ?>">
-							<p class="description"><?php esc_html_e( 'Optional. Leave blank to auto-generate.', 'mcp-ai-wpoos-pro' ); ?></p></td></tr>
+							<td><input type="text" id="mw_token" name="wp_mcp_ai_media_worker_token" value="<?php echo esc_attr( $token ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Optional shared secret', 'mcp-ai-wpoos-pro' ); ?>" <?php echo $has_token_constant ? 'readonly style="background:#f0f0f0;"' : ''; ?>>
+							<p class="description"><?php echo $has_token_constant ? esc_html__( 'Set by WP_MEDIA_WORKER_TOKEN constant.', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Optional. Leave blank to auto-generate from WordPress salts. Must match the worker\'s WORKER_API_TOKEN environment variable.', 'mcp-ai-wpoos-pro' ); ?></p></td></tr>
 					</table>
 					<?php
 					if ( ! $has_constant ) :
@@ -109,6 +117,7 @@ class WP_MCP_AI_Media_Worker_Settings {
 				<ul>
 					<li><a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/project/proposals/media-worker-sidecar-proposal.md" target="_blank">Sidecar Architecture &amp; Implementation Report</a> — full endpoint map, service cascade, test results</li>
 					<li><a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/operations/deployment/media-worker-docker-setup.md" target="_blank">Docker Setup Guide</a> — WSL2 commands, troubleshooting, architecture diagram</li>
+					<li><a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/operations/deployment/media-worker-velocity-setup.md" target="_blank">Cloudways Velocity Setup Guide</a> — managed Node.js deployment, security hardening, ops runbook</li>
 				</ul>
 			</div>
 		</div>
@@ -169,8 +178,10 @@ class WP_MCP_AI_Media_Worker_Settings {
 			$u = isset( $_POST['wp_mcp_ai_media_worker_url'] ) ? esc_url_raw( wp_unslash( $_POST['wp_mcp_ai_media_worker_url'] ) ) : '';
 			update_option( self::OPTION_URL, $u );
 		}
-		$t = isset( $_POST['wp_mcp_ai_media_worker_token'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_media_worker_token'] ) ) : '';
-		update_option( self::OPTION_TOKEN, $t );
+		if ( ! defined( 'WP_MEDIA_WORKER_TOKEN' ) ) {
+			$t = isset( $_POST['wp_mcp_ai_media_worker_token'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_media_worker_token'] ) ) : '';
+			update_option( self::OPTION_TOKEN, $t );
+		}
 		delete_transient( self::HEALTH_TRANSIENT );
 		wp_safe_redirect(
 			add_query_arg(
