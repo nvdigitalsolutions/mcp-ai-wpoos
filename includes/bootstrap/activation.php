@@ -305,26 +305,26 @@ if ( ! function_exists( 'wp_mcp_ai_auto_detect_env_keys' ) ) {
 		// Each setting key maps to an ordered list of env vars — the first
 		// non-empty value wins.
 		$env_key_map = array(
-			'openai_api_key'        => array( 'OPENAI_API_KEY' ),
-			'gemini_api_key'        => array( 'GEMINI_API_KEY', 'GOOGLE_API_KEY' ),
-			'anthropic_api_key'     => array( 'ANTHROPIC_API_KEY' ),
-			'deepseek_api_key'      => array( 'DEEPSEEK_API_KEY' ),
-			'brave_search_api_key'  => array( 'BRAVE_API_KEY', 'BRAVE_SEARCH_API_KEY' ),
-			'tavily_api_key'        => array( 'TAVILY_API_KEY' ),
-			'perplexity_api_key'    => array( 'PERPLEXITY_API_KEY' ),
-			'lm_studio_api_key'     => array( 'LM_STUDIO_API_KEY' ),
-			'nvidia_api_key'        => array( 'NVIDIA_API_KEY' ),
-			'huggingface_api_key'   => array( 'HUGGINGFACE_API_KEY', 'HF_API_KEY' ),
-			'cloudflare_api_token'  => array( 'CLOUDFLARE_API_TOKEN' ),
-			'kimi_api_key'          => array( 'KIMI_API_KEY' ),
-			'digitalocean_api_key'  => array( 'DIGITALOCEAN_API_KEY' ),
-			'stability_api_key'     => array( 'STABILITY_API_KEY' ),
-			'mubert_api_key'        => array( 'MUBERT_API_KEY' ),
-			'exa_api_key'           => array( 'EXA_API_KEY' ),
-			'crawl4ai_api_key'      => array( 'CRAWL4AI_API_KEY' ),
-			'removebg_api_key'      => array( 'REMOVEBG_API_KEY' ),
-			'google_maps_api_key'   => array( 'GOOGLE_MAPS_API_KEY' ),
-			'ita_tariff_api_key'    => array( 'ITA_TARIFF_API_KEY' ),
+			'openai_api_key'       => array( 'OPENAI_API_KEY' ),
+			'gemini_api_key'       => array( 'GEMINI_API_KEY', 'GOOGLE_API_KEY' ),
+			'anthropic_api_key'    => array( 'ANTHROPIC_API_KEY' ),
+			'deepseek_api_key'     => array( 'DEEPSEEK_API_KEY' ),
+			'brave_search_api_key' => array( 'BRAVE_API_KEY', 'BRAVE_SEARCH_API_KEY' ),
+			'tavily_api_key'       => array( 'TAVILY_API_KEY' ),
+			'perplexity_api_key'   => array( 'PERPLEXITY_API_KEY' ),
+			'lm_studio_api_key'    => array( 'LM_STUDIO_API_KEY' ),
+			'nvidia_api_key'       => array( 'NVIDIA_API_KEY' ),
+			'huggingface_api_key'  => array( 'HUGGINGFACE_API_KEY', 'HF_API_KEY' ),
+			'cloudflare_api_token' => array( 'CLOUDFLARE_API_TOKEN' ),
+			'kimi_api_key'         => array( 'KIMI_API_KEY' ),
+			'digitalocean_api_key' => array( 'DIGITALOCEAN_API_KEY' ),
+			'stability_api_key'    => array( 'STABILITY_API_KEY' ),
+			'mubert_api_key'       => array( 'MUBERT_API_KEY' ),
+			'exa_api_key'          => array( 'EXA_API_KEY' ),
+			'crawl4ai_api_key'     => array( 'CRAWL4AI_API_KEY' ),
+			'removebg_api_key'     => array( 'REMOVEBG_API_KEY' ),
+			'google_maps_api_key'  => array( 'GOOGLE_MAPS_API_KEY' ),
+			'ita_tariff_api_key'   => array( 'ITA_TARIFF_API_KEY' ),
 		);
 
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
@@ -535,6 +535,17 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			require_once $job_store_file;
 			if ( method_exists( 'WP_MCP_AI_Job_Store', 'create_table' ) ) {
 				WP_MCP_AI_Job_Store::create_table();
+			}
+		}
+
+		// Create concurrency slots table for atomic slot tracking (v1.2.1).
+		// Replaces the transient-based concurrency guard with InnoDB
+		// row-level locking for sites without Redis.
+		$slots_file = WP_MCP_AI_PATH . 'includes/security/class-wp-mcp-ai-concurrency-guard.php';
+		if ( file_exists( $slots_file ) ) {
+			require_once $slots_file;
+			if ( method_exists( 'WP_MCP_AI_Concurrency_Guard', 'create_slots_table' ) ) {
+				WP_MCP_AI_Concurrency_Guard::create_slots_table();
 			}
 		}
 

@@ -120,6 +120,9 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			if ( is_admin() ) {
 				add_action( 'admin_menu', array( __CLASS__, 'register_admin_page' ) );
 			}
+
+			// Re-evaluate cron scheduling when RabbitMQ settings change.
+			add_action( 'update_option_wp_mcp_ai_settings', array( __CLASS__, 'on_settings_updated' ), 10, 2 );
 		}
 
 		/**
@@ -166,17 +169,82 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		/**
 		 * Schedule cron jobs for queue processing.
 		 *
+		 * When RabbitMQ is the primary transport with a dedicated queue
+		 * worker, the DB polling cron is unnecessary — jobs are consumed
+		 * via AMQP push. The daily cleanup cron always runs regardless
+		 * of transport.
+		 *
+		 * @since 1.3.0 Added RabbitMQ transport gating.
+		 *
 		 * @return void
 		 */
 		public static function schedule_cron_jobs() {
-			// Process queue every minute.
-			if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
+			// If RabbitMQ is the primary transport, skip the DB polling cron
+			// to avoid wasted MySQL connections (1,440 queries/day).
+			$is_rmq = self::is_rabbitmq_primary_transport();
+
+			if ( $is_rmq ) {
+				$timestamp = wp_next_scheduled( self::CRON_HOOK );
+				if ( $timestamp ) {
+					wp_unschedule_event( $timestamp, self::CRON_HOOK );
+				}
+			}
+
+			if ( ! $is_rmq && ! wp_next_scheduled( self::CRON_HOOK ) ) {
 				wp_schedule_event( time(), 'minute', self::CRON_HOOK );
 			}
 
-			// Cleanup old jobs daily.
+			// Cleanup old jobs daily (always runs).
 			if ( ! wp_next_scheduled( self::CRON_CLEANUP_HOOK ) ) {
 				wp_schedule_event( time(), 'daily', self::CRON_CLEANUP_HOOK );
+			}
+		}
+
+		/**
+		 * Check whether RabbitMQ is the primary job transport.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @return bool True when RabbitMQ is enabled and a dedicated
+		 *              worker is configured.
+		 */
+		private static function is_rabbitmq_primary_transport() {
+			if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
+				return false;
+			}
+
+			try {
+				if ( ! WP_MCP_AI_RabbitMQ_Client::get_instance()->is_available() ) {
+					return false;
+				}
+			} catch ( \Exception $e ) {
+				return false;
+			}
+
+			return (bool) get_option( 'wp_mcp_ai_queue_worker_dedicated', false );
+		}
+
+		/**
+		 * Re-evaluate cron scheduling when RabbitMQ settings change.
+		 *
+		 * Hooked to update_option_wp_mcp_ai_settings.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param mixed $old_value Previous settings.
+		 * @param mixed $new_value New settings.
+		 * @return void
+		 */
+		public static function on_settings_updated( $old_value, $new_value ) {
+			$old_rmq    = ! empty( $old_value['rabbitmq_enabled'] );
+			$new_rmq    = ! empty( $new_value['rabbitmq_enabled'] );
+			$old_worker = ! empty( $old_value['queue_worker_dedicated'] );
+			$new_worker = ! empty( $new_value['queue_worker_dedicated'] );
+
+			if ( $old_rmq !== $new_rmq || $old_worker !== $new_worker ) {
+				// Clear and re-schedule — schedule_cron_jobs() will decide.
+				wp_clear_scheduled_hook( self::CRON_HOOK );
+				self::schedule_cron_jobs();
 			}
 		}
 
@@ -739,11 +807,15 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		/**
 		 * Execute an agentic loop job.
 		 *
-		 * @param array $job Job data.
+		 * @param array $_job Job data (unused — not yet implemented).
 		 * @return mixed Agentic loop result.
 		 * @throws Exception Always thrown as not yet implemented.
+		 *
+		 * @phpcs:disable VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Reserved parameter for future implementation.
 		 */
-		private static function execute_agentic_loop_job( $job ) {
+		private static function execute_agentic_loop_job( $_job ) {
+			unset( $_job ); // Reserved for future implementation.
+
 			// TODO: Implement agentic loop execution.
 			// This would integrate with the chat controller's agentic loop logic
 			// but allow for unlimited iterations in the background.

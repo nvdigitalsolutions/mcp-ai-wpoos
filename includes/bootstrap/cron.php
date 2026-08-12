@@ -68,6 +68,13 @@ if ( ! function_exists( 'wp_mcp_ai_ensure_cleanup_cron_scheduled' ) ) {
 			wp_schedule_event( time(), 'hourly', 'wp_mcp_ai_cleanup_temp_files' );
 		}
 
+		// Schedule daily cleanup of expired concurrency slots.
+		// Prevents orphaned slots from permanently consuming capacity
+		// if a process crashes without releasing (v1.2.1).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_concurrency_slots' ) ) {
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_concurrency_slots' );
+		}
+
 		// Schedule daily model catalog discovery cron job (April 2026 refresh).
 		// Deliberately offset the first run by an hour to keep the activation/upgrade
 		// page load light — the daily file-cleanup crons above run on essentially
@@ -105,6 +112,9 @@ if ( ! has_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_f
 if ( ! has_action( 'wp_mcp_ai_cleanup_temp_files', 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 	add_action( 'wp_mcp_ai_cleanup_temp_files', 'wp_mcp_ai_cleanup_temp_files_handler' );
 }
+
+// Register concurrency slots cleanup handler (v1.2.1).
+add_action( 'wp_mcp_ai_cleanup_concurrency_slots', array( 'WP_MCP_AI_Concurrency_Guard', 'cleanup_expired_slots' ) );
 
 if ( ! has_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_research_background_handler' ) ) {
 	add_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_research_background_handler', 10, 1 );
@@ -476,7 +486,7 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: filemtime() may emit warnings for files deleted between glob() and stat; failure is handled with false !== $mtime check.
 			$mtime = @filemtime( $file );
 			if ( false !== $mtime && $mtime < $cutoff ) {
-				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: unlink() may emit warnings on permission errors; best-effort cleanup, failure is non-critical.
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink -- Silenced intentionally for temp files; wp_delete_file() is for media attachments only.
 				if ( @unlink( $file ) ) {
 					++$deleted;
 				}

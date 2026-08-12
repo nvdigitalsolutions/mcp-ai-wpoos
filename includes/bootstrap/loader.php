@@ -525,7 +525,13 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sla-manager.php';
 }
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rabbitmq-client.php' ) ) {
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rabbitmq-client.php';
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rabbitmq-client.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-rabbitmq.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-rabbitmq.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-site-health-connection-pool.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-site-health-connection-pool.php';
 }
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-queue-manager.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-queue-manager.php';

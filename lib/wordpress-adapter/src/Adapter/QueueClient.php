@@ -51,9 +51,10 @@ class QueueClient implements QueueClientInterface {
 				)
 			);
 
-			// If Action Scheduler is also present, schedule as fallback there too
-			// so that sites without the queue worker binary still process jobs.
-			if ( \function_exists( 'as_enqueue_async_action' ) ) {
+			// Only enqueue to Action Scheduler as a fallback when no dedicated
+			// queue worker is configured to consume from RabbitMQ. This prevents
+			// write amplification on the wp_actionscheduler_* tables.
+			if ( ! $this->isDedicatedQueueWorkerActive() && \function_exists( 'as_enqueue_async_action' ) ) {
 				\as_enqueue_async_action(
 					$handler,
 					\array_merge(
@@ -355,6 +356,39 @@ class QueueClient implements QueueClientInterface {
 		} catch ( \Exception $e ) {
 			return false;
 		}
+	}
+
+	/**
+	 * Check whether a dedicated queue worker is configured to consume
+	 * jobs from RabbitMQ, making the Action Scheduler fallback enqueue
+	 * unnecessary.
+	 *
+	 * When a dedicated queue worker (binary or daemon) is deployed,
+	 * jobs published to RabbitMQ are consumed directly. Enqueuing the
+	 * same job to Action Scheduler creates orphaned AS records that
+	 * bloat the wp_actionscheduler_* tables.
+	 *
+	 * @since 1.2.1
+	 *
+	 * @return bool True when AS fallback enqueue should be suppressed.
+	 */
+	private function isDedicatedQueueWorkerActive(): bool {
+		// A dedicated worker must be explicitly opted into by the site
+		// operator when they deploy bin/queue-worker.php via cron,
+		// systemd, or Kubernetes.
+		$dedicated = \get_option( 'wp_mcp_ai_queue_worker_dedicated', false );
+
+		/**
+		 * Filter whether a dedicated queue worker daemon is active.
+		 *
+		 * Allows programmatic control (e.g., via wp-config.php constant)
+		 * for sites that deploy the worker through infrastructure-as-code.
+		 *
+		 * @since 1.2.1
+		 *
+		 * @param bool $dedicated Whether a dedicated worker is active.
+		 */
+		return (bool) \apply_filters( 'wp_mcp_ai_queue_worker_dedicated', $dedicated );
 	}
 
 	// ─── Utilities ─────────────────────────────────────────────────────

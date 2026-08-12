@@ -72,6 +72,7 @@ $options = getopt(
 		'memory-limit:',
 		'max-jobs:',
 		'timeout:',
+		'batch-size:',
 		'help',
 	)
 );
@@ -85,6 +86,7 @@ if ( isset( $options['help'] ) ) {
 	echo "  --memory-limit=N    Set memory limit (e.g., 256M)\n";
 	echo "  --max-jobs=N        Exit after processing N jobs\n";
 	echo "  --timeout=N         Exit after N seconds\n";
+	echo "  --batch-size=N      Process N jobs per batch (default: 3)\n";
 	echo "  --help              Show this help\n";
 	exit( 0 );
 }
@@ -94,6 +96,9 @@ $use_rabbitmq = isset( $options['rabbitmq'] );
 $max_jobs     = isset( $options['max-jobs'] ) ? absint( $options['max-jobs'] ) : 0;
 $timeout      = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 0;
 $memory_limit = isset( $options['memory-limit'] ) ? $options['memory-limit'] : '256M';
+$batch_size   = isset( $options['batch-size'] )
+	? absint( $options['batch-size'] )
+	: (int) apply_filters( 'wp_mcp_ai_queue_worker_batch_size', 3 );
 
 // ─── Bootstrap WordPress ─────────────────────────────────────────────
 // Find WordPress root. This script lives in bin/ under the plugin dir.
@@ -154,6 +159,13 @@ if ( ! flock( $lock_fh, LOCK_EX | LOCK_NB ) ) { // phpcs:ignore WordPress.WP.Alt
 	fwrite( STDERR, "Another queue worker is already running. Exiting.\n" );
 	fclose( $lock_fh ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 	exit( 0 );
+}
+
+// ─── Heartbeat: signal that a queue worker is active ──────────────────
+// The QueueClient adapter checks this transient to suppress the
+// Action Scheduler fallback enqueue when a dedicated worker is running.
+if ( $use_rabbitmq ) {
+	set_transient( 'wp_mcp_ai_queue_worker_heartbeat', time(), 120 );
 }
 
 // ─── Signal handling for graceful shutdown ───────────────────────────
@@ -233,7 +245,7 @@ do {
 		if ( $use_rabbitmq ) {
 			$result = process_rabbitmq_queue( $should_exit );
 		} else {
-			$result = WP_MCP_AI_Job_Queue_Manager::process_queue( 3 );
+			$result = WP_MCP_AI_Job_Queue_Manager::process_queue( $batch_size );
 		}
 		$batch_processed = isset( $result['processed'] ) ? (int) $result['processed'] : 0;
 
