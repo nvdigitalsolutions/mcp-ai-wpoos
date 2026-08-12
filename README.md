@@ -44,13 +44,13 @@
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
-- [⚠️ Warranty & Safe Use](#warranty--safe-use)
+- [⚠️ Warranty & Safe Use](#-warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
   - [🌱 Beginner 3-Step Install (Try it on Your PC)](#-beginner-3-step-install-try-it-on-your-pc)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
+- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
@@ -1018,7 +1018,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🚀 Features
 
-> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details.
+> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details.
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
@@ -1588,7 +1588,7 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 
 **What requires JetEngine:**
 - ❌ Server-side chat transcript storage (chat history only in browser without it)
-- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#optional-tools-dependencies))
+- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies))
 
 ---
 
@@ -1734,7 +1734,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - Google Maps Platform tools
 
 **Base Version excludes 31 tools requiring third-party plugins or external APIs:**
-- **Third-party WordPress plugins** (13 tools) - See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details
+- **Third-party WordPress plugins** (13 tools) - See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details
   - WooCommerce tools (3)
   - JetEngine/JetFormBuilder tools (5)
   - Elementor tools (2)
@@ -1768,7 +1768,7 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 - Advanced workflows requiring external APIs
 - Need server-side chat transcript storage (requires JetEngine)
 
-📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
+📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 
 
 ---
@@ -1879,7 +1879,7 @@ A dedicated router transparently forwards chat completions to the active provide
 - Streaming automatically disabled when tools are present for reliable execution
 - Full backward compatibility with non-tool scenarios
 - Connect via JSON-RPC endpoint (recommended) or SSE streaming
-- See [LM Studio setup guide](#-lm-studio-setup) for configuration details
+- See [LM Studio setup guide](#lm-studio-setup) for configuration details
 
 ### Provider Priority List & Automatic Fallback
 
@@ -2323,7 +2323,7 @@ Sites that enable the Simple JWT Login integration can now reuse those bearer to
 
 NV oOS works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
 
-**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#sse-streaming-support) section for details.
+**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#-sse-streaming-support) section for details.
 
 ### Quick Start
 
@@ -3213,8 +3213,8 @@ See [`packages/README.md`](packages/README.md) for a full package listing and AP
 - Validate cross-version compatibility (PHP 7.4–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
 
 ### Manual smoke tests
-- Follow the scenarios in [## ✅ Manual QA Scenarios](#manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
-- For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#logging).
+- Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
+- For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#-logging).
 
 ---
 
@@ -3411,7 +3411,7 @@ However, certain features require third-party plugins (sold separately). The plu
 - **Rank Math SEO** (1 tool) – SEO analysis and schema data access
 - **WPCode** (1 tool) – Code snippet management and automation
 
-**📖 See the complete breakdown:** [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
+**📖 See the complete breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 
 ### How It Works
 
@@ -3523,7 +3523,7 @@ When encountering problems, please:
 
 - [ ] Check the [troubleshooting guide](docs/getting-started/installation-setup/deployment-troubleshooting.md)
 - [ ] Enable logging in Settings → NV oOS to capture detailed errors
-- [ ] Review the [common issues section](#-common-issues) below
+- [ ] Review the [common issues section](#common-issues) below
 - [ ] Search [existing GitHub issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
 - [ ] Test with a default assistant to isolate configuration issues
 
