@@ -1,5 +1,70 @@
 # oOS – Changelog
 
+## [1.1.54] - 2026-08-12
+
+### Security — PostCSS CVE-2026-69153 (PR #5850)
+
+- **PostCSS minimum bumped to 8.5.23** — resolves high-severity CVE-2026-69153 in the CSS post-processor chain. Applied in `package.json` overrides across affected addons. No functional changes — version constraint only. 2 files, +4/-4 lines.
+
+### Fixed — MCP Async Tool Response Handling (PR #5845)
+
+- **`tools/call` async response fix** — the endpoint handler was dropping responses for tools that return promises or deferred execution (video generation, deep research, batch OCR). Now correctly awaits and serializes async results. 1 file, +111 lines.
+
+### Fixed — Plugin Updater Integrity Check v2 (PR #5846)
+
+- **Phantom bridge file false-positive** — stale PHP stat cache was causing a false failure on the `bridge/` directory path in the post-install integrity check.
+- **Stat cache clearing** — added `clearstatcache()` after every file check to force fresh filesystem reads.
+- **Main-file rename edge case** — handled scenario where the old plugin main filename persists in the filesystem cache after a rename.
+- 1 file, +16/-2 lines.
+
+### Fixed — API Key Merged-Settings in Research Tools (PR #5852)
+
+- **20 research tools fixed** — `deep_research`, `web_search`, `semantic_content_search`, `semantic_context_search`, `retrieve_agent_memory`, `recall_memory`, `wake_up_context`, and 13 others were reading API keys from the global option instead of the merged provider-specific settings.
+- **Per-assistant/provider overrides now honored** — all tools now use `WP_MCP_AI_Credentials_Manager::get_merged_credentials()`, respecting the provider → assistant → global fallback chain.
+- 20 files, +37/-33 lines.
+
+### Added — Design Skills Audit & Enhancement (PR #5847)
+
+- **22 existing design-* skills enhanced** — comprehensive operational instructions, multi-step workflows, cross-references, and MCP tool-calling patterns added to all design-* agent skills.
+- **7 new pro-toolkit skills created**:
+  - `design-ai-assistant-admin` — AI assistant configuration, model providers, peer mesh networking
+  - `design-crm` — complete CRM pipeline: leads, deals, companies, contacts, BANT/MEDDIC scoring
+  - `design-project-management` — projects, tasks, sprints, events, task plans, PM workflows
+  - `design-communications` — multi-channel messaging (SMS, email, WhatsApp), contacts, delivery tracking
+  - `design-services` — service components, dependency tracking, approval workflows
+  - `design-team-management` — organizational teams, professions, role assignments
+  - `design-vault` — encrypted vault for passwords, secure notes, payment cards, digital identities
+  - `design-security-ops` — security operations, audit logging, posture management
+- Total: 29 enhanced/created skills, ~8,000 lines. 61 files, +7,971/-57 lines.
+
+### Fixed — OKF YAML Frontmatter Compliance (PRs #5844, #5849)
+
+- **Missing `type: Skill` frontmatter** (PR #5844) — added to all 22 `design-*` skills per OKF v0.2 trust-signal specification. 45 files, +68 lines.
+- **YAML spec compliance fixes** (PR #5849) — removed duplicate/invalid top-level keys from 9 design skills that violated the OKF v0.2 schema. 20 files, -100 lines.
+- All 44 skills now pass OKF v0.2 frontmatter validation.
+
+### Fixed — README TOC Anchor Links (PR #5853)
+
+- **VS16 emoji anchor fix** — emojis using Variation Selector 16 (🪲🐛🛒📊) now generate correct GitHub anchor links.
+- **U+26xx/U+27xx symbol anchor fix** — symbols like ⚠️⚡✅ now produce clickable TOC links.
+- 2 files.
+
+### Housekeeping — Stale Build Artifacts (PR #5851)
+
+- Removed 30 stale v1.1.52 build ZIPs and compiled assets superseded by v1.1.53 builds.
+
+### Versioning
+
+- Bumped to **1.1.54** across all version-bearing files.
+- Pro addon: 1.1.54.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **27**.
+- Bundled skills: **67** base.
+- Total coding-time agent skills: **44** (22 wp-* + 22 design-*).
+
+---
+
 ## [1.1.53] - 2026-08-12
 
 ### Added — Shared Analytics Service (PR #5836)

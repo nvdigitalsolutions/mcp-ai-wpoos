@@ -1,12 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.53
+**Version:** 1.1.54
 **Last Updated:** August 12, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (August 2026)
 
+- **v1.1.54** (August 12): PostCSS CVE-2026-69153 fix (bumped to 8.5.23). MCP async tool response handling fix — tools/call now correctly awaits async results. Plugin updater integrity check v2 — fixed phantom bridge file false-positive from stale stat cache, added clearstatcache(). API key merged-settings fix — 20 research tools now use get_merged_credentials() honoring per-assistant/provider overrides. 29 design-* skills enhanced/created — 7 new pro-toolkit skills (ai-assistant-admin, crm, project-management, communications, services, team-management, vault, security-ops), ~8,000 lines. OKF YAML frontmatter compliance — added missing type: Skill to all 22 design-* skills, fixed spec violations in 9. README TOC anchor fixes for VS16 emojis and U+26xx/U+27xx symbols. Stale v1.1.52 build artifacts removed.
 - **v1.1.53** (August 12): Shared Analytics Service (7 platform adapters, 5 DTOs, cross-platform normalization). Circuit breaker protection on all 15 AI provider clients. Concurrency guard, cost tracker, and backpressure wired into execution pipeline. 22 new design-* agent skills synced (bundled skills: 45→67). SSE backoff reset and rate-limit fixes. Load Guard fatal error fix. Documentation catch-up: CHANGELOG, README, CLAUDE.md, AGENTS.md, 6 .context/ files updated.
 - **v1.1.52** (August 11): Paper Store remote site support — 8 tools + REST API (697 lines) + remote trait, `list_mcp_tools` discovery tool. Remote connection CPT auto-discovery. Design System tool preset (72 tools, 13 categories). Post-install integrity check (15 critical paths). MCP protocol version negotiation for Zed/Claude Desktop/Cursor. Pro update visibility fix. Docker chmod suppression. Security bumps (multer, nodemailer, sharp). 3 new feature docs: Paper Store, Remote Sites, MCP Protocol Version Negotiation.
 - **v1.1.51** (August 11): Documentation audit & gap-fill — 12 gaps resolved across P0/P1/P2 tiers. DOCUMENTATION_INDEX updated with August 2026 section (7 versions, ~30 proposals). 6 new feature reference docs: Backup & Restore, Plugin Updater, Abilities API, Self-Hosted OCR, SGI Transparency, Embedded v0.2.0. FOR_REVIEWERS and ADDON_INVENTORY counts updated. README v1.1.46 gap filled.
