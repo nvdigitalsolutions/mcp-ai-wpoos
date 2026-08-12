@@ -1,0 +1,13 @@
+# Dependencies — install locally, never commit into the synced repo.
+/node_modules/
+
+# Local environment files.
+.env
+.env.*
+
+# Runtime output and scratch files.
+/output/
+/temp/
+
+# Logs.
+npm-debug.log*
