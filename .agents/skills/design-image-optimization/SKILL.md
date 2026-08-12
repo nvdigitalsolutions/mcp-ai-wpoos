@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-image-optimization
-description: Optimize images for web performance — format conversion (WebP, AVIF), responsive sizing, compression, background removal, lazy loading, and WordPress media library integration. Uses MCP bridge tools (resize_image, remove_background) as primary; the Design Stack media worker (Sharp) as fallback for advanced/batch processing.
+description: Optimize images for web performance — format conversion (WebP, AVIF), responsive sizing, compression, background removal, lazy loading, and WordPress media library integration. Uses MCP bridge tools (resize_image, remove_background) as primary; the Design Stack media worker (Sharp) as fallback for advanced/batch processing. Use when you need to resize images for social media, convert formats for faster page loads, remove backgrounds from product photos, generate alt text, or batch-process an entire media library.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Image Optimization
@@ -232,6 +234,15 @@ function design_responsive_image( $attachment_id, $sizes = [ 400, 800, 1200 ] ) 
        alt="AI-generated description of the image" />
 </picture>
 ```
+
+## What This Skill Does NOT Cover
+
+- **Image generation** — use `design-image-generation` for AI creation of new images via Gemini, DALL·E, or other providers.
+- **Video processing** — use `design-video-creation` for video transcoding, frame extraction, and format conversion.
+- **Social media publishing** — use `design-social-publishing` to post optimized images to Instagram, Facebook, Twitter/X, or LinkedIn.
+- **Media workflow automation** — use `design-media-workflow` for end-to-end pipelines that chain generation, optimization, and publishing.
+- **Brand asset management** — use `design-brand-kit` for logo placement, brand color application, and visual identity consistency.
+- **Image analysis and OCR** — use `analyze_image` or `extract_image_text` for content analysis rather than optimization.
 
 ## Cross-references
 

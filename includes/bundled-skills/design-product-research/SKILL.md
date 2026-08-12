@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-product-research
-description: Research products via AI tools, cross-reference live stock, generate WooCommerce-ready copy, and extract marketing angles. Covers the full product research-to-copy pipeline. Integrates with remote_wp_connection for stock checks and paper_store for optional persistence.
+description: Research products via AI tools, cross-reference live stock, generate WooCommerce-ready copy, and extract marketing angles. Covers the full research-to-copy pipeline with remote_wp_connection stock checks and paper_store persistence. Use when researching products by SKU/name/category, generating WooCommerce descriptions, preparing product data for campaigns, or cross-referencing catalog files against live inventory.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Product Research & Copy Generation
@@ -277,6 +279,16 @@ RIGHT:
 - Presenting copy in the brand's established tone of voice
 - Only persisting to paper_store when the user explicitly requests it
 ```
+
+## What This Skill Does NOT Cover
+
+- Deep multi-source market or brand research → `design-deep-research`
+- Creating WordPress post drafts from research → `design-content-research`
+- Image generation for products → `design-image-generation`
+- Pricing strategy, margin analysis, or financial modeling
+- Inventory management beyond stock-level checks
+- EZuite ERP operations → `ezuite_erp` / `ezuite_erp_get_products`
+- Social media content writing from product data → `design-social-content`
 
 ## Cross-references
 

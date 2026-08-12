@@ -1,16 +1,17 @@
 ---
-type: Skill
 name: wp-plugin-options-storage
-description: Picks the right WordPress storage primitive for plugin data: options, user/post/term/comment meta, transients, site options, site transients, or custom tables. Covers grouped settings, autoload management, transient TTL rules, serialized/JSON blob trade-offs, multisite storage caveats, and naming conventions. Use when scaffolding settings, choosing persistence for plugin-owned data, or auditing update_option/get_option/get_post_meta/set_transient/autoload usage.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.5 - 6.9
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-options-storage
-source-license: MIT
+description: "Picks the right WordPress storage primitive for plugin data: options, user/post/term/comment meta, transients, site options, site transients, or custom tables. Covers grouped settings, autoload management, transient TTL rules, serialized/JSON blob trade-offs, multisite storage caveats, and naming conventions. Use when scaffolding settings, choosing persistence for plugin-owned data, or auditing update_option/get_option/get_post_meta/set_transient/autoload usage."
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.5 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-options-storage"
+  source-license: MIT
 ---
 # WordPress plugin: options & storage
 

@@ -1,16 +1,17 @@
 ---
-type: Skill
 name: wp-utf8-text
 description: Handle UTF-8 and text encoding safely in WordPress plugins, especially on WP 6.9+ where wp_is_valid_utf8(), wp_scrub_utf8(), and noncharacter helpers replace older seems_utf8-style checks. Covers when to validate, scrub, reject, or preserve invalid bytes; wp_check_invalid_utf8 behavior; XML/JSON/feed/export boundaries; and avoiding data loss from premature replacement. Use when processing imported text, CSV, XML, feeds, email, REST payloads, AI prompts, logs, filenames, or external API data.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.9 - 6.9.4
-php-min: 7.4
-last-updated: 2026-04-29
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-utf8-text
-source-license: MIT
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.9 - 6.9.4
+  php-min: "7.4"
+  last-updated: "2026-04-29"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-utf8-text"
+  source-license: MIT
 ---
 # WordPress UTF-8 Text Handling
 

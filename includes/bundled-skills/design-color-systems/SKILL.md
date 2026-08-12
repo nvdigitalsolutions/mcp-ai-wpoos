@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-color-systems
-description: Design and implement color systems for brands, websites, and design projects. Covers color theory, palette generation, accessibility contrast ratios (WCAG), CSS custom properties, dark mode, and color psychology. Integrates with AI tools for palette extraction and generation.
+description: Produces accessible color palettes and CSS design-token implementations for brands and websites. Use when the task asks for "color palette", "brand colors", "color scheme", "WCAG contrast", "dark mode colors", "design tokens", or "CSS custom properties for colors". Covers color theory, WCAG 2.2 contrast compliance, dark mode, AI palette extraction, and color psychology.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Color Systems
@@ -202,6 +204,16 @@ prompt: "A warm, earthy brand palette for an organic coffee company —
 /* RIGHT — accessible muted text */
 .caption { color: var(--color-text-muted); } /* from token system */
 ```
+
+## What This Skill Does NOT Cover
+
+- **Logo design and brand mark creation** — use **`design-brand-kit`**.
+- **Font selection and typography pairing** — use **`design-typography`**.
+- **Full brand guideline document generation** — use **`design-document-generation`**.
+- **Image generation or editing** — use **`design-image-generation`**.
+- **WordPress theme development or block styling** — use **`wp-plugin-architecture`**.
+- **Social media content creation** — use **`design-social-content`**.
+- **UI component library building (React/Vue components)** — this skill is CSS-focused; component frameworks are out of scope.
 
 ## Cross-references
 

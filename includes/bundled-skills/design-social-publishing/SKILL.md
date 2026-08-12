@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-social-publishing
-description: Publish and schedule content to social media platforms (Twitter/X, Facebook, Instagram, LinkedIn) via the MCP bridge schedule_social_post tool as primary. The Design Stack media worker API is the fallback for advanced platform management. Covers platform-specific formatting, media attachment, scheduling, and WordPress-to-social publishing workflows.
+description: Publish and schedule content to social media platforms (Twitter/X, Facebook, Instagram, LinkedIn) via the MCP bridge schedule_social_post tool as primary. The Design Stack media worker API is the fallback for advanced platform management. Covers platform-specific formatting, media attachment, scheduling, and WordPress-to-social publishing workflows. Use when posting to social platforms, scheduling future posts, attaching media to posts, checking optimal timing, or debugging API delivery failures.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Social Media Publishing
@@ -236,6 +238,55 @@ Get them at: https://www.linkedin.com/developers/
 - **Schedule during optimal hours** — use `get_optimal_timing: true` to find best times, or `scheduled_time: "optimal"`.
 - **Store post URLs** — track what was published where for analytics.
 - **Handle API errors gracefully** — expired tokens, rate limits, and media processing failures should surface actionable messages.
+
+## Common Mistakes
+
+```
+WRONG — posting without verifying connected platform status first
+→ The post silently fails. Always verify accounts are active before publishing.
+
+RIGHT — check platform accounts first via schedule_social_post with get_optimal_timing: true
+→ This validates API connectivity before the actual publish attempt.
+
+WRONG — exceeding platform character limits (280 for Twitter, 2.2K for Instagram)
+→ Truncated posts lose key messaging and CTAs.
+
+RIGHT — truncate or split content per platform before scheduling
+→ Write platform-length-aware copy; use threads for Twitter long-form.
+
+WRONG — using identical content across all platforms without adaptation
+→ LinkedIn audiences expect different tone than Instagram; hashtag norms differ.
+
+RIGHT — tailor formatting per platform (hashtag count, line breaks, link placement, tone)
+→ Write once, adapt per platform before calling schedule_social_post.
+
+WRONG — scheduling 50 posts at once without checking rate limits
+→ Twitter: 1,500/month (free tier); Facebook: 200/day/page; LinkedIn: 100/day.
+
+RIGHT — spread posts across time; respect documented rate limits per platform
+→ Use recurrence parameter for regular cadence instead of bulk one-shot scheduling.
+
+WRONG — not capturing and storing post IDs/URLs after successful publishing
+→ You lose the ability to track engagement or update/delete posts later.
+
+RIGHT — store returned post URLs as WordPress post meta or in a tracking CCT
+→ Enables analytics dashboards and cross-referencing with campaign performance.
+
+WRONG — using media worker API directly when schedule_social_post covers the same needs
+→ Adds unnecessary complexity and bypasses the MCP bridge's error handling.
+
+RIGHT — use schedule_social_post (MCP) as primary; media worker only for unsupported platforms
+→ Keep the publishing path simple and auditable through the MCP layer.
+```
+
+## What This Skill Does NOT Cover
+
+- Writing captions, hashtags, or post copy → `design-social-content`
+- Image/video generation for social posts → `design-image-generation`
+- Content calendar planning and editorial strategy → `design-content-calendar`
+- Analytics and performance reporting → `design-analytics-reporting`
+- Platform account creation, business verification, or API app registration
+- Social listening, brand monitoring, or sentiment analysis
 
 ## Cross-references
 

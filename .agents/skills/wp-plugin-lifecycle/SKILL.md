@@ -1,16 +1,17 @@
 ---
-type: Skill
 name: wp-plugin-lifecycle
 description: Designs and reviews the three lifecycle events of a WordPress plugin — activation (one-shot setup, dbDelta, add_option seeding, cron schedule, cap seeding), deactivation (reversible cleanup, cron clear via wp_unschedule_hook, never delete user data), and uninstall.php (standalone file, WP_UNINSTALL_PLUGIN guard, no autoloader, full data removal). Multisite-aware patterns using the $network_wide / $network_deactivating callback args, plus the recommendation against register_uninstall_hook in favor of uninstall.php. Use when scaffolding a plugin or debugging ghost cron events / orphan options. Triggers on register_activation_hook, register_deactivation_hook, uninstall.php, WP_UNINSTALL_PLUGIN, dbDelta, wp_unschedule_hook, switch_to_blog.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.5 - 6.9
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-lifecycle
-source-license: MIT
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.5 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-lifecycle"
+  source-license: MIT
 ---
 # WordPress plugin: lifecycle (activate / deactivate / uninstall)
 

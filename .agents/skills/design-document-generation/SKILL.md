@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-document-generation
-description: Generate professional documents — PDF, Word (.docx), Excel (.xlsx), and invoices — from natural language descriptions or structured data. Covers document creation (AI-powered + simple), HTML-to-PDF conversion, PDF extraction/OCR, merging, watermarking, and data export. Use for Step 7 monthly presentations, campaign briefs, analytics reports, invoices, and branded documents.
+description: Generate professional documents — PDF, Word (.docx), Excel (.xlsx), and invoices — from natural language descriptions or structured data. Covers AI-powered and simple document creation, HTML-to-PDF conversion, PDF extraction/OCR, merging, watermarking, and data export. Use when you need to create campaign decks, reports, proposals, invoices, spreadsheets, or any shareable document — especially for Step 7 monthly presentations, campaign briefs, and analytics reports.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Document Generation
@@ -34,6 +36,16 @@ Use this skill when creating professional documents — campaign decks, reports,
 | `merge_pdfs` | Combine multiple PDFs into one |
 | `add_watermark_to_pdf` | Add text/image watermarks to PDFs for branding/security |
 
+## WP-CLI Commands
+
+Key `mcp-ai` WP-CLI commands for document workflows. Run via `terminal`:
+
+| Command | Use for |
+|---|---|
+| `wp mcp-ai health` | Verify document generation tools are registered |
+| `wp mcp-ai log` | Check document generation success/failure logs |
+| `wp mcp-ai bulk` | Batch-process document exports from post types |
+| `wp media import` | Import generated documents into the media library |
 
 ## When to use this skill
 
@@ -373,6 +385,15 @@ RIGHT:
   ✅ One clear purpose per document
 ```
 
+## What This Skill Does NOT Cover
+
+- **Image generation** — use `design-image-generation` to create visuals for document inclusion.
+- **Data analysis and reporting** — use `design-analytics-reporting` to compile metrics before generating report documents.
+- **Campaign planning** — use `design-campaign-orchestration` to build the monthly plan before generating the deck.
+- **Email delivery** — use `design-email-marketing` to send generated documents as email attachments.
+- **CRM or project documents** — use `design-project-management` for project reports or `design-crm` for deal/client documents tied to CRM records.
+- **Brand identity design** — use `design-brand-kit` for logo placement, brand colors, and typography in documents.
+
 ## Cross-references
 
 - Run **`design-campaign-orchestration`** to build the monthly plan before generating the deck.
@@ -380,3 +401,5 @@ RIGHT:
 - Run **`design-product-research`** for product data that feeds into campaign documents.
 - Run **`design-brand-kit`** to ensure document styling uses correct brand colors and fonts.
 - Run **`gws-drive`** to upload generated documents to Google Drive "Approved" folders.
+- Run **`design-project-management`** to generate project reports and task plans from `mcp_ai_project` and `mcp_ai_task` CPT records.
+- Run **`design-crm`** to generate deal summaries, lead profiles, and customer-facing documents from CRM records.

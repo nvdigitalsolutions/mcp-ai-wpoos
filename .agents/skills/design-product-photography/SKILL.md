@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-product-photography
-description: Define product photography standards for e-commerce — shot types, composition, lighting, consistency rules, AI-assisted generation, and platform-specific variants. Covers the full product imagery pipeline from concept to published asset.
+description: Define product photography standards for e-commerce — shot types, composition, lighting, consistency rules, AI-assisted generation, and platform-specific variants. Covers the full product imagery pipeline from concept to published asset. Use when you need to plan product photoshoots, create photography briefs, set image standards for an e-commerce catalog, generate AI product lifestyle shots, or ensure visual consistency across hundreds of products.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Product Photography
@@ -349,6 +351,15 @@ RIGHT:
 - **Consistent naming** — `[brand]-[product]-[view].webp`. Never `IMG_4829.jpg`.
 - **Alt text on every image** — use `generate_image_alt_text_validated` before publishing.
 - **No supplier images as primary** — they look generic and destroy brand trust. Use only as reference.
+
+## What This Skill Does NOT Cover
+
+- **Image generation techniques** — use `design-image-generation` for prompt engineering, model selection, and AI provider configuration.
+- **Image optimization** — use `design-image-optimization` for format conversion, compression, responsive sizing, and alt text generation.
+- **Social media publishing** — use `design-social-publishing` to post product images to Instagram, Facebook, and other platforms.
+- **Brand identity creation** — use `design-brand-kit` for logo design, color palettes, and typography that define the visual brand context.
+- **Product copywriting** — use `design-product-research` for product descriptions and marketing copy that accompanies product images.
+- **Video product showcases** — use `design-video-creation` for product video content (unboxing, demos, short-form Reels).
 
 ## Cross-references
 

@@ -63,7 +63,7 @@ Independent of the coding-time agents above, the plugin also exposes **Agent Ski
 | **Skill packs** | Curated, named bundles of related skills (e.g. "WordPress Developer") addressable as a single install unit via the Skill Manager admin UI. |
 | **Reference** | [`docs/features/agent-skills.md`](docs/features/agent-skills.md) (full Phases 1–4 narrative) and [`docs/features/okf-integration.md`](docs/features/okf-integration.md) (OKF skill conformance).
 
-**Coding-time skills (`.agents/skills/`) vs runtime skills:** The `.agents/skills/` directory contains **44** coding-time agent skills auto-discovered by the Zed editor (22 design-* skills + 22 wp-* WordPress plugin development patterns). These are distinct from the runtime Agent Skills (67 base + 28+ Pro bundled skills loaded by NV oOS assistants at runtime). The `.agents/skills/` files are WordPress plugin development patterns that guide coding agents, while the runtime skills (`includes/bundled-skills/`) are SKILL.md files loaded by AI assistants during conversations.
+**Coding-time skills (`.agents/skills/`) vs runtime skills:** The `.agents/skills/` directory contains **53** coding-time agent skills auto-discovered by the Zed editor (30 design-* skills + 22 wp-* WordPress plugin development patterns + 1 mcp-ai-wpoos-plugin operational guide). These are distinct from the runtime Agent Skills (67 base + 28+ Pro bundled skills loaded by NV oOS assistants at runtime). The `.agents/skills/` files are WordPress plugin development patterns that guide coding agents, while the runtime skills (`includes/bundled-skills/`) are SKILL.md files loaded by AI assistants during conversations.
 
 When extending Agent Skills, see §6 ("Updating Agent Configuration") below for the file-update checklist.
 

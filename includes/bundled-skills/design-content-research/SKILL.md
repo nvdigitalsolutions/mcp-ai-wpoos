@@ -1,7 +1,9 @@
 ---
-type: Skill
 name: design-content-research
-description: Convert research findings into WordPress draft posts. Covers create_post_from_research for transforming Paper Store research records or raw data into publishable content. Use for blog posts, buying guides, brand spotlights, and any content built from research.
+description: Produces WordPress draft posts from research findings — converts Paper Store research records or raw research data into publishable blog posts, buying guides, brand spotlights, and how-to articles. Use when the task asks to "turn research into a post", "create a blog post from findings", "publish my research", "research to content", or "write up the findings". Covers the full research-to-post pipeline with Paper Store integration.
+license: Proprietary. See LICENSE.txt
+metadata:
+  type: Skill
 ---
 
 # Content Research → Post Pipeline
@@ -31,8 +33,17 @@ create_post {
 ```
 
 Use `save_post` to update an existing post by passing `post_id`.
-| `create_post` | Direct WordPress post creation with images, charts, categories, tags, and meta |
-| `save_post` | Create or update a post by ID |
+
+## WP-CLI Commands
+
+Key `mcp-ai` WP-CLI commands for research-to-post workflows. Run via `terminal`:
+
+| Command | Use for |
+|---|---|
+| `wp mcp-ai content` | Search existing posts to avoid duplicate topics |
+| `wp mcp-ai paper-store list` | List available research records in Paper Store collections |
+| `wp mcp-ai paper-store read` | Read a specific Paper Store research record before conversion |
+| `wp mcp-ai bulk` | Batch-create multiple posts from research records |
 
 ## When to use this skill
 
@@ -241,6 +252,16 @@ RIGHT:
   ✅ update_paper_status: true when research is complete
   ✅ One clear topic per post
 ```
+
+## What This Skill Does NOT Cover
+
+- **Conducting the actual research (web search, deep research)** — use **`design-deep-research`** or **`design-web-research`**.
+- **SEO optimization of the resulting post** — use **`design-seo-content`** after draft creation.
+- **Publishing or scheduling the post** — use `save_post` (status: "publish") or `schedule_social_post`.
+- **Creating featured images for the post** — use **`design-image-generation`**.
+- **Managing Paper Store collections and records directly** — use `paper_store_write` / `paper_store_read` / `paper_store_search` tools.
+- **Product-specific research for WooCommerce** — use **`design-product-research`**.
+- **Writing social media posts promoting the content** — use **`design-social-content`**.
 
 ## Cross-references
 

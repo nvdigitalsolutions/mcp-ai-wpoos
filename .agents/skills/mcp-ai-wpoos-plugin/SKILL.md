@@ -1,12 +1,13 @@
 ---
 name: mcp-ai-wpoos-plugin
-description: "Complete operational guide for the NV oOS (Open Operator System) WordPress plugin in Docker/WSL2 — setup, assistant creation, credential tokens, MCP tool calling, API key auto-detection, env var bridging, common fixes, and IGCSE study configuration. Use when setting up the plugin for the first time, creating assistants programmatically, generating MCP bridge tokens, troubleshooting Docker path issues, bridging API keys, or calling tools via JSON-RPC over HTTP."
-plugin: mcp-ai-wpoos
-plugin-version: 1.1.50
-plugin-version-tested: 1.1.50
-last-updated: 2026-08-10
+description: Complete operational guide for the NV oOS (Open Operator System) WordPress plugin in Docker/WSL2 — setup, assistant creation, credential tokens, MCP tool calling, API key auto-detection, env var bridging, common fixes, and IGCSE study configuration. Use when setting up the plugin for the first time, creating assistants programmatically, generating MCP bridge tokens, troubleshooting Docker path issues, bridging API keys, or calling tools via JSON-RPC over HTTP.
+license: Proprietary. See LICENSE.txt
+metadata:
+  plugin: mcp-ai-wpoos
+  plugin-version: "1.1.50"
+  plugin-version-tested: "1.1.50"
+  last-updated: "2026-08-10"
 ---
-
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
 Complete operational skill for the NV Digital Open Operator System (oOS)
@@ -134,7 +135,44 @@ docker compose exec -T wordpress sh -c "
 The current `docker-compose.yml` uses relative paths (`.`) which Docker Desktop
 translates automatically. No action needed. If you encounter path issues with
 custom setups, use WSL paths (`/mnt/c/...`, `/mnt/f/...`) rather than Windows
-drive letters (`C:/...`, `F:/...`). See Docker Compose header comment for details.
+drive letters (`C:/...`, `/F:/...`). See Docker Compose header comment for details.
+
+### 5. Symlinks on WSL2 / Windows
+
+**`ln -s` silently creates copies on NTFS drives.** When you run `ln -s` from
+WSL targeting a path on a Windows-mounted drive (e.g. `/mnt/f/...`), it does
+NOT error — but it creates a real directory copy instead of a symlink. You
+need Windows Developer Mode enabled OR admin privileges for true symlinks.
+
+**Workaround: use NTFS junctions.** Junctions are directory-only reparse points
+that work without admin and are transparent to both Windows and WSL:
+
+```powershell
+# PowerShell (from WSL):
+Remove-Item "F:\path\to\link" -Recurse -Force
+New-Item -Path "F:\path\to\link" -ItemType Junction -Target "F:\path\to\target"
+```
+
+```bash
+# Or via cmd.exe (no admin needed for junctions):
+cmd.exe /c "mklink /J F:\path\to\link F:\path\to\target"
+```
+
+**Batch creation** is best done via a PowerShell `.ps1` script, not a shell
+loop — each `cmd.exe /c` spawns a new process with the copyright banner.
+
+**When to use which:**
+
+| Type | Command | Admin | Scope |
+|------|---------|-------|-------|
+| Junction | `mklink /J` | No | Directories only, same volume |
+| Symlink (file) | `mklink` | Usually | Files, cross-volume OK |
+| Symlink (dir) | `mklink /D` | Yes | Directories, cross-volume OK |
+| WSL symlink | `ln -s` | Dev Mode | Only on WSL-native filesystems |
+
+> **Design Stack**: `.agents/skills/design-*` and `mcp-ai-wpoos-plugin` use
+> junctions pointing to `plugins/mcp-ai-wpoos/.agents/skills/`. The creation
+> script is at `bin/create-skill-junctions.ps1`.
 
 ---
 
