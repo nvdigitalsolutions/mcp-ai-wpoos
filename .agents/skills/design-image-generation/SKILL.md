@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-image-generation
-description: Generate images using AI models — Gemini, DALL·E, Stable Diffusion, Midjourney, Flux, Leonardo, Ideogram, and more. MCP bridge tools are primary; the Design Stack media worker is the fallback for advanced providers. Covers prompt engineering, model selection, size/aspect ratios, style parameters, batch generation, multi-site awareness, and WordPress integration.
+description: Generate images using AI models — Gemini, DALL·E, Stable Diffusion, Midjourney, Flux, Leonardo, Ideogram, and more. MCP bridge tools are primary; the Design Stack media worker is the fallback for advanced providers. Covers prompt engineering, model selection, size/aspect ratios, style parameters, batch generation, multi-site awareness, and WordPress integration. Use when you need to create hero images, social graphics, product mockups, brand illustrations, or any visual asset for marketing, social media, or e-commerce.
 ---
 
 # AI Image Generation
@@ -304,6 +304,26 @@ update_post_meta( $attachment_id, '_ai_prompt', $prompt );
 update_post_meta( $attachment_id, '_ai_model', $model );
 ```
 
+## Common Mistakes
+
+```
+WRONG:
+  ● Using generate_gemini_image_validated without first checking your tool list for the correct agent-prefixed name
+  ● Generating images at full resolution without resizing — uploads 4096px images to WordPress with no optimization
+  ● Using "make it look good" as a prompt instead of structured [Subject]+[Style]+[Lighting]+[Composition] descriptions
+  ● Skipping provider comparison — using DALL·E for photorealism when Flux would produce better results at lower cost
+  ● Generating images without checking existing Media Library — duplicates assets already available
+  ● Forgetting to verify spoke site connectivity via remote_wp_connection before attempting cross-site image generation
+
+RIGHT:
+  ✅ Search your tool list for "generate_gemini" to find the correct agent-prefixed tool name before generating
+  ✅ Always follow generation with design-image-optimization — resize to target dimensions, convert to WebP
+  ✅ Use structured prompts: "Product photography of [item], [lighting], [background], [style], luxury catalog"
+  ✅ Match provider to purpose: Gemini for fast creative, Flux for photorealism, Ideogram for text-in-image
+  ✅ Run semantic_content_search or search_attachments first to check for existing usable assets
+  ✅ Call remote_wp_connection { action: "list_connections" } before any cross-site image operations
+```
+
 ## Critical rules
 
 - **Check your available tools first** — tool names vary by agent configuration. Search your tool list for `generate_gemini_image` or `web_search` to find the correct names.
@@ -317,6 +337,15 @@ update_post_meta( $attachment_id, '_ai_model', $model );
 - **Flux for photorealism** — best quality-to-speed ratio via media worker.
 - **Verify spoke sites before cross-site ops** — use `remote_wp_connection` to list connections and test connectivity before targeting remote sites.
 - **Research before prompting** — use the web search tool available in your tool list to gather visual references for more accurate prompts.
+
+## What This Skill Does NOT Cover
+
+- **Image optimization** — use `design-image-optimization` for resizing, format conversion (WebP/AVIF), compression, and alt text generation.
+- **Product photography standards** — use `design-product-photography` for e-commerce shot types, composition rules, and catalog consistency.
+- **Video creation** — use `design-video-creation` for AI video generation (Sora, Veo, Runway) and FFmpeg processing.
+- **Social media publishing** — use `design-social-publishing` to schedule and post generated images to social platforms.
+- **Brand identity design** — use `design-brand-kit` for logos, color palettes, and typography that should guide image styling.
+- **OCR and text extraction** — use `extract_image_text` or `design-document-generation` for extracting text from images.
 
 ## Cross-references
 

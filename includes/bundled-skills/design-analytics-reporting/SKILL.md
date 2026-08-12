@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-analytics-reporting
-description: Track, measure, and report on marketing performance — social media analytics, e-commerce sales data, campaign ROI, product velocity, and audience insights. Covers metric definitions, reporting templates, and data-driven decision frameworks.
+description: Produces marketing performance reports and data-driven recommendations from WooCommerce sales data, social media metrics, and campaign analytics. Use when the task asks for "campaign performance", "ROI analysis", "monthly report", "sales trends", "product velocity", "audience insights", or "KPI tracking". Covers metric definition, reporting templates, slow-mover detection, and insight-to-action frameworks.
 ---
 
 # Analytics & Reporting
@@ -44,6 +44,7 @@ Trigger when ANY of the following is true:
 | **Industry benchmarks** | `web_search_validated` | Social media engagement averages, conversion benchmarks |
 | Report storage (on request) | `paper_store_write` / `paper_store_read` | Persist reports for historical comparison |
 | Media report generation | `generate_media_report` | Generate structured reports on media library composition and usage |
+| **Pro toolkit CPTs** | `toolkit_cpt` → `mcp_ai_project`, `mcp_ai_task`, `mcp_ai_event` | Campaign projects, tasks, and event data for cross-reference |
 
 ## Core Metrics Framework
 
@@ -371,6 +372,16 @@ RIGHT:
 - **Use your own baseline** — benchmark against your own historical data first, industry averages second.
 - **Clean your data** — exclude outliers (viral post that skews monthly average), note anomalies.
 - **Feed insights back into planning** — analytics reports are the input for campaign orchestration and product selection.
+
+## What This Skill Does NOT Cover
+
+- **Creating or scheduling social media posts** — use `schedule_social_post` via **`design-social-publishing`**.
+- **Writing social media captions or content** — use **`design-social-content`**.
+- **Building campaign plans from analytics insights** — use **`design-campaign-orchestration`**.
+- **Generating charts and visual reports** — use the `create_chart_validated` tool directly.
+- **Running deep research on market trends** — use `deep_research` via **`design-deep-research`**.
+- **Managing CRM data (leads, deals, customers)** — use **`design-crm`**.
+- **Direct WooCommerce product management** — use `woo_products` or `remote_wp_connection` tools directly.
 
 ## Cross-references
 

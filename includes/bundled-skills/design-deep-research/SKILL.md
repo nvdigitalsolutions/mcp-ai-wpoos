@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-deep-research
-description: Perform comprehensive, multi-source research on any topic using AI-powered web search and analysis. Covers deep_research for broad discovery and semantic_content_search for site-specific knowledge retrieval. Use for brand profiles, market analysis, competitive intelligence, and content research requiring depth and citations.
+description: Perform comprehensive, multi-source research on any topic using AI-powered web search and analysis. Covers deep_research for broad discovery and semantic_content_search for site-specific knowledge retrieval. Use when you need to research brands, markets, competitors, or trends with citations — before creating content, planning campaigns, or making strategic decisions.
 ---
 
 # Deep Research
@@ -214,6 +214,15 @@ RIGHT:
   ✅ Research → insight → action chain
   ✅ Paper Store only when explicitly requested
 ```
+
+## What This Skill Does NOT Cover
+
+- **Quick fact-checking** — use `design-web-research` for fast lookups via `web_search` or `brave_web_search`.
+- **Product-specific research** — use `design-product-research` for structured SKU/catalog investigations via `research_product`.
+- **Content writing** — use `design-content-research` to convert research into WordPress draft posts via `create_post_from_research`.
+- **Campaign planning** — use `design-campaign-orchestration` to apply research insights to campaign themes and calendars.
+- **SEO implementation** — use `design-seo-content` to apply research keywords to product/category pages.
+- **Image or visual research** — use `analyze_image` or `design-image-generation` for visual reference gathering.
 
 ## Cross-references
 

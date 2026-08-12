@@ -1,12 +1,25 @@
 ---
 type: Skill
 name: design-email-marketing
-description: Design and write email marketing campaigns — newsletters, promotional sequences, abandoned cart recovery, welcome flows, and SMS reminders. Covers copywriting, segmentation, timing, and integration with the monthly campaign calendar. Platform-agnostic by default; adapts to available sending tools.
+description: Design and write email marketing campaigns — newsletters, promotional sequences, abandoned cart recovery, welcome flows, and SMS reminders. Covers copywriting, segmentation, timing, and monthly campaign calendar integration. Use when you need to write newsletter copy, plan email sequences, design abandoned cart recovery, segment subscriber lists, or schedule promotional sends aligned with your marketing calendar.
 ---
 
 # Email Marketing
 
 Use this skill when creating email campaigns, writing newsletters, designing automated sequences, or planning SMS reminders for e-commerce.
+
+## Available Tools
+
+| Tool | Purpose |
+|---|---|
+| `toolkit_cpt` (action: `list_items` on `mcp_ai_customer`) | Query customer records for segmentation — filter by purchase history, last order date, lifetime value |
+| `toolkit_cpt` (action: `list_items` on `mcp_ai_lead`) | Query leads for prospect outreach — filter by status, source, score |
+| `toolkit_cpt` (action: `get_schema` on `mcp_ai_customer` / `mcp_ai_lead`) | Discover available CRM fields before querying customer or lead records |
+| `create_post_validated` | Create email newsletter drafts as WordPress posts for review |
+| `paper_store_write` | Save email templates and sequences to the Paper Store for reuse |
+| `nv_oos_*_agent_remote_wp_connection` | Pull customer/order data from remote WooCommerce sites for email targeting |
+
+> **CRM note:** Use `design-crm` to manage the full customer and lead lifecycle — this skill focuses on email content and segmentation, not CRM record management.
 
 ## WP-CLI Commands
 
@@ -331,6 +344,15 @@ RIGHT:
 - **SMS is for urgency only** — don't dilute SMS with routine content. Save it for sales, launches, and time-sensitive alerts.
 - **Track and iterate** — open rate, click rate, conversion rate. Feed performance back into segmentation and content decisions.
 
+## What This Skill Does NOT Cover
+
+- **Social media publishing** — use `design-social-publishing` for posting content to Instagram, Facebook, Twitter/X, or LinkedIn.
+- **CRM contact management** — use `design-crm` for managing customer, lead, and company records (via `toolkit_cpt` on `mcp_ai_customer`, `mcp_ai_lead`).
+- **Campaign orchestration** — use `design-campaign-orchestration` to build the monthly marketing calendar that emails align with.
+- **SMS-only workflows** — use `design-communications` for transactional SMS and chat-based customer interactions.
+- **Analytics and performance tracking** — use `design-analytics-reporting` to measure open rates, click rates, and conversion data.
+- **Content creation for social/website** — use `design-social-content` or `design-content-research` for non-email content.
+
 ## Cross-references
 
 - Run **`design-campaign-orchestration`** to align email sends with the monthly marketing calendar.
@@ -339,3 +361,4 @@ RIGHT:
 - Run **`design-product-research`** to gather product details for email features.
 - Run **`design-brand-kit`** to ensure email visuals and tone match brand guidelines.
 - Run **`design-image-generation`** to create email hero images — check your tool list for the Gemini image tool.
+- Run **`design-crm`** to manage customer and lead records — use `toolkit_cpt` on `mcp_ai_customer` and `mcp_ai_lead` for segmentation data.

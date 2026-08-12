@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-pro-schedule-manager
-description: Manage NV oOS Pro Schedules — create, update, delete, list, dry-run, view run history, and plan schedules from workflows. Covers all 7 Pro Schedule Manager MCP tools with usage patterns, cross-references to wp-plugin-cron and wp-action-scheduler for underlying scheduling infrastructure, and operational troubleshooting. Use when managing schedules via the Pro Schedule Manager, planning recurring tasks, debugging schedule failures, or integrating workflow outputs with scheduled execution.
+description: Manage NV oOS Pro Schedules — create, update, delete, list, dry-run, view run history, and plan schedules from workflows. Covers all 7 Pro Schedule Manager MCP tools with usage patterns, cross-references, and operational troubleshooting. Use when creating recurring tasks, debugging schedule failures, pausing vs deleting schedules, converting Action Scheduler jobs to managed schedules, or bridging workflow outputs to timed execution.
 author: Design Stack
 plugin: nv-oos-pro
 plugin-version-tested: latest
@@ -349,6 +349,9 @@ on the schedule's characteristics (recurrence, expected load, need for retries).
 - Run `wp-action-scheduler` for queue semantics: status tracking, retries, batch processing, WP-CLI commands.
 - Run `wp-plugin-lifecycle` for activation/deactivation scheduling patterns.
 - Run `wp-security-audit` on schedule callbacks — they run with no current user, so capability checks don't work.
+- Run `design-pro-workflow-builder` to design workflows that produce scheduled tasks via `plan_schedules_from_workflow`.
+- Run `design-crm` to schedule recurring CRM tasks — pipeline reviews, lead scoring, follow-up reminders.
+- Run `design-campaign-orchestration` to schedule recurring campaign content publication and monthly reports.
 
 ## What this skill does NOT cover
 

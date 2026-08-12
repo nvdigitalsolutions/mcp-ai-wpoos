@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-brand-kit
-description: Create and manage comprehensive brand identity kits — logos, color palettes, typography, imagery style, brand guidelines, and asset generation. Covers AI-assisted logo generation (MCP Gemini primary, media worker fallback), brand strategy, and WordPress integration for brand asset management.
+description: Produces complete brand identity systems — logos (AI-generated via Gemini), color palettes, typography, imagery guidelines, and WordPress-based brand asset libraries. Use when the task asks for "brand kit", "logo design", "brand guidelines", "brand identity", "visual identity", "brand colors", or "brand assets". Covers AI-assisted logo generation, asset sizing, brand archetypes, and WordPress brand page structure.
 ---
 
 # Brand Kit Design
@@ -232,6 +232,16 @@ RIGHT:
 - Single source of truth for all brand assets (WordPress Brand Kit page)
 - Published brand guidelines document with do's and don'ts
 ```
+
+## What This Skill Does NOT Cover
+
+- **Color palette generation and WCAG contrast checking** — use **`design-color-systems`**.
+- **Font pairing and web font loading strategies** — use **`design-typography`**.
+- **Generating social media content using the brand** — use **`design-social-content`**.
+- **Image optimization (WebP, AVIF, compression)** — use **`design-image-optimization`**.
+- **Video creation for brand marketing** — use **`design-video-creation`**.
+- **SEO optimization of brand pages** — use **`design-seo-content`**.
+- **Document generation for brand guidelines** — use **`design-document-generation`**.
 
 ## Cross-references
 

@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-pro-workflow-builder
-description: Design and execute DAG-based automation workflows using the NV oOS Pro Workflow Builder — a ReactFlow visual builder for chaining tool calls, agent runs, and actions into repeatable automation pipelines. Covers the visual builder UI, 9 preset categories, node types (trigger, tool, action, agent, condition, delay, parallel, merge, loop, approval), DAG execution engine (Kahn's algorithm), scheduling via Pro Schedule Manager, template variable syntax, and best practices. Use when designing workflows in the builder, debugging DAG execution failures, or choosing between a workflow-builder schedule and raw tool chaining.
+description: Design and execute DAG-based automation workflows using the NV oOS Pro Workflow Builder — a ReactFlow visual builder for chaining tool calls, agent runs, and actions into repeatable pipelines. Covers the visual builder UI, 9 preset categories, 10 node types, Kahn's algorithm execution engine, scheduling via Pro Schedule Manager, template variable syntax, and best practices. Use when designing workflows, debugging DAG execution failures, choosing between a workflow schedule and raw tool chaining, or building CRM/PM automation pipelines with toolkit_cpt nodes.
 author: Design Stack
 plugin: nv-oos-pro
 plugin-version-tested: latest
@@ -81,7 +81,7 @@ The builder is a ReactFlow-powered canvas where you:
 | Node type | What it does | Configuration |
 |---|---|---|
 | **trigger** | Entry point — starts the DAG. No execution. | None. Always the first node. |
-| **tool** | Calls an MCP tool via the Tool Registry. | `tool_name` (required), `arguments` (object) |
+| **tool** | Calls an MCP tool via the Tool Registry. This includes `toolkit_cpt` for CRM/PM record operations (leads, deals, tasks, projects). | `tool_name` (required), `arguments` (object) |
 | **action** | Fires the `wp_mcp_ai_workflow_execute_action` filter. Extensible by plugins. | `command` (string), `params` (object) |
 | **agent** | Fires `wp_mcp_ai_workflow_execute_agent` filter — typically invokes an AI assistant. | `agent_id`, `prompt` |
 
@@ -276,6 +276,8 @@ RIGHT: { "summary": "{{node_2.result.summary}}", "urls": "{{node_2.result.source
 - Run `wp-plugin-cron` for the cron mechanics that trigger scheduled workflow runs.
 - Run `mcp-ai-wpoos-plugin` for details on available tools you can use in tool nodes (the Tool Registry).
 - The `execute_workflow` MCP tool is the programmatic interface for running workflows on-demand.
+- Run `design-crm` to build CRM automation workflows — lead scoring, auto-assignment, deal stage progression using `toolkit_cpt` nodes in the builder.
+- Run `design-project-management` to build PM automation workflows — task creation from templates, sprint status roll-ups, project health checks.
 
 ## What this skill does NOT cover
 

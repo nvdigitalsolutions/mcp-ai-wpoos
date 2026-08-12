@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-media-workflow
-description: End-to-end media pipeline automation — from AI generation through optimization to social publishing. Covers workflow design, WordPress integration, Redis job queuing, batch processing, multi-site pipelines, and orchestration. MCP bridge tools are the primary interface for individual operations; the Design Stack media worker handles batch and advanced processing.
+description: End-to-end media pipeline automation — from AI generation through optimization to social publishing. Covers workflow design, WordPress integration, Redis job queuing, batch processing, multi-site pipelines, and orchestration. MCP bridge tools are the primary interface for individual operations; the Design Stack media worker handles batch and advanced processing. Use when you need to automate image generation→optimization→publishing chains, set up cross-site media sync, design batch processing pipelines, or orchestrate multi-step media workflows triggered by post publish or cron.
 ---
 
 # Media Workflow Automation
@@ -302,6 +302,26 @@ Attempt 1: schedule_social_post → Twitter OK, LinkedIn fails (expired token)
 | Cross-site remote calls | 100–500ms + target site latency | ✅ Yes |
 | WordPress media sideload | 1–5s | ⚠️ Serialize |
 
+## Common Mistakes
+
+```
+WRONG:
+  ● Hard-coding site URLs in workflow scripts — breaks when domains change or sites migrate
+  ● Triggering image generation on every post save without deduplication — creates hundreds of duplicate images
+  ● Using synchronous HTTP calls for AI generation in WordPress hooks — blocks the request for 30+ seconds
+  ● Mixing MCP tools and media worker calls for the same operation type without a clear routing rule
+  ● Forgetting to verify spoke site connectivity before running cross-site media sync workflows
+  ● Tracking workflow state in scattered post meta keys — use a single `_workflow_log` array or toolkit_cpt records (mcp_ai_project / mcp_ai_task)
+
+RIGHT:
+  ✅ Use remote_wp_connection to dynamically discover spoke sites at workflow runtime
+  ✅ Implement idempotency checks — query existing media before generating, use post meta flags
+  ✅ Route AI generation through a job queue (Action Scheduler or Redis Bull) — never block the request thread
+  ✅ Define a clear routing rule: check MCP tool availability first, fall back to media worker only when no MCP tool exists
+  ✅ Call remote_wp_connection { action: "list_connections" } and test_connection before cross-site pipeline execution
+  ✅ Store workflow state centrally — use post meta arrays or toolkit_cpt on mcp_ai_project (project-level) and mcp_ai_task (step-level)
+```
+
 ## Critical rules
 
 - **Check your available tools first** — tool names vary by agent configuration. Search for `generate_gemini` or `web_search` in your tool list to find the correct prefixed names.
@@ -332,6 +352,15 @@ Attempt 1: schedule_social_post → Twitter OK, LinkedIn fails (expired token)
 - Use **`bulk_tag_media`** for taxonomy-based organization of media library assets.
 - Use **`sync_media_to_remote`** to push media assets to remote WordPress sites via `remote_wp_connection`.
 - Use **`import_media_from_url`** to bring external images into the media library for pipeline processing.
+
+## What This Skill Does NOT Cover
+
+- **Individual image generation** — use `design-image-generation` for one-off AI image creation; this skill covers chaining generation into pipelines.
+- **Individual image optimization** — use `design-image-optimization` for single-image resize/compress/convert operations.
+- **Social content strategy** — use `design-social-content` for caption writing and platform-specific content planning.
+- **Campaign planning** — use `design-campaign-orchestration` for monthly themes and product selection that drive workflow triggers.
+- **Video production** — use `design-video-creation` for video-specific pipelines (transcoding, frame extraction, AI generation).
+- **Project and task management** — use `toolkit_cpt` on `mcp_ai_project` and `mcp_ai_task` for tracking workflow status outside media pipeline metadata.
 
 ## References
 

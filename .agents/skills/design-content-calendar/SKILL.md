@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-content-calendar
-description: Plan, organize, and schedule content across platforms. Covers editorial strategy, content pillars, posting cadence, seasonal planning, and WordPress-to-social calendar integration. Use for content strategy and scheduling workflows.
+description: Produces structured content calendars with platform-specific posting schedules, content pillars, and batch publishing plans. Use when the task asks to "plan content", "schedule posts", "create a content calendar", "editorial calendar", "posting schedule", or "content strategy". Covers content pillars, posting cadence, multi-site calendars, seasonal hooks, and content repurposing matrices.
 ---
 
 # Content Calendar
@@ -232,6 +232,35 @@ add_action( 'publish_social_post', 'trigger_social_publishing', 10, 2 );
 - **Generate visuals in batch** — use the Gemini image tool in your tool list ahead of time for all planned posts.
 - **Research trends before planning** — use the web search tool in your tool list to identify trending topics and hashtags.
 - **Plan per-site for multi-site** — use `remote_wp_connection` to discover spoke sites and plan site-specific calendars.
+
+## What This Skill Does NOT Cover
+
+- **Writing individual post captions or copy** — use **`design-social-content`**.
+- **Publishing or scheduling individual social posts** — use `schedule_social_post` via **`design-social-publishing`**.
+- **Creating images or visuals for posts** — use **`design-image-generation`**.
+- **Monthly campaign strategy and product selection** — use **`design-campaign-orchestration`**.
+- **Analyzing past content performance** — use **`design-analytics-reporting`**.
+- **SEO keyword research for content** — use **`design-seo-content`**.
+
+## Common Mistakes
+
+```
+WRONG:
+  ● Filling the calendar 100% with no buffer for trending content
+  ● Same content type every day (all static, no reels, no stories)
+  ● Planning posts without checking if visuals exist or can be created
+  ● Forgetting to plan for multi-site — Hub post ≠ spoke post
+  ● Scheduling posts at random times without audience-activity data
+  ● No seasonal or annual hooks woven into the monthly plan
+
+RIGHT:
+  ✅ 80% planned, 20% buffer for trending/reactive content
+  ✅ Mix of reels, static posts, stories, and carousels each week
+  ✅ Batch-generate visuals during planning before scheduling
+  ✅ Per-site calendars: Hub for cross-brand, spoke for niche audiences
+  ✅ Schedule at peak engagement times (check platform analytics)
+  ✅ Anchor each month to a seasonal hook or industry event
+```
 
 ## Cross-references
 

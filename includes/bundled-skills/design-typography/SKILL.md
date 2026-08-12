@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-typography
-description: Design and implement typography systems for web and brand projects. Covers font pairing, type scales, variable fonts, web font loading strategies (font-display, subsetting), CSS typography best practices, and WordPress theme typography integration.
+description: Design and implement typography systems for web and brand projects. Covers font pairing, type scales, variable fonts, web font loading strategies (font-display, subsetting), CSS typography best practices, and WordPress theme typography integration. Use when selecting fonts, building type scales, loading web fonts, configuring theme.json typography, or fixing font performance issues.
 ---
 
 # Typography Systems
@@ -230,6 +230,16 @@ prompt: "Typography specimen poster showing 'Playfair Display' for headings
 and 'Source Sans 3' for body text. Include sample headings, paragraph text,
 and pull quotes. Elegant editorial layout, black text on cream background."
 ```
+
+## What This Skill Does NOT Cover
+
+- Color system design and palette generation → `design-color-systems`
+- Full brand identity definition (logos, imagery, voice) → `design-brand-kit`
+- Logo design, mark creation, or iconography
+- Layout and grid system design (CSS Grid, Flexbox patterns)
+- Icon font selection and icon-set curation
+- Print typography specifications (ink traps, paper stock, imposition)
+- Font licensing and commercial usage rights
 
 ## Critical rules
 

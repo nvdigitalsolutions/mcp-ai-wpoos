@@ -1,12 +1,25 @@
 ---
 type: Skill
 name: design-campaign-orchestration
-description: Plan and orchestrate monthly marketing campaigns — theme selection, product prioritization, weekly content structures, recurring posts, promotions, and presentation generation. Covers the full campaign lifecycle from planning to delivery.
+description: Produces complete monthly marketing campaign plans — themes, product selection, weekly content structures, recurring posts, promotions, and presentation decks. Use when the task asks to "plan this month's content", "orchestrate a campaign", "build a marketing plan", "select products for promotion", "create a campaign calendar", or "monthly SOP". Covers the full 7-step campaign lifecycle from theme selection to presentation delivery.
 ---
 
 # Campaign Orchestration
 
 Use this skill when planning monthly marketing campaigns, structuring content calendars, selecting products for promotion, or preparing campaign presentations.
+
+## Available Tools
+
+| Tool | Purpose |
+|---|---|
+| `remote_wp_connection` | Pull live WooCommerce product stock, orders, and site content for campaign planning |
+| `schedule_social_post` | Schedule campaign posts to social platforms |
+| `generate_gemini_image_validated` | Create campaign visuals, reel covers, and promo graphics |
+| `paper_store_write` / `paper_store_read` | Persist and retrieve campaign plans, product selections, and tracking sheets |
+| `create_post` | Publish campaign landing pages and announcements to WordPress |
+| `web_search_validated` | Research seasonal trends, competitor campaigns, and industry hooks |
+| `toolkit_cpt` | Access pro toolkit CPTs — `mcp_ai_event` (campaign events), `mcp_ai_project` (campaign projects), `mcp_ai_task` (campaign tasks) |
+| `create_chart_validated` | Generate campaign performance charts for presentation decks |
 
 ## WP-CLI Commands
 
@@ -180,14 +193,15 @@ By the **1st week of each month**, the final plan should include:
 
 ```
 Monthly Campaign Deck:
-├── 1. Theme & Rationale (why this theme now?)
+│ 1. Theme & Rationale (why this theme now?)
 ├── 2. Product Selection (table with SKUs, prices, stock, rationale)
 ├── 3. Weekly Content Calendar (posts, reels, stories by day)
 ├── 4. Reel Storyboards (3–4 reel concepts with shot lists)
 ├── 5. Recurring Post Schedule (delivery, gift wrap, vouchers)
 ├── 6. Campaign & Promo Calendar (sales, GWP, bundles, emails)
 ├── 7. Asset Checklist (images needed, copy needed, status)
-└── 8. Success Metrics (reach, engagement, sales targets)
+├── 8. Success Metrics (reach, engagement, sales targets)
+└── 9. Project & Task Tracking (link to `mcp_ai_project` / `mcp_ai_task` CPTs via `toolkit_cpt`)
 ```
 
 ## Recurring Post Templates
@@ -333,6 +347,16 @@ RIGHT:
 - Final plan ready by the 1st of the month
 ```
 
+## What This Skill Does NOT Cover
+
+- **Writing individual social media captions** — use **`design-social-content`**.
+- **Publishing or scheduling individual social posts** — use `schedule_social_post` via **`design-social-publishing`**.
+- **Researching products before adding them to a campaign** — use **`design-product-research`**.
+- **Creating individual images or visuals** — use **`design-image-generation`**.
+- **Deep research on market trends** — use `deep_research` via **`design-deep-research`**.
+- **Running analytics reports on past campaigns** — use **`design-analytics-reporting`**.
+- **CRM pipeline management (leads, deals, contacts)** — use **`design-crm`**.
+
 ## Cross-references
 
 - Run **`design-content-calendar`** to build the detailed daily/weekly posting schedule.
@@ -341,6 +365,8 @@ RIGHT:
 - Run **`design-product-research`** to research products before adding them to the campaign.
 - Run **`design-image-generation`** to create campaign visuals — check your tool list for the Gemini image tool.
 - Run **`design-brand-kit`** to ensure campaign visuals align with brand guidelines.
+- Run **`design-project-management`** to track campaign projects, tasks, and sprints via `toolkit_cpt` → `mcp_ai_project`, `mcp_ai_task`.
+- Run **`design-crm`** to manage campaign-related leads, deals, and customer activity via `toolkit_cpt` → `mcp_ai_company`, `mcp_ai_deal`.
 - Run **`mcp-ai-wpoos-plugin`** for `remote_wp_connection` — verify product stock before featuring.
 - Use **`paper_store_*`** tools with `connection_id` to persist campaign plans to the target site's Paper Store.
 - Use **`create_post`** to directly publish campaign-related content (landing pages, announcements) to WordPress.

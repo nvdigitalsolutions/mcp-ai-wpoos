@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-video-creation
-description: Create and process videos using AI generation (Runway, Pika, Replicate) and FFmpeg processing. MCP bridge provides frame extraction (extract_video_frames); the Design Stack media worker handles full FFmpeg processing (resize, trim, compress, GIF, format conversion). Covers social-media-optimized video output.
+description: Create and process videos using AI generation (Runway, Pika, Replicate, Sora, Veo) and FFmpeg processing. MCP bridge provides frame extraction (extract_video_frames); the Design Stack media worker handles full FFmpeg processing (resize, trim, compress, GIF, format conversion). Covers social-media-optimized video output. Use when generating AI videos, extracting frames/thumbnails, transcoding videos, creating GIFs from clips, or preparing video for social platforms.
 ---
 
 # Video Creation & Processing
@@ -175,6 +175,16 @@ ffmpeg -i input.mp4 -vf "drawtext=text='Your Brand':fontcolor=white:fontsize=48:
   <source src="hero-bg.mp4" type="video/mp4" />
 </video>
 ```
+
+## What This Skill Does NOT Cover
+
+- AI video generation API key management and provider setup → `mcp-ai-wpoos-plugin`
+- Social media publishing of finished videos → `design-social-publishing`
+- Video analytics, engagement tracking, or performance reporting
+- Live streaming setup and RTMP configuration
+- Audio production, sound design, or podcast editing
+- 3D animation, motion graphics design, or compositing (After Effects)
+- Video hosting infrastructure (YouTube/Vimeo channel management)
 
 ## Critical rules
 

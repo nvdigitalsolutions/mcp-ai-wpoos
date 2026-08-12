@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-web-research
-description: Perform quick web searches, local business lookups, and URL content extraction. Covers web_search for general queries, brave_local_search for location-based discovery, and run_crawl4ai_job for deep page crawling. Use for fact-checking, trend spotting, competitor analysis, and content research that doesn't need multi-step deep research.
+description: Perform quick web searches, local business lookups, and URL content extraction. Covers web_search for general queries, brave_local_search for location-based discovery, and run_crawl4ai_job for deep page crawling. Use when fact-checking, trend spotting, doing competitor analysis, looking up local businesses, extracting page content, or performing content research that doesn't need multi-step deep research.
 ---
 
 # Web Research
@@ -160,6 +160,16 @@ timeout              — Max wait time in seconds (default: 120, max: 600)
    }
 ```
 
+## WP-CLI Commands
+
+Key `mcp-ai` WP-CLI commands for web research workflows. Run via `terminal`:
+
+| Command | Use for |
+|---|---|
+| `wp mcp-ai harness` | Semantic search across research outputs and crawled content |
+| `wp mcp-ai bulk` | Batch crawl and index URLs via Crawl4AI |
+| `wp mcp-ai log` | View crawl job logs, errors, and timeout diagnostics |
+
 ## Choosing the Right Search Tool
 
 ```
@@ -212,6 +222,15 @@ RIGHT:
   ✅ country: "LK" for Sri Lankan market research
   ✅ freshness: "pm" for trend monitoring
 ```
+
+## What This Skill Does NOT Cover
+
+- Deep multi-source research reports with citations → `design-deep-research`
+- Product SKU research with WooCommerce intent → `design-product-research`
+- SEO keyword research and competitive SERP analysis → `design-seo-content`
+- Converting research findings into WordPress drafts → `design-content-research`
+- Persistent storage and structured tagging of research data → `paper_store_*` tools
+- Brand or market trend analysis with strategic recommendations → `design-deep-research`
 
 ## Cross-references
 

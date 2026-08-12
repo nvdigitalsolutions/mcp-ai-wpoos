@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-seo-content
-description: Optimize WooCommerce product pages, category pages, and site content for search engines. Covers keyword research, meta tags, product descriptions, schema markup, internal linking, and local SEO for Sri Lankan e-commerce.
+description: Optimize WooCommerce product pages, category pages, and site content for search engines. Covers keyword research, meta tags, product descriptions, schema markup, internal linking, and local SEO. Use when writing product titles/descriptions, conducting keyword research, auditing pages for SEO gaps, setting up internal linking, adding schema markup, or optimizing for local search visibility.
 ---
 
 # SEO Content Optimization
@@ -31,7 +31,7 @@ Trigger when ANY of the following is true:
 - The task mentions "Google ranking", "organic traffic", "product page SEO", or "search visibility".
 - Optimizing for local search (Sri Lanka-specific queries).
 
-## SEO Data Retrieval
+## Available Tools
 
 | Research Task | Tool Name |
 |---|---|
@@ -41,6 +41,7 @@ Trigger when ANY of the following is true:
 | Semantic content search | `semantic_content_search` (find related content by meaning) |
 | Product data retrieval | `remote_wp_connection` (get live products) |
 | Image alt text | `generate_image_alt_text_validated` |
+| Post/page creation | `create_post_validated`, `save_post_validated` |
 
 ## The WooCommerce SEO Pyramid
 
@@ -422,6 +423,16 @@ RIGHT:
 - **Write for humans, optimize for search** — readable, helpful content ranks better than keyword-stuffed spam.
 - **Sri Lanka keywords in key positions** — "Sri Lanka", "islandwide delivery", "Colombo" where relevant.
 - **Don't change URLs** — permalinks are permanent. If you must change, use 301 redirects.
+
+## What This Skill Does NOT Cover
+
+- Technical server-side SEO (caching, CDN, SSL configuration)
+- Backlink building and off-page SEO strategies
+- Google Search Console or Analytics setup and configuration
+- Image file-size optimization and format conversion → `design-image-optimization`
+- Social media SEO and platform-specific ranking → `design-social-content`
+- Rank Math / Yoast plugin configuration and settings
+- Paid search (Google Ads) campaign management
 
 ## Cross-references
 
