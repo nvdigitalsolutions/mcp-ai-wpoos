@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import axios from 'axios';
 import { getQueue } from '../queue.js';
+import { validatePublicUrl } from '../utils/safe-url.js';
 
 const router = Router();
 
@@ -8,21 +9,38 @@ const router = Router();
 const WORKER_URL = `http://localhost:${process.env.PORT || 3100}`;
 
 /**
+ * Validate a user-supplied callback URL before the workflow posts results to
+ * it (SSRF guard). Returns the normalised URL string or null when absent.
+ *
+ * @param {string} callback_url Raw callback URL from the request body.
+ * @return {string|null} Normalised URL or null.
+ */
+function safeCallbackUrl(callback_url) {
+	if (!callback_url) {
+		return null;
+	}
+	return validatePublicUrl(callback_url).toString();
+}
+
+/**
  * Helper: post to internal endpoints with retry logic.
  */
 async function internalPost(endpoint, data, retries = 2) {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const resp = await axios.post(`${WORKER_URL}${endpoint}`, data, {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 120000,
-      });
-      return resp.data;
-    } catch (err) {
-      if (i === retries) throw err;
-      await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
-    }
-  }
+	for (let i = 0; i <= retries; i++) {
+		try {
+			const resp = await axios.post(`${WORKER_URL}${endpoint}`, data, {
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Site-Token': process.env.WORKER_API_TOKEN || '',
+				},
+				timeout: 120000,
+			});
+			return resp.data;
+		} catch (err) {
+			if (i === retries) throw err;
+			await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
+		}
+	}
 }
 
 // ── Workflow: Blog Post → Social Media Package ─────────────
@@ -162,7 +180,7 @@ router.post('/social-package', async (req, res) => {
     // Callback
     if (callback_url) {
       try {
-        await axios.post(callback_url, results, { timeout: 10000 });
+        await axios.post(safeCallbackUrl(callback_url), results, { timeout: 10000 });
       } catch (err) {
         console.warn('[Workflow] Callback failed:', err.message);
       }
@@ -303,7 +321,7 @@ router.post('/brand-assets', async (req, res) => {
     // Callback
     if (callback_url) {
       try {
-        await axios.post(callback_url, results, { timeout: 10000 });
+        await axios.post(safeCallbackUrl(callback_url), results, { timeout: 10000 });
       } catch (err) {
         console.warn('[Workflow] Callback failed:', err.message);
       }
@@ -406,7 +424,7 @@ router.post('/video-pipeline', async (req, res) => {
 
     if (callback_url) {
       try {
-        await axios.post(callback_url, results, { timeout: 10000 });
+        await axios.post(safeCallbackUrl(callback_url), results, { timeout: 10000 });
       } catch (err) {
         console.warn('[Workflow] Callback failed:', err.message);
       }

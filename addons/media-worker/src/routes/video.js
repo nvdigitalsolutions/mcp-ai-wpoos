@@ -5,6 +5,7 @@ import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
+import { detectCapabilities } from '../utils/capabilities.js';
 
 const execAsync = promisify(exec);
 const router = Router();
@@ -210,6 +211,11 @@ router.get('/models', (_req, res) => {
 // ── Video Processing (FFmpeg) ─────────────────────────────
 router.post('/process', upload.single('file'), async (req, res) => {
   try {
+    const caps = await detectCapabilities();
+    if (!caps.ffmpeg) {
+      return res.status(503).json({ error: 'capability_unavailable', capability: 'video', message: 'ffmpeg is not installed on this server.' });
+    }
+
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -297,6 +303,11 @@ router.post('/process', upload.single('file'), async (req, res) => {
 // ── Video Info ────────────────────────────────────────────
 router.post('/info', upload.single('file'), async (req, res) => {
   try {
+    const caps = await detectCapabilities();
+    if (!caps.ffprobe) {
+      return res.status(503).json({ error: 'capability_unavailable', capability: 'video', message: 'ffprobe is not installed on this server.' });
+    }
+
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }

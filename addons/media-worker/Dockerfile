@@ -37,8 +37,16 @@ RUN npm ci --only=production 2>/dev/null || npm install \
 # Copy source
 COPY src/ ./src/
 
+# Best-effort: allow Chromium's setuid sandbox helper to work for the
+# non-root user (Alpine chromium path; || true for portability).
+RUN chmod 4755 /usr/lib/chromium/chrome-sandbox 2>/dev/null || true
+
 # Temp directory for file processing
-RUN mkdir -p /data/temp && chmod 777 /data/temp
+RUN mkdir -p /data/temp && chown node:node /data/temp
+
+# Run as non-root so Chromium can use its sandbox. Never --no-sandbox in
+# production (see docs/project/proposals/024-...-security-plan.md).
+USER node
 
 EXPOSE 3100
 

@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 # Media Worker Sidecar — Endpoint Test Suite
 # Usage: bash bin/test-endpoints.sh [http://localhost:3100]
+# Optional: set MEDIA_WORKER_TOKEN to authenticate against v2.2.0+ workers
 set -euo pipefail
 BASE="${1:-http://localhost:3100}"
+TOKEN="${MEDIA_WORKER_TOKEN:-}"
+if [ -n "$TOKEN" ]; then
+  AUTH_HDR=(-H "X-Site-Token: $TOKEN")
+else
+  AUTH_HDR=()
+fi
 PASS=0; FAIL=0
 test_ep() {
   local label="$1" method="$2" path="$3" data="$4"
-  resp=$(curl -s -w "\n%{http_code}" -X "$method" "$BASE$path" -H "Content-Type: application/json" ${data:+-d "$data"} --max-time 15 2>/dev/null)
+  resp=$(curl -s -w "\n%{http_code}" -X "$method" "$BASE$path" -H "Content-Type: application/json" "${AUTH_HDR[@]}" ${data:+-d "$data"} --max-time 15 2>/dev/null)
   code=$(echo "$resp" | tail -1)
   if [ "$code" = "200" ]; then echo "  ✅ $label"; PASS=$((PASS+1)); else echo "  ❌ $label (HTTP $code)"; FAIL=$((FAIL+1)); fi
 }
