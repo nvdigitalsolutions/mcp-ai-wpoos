@@ -374,7 +374,7 @@ class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interfac
 	 */
 	protected function fetch_platform_mentions( $platform, $keywords, $date_from, $date_to, $limit ) {
 		// Get API credentials from settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = isset( $settings['social_media_api_keys'][ $platform ] ) ? $settings['social_media_api_keys'][ $platform ] : '';
 
 		if ( empty( $api_key ) ) {

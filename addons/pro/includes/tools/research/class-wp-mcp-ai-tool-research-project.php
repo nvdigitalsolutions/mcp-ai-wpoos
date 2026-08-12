@@ -594,7 +594,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	protected function perform_ai_research( $prompt, $context ) {
 		// Get a suitable AI model for research.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		$provider = $this->get_research_provider( $settings );
 
 		if ( is_wp_error( $provider ) ) {

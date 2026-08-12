@@ -942,7 +942,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	protected function perform_ai_research( $prompt, $context ) {
 		// Get a suitable AI model for content creation.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		$provider = $this->get_research_provider( $settings );
 
 		if ( is_wp_error( $provider ) ) {
@@ -1030,7 +1030,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Providers requiring multi-field or non-standard credential checks.
-		$settings_raw = get_option( 'wp_mcp_ai_settings', array() );
+		$settings_raw = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		if ( ! empty( $settings_raw['cloudflare_api_token'] ) && ! empty( $settings_raw['cloudflare_account_id'] ) && class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			return 'cloudflare';
 		}

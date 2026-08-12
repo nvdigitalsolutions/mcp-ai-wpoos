@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Sync_With_Nmra implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Get API key from settings if not provided.
 		if ( empty( $api_key ) ) {
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 			$api_key  = ! empty( $settings['nmra_api_key'] ) ? $settings['nmra_api_key'] : '';
 		}
 
