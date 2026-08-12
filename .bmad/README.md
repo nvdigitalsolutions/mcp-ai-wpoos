@@ -1,6 +1,6 @@
 # NV oOS BMAD Agent Definitions
 
-> **Last reviewed:** August 2026 (v1.1.50). The GSD half of the GSD × BMAD methodology is now standardized upstream in [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core) (`npx @opengsd/gsd-core@latest`). NV oOS was an early adopter and implementation proving ground for the concepts that gsd-core now productises: meta-prompting, context engineering, fresh-context subagents, phase-loop governance, and spec-driven development. The `.bmad/`, `.context/`, and BMAD agent definitions below remain the NV oOS-specific instantiation — the BMAD roles and NV oOS Pro tool mappings that make the methodology work inside WordPress.
+> **Last reviewed:** August 2026 (v1.1.54). The GSD half of the GSD × BMAD methodology is now standardized upstream in [`open-gsd/gsd-core`](https://github.com/open-gsd/gsd-core) (`npx @opengsd/gsd-core@latest`). NV oOS was an early adopter and implementation proving ground for the concepts that gsd-core now productises: meta-prompting, context engineering, fresh-context subagents, phase-loop governance, and spec-driven development. The `.bmad/`, `.context/`, and BMAD agent definitions below remain the NV oOS-specific instantiation — the BMAD roles and NV oOS Pro tool mappings that make the methodology work inside WordPress.
 >
 > All BMAD-role agents operate under the
 > Unix Theory Compliance Phases P0–P7 constraints landed across the v1.1.15 →
