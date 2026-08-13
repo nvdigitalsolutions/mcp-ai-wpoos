@@ -101,20 +101,16 @@ Chromium. The worker detects binaries at boot and degrades **gracefully**:
 ### Native module `canvas` — install-time safety
 
 Chart rendering and PDF rasterization use the native `canvas` package
-(`canvas@3.x` via `chartjs-node-canvas`, `canvas@2.x` directly). It is
-listed under `optionalDependencies`, so **a build failure can never fail the
-deploy** — npm skips it, the routes above return `503 capability_unavailable`,
-and WordPress falls back through its local service cascade.
+(`canvas@3.x`, shared with `chartjs-node-canvas`). It is listed under
+`optionalDependencies`, so **a build failure can never fail the deploy** —
+npm skips it, the routes above return `503 capability_unavailable`, and
+WordPress falls back through its local service cascade.
 
-In practice the compiler is rarely needed on Velocity:
-
-- `canvas@3.x` ships npm-hosted napi prebuilt binaries for linux-x64-gnu.
-- `canvas@2.x` (2.9+) ships prebuilt binaries for linux-x64-gnu via
-  `prebuild-install` (downloaded from GitHub releases during `npm install`).
-
-Only if a prebuild is unavailable (musl image, blocked download) does npm
-fall back to compiling — which then needs `libcairo2-dev`/`libpango1.0-dev`
-and falls under the same Cloudways-support question as ffmpeg below.
+`canvas@3.x` ships npm-hosted napi prebuilt binaries for linux-x64-gnu
+(and musl), so on Velocity it installs **without a compiler on any Node
+version (22 or 24)**. Only on an unsupported architecture does npm fall
+back to compiling, which then needs `libcairo2-dev`/`libpango1.0-dev` and
+falls under the same Cloudways-support question as ffmpeg below.
 
 Actions:
 
