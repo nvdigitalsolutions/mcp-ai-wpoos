@@ -61,7 +61,7 @@
 		"validator": "^13.15.35"
 	},
 	"optionalDependencies": {
-		"canvas": "^2.11.2",
+		"canvas": "^3.2.3",
 		"chartjs-node-canvas": "^5.0.0"
 	}
 }
