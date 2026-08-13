@@ -64,7 +64,10 @@ pdfRouter.post('/render', async (req, res) => {
       return res.status(404).json({ success: false, error: `File not found: ${source}` });
     }
 
-    const pdfjsLib = (await import('pdfjs-dist/legacy/build/pdf.mjs')).default;
+    const pdfjsModule = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    // The legacy build exposes named exports; some versions also ship a
+    // default export. Tolerate both.
+    const pdfjsLib = pdfjsModule.default || pdfjsModule;
 
     let canvasModule;
     try {

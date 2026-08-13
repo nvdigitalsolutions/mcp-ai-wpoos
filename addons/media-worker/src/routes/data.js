@@ -64,18 +64,29 @@ dataRouter.post('/language-detect', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing text' });
     }
 
-    const { franc } = await import('franc');
+    const { francAll } = await import('franc');
     const iso6391 = await import('iso-639-1');
 
-    const langCode = franc(text, { minLength: 3 });
-    const langName = iso6391.default.getName(langCode) || langCode;
-    const langNative = iso6391.default.getNativeName(langCode) || langCode;
+    // franc is unreliable on very short strings and its scores are relative
+    // (the top candidate is always 1). Use the margin between the top two
+    // candidates as the confidence signal, and report 'und' (undetermined)
+    // when ambiguous so callers don't trust a confident wrong answer.
+    const candidates = francAll(text, { minLength: 3 });
+    const top = candidates && candidates[0];
+    const second = candidates && candidates[1];
+    const margin = top && second ? top[1] - second[1] : 0;
+    const confident = Boolean(top) && margin >= 0.1;
+    const langCode = confident ? top[0] : 'und';
+    const langName = confident ? iso6391.default.getName(langCode) || langCode : 'Undetermined';
+    const langNative = confident ? iso6391.default.getNativeName(langCode) || langCode : 'Undetermined';
 
     res.json({
       success: true,
       code: langCode,
       name: langName,
       native: langNative,
+      confidence: margin,
+      alternatives: ( candidates || [] ).slice( 1, 4 ).map( ( [ code, score ] ) => ( { code, score } ) ),
     });
   	} catch (err) {
   		res.status(500).json({ success: false, error: err.message });
@@ -100,7 +111,9 @@ dataRouter.post('/language-detect', async (req, res) => {
           national: phone.replace(/[^0-9]/g, ''),
           international: phone,
           valid: false,
-          country: country_code || 'US',
+          // Parsing failed — do NOT echo the default country, it is
+          // misleading for international-format numbers.
+          country: null,
         });
       }
 
