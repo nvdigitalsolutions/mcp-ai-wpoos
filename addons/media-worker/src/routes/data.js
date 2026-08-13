@@ -217,6 +217,13 @@ dataRouter.post('/render-chart', async (req, res) => {
     fs.writeFileSync(outPath, image);
     res.json({ success: true, output_path: outPath, size: image.length, width, height });
   } catch (err) {
+    if ('ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code) {
+      return res.status(503).json({
+        error: 'capability_unavailable',
+        capability: 'chart-rendering',
+        message: 'Chart rendering is unavailable: chartjs-node-canvas or its native canvas dependency is not installed on this server.',
+      });
+    }
     res.status(500).json({ success: false, error: err.message });
   }
 });

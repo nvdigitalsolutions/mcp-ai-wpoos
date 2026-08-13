@@ -65,7 +65,20 @@ pdfRouter.post('/render', async (req, res) => {
     }
 
     const pdfjsLib = (await import('pdfjs-dist/legacy/build/pdf.mjs')).default;
-    const canvasModule = await import('canvas');
+
+    let canvasModule;
+    try {
+      canvasModule = await import('canvas');
+    } catch (err) {
+      if ('ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code) {
+        return res.status(503).json({
+          error: 'capability_unavailable',
+          capability: 'pdf-rasterization',
+          message: 'PDF rasterization is unavailable: the native canvas module is not installed on this server.',
+        });
+      }
+      throw err;
+    }
 
     const data = new Uint8Array(fs.readFileSync(source));
     const doc = await pdfjsLib.getDocument({ data }).promise;

@@ -32,6 +32,7 @@ monitoring) and connect it to the mcp-ai-wpoos WordPress plugin.
    | `AUTH_MODE` | yes | `strict` |
    | `REDIS_URL` | no | only if PM2 runs in cluster mode |
    | `PUPPETEER_EXECUTABLE_PATH` | no | only if Chromium exists on the server |
+   | `PUPPETEER_SKIP_DOWNLOAD` | recommended | `true` — skips the ~170 MB Chromium download at install time; the bundled binary can't run on Velocity without system libs anyway |
    | provider keys | no | `OPENAI_API_KEY`, `GEMINI_API_KEY`, etc. |
 
    **Never set** `SSRF_ALLOW_PRIVATE` or `ALLOW_NO_SANDBOX` on Velocity.
@@ -93,7 +94,27 @@ Chromium. The worker detects binaries at boot and degrades **gracefully**:
 |---|---|---|
 | Video process/info (`/api/video/*`) | `503 capability_unavailable` → WP local fallback | full |
 | Browser screenshot/PDF (`/api/browser/*`, `/api/pdf/generate`) | routes error → WP local fallback | full (sandboxed Chromium) |
+| Chart rendering (`/api/data/render-chart`) | `503 capability_unavailable` → WP local fallback | full |
+| PDF rasterization (`/api/pdf/render`) | `503 capability_unavailable` → WP local fallback | full |
 | Image, document, OCR, email, data | unaffected | unaffected |
+
+### Native module `canvas` — install-time safety
+
+Chart rendering and PDF rasterization use the native `canvas` package
+(`canvas@3.x` via `chartjs-node-canvas`, `canvas@2.x` directly). It is
+listed under `optionalDependencies`, so **a build failure can never fail the
+deploy** — npm skips it, the routes above return `503 capability_unavailable`,
+and WordPress falls back through its local service cascade.
+
+In practice the compiler is rarely needed on Velocity:
+
+- `canvas@3.x` ships npm-hosted napi prebuilt binaries for linux-x64-gnu.
+- `canvas@2.x` (2.9+) ships prebuilt binaries for linux-x64-gnu via
+  `prebuild-install` (downloaded from GitHub releases during `npm install`).
+
+Only if a prebuild is unavailable (musl image, blocked download) does npm
+fall back to compiling — which then needs `libcairo2-dev`/`libpango1.0-dev`
+and falls under the same Cloudways-support question as ffmpeg below.
 
 Actions:
 
