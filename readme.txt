@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.53
+Stable tag: 1.1.55
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.55 - August 13, 2026 =
+
+Bumped to 1.1.55 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Highlights: MCP agent compatibility fixes (legacy HTTP+SSE transport, JSON-RPC errors return HTTP 200, tool rate limiter settings, raw credential headers, bounded async polling), Hermes Fleet Operator addon (scoped operator credentials, admin page, WP-CLI, skills pack), Media Worker v2.2.0 security hardening (timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet headers) plus WP_MEDIA_WORKER_TOKEN constant support, database connection pooling stance (RabbitMQ gating, atomic concurrency slots, PDO persistent connections, Site Health checks), PostCSS bumped to 8.5.26 (GHSA-6g55-p6wh-862q), and a media-worker subtree sync workflow. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
 
 = 1.1.50 - August 10, 2026 =
 
