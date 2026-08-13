@@ -76,6 +76,66 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	}
 
 	/**
+	 * Process an MCP JSON-RPC request and return raw response arrays.
+	 *
+	 * Shared by the Streamable HTTP (JSON) transport and the legacy SSE
+	 * transport: both need the JSON-RPC response payloads, but each delivers
+	 * them over a different channel. Notifications (messages without an id)
+	 * produce no response element.
+	 *
+	 * @since 1.1.55
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return array List of JSON-RPC response arrays (0..n entries).
+	 */
+	public function process_mcp_request_to_data( WP_REST_Request $request ) {
+		$body = $request->get_body();
+
+		if ( empty( $body ) ) {
+			$error = $this->mcp_error_response( null, -32700, 'Parse error: Empty request body' );
+
+			return array( $error->get_data() );
+		}
+
+		$message = json_decode( $body, true );
+
+		if ( null === $message ) {
+			$error = $this->mcp_error_response( null, -32700, 'Parse error: Invalid JSON' );
+
+			return array( $error->get_data() );
+		}
+
+		// JSON-RPC batching: process each message and collect the responses.
+		if ( is_array( $message ) && isset( $message[0] ) ) {
+			$response = $this->handle_mcp_batch( $message, $request );
+			$data     = $response instanceof WP_REST_Response ? $response->get_data() : null;
+
+			// Notifications-only batches return 202 with a null body.
+			if ( null === $data ) {
+				return array();
+			}
+
+			return is_array( $data ) ? $data : array( $data );
+		}
+
+		if ( ! is_array( $message ) ) {
+			$error = $this->mcp_error_response( null, -32700, 'Parse error: Invalid JSON' );
+
+			return array( $error->get_data() );
+		}
+
+		$response = $this->process_single_mcp_message( $message, $request );
+		$data     = $response instanceof WP_REST_Response ? $response->get_data() : null;
+
+		// Notifications return 202 with a null body — nothing to deliver.
+		if ( null === $data ) {
+			return array();
+		}
+
+		return array( $data );
+	}
+
+	/**
 	 * Handle a JSON-RPC batch request per MCP 2026-07-28 specification.
 	 *
 	 * Processes an array of JSON-RPC messages and returns an array of responses.
@@ -1073,7 +1133,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * Mirrors the pattern in WP_MCP_AI_Chat_Service::wait_for_async_tool_completion
 	 * so direct MCP tools/call requests get the same behaviour as the chat client.
 	 *
+	 * The default poll budget (15 polls x 3s = 45s) is deliberately kept below
+	 * typical proxy timeouts (Cloudflare 524 at ~100s): when the queue runner
+	 * is stalled, agents get a visible wp_mcp_ai_async_tool_timeout error
+	 * instead of a connection reset. Stuck jobs are kicked inline so hosts
+	 * with a dead WP-Cron loopback still make progress.
+	 *
 	 * @since 2.x.0
+	 * @since 1.1.55 Bounded default poll budget; inline kick for stuck jobs.
 	 *
 	 * @param string $job_id   Async job identifier.
 	 * @param string $tool_name Tool name for error messages.
@@ -1086,8 +1153,28 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		$executor = new WP_MCP_AI_Tool_Async_Executor();
 
-		$max_polls     = apply_filters( 'wp_mcp_ai_async_max_polls', 120 );
-		$poll_interval = apply_filters( 'wp_mcp_ai_async_poll_interval', 3 );
+		/**
+		 * Filter the maximum number of status polls while waiting for an async
+		 * tool job submitted via MCP tools/call.
+		 *
+		 * Default 15 (with the 3s interval, ~45s total) keeps the request
+		 * under common proxy timeouts. Raise for long-running tools, but be
+		 * aware values above ~30 risk Cloudflare 524 on proxied sites.
+		 *
+		 * @since 1.1.55
+		 *
+		 * @param int $max_polls Maximum poll count. Default 15.
+		 */
+		$max_polls = (int) apply_filters( 'wp_mcp_ai_async_max_polls', 15 );
+
+		/**
+		 * Filter the poll interval in seconds while waiting for an async tool job.
+		 *
+		 * @since 1.1.55
+		 *
+		 * @param int $poll_interval Interval between polls in seconds. Default 3.
+		 */
+		$poll_interval = (int) apply_filters( 'wp_mcp_ai_async_poll_interval', 3 );
 		$poll_count    = 0;
 
 		$required_time = ( $max_polls * $poll_interval ) + 60;
@@ -1097,6 +1184,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		while ( $poll_count < $max_polls ) {
+			// Self-heal stuck jobs: on hosts where WP-Cron never fires, drive
+			// the job forward inline (no-op when the job is healthy).
+			$executor->kick_inline_if_stale( $job_id );
+
 			$job_status = $executor->get_result( $job_id );
 
 			if ( is_wp_error( $job_status ) ) {
@@ -2157,6 +2248,13 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	/**
 	 * Create a JSON-RPC error response.
 	 *
+	 * JSON-RPC errors are transport-independent: the HTTP status defaults to
+	 * 200 with the error carried in the JSON-RPC envelope. Several MCP client
+	 * SDKs (e.g. the TypeScript SDK bundled with mcp-remote) silently drop
+	 * non-2xx response bodies, which turned every tool error into a silent
+	 * timeout for agent clients. Returning 200 guarantees the error reaches
+	 * the client.
+	 *
 	 * @param mixed  $id      Request ID or null.
 	 * @param int    $code    Error code.
 	 * @param string $message Error message.
@@ -2173,13 +2271,28 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			$error['data'] = $data;
 		}
 
+		/**
+		 * Filter the HTTP status used for MCP JSON-RPC error responses.
+		 *
+		 * Defaults to 200 so client SDKs that drop non-2xx bodies (e.g. the
+		 * TypeScript SDK bundled with mcp-remote) still relay the JSON-RPC
+		 * error to the agent. Set to 400/404/500 for strict HTTP semantics.
+		 *
+		 * @since 1.1.55
+		 *
+		 * @param int   $status HTTP status code. Default 200.
+		 * @param int   $code   JSON-RPC error code (e.g. -32603).
+		 * @param mixed $id     Request identifier.
+		 */
+		$status = apply_filters( 'wp_mcp_ai_mcp_error_http_status', 200, $code, $id );
+
 		$response = new WP_REST_Response(
 			array(
 				'jsonrpc' => '2.0',
 				'id'      => $id,
 				'error'   => $error,
 			),
-			- 32700 === $code ? 400 : ( -32601 === $code ? 404 : 500 )
+			$status
 		);
 		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
 		$this->add_cors_headers( $response );

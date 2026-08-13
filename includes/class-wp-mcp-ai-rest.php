@@ -27,6 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-session-store.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-thread-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-threads-controller.php';
 
@@ -259,11 +260,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Register ACP Transport REST endpoints.
-			$acp_dispatcher_file  = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-jsonrpc-dispatcher.php';
-			$acp_session_file     = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-manager.php';
-			$acp_bridge_file      = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
-			$acp_server_file      = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-server.php';
-			$acp_transport_file   = WP_MCP_AI_PATH . 'includes/acp/transport/class-wp-mcp-ai-acp-transport-http.php';
+			$acp_dispatcher_file = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-jsonrpc-dispatcher.php';
+			$acp_session_file    = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-manager.php';
+			$acp_bridge_file     = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
+			$acp_server_file     = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-server.php';
+			$acp_transport_file  = WP_MCP_AI_PATH . 'includes/acp/transport/class-wp-mcp-ai-acp-transport-http.php';
 			if ( file_exists( $acp_dispatcher_file ) && file_exists( $acp_session_file ) && file_exists( $acp_bridge_file ) && file_exists( $acp_server_file ) && file_exists( $acp_transport_file ) ) {
 				require_once $acp_dispatcher_file;
 				require_once $acp_session_file;
@@ -297,9 +298,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Register Voice REST endpoints (realtime voice sessions).
-			$voice_file       = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
-			$translate_file   = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-translate-client.php';
-			$whisper_file     = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-whisper-client.php';
+			$voice_file     = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
+			$translate_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-translate-client.php';
+			$whisper_file   = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-whisper-client.php';
 			if ( file_exists( $voice_file ) && file_exists( $translate_file ) && file_exists( $whisper_file ) ) {
 				require_once $voice_file;
 				require_once $translate_file;
@@ -2073,6 +2074,34 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
+			/**
+			 * Allow raw assistant credentials (cred_xxx.yyy) without the
+			 * "Bearer " scheme prefix.
+			 *
+			 * Mirrors the compatibility handling in permissions_check_mcp().
+			 *
+			 * @since 1.1.55
+			 *
+			 * @param bool $accept_raw_credential_header Whether to accept raw credential headers. Default true.
+			 */
+			$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+			if ( $accept_raw_credential && ! empty( $bearer ) && preg_match( '/^cred_[A-Za-z0-9]+\.[A-Za-z0-9_-]{8,}$/', trim( $bearer ) ) ) {
+				$token = trim( $bearer );
+				$local = $this->validate_local_token( $token, $request );
+
+				if ( true === $local ) {
+					// Check rate limiting for local token authenticated requests.
+					$user_id          = get_current_user_id();
+					$rate_limit_check = $this->check_rate_limit( $user_id );
+					if ( is_wp_error( $rate_limit_check ) ) {
+						return $rate_limit_check;
+					}
+					return true;
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+			}
+
 			$nonce = $request->get_header( 'X-WP-Nonce' );
 			if ( ! $requires_authenticated_user ) {
 				if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
@@ -2498,6 +2527,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
+				/**
+				 * Allow raw assistant credentials (cred_xxx.yyy) without the
+				 * "Bearer " scheme prefix.
+				 *
+				 * Some agent configurations forward the Authorization header value
+				 * verbatim as configured (e.g. Cloudways Agent). The credential
+				 * itself is the secret; the scheme label adds no security, so we
+				 * accept the raw form for compatibility. Disable this filter to
+				 * require strict RFC 6750 bearer syntax.
+				 *
+				 * @since 1.1.55
+				 *
+				 * @param bool $accept_raw_credential_header Whether to accept raw credential headers. Default true.
+				 */
+				$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+			if ( $accept_raw_credential && ! empty( $bearer ) && preg_match( '/^cred_[A-Za-z0-9]+\.[A-Za-z0-9_-]{8,}$/', trim( $bearer ) ) ) {
+				$token = trim( $bearer );
+
+				// Validate local credential token (raw form).
+				$local = $this->validate_local_token( $token, $request );
+				if ( true === $local ) {
+					return true;
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+			}
+
 				// Check for WordPress Basic auth (Application Passwords).
 			if ( ! empty( $bearer ) && 0 === stripos( $bearer, 'Basic ' ) ) {
 				$basic_result = $this->validate_wp_basic_auth( $request );
@@ -2745,11 +2801,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 * @param int $user_id User ID making the request (0 for guests).
 			 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
 			 */
-			protected function check_rate_limit( $user_id ) {
+		protected function check_rate_limit( $user_id ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			// Check if rate limiting is enabled.
 			if ( empty( $settings['enable_rate_limiting'] ) ) {
+				return true;
+			}
+
+			// GET/HEAD requests are cheap, read-only probes (endpoint discovery,
+			// SSE stream checks). MCP client retry loops can legitimately issue
+			// many of them per hour, so they must not consume the budget aimed
+			// at expensive or state-changing traffic.
+			$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+			if ( in_array( strtoupper( $request_method ), array( 'GET', 'HEAD' ), true ) ) {
 				return true;
 			}
 
@@ -2836,29 +2901,65 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * chat requests. Tool execution uses a shorter, tighter window to prevent
 		 * tool abuse while allowing reasonable usage.
 		 *
-		 * @since 1.2.0
+		 * Limits are configurable via the Security → Tool Rate Limiting settings
+		 * (tool_rate_limit_max / tool_rate_limit_window). Credential-token
+		 * (AI agent) traffic is exempt by default because an assistant credential
+		 * is already an explicit grant of its tool set — agents legitimately fire
+		 * tool calls in bursts. Guest and nonce (chat UI) traffic stays limited.
 		 *
-		 * @param int $user_id User ID making the request (0 for guests).
+		 * @since 1.2.0
+		 * @since 1.1.55 Added settings-driven limits and token exemption.
+		 *
+		 * @param int   $user_id      User ID making the request (0 for guests).
+		 * @param array $auth_context Optional auth context (token_authenticated flag).
 		 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
 		 */
-		protected function check_tool_rate_limit( $user_id ) {
+		protected function check_tool_rate_limit( $user_id, $auth_context = array() ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Exempt credential-token (AI agent) traffic when enabled.
+			// An assistant credential is an explicit grant of the assistant's tool
+			// set; rate limiting exists to stop chat-UI/guest abuse.
+			$exempt_tokens = isset( $settings['tool_rate_limit_exempt_tokens'] ) ? (bool) $settings['tool_rate_limit_exempt_tokens'] : true;
+			if ( $exempt_tokens && ! empty( $auth_context['token_authenticated'] ) ) {
+				return true;
+			}
+
+			// Resolve the window and max from settings, falling back to the class
+			// constants for backward compatibility.
+			$window_default = isset( $settings['tool_rate_limit_window'] ) ? absint( $settings['tool_rate_limit_window'] ) : self::TOOL_RATE_LIMIT_WINDOW;
+			$window_default = max( 10, $window_default );
+
+			$max_default = isset( $settings['tool_rate_limit_max'] ) ? absint( $settings['tool_rate_limit_max'] ) : self::TOOL_RATE_LIMIT_MAX;
+			$max_default = max( 0, $max_default );
+
 			/**
 			 * Filters the tool rate limit window in seconds.
 			 *
 			 * @since 1.2.0
 			 *
-			 * @param int $window Window in seconds. Default TOOL_RATE_LIMIT_WINDOW (60).
+			 * @param int $window Window in seconds. Defaults to the
+			 *                    tool_rate_limit_window setting (60).
 			 */
-			$window = apply_filters( 'wp_mcp_ai_tool_rate_limit_window', self::TOOL_RATE_LIMIT_WINDOW );
+			$window = apply_filters( 'wp_mcp_ai_tool_rate_limit_window', $window_default );
 
 			/**
 			 * Filters the maximum tool executions per window.
 			 *
 			 * @since 1.2.0
 			 *
-			 * @param int $max Maximum executions. Default TOOL_RATE_LIMIT_MAX (60).
+			 * @param int $max Maximum executions. Defaults to the
+			 *                 tool_rate_limit_max setting (300). 0 = unlimited.
 			 */
-			$max = apply_filters( 'wp_mcp_ai_tool_rate_limit_max', self::TOOL_RATE_LIMIT_MAX );
+			$max = apply_filters( 'wp_mcp_ai_tool_rate_limit_max', $max_default );
+
+			$window = max( 10, absint( $window ) );
+			$max    = max( 0, absint( $max ) );
+
+			// 0 disables the limiter.
+			if ( 0 === $max ) {
+				return true;
+			}
 
 			// Create a unique key. Guests (user_id=0) get an IP-based
 			// key to prevent one attacker from exhausting the global quota.
@@ -5879,7 +5980,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$is_guest     = ! empty( $auth_context['is_guest'] );
 
 			// Enforce per-user, per-tool rate limiting.
-			$tool_rate_limit = $this->check_tool_rate_limit( $user_id );
+			$tool_rate_limit = $this->check_tool_rate_limit( $user_id, $auth_context );
 			if ( is_wp_error( $tool_rate_limit ) ) {
 				return $tool_rate_limit;
 			}
