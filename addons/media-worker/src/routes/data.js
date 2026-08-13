@@ -19,12 +19,12 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { siteBaseDir, pathGuard } from '../utils/site-paths.js';
 
 export const dataRouter = Router();
 
-function tempFile(ext) {
-  return path.join(os.tmpdir(), `data-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`);
+function tempFile( req, ext ) {
+	return path.join( siteBaseDir( req.site ), `data-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 // ── POST /translate ─────────────────────────────────────────
@@ -139,7 +139,7 @@ dataRouter.post('/qrcode', async (req, res) => {
       errorCorrectionLevel: options?.errorCorrection || 'M',
     };
 
-    const outPath = outputPath || tempFile(qrOpts.type);
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, qrOpts.type );
 
     if (qrOpts.type === 'svg') {
       const svg = await QRCode.toString(text, { ...qrOpts, type: 'svg' });
@@ -192,7 +192,7 @@ dataRouter.post('/generate-ics', async (req, res) => {
     if (error) {
       return res.status(400).json({ success: false, error: error.message || 'ICS generation failed' });
     }
-    const outPath = tempFile('ics');
+    const outPath = tempFile( req, 'ics' );
     fs.writeFileSync(outPath, value);
     res.json({ success: true, ics: value, output_path: outPath, event_count: events.length });
   } catch (err) {
@@ -213,7 +213,7 @@ dataRouter.post('/render-chart', async (req, res) => {
     const renderer = new ChartJSNodeCanvas({ width, height, backgroundColour: options?.background || 'white' });
     const config = { type, data, options: options?.chartOptions || {} };
     const image = await renderer.renderToBuffer(config);
-    const outPath = tempFile('png');
+    const outPath = tempFile( req, 'png' );
     fs.writeFileSync(outPath, image);
     res.json({ success: true, output_path: outPath, size: image.length, width, height });
   } catch (err) {
@@ -288,7 +288,7 @@ dataRouter.post('/csv-generate', async (req, res) => {
         else resolve(output);
       });
     });
-    const outPath = tempFile('csv');
+    const outPath = tempFile( req, 'csv' );
     fs.writeFileSync(outPath, csv);
     res.json({ success: true, csv, output_path: outPath, rows: data.length });
   } catch (err) {

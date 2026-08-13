@@ -6,10 +6,25 @@ import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
 import { detectCapabilities } from '../utils/capabilities.js';
+import { siteUploadDir } from '../utils/site-paths.js';
 
 const execAsync = promisify(exec);
 const router = Router();
-const upload = multer({ dest: '/tmp/', limits: { fileSize: 500 * 1024 * 1024 } });
+
+// Uploads land in the caller's site namespace (multi-tenant) or the system
+// temp dir (single-tenant, legacy behavior).
+const upload = multer({
+	storage: multer.diskStorage({
+		destination: ( req, _file, cb ) => {
+			try {
+				cb( null, siteUploadDir( req.site ) );
+			} catch ( err ) {
+				cb( err );
+			}
+		},
+	}),
+	limits: { fileSize: 500 * 1024 * 1024 },
+});
 
 // ── Replicate model version map ──────────────────────────
 const REPLICATE_MODELS = {
@@ -223,7 +238,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
     const { operation = 'compress', width, height, format = 'mp4', fps, start, duration } = req.body;
     const inputPath = req.file.path;
     const outputName = `processed_${Date.now()}.${format}`;
-    const outputPath = path.join('/tmp/', outputName);
+    const outputPath = path.join(path.dirname(inputPath), outputName);
 
     let ffmpegCmd = `ffmpeg -i "${inputPath}"`;
 
