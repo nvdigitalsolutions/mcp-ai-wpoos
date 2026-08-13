@@ -394,6 +394,54 @@ for server-initiated messages and retries it on failure — on pre-1.1.55
 servers that GET hits the request rate limiter, and the retry loop can burn
 the whole hourly quota (see Rate Limiting below).
 
+### SSH-only sites — `bin/mcp-bridge-ssh.js` (Zed stdio over SSH)
+
+For sites with **no public web route** (SSH is the only way in), use the
+repo's own bridge, which owns the SSH port-forward and delegates to
+`bin/mcp-bridge.js` (newline-delimited stdio ↔ Streamable HTTP relay). No
+manual tunnel, no mcp-remote, no npm dependencies — Zed spawns it as a stdio
+context server.
+
+**Prerequisite:** SSH key auth (`ssh <user>@<host> -p <port>` must succeed
+non-interactively). Password prompts are impossible for a spawned process
+with no TTY.
+
+Zed `context_servers` entry (Settings → AI → MCP Servers → Add Local Server):
+
+```json
+{
+  "command": "node",
+  "args": ["bin/mcp-bridge-ssh.js"],
+  "env": {
+    "MCP_AI_SSH_USER": "user",
+    "MCP_AI_SSH_HOST": "203.0.113.10",
+    "MCP_AI_SSH_PORT": "2222",
+    "MCP_AI_SSH_REMOTE_PORT": "80",
+    "MCP_AI_TOKEN": "op_xxxx.SECRET"
+  }
+}
+```
+
+Key env vars: `MCP_AI_SSH_REMOTE_HOST`/`MCP_AI_SSH_REMOTE_PORT` (web server
+from the server's perspective; probe with curl over SSH — Cloudways Apache
+may sit on 8080), `MCP_AI_HOST_HEADER` (canonical host override when the
+web server 301-redirects on Host), `MCP_AI_SSH_EXTRA_ARGS` (e.g.
+`"-i C:/keys/id_ed25519 -o ProxyJump=bastion"`), `MCP_AI_ENV_FILE` (default
+`~/.nvoos-bridge.env` — keep the token out of settings.json).
+
+Operator-credential audience binding is checked against `home_url()` from
+the database, not the request Host header, so `http://127.0.0.1:<port>`
+requests through the tunnel validate normally.
+
+Orphan-proofing: the bridge holds ssh's stdin open so a hard-killed bridge
+closes the pipe and ssh exits — no stray tunnels. Tests:
+`node bin/test-mcp-bridge-ssh.js`.
+
+For driving a **Hermes Agent** (Nous Research) itself rather than the NV oOS
+console — its WebUI API over public HTTPS — see `bin/hermes-mcp-server.js`
+(tools: `hermes_chat`, `hermes_list_sessions`, `hermes_session_detail`;
+runbook: `docs/operations/fleet/hermes-operator-setup.md` §7).
+
 ---
 
 ## Rate Limiting & Agent Traffic
