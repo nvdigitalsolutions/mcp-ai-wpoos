@@ -18,8 +18,6 @@
 
 **🆕 v1.1.55 Highlights:** MCP agent compatibility — JSON-RPC errors return HTTP 200, legacy HTTP+SSE transport, tool rate limiter settings, raw credential headers, bounded async polling. New Hermes Fleet Operator addon (scoped operator credentials). Media Worker v2.2.0 security hardening (SSRF guard, sandboxed Puppeteer, rate limiting) + `WP_MEDIA_WORKER_TOKEN`. Database connection pooling stance (Proposal 023). PostCSS 8.5.26.
 
-**🆕 v1.1.53 Highlights:** Shared Analytics Service (7 platform adapters, 5 DTOs) for all Pro toolkits. Circuit breaker protection on all 15 AI provider clients. Concurrency guard, cost tracker, and backpressure wired into the execution pipeline. 22 new design-* coding-time agent skills synced alongside wp-* skills. SSE backoff reset and rate-limit fixes. Load Guard fatal error fix.
-
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
