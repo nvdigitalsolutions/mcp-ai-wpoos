@@ -2,7 +2,7 @@
 
 **Based on:** `docs/project/proposals/026-media-worker-multi-tenancy-sidecar-proposal.md` (Phase 1, v2.4.0 — implemented in PR #5866)
 **Date:** 2026-08-13
-**Status:** Draft — for review
+**Status:** Approved — Phase 2 implemented 2026-08-13 (branch `feat/media-worker-phase2-provider-keys`, v2.5.0)
 **Target release:** media-worker v2.5.0 (per-site provider keys, temp TTL tuning); v2.4.1 optional for the load-testing guide
 **Standalone repo:** `nvdigitalsolutions/mcp-ai-wpoos-media-worker` (one-way subtree mirror of `addons/media-worker/`)
 
