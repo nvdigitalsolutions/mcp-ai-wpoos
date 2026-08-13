@@ -19,9 +19,19 @@ const queues = new Map();
 let redisClient = null;
 let redisAvailable = false;
 
+// Never hammer Redis faster than this after a failed connection attempt.
+// Prevents reconnect storms when callers poll (the in-memory processor
+// calls getRedis() on every loop iteration) and keeps the event loop
+// drainable so the process can exit cleanly (tests, graceful shutdown).
+const REDIS_RETRY_MS = 30000;
+let redisRetryAt = 0;
+
 // Lazy Redis connection
 async function getRedis() {
   if (redisClient) return redisClient;
+
+  // Back off after a failure instead of re-dialing on every call.
+  if (!redisAvailable && Date.now() < redisRetryAt) return null;
 
   const redisUrl = process.env.REDIS_URL || 'redis://redis:6379';
   try {
@@ -41,8 +51,17 @@ async function getRedis() {
     console.log('[Queue] Redis connected:', redisUrl);
   } catch (err) {
     console.warn('[Queue] Redis unavailable, using in-memory queue:', err.message);
-    redisClient = null;
     redisAvailable = false;
+    redisRetryAt = Date.now() + REDIS_RETRY_MS;
+    if (redisClient) {
+      // Release the socket and stop retry timers so the process can exit.
+      try {
+        await redisClient.disconnect();
+      } catch {
+        // Best effort — the client is already unusable.
+      }
+    }
+    redisClient = null;
   }
 
   return redisClient;
@@ -57,6 +76,20 @@ class JobQueue extends EventEmitter {
     this._processing = false;
     this._handlers = new Map();
     this._inMemory = [];
+    this._wakeResolve = null;
+  }
+
+  /**
+   * Wake the in-memory processing loop (called when a job is enqueued or
+   * when processing stops) so jobs are picked up immediately instead of
+   * waiting for the idle poll tick.
+   */
+  _wake() {
+    if (this._wakeResolve) {
+      const resolve = this._wakeResolve;
+      this._wakeResolve = null;
+      resolve();
+    }
   }
 
   /**
@@ -89,9 +122,13 @@ class JobQueue extends EventEmitter {
     } else {
       // In-memory fallback
       if (options.delay && options.delay > 0) {
-        setTimeout(() => this._inMemory.push(job), options.delay);
+        setTimeout(() => {
+          this._inMemory.push(job);
+          this._wake();
+        }, options.delay);
       } else {
         this._inMemory.push(job);
+        this._wake();
       }
     }
 
@@ -136,7 +173,12 @@ class JobQueue extends EventEmitter {
             if (this._inMemory.length > 0) {
               job = this._inMemory.shift();
             } else {
-              await new Promise((r) => setTimeout(r, 1000));
+              // Idle: sleep until a job is enqueued (unref'd so a quiet
+              // process can still exit — tests and graceful shutdown).
+              await new Promise((resolve) => {
+                this._wakeResolve = resolve;
+                setTimeout(resolve, 1000).unref();
+              });
             }
           }
 
@@ -201,6 +243,7 @@ class JobQueue extends EventEmitter {
    */
   stop() {
     this._processing = false;
+    this._wake();
   }
 }
 
