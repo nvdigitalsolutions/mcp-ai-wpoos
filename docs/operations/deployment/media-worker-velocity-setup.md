@@ -7,7 +7,7 @@ monitoring) and connect it to the mcp-ai-wpoos WordPress plugin.
 > **Prerequisite:** The worker must run **v2.2.0+** (security hardening).
 > Never expose an older build on a public URL — v2.1.x has no auth,
 > no SSRF guard, and launches Puppeteer with `--no-sandbox`.
-> See `docs/project/proposals/024-media-worker-cloud-deployment-security-implementation-plan.md`.
+> See `docs/project/proposals/025-media-worker-cloud-deployment-security-implementation-plan.md`.
 
 ---
 

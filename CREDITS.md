@@ -487,6 +487,57 @@ WordPress core externals (`@wordpress/element`, `@wordpress/components`,
 The full per-package license + copyright table is in
 [`addons/saas-controller/THIRD_PARTY_NOTICES.md`](addons/saas-controller/THIRD_PARTY_NOTICES.md).
 
+### `addons/media-worker/` — Docker-based media processing sidecar (v2.2.0)
+
+Node.js/Express service that offloads heavy media work from WordPress. All
+runtime packages are declared in `addons/media-worker/package.json`. The
+v2.2.0 security release added **helmet** and **express-rate-limit**.
+
+| Package | Version | License | Purpose |
+|---|---|---|---|
+| `express` | ^4.21.0 | MIT | HTTP framework for the 11 route handlers. |
+| `helmet` ⭐ v2.2.0 | ^8.0.0 | MIT | Security headers (CSP, HSTS, X-Content-Type-Options, etc.). |
+| `express-rate-limit` ⭐ v2.2.0 | ^7.5.0 | MIT | Global + per-route-group rate limiting. |
+| `cors` | ^2.8.5 | MIT | Restricted CORS (`ALLOWED_ORIGINS`). |
+| `puppeteer` | ^24 | Apache-2.0 | Sandboxed headless-browser automation. |
+| `sharp` | ^0.34 | Apache-2.0 | High-performance image processing. |
+| `canvas` | ^2.11.2 | MIT | Server-side canvas rendering. |
+| `tesseract.js` | ^6 | Apache-2.0 | OCR route backend. |
+| `pdf-lib` / `pdfkit` / `pdf-parse` / `pdfjs-dist` | — | MIT / MIT / MIT / Apache-2.0 | PDF generation and text extraction. |
+| `fluent-ffmpeg` | ^2.1.3 | MIT | Video transcoding, frame extraction, GIF conversion. |
+| `mjml` | ^4 | MIT | Email template rendering. |
+| `nodemailer` | ^7 | MIT | Email sending. |
+| `multer` | ^2 | MIT | Multipart upload handling. |
+| `exceljs` / `docx` | ^4.4.0 / ^9.5.1 | MIT | Spreadsheet and Word document generation. |
+| `axios` | ^1.7.0 | MIT | Outbound HTTP client. |
+| `cheerio` | ^1.0.0 | MIT | HTML parsing/scraping. |
+| `openai` / `@google/generative-ai` | — / ^0.21.0 | Apache-2.0 | AI generation backends. |
+| `mathjs` | ^14 | Apache-2.0 | Math/statistics utilities. |
+| `katex` | ^0.16.0 | MIT | Math rendering. |
+| `qrcode` | ^1.5.0 | MIT | QR code generation. |
+| `chart.js` + `chartjs-node-canvas` | ^4.4.0 / ^5.0.0 | MIT | Server-rendered charts. |
+| `marked` / `turndown` | ^9.1.6 / ^7 | MIT | Markdown/HTML conversion. |
+| `validator` | ^13 | MIT | Input validation. |
+| `ioredis` | ^5.4.0 | MIT | Redis job queuing. |
+| `@turf/turf` | ^7.0.0 | MIT | Geospatial analysis. |
+| `ics` | ^3.7.0 | ISC | Calendar ICS export. |
+| `franc` / `iso-639-1` | ^6.1.0 / ^3.1.0 | MIT | Language detection + codes. |
+| `google-translate-api-x` | ^10.7.0 | MIT | Auto-translation. |
+| `mailparser` | ^3.9.9 | MIT | Inbound email parsing. |
+| `libphonenumber-js` | ^1.11.21 | MIT | Phone number handling. |
+| `subtitle` | ^4 | MIT | Subtitle parsing. |
+| `gif-encoder` | ^0.7.2 | MIT | GIF encoding. |
+| `regression` | ^2 | MIT | Trend/regression analysis. |
+| `currency.js` | ^2.0.4 | MIT | Currency math. |
+| `csv-parse` / `csv-stringify` / `fast-csv` | ^5.6.0 / ^6.5.2 / ^5.0.0 | MIT | CSV parsing/serialization. |
+| `dotenv` | ^16.4.0 | BSD-2-Clause | Environment configuration. |
+| `prettier` | ^3 | MIT | Code formatting (build-time). |
+| `@neplex/vectorizer` | ^0.0.5 | MIT | Vector embedding helpers. |
+
+Deployment: Docker image (`addons/media-worker/Dockerfile`). Mirrored one-way to the
+standalone repo `nvdigitalsolutions/mcp-ai-wpoos-media-worker` via
+`sync-media-worker.yml`.
+
 ---
 
 ## NV oOS First-Party Standalone Packages (`packages/`)
