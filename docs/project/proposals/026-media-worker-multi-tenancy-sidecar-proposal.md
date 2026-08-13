@@ -238,7 +238,7 @@ Integration (manual, documented in runbook):
 |---|---|---|
 | 0 | This proposal review | — |
 | 1 | Auth identity, site-paths, queue namespacing, per-site rate limits, logging, PDF upload + sandbox, unit tests, docs | v2.4.0 |
-| 2 | Per-site provider key map (optional), temp TTL tuning, load-testing guide for N sites | v2.4.1+ |
+| 2 | Per-site provider key map, temp TTL tuning, load-testing guide — spec'd in `027-media-worker-multi-tenancy-phase2-spec.md` | v2.5.0 |
 
 Ship path: monorepo PR → `alpha-working` → subtree sync → standalone repo CI → Velocity redeploy.
 
