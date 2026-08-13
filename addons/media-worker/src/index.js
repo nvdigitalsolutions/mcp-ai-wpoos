@@ -270,6 +270,16 @@ const server = app.listen( PORT, async () => {
 	console.log( '' );
 	console.log( '[Design Worker] Video:', caps.ffmpeg && caps.ffprobe ? '✅ ffmpeg + ffprobe' : '❌ ffmpeg not found — video routes return 503' );
 	console.log( '[Design Worker] Job Queue:', process.env.REDIS_URL ? '✅ Redis' : '⚠️  in-memory (single process only)' );
+
+	// PM2 sets NODE_APP_INSTANCE in cluster mode. Both the in-memory rate
+	// limiter store and the in-memory queue are per-process; cluster mode
+	// silently multiplies rate-limit budgets and isolates queue state, so
+	// warn loudly instead of degrading silently (proposal 027, Phase 2d).
+	if ( undefined !== process.env.NODE_APP_INSTANCE ) {
+		console.warn( '[Design Worker] PM2 cluster mode detected:' );
+		console.warn( '  - In-memory rate-limit counters multiply by instance count — use a Redis-backed store.' );
+		console.warn( '  - The in-memory job queue is single-process — REDIS_URL is required in cluster mode.' );
+	}
 } );
 
 // ── Hard limits & graceful shutdown (PM2-compatible) ───────
