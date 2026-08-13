@@ -25,6 +25,46 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settin
 class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 
 	/**
+	 * Whether AJAX handlers have been registered.
+	 *
+	 * @var bool
+	 */
+	private static $ajax_registered = false;
+
+	/**
+	 * Constructor.
+	 *
+	 * Registers admin AJAX handlers exactly once per request. The section is
+	 * instantiated both by the settings registry and by the Orchestration
+	 * section's inline rabbitmq view, so a static guard prevents duplicate
+	 * wp_ajax_* callbacks.
+	 */
+	public function __construct() {
+		if ( ! self::$ajax_registered ) {
+			self::$ajax_registered = true;
+			$this->register_ajax_handlers();
+		}
+	}
+
+	/**
+	 * Whether the RabbitMQ integration is enabled.
+	 *
+	 * Reads the saved setting (with the wp_mcp_ai_rabbitmq_enabled constant
+	 * fallback) via the settings registry. Note: this class has no local
+	 * settings property, so direct reads from $this->settings would always
+	 * be empty.
+	 *
+	 * @return bool True when the integration is enabled.
+	 */
+	private function is_integration_enabled() {
+		if ( defined( 'WP_MCP_AI_RABBITMQ_ENABLED' ) && WP_MCP_AI_RABBITMQ_ENABLED ) {
+			return true;
+		}
+
+		return ! empty( WP_MCP_AI_Settings_Registry::get_setting( 'rabbitmq_enabled', false ) );
+	}
+
+	/**
 	 * Get section ID.
 	 *
 	 * @return string Section ID.
@@ -94,9 +134,7 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 	 */
 	public function is_visible() {
 		// Only show if AMQP extension is available or RabbitMQ is configured.
-		return extension_loaded( 'amqp' ) ||
-			defined( 'WP_MCP_AI_RABBITMQ_ENABLED' ) ||
-			! empty( $this->settings['rabbitmq_enabled'] );
+		return extension_loaded( 'amqp' ) || $this->is_integration_enabled();
 	}
 
 	/**
@@ -333,7 +371,7 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 	private function render_status_widget() {
 		$rabbitmq_available = class_exists( 'WP_MCP_AI_RabbitMQ_Client' );
 		$extension_loaded   = extension_loaded( 'amqp' );
-		$enabled            = ! empty( $this->settings['rabbitmq_enabled'] );
+		$enabled            = $this->is_integration_enabled();
 
 		?>
 		<div class="wp-mcp-ai-status-widget" style="background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
