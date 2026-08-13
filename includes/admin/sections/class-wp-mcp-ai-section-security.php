@@ -156,6 +156,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'rate_limit_requests',
 						'rate_limit_window',
 						'rate_limit_by',
+						// Tool rate limiting (agent-aware).
+						'tool_rate_limit_max',
+						'tool_rate_limit_window',
+						'tool_rate_limit_exempt_tokens',
 						// Webhook secret status (1.2.0).
 						'_webhook_secret_status',
 						// Auth brute-force rate limiting (1.2.0).
@@ -503,6 +507,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 						'both'    => __( 'Both User ID and IP', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'user_id',
+				),
+
+				// ========================================
+				// TOOL RATE LIMITING (agent-aware)
+				// ========================================
+				'_heading_tool_rate_limiting'              => array(
+					'type'  => 'heading',
+					'label' => __( 'Tool Rate Limiting', 'mcp-ai-wpoos' ),
+				),
+				'tool_rate_limit_max'                      => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Tool Executions', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum tool executions allowed per window per user/IP. Set to 0 for unlimited. Recommended: 300+ for AI agent workloads — agents can fire dozens of tool calls per minute.', 'mcp-ai-wpoos' ),
+					'default'     => 300,
+					'placeholder' => '300',
+				),
+				'tool_rate_limit_window'                   => array(
+					'type'        => 'number',
+					'label'       => __( 'Tool Rate Limit Window (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Time window for the tool execution limit in seconds. Common values: 60 (1 min), 300 (5 min).', 'mcp-ai-wpoos' ),
+					'default'     => 60,
+					'placeholder' => '60',
+				),
+				'tool_rate_limit_exempt_tokens'            => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Exempt AI Agent Tokens', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Do not rate-limit tool calls authenticated with assistant credential tokens', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Assistant credentials are an explicit grant of the tool set, and AI agents legitimately call tools in bursts. Recommended ON for agent workloads; guest and chat-UI traffic stays rate-limited.', 'mcp-ai-wpoos' ),
+					'default'        => true,
 				),
 
 				// Webhook secret status indicator (1.2.0).
@@ -1878,6 +1911,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				);
 				if ( is_wp_error( $result ) ) {
 					$errors[] = __( 'Rate Limit Window: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
+				}
+			}
+
+			// Validate tool rate limit numbers (0 disables the tool limiter).
+			if ( isset( $input['tool_rate_limit_max'] ) ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['tool_rate_limit_max'],
+					0,
+					10000
+				);
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Max Tool Executions: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
+				}
+			}
+
+			if ( isset( $input['tool_rate_limit_window'] ) ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['tool_rate_limit_window'],
+					10,
+					86400
+				);
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Tool Rate Limit Window: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 

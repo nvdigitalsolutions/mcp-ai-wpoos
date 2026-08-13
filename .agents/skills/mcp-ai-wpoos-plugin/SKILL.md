@@ -5,8 +5,8 @@ license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.50"
-  plugin-version-tested: "1.1.50"
-  last-updated: "2026-08-10"
+  plugin-version-tested: "1.1.55"
+  last-updated: "2026-08-13"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -260,9 +260,13 @@ node bin/mcp-bridge.js
 ### Auth Methods (in order of preference)
 
 1. **Bearer token** (`cred_xxxxx.SECRET`) — recommended for MCP clients
-2. **OAuth 2.0** (authorization_code grant) — browser-based MCP app flow
-3. **Mesh Key** (`X-WP-MCP-AI-Mesh-Key` header) — mesh federation
-4. **WordPress nonce** (`X-WP-Nonce` header + auth cookie) — browser admin
+2. **Raw credential** (`Authorization: cred_xxxxx.SECRET` without `Bearer `) —
+   accepted since v1.1.55 for agent configs that forward the header verbatim
+   (e.g. Cloudways Agent); disable via filter
+   `wp_mcp_ai_accept_raw_credential_header`
+3. **OAuth 2.0** (authorization_code grant) — browser-based MCP app flow
+4. **Mesh Key** (`X-WP-MCP-AI-Mesh-Key` header) — mesh federation
+5. **WordPress nonce** (`X-WP-Nonce` header + auth cookie) — browser admin
 
 Application passwords (Basic auth) are not supported on the MCP endpoint.
 Use Bearer tokens instead.
@@ -318,6 +322,103 @@ and `inputSchema` (JSON Schema).
 Response is in `result.content[0].text` as a JSON string. Canonical envelope:
 success returns an array; errors return a `WP_Error` object serialized as
 `{"code":"...", "message":"...", "data":{...}}`.
+
+### HTTP status semantics (v1.1.55+)
+
+JSON-RPC **error envelopes are returned with HTTP 200** so client SDKs that
+drop non-2xx bodies (e.g. the TypeScript SDK bundled with `mcp-remote`)
+still relay errors to the agent. Pre-1.1.55, errors were returned as
+400/404/500 and such SDKs **silently discarded them** — tool calls appeared
+to return nothing. Auth failures (401/403) and pre-dispatch guards (429)
+keep their HTTP statuses. Revert via filter `wp_mcp_ai_mcp_error_http_status`.
+
+---
+
+## MCP Transports & Client Compatibility
+
+The `/wp-json/mcp-ai/v1/mcp` endpoint supports **two transports**, chosen by
+the request shape:
+
+| Transport | How it connects | Response channel |
+|-----------|-----------------|------------------|
+| **Streamable HTTP** (default) | `POST /mcp` JSON-RPC, `Accept` includes `application/json` | JSON body on the POST response, HTTP 200/202 |
+| **Legacy HTTP+SSE** (v1.1.55+, flag `WP_MCP_AI_LEGACY_SSE_ENABLED`) | `GET /mcp` with SSE-only `Accept: text/event-stream` (or `?stream=true`) → `event: endpoint` with `session_id`; then `POST /mcp?session_id=...` | POST returns 202; responses arrive on the GET stream as `event: message` frames |
+
+**Discriminator rule:** `Accept` containing `text/event-stream` **and not**
+`application/json` → legacy SSE handshake. Mixed `Accept` headers
+(`application/json, text/event-stream`) always get JSON — that is deliberate,
+because Zed, Cursor, LM Studio and mcp-remote all send the mixed header but
+expect JSON responses.
+
+**Session model (legacy SSE):** sessions are owned by the credential that
+opened them (SHA-256 hash of the `Authorization` header); message POSTs with
+a different credential get 404. Caps: 5 sessions/credential, 20 global,
+30-min TTL (`wp_mcp_ai_sse_session_ttl` / `wp_mcp_ai_sse_max_per_credential` /
+`wp_mcp_ai_sse_max_total`). Store: `WP_MCP_AI_SSE_Session_Store`
+(`includes/rest/class-wp-mcp-ai-sse-session-store.php`).
+
+**`GET /sse` is NOT a message channel** — it streams the assistant directory
+(`event: directory`). Legacy SSE clients cannot complete a session there.
+`GET /no-sse` returns the directory as JSON.
+
+### Client compatibility quick reference
+
+| Client | What works |
+|--------|-----------|
+| Zed / Cursor / LM Studio / new SDKs | Native Streamable HTTP (`url` = `/mcp`) |
+| Python MCP SDK | `streamable_http_client(url, headers=...)` works; `sse_client(url)` **requires v1.1.55+** for the handshake |
+| mcp-remote bridge (Claude Desktop, older agents) | `npx -y mcp-remote@latest <url> --header "Authorization: Bearer <token>"` — connects via Streamable HTTP, needs Node 24+ |
+| Cloudways Agent 0.19.0 / Codex-style agents | A bare `url:` is treated as **SSE transport** — use the mcp-remote stdio bridge, or point at the `/mcp` endpoint on v1.1.55+ |
+
+### mcp-remote stdio bridge pattern (verified)
+
+For agents whose MCP client only speaks legacy SSE over a configured URL
+(Cloudways Agent, Claude Desktop):
+
+```yaml
+mcp_servers:
+  nv-oos-sophie-agent:
+    command: npx
+    args:
+      - "-y"
+      - "mcp-remote@latest"
+      - "https://<site>/wp-json/mcp-ai/v1/mcp"
+      - "--header"
+      - "Authorization: Bearer cred_xxxxx.SECRET"
+    enabled: true
+```
+
+mcp-remote auto-detects the transport (`http-first` strategy) and exposes the
+remote tools over local stdio. **Note:** mcp-remote opens a GET SSE stream
+for server-initiated messages and retries it on failure — on pre-1.1.55
+servers that GET hits the request rate limiter, and the retry loop can burn
+the whole hourly quota (see Rate Limiting below).
+
+---
+
+## Rate Limiting & Agent Traffic
+
+Two independent limiters apply to MCP traffic:
+
+1. **General request limiter** — `rate_limit_requests` per
+   `rate_limit_window` seconds per user/IP (oOS → Security → Network & Headers).
+   GET/HEAD requests are exempt since v1.1.55 (discovery/SSE probes must not
+   consume the budget aimed at state-changing traffic).
+   **For AI-agent workloads set `rate_limit_requests` to 1000** — the default
+   300 is for chat usage, and client retry loops burn requests fast.
+2. **Tool execution limiter** — v1.1.55+ settings under oOS → Security →
+   **Tool Rate Limiting**: `tool_rate_limit_max` (default 300, 0 = unlimited),
+   `tool_rate_limit_window` (default 60s), `tool_rate_limit_exempt_tokens`
+   (default **on** — credential-token/agent traffic is exempt because an
+   assistant credential is already an explicit grant of its tool set).
+   Pre-1.1.55 this was a hardcoded 60 calls/60s with no UI — agents burst
+   through it routinely.
+
+**Symptom of a tripped tool limiter on pre-1.1.55 servers:** tools/call
+returns HTTP 500 with a `-32603 "Tool rate limit exceeded"` error body —
+which mcp-remote-style SDKs silently drop, so the agent sees no response
+at all. With v1.1.55+ the same condition returns a visible JSON-RPC error
+(and is unlikely to trip for agent tokens).
 
 ---
 
@@ -439,6 +540,48 @@ wp_mcp_ai_auto_detect_env_keys();
 ```
 Or set keys manually via admin UI → oOS → Providers.
 
+### Agent logs "unhandled errors in a TaskGroup (1 sub-exception)" / tools never load
+
+**Cause:** the client is using the legacy SSE transport against `/mcp`, but
+the server answers JSON (`SSEError: Expected response with content type
+'text/event-stream', got 'application/json'`).
+**Fix:** switch the client to Streamable HTTP, use the mcp-remote stdio
+bridge (see Transports section), or upgrade the server to v1.1.55+ where
+GET `/mcp` with an SSE-only Accept serves a real SSE handshake.
+
+### Tool call responses never come back (agent hangs on tools)
+
+**Cause (pre-v1.1.55):** tool errors are returned as HTTP 400/404/500 with a
+JSON-RPC error body; SDKs like the one in mcp-remote **silently drop
+non-2xx responses**, so the pending request never resolves. This includes
+rate-limit hits and every tool `WP_Error`.
+**Fix:** upgrade to v1.1.55+ (errors return HTTP 200 with the JSON-RPC
+envelope), or reduce tool-call frequency to avoid the 60/min tool limit.
+
+### Constant "429 ... Failed to open SSE stream: Too Many Requests" from mcp-remote
+
+**Cause:** mcp-remote's GET SSE-stream retry loop consumes the general
+`rate_limit_requests` bucket (per user/IP). Each retry counts.
+**Fix:** raise `rate_limit_requests` (1000 for agent sites) and upgrade to
+v1.1.55+ (GETs exempt from the quota, real SSE stream stops the retry loop).
+
+### `remote_wp_connection` / `ezuite_erp` calls hang, then return 0 bytes
+
+**Cause:** these network-dependent tools route through the async job queue;
+`mcp_wait_for_async_tool()` could poll up to 6 minutes (120 polls × 3s),
+longer than Cloudflare's ~100s cutoff (524) — the request dies mid-wait.
+**Fix:** v1.1.55+ bounds the wait to ~45s (filter `wp_mcp_ai_async_max_polls`,
+default 15) and kicks stuck jobs inline (`kick_inline_if_stale`) so hosts
+with a dead WP-Cron loopback self-heal; timeouts now surface as visible
+errors instead of resets.
+
+### Cloudflare blocks non-browser clients (error 1010) or 524 timeouts
+
+**Cause:** Cloudflare WAF blocks default non-browser user agents (e.g.
+Python `urllib`); long synchronous tool calls exceed the ~100s proxy cutoff.
+**Fix:** use curl/browser-like user agents for probes, and prefer v1.1.55+
+where long tools are bounded or delivered out-of-band (SSE message queue).
+
 ---
 
 ## References
@@ -451,3 +594,8 @@ Or set keys manually via admin UI → oOS → Providers.
 - Activation logic: `includes/bootstrap/activation.php`
 - Credentials: `includes/class-wp-mcp-ai-credentials.php`
 - API key store: `includes/security/class-wp-mcp-ai-api-key-store.php`
+- MCP controller (transports, SSE handshake): `includes/rest/class-wp-mcp-ai-rest-mcp-controller.php`
+- Legacy SSE session store: `includes/rest/class-wp-mcp-ai-sse-session-store.php`
+- JSON-RPC dispatch & error mapping: `includes/class-wp-mcp-ai-rest-mcp-methods.php`
+- Rate limiters: `check_rate_limit()` / `check_tool_rate_limit()` in `includes/class-wp-mcp-ai-rest.php`
+- Implementation plans: `docs/developer/implementation-plan-mcp-agent-compat.md`, `docs/developer/legacy-sse-transport-plan.md`
