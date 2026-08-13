@@ -71,8 +71,9 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 **Rotation procedure** (two-step, no downtime):
 
 1. Set the **new** token as an additional accepted value on the worker
-   (e.g. `WORKER_API_TOKEN=<new>` with a brief old/new overlap via the
-   worker's `WORKER_API_TOKEN_PREVIOUS`, if configured).
+   (`WORKER_API_TOKEN=<new>` with the old value kept as
+   `WORKER_API_TOKEN_PREVIOUS` for the overlap window — both are
+   compared timing-safely).
 2. Update the WordPress constant/option.
 3. Verify Test Connection, then remove the old value and restart the worker.
 
