@@ -100,7 +100,10 @@ pdfRouter.post( '/render', upload.single( 'file' ), async ( req, res ) => {
 
 		const { pages, scale, outputDir } = req.body || {};
 
-		const pdfjsLib = ( await import( 'pdfjs-dist/legacy/build/pdf.mjs' ) ).default;
+		const pdfjsModule = await import( 'pdfjs-dist/legacy/build/pdf.mjs' );
+		// The legacy build exposes named exports; some versions also ship a
+		// default export. Tolerate both.
+		const pdfjsLib = pdfjsModule.default || pdfjsModule;
 
 		let canvasModule;
 		try {
