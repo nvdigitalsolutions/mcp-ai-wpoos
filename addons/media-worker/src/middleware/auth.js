@@ -10,11 +10,18 @@
  *   - Token configured  -> strict: every /api/* request must carry the token.
  *   - Token not set     -> lenient: requests pass (local Docker development).
  * Set AUTH_MODE=strict to *fail closed* when no token is configured.
+ *
+ * Token rotation: during a rotation window the previous token may be kept as
+ * WORKER_API_TOKEN_PREVIOUS. Requests carrying it are accepted (with a
+ * one-time warning) so WordPress and the worker can switch tokens without a
+ * window of 401s. Remove the variable once rotation is complete.
  */
 
 import { timingSafeEqual, createHash } from 'crypto';
 
 const MIN_TOKEN_LENGTH = 16;
+
+let warnedPrevious = false;
 
 /**
  * Constant-time SHA-256 digest used to normalise secret lengths before
@@ -67,9 +74,22 @@ export function authMiddleware( req, res, next ) {
 	}
 
 	const provided = req.get( 'X-Site-Token' ) || '';
-	if ( ! tokenMatches( provided, expected ) ) {
-		return res.status( 401 ).json( { error: 'Unauthorized' } );
+	if ( tokenMatches( provided, expected ) ) {
+		return next();
 	}
 
-	next();
+	// Rotation overlap: accept the previous token as well (timing-safe),
+	// with a one-time warning so operators remember to remove it.
+	const previous = process.env.WORKER_API_TOKEN_PREVIOUS;
+	if ( previous && tokenMatches( provided, previous ) ) {
+		if ( ! warnedPrevious ) {
+			warnedPrevious = true;
+			console.warn(
+				'[Auth] Request authenticated with WORKER_API_TOKEN_PREVIOUS — remove it once rotation is complete.'
+			);
+		}
+		return next();
+	}
+
+	return res.status( 401 ).json( { error: 'Unauthorized' } );
 }

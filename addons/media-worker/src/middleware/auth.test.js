@@ -106,3 +106,42 @@ test( 'authMiddleware accepts a correct token', () => {
 		delete process.env.WORKER_API_TOKEN;
 	}
 } );
+
+test( 'authMiddleware accepts WORKER_API_TOKEN_PREVIOUS during rotation', () => {
+	const original = process.env.WORKER_API_TOKEN;
+	const originalPrev = process.env.WORKER_API_TOKEN_PREVIOUS;
+	process.env.WORKER_API_TOKEN = 'new-token-12345678901234567890123456';
+	process.env.WORKER_API_TOKEN_PREVIOUS = 'old-token-12345678901234567890123456';
+
+	let nextCalled = false;
+	authMiddleware( mockReq( 'old-token-12345678901234567890123456' ), mockRes(), () => {
+		nextCalled = true;
+	} );
+	assert.equal( nextCalled, true );
+
+	// The new token still works, and a random token is still rejected.
+	let nextCalledNew = false;
+	authMiddleware( mockReq( 'new-token-12345678901234567890123456' ), mockRes(), () => {
+		nextCalledNew = true;
+	} );
+	assert.equal( nextCalledNew, true );
+
+	let nextCalledBad = false;
+	const res = mockRes();
+	authMiddleware( mockReq( 'random-token' ), res, () => {
+		nextCalledBad = true;
+	} );
+	assert.equal( nextCalledBad, false );
+	assert.equal( res.statusCode, 401 );
+
+	if ( original ) {
+		process.env.WORKER_API_TOKEN = original;
+	} else {
+		delete process.env.WORKER_API_TOKEN;
+	}
+	if ( originalPrev ) {
+		process.env.WORKER_API_TOKEN_PREVIOUS = originalPrev;
+	} else {
+		delete process.env.WORKER_API_TOKEN_PREVIOUS;
+	}
+} );
