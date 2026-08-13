@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import axios from 'axios';
 import OpenAI from 'openai';
+import { getCredential } from '../utils/provider-keys.js';
 
 const router = Router();
 
@@ -34,11 +35,11 @@ const platforms = {
 };
 
 // ── Get Connected Platforms ───────────────────────────────
-router.get('/accounts', (_req, res) => {
+router.get('/accounts', (req, res) => {
   const connected = Object.entries(platforms).map(([key, plat]) => ({
     id: key,
     name: plat.name,
-    connected: plat.requires.every((env) => !!process.env[env]),
+    connected: plat.requires.every((env) => !!getCredential(req.site, env)),
     max_chars: plat.maxChars,
   }));
 
@@ -62,8 +63,8 @@ router.post('/post', async (req, res) => {
       });
     }
 
-    // Check required API keys
-    const missing = platConfig.requires.filter((env) => !process.env[env]);
+    // Check required API keys (per-site resolution, Phase 2)
+    const missing = platConfig.requires.filter((env) => !getCredential(req.site, env));
     if (missing.length > 0) {
       return res.status(503).json({
         error: `${platConfig.name} is not configured`,
@@ -136,7 +137,7 @@ router.post('/post', async (req, res) => {
             { media: media_url, media_category: 'tweet_image' },
             {
               headers: {
-                Authorization: `Bearer ${process.env.TWITTER_ACCESS_TOKEN}`,
+                Authorization: `Bearer ${getCredential(req.site, 'TWITTER_ACCESS_TOKEN')}`,
                 'Content-Type': 'application/x-www-form-urlencoded',
               },
             }
@@ -146,7 +147,7 @@ router.post('/post', async (req, res) => {
 
         const response = await axios.post(platConfig.api, tweetPayload, {
           headers: {
-            Authorization: `Bearer ${process.env.TWITTER_ACCESS_TOKEN}`,
+            Authorization: `Bearer ${getCredential(req.site, 'TWITTER_ACCESS_TOKEN')}`,
             'Content-Type': 'application/json',
           },
         });
@@ -168,7 +169,7 @@ router.post('/post', async (req, res) => {
 
     // ── Facebook Post ───────────────────────────────────
     if (platform === 'facebook') {
-      const pageId = process.env.FACEBOOK_PAGE_TOKEN?.split('|')[0];
+      const pageId = getCredential(req.site, 'FACEBOOK_PAGE_TOKEN')?.split('|')[0];
       try {
         const response = await axios.post(
           `${platConfig.api}/${pageId}/feed`,
@@ -177,7 +178,7 @@ router.post('/post', async (req, res) => {
             link: media_url,
           },
           {
-            params: { access_token: process.env.FACEBOOK_PAGE_TOKEN },
+            params: { access_token: getCredential(req.site, 'FACEBOOK_PAGE_TOKEN') },
           }
         );
 
@@ -198,7 +199,7 @@ router.post('/post', async (req, res) => {
     // ── Instagram Post (Graph API) ──────────────────────
     if (platform === 'instagram') {
       try {
-        const igUserId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
+        const igUserId = getCredential(req.site, 'INSTAGRAM_BUSINESS_ACCOUNT_ID');
         if (!igUserId) {
           return res.status(400).json({
             error: 'INSTAGRAM_BUSINESS_ACCOUNT_ID not set',
@@ -206,7 +207,7 @@ router.post('/post', async (req, res) => {
           });
         }
 
-        const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
+        const accessToken = getCredential(req.site, 'INSTAGRAM_ACCESS_TOKEN');
 
         // Step 1: Create media container
         const isVideo = media_type === 'video' || media_type === 'reel';
@@ -289,7 +290,7 @@ router.post('/post', async (req, res) => {
         const response = await axios.post(
           `${platConfig.api}/ugcPosts`,
           {
-            author: `urn:li:person:${process.env.LINKEDIN_PERSON_URN || 'me'}`,
+            author: `urn:li:person:${getCredential(req.site, 'LINKEDIN_PERSON_URN') || 'me'}`,
             lifecycleState: 'PUBLISHED',
             specificContent: {
               'com.linkedin.ugc.ShareContent': {
@@ -312,7 +313,7 @@ router.post('/post', async (req, res) => {
           },
           {
             headers: {
-              Authorization: `Bearer ${process.env.LINKEDIN_TOKEN}`,
+              Authorization: `Bearer ${getCredential(req.site, 'LINKEDIN_TOKEN')}`,
               'Content-Type': 'application/json',
               'X-Restli-Protocol-Version': '2.0.0',
             },
@@ -373,10 +374,10 @@ router.post('/generate-content', async (req, res) => {
       general: ['#ContentCreation', '#CreativeStudio', '#DigitalContent', '#MarketingTips', '#BuildInPublic'],
     };
 
-    // Try AI generation if OpenAI key is available
-    if (process.env.OPENAI_API_KEY) {
+    // Try AI generation if an OpenAI key is available (per-site, Phase 2)
+    if (getCredential(req.site, 'OPENAI_API_KEY')) {
       try {
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const openai = new OpenAI({ apiKey: getCredential(req.site, 'OPENAI_API_KEY') });
         const platforms = platform ? [platform] : ['twitter', 'instagram', 'linkedin'];
         const variants = [];
 

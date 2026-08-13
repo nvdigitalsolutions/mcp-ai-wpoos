@@ -14,6 +14,7 @@ import {
 import { detectCapabilities } from './utils/capabilities.js';
 import { isMultiTenant, cleanupSiteTemp } from './utils/site-paths.js';
 import { configuredSites } from './middleware/auth.js';
+import { configuredProviders } from './utils/provider-keys.js';
 import { imageRouter } from './routes/image.js';
 import { videoRouter } from './routes/video.js';
 import { socialRouter } from './routes/social.js';
@@ -97,17 +98,25 @@ app.get( '/api/health/full', async (_req, res) => {
 			linkedin: !!process.env.LINKEDIN_TOKEN,
 		};
 
+		const tenants = {
+			mode: isMultiTenant() ? 'multi' : 'single',
+			count: configuredSites().length,
+			slugs: configuredSites(),
+			sites: {},
+		};
+		if ( isMultiTenant() ) {
+			for ( const slug of configuredSites() ) {
+				tenants.sites[ slug ] = { providers: configuredProviders( slug ) };
+			}
+		}
+
 		res.json( {
 			status: 'ok',
 			service: 'design-media-worker',
 			version: '2.4.0',
 			uptime: process.uptime(),
 			environment: process.env.NODE_ENV || 'development',
-			tenants: {
-				mode: isMultiTenant() ? 'multi' : 'single',
-				count: configuredSites().length,
-				slugs: configuredSites(),
-			},
+			tenants,
 			auth: {
 				enabled: Boolean( process.env.WORKER_API_TOKEN ),
 				mode: process.env.WORKER_API_TOKEN
@@ -209,6 +218,10 @@ const server = app.listen( PORT, async () => {
 		console.log(
 			`[Design Worker] Multi-tenant mode: ${ configuredSites().length } site(s) — ${ configuredSites().join( ', ' ) }`
 		);
+		for ( const slug of configuredSites() ) {
+			const configured = Object.values( configuredProviders( slug ) ).filter( Boolean ).length;
+			console.log( `[Design Worker] Site "${ slug }": ${ configured } provider credential(s) configured` );
+		}
 	}
 	console.log( `[Design Worker] SSRF guard: ${ '1' === process.env.SSRF_ALLOW_PRIVATE ? 'DISABLED (SSRF_ALLOW_PRIVATE=1)' : 'enabled' }` );
 	console.log( `[Design Worker] Browser sandbox: ${ '1' === process.env.ALLOW_NO_SANDBOX ? 'fallback allowed (ALLOW_NO_SANDBOX=1)' : 'enforced' }` );
