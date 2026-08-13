@@ -15,6 +15,7 @@ import { detectCapabilities } from './utils/capabilities.js';
 import { isMultiTenant, cleanupSiteTemp } from './utils/site-paths.js';
 import { configuredSites } from './middleware/auth.js';
 import { configuredProviders } from './utils/provider-keys.js';
+import { getUsage } from './utils/usage.js';
 import { imageRouter } from './routes/image.js';
 import { videoRouter } from './routes/video.js';
 import { socialRouter } from './routes/social.js';
@@ -103,6 +104,7 @@ app.get( '/api/health/full', async (_req, res) => {
 			count: configuredSites().length,
 			slugs: configuredSites(),
 			sites: {},
+			usage: getUsage(),
 		};
 		if ( isMultiTenant() ) {
 			for ( const slug of configuredSites() ) {

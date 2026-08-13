@@ -7,6 +7,7 @@ import axios from 'axios';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { getCredential } from '../utils/provider-keys.js';
+import { recordUsage } from '../utils/usage.js';
 
 const execAsync = promisify(exec);
 const router = Router();
@@ -55,6 +56,7 @@ const MODELS_BY_PROVIDER = {
 
 // ── POST /api/image/generate ──────────────────────────────
 router.post('/generate', async (req, res) => {
+  let activeProvider = null;
   try {
     const {
       prompt,
@@ -93,10 +95,12 @@ router.post('/generate', async (req, res) => {
     if (!providerCfg) {
       return res.status(400).json({ error: `Unknown provider: ${providerId}` });
     }
+    activeProvider = providerId;
 
     // Per-site credential resolution (Phase 2): site key -> shared pool ->
     // 503. Firefly additionally requires the client secret.
     if (!getCredential(req.site, providerCfg.key)) {
+      recordUsage(req.site, providerId, 'missing_key');
       return res.status(503).json({
         error: `${providerCfg.name} API key not configured`,
         capability: 'image_generation',
@@ -107,6 +111,7 @@ router.post('/generate', async (req, res) => {
       });
     }
     if (providerId === 'firefly' && !getCredential(req.site, 'FIREFLY_CLIENT_SECRET')) {
+      recordUsage(req.site, providerId, 'missing_key');
       return res.status(503).json({
         error: 'Adobe Firefly client secret not configured',
         capability: 'image_generation',
@@ -121,9 +126,15 @@ router.post('/generate', async (req, res) => {
       prompt, size, style, count, negative_prompt, aspect_ratio, seed, steps, cfg_scale,
     }, req.site);
 
+    recordUsage(req.site, providerId, 'success');
     res.json({ success: true, provider: providerId, model, images, prompt });
   } catch (err) {
     console.error('[Image Generate]', err.message);
+    if (err.status === 503) {
+      recordUsage(req.site, activeProvider, 'missing_key');
+    } else if (err.response) {
+      recordUsage(req.site, activeProvider, 'provider_error');
+    }
     const status = err.response?.status || err.status || 500;
     res.status(status).json({
       error: err.message,
