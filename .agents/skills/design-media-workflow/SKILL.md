@@ -48,6 +48,25 @@ Examples (agent name varies per installation):
 | Sync media to remote | `sync_media_to_remote` | — |
 | Import media from URL | `import_media_from_url` | — |
 
+### Tool Rate Limits & Reliability (agent workflows)
+
+- The server rate-limits tool executions (oOS → Security → **Tool Rate
+  Limiting**: default 300 calls/min window, `tool_rate_limit_exempt_tokens`
+  defaults to ON for credential-token/agent traffic) and general API requests
+  (`rate_limit_requests` — use 1000 for agent sites).
+- On servers **older than v1.1.55**, tool errors were returned as HTTP 500
+  and some MCP SDKs silently dropped them — tool calls looked like they
+  returned nothing. On v1.1.55+ JSON-RPC errors always reach the agent.
+- Network-dependent tools (`remote_wp_connection`, `ezuite_erp`) can run
+  through the async job queue; on v1.1.55+ the MCP wait is bounded to ~45s
+  and returns a visible timeout error instead of hanging.
+- Batch-heavy pipelines (bulk_tag, collections, multi-site sync) should
+  prefer the media worker / Redis queue for volume, and treat each MCP tool
+  call as one rate-limit unit.
+- Connection details and full troubleshooting:
+  `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md` (transports, mcp-remote
+  bridge, rate limits).
+
 ## WP-CLI Commands
 
 The mcp-ai-wpoos plugin registers these WP-CLI commands useful for design workflows. Run via the `terminal` tool inside the WordPress container (`docker compose exec wordpress wp ...`).
