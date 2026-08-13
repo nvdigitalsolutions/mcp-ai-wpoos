@@ -40,7 +40,7 @@ monitoring) and connect it to the mcp-ai-wpoos WordPress plugin.
 4. Deploy and verify the **public** health endpoint:
    ```bash
    curl https://<velocity-app-url>/api/health
-   # → { "status": "ok", "service": "design-media-worker", "version": "2.2.0", "uptime": … }
+   # → { "status": "ok", "service": "design-media-worker", "version": "2.4.0", "uptime": … }
    ```
    The full capability matrix requires auth:
    ```bash
@@ -138,7 +138,52 @@ Actions:
 - Optional extra layer: put a Cloudflare WAF or Velocity firewall rule in
   front and allowlist the WordPress server's egress IP.
 
-## 7. Deployment Flow (One-way Sync)
+## 7. Shared Worker Mode (Multi-Tenant, v2.4.0+)
+
+One Velocity app can serve **multiple WordPress sites** when the isolation
+boundaries below are acceptable (same owner/agency network). For different
+clients, prefer one app per site — the sidecar model.
+
+### Configuration
+
+1. Worker env vars:
+   - `SITE_TOKENS={"site-a":"<tokenA>","site-b":"<tokenB>"}` — one slug per
+     WordPress site (slug: `[a-z0-9-]{1,32}`, e.g. the client name).
+   - `AUTH_MODE=strict` — multi-tenant mode always fails closed.
+   - Optional: `SITE_TOKENS_PREVIOUS` (rotation overlap), `TEMP_ROOT`,
+     `TEMP_TTL`, per-site rate limits (`RATE_LIMIT_IMAGE_SITE-A=60`).
+2. Each WordPress site keeps its **own** token (per-site
+   `WP_MEDIA_WORKER_TOKEN` constant or `wp_mcp_ai_media_worker_token` option):
+   site-a → `<tokenA>`, site-b → `<tokenB>`. The plugin already sends
+   `X-Site-Token` + `X-Site-Url` — no plugin changes needed.
+
+### Per-site isolation (v2.4.0)
+
+| Dimension | Isolation |
+|---|---|
+| Auth identity | token → site slug; `req.site` on every request; fail-closed |
+| Scratch files | `TEMP_ROOT/sites/<slug>/`; caller-supplied paths must stay in the namespace (`403 path_not_allowed` otherwise) |
+| PDF sources | multipart upload support + site-scoped paths (`/api/pdf/extract`, `/api/pdf/render`) |
+| Job queues | `queue:<site>:*` Redis keys; `/api/workflow/status` scoped per site |
+| Rate limits | per-site buckets keyed `site:<slug>:<ip>` with per-site overrides |
+| Audit logs | `site=<slug>` + site host on every request line; `X-Site-Url` change warnings |
+
+### Still shared (know your boundaries)
+
+- Provider API keys — pooled billing/quotas (per-site key maps are Phase 2,
+  see proposal 026).
+- System binaries (ffmpeg/Chromium) and the global rate-limit budget.
+- `/api/health/full` capability matrix (adds a `tenants` block: mode, count,
+  slugs — never tokens).
+
+### Verify
+
+```bash
+curl -H "X-Site-Token: <tokenA>" https://<velocity-app-url>/api/health/full
+# → "tenants": { "mode": "multi", "count": 2, "slugs": ["site-a", "site-b"] }
+```
+
+## 8. Deployment Flow (One-way Sync)
 
 ```
 monorepo PR (addons/media-worker/**)
@@ -152,9 +197,9 @@ monorepo PR (addons/media-worker/**)
 Never commit to the standalone repo directly — the next sync overwrites it.
 Dependency bumps go through the monorepo's `package.json` / `package-lock.json`.
 
-## 8. Rollout Checklist
+## 9. Rollout Checklist
 
-- [ ] v2.2.0 synced to the standalone repo (check version in `/api/health`)
+- [ ] v2.4.0 synced to the standalone repo (check version in `/api/health`)
 - [ ] Velocity app provisioned, env set (token ≥32 chars, `AUTH_MODE=strict`)
 - [ ] `bin/test-endpoints.sh` run against the app URL with `MEDIA_WORKER_TOKEN` set
 - [ ] WordPress constants/options updated; Test Connection green

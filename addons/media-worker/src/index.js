@@ -12,6 +12,8 @@ import {
 	workflowLimiter,
 } from './middleware/rate-limit.js';
 import { detectCapabilities } from './utils/capabilities.js';
+import { isMultiTenant, cleanupSiteTemp } from './utils/site-paths.js';
+import { configuredSites } from './middleware/auth.js';
 import { imageRouter } from './routes/image.js';
 import { videoRouter } from './routes/video.js';
 import { socialRouter } from './routes/social.js';
@@ -61,7 +63,7 @@ app.get( '/api/health', (_req, res) => {
 	res.json( {
 		status: 'ok',
 		service: 'design-media-worker',
-		version: '2.2.0',
+		version: '2.4.0',
 		uptime: process.uptime(),
 	} );
 } );
@@ -98,9 +100,14 @@ app.get( '/api/health/full', async (_req, res) => {
 		res.json( {
 			status: 'ok',
 			service: 'design-media-worker',
-			version: '2.2.0',
+			version: '2.4.0',
 			uptime: process.uptime(),
 			environment: process.env.NODE_ENV || 'development',
+			tenants: {
+				mode: isMultiTenant() ? 'multi' : 'single',
+				count: configuredSites().length,
+				slugs: configuredSites(),
+			},
 			auth: {
 				enabled: Boolean( process.env.WORKER_API_TOKEN ),
 				mode: process.env.WORKER_API_TOKEN
@@ -198,6 +205,11 @@ const server = app.listen( PORT, async () => {
 	console.log(
 		`[Design Worker] Auth: ${ process.env.WORKER_API_TOKEN ? 'strict (X-Site-Token required)' : 'lenient (no WORKER_API_TOKEN set)' }`
 	);
+	if ( isMultiTenant() ) {
+		console.log(
+			`[Design Worker] Multi-tenant mode: ${ configuredSites().length } site(s) — ${ configuredSites().join( ', ' ) }`
+		);
+	}
 	console.log( `[Design Worker] SSRF guard: ${ '1' === process.env.SSRF_ALLOW_PRIVATE ? 'DISABLED (SSRF_ALLOW_PRIVATE=1)' : 'enabled' }` );
 	console.log( `[Design Worker] Browser sandbox: ${ '1' === process.env.ALLOW_NO_SANDBOX ? 'fallback allowed (ALLOW_NO_SANDBOX=1)' : 'enforced' }` );
 
@@ -248,6 +260,11 @@ const server = app.listen( PORT, async () => {
 server.requestTimeout = Number( process.env.REQUEST_TIMEOUT_MS || 60000 );
 server.headersTimeout = 30000;
 server.keepAliveTimeout = 5000;
+
+// ── Multi-tenant scratch TTL cleanup (no-op in single-tenant mode) ──
+const TEMP_TTL_MS = Number( process.env.TEMP_TTL || 24 * 60 * 60 * 1000 );
+cleanupSiteTemp( TEMP_TTL_MS );
+setInterval( () => cleanupSiteTemp( TEMP_TTL_MS ), 15 * 60 * 1000 ).unref();
 
 function shutdown( signal ) {
 	console.log( `[Design Worker] ${ signal } received — shutting down.` );

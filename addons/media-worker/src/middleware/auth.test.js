@@ -4,7 +4,13 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { authMiddleware, tokenMatches } from './auth.js';
+import {
+	authMiddleware,
+	tokenMatches,
+	parseTokenMap,
+	resolveSite,
+	configuredSites,
+} from './auth.js';
 
 /** Minimal mock Express response. */
 function mockRes() {
@@ -144,4 +150,82 @@ test( 'authMiddleware accepts WORKER_API_TOKEN_PREVIOUS during rotation', () => 
 	} else {
 		delete process.env.WORKER_API_TOKEN_PREVIOUS;
 	}
+} );
+
+// ── Multi-tenant mode (SITE_TOKENS) ───────────────────────────
+
+const originalSites = process.env.SITE_TOKENS;
+const originalSitesPrev = process.env.SITE_TOKENS_PREVIOUS;
+const originalWorkerToken = process.env.WORKER_API_TOKEN;
+
+function restoreSiteEnv() {
+	if ( originalSites ) {
+		process.env.SITE_TOKENS = originalSites;
+	} else {
+		delete process.env.SITE_TOKENS;
+	}
+	if ( originalSitesPrev ) {
+		process.env.SITE_TOKENS_PREVIOUS = originalSitesPrev;
+	} else {
+		delete process.env.SITE_TOKENS_PREVIOUS;
+	}
+	if ( originalWorkerToken ) {
+		process.env.WORKER_API_TOKEN = originalWorkerToken;
+	} else {
+		delete process.env.WORKER_API_TOKEN;
+	}
+}
+
+test( 'parseTokenMap parses JSON maps and rejects garbage', () => {
+	assert.deepEqual( parseTokenMap( '{"site-a":"t1","site-b":"t2"}' ), { 'site-a': 't1', 'site-b': 't2' } );
+	assert.equal( parseTokenMap( '' ), null );
+	assert.equal( parseTokenMap( undefined ), null );
+	assert.equal( parseTokenMap( 'not json' ), null );
+	assert.equal( parseTokenMap( '[1,2]' ), null );
+} );
+
+test( 'resolveSite maps tokens to slugs, including rotation overlap', () => {
+	process.env.SITE_TOKENS = '{"site-a":"tokA-123456789","site-b":"tokB-123456789"}';
+	assert.equal( resolveSite( 'tokA-123456789' ), 'site-a' );
+	assert.equal( resolveSite( 'tokB-123456789' ), 'site-b' );
+	assert.equal( resolveSite( 'unknown-token' ), null );
+
+	process.env.SITE_TOKENS_PREVIOUS = '{"site-a":"oldA-123456789"}';
+	assert.equal( resolveSite( 'oldA-123456789' ), 'site-a' );
+	restoreSiteEnv();
+} );
+
+test( 'configuredSites lists slugs without exposing tokens', () => {
+	process.env.SITE_TOKENS = '{"site-a":"tokA-123456789","site-b":"tokB-123456789"}';
+	assert.deepEqual( configuredSites().sort(), [ 'site-a', 'site-b' ] );
+	restoreSiteEnv();
+} );
+
+test( 'authMiddleware multi-tenant accepts known tokens and sets req.site', () => {
+	process.env.SITE_TOKENS = '{"site-a":"tokA-123456789"}';
+	process.env.WORKER_API_TOKEN = 'irrelevant-single-tenant-value';
+
+	const req = mockReq( 'tokA-123456789' );
+	let nextCalled = false;
+	authMiddleware( req, mockRes(), () => {
+		nextCalled = true;
+	} );
+	assert.equal( nextCalled, true );
+	assert.equal( req.site, 'site-a' );
+	restoreSiteEnv();
+} );
+
+test( 'authMiddleware multi-tenant fails closed on unknown tokens', () => {
+	process.env.SITE_TOKENS = '{"site-a":"tokA-123456789"}';
+	// Even a valid single-tenant token must NOT pass in multi-tenant mode.
+	process.env.WORKER_API_TOKEN = 'single-tenant-token-123456789';
+
+	let nextCalled = false;
+	const res = mockRes();
+	authMiddleware( mockReq( 'single-tenant-token-123456789' ), res, () => {
+		nextCalled = true;
+	} );
+	assert.equal( nextCalled, false );
+	assert.equal( res.statusCode, 401 );
+	restoreSiteEnv();
 } );

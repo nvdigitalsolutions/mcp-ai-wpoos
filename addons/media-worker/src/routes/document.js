@@ -9,12 +9,12 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { siteBaseDir, pathGuard } from '../utils/site-paths.js';
 
 export const documentRouter = Router();
 
-function tempFile(ext) {
-  return path.join(os.tmpdir(), `doc-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`);
+function tempFile( req, ext ) {
+	return path.join( siteBaseDir( req.site ), `doc-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 // ── POST /excel — generate Excel spreadsheet ───────────────
@@ -64,7 +64,7 @@ documentRouter.post('/excel', async (req, res) => {
       }
     }
 
-    const outPath = outputPath || tempFile('xlsx');
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, 'xlsx' );
     await workbook.xlsx.writeFile(outPath);
     const stats = fs.statSync(outPath);
 
@@ -193,7 +193,7 @@ documentRouter.post('/word', async (req, res) => {
     });
 
     const buffer = await Packer.toBuffer(doc);
-    const outPath = outputPath || tempFile('docx');
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, 'docx' );
     fs.writeFileSync(outPath, buffer);
     const stats = fs.statSync(outPath);
 

@@ -105,4 +105,23 @@ describe('JobQueue', () => {
 
     queue.stop();
   });
+
+  it('should scope Redis keys per site in multi-tenant mode', () => {
+    const siteA = new JobQueue('workflow', 'site-a');
+    const siteB = new JobQueue('workflow', 'site-b');
+    const legacy = new JobQueue('workflow');
+
+    assert.equal(siteA.queueKey, 'queue:site-a:workflow');
+    assert.equal(siteA.delayedKey, 'queue:delayed:site-a');
+    assert.equal(siteB.queueKey, 'queue:site-b:workflow');
+    assert.equal(siteB.delayedKey, 'queue:delayed:site-b');
+    assert.equal(legacy.queueKey, 'queue:workflow');
+    assert.equal(legacy.delayedKey, 'queue:delayed');
+
+    // Singleton is per (site, name) pair; 'default' means unscoped.
+    assert.strictEqual(getQueue('workflow', 'site-a'), getQueue('workflow', 'site-a'));
+    assert.notStrictEqual(getQueue('workflow', 'site-a'), getQueue('workflow', 'site-b'));
+    assert.notStrictEqual(getQueue('workflow', 'site-a'), getQueue('workflow'));
+    assert.strictEqual(getQueue('workflow', 'default'), getQueue('workflow'));
+  });
 });

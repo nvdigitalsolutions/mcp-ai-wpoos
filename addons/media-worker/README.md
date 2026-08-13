@@ -105,6 +105,27 @@ with these controls — on a managed public host like Cloudways Velocity:
 
 All environment variables are documented in [.env.example](.env.example).
 
+## Multi-Tenant Mode (v2.4.0+)
+
+Optional shared-worker mode for serving **multiple WordPress sites** from one
+instance. Set `SITE_TOKENS` (JSON map of site slug → token) plus
+`AUTH_MODE=strict`; every site then gets:
+
+- its own token (per-site `WP_MEDIA_WORKER_TOKEN` — the plugin already sends
+  `X-Site-Token` and `X-Site-Url`, no plugin changes needed),
+- a namespaced scratch filesystem (`TEMP_ROOT/sites/<slug>/`) with strict
+  caller-supplied path checks (`403 path_not_allowed`),
+- site-scoped Redis queue keys and workflow status,
+- per-site rate-limit budgets (`RATE_LIMIT_IMAGE_SITE-A=60` overrides),
+- audit logs tagged `site=<slug>` with `X-Site-Url` change warnings.
+
+PDF routes (`/api/pdf/extract`, `/api/pdf/render`) accept multipart file
+uploads so managed hosts without a shared volume can still use them.
+Single-tenant deployments are unaffected. Provider API keys remain shared
+(pooled billing) — for hard isolation between clients, deploy one worker per
+site instead. Full design: proposal
+[026](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/026-media-worker-multi-tenancy-sidecar-proposal.md).
+
 ## Documentation
 
 - [Sidecar Architecture & Implementation Report](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/media-worker-sidecar-proposal.md)

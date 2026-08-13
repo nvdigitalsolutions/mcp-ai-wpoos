@@ -1,6 +1,6 @@
 {
 	"name": "design-media-worker",
-	"version": "2.2.0",
+	"version": "2.4.0",
 	"description": "Design Stack media worker — AI image/video generation, optimization, social publishing, document pipeline, and workflow orchestration",
 	"main": "src/index.js",
 	"type": "module",

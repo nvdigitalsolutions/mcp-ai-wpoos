@@ -12,14 +12,14 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
+import { siteBaseDir, pathGuard } from '../utils/site-paths.js';
 
 export const browserRouter = Router();
 
-function tempFile(ext) {
-  return path.join(os.tmpdir(), `browser-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`);
+function tempFile( req, ext ) {
+	return path.join( siteBaseDir( req.site ), `browser-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 // ── POST /screenshot — capture webpage screenshot ───────────
@@ -62,7 +62,7 @@ browserRouter.post('/screenshot', async (req, res) => {
       ...(options?.clip ? { clip: options.clip } : {}),
     };
 
-    const outPath = outputPath || tempFile(screenshotOpts.type);
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, screenshotOpts.type );
     await page.screenshot({ path: outPath, ...screenshotOpts });
     await browser.close();
 
@@ -107,7 +107,7 @@ browserRouter.post('/pdf', async (req, res) => {
       ...options,
     };
 
-    const outPath = outputPath || tempFile('pdf');
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, 'pdf' );
     await page.pdf({ path: outPath, ...pdfOpts });
     await browser.close();
 

@@ -68,11 +68,14 @@ async function getRedis() {
 }
 
 class JobQueue extends EventEmitter {
-  constructor(name) {
+  constructor(name, site = '') {
     super();
     this.name = name;
-    this.queueKey = `queue:${name}`;
-    this.processingKey = `queue:${name}:processing`;
+    this.site = site;
+    const scope = site ? `${site}:${name}` : name;
+    this.queueKey = `queue:${scope}`;
+    this.delayedKey = site ? `queue:delayed:${site}` : 'queue:delayed';
+    this.processingKey = `queue:${scope}:processing`;
     this._processing = false;
     this._handlers = new Map();
     this._inMemory = [];
@@ -115,7 +118,7 @@ class JobQueue extends EventEmitter {
       if (options.delay && options.delay > 0) {
         // Delayed job — store with score for later pickup
         const executeAt = Date.now() + options.delay;
-        await redis.zadd('queue:delayed', executeAt, serialized);
+        await redis.zadd(this.delayedKey, executeAt, serialized);
       } else {
         await redis.lpush(this.queueKey, serialized);
       }
@@ -157,9 +160,9 @@ class JobQueue extends EventEmitter {
           if (redis && redisAvailable) {
             // Check delayed jobs first
             const now = Date.now();
-            const delayed = await redis.zrangebyscore('queue:delayed', 0, now, 'LIMIT', 0, 1);
+            const delayed = await redis.zrangebyscore(this.delayedKey, 0, now, 'LIMIT', 0, 1);
             if (delayed.length > 0) {
-              await redis.zrem('queue:delayed', delayed[0]);
+              await redis.zrem(this.delayedKey, delayed[0]);
               job = JSON.parse(delayed[0]);
             } else {
               // Blocking pop from queue
@@ -231,7 +234,7 @@ class JobQueue extends EventEmitter {
     if (redis && redisAvailable) {
       const [waiting, delayed] = await Promise.all([
         redis.llen(this.queueKey),
-        redis.zcard('queue:delayed'),
+        redis.zcard(this.delayedKey),
       ]);
       return { waiting, delayed, inMemory: false };
     }
@@ -248,13 +251,20 @@ class JobQueue extends EventEmitter {
 }
 
 /**
- * Get or create a named queue (singleton per name).
+ * Get or create a named queue (singleton per site + name).
+ *
+ * @param {string} name Queue name (e.g. 'workflow').
+ * @param {string} [site] Site slug in multi-tenant mode; 'default' and ''
+ *                        mean unscoped (legacy single-tenant keys).
+ * @return {JobQueue} Queue instance.
  */
-function getQueue(name) {
-  if (!queues.has(name)) {
-    queues.set(name, new JobQueue(name));
+function getQueue(name, site = '') {
+  const scope = site && 'default' !== site ? site : '';
+  const key = `${scope}:${name}`;
+  if (!queues.has(key)) {
+    queues.set(key, new JobQueue(name, scope));
   }
-  return queues.get(name);
+  return queues.get(key);
 }
 
 export { JobQueue, getQueue, getRedis };
