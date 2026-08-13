@@ -19,12 +19,12 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { siteBaseDir, pathGuard } from '../utils/site-paths.js';
+import { siteDirFor, pathGuard } from '../utils/site-paths.js';
 
 export const dataRouter = Router();
 
 function tempFile( req, ext ) {
-	return path.join( siteBaseDir( req.site ), `data-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
+	return path.join( siteDirFor( req.site, 'doc' ), `data-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 // ── POST /translate ─────────────────────────────────────────

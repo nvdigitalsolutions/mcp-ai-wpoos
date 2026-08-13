@@ -21,7 +21,7 @@ import fs from 'fs';
 import path from 'path';
 import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
-import { siteBaseDir, siteUploadDir, pathGuard } from '../utils/site-paths.js';
+import { siteDirFor, siteUploadDir, pathGuard } from '../utils/site-paths.js';
 
 export const pdfRouter = Router();
 
@@ -29,7 +29,7 @@ const upload = multer( { storage: multer.memoryStorage(), limits: { fileSize: 50
 
 // ── Helpers ─────────────────────────────────────────────────
 function tempFile( req, ext ) {
-	return path.join( siteBaseDir( req.site ), `pdf-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
+	return path.join( siteDirFor( req.site, 'browser' ), `pdf-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 function ensureDir( dir ) {

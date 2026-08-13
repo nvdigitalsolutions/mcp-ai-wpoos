@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
 import { detectCapabilities } from '../utils/capabilities.js';
-import { siteUploadDir } from '../utils/site-paths.js';
+import { siteUploadDir, siteDirFor } from '../utils/site-paths.js';
 
 const execAsync = promisify(exec);
 const router = Router();
@@ -238,7 +238,7 @@ router.post('/process', upload.single('file'), async (req, res) => {
     const { operation = 'compress', width, height, format = 'mp4', fps, start, duration } = req.body;
     const inputPath = req.file.path;
     const outputName = `processed_${Date.now()}.${format}`;
-    const outputPath = path.join(path.dirname(inputPath), outputName);
+    const outputPath = path.join(siteDirFor(req.site, 'video'), outputName);
 
     let ffmpegCmd = `ffmpeg -i "${inputPath}"`;
 

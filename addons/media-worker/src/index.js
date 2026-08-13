@@ -12,7 +12,7 @@ import {
 	workflowLimiter,
 } from './middleware/rate-limit.js';
 import { detectCapabilities } from './utils/capabilities.js';
-import { isMultiTenant, cleanupSiteTemp } from './utils/site-paths.js';
+import { isMultiTenant, cleanupSiteTemp, tempStats } from './utils/site-paths.js';
 import { configuredSites } from './middleware/auth.js';
 import { configuredProviders } from './utils/provider-keys.js';
 import { getUsage } from './utils/usage.js';
@@ -105,6 +105,7 @@ app.get( '/api/health/full', async (_req, res) => {
 			slugs: configuredSites(),
 			sites: {},
 			usage: getUsage(),
+			temp: tempStats(),
 		};
 		if ( isMultiTenant() ) {
 			for ( const slug of configuredSites() ) {
@@ -277,9 +278,9 @@ server.headersTimeout = 30000;
 server.keepAliveTimeout = 5000;
 
 // ── Multi-tenant scratch TTL cleanup (no-op in single-tenant mode) ──
-const TEMP_TTL_MS = Number( process.env.TEMP_TTL || 24 * 60 * 60 * 1000 );
-cleanupSiteTemp( TEMP_TTL_MS );
-setInterval( () => cleanupSiteTemp( TEMP_TTL_MS ), 15 * 60 * 1000 ).unref();
+// Per-group TTLs: TEMP_TTL_<GROUP> (defaults in site-paths.js TTL_GROUPS).
+cleanupSiteTemp();
+setInterval( () => cleanupSiteTemp(), 15 * 60 * 1000 ).unref();
 
 function shutdown( signal ) {
 	console.log( `[Design Worker] ${ signal } received — shutting down.` );
