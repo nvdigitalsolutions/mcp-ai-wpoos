@@ -1,5 +1,56 @@
 # oOS – Changelog
 
+## [1.1.55] - 2026-08-13
+
+### Fixed — MCP Agent Compatibility & Tool Reliability (PR #5859)
+
+- **JSON-RPC errors return HTTP 200** — SDKs that drop non-2xx bodies now relay tool errors to the agent instead of hanging silently. Auth/permission failures and pre-dispatch guards keep real HTTP statuses (401/403/429). Filter: `wp_mcp_ai_mcp_error_http_status`.
+- **Legacy MCP HTTP+SSE transport** — SSE-only clients (`Accept: text/event-stream` or `?stream=true`) get a credential-bound session handshake from `GET /mcp` with responses delivered as `event: message` on the GET stream. New `WP_MCP_AI_SSE_Session_Store` (327 lines) backs sessions. Gated by `WP_MCP_AI_LEGACY_SSE_ENABLED`.
+- **Tool rate limiter settings + admin UI** — `tool_rate_limit_max` / `tool_rate_limit_window` / `tool_rate_limit_exempt_tokens` now settings-driven with a security admin section; credential-token traffic exempt by default. Constants remain as fallbacks.
+- **GET/HEAD exempt from request quota** — discovery/SSE probe retry loops no longer exhaust the hourly budget.
+- **Raw credential headers accepted** — `Authorization: cred_xxxxx.SECRET` (no `Bearer` prefix) works for agent configs that forward headers verbatim. Filter: `wp_mcp_ai_accept_raw_credential_header` (default `true`).
+- **Bounded async tool polling** — `mcp_wait_for_async_tool()` defaults to ~45s (15 polls × 3s) and kicks stuck jobs inline, staying under Cloudflare 524 timeouts.
+- 8 files, +1,435/-32 lines. Full rationale: `docs/developer/implementation-plan-mcp-agent-compat.md`, `docs/developer/legacy-sse-transport-plan.md`.
+
+### Added — Hermes Fleet Operator Addon (PR #5858)
+
+- **New addon** `addons/fleet-operator/` (~2,587 lines) — scoped `op_` operator credentials with audience binding, expiry, rate limits, and instant revocation so a supervisor agent (Hermes or any MCP/A2A host) can operate the site within an allowlist.
+- **Server-side scoping** — MCP `tools/list` scoping plus `tools/call` enforcement and audit attribution via base-plugin hooks; `/mcp` method enum relaxed so ping/notifications reach the JSON-RPC handler.
+- **Ships**: admin page, WP-CLI commands, Hermes config generator, 3-skill nvoos pack (approvals, operations, site-context), runbook (`docs/operations/fleet/hermes-operator-setup.md`), and PHPUnit coverage (406 lines).
+
+### Security — Media Worker v2.2.0 Hardening (PR #5857)
+
+- **Nine controls**: timing-safe `X-Site-Token` auth, SSRF guard (OWASP controls), sandboxed Puppeteer launcher, express-rate-limit, Helmet headers, split health endpoints with real capability detection, structured request logging, graceful shutdown, unit tests.
+- **`WP_MEDIA_WORKER_TOKEN` constant** takes priority over the option in the plugin sidecar client; settings page shows constant mode, warns on cleartext URLs, links the Velocity guide.
+- **Cloud deployment**: Velocity setup guide (`docs/operations/deployment/media-worker-velocity-setup.md`), `.env.example`, CI workflow, security implementation plan.
+
+### Chore — Media Worker Subtree Sync (PR #5856)
+
+- New `sync-media-worker.yml` GitHub Action mirrors `addons/media-worker/` to the standalone `mcp-ai-wpoos-media-worker` repo on pushes to main/alpha-working.
+
+### Added — Database Connection Pooling Stance (PR #5855)
+
+- **Wave 1**: Action Scheduler fallback enqueue gated when RabbitMQ worker is active; atomic concurrency-guard slot tracking (Redis `wp_cache_incr` + InnoDB `INSERT … ON DUPLICATE KEY UPDATE` fallback); new `mcp_ai_concurrency_slots` table with daily cleanup cron.
+- **Wave 2**: PDO persistent connections in the Graphify remote SQL driver; DB polling cron gated behind RabbitMQ transport preference; queue worker batch size configurable (`--batch-size=N` + filter); Site Health checks for MySQL pool, queue depth, and RabbitMQ health.
+- **RabbitMQ admin UI**: section registered with settings registry, view added to Orchestration tab, broken `render()` fixed.
+- 16 files, +2,572/-62 lines. Full spec: `docs/project/proposals/023-database-connection-pooling-stance.md`.
+
+### Security — PostCSS 8.5.26 (GHSA-6g55-p6wh-862q)
+
+- `postcss` minimum bumped to >=8.5.26 in `addons/schedule-anything-spa/package.json` to resolve the advisory. Version constraint only.
+
+### Versioning
+
+- Bumped to **1.1.55** across all version-bearing files.
+- Pro addon: 1.1.55.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+- Bundled skills: **74** base (+ 41 Pro).
+- Total coding-time agent skills: **51** (20 wp-* + 30 design-* + 1 mcp-ai-wpoos-plugin).
+
+---
+
 ## [1.1.54] - 2026-08-12
 
 ### Security — PostCSS CVE-2026-69153 (PR #5850)

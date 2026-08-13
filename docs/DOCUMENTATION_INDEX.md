@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 12, 2026  
-**Plugin Version:** 1.1.54  
+**Last Updated:** August 13, 2026
+**Plugin Version:** 1.1.55
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,8 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **AUGUST 13, 2026 UPDATE (v1.1.55):** MCP AGENT COMPATIBILITY (JSON-RPC ERRORS RETURN HTTP 200, LEGACY HTTP+SSE TRANSPORT, TOOL RATE LIMITER SETTINGS, RAW CREDENTIAL HEADERS, BOUNDED ASYNC POLLING). NEW HERMES FLEET OPERATOR ADDON (SCOPED `op_` CREDENTIALS, MCP TOOLS/LIST SCOPING, WP-CLI, SKILLS PACK). MEDIA WORKER v2.2.0 SECURITY HARDENING (TIMING-SAFE TOKEN, SSRF GUARD, SANDBOXED PUPPETEER, RATE LIMITING, HELMET) + `WP_MEDIA_WORKER_TOKEN` + VELOCITY DEPLOY GUIDE. DATABASE CONNECTION POOLING STANCE (PROPOSAL 023: RABBITMQ GATING, ATOMIC CONCURRENCY SLOTS, PDO PERSISTENCE, SITE HEALTH). POSTCSS >=8.5.26 (GHSA-6g55-p6wh-862q). MEDIA WORKER SUBTREE SYNC WORKFLOW.
+>
 > **AUGUST 12, 2026 UPDATE (v1.1.54):** POSTCSS CVE-2026-69153 FIX. MCP ASYNC TOOL RESPONSE HANDLING FIX. PLUGIN UPDATER INTEGRITY CHECK v2 (PHANTOM BRIDGE + STAT CACHE). API KEY MERGED-SETTINGS FIX ACROSS 20 RESEARCH TOOLS. 29 DESIGN-* SKILLS ENHANCED/CREATED (7 NEW PRO-TOOLKIT SKILLS, ~8,000 LINES). OKF YAML FRONTMATTER COMPLIANCE FOR ALL 44 SKILLS. README TOC ANCHOR FIXES (VS16 EMOJIS, U+26xx/U+27xx SYMBOLS). STALE v1.1.52 BUILD ARTIFACTS REMOVED.
 >
 > **AUGUST 12, 2026 UPDATE (v1.1.53):** SHARED ANALYTICS SERVICE (7 PLATFORM ADAPTERS, 5 DTOs, CROSS-PLATFORM NORMALIZATION). CIRCUIT BREAKER ON ALL 15 AI PROVIDER CLIENTS. CONCURRENCY GUARD + COST TRACKER + BACKPRESSURE WIRED INTO EXECUTION PIPELINE. 22 NEW DESIGN-* AGENT SKILLS SYNCED (BUNDLED SKILLS: 45→67). SSE BACKOFF RESET AND RATE-LIMIT FIXES. LOAD GUARD FATAL ERROR FIX. DOCUMENTATION CATCH-UP (CHANGELOG, README, CLAUDE.md, AGENTS.md, 6 .context/ FILES).
@@ -606,6 +608,42 @@ n#### New Audit & Compliance Docs
 - **[docs/ROADMAP.md](ROADMAP.md)** ⭐ **UPDATED** — v1.1.39 released section with capability snapshot update.
 - **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.39 section with full PR-level detail across 7 categories.
 - **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.39 latest updates section, version bump, duplicate section cleanup.
+
+---
+
+## 🆕 August 2026 — v1.1.55: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0, Connection Pooling
+
+### New and updated documents (August 13, 2026, v1.1.55)
+
+#### New MCP & Transport Docs
+
+- **[docs/developer/implementation-plan-mcp-agent-compat.md](developer/implementation-plan-mcp-agent-compat.md)** ⭐ **NEW** — MCP agent compatibility & tool reliability: HTTP 200 JSON-RPC errors, tool rate limiter settings, raw credential headers, bounded async polling. (August 13, 2026)
+- **[docs/developer/legacy-sse-transport-plan.md](developer/legacy-sse-transport-plan.md)** ⭐ **NEW** — Legacy MCP HTTP+SSE transport plan with credential-bound session store. (August 13, 2026)
+
+#### New Fleet Operator Docs
+
+- **[addons/fleet-operator/README.md](../addons/fleet-operator/README.md)** ⭐ **NEW** — Hermes Fleet Operator addon README: scoped `op_` credentials, admin page, WP-CLI, config generator, skills pack. (August 13, 2026)
+- **[docs/operations/fleet/hermes-operator-setup.md](operations/fleet/hermes-operator-setup.md)** ⭐ **NEW** — Hermes Fleet Operator setup runbook. (August 13, 2026)
+
+#### New Media Worker Docs
+
+- **[docs/operations/deployment/media-worker-velocity-setup.md](operations/deployment/media-worker-velocity-setup.md)** ⭐ **NEW** — Media Worker Cloudways Velocity cloud deployment guide. (August 12, 2026)
+- **[docs/project/proposals/025-media-worker-cloud-deployment-security-implementation-plan.md](project/proposals/025-media-worker-cloud-deployment-security-implementation-plan.md)** ⭐ **NEW** — Media Worker cloud deployment & security hardening implementation plan (v2.2.0). (August 12, 2026)
+
+#### New Proposals
+
+- 023: Database Connection Pooling Stance (proposal + implementation plan, 1,484 lines) — RabbitMQ gating, atomic concurrency slots, PDO persistence, Site Health. (August 12, 2026)
+- 024: Hermes Agent Fleet Operator implementation plan (325 lines). (August 13, 2026)
+- 025: Media Worker cloud deployment & security implementation plan (359 lines). (August 12, 2026)
+
+#### Updated Core Docs
+
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.55 highlights, addon list reconciliation (26 addons, ghost entries removed), MCP transports & rate limiting, skill counts (74 base + 41 Pro bundled; 51 coding-time).
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.55 with full PR-level detail (PRs #5855–#5859).
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.55 entry.
+- **[docs/project/ADDON_INVENTORY.md](project/ADDON_INVENTORY.md)** ⭐ **UPDATED** — Fleet Operator added (#21), Media Worker bumped to 2.2.0, ghost AI Platform entry removed.
+- **[docs/project/FOR_REVIEWERS.md](project/FOR_REVIEWERS.md)** ⭐ **UPDATED** — version 1.1.55, addon count, Fleet Operator + Media Worker v2.2.0.
+- **[.context/rest-api.md](../.context/rest-api.md)** ⭐ **UPDATED** — MCP transports, error semantics, rate limiting (v1.1.55).
 
 ---
 

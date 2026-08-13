@@ -110,7 +110,7 @@ All environment variables are documented in [.env.example](.env.example).
 - [Sidecar Architecture & Implementation Report](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/media-worker-sidecar-proposal.md)
 - [Docker Setup Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/operations/deployment/media-worker-docker-setup.md)
 - [Cloudways Velocity Setup Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/operations/deployment/media-worker-velocity-setup.md)
-- [Cloud Deployment & Security Plan](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/024-media-worker-cloud-deployment-security-implementation-plan.md)
+- [Cloud Deployment & Security Plan](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/025-media-worker-cloud-deployment-security-implementation-plan.md)
 
 ## Repository Sync
 
@@ -119,3 +119,11 @@ This folder is mirrored one-way to the standalone repo
 via the `sync-media-worker.yml` git-subtree GitHub Action. Changes committed
 directly to the standalone repo are overwritten by the next sync — contribute
 changes through the monorepo instead.
+
+## Credits
+
+All third-party npm packages are declared in `package.json`. The v2.2.0
+security release added **helmet** ^8.0.0 (MIT, security headers) and
+**express-rate-limit** ^7.5.0 (MIT, rate limiting). The full per-package
+license table lives in the monorepo root [`CREDITS.md`](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/CREDITS.md)
+under *"JavaScript Dependencies — Add-ons → addons/media-worker/"*.

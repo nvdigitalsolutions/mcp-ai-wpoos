@@ -1,6 +1,6 @@
 # NV oOS Proposals Directory
 
-**Last Updated:** July 1, 2026
+**Last Updated:** August 13, 2026
 **Total Proposals:** 100+ files (see [RELATED_PROPOSALS_INDEX.md](./RELATED_PROPOSALS_INDEX.md) for cross-reference map)
 **Completed:** 30+ | **In Progress:** 4 | **Pending:** ~30 (many stale)
 
@@ -12,7 +12,10 @@ This directory contains proposals, research, and implementation status for major
 
 ## 🎯 Quick Status Overview
 
-### ✅ Recently Completed (June-July 2026)
+### ✅ Recently Completed (June-August 2026)
+- **Hermes Fleet Operator** — External-operator governance addon (`addons/fleet-operator/`): scoped `op_` credentials, MCP tools/list scoping, WP-CLI, skills pack (see [`024-hermes-agent-fleet-operator-implementation-plan.md`](./024-hermes-agent-fleet-operator-implementation-plan.md))
+- **Database Connection Pooling Stance** — Proposal 023 implemented across two waves (RabbitMQ gating, atomic concurrency slots, PDO persistence, Site Health) (see [`023-database-connection-pooling-stance.md`](./023-database-connection-pooling-stance.md))
+- **Media Worker Cloud Deployment & Security** — v2.2.0 hardening (timing-safe token, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet) + Velocity cloud deploy guide (see [`025-media-worker-cloud-deployment-security-implementation-plan.md`](./025-media-worker-cloud-deployment-security-implementation-plan.md))
 - **NV oOS Graphify v1.0.0** — Standalone knowledge graph plugin (14 tools, Cytoscape.js, 18 remote drivers)
 - **NV oOS Graphify AI v1.0.0-dev** — 13-provider AI addon with RAG and embeddings
 - **NV oOS Graphify AI Platform v1.0.0-dev** — Agents, A2A, ACP, Federation, Harness, Skills
@@ -30,7 +33,6 @@ This directory contains proposals, research, and implementation status for major
 - **Layer I Guardrails** — Jailbreak prevention (v1.1.29, Jun 12)
 
 ### 🚧 Currently In Progress
-- **Hermes Agent Fleet Operator** — External-operator governance for Hermes (or any MCP/A2A host) managing multiple NV oOS sites (see [`024-hermes-agent-fleet-operator-implementation-plan.md`](./024-hermes-agent-fleet-operator-implementation-plan.md))
 - **Cross-Platform Extraction Phase 3** — ~22% tool migration (43/195 base); Pro tools pending
 - **Laravel-Scale Deployment Architecture** — Central Octane orchestrator proposal under review (see [`laravel-scale-deployment-architecture.md`](./laravel-scale-deployment-architecture.md))
 - **Graphify Release Readiness** — Plugin Check compliance audit in progress (see [`nvoos-graphify-release-readiness.md`](./nvoos-graphify-release-readiness.md))

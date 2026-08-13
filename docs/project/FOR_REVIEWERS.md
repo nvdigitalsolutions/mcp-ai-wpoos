@@ -14,12 +14,12 @@ Architecturally, the project has undergone a major framework extraction: the AI 
 The repo is a **monorepo** containing:
 - The **base plugin** (GPLv3, ships to WordPress.org) — `mcp-ai-wpoos.php` + `includes/`
 - A **Pro addon** (commercial/proprietary) — `addons/pro/`
-- **25 additional addons** (various licenses) — `addons/*/`
+- **25 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v2.2.0)
 - The **extracted AI engine** (framework-agnostic, Hexagonal Architecture) — `lib/core/`
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.52 (August 2026)
+**Current version:** 1.1.55 (August 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,502 (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -96,7 +96,7 @@ core/
 
 ## 4. Addon Inventory (Production vs Experimental)
 
-The monorepo contains **25 addon directories** (27 entries in the inventory, including 2 reference-only Cloudflare Workers). See [ADDON_INVENTORY.md](ADDON_INVENTORY.md) for full details including license, version, and dependencies.
+The monorepo contains **26 addon directories** under `addons/` (27 entries in the [ADDON_INVENTORY.md](ADDON_INVENTORY.md) inventory, including the standalone `core/` plugin). See the inventory for full details including license, version, and dependencies.
 
 ### Production (actively maintained — review priority)
 
@@ -116,7 +116,8 @@ The monorepo contains **25 addon directories** (27 entries in the inventory, inc
 | **Comic Reader** | 0.2.0 | GPLv3 | CBR/CBZ/CB7/CBT comic reader & AI-powered creator. React reading interface. |
 | **Funiq Bridge** | 1.0.0 | GPLv3 | Payload CMS → WordPress bridge for Funiq React PWA. REST API, CPTs, taxonomies, React admin SPA. |
 | **LibreChat** | 0.1.0 | GPLv3 | Sandboxed Python/JavaScript code interpreter, TTS/STT speech services, web search reranker. |
-| **Media Worker** | 0.1.0 | GPLv3 | Docker-based Node.js sidecar. 11 route handlers (image, video, pdf, ocr, email, social, code, data, document, browser, workflow). Queue module with concurrent processing. |
+| **Fleet Operator** | 0.1.0 | GPLv3 | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` credentials with audience binding, expiry, rate limits, revocation; MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI, config generator, skills pack. |
+| **Media Worker** | 2.2.0 | GPLv3 | Docker-based Node.js sidecar. 11 route handlers (image, video, pdf, ocr, email, social, code, data, document, browser, workflow). Queue module with concurrent processing. v2.2.0 hardening: timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet. |
 
 ### Experimental (works but limited testing)
 
@@ -141,7 +142,6 @@ The monorepo contains **25 addon directories** (27 entries in the inventory, inc
 | Component | Directory | Type | Description |
 |---|---|---|---|
 | Cloud Worker | `addons/cloud-worker/` | Cloudflare Worker | SaaS backend. Inference proxy, Stripe billing, D1 ledger. Deployed independently. |
-| AI Platform | `addons/ai-platform/` | WordPress Plugin | AI platform admin dashboard + CPTs (Project, Resource, Template). In active development. |
 | Tenant Router | `addons/tenant-router/` | Cloudflare Worker | Edge-level routing for Schedule Anything multi-tenant SaaS (Cloudflare KV + REST fallback). |
 
 ---
