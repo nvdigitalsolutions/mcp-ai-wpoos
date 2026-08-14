@@ -4,31 +4,49 @@ Shared analytics subsystem consumed by all NV oOS Pro toolkits.
 
 ## Purpose
 
-Provides a single, consistent analytics service with:
+Provides a single, consistent analytics service with a unified data model (5 immutable DTOs), cross-platform normalization, smart caching, rate-limit coordination, and an extensible adapter pattern — so every Pro toolkit reports analytics the same way.
 
-- **Unified data model** — 5 immutable DTOs (Account, Post, Metric, TimeSeries, Report)
-- **Cross-platform normalization** — Platform-specific metric names mapped to unified schema
-- **Smart caching** — Transient-based with per-data-type TTLs and cache stampede prevention
-- **Rate limit coordination** — Token-bucket per platform prevents API exhaustion
-- **Extensible adapter pattern** — One interface, many platforms (Meta ✓, Twitter, LinkedIn, TikTok, WooCommerce, GA4, Cloudways)
+## Tier
 
-## Neighbors
+| | |
+|---|---|
+| **Distribution** | Pro |
+| **PHP target** | 8.1+ (Pro addon minimum) |
+| **Loaded by** | `addons/pro/includes/analytics/init.php` on `plugins_loaded` priority 20 (after toolkit inits at priority 10, so platform adapters can be registered) |
+| **Optional dependencies** | none (platform connectivity is the adapter's concern) |
 
-- `../tools/social-media/` — Social Media toolkit tools (will consume this service in Phase 4)
-- `../tools/ecommerce/` — Ecommerce toolkit (will consume this service)
-- `../tools/analytics/` — Advanced Analytics toolkit (complementary)
-- `../mcp-servers/` — MCP server definitions (will register tools)
+## Public Surface
 
-## Context Files
+| Symbol | File | Used by |
+|---|---|---|
+| `WP_MCP_AI_Analytics_Service` (singleton facade) | `class-wp-mcp-ai-analytics-service.php` | Social media tools (`get_social_analytics`, `get_cross_platform_analytics`), admin settings page |
+| `WP_MCP_AI_Analytics_Adapter` (interface) | `interface-wp-mcp-ai-analytics-adapter.php` | All platform adapters |
+| `WP_MCP_AI_Analytics_Account_DTO` | `dto/class-wp-mcp-ai-analytics-account-dto.php` | Service + adapters (immutable data carrier) |
+| `WP_MCP_AI_Analytics_Post_DTO` | `dto/class-wp-mcp-ai-analytics-post-dto.php` | Service + adapters |
+| `WP_MCP_AI_Analytics_Metric_DTO` | `dto/class-wp-mcp-ai-analytics-metric-dto.php` | Service + adapters |
+| `WP_MCP_AI_Analytics_TimeSeries_DTO` | `dto/class-wp-mcp-ai-analytics-timeseries-dto.php` | Service + adapters |
+| `WP_MCP_AI_Analytics_Report_DTO` | `dto/class-wp-mcp-ai-analytics-report-dto.php` | Service + tools (final response shape) |
+| `WP_MCP_AI_Analytics_Cache` | `class-wp-mcp-ai-analytics-cache.php` | Service (transient cache + stampede prevention) |
+| `WP_MCP_AI_Analytics_Rate_Limiter` | `class-wp-mcp-ai-analytics-rate-limiter.php` | Service (per-platform token bucket) |
+| `WP_MCP_AI_Analytics_Metric_Normalizer` | `class-wp-mcp-ai-analytics-metric-normalizer.php` | Service (platform → unified schema) |
+| `WP_MCP_AI_Analytics_Site_Health` | `class-wp-mcp-ai-analytics-site-health.php` | Site Health integration |
+| `WP_MCP_AI_Analytics_{Meta,Twitter,LinkedIn,TikTok,WooCommerce,GA4,Cloudways}_Adapter` | `adapters/*.php` | Registered by `init.php` / toolkits |
 
-Load alongside this directory:
-- `.context/security-checklist.md`
-- `.context/tool-registry.md`
-- `.context/pro-addon-architecture.md`
+## Inputs / Outputs / Neighbors
 
-## Entry Point
+- **Reads from:** platform APIs through adapters; transient cache; provider credentials via the Pro settings registry.
+- **Writes to:** transients (per-data-type TTLs); Site Health info.
+- **Upstream callers:** `addons/pro/includes/tools/social-media/` (get_social_analytics, get_cross_platform_analytics), `addons/pro/includes/tools/ecommerce/` and `../tools/analytics/` (Phase 4+ consumers), `addons/pro/includes/admin/class-wp-mcp-ai-analytics-service-page.php`.
+- **Downstream collaborators:** platform adapters (same folder); `addons/pro/includes/mcp-servers/` (registered MCP servers).
+- **Events fired:** none public.
+- **Events listened to:** none public.
 
-`init.php` — Bootstrap on `plugins_loaded` priority 20.
+## Conventions
+
+- DTOs are immutable data carriers — hydrate once via `from_array()`, never mutate after construction; presenters/tools map DTOs to responses, they do not extend them.
+- Every adapter implements `WP_MCP_AI_Analytics_Adapter` and returns normalized DTOs only — never raw platform payloads.
+- All platform calls go through the rate limiter and the cache layer; adapters must not call external APIs directly.
+- New platforms are added as new adapter classes + one registration line in `init.php` — no changes to the service singleton.
 
 ## Architecture
 
@@ -89,12 +107,23 @@ $service->invalidate_cache( 'instagram' );
 | 7 | MCP server registration | ✅ Complete |
 | 7 | Site Health integration | ✅ Complete |
 
-## Testing
+## Tests
 
 ```bash
-# Run analytics-specific tests
-vendor/bin/phpunit tests/analytics/
-
-# Lint the analytics directory
 composer run lint:errors-only
 ```
+
+There is no dedicated PHPUnit suite for this folder yet; the consumer tools (social media analytics tools) and the service page are covered by the Pro toolkit tool tests. When adding adapters, add `tests/` coverage alongside.
+
+## Also Load
+
+- [`.context/conventions.md`](../../../../.context/conventions.md) — naming + style (always)
+- [`.context/security-checklist.md`](../../../../.context/security-checklist.md) — security (always; API credentials flow through here)
+- [`.context/tool-registry.md`](../../../../.context/tool-registry.md) — tool registration patterns
+- [`.context/pro-vs-base.md`](../../../../.context/pro-vs-base.md) — Pro-only subsystem boundaries
+
+## See Also
+
+- Upstream parent: [`addons/pro/includes/`](../)
+- Siblings worth knowing about: [`../tools/social-media/`](../tools/social-media/) (primary consumer), [`../mcp-servers/`](../mcp-servers/)
+- Proposal: [`docs/project/proposals/021-shared-analytics-service-proposal.md`](../../../../docs/project/proposals/021-shared-analytics-service-proposal.md)

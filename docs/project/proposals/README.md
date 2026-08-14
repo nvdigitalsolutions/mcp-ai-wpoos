@@ -1,6 +1,6 @@
 # NV oOS Proposals Directory
 
-**Last Updated:** August 13, 2026
+**Last Updated:** August 14, 2026
 **Total Proposals:** 100+ files (see [RELATED_PROPOSALS_INDEX.md](./RELATED_PROPOSALS_INDEX.md) for cross-reference map)
 **Completed:** 30+ | **In Progress:** 4 | **Pending:** ~30 (many stale)
 
@@ -13,6 +13,10 @@ This directory contains proposals, research, and implementation status for major
 ## 🎯 Quick Status Overview
 
 ### ✅ Recently Completed (June-August 2026)
+- **Media Worker Phase 3 — Scale Without Breaking Changes** — W1–W7 implemented (multisite per-blog tokens, usage reporter, env merges, opt-in Redis rate-limit store, provider-keys file hot-reload, Velocity deploy workflow); worker bumped to v3.0.0; strict-path default flip deferred (open Q5) (see [`028-media-worker-phase3-proposal.md`](./028-media-worker-phase3-proposal.md))
+- **Media Worker Phase 2 — Per-Site Provider Keys & Scale Guide** — `SITE_PROVIDER_KEYS`, per-site usage counters, grouped temp TTLs, cluster warnings + k6 kit; spec marked implemented (PR #5868) (see [`027-media-worker-multi-tenancy-phase2-spec.md`](./027-media-worker-multi-tenancy-phase2-spec.md))
+- **Media Worker Multi-Tenancy Sidecar (Phase 1)** — Shared worker mode v2.4.0: `SITE_TOKENS` per-site isolation, per-site rate limits, token rotation (PR #5866) (see [`026-media-worker-multi-tenancy-sidecar-proposal.md`](./026-media-worker-multi-tenancy-sidecar-proposal.md))
+- **Hermes WebUI MCP Server + SSH Bridge + Skill Sync** — `bin/hermes-mcp-server.js`, `bin/mcp-bridge-ssh.js`, Hermes skill sync scripts (PR #5862 + follow-ups)
 - **Hermes Fleet Operator** — External-operator governance addon (`addons/fleet-operator/`): scoped `op_` credentials, MCP tools/list scoping, WP-CLI, skills pack (see [`024-hermes-agent-fleet-operator-implementation-plan.md`](./024-hermes-agent-fleet-operator-implementation-plan.md))
 - **Database Connection Pooling Stance** — Proposal 023 implemented across two waves (RabbitMQ gating, atomic concurrency slots, PDO persistence, Site Health) (see [`023-database-connection-pooling-stance.md`](./023-database-connection-pooling-stance.md))
 - **Media Worker Cloud Deployment & Security** — v2.2.0 hardening (timing-safe token, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet) + Velocity cloud deploy guide (see [`025-media-worker-cloud-deployment-security-implementation-plan.md`](./025-media-worker-cloud-deployment-security-implementation-plan.md))

@@ -29,6 +29,7 @@ These context files solve that problem by giving agents a fast, focused referenc
 | `pro-vs-base.md` | Making Base vs Pro version placement decisions |
 | `cross-platform-extraction.md` | Working on the cross-platform extraction engine (Laravel/Craft CMS adapters) |
 | `settings-storage.md` | Working on plugin options, transients, or custom table storage |
+| `media-worker.md` | Working on the media worker sidecar, the plugin client trait, or worker-routed Pro services |
 
 ## Subdirectories
 

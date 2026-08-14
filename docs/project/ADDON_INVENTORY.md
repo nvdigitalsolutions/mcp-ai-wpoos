@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** August 11, 2026
+> **Last Updated:** August 14, 2026
 
 ---
 
@@ -44,7 +44,7 @@
 | 14 | **Funiq Bridge** | `addons/funiq-bridge/` | 1.0.0 | ✅ Production | GPL-3.0 | Base plugin | Payload CMS-to-WordPress bridge for the Funiq React PWA. REST API, CPTs (Product, Promotion, Promocode), taxonomies (Category, Brand, Color, Status), React admin SPA. |
 | 15 | **LibreChat** | `addons/librechat/` | 0.1.0 | ✅ Production | GPL-3.0 | Base plugin | Code interpreter (sandboxed Python/JavaScript), speech services (TTS/STT), and web search reranker. SPA build integration. |
 | 16 | **Page Agent** | `addons/page-agent/` | 0.1.0 | ⚠️ Experimental | GPL-3.0 | Base plugin | AI-powered browser page control copilot powered by Alibaba Page Agent (MIT). Give any WordPress page its own AI agent that can click, type, and navigate via natural language. Client-side only — no headless browser required. Includes shortcode, Elementor widget, REST endpoints, and MCP tool bridge. |
-| 17 | **Media Worker** | `addons/media-worker/` | 2.2.0 | ⚠️ Experimental | GPL-3.0 | None (standalone) | Docker-based Node.js sidecar for heavy media processing. 11 Express route handlers: browser (Puppeteer), code, data, document, email, image, ocr (Tesseract), pdf, social, video, workflow. Queue module with concurrent processing. v2.2.0 security hardening: timing-safe X-Site-Token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet headers. Pro integration via settings + client trait (`WP_MEDIA_WORKER_TOKEN` constant supported). |
+| 17 | **Media Worker** | `addons/media-worker/` | 3.0.0 | ⚠️ Experimental | GPL-3.0 | None (standalone) | Docker-based Node.js sidecar for heavy media processing. 11 Express route handlers: browser (Puppeteer), code, data, document, email, image, ocr (Tesseract), pdf, social, video, workflow. Queue module with concurrent processing. Multi-tenant shared worker mode (v2.4.0+): `SITE_TOKENS` per-site isolation, per-site rate limits, token rotation. Phase 2: per-site provider keys (`SITE_PROVIDER_KEYS`), usage counters, grouped temp TTLs, k6 load-test kit. Phase 3: opt-in Redis rate-limit store, `PROVIDER_KEYS_FILE` hot-reload, multisite per-blog tokens. Security: timing-safe X-Site-Token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet headers. Pro integration via settings + client trait (`WP_MEDIA_WORKER_TOKEN` constant supported); worker routing with local fallbacks. |
 | 18 | **Schedule Anything** | `addons/schedule-anything-platform/` | 0.1.0 | ⚠️ Experimental | Proprietary | Base plugin | Full SaaS booking platform with Stripe payment integration, calendar management, and multi-tenant architecture. |
 | 19 | **Schedule Anything SPA** | `addons/schedule-anything-spa/` | 0.1.0 | ⚠️ Experimental | Proprietary | Schedule Anything Platform | React SPA frontend for the Schedule Anything SaaS booking platform. Vite + Tailwind + React frontend. |
 | 20 | **Crocoblock DS** | `addons/crocoblock-ds/` | 0.1.0 | ⚠️ Experimental | GPL-3.0 | None | Design token system for Crocoblock suite. 55+ CSS tokens, admin editor, DTCG export, a11y tokens. |

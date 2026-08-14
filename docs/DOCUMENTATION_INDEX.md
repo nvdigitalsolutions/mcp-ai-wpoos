@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 13, 2026
-**Plugin Version:** 1.1.55
+**Last Updated:** August 14, 2026
+**Plugin Version:** 1.1.56
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,7 +9,9 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
-> **AUGUST 13, 2026 UPDATE (v1.1.55):** MCP AGENT COMPATIBILITY (JSON-RPC ERRORS RETURN HTTP 200, LEGACY HTTP+SSE TRANSPORT, TOOL RATE LIMITER SETTINGS, RAW CREDENTIAL HEADERS, BOUNDED ASYNC POLLING). NEW HERMES FLEET OPERATOR ADDON (SCOPED `op_` CREDENTIALS, MCP TOOLS/LIST SCOPING, WP-CLI, SKILLS PACK). MEDIA WORKER v2.2.0 SECURITY HARDENING (TIMING-SAFE TOKEN, SSRF GUARD, SANDBOXED PUPPETEER, RATE LIMITING, HELMET) + `WP_MEDIA_WORKER_TOKEN` + VELOCITY DEPLOY GUIDE. DATABASE CONNECTION POOLING STANCE (PROPOSAL 023: RABBITMQ GATING, ATOMIC CONCURRENCY SLOTS, PDO PERSISTENCE, SITE HEALTH). POSTCSS >=8.5.26 (GHSA-6g55-p6wh-862q). MEDIA WORKER SUBTREE SYNC WORKFLOW.
+> **AUGUST 14, 2026 UPDATE (v1.1.56):** MEDIA WORKER v3.0.0 — MULTI-TENANT SHARED WORKER MODE v2.4.0 (`SITE_TOKENS` PER-SITE ISOLATION, RATE LIMITS, ROTATION), PHASE 2 PER-SITE PROVIDER KEYS (`SITE_PROVIDER_KEYS`, USAGE COUNTERS, GROUPED TEMP TTLS, CLUSTER WARNINGS + K6 LOAD-TEST KIT), PHASE 3 OPERATIONAL SCALE (MULTISITE PER-BLOG TOKENS, USAGE REPORTER, OPT-IN REDIS RATE-LIMIT STORE, `PROVIDER_KEYS_FILE` HOT-RELOAD). ZERO-DOWNTIME TOKEN ROTATION (`WORKER_API_TOKEN_PREVIOUS`) + CANVAS v3 NAPI PREBUILDS + CLOUDWAYS READINESS + LIVE ROUTE FIXES. WORKER ROUTING EXPANSION (DOCUMENT GENERATION, OCR, FRAMES, CHARTS, EMAIL, QR/TRANSLATE/PDF, VECTORIZE — LOCAL FALLBACKS). HERMES TOOLING: WEBUI MCP SERVER, SSH BRIDGE, SKILL SYNC, ZED CONSOLE PROFILE. PROPOSALS 026/027/028.
+>
+> **AUGUST 13, 2026 UPDATE (v1.1.55):** MCP AGENT COMPATIBILITY (JSON-RPC ERRORS RETURN HTTP 200, LEGACY HTTP+SSE TRANSPORT, TOOL RATE LIMITER SETTINGS, RAW CREDENTIAL HEADERS, BOUNDED ASYNC POLLING). NEW HERMES FLEET OPERATOR ADDON (SCOPED `op_` CREDENTIALS, MCP TOOLS/LIST SCOPING, WP-CLI, SKILLS PACK). MEDIA WORKER v2.2.0 SECURITY HARDENING (TIMING-SAFE TOKEN, SSRF GUARD, SANDBOXED PUPPETEER, RATE LIMITING, HELMET) + `WP_MEDIA_WORKER_TOKEN` + VELOCITY DEPLOY GUIDE. RABBITMQ STATUS WIDGET FIX. DATABASE CONNECTION POOLING STANCE (PROPOSAL 023: RABBITMQ GATING, ATOMIC CONCURRENCY SLOTS, PDO PERSISTENCE, SITE HEALTH). POSTCSS >=8.5.26 (GHSA-6g55-p6wh-862q). MEDIA WORKER SUBTREE SYNC WORKFLOW.
 >
 > **AUGUST 12, 2026 UPDATE (v1.1.54):** POSTCSS CVE-2026-69153 FIX. MCP ASYNC TOOL RESPONSE HANDLING FIX. PLUGIN UPDATER INTEGRITY CHECK v2 (PHANTOM BRIDGE + STAT CACHE). API KEY MERGED-SETTINGS FIX ACROSS 20 RESEARCH TOOLS. 29 DESIGN-* SKILLS ENHANCED/CREATED (7 NEW PRO-TOOLKIT SKILLS, ~8,000 LINES). OKF YAML FRONTMATTER COMPLIANCE FOR ALL 44 SKILLS. README TOC ANCHOR FIXES (VS16 EMOJIS, U+26xx/U+27xx SYMBOLS). STALE v1.1.52 BUILD ARTIFACTS REMOVED.
 >
@@ -611,7 +613,11 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0, Connection Pooling
+## 🆕 August 2026 — v1.1.55–v1.1.56: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.0.0, Connection Pooling
+
+### New and updated documents (August 14, 2026, v1.1.56)
+
+- Media Worker multi-tenancy & scale docs (026/027/028 proposals, k6 load-test kit, probe-wordpress.php) are listed under [New Media Worker Docs](#new-media-worker-docs) below.
 
 ### New and updated documents (August 13, 2026, v1.1.55)
 
@@ -629,12 +635,20 @@ n#### New Audit & Compliance Docs
 
 - **[docs/operations/deployment/media-worker-velocity-setup.md](operations/deployment/media-worker-velocity-setup.md)** ⭐ **NEW** — Media Worker Cloudways Velocity cloud deployment guide. (August 12, 2026)
 - **[docs/project/proposals/025-media-worker-cloud-deployment-security-implementation-plan.md](project/proposals/025-media-worker-cloud-deployment-security-implementation-plan.md)** ⭐ **NEW** — Media Worker cloud deployment & security hardening implementation plan (v2.2.0). (August 12, 2026)
+- **[docs/project/proposals/026-media-worker-multi-tenancy-sidecar-proposal.md](project/proposals/026-media-worker-multi-tenancy-sidecar-proposal.md)** ⭐ **NEW** — Media Worker multi-tenancy sidecar proposal (Phase 1, merged). (August 13, 2026)
+- **[docs/project/proposals/027-media-worker-multi-tenancy-phase2-spec.md](project/proposals/027-media-worker-multi-tenancy-phase2-spec.md)** ⭐ **NEW** — Media Worker Phase 2 spec: per-site provider keys and scale guide (implemented, PR #5868). (August 13, 2026)
+- **[docs/project/proposals/028-media-worker-phase3-proposal.md](project/proposals/028-media-worker-phase3-proposal.md)** ⭐ **NEW** — Media Worker Phase 3 proposal: scale without breaking changes (W1–W7 implemented 2026-08-14, worker v3.0.0). (August 14, 2026)
+- **[addons/media-worker/bin/load-test/README.md](../addons/media-worker/bin/load-test/README.md)** ⭐ **NEW** — k6 load-test kit for shared workers with split decision table. (August 14, 2026)
+- **[addons/media-worker/bin/probe-wordpress.php](../addons/media-worker/bin/probe-wordpress.php)** ⭐ **NEW** — WordPress-side connectivity probe for worker routing decisions. (August 14, 2026)
 
 #### New Proposals
 
 - 023: Database Connection Pooling Stance (proposal + implementation plan, 1,484 lines) — RabbitMQ gating, atomic concurrency slots, PDO persistence, Site Health. (August 12, 2026)
 - 024: Hermes Agent Fleet Operator implementation plan (325 lines). (August 13, 2026)
 - 025: Media Worker cloud deployment & security implementation plan (359 lines). (August 12, 2026)
+- 026: Media Worker multi-tenancy sidecar proposal (Phase 1). (August 13, 2026)
+- 027: Media Worker Phase 2 spec — per-site provider keys and scale guide (implemented). (August 13, 2026)
+- 028: Media Worker Phase 3 proposal — scale without breaking changes (implemented). (August 14, 2026)
 
 #### Updated Core Docs
 

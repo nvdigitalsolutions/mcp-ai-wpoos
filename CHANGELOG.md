@@ -1,6 +1,66 @@
 # oOS – Changelog
 
+## [1.1.56] - 2026-08-14
+
+### Added — Media Worker Multi-Tenant Shared Worker Mode, v2.4.0 (PR #5866)
+
+- **Multi-tenant mode** — `SITE_TOKENS` JSON map switches the worker to per-site isolation: every `/api/*` request must carry a token belonging to a known site (fail-closed with `AUTH_MODE=strict`), and temp files, job queues, and rate limits are namespaced per site (`src/utils/site-paths.js`).
+- **Per-site rate limits** — `RATE_LIMIT_*_<SITE>` overrides keep one noisy site from starving its neighbours.
+- **Rotation overlap** — `SITE_TOKENS_PREVIOUS` accepts the previous per-site token during rotation, mirroring the single-tenant semantics.
+- 21 files, +1,349/-304. Specs: `docs/project/proposals/026-media-worker-multi-tenancy-sidecar-proposal.md`, `docs/project/proposals/027-media-worker-multi-tenancy-phase2-spec.md`.
+
+### Added — Media Worker Phase 2: Per-Site Provider Keys & Observability (PR #5868)
+
+- **Per-site provider credentials** — `SITE_PROVIDER_KEYS` JSON map (site slug → credential object) resolves per-tenant AI provider keys before falling back to the shared pool; `PROVIDER_KEYS_STRICT=1` disables the shared-pool fallback entirely.
+- **Per-site usage counters** — `tenants.usage` tracks provider usage per site on image/social routes (`src/utils/usage.js`).
+- **Grouped temp TTLs + storage stats** — `TEMP_TTL_UPLOAD/VIDEO/BROWSER/DOC` per-group TTLs and temp storage statistics replace the single TTL.
+- **Cluster-mode warnings + k6 load-test kit** — loud boot warnings when PM2 cluster mode is detected; k6 kit with a split decision table under `addons/media-worker/bin/load-test/`.
+
+### Added — Media Worker Phase 3: Scale Without Breaking Changes (Proposal 028)
+
+- **Worker bumped to v3.0.0** — W1 per-blog worker tokens on WordPress multisite (additive option chain in the sidecar trait); W2 Media Worker Usage Reporter (`includes/class-wp-mcp-ai-media-worker-usage-reporter.php`, daily cron snapshots `tenants.usage` into an option, fires `wp_mcp_ai_media_worker_usage_updated`; opt-in, off by default); W3 `SITE_TOKEN_<SLUG>` / `SITE_PROVIDER_KEYS_<SLUG>` env-var merges over the JSON maps (env wins); W4 opt-in Redis rate-limit store (`RATE_LIMIT_REDIS=1`, `rate-limit-redis` optional dep); W5 `PROVIDER_KEYS_FILE` hot-reload with atomic replace and malformed-update rejection; W6 revised: permissive-mode boot notice only, the strict-path default flip is deferred; W7 manual Velocity deploy workflow. 59 unit tests passing.
+
+### Changed — Worker Routing Expansion
+
+- Media operations now route through the connected worker with unchanged local fallbacks: document generation (Word/Excel/PDF merge/watermark), OCR, video frame extraction, health charts, email (Nodemailer/MJML), QR/translate/PDF-extract, image vectorization, Prettier formatting, and FFmpeg processing. The Pro settings page lists worker-routed packages.
+- New `addons/media-worker/bin/probe-wordpress.php` probes the WordPress side (connectivity, tokens, package availability) so the worker can report routing decisions accurately.
+
+### Security — Media Worker Rotation, Canvas, Cloudways Readiness (PRs #5863–#5865)
+
+- **Zero-downtime token rotation** — `WORKER_API_TOKEN_PREVIOUS` is accepted during the rotation overlap window (PR #5864).
+- **Canvas v3 napi prebuilds** — compiler-free installs on managed hosts (PR #5865).
+- **Cloudways readiness hardening** — endpoint test script, queue and route resilience for managed deploys (PR #5863).
+
+### Fixed — Media Worker Live Route Bugs (PR #5867)
+
+- Data and PDF route bugs found during live worker testing (translation/QR and PDF pipeline paths).
+
+### Added — Hermes WebUI MCP Server, SSH Bridge & Skill Sync (PR #5862 + follow-ups)
+
+- **`bin/hermes-mcp-server.js`** — stdio MCP server that drives a Hermes Agent from Zed: serialized WebUI logins, session cookie + synchronous chat, tools `hermes_list_sessions`, `hermes_chat`, `hermes_session_detail`, `hermes_sync_skills`.
+- **`bin/mcp-bridge-ssh.js`** + `bin/utils/fake-ssh.js` — SSH MCP bridge for remote agent hosts.
+- **Skill sync** — `bin/hermes-skill-sync.js` / `bin/sync-skills-to-hermes.js` mirror the repo `.agents/skills/` tree into the agent (idempotent upsert, optional `names` filter and `remove_missing` prune).
+- **Hardened env-file parser** (`bin/utils/env-file.js`) and env-file config loading fixes.
+- **Zed** — Hermes Console agent profile added to `.zed/settings.json`.
+
+### Versioning
+
+- Bumped to **1.1.56** across all version-bearing files.
+- Pro addon: 1.1.56.
+- Media Worker: **v3.0.0** (multi-tenant mode v2.4.0, Phase 2 per-site keys, Phase 3 W1–W7).
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+- Bundled skills: **74** base (+ 41 Pro).
+- Total coding-time agent skills: **51** (20 wp-* + 30 design-* + 1 mcp-ai-wpoos-plugin).
+
+---
+
 ## [1.1.55] - 2026-08-13
+
+### Fixed — RabbitMQ Status Widget (PR #5860)
+
+- The Orchestration → RabbitMQ status widget always showed "Integration Enabled: Disabled" because `WP_MCP_AI_Section_RabbitMQ` read `rabbitmq_enabled` from an undeclared `$settings` property (always `null`). It now reads through `WP_MCP_AI_Settings_Registry::get_setting()` with the `WP_MCP_AI_RABBITMQ_ENABLED` constant as override, and the previously unhooked AJAX handlers (`wp_ajax_wp_mcp_ai_rabbitmq_health` / `wp_ajax_wp_mcp_ai_rabbitmq_setup`) are now registered in the constructor with a static guard. Fix details: `docs/history/2026/fixes/rabbitmq-status-widget-disabled-fix.md`.
 
 ### Fixed — MCP Agent Compatibility & Tool Reliability (PR #5859)
 

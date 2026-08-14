@@ -31,6 +31,7 @@ These are the AI assistants that human maintainers invoke when working on the re
 | **Zed Agent Profiles** | Zed Industries | [`.zed/settings.json`](.zed/settings.json) + [`.zed/README.md`](.zed/README.md) | Selected from the Agent Panel profile picker | Native Zed mirror of the `examples/agents/` roster (14 profiles) — same scopes, mapped to Zed's tool registry |
 | **Zed Agent Skills** | Zed Industries | [`.agents/skills/*.md`](.agents/skills/) | Auto-discovered by Zed agent panel | 51 coding-time agent skills (20 wp-* WordPress plugin development patterns + 30 design-* skills + mcp-ai-wpoos-plugin operational guide) — distinct from runtime bundled skills |
 | **OpenAI Codex** | OpenAI | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox tasks | Sandbox-based code generation and testing |
+| **Hermes Console** | Hermes agent (WebUI) | [`.zed/settings.json`](.zed/settings.json) (Hermes Console profile) + [`bin/hermes-mcp-server.js`](bin/hermes-mcp-server.js) | Manual (Zed profile) | Drive a remote Hermes agent from Zed: list sessions, synchronous chat, session detail, and repo skill sync (`hermes_sync_skills`) via a stdio MCP bridge. SSH variant: [`bin/mcp-bridge-ssh.js`](bin/mcp-bridge-ssh.js) |
 
 ### Internal BMAD Agents (GSD × BMAD Workflow)
 
@@ -260,6 +261,7 @@ If an AI agent produces code with a security vulnerability, report it through th
 | New or changed GitHub Custom Agent | `.github/agents/*.agent.md` (per layering rule in §2), `AGENTS.md` (agent inventory in §1) — must be in the same PR. If a matching agent also exists in [`examples/agents/`](examples/agents/), update `.zed/settings.json` so the Zed profile's tool block stays in sync. |
 | New bundled skill or skill pack | Add `SKILL.md` under `includes/bundled-skills/` (base) or `addons/pro/includes/bundled-skills/` (Pro); update the corresponding `THIRD_PARTY_NOTICES.md` if curated from an upstream catalogue; document in `docs/features/agent-skills.md` |
 | New coding-time agent skill | Add `SKILL.md` under `.agents/skills/{slug}/`; update `AGENTS.md` (agent inventory in §1); verify the skill is auto-discovered by the Zed agent panel |
+| New `bin/` tool or MCP bridge | Update [`bin/README.md`](bin/README.md) (tool tables + env vars); update `AGENTS.md` (agent inventory in §1 if it drives a new agent profile) |
 | New security infrastructure class | `CLAUDE.md` (architecture section), `.context/security-checklist.md`, `README.md` (features list), `docs/features/security-infrastructure.md` |
 
 ### Review cadence

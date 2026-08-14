@@ -55,7 +55,7 @@ While running: watch worker logs (`pm2 logs`), `/api/health/full` for
 | RSS pinned near the plan RAM ceiling during normal load | Split, or move video/browser work off this instance |
 | Per-site rate-limit 429s for the quiet sites while one site runs hot | Raise `RATE_LIMIT_*_<SITE>` for the quiet sites or split |
 | Provider key contention (one site exhausts shared quotas) | Phase 2a per-site keys (`SITE_PROVIDER_KEYS`) |
-| Cluster mode considered for scale | Stop — in-memory rate limits and queue are single-process; keep `instances: 1` until a Redis rate-limit store lands (Phase 2d) |
+| Cluster mode considered for scale | Use with care — the in-memory job queue is single-process (requires `REDIS_URL` for cluster), and rate-limit budgets multiply per instance unless `RATE_LIMIT_REDIS=1` is set (Phase 3 W4, optional `rate-limit-redis` dep) |
 
 ## Disk sizing
 

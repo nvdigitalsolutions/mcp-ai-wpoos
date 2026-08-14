@@ -121,10 +121,47 @@ instance. Set `SITE_TOKENS` (JSON map of site slug → token) plus
 
 PDF routes (`/api/pdf/extract`, `/api/pdf/render`) accept multipart file
 uploads so managed hosts without a shared volume can still use them.
-Single-tenant deployments are unaffected. Provider API keys remain shared
-(pooled billing) — for hard isolation between clients, deploy one worker per
-site instead. Full design: proposal
+Single-tenant deployments are unaffected. Full design: proposal
 [026](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/026-media-worker-multi-tenancy-sidecar-proposal.md).
+
+### Per-Site Provider Keys & Observability (Phase 2, v2.5.0)
+
+- **`SITE_PROVIDER_KEYS`** — JSON map of site slug → credential object
+  (`openai_api_key`, `gemini_api_key`, `firefly_client_id`, social tokens, …)
+  resolved per tenant before falling back to the shared pool;
+  `PROVIDER_KEYS_STRICT=1` disables the shared-pool fallback for hard
+  isolation.
+- **Per-site usage counters** — `tenants.usage` tracks provider usage per
+  site on image/social routes.
+- **Grouped temp TTLs** — `TEMP_TTL_UPLOAD/VIDEO/BROWSER/DOC` per-group
+  lifetimes with storage stats.
+- **Cluster warnings + k6 kit** — boot warnings on PM2 cluster mode;
+  `bin/load-test/` k6 load tests with a split decision table.
+
+Full spec: proposal
+[027](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/027-media-worker-multi-tenancy-phase2-spec.md)
+(implemented, PR #5868).
+
+### Operational Scale (Phase 3, v3.0.0)
+
+- **WordPress multisite per-blog tokens** — additive option chain in the
+  plugin sidecar client.
+- **Usage Reporter** — plugin-side daily cron snapshots `tenants.usage`
+  into an option and fires `wp_mcp_ai_media_worker_usage_updated`
+  (opt-in, off by default).
+- **Env-var merges** — `SITE_TOKEN_<SLUG>` / `SITE_PROVIDER_KEYS_<SLUG>`
+  merge over the JSON maps for platform env-size limits (env wins).
+- **Opt-in Redis rate-limit store** — `RATE_LIMIT_REDIS=1` with
+  `rate-limit-redis` optional dependency; required for PM2 cluster mode.
+- **`PROVIDER_KEYS_FILE` hot-reload** — watched JSON file with atomic
+  replace; malformed updates are rejected and the previous map stays
+  active.
+- **Strict-path note** — single-tenant PDF path checks stay permissive;
+  set `STRICT_PATHS=1` to enforce the site namespace now (boot notice
+  included).
+
+Full plan: proposal
+[028](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/028-media-worker-phase3-proposal.md).
 
 ## Documentation
 
@@ -132,6 +169,10 @@ site instead. Full design: proposal
 - [Docker Setup Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/operations/deployment/media-worker-docker-setup.md)
 - [Cloudways Velocity Setup Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/operations/deployment/media-worker-velocity-setup.md)
 - [Cloud Deployment & Security Plan](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/025-media-worker-cloud-deployment-security-implementation-plan.md)
+- [Multi-Tenancy Sidecar Proposal (Phase 1)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/026-media-worker-multi-tenancy-sidecar-proposal.md)
+- [Phase 2 Spec — Per-Site Provider Keys & Scale Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/027-media-worker-multi-tenancy-phase2-spec.md)
+- [Phase 3 Proposal — Scale Without Breaking Changes](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/028-media-worker-phase3-proposal.md)
+- [Load-Test Kit (k6)](bin/load-test/README.md)
 
 ## Repository Sync
 
