@@ -22,11 +22,13 @@ const path = require( 'path' );
  */
 function parseEnvFile( content ) {
 	const out = {};
-	for ( const line of String( content ).split( /\r?\n/ ) ) {
-		const trimmed = line.trim();
+	for ( const line of String( content ).replace( /^\uFEFF/, '' ).split( /\r?\n/ ) ) {
+		let trimmed = line.trim();
 		if ( ! trimmed || trimmed.startsWith( '#' ) ) {
 			continue;
 		}
+		// Tolerate `export KEY=value` — a common copy-paste mistake.
+		trimmed = trimmed.replace( /^export\s+/, '' );
 		const eq = trimmed.indexOf( '=' );
 		if ( -1 === eq ) {
 			continue;

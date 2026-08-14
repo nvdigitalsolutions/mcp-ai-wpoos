@@ -167,11 +167,13 @@ test( 'parseEnvFile skips comments/blanks and strips quotes', () => {
 		'MCP_AI_SSH_PORT="2222"',
 		"KEY_WITH_SPACE='a b c'",
 		'no_equals_sign',
+		'export EXPORTED_KEY=value',
 	].join( '\n' ) );
 	assert.deepStrictEqual( parsed, {
 		MCP_AI_TOKEN: 'op_abc.SECRET',
 		MCP_AI_SSH_PORT: '2222',
 		KEY_WITH_SPACE: 'a b c',
+		EXPORTED_KEY: 'value',
 	} );
 } );
 

@@ -243,6 +243,23 @@ test( 'unknown tool returns a JSON-RPC error envelope', async () => {
 	await stop( ctx );
 } );
 
+test( 'concurrent first tool calls share one login', async () => {
+	const webui = await startFakeWebui();
+	const ctx = { ...startServer( webui.port ), webui };
+
+	// Fire two requests back-to-back on a fresh session: both see 401 and
+	// race to log in. The serialized login must collapse them into one.
+	const p1 = rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_list_sessions', arguments: {} }, 10 );
+	const p2 = rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_list_sessions', arguments: {} }, 11 );
+	const [ r1, r2 ] = await Promise.all( [ p1, p2 ] );
+
+	assert.strictEqual( JSON.parse( r1.result.content[ 0 ].text ).count, 2 );
+	assert.strictEqual( JSON.parse( r2.result.content[ 0 ].text ).count, 2 );
+	assert.strictEqual( webui.state.loginCount, 1, 'parallel first calls must trigger a single login' );
+
+	await stop( ctx );
+} );
+
 test( 'in-flight request completes even when stdin closes right after', async () => {
 	const webui = await startFakeWebui();
 	webui.state.chatDelayMs = 400; // Response arrives well after stdin EOF.

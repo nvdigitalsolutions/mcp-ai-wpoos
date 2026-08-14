@@ -139,15 +139,30 @@ function request( method, route, body, timeoutMs ) {
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
+let loginInFlight = null;
+
 /**
- * Log in with the WebUI password, storing the session cookie.
+ * Log in with the WebUI password, storing the session cookie. Concurrent
+ * callers share a single login attempt — the WebUI rate-limits logins, so
+ * parallel first tool calls must not each trigger one.
+ *
+ * @returns {Promise<void>}
  */
-async function login() {
-	const { statusCode, data } = await request( 'POST', '/api/auth/login', { password: PASSWORD }, 20000 );
-	if ( 200 !== statusCode || ! data || true !== data.ok ) {
-		throw new Error( `WebUI login failed (HTTP ${ statusCode }): ${ JSON.stringify( data ) }` );
+function login() {
+	if ( ! loginInFlight ) {
+		loginInFlight = ( async () => {
+			try {
+				const { statusCode, data } = await request( 'POST', '/api/auth/login', { password: PASSWORD }, 20000 );
+				if ( 200 !== statusCode || ! data || true !== data.ok ) {
+					throw new Error( `WebUI login failed (HTTP ${ statusCode }): ${ JSON.stringify( data ) }` );
+				}
+				log( 'logged in to WebUI' );
+			} finally {
+				loginInFlight = null;
+			}
+		} )();
 	}
-	log( 'logged in to WebUI' );
+	return loginInFlight;
 }
 
 /**
