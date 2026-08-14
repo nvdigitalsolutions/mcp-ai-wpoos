@@ -121,6 +121,7 @@ context server; it talks to the WebUI over public HTTPS — no SSH, no tunnel.
 | `hermes_list_sessions` | List agent sessions (id, title, model, counts, workspace) |
 | `hermes_chat` | Send a message and wait for the agent's answer (optionally a specific `session_id`) |
 | `hermes_session_detail` | Full detail for one session |
+| `hermes_sync_skills` | Sync the repo `.agents/skills/` tree to the agent's skills (upsert `SKILL.md` files; optional `names` filter and `remove_missing` prune) |
 
 | Env var | Default | Purpose |
 |---|---|---|
@@ -129,9 +130,20 @@ context server; it talks to the WebUI over public HTTPS — no SSH, no tunnel.
 | `HERMES_SESSION_ID` | — | Default session for `hermes_chat` (else newest) |
 | `HERMES_CHAT_TIMEOUT` | `300000` | Chat request timeout (agent runs take minutes) |
 | `HERMES_WEBUI_INSECURE` | unset | `1` to skip TLS verification (self-signed certs) |
+| `HERMES_SYNC_SKILLS_ON_START` | `1` | After the MCP handshake, diff `.agents/skills/` against the agent and upload changed/new skills. Set `0` to disable |
+| `HERMES_SYNC_SKILLS_DIR` | `.agents/skills` | Override the local skills directory |
 
 Session cookies expire (1h TTL on the WebUI) — the server re-logins
 automatically on 401/403/302 and retries once.
+
+**Skill sync.** The server refreshes the agent's skills from the repo's
+`.agents/skills/` on startup (every Zed session, so pulling updated skills and
+reconnecting is enough) and on demand via the `hermes_sync_skills` tool. The
+sync is idempotent: unchanged skills are skipped, new/changed `SKILL.md` files
+are uploaded through the WebUI skills API. Extra files inside a skill directory
+(scripts, references) cannot be uploaded — the WebUI API writes `SKILL.md` only.
+`remove_missing: true` deletes remote skills absent from the repo; leave it off
+unless you are sure the agent has no self-authored skills worth keeping.
 
 **Usage (Zed `context_servers`):** keep the password out of settings.json
 via `~/.nvoos-bridge.env` (`HERMES_WEBUI_URL=…`, `HERMES_WEBUI_PASSWORD=…`):
@@ -142,9 +154,20 @@ via `~/.nvoos-bridge.env` (`HERMES_WEBUI_URL=…`, `HERMES_WEBUI_PASSWORD=…`):
 }
 ```
 
+**CLI / git hook.** `node bin/sync-skills-to-hermes.js` runs the same sync
+standalone (`--remove-missing`, `--names=a,b`, `--dir=…`, `--json`). Wire it
+into git so every pull refreshes the agent:
+
+```sh
+# .git/hooks/post-merge (chmod +x)
+#!/bin/sh
+node bin/sync-skills-to-hermes.js >> .hermes-skill-sync.log 2>&1 || true
+```
+
 **Tests:** `node bin/test-hermes-mcp-server.js` — handshake, tool dispatch,
-session fallback, cookie-expiry re-login, and stdin-EOF drain against a fake
-WebUI (no real infrastructure needed).
+session fallback, cookie-expiry re-login, stdin-EOF drain, and the skill-sync
+paths (upsert, names filter, remove_missing, startup auto-sync, CLI) against a
+fake WebUI (no real infrastructure needed).
 
 ---
 

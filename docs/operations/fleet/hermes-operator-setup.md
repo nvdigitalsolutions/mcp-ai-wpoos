@@ -165,11 +165,29 @@ No SSH tunnel is involved.
    ```
 
 2. Tools exposed: `hermes_chat` (send a message, wait for the answer),
-   `hermes_list_sessions`, `hermes_session_detail`. Session cookies expire
+   `hermes_list_sessions`, `hermes_session_detail`, and `hermes_sync_skills`
+   (sync the repo `.agents/skills/` tree to the agent). Session cookies expire
    after 1h — the server re-logins automatically.
 
 3. Verify — green dot in Settings → AI → MCP Servers, then ask the Zed agent
    to run `hermes_list_sessions`.
+
+4. **Skill sync.** The server refreshes the agent's skills from
+   `.agents/skills/` right after the MCP handshake on every Zed session
+   (`HERMES_SYNC_SKILLS_ON_START=1`, default) and on demand via the
+   `hermes_sync_skills` tool. Idempotent: unchanged skills are skipped,
+   changed/new `SKILL.md` files are uploaded through the WebUI skills API
+   (`/api/skills/save`). `remove_missing: true` deletes remote skills absent
+   from the repo — leave it off, the agent may have self-authored skills.
+
+   For pull-driven updates without Zed, run
+   `node bin/sync-skills-to-hermes.js` manually, from cron, or from a git
+   hook (`.git/hooks/post-merge`) so every pull refreshes the agent:
+
+   ```sh
+   #!/bin/sh
+   node bin/sync-skills-to-hermes.js >> .hermes-skill-sync.log 2>&1 || true
+   ```
 
 Tests: `node bin/test-hermes-mcp-server.js`. Full reference:
 `bin/README.md` → "hermes-mcp-server.js".
