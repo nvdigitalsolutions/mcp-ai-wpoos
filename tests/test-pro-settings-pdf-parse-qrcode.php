@@ -39,7 +39,7 @@ class WP_MCP_AI_Pro_Settings_Pdf_Parse_Qrcode_Test extends WP_UnitTestCase {
 	 * Test that pdf-parse and qrcode are included in Document Generation Toolkit's npm_packages.
 	 */
 	public function test_packages_in_document_generation_toolkit() {
-		$toolkits = WP_MCP_AI_Pro_Settings::get_individual_toolkit_status();
+		$toolkits = WP_MCP_AI_Pro_Settings::get_toolkit_details();
 
 		$this->assertArrayHasKey( 'document_generation', $toolkits );
 		$this->assertArrayHasKey( 'npm_packages', $toolkits['document_generation'] );
@@ -57,7 +57,7 @@ class WP_MCP_AI_Pro_Settings_Pdf_Parse_Qrcode_Test extends WP_UnitTestCase {
 	 * Test that smalot/pdfparser is included in Document Generation Toolkit's composer_packages.
 	 */
 	public function test_composer_packages_in_document_generation_toolkit() {
-		$toolkits = WP_MCP_AI_Pro_Settings::get_individual_toolkit_status();
+		$toolkits = WP_MCP_AI_Pro_Settings::get_toolkit_details();
 
 		$this->assertArrayHasKey( 'document_generation', $toolkits );
 		$this->assertArrayHasKey( 'composer_packages', $toolkits['document_generation'] );
@@ -157,7 +157,7 @@ class WP_MCP_AI_Pro_Settings_Pdf_Parse_Qrcode_Test extends WP_UnitTestCase {
 	 * Test that Document Generation Toolkit has composer_status array.
 	 */
 	public function test_document_generation_toolkit_has_composer_status() {
-		$toolkits = WP_MCP_AI_Pro_Settings::get_individual_toolkit_status();
+		$toolkits = WP_MCP_AI_Pro_Settings::get_toolkit_details();
 
 		$this->assertArrayHasKey( 'document_generation', $toolkits );
 		$this->assertArrayHasKey( 'composer_status', $toolkits['document_generation'] );
@@ -168,7 +168,7 @@ class WP_MCP_AI_Pro_Settings_Pdf_Parse_Qrcode_Test extends WP_UnitTestCase {
 	 * Test that Document Generation Toolkit has composer_available flag.
 	 */
 	public function test_document_generation_toolkit_has_composer_available_flag() {
-		$toolkits = WP_MCP_AI_Pro_Settings::get_individual_toolkit_status();
+		$toolkits = WP_MCP_AI_Pro_Settings::get_toolkit_details();
 
 		$this->assertArrayHasKey( 'document_generation', $toolkits );
 		$this->assertArrayHasKey( 'composer_available', $toolkits['document_generation'] );
@@ -179,7 +179,7 @@ class WP_MCP_AI_Pro_Settings_Pdf_Parse_Qrcode_Test extends WP_UnitTestCase {
 	 * Test that overall toolkit status includes composer_available in fully_operational check.
 	 */
 	public function test_toolkit_fully_operational_includes_composer_check() {
-		$toolkits = WP_MCP_AI_Pro_Settings::get_individual_toolkit_status();
+		$toolkits = WP_MCP_AI_Pro_Settings::get_toolkit_details();
 
 		$this->assertArrayHasKey( 'document_generation', $toolkits );
 		$toolkit = $toolkits['document_generation'];
@@ -232,7 +232,7 @@ class WP_MCP_AI_Pro_Settings_Pdf_Parse_Qrcode_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test qrcode detection with package.json fallback.
+	 * Test that qrcode detection with package.json fallback.
 	 */
 	public function test_qrcode_detection_with_package_json_fallback() {
 		// Use reflection to access private method.
@@ -263,5 +263,56 @@ class WP_MCP_AI_Pro_Settings_Pdf_Parse_Qrcode_Test extends WP_UnitTestCase {
 				);
 			}
 		}
+	}
+
+	/**
+	 * Test that a worker-wired package reports the sidecar source when the
+	 * Media Worker is reachable (health check primed via its transient so
+	 * no HTTP call is attempted in the test environment).
+	 */
+	public function test_package_status_reports_sidecar_source_when_worker_reachable() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Settings' );
+		$method     = $reflection->getMethod( 'get_package_status' );
+		$method->setAccessible( true );
+
+		set_transient( 'wp_mcp_ai_worker_health', array( 'ok' => true ), 5 * MINUTE_IN_SECONDS );
+		$status = $method->invoke( null, 'qrcode' );
+		delete_transient( 'wp_mcp_ai_worker_health' );
+
+		$this->assertTrue( $status['available'] );
+		$this->assertEquals( 'sidecar', $status['source'] );
+		$this->assertStringContainsString( '/api/data/qrcode', $status['message'] );
+	}
+
+	/**
+	 * Test that packages without a wired worker route never claim the sidecar
+	 * source, even when the worker is reachable.
+	 */
+	public function test_package_status_does_not_claim_sidecar_for_unwired_packages() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Settings' );
+		$method     = $reflection->getMethod( 'get_package_status' );
+		$method->setAccessible( true );
+
+		set_transient( 'wp_mcp_ai_worker_health', array( 'ok' => true ), 5 * MINUTE_IN_SECONDS );
+		$status = $method->invoke( null, 'exceljs' );
+		delete_transient( 'wp_mcp_ai_worker_health' );
+
+		$this->assertNotEquals( 'sidecar', $status['source'] );
+	}
+
+	/**
+	 * Test that no package claims the sidecar source when the worker is not
+	 * reachable (negative control).
+	 */
+	public function test_package_status_falls_back_when_worker_unreachable() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Settings' );
+		$method     = $reflection->getMethod( 'get_package_status' );
+		$method->setAccessible( true );
+
+		set_transient( 'wp_mcp_ai_worker_health', array( 'ok' => false ), 5 * MINUTE_IN_SECONDS );
+		$status = $method->invoke( null, 'qrcode' );
+		delete_transient( 'wp_mcp_ai_worker_health' );
+
+		$this->assertNotEquals( 'sidecar', $status['source'] );
 	}
 }
