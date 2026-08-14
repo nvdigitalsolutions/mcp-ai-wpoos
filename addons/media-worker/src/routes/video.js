@@ -235,10 +235,66 @@ router.post('/process', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const { operation = 'compress', width, height, format = 'mp4', fps, start, duration } = req.body;
+    const { operation = 'compress', width, height, format = 'mp4', fps, start, duration, timestamps, count } = req.body;
     const inputPath = req.file.path;
+    const videoDir = siteDirFor(req.site, 'video');
+
+    // ── extract_frames (multi-output) — handled separately ──
+    if ('extract_frames' === operation) {
+      const stamps = String(timestamps || '')
+        .split(',')
+        .map((s) => parseFloat(String(s).trim()))
+        .filter((n) => Number.isFinite(n) && n >= 0);
+      const frameDirName = `frames_${Date.now()}`;
+      const frameDir = path.join(videoDir, frameDirName);
+      fs.mkdirSync(frameDir, { recursive: true });
+      const scale = width ? `scale=${parseInt(width, 10)}:-1` : null;
+      const files = [];
+
+      if (stamps.length) {
+        for (let i = 0; i < stamps.length; i++) {
+          const name = `frame_${String(i).padStart(3, '0')}.jpg`;
+          const out = path.join(frameDir, name);
+          const vf = scale ? ` -vf "${scale}"` : '';
+          await execAsync(`ffmpeg -ss ${stamps[i]} -i "${inputPath}" -frames:v 1 -q:v 2${vf} -y "${out}"`, { timeout: 300000 });
+          files.push(`${frameDirName}/${name}`);
+        }
+      } else {
+        const frameCount = Math.max(1, Math.min(120, parseInt(count, 10) || 10));
+        let fpsFilter = 'fps=1';
+        try {
+          const { stdout } = await execAsync(`ffprobe -v quiet -print_format json -show_format "${inputPath}"`, { timeout: 30000 });
+          const meta = JSON.parse(stdout);
+          const videoDuration = parseFloat(meta?.format?.duration || 0);
+          if (videoDuration > 0) {
+            fpsFilter = `fps=${Math.max(0.01, frameCount / videoDuration)}`;
+          }
+        } catch {
+          // Duration unknown — fall back to 1 fps.
+        }
+        const vf = [fpsFilter, scale].filter(Boolean).join(',');
+        const outPattern = path.join(frameDir, 'frame_%03d.jpg');
+        await execAsync(`ffmpeg -i "${inputPath}" -vf "${vf}" -q:v 2 -y "${outPattern}"`, { timeout: 300000 });
+        for (let i = 1; i <= frameCount; i++) {
+          files.push(`${frameDirName}/frame_${String(i).padStart(3, '0')}.jpg`);
+        }
+      }
+
+      fs.unlinkSync(inputPath);
+      // Frames need a longer retrieval window than single outputs.
+      setTimeout(() => { try { fs.rmSync(path.join(videoDir, frameDirName), { recursive: true, force: true }); } catch {} }, 5 * 60 * 1000);
+
+      return res.json({
+        success: true,
+        operation,
+        frame_count: files.length,
+        output_files: files,
+      });
+    }
+
+    // ── Single-output operations ──
     const outputName = `processed_${Date.now()}.${format}`;
-    const outputPath = path.join(siteDirFor(req.site, 'video'), outputName);
+    const outputPath = path.join(videoDir, outputName);
 
     let ffmpegCmd = `ffmpeg -i "${inputPath}"`;
 
@@ -284,6 +340,14 @@ router.post('/process', upload.single('file'), async (req, res) => {
         if (width) ffmpegCmd += ` -vf "scale=${width}:-1"`;
         break;
 
+      case 'extract_audio':
+        // Strip the video stream; codec follows the requested format.
+        {
+          const codec = 'mp3' === format ? 'libmp3lame' : ('m4a' === format || 'aac' === format ? 'aac' : 'copy');
+          ffmpegCmd += ` -vn -c:a ${codec}`;
+        }
+        break;
+
       default:
         return res.status(400).json({ error: `Unknown operation: ${operation}` });
     }
@@ -313,6 +377,36 @@ router.post('/process', upload.single('file'), async (req, res) => {
     if (req.file) fs.unlink(req.file.path, () => {});
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── Download processed output ──────────────────────────────
+// Express 4 wildcard (*) so multi-segment names (frames_*/frame_000.jpg)
+// match too; the strict regex below re-validates the whole name.
+router.get('/download/*', (req, res) => {
+  const name = String(req.params[0] || '');
+  // Every path segment must be filename-safe; the first segment must be
+  // one of the namespaces produced by /process. This prevents traversal
+  // AND serving unrelated scratch files (e.g. other sites' uploads).
+  if (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(name)) {
+    return res.status(400).json({ error: 'invalid_filename' });
+  }
+  const first = name.split('/')[0];
+  if (!first.startsWith('processed_') && !first.startsWith('frames_')) {
+    return res.status(403).json({ error: 'path_not_allowed' });
+  }
+  const base = siteDirFor(req.site, 'video');
+  const resolved = path.resolve(base, name);
+  if (resolved !== base && !resolved.startsWith(base + path.sep)) {
+    return res.status(403).json({ error: 'path_not_allowed' });
+  }
+  try {
+    if (!fs.statSync(resolved).isFile()) {
+      return res.status(404).json({ error: 'file_not_found' });
+    }
+  } catch {
+    return res.status(404).json({ error: 'file_not_found' });
+  }
+  res.download(resolved, path.basename(resolved));
 });
 
 // ── Video Info ────────────────────────────────────────────

@@ -19,13 +19,16 @@
  *     use WP_MCP_AI_Media_Worker_Client;
  *
  *     public function format_code( $code, $options = [] ) {
- *         // 1. Try existing filter (backward compatibility)
- *         $result = apply_filters( 'wp_mcp_ai_prettier_format_code', false, $params );
- *         if ( false !== $result ) return $result;
- *
- *         // 2. Try media-worker sidecar (NEW -- zero config if Docker)
+ *         // 1. Try the Media Worker sidecar (preferred when a URL is
+ *         //    configured — fails fast when it is not).
  *         $result = $this->sidecar_request( '/api/code/format', $params );
  *         if ( ! is_wp_error( $result ) ) return $result;
+ *
+ *         // 2. Try existing filters (backward compatibility / custom
+ *         //    implementations; the bundled legacy handlers only run
+ *         //    local Node.js when a local node binary exists).
+ *         $result = apply_filters( 'wp_mcp_ai_prettier_format_code', false, $params );
+ *         if ( false !== $result ) return $result;
  *
  *         // 3. Fall back to local Node.js (existing behavior)
  *         if ( $this->is_available() ) return $this->execute_locally( $params );

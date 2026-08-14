@@ -61,8 +61,10 @@ emailRouter.post('/compile-mjml', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing mjml content' });
     }
 
-    const mjml2html = (await import('mjml')).default;
-    const result = mjml2html(mjmlInput, {
+    		const mjml2html = ( await import( 'mjml' ) ).default;
+    		// mjml 5.x is async (mjml 4.x returned the result synchronously —
+    		// awaiting works for both).
+    		const result = await mjml2html( mjmlInput, {
       minify: options?.minify !== false,
       validationLevel: options?.validationLevel || 'soft',
       ...options,

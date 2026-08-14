@@ -188,11 +188,11 @@ class WP_MCP_AI_Tool_Transcode_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$video_path = $file_info['file_path'];
 		$temp_file  = $file_info['temp_file'];
 
-		// Check if fluent-ffmpeg service is available.
+		// Check if fluent-ffmpeg service is available (locally or via sidecar).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-fluent-ffmpeg-service.php';
 		$ffmpeg_service = new WP_MCP_AI_Fluent_FFmpeg_Service();
 
-		if ( ! $ffmpeg_service->is_available() ) {
+		if ( ! $ffmpeg_service->is_available() && ! $ffmpeg_service->is_sidecar_video_processing_available() ) {
 			if ( $temp_file && file_exists( $video_path ) ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
 				unlink( $video_path );
@@ -200,7 +200,7 @@ class WP_MCP_AI_Tool_Transcode_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 			return new WP_Error(
 				'wp_mcp_ai_ffmpeg_not_available',
-				__( 'Fluent-ffmpeg is not available. Please ensure Node.js, fluent-ffmpeg package, and FFmpeg binary are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				__( 'Fluent-ffmpeg is not available. Configure the Media Worker sidecar in Settings → Media Worker, or install Node.js, the fluent-ffmpeg package, and the FFmpeg binary locally.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status' => 500,
 					'docs'   => 'https://github.com/fluent-ffmpeg/node-fluent-ffmpeg',

@@ -268,7 +268,15 @@ function wp_mcp_ai_get_npm_package_status( $package_name ) {
 /**
  * Check if Node.js is available
  *
- * @return bool True if Node.js is available.
+ * NOTE: this deliberately conflates two things so the admin notice can show
+ * a single status: it returns true when a LOCAL `node` command exists, or
+ * the string 'sidecar' when only the Media Worker sidecar is reachable.
+ * Code that actually executes the local binary must use
+ * wp_mcp_ai_has_local_nodejs() instead — the sidecar serves HTTP, not a
+ * local process.
+ *
+ * @return bool|string True if local Node.js exists, 'sidecar' if only the
+ *                     Media Worker sidecar is reachable, false otherwise.
  */
 function wp_mcp_ai_is_nodejs_available() {
 	static $available = null;
@@ -300,6 +308,29 @@ function wp_mcp_ai_is_nodejs_available() {
 }
 
 /**
+ * Check whether Node.js is available as a LOCAL command on this server.
+ *
+ * Unlike wp_mcp_ai_is_nodejs_available(), this never reports the Media
+ * Worker sidecar: the sidecar serves HTTP, not a local `node` binary, so
+ * legacy local-execution paths (wp_mcp_ai_exec_node_service and the filter
+ * handlers below) gate on this check to avoid spawning `node` on
+ * sidecar-only hosts.
+ *
+ * @since 1.1.55
+ * @return bool True when the local `node` command is available.
+ */
+function wp_mcp_ai_has_local_nodejs() {
+	static $available = null;
+
+	if ( null === $available ) {
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$available       = $process_service->is_command_available( 'node' );
+	}
+
+	return $available;
+}
+
+/**
  * Execute Node.js service script
  *
  * @param string $service_file Service file path.
@@ -309,7 +340,7 @@ function wp_mcp_ai_is_nodejs_available() {
  * @return string|WP_Error Result or error.
  */
 function wp_mcp_ai_exec_node_service( $service_file, $action, $params, $timeout = 30 ) {
-	if ( ! wp_mcp_ai_is_nodejs_available() ) {
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
 		return new WP_Error(
 			'nodejs_not_available',
 			__( 'Node.js is not available on this server.', 'mcp-ai-wpoos-pro' )
@@ -397,6 +428,12 @@ function wp_mcp_ai_prettier_format_code_handler( $result, $params ) {
 		return $result;
 	}
 
+	// No local Node.js — pass through (return false) so the service cascade
+	// can try the Media Worker sidecar or surface its own accurate error.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
+	}
+
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/prettier-service.js';
 	$output       = wp_mcp_ai_exec_node_service( $service_file, 'format', $params, 30 );
 
@@ -414,6 +451,12 @@ function wp_mcp_ai_prettier_check_syntax_handler( $result, $params ) {
 	// If already handled by another filter, return it.
 	if ( false !== $result ) {
 		return $result;
+	}
+
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
 	}
 
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/prettier-service.js';
@@ -446,6 +489,12 @@ function wp_mcp_ai_mjml_compile_handler( $result, $params ) {
 		return $result;
 	}
 
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
+	}
+
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/mjml-service.js';
 	$output       = wp_mcp_ai_exec_node_service( $service_file, 'compile', $params, 30 );
 
@@ -463,6 +512,12 @@ function wp_mcp_ai_mjml_validate_handler( $result, $params ) {
 	// If already handled by another filter, return it.
 	if ( false !== $result ) {
 		return $result;
+	}
+
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
 	}
 
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/mjml-service.js';
@@ -506,6 +561,12 @@ function wp_mcp_ai_fluent_ffmpeg_get_metadata_handler( $result, $params ) {
 		return $result;
 	}
 
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
+	}
+
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/ffmpeg-service.js';
 	$output       = wp_mcp_ai_exec_node_service( $service_file, 'metadata', $params, 60 );
 
@@ -536,6 +597,12 @@ function wp_mcp_ai_fluent_ffmpeg_transcode_video_handler( $result, $params ) {
 	// If already handled by another filter, return it.
 	if ( false !== $result ) {
 		return $result;
+	}
+
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
 	}
 
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/ffmpeg-service.js';
