@@ -59,14 +59,28 @@ function log( msg ) {
 }
 
 // ── Configuration ────────────────────────────────────────────────────────────
+//
+// Read lazily via readConfig() AFTER loadEnvFile() has populated the
+// environment — reading at module scope would capture empty values for
+// env-file-only launches (the exact way Zed spawns this server).
 
-const BASE_URL = ( process.env.HERMES_WEBUI_URL || '' ).replace( /\/+$/, '' );
-const PASSWORD = process.env.HERMES_WEBUI_PASSWORD || '';
-const DEFAULT_SESSION_ID = process.env.HERMES_SESSION_ID || '';
-const INSECURE = '1' === process.env.HERMES_WEBUI_INSECURE;
+let BASE_URL = '';
+let PASSWORD = '';
+let DEFAULT_SESSION_ID = '';
+let INSECURE = false;
+let CHAT_TIMEOUT_MS = 300000;
 
-const timeoutRaw = parseInt( process.env.HERMES_CHAT_TIMEOUT || '', 10 );
-const CHAT_TIMEOUT_MS = Number.isFinite( timeoutRaw ) && timeoutRaw >= 1000 ? timeoutRaw : 300000;
+/**
+ * (Re-)read all configuration from the environment.
+ */
+function readConfig() {
+	BASE_URL = ( process.env.HERMES_WEBUI_URL || '' ).replace( /\/+$/, '' );
+	PASSWORD = process.env.HERMES_WEBUI_PASSWORD || '';
+	DEFAULT_SESSION_ID = process.env.HERMES_SESSION_ID || '';
+	INSECURE = '1' === process.env.HERMES_WEBUI_INSECURE;
+	const timeoutRaw = parseInt( process.env.HERMES_CHAT_TIMEOUT || '', 10 );
+	CHAT_TIMEOUT_MS = Number.isFinite( timeoutRaw ) && timeoutRaw >= 1000 ? timeoutRaw : 300000;
+}
 
 let cookie = null;
 
@@ -340,6 +354,7 @@ function write( obj ) {
 
 function main() {
 	loadEnvFile( log );
+	readConfig();
 
 	if ( ! BASE_URL ) {
 		log( 'ERROR: HERMES_WEBUI_URL is not set.' );

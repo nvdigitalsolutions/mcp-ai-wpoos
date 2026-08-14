@@ -13,7 +13,9 @@
 
 const test = require( 'node:test' );
 const assert = require( 'node:assert' );
+const fs = require( 'node:fs' );
 const http = require( 'node:http' );
+const os = require( 'node:os' );
 const path = require( 'node:path' );
 const readline = require( 'node:readline' );
 const { spawn } = require( 'node:child_process' );
@@ -230,6 +232,44 @@ test( 'expired session cookie triggers exactly one re-login', async () => {
 	assert.strictEqual( webui.state.loginCount, 2, 'exactly one re-login after expiry' );
 
 	await stop( ctx );
+} );
+
+test( 'config comes from the env file when process env is empty', async () => {
+	// Regression: config used to be read at module scope, before
+	// loadEnvFile() ran — env-file-only launches (how Zed spawns us) failed.
+	const webui = await startFakeWebui();
+	const envFile = path.join( os.tmpdir(), `hermes-mcp-test-${ process.pid }.env` );
+	fs.writeFileSync( envFile, [
+		`HERMES_WEBUI_URL=http://127.0.0.1:${ webui.port }`,
+		'HERMES_WEBUI_PASSWORD=test-password',
+	].join( '\n' ) );
+
+	const child = spawn( process.execPath, [ SERVER ], {
+		env: {
+			...process.env,
+			MCP_AI_ENV_FILE: envFile,
+			// No HERMES_* vars in process env — file must supply them.
+		},
+		stdio: [ 'pipe', 'pipe', 'pipe' ],
+		windowsHide: true,
+	} );
+	const lines = [];
+	readline.createInterface( { input: child.stdout } ).on( 'line', ( l ) => lines.push( l ) );
+	const exit = new Promise( ( resolve ) => child.once( 'exit', ( code, signal ) => resolve( { code, signal } ) ) );
+
+	try {
+		const init = await rpc( child, lines, 'initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'zed', version: '0.224.0' } }, 1 );
+		assert.strictEqual( init.result.serverInfo.name, 'hermes-webui' );
+
+		const list = await rpc( child, lines, 'tools/call', { name: 'hermes_list_sessions', arguments: {} }, 2 );
+		assert.strictEqual( JSON.parse( list.result.content[ 0 ].text ).count, 2 );
+		assert.strictEqual( webui.state.loginCount, 1, 'password came from the env file' );
+	} finally {
+		child.stdin.end();
+		await exit;
+		fs.unlinkSync( envFile );
+		await webui.close();
+	}
 } );
 
 test( 'unknown tool returns a JSON-RPC error envelope', async () => {
