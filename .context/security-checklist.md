@@ -3,6 +3,7 @@
 > **GSD Context File** — Load this at the start of every AI development session.
 > This checklist must be applied to **every code change** without exception.
 > **Last reviewed:** August 2026.
+> **v1.1.56 updates**: Media Worker v3.0.0 — multi-tenant shared worker mode (`SITE_TOKENS` fail-closed auth, per-site rate limits, token rotation), per-site provider keys (`SITE_PROVIDER_KEYS`, `PROVIDER_KEYS_STRICT`), opt-in Redis rate-limit store (`RATE_LIMIT_REDIS=1`), `PROVIDER_KEYS_FILE` hot-reload, zero-downtime rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds; worker routing with local fallbacks; Hermes MCP bridges (env-file parser hardening).
 > **v1.1.55 updates**: MCP JSON-RPC errors return HTTP 200 (SDK compat), settings-driven tool rate limiter with credential-token exemption, GET/HEAD quota exemption, raw `cred_*` header acceptance, legacy HTTP+SSE transport with credential-bound session store, Media Worker v2.2.0 sidecar hardening, database connection pooling stance (Proposal 023), PostCSS >=8.5.26 (GHSA-6g55-p6wh-862q).
 > **v1.1.54 updates**: PostCSS CVE-2026-69153 resolved, API key merged-settings enforced in 20 research tools, plugin updater integrity check v2 (stat cache fix).
 
@@ -308,6 +309,7 @@ The plugin ships 7 security infrastructure classes in `includes/security/`. When
 - **MCP raw credential headers** (v1.1.55) — `Authorization: cred_*` without `Bearer` accepted for verbatim header forwarding; filter `wp_mcp_ai_accept_raw_credential_header`
 - **Legacy MCP HTTP+SSE transport** (v1.1.55) — credential-bound sessions via `WP_MCP_AI_SSE_Session_Store`, gated by `WP_MCP_AI_LEGACY_SSE_ENABLED`
 - **Media Worker v2.2.0** (v1.1.55) — timing-safe `X-Site-Token` auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet headers; `WP_MEDIA_WORKER_TOKEN` constant in the plugin client
+- **Media Worker v2.4.0 → v3.0.0** (v1.1.56) — multi-tenant fail-closed auth (`SITE_TOKENS`, `AUTH_MODE=strict`), per-site provider keys (`SITE_PROVIDER_KEYS`), `PROVIDER_KEYS_FILE` hot-reload, opt-in Redis rate-limit store, zero-downtime token rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds
 - **Connection pooling stance** (v1.1.55) — atomic concurrency slots (`mcp_ai_concurrency_slots`), RabbitMQ gating of Action Scheduler fallback and DB polling cron, PDO persistence in Graphify
 - **PostCSS GHSA-6g55-p6wh-862q** (v1.1.55) — `postcss` minimum bumped to >=8.5.26 in `addons/schedule-anything-spa/package.json`
 - **PostCSS CVE-2026-69153** (v1.1.54) — `postcss` minimum bumped to 8.5.23; affects CSS build chain across addons

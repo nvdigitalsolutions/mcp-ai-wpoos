@@ -1,10 +1,10 @@
 # oOS Cross-Platform Extraction — Related Proposals Index
 
-> **Auto-generated:** 2026-07-01 by multi-agent architecture review  
-> **Master document:** [`cross-platform-extraction-architecture.md`](./cross-platform-extraction-architecture.md)  
+> **Auto-generated:** 2026-07-01 by multi-agent architecture review (manually extended 2026-08-14 with the Media Worker thread)
+> **Master document:** [`cross-platform-extraction-architecture.md`](./cross-platform-extraction-architecture.md)
 > **Current state:** [`cross-platform-extraction-gap-analysis.md`](./cross-platform-extraction-gap-analysis.md)
 
-This index maps every proposal in `docs/project/proposals/` that is directly relevant to the cross-platform extraction, Laravel-scale deployment, and Graphify ecosystem threads.
+This index maps every proposal in `docs/project/proposals/` that is directly relevant to the cross-platform extraction, Laravel-scale deployment, Graphify ecosystem, and media worker sidecar threads.
 
 ---
 
@@ -81,6 +81,20 @@ Documents that define orchestration enhancements and quality standards:
 | [`FEATURE_GAP_ANALYSIS_PROPOSAL_2026_03.md`](./FEATURE_GAP_ANALYSIS_PROPOSAL_2026_03.md) | 📋 Analysis | **Feature gap analysis** — Cross-functional requirements assessment |
 | [`librechat-addon-implementation-proposal.md`](./librechat-addon-implementation-proposal.md) | 📋 Proposal | **Code interpreter + speech** — LibreChat integration for advanced AI capabilities |
 | [`dietpi-pro-toolkit.md`](./dietpi-pro-toolkit.md) | ✅ Implemented | **Edge computing** — 19+ server management tools for Raspberry Pi/edge nodes in the mesh |
+
+---
+
+## 7. Media Worker Sidecar & Scale Thread
+
+Documents that define the Node.js media worker sidecar, its multi-tenant shared-worker mode, and the DB/queue scale stances:
+
+| Document | Status | Role |
+|---|---|---|
+| [`023-database-connection-pooling-stance.md`](./023-database-connection-pooling-stance.md) | ✅ Implemented (v1.1.55) | **DB/queue scale stance** — RabbitMQ gating, atomic concurrency slots, PDO persistence, Site Health |
+| [`025-media-worker-cloud-deployment-security-implementation-plan.md`](./025-media-worker-cloud-deployment-security-implementation-plan.md) | ✅ Implemented (v1.1.55) | **Companion microservice hardening** — Cloudways Velocity deploy, SSRF guard, sandboxed Puppeteer, rate limiting |
+| [`026-media-worker-multi-tenancy-sidecar-proposal.md`](./026-media-worker-multi-tenancy-sidecar-proposal.md) | ✅ Phase 1 merged (v2.4.0) | **Shared worker mode** — `SITE_TOKENS` per-site isolation, per-site rate limits, token rotation |
+| [`027-media-worker-multi-tenancy-phase2-spec.md`](./027-media-worker-multi-tenancy-phase2-spec.md) | ✅ Implemented (PR #5868) | **Phase 2 spec** — per-site provider keys, usage counters, grouped temp TTLs, k6 load-test kit |
+| [`028-media-worker-phase3-proposal.md`](./028-media-worker-phase3-proposal.md) | ✅ Implemented (v3.0.0, W6 flip deferred) | **Phase 3 scale** — multisite per-blog tokens, usage reporter, Redis rate-limit store, provider-keys hot-reload |
 
 ---
 

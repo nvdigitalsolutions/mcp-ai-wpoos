@@ -88,7 +88,7 @@ addons/pro/
 │   └── ...                             ← Pro admin, REST, services
 addons/
 ├── fleet-operator/                      ← Hermes Fleet Operator addon (scoped op_ credentials, MCP tools/list scoping, WP-CLI)
-├── media-worker/                        ← Media Worker sidecar (v2.2.0, security-hardened)
+├── media-worker/                        ← Media Worker sidecar (v3.0.0, multi-tenant + security-hardened)
 ├── librechat/                          ← LibreChat addon (code interpreter, speech)
 ├── funiq-bridge/                       ← Funiq Bridge addon (v1.0.0)
 ├── schedule-anything/                  ← Schedule Anything SaaS platform
@@ -396,6 +396,7 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **MCP tool rate limiter** (v1.1.55) — settings-driven (`tool_rate_limit_max` / `tool_rate_limit_window` / `tool_rate_limit_exempt_tokens`) with credential-token exemption; GET/HEAD exempt from the request quota.
 - **Connection-pooling stance** (v1.1.55, Proposal 023) — atomic concurrency-guard slot tracking (Redis `wp_cache_incr` + InnoDB upsert fallback, `mcp_ai_concurrency_slots` table), RabbitMQ gating of Action Scheduler fallback and DB polling cron, PDO persistent connections in Graphify, Site Health checks for MySQL pool / queue depth / RabbitMQ.
 - **Media Worker v2.2.0** (v1.1.55) — sidecar hardening: timing-safe `X-Site-Token` auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet headers; `WP_MEDIA_WORKER_TOKEN` constant in the plugin client trait.
+- **Media Worker v2.4.0 → v3.0.0** (v1.1.56) — multi-tenant shared worker mode (`SITE_TOKENS` per-site isolation, per-site rate limits, `SITE_TOKENS_PREVIOUS` rotation); Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`, `PROVIDER_KEYS_STRICT`), usage counters, grouped temp TTLs, cluster warnings + k6 kit; Phase 3 scale (multisite per-blog tokens, usage reporter, `SITE_TOKEN_<SLUG>` env merges, opt-in Redis rate-limit store `RATE_LIMIT_REDIS=1`, `PROVIDER_KEYS_FILE` hot-reload); zero-downtime rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds; worker routing for document generation, OCR, frames, charts, email, QR/translate/PDF, vectorize with local fallbacks.
 - **API key merged-settings enforcement** (v1.1.54) — 20 research tools now use `get_merged_credentials()` instead of reading the global API key option directly, ensuring per-assistant and per-provider API key overrides take effect.
 - **Post-install integrity check** (v1.1.52) — `WP_MCP_AI_Plugin_Updater` verifies 15 critical file paths after every update before reporting success. Prevents silent corruption on distributed filesystems (Cloudways).
 - **REST require_once guards** (v1.1.52) — all REST controller `require_once` calls in `class-wp-mcp-ai-rest.php` now guarded with `file_exists()` checks.

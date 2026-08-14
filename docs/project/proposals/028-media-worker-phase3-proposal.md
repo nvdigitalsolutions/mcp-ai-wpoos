@@ -2,7 +2,7 @@
 
 **Based on:** `026-media-worker-multi-tenancy-sidecar-proposal.md` (Phase 1, merged) and `027-media-worker-multi-tenancy-phase2-spec.md` (Phase 2, PR #5868)
 **Date:** 2026-08-13
-**Status:** Draft — for review
+**Status:** Implemented — W1–W7 shipped 2026-08-14 (worker v3.0.0); W6 default flip deferred (open Q5)
 **Target releases:** v2.5.1 (W1–W3), v2.6.0 (W4–W5), v3.0.0 (W6 default flip)
 **Standalone repo:** `nvdigitalsolutions/mcp-ai-wpoos-media-worker` (one-way subtree mirror of `addons/media-worker/`)
 

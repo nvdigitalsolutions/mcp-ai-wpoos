@@ -14,12 +14,12 @@ Architecturally, the project has undergone a major framework extraction: the AI 
 The repo is a **monorepo** containing:
 - The **base plugin** (GPLv3, ships to WordPress.org) — `mcp-ai-wpoos.php` + `includes/`
 - A **Pro addon** (commercial/proprietary) — `addons/pro/`
-- **25 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v2.2.0)
+- **25 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.0.0)
 - The **extracted AI engine** (framework-agnostic, Hexagonal Architecture) — `lib/core/`
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.55 (August 2026)
+**Current version:** 1.1.56 (August 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,502 (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -117,7 +117,7 @@ The monorepo contains **26 addon directories** under `addons/` (27 entries in th
 | **Funiq Bridge** | 1.0.0 | GPLv3 | Payload CMS → WordPress bridge for Funiq React PWA. REST API, CPTs, taxonomies, React admin SPA. |
 | **LibreChat** | 0.1.0 | GPLv3 | Sandboxed Python/JavaScript code interpreter, TTS/STT speech services, web search reranker. |
 | **Fleet Operator** | 0.1.0 | GPLv3 | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` credentials with audience binding, expiry, rate limits, revocation; MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI, config generator, skills pack. |
-| **Media Worker** | 2.2.0 | GPLv3 | Docker-based Node.js sidecar. 11 route handlers (image, video, pdf, ocr, email, social, code, data, document, browser, workflow). Queue module with concurrent processing. v2.2.0 hardening: timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet. |
+| **Media Worker** | 3.0.0 | GPLv3 | Docker-based Node.js sidecar. 11 route handlers (image, video, pdf, ocr, email, social, code, data, document, browser, workflow). Queue module with concurrent processing. Multi-tenant shared worker mode since v2.4.0 (`SITE_TOKENS` per-site isolation, per-site rate limits); Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`) + usage counters + grouped temp TTLs; Phase 3 scale features (opt-in Redis rate-limit store, provider-keys file hot-reload). Timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet. Worker routing with local fallbacks. |
 
 ### Experimental (works but limited testing)
 

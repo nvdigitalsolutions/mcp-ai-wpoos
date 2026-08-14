@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.55
+Stable tag: 1.1.56
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -297,9 +297,13 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
+= 1.1.56 - August 14, 2026 =
+
+Bumped to 1.1.56 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Highlights: Media Worker v3.0.0 with multi-tenant shared worker mode (SITE_TOKENS per-site isolation, per-site rate limits), Phase 2 per-site provider keys (SITE_PROVIDER_KEYS) plus per-site usage counters, grouped temp TTLs, cluster-mode warnings, and a k6 load-test kit; Phase 3 operational scale (multisite per-blog tokens, usage reporter, env-var merges, opt-in Redis rate-limit store, provider-keys file hot-reload); zero-downtime token rotation (WORKER_API_TOKEN_PREVIOUS) and Canvas v3 napi prebuilds; Cloudways readiness hardening and live route bug fixes; worker routing expansion for document generation, OCR, frames, charts, email, QR/translate/PDF, and vectorization with local fallbacks; and Hermes tooling (WebUI MCP server, SSH bridge, skill sync, Zed Console profile). Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+
 = 1.1.55 - August 13, 2026 =
 
-Bumped to 1.1.55 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Highlights: MCP agent compatibility fixes (legacy HTTP+SSE transport, JSON-RPC errors return HTTP 200, tool rate limiter settings, raw credential headers, bounded async polling), Hermes Fleet Operator addon (scoped operator credentials, admin page, WP-CLI, skills pack), Media Worker v2.2.0 security hardening (timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet headers) plus WP_MEDIA_WORKER_TOKEN constant support, database connection pooling stance (RabbitMQ gating, atomic concurrency slots, PDO persistent connections, Site Health checks), PostCSS bumped to 8.5.26 (GHSA-6g55-p6wh-862q), and a media-worker subtree sync workflow. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
+Bumped to 1.1.55 across plugin header, WP_MCP_AI_VERSION constant, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Highlights: MCP agent compatibility fixes (legacy HTTP+SSE transport, JSON-RPC errors return HTTP 200, tool rate limiter settings, raw credential headers, bounded async polling), Hermes Fleet Operator addon (scoped operator credentials, admin page, WP-CLI, skills pack), Media Worker v2.2.0 security hardening (timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet headers) plus WP_MEDIA_WORKER_TOKEN constant support, RabbitMQ status widget fix (settings registry read + AJAX handler registration), database connection pooling stance (RabbitMQ gating, atomic concurrency slots, PDO persistent connections, Site Health checks), PostCSS bumped to 8.5.26 (GHSA-6g55-p6wh-862q), and a media-worker subtree sync workflow. Tool count: ~265 base + ~1,237 Pro (~1,502 total; live registry authoritative).
 
 = 1.1.50 - August 10, 2026 =
 

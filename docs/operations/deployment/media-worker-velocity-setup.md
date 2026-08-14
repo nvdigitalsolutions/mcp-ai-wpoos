@@ -4,7 +4,7 @@ Deploy the Design Stack Media Worker to **Cloudways Velocity** (managed
 Node.js hosting: Git-based deploys, NGINX + PM2, managed backups and
 monitoring) and connect it to the mcp-ai-wpoos WordPress plugin.
 
-> **Prerequisite:** The worker must run **v2.2.0+** (security hardening).
+> **Prerequisite:** The worker must run **v2.2.0+** (security hardening; v3.0.0+ recommended — includes multi-tenant mode and Phase 2/3 scale features).
 > Never expose an older build on a public URL — v2.1.x has no auth,
 > no SSRF guard, and launches Puppeteer with `--no-sandbox`.
 > See `docs/project/proposals/025-media-worker-cloud-deployment-security-implementation-plan.md`.
@@ -152,6 +152,12 @@ clients, prefer one app per site — the sidecar model.
    - `AUTH_MODE=strict` — multi-tenant mode always fails closed.
    - Optional: `SITE_TOKENS_PREVIOUS` (rotation overlap), `TEMP_ROOT`,
      `TEMP_TTL`, per-site rate limits (`RATE_LIMIT_IMAGE_SITE-A=60`).
+   - Per-site provider keys (Phase 2): `SITE_PROVIDER_KEYS` JSON map (slug →
+     credential object) or `SITE_PROVIDER_KEYS_<SLUG>` env merges;
+     `PROVIDER_KEYS_STRICT=1` to disable the shared-pool fallback.
+   - Scale (Phase 3): `SITE_TOKEN_<SLUG>` per-site token env merges,
+     `RATE_LIMIT_REDIS=1` for cluster mode, `PROVIDER_KEYS_FILE` for
+     hot-reloaded key files.
 2. Each WordPress site keeps its **own** token (per-site
    `WP_MEDIA_WORKER_TOKEN` constant or `wp_mcp_ai_media_worker_token` option):
    site-a → `<tokenA>`, site-b → `<tokenB>`. The plugin already sends
@@ -168,10 +174,22 @@ clients, prefer one app per site — the sidecar model.
 | Rate limits | per-site buckets keyed `site:<slug>:<ip>` with per-site overrides |
 | Audit logs | `site=<slug>` + site host on every request line; `X-Site-Url` change warnings |
 
+### Phase 2 & Phase 3 (implemented, v2.5.0 → v3.0.0)
+
+| Feature | Details |
+|---|---|
+| Per-site provider keys | `SITE_PROVIDER_KEYS` / `SITE_PROVIDER_KEYS_<SLUG>` resolved per tenant before the shared pool; `PROVIDER_KEYS_STRICT=1` fails closed |
+| Usage counters | `tenants.usage` per-site provider usage; plugin-side Usage Reporter cron (opt-in) snapshots it via `wp_mcp_ai_media_worker_usage_updated` |
+| Multisite per-blog tokens | additive `WP_MEDIA_WORKER_TOKEN` option chain on WordPress multisite (Phase 3 W1) |
+| Redis rate-limit store | `RATE_LIMIT_REDIS=1` + `REDIS_URL` + `rate-limit-redis` optional dep — required for PM2 cluster mode (Phase 3 W4) |
+| Key file hot-reload | `PROVIDER_KEYS_FILE` watched with atomic replace; malformed updates rejected (Phase 3 W5) |
+| Grouped temp TTLs | `TEMP_TTL_UPLOAD/VIDEO/BROWSER/DOC` per-group lifetimes with storage stats |
+
 ### Still shared (know your boundaries)
 
-- Provider API keys — pooled billing/quotas (per-site key maps are Phase 2,
-  see proposal 026).
+- Provider API keys — the shared pool remains the default fallback; per-site
+  keys via `SITE_PROVIDER_KEYS` (Phase 2, proposal 027) remove pooled
+  billing/quotas where needed.
 - System binaries (ffmpeg/Chromium) and the global rate-limit budget.
 - `/api/health/full` capability matrix (adds a `tenants` block: mode, count,
   slugs — never tokens).

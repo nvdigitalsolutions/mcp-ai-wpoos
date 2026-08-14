@@ -41,3 +41,20 @@ with deterministic link-based navigation.
 
 - One file = one class. OKF engine classes live here; MCP tools live in `includes/tools/okf/`.
 - Pure-PHP YAML parser handles only the subset needed for OKF frontmatter (scalars, lists, key-value pairs). No external YAML library dependency.
+
+## Tests
+
+```bash
+vendor/bin/phpunit tests/manual/test-okf-v02-parser.php
+vendor/bin/phpunit tests/manual/test-okf-v02-reader.php
+vendor/bin/phpunit tests/manual/test-okf-v02-validate-attestation.php
+```
+
+OKF tests live under `tests/manual/` (they exercise real bundle files on disk). Parser/reader behavior and attestation validation are covered; the writer is exercised through the MCP tool suite.
+
+## Also Load
+
+- [`.context/conventions.md`](../../.context/conventions.md) — naming + style (always)
+- [`.context/security-checklist.md`](../../.context/security-checklist.md) — security (always)
+- [`.context/settings-storage.md`](../../.context/settings-storage.md) — file-system + option boundaries
+- [`docs/features/okf-integration.md`](../../docs/features/okf-integration.md) — OKF v0.1 conformance and skill integration
