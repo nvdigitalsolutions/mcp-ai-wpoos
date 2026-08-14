@@ -4,18 +4,24 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
 	getCredential,
 	configuredProviders,
 	parseSiteProviderKeys,
 	isProviderKeysStrict,
 	resetProviderKeysCache,
+	reloadProviderKeysFromFile,
 } from './provider-keys.js';
 
 const originalKeys = process.env.SITE_PROVIDER_KEYS;
 const originalStrict = process.env.PROVIDER_KEYS_STRICT;
 const originalOpenAI = process.env.OPENAI_API_KEY;
 const originalFirefly = process.env.FIREFLY_CLIENT_SECRET;
+const originalSiteEnv = process.env.SITE_PROVIDER_KEYS_SITE_A;
+const originalFile = process.env.PROVIDER_KEYS_FILE;
 
 function resetEnv() {
 	if ( originalKeys ) {
@@ -37,6 +43,16 @@ function resetEnv() {
 		process.env.FIREFLY_CLIENT_SECRET = originalFirefly;
 	} else {
 		delete process.env.FIREFLY_CLIENT_SECRET;
+	}
+	if ( originalSiteEnv ) {
+		process.env.SITE_PROVIDER_KEYS_SITE_A = originalSiteEnv;
+	} else {
+		delete process.env.SITE_PROVIDER_KEYS_SITE_A;
+	}
+	if ( originalFile ) {
+		process.env.PROVIDER_KEYS_FILE = originalFile;
+	} else {
+		delete process.env.PROVIDER_KEYS_FILE;
 	}
 	resetProviderKeysCache();
 }
@@ -113,5 +129,42 @@ test( 'configuredProviders reports booleans per site without values', () => {
 	assert.equal( providers.OPENAI_API_KEY, true );
 	assert.equal( providers.GEMINI_API_KEY, true );
 	assert.equal( providers.TWITTER_API_KEY, false );
+	resetEnv();
+} );
+
+// ── Phase 3: per-site env fallback + provider key file ───────
+
+test( 'SITE_PROVIDER_KEYS_<SLUG> env vars merge over the global JSON (W3)', () => {
+	process.env.OPENAI_API_KEY = 'sk-POOL';
+	process.env.SITE_PROVIDER_KEYS = '{"site-a":{"openai_api_key":"sk-JSON"}}';
+	process.env.SITE_PROVIDER_KEYS_SITE_A = '{"openai_api_key":"sk-ENV"}';
+
+	// The per-site env var wins over the global JSON entry.
+	assert.equal( getCredential( 'site-a', 'OPENAI_API_KEY' ), 'sk-ENV' );
+	// Pool fallback still applies where neither is set.
+	assert.equal( getCredential( 'site-b', 'OPENAI_API_KEY' ), 'sk-POOL' );
+	resetEnv();
+} );
+
+test( 'PROVIDER_KEYS_FILE loads and hot-replaces the file-sourced map (W5)', () => {
+	const filePath = path.join( os.tmpdir(), `provider-keys-test-${ Date.now() }.json` );
+	fs.writeFileSync( filePath, '{"site-a":{"openai_api_key":"sk-FILE1"},"site-b":{"gemini_api_key":"AIza-B"}}' );
+
+	process.env.PROVIDER_KEYS_FILE = filePath;
+	assert.equal( getCredential( 'site-a', 'OPENAI_API_KEY' ), 'sk-FILE1' );
+	assert.equal( getCredential( 'site-b', 'GEMINI_API_KEY' ), 'AIza-B' );
+
+	// Rewrite the file without site-b: reload must REPLACE, not merge.
+	fs.writeFileSync( filePath, '{"site-a":{"openai_api_key":"sk-FILE2"}}' );
+	assert.equal( reloadProviderKeysFromFile(), true );
+	assert.equal( getCredential( 'site-a', 'OPENAI_API_KEY' ), 'sk-FILE2' );
+	assert.equal( getCredential( 'site-b', 'GEMINI_API_KEY' ), null );
+
+	// Malformed update is rejected and the previous map stays active.
+	fs.writeFileSync( filePath, 'not json' );
+	assert.equal( reloadProviderKeysFromFile(), false );
+	assert.equal( getCredential( 'site-a', 'OPENAI_API_KEY' ), 'sk-FILE2' );
+
+	fs.rmSync( filePath, { force: true } );
 	resetEnv();
 } );

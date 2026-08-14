@@ -92,6 +92,8 @@ The charter is a single hard rule:
 2. **v3.0.0:** strict paths on by default in **all** modes; `LEGACY_PDF_PATHS=1` restores the old behavior for audited legacy flows, with a loud boot warning.
 3. Multi-tenant mode has been strict since Phase 1 — unaffected either way.
 
+**Status — REVISED during implementation (2026-08-13):** the flip is **deferred**. The audit found that the Docker single-tenant flow relies on shared-volume paths *outside* `os.tmpdir()`, so a default flip would break the primary documented Docker deployment. Shipped instead: the v2.6 boot notice (permissive-mode warning) and `STRICT_PATHS=1`/`STRICT_PDF_PATHS=1` opt-in flags (already present since Phase 1). The flip returns once a safe default for shared-volume paths is defined (e.g. an allowlisted `TEMP_ROOT` in single-tenant strict mode) — tracked as open Q5.
+
 **Tests:** flag matrix (default/strict/legacy) across single- and multi-tenant modes.
 
 ### W7 — CI/deploy automation & docs (continuous, no behavior change)
@@ -134,6 +136,7 @@ Each release is one monorepo PR per workstream (or bundled per the 3a/3b/3c slic
 2. **Env size ceiling** — validate with Cloudways support before W3 ships, so the docs state a real per-app site ceiling.
 3. **Cost tracker schema** — does the existing tracker accept provider-scoped line items, or does W2 need a small schema extension on the WP side?
 4. **Who watches the file?** For W5, confirm SSH/deploy-hook access to a writable path on Velocity (the design assumes yes).
+5. **Shared-volume path convention (NEW, from W6 audit):** define an allowlisted directory for Docker single-tenant strict mode before the PDF-path default flip returns.
 
 ---
 

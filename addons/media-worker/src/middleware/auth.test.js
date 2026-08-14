@@ -10,6 +10,7 @@ import {
 	parseTokenMap,
 	resolveSite,
 	configuredSites,
+	isMultiTenantMode,
 } from './auth.js';
 
 /** Minimal mock Express response. */
@@ -157,6 +158,7 @@ test( 'authMiddleware accepts WORKER_API_TOKEN_PREVIOUS during rotation', () => 
 const originalSites = process.env.SITE_TOKENS;
 const originalSitesPrev = process.env.SITE_TOKENS_PREVIOUS;
 const originalWorkerToken = process.env.WORKER_API_TOKEN;
+const originalSiteEnvToken = process.env.SITE_TOKEN_SITE_A;
 
 function restoreSiteEnv() {
 	if ( originalSites ) {
@@ -173,6 +175,11 @@ function restoreSiteEnv() {
 		process.env.WORKER_API_TOKEN = originalWorkerToken;
 	} else {
 		delete process.env.WORKER_API_TOKEN;
+	}
+	if ( originalSiteEnvToken ) {
+		process.env.SITE_TOKEN_SITE_A = originalSiteEnvToken;
+	} else {
+		delete process.env.SITE_TOKEN_SITE_A;
 	}
 }
 
@@ -227,5 +234,22 @@ test( 'authMiddleware multi-tenant fails closed on unknown tokens', () => {
 	} );
 	assert.equal( nextCalled, false );
 	assert.equal( res.statusCode, 401 );
+	restoreSiteEnv();
+} );
+
+test( 'SITE_TOKEN_<SLUG> env vars merge over SITE_TOKENS (Phase 3 W3)', () => {
+	process.env.SITE_TOKENS = '{"site-a":"json-token-123456789"}';
+	process.env.SITE_TOKEN_SITE_A = 'env-token-123456789';
+	process.env.SITE_TOKEN_SITE_B = 'env-token-b-123456789';
+
+	// The env value wins for site-a, and site-b appears from env only.
+	assert.equal( resolveSite( 'env-token-123456789' ), 'site-a' );
+	assert.equal( resolveSite( 'json-token-123456789' ), null );
+	assert.equal( resolveSite( 'env-token-b-123456789' ), 'site-b' );
+	assert.deepEqual( configuredSites().sort(), [ 'site-a', 'site-b' ] );
+
+	// Multi-tenant mode activates from env tokens alone.
+	delete process.env.SITE_TOKENS;
+	assert.equal( isMultiTenantMode(), true );
 	restoreSiteEnv();
 } );

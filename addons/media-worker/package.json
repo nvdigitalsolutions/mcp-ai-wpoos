@@ -1,6 +1,6 @@
 {
 	"name": "design-media-worker",
-	"version": "2.4.0",
+	"version": "3.0.0",
 	"description": "Design Stack media worker — AI image/video generation, optimization, social publishing, document pipeline, and workflow orchestration",
 	"main": "src/index.js",
 	"type": "module",
@@ -62,6 +62,7 @@
 	},
 	"optionalDependencies": {
 		"canvas": "^3.2.3",
-		"chartjs-node-canvas": "^5.0.0"
+		"chartjs-node-canvas": "^5.0.0",
+		"rate-limit-redis": "^4.2.0"
 	}
 }

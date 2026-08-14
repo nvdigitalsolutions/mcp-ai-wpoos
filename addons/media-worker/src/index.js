@@ -14,8 +14,9 @@ import {
 import { detectCapabilities } from './utils/capabilities.js';
 import { isMultiTenant, cleanupSiteTemp, tempStats } from './utils/site-paths.js';
 import { configuredSites } from './middleware/auth.js';
-import { configuredProviders } from './utils/provider-keys.js';
+import { configuredProviders, reloadProviderKeysFromFile, startProviderKeysWatcher } from './utils/provider-keys.js';
 import { getUsage } from './utils/usage.js';
+import { initRateLimitStore } from './middleware/rate-limit.js';
 import { imageRouter } from './routes/image.js';
 import { videoRouter } from './routes/video.js';
 import { socialRouter } from './routes/social.js';
@@ -65,7 +66,7 @@ app.get( '/api/health', (_req, res) => {
 	res.json( {
 		status: 'ok',
 		service: 'design-media-worker',
-		version: '2.4.0',
+		version: '3.0.0',
 		uptime: process.uptime(),
 	} );
 } );
@@ -116,7 +117,7 @@ app.get( '/api/health/full', async (_req, res) => {
 		res.json( {
 			status: 'ok',
 			service: 'design-media-worker',
-			version: '2.4.0',
+			version: '3.0.0',
 			uptime: process.uptime(),
 			environment: process.env.NODE_ENV || 'development',
 			tenants,
@@ -212,6 +213,15 @@ app.use( ( err, _req, res, _next ) => {
 
 // ── Startup ────────────────────────────────────────────────
 const server = app.listen( PORT, async () => {
+	// Phase 3 W4: swap rate-limit stores before serving traffic (opt-in).
+	await initRateLimitStore();
+
+	// Phase 3 W5: load + watch the provider-keys file (opt-in).
+	if ( process.env.PROVIDER_KEYS_FILE ) {
+		reloadProviderKeysFromFile();
+		startProviderKeysWatcher();
+	}
+
 	console.log( `[Design Worker] Running on http://localhost:${ PORT }` );
 	console.log( `[Design Worker] Environment: ${ process.env.NODE_ENV || 'development' }` );
 	console.log(
@@ -277,8 +287,15 @@ const server = app.listen( PORT, async () => {
 	// warn loudly instead of degrading silently (proposal 027, Phase 2d).
 	if ( undefined !== process.env.NODE_APP_INSTANCE ) {
 		console.warn( '[Design Worker] PM2 cluster mode detected:' );
-		console.warn( '  - In-memory rate-limit counters multiply by instance count — use a Redis-backed store.' );
+		console.warn( '  - In-memory rate-limit counters multiply by instance count — set RATE_LIMIT_REDIS=1 with REDIS_URL.' );
 		console.warn( '  - The in-memory job queue is single-process — REDIS_URL is required in cluster mode.' );
+	}
+
+	// Phase 3 W6 (revised): notice, not a flip — the default stays
+	// permissive in single-tenant mode until the shared-volume audit lands.
+	if ( ! isMultiTenant() && '1' !== process.env.STRICT_PATHS && '1' !== process.env.STRICT_PDF_PATHS ) {
+		console.warn( '[Design Worker] PDF path checks are permissive in single-tenant mode.' );
+		console.warn( '  Set STRICT_PATHS=1 to enforce the site namespace now (see proposal 028, W6).' );
 	}
 } );
 

@@ -203,8 +203,11 @@ trait WP_MCP_AI_Media_Worker_Client {
 	 * Priority:
 	 *   1. WP_MEDIA_WORKER_TOKEN constant (set in wp-config.php, must match
 	 *      the worker's WORKER_API_TOKEN environment variable).
-	 *   2. wp_mcp_ai_media_worker_token option (set via admin UI).
-	 *   3. wp_hash( home_url() ) fallback, derived from the WordPress auth
+	 *   2. wp_mcp_ai_media_worker_token_<blog_id> per-blog option
+	 *      (multisite only — Phase 3 W1; each blog can map to its own
+	 *      worker tenant).
+	 *   3. wp_mcp_ai_media_worker_token option (set via admin UI).
+	 *   4. wp_hash( home_url() ) fallback, derived from the WordPress auth
 	 *      salts (AUTH_KEY / SECURE_AUTH_KEY). If salts are rotated, this
 	 *      default changes and must be re-synced with the sidecar, so a
 	 *      stable constant or option is preferred for cloud deployments.
@@ -214,6 +217,14 @@ trait WP_MCP_AI_Media_Worker_Client {
 	protected function get_sidecar_token() {
 		if ( defined( 'WP_MEDIA_WORKER_TOKEN' ) && WP_MEDIA_WORKER_TOKEN ) {
 			return WP_MEDIA_WORKER_TOKEN;
+		}
+
+		// Per-blog override (multisite only; never read on single-site).
+		if ( is_multisite() ) {
+			$blog_token = get_option( 'wp_mcp_ai_media_worker_token_' . get_current_blog_id(), '' );
+			if ( ! empty( $blog_token ) ) {
+				return $blog_token;
+			}
 		}
 
 		$token = get_option( 'wp_mcp_ai_media_worker_token', '' );
