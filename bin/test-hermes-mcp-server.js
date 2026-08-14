@@ -21,6 +21,7 @@ const readline = require( 'node:readline' );
 const { spawn } = require( 'node:child_process' );
 
 const SERVER = path.join( __dirname, 'hermes-mcp-server.js' );
+const { readLocalSkills, normalizeContent } = require( './hermes-skill-sync.js' );
 
 // ── Fake WebUI ───────────────────────────────────────────────────────────────
 
@@ -41,6 +42,10 @@ function startFakeWebui() {
 		expireAfterRequests: Infinity,
 		requestCount: 0,
 		chatDelayMs: 0,
+		// Skills API state: name → SKILL.md content, plus call logs.
+		skillBodies: {},
+		saveCalls: [],
+		deleteCalls: [],
 	};
 
 	const server = http.createServer( ( req, res ) => {
@@ -89,6 +94,49 @@ function startFakeWebui() {
 			return json( 200, { session_id: 's1', title: 'First' } );
 		}
 
+		// ── Skills API (mirrors the real WebUI routes) ──
+		if ( 'GET' === req.method && '/api/skills' === req.url ) {
+			const skills = Object.entries( state.skillBodies ).map( ( [ name ] ) => ( {
+				name,
+				description: 'd',
+				category: null,
+				disabled: false,
+			} ) );
+			return json( 200, { success: true, skills, categories: [], count: skills.length } );
+		}
+
+		if ( 'GET' === req.method && req.url.startsWith( '/api/skills/content' ) ) {
+			const name = new URL( req.url, 'http://fake' ).searchParams.get( 'name' );
+			if ( Object.prototype.hasOwnProperty.call( state.skillBodies, name ) ) {
+				return json( 200, { success: true, name, content: state.skillBodies[ name ], linked_files: {} } );
+			}
+			return json( 200, { success: false, error: `Skill '${ name }' not found.` } );
+		}
+
+		if ( 'POST' === req.method && '/api/skills/save' === req.url ) {
+			let raw = '';
+			req.on( 'data', ( c ) => { raw += c; } );
+			req.on( 'end', () => {
+				const body = JSON.parse( raw || '{}' );
+				state.saveCalls.push( { name: body.name, content: body.content } );
+				state.skillBodies[ body.name ] = body.content;
+				json( 200, { ok: true, name: body.name } );
+			} );
+			return;
+		}
+
+		if ( 'POST' === req.method && '/api/skills/delete' === req.url ) {
+			let raw = '';
+			req.on( 'data', ( c ) => { raw += c; } );
+			req.on( 'end', () => {
+				const body = JSON.parse( raw || '{}' );
+				state.deleteCalls.push( { name: body.name } );
+				delete state.skillBodies[ body.name ];
+				json( 200, { ok: true } );
+			} );
+			return;
+		}
+
 		if ( 'POST' === req.method && '/api/chat' === req.url ) {
 			let raw = '';
 			req.on( 'data', ( c ) => { raw += c; } );
@@ -118,12 +166,16 @@ function startFakeWebui() {
 
 // ── MCP client helpers ───────────────────────────────────────────────────────
 
-function startServer( port ) {
+function startServer( port, extraEnv = {} ) {
 	const child = spawn( process.execPath, [ SERVER ], {
 		env: {
 			...process.env,
 			HERMES_WEBUI_URL: `http://127.0.0.1:${ port }`,
 			HERMES_WEBUI_PASSWORD: 'test-password',
+			// Isolate tests from the startup auto-sync (which would otherwise
+			// read the real repo .agents/skills tree against the fake WebUI).
+			HERMES_SYNC_SKILLS_ON_START: '0',
+			...extraEnv,
 		},
 		stdio: [ 'pipe', 'pipe', 'pipe' ],
 		windowsHide: true,
@@ -154,6 +206,22 @@ async function stop( ctx ) {
 	await ctx.webui.close();
 }
 
+/**
+ * Create a temporary skills fixture (alpha + beta) for sync tests.
+ *
+ * @returns {string} Fixture directory path (caller removes it).
+ */
+function makeSkillsFixture() {
+	const dir = fs.mkdtempSync( path.join( os.tmpdir(), 'hermes-sync-skills-' ) );
+	fs.mkdirSync( path.join( dir, 'alpha' ) );
+	fs.writeFileSync( path.join( dir, 'alpha', 'SKILL.md' ), '---\nname: alpha\ndescription: A\n---\n\nbody alpha\n' );
+	fs.mkdirSync( path.join( dir, 'beta' ) );
+	fs.writeFileSync( path.join( dir, 'beta', 'SKILL.md' ), '---\nname: beta\ndescription: B\n---\n\nbody beta\n' );
+	return dir;
+}
+
+const BETA_CONTENT = '---\nname: beta\ndescription: B\n---\n\nbody beta\n';
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 test( 'initialize + tools/list handshake', async () => {
@@ -169,6 +237,7 @@ test( 'initialize + tools/list handshake', async () => {
 		'hermes_list_sessions',
 		'hermes_chat',
 		'hermes_session_detail',
+		'hermes_sync_skills',
 	] );
 
 	await stop( ctx );
@@ -330,5 +399,247 @@ test( 'in-flight request completes even when stdin closes right after', async ()
 		assert.strictEqual( code, 0 );
 	} finally {
 		await ctx.webui.close();
+	}
+} );
+
+// ── Skill-sync engine (pure functions) ──────────────────────────────────────
+
+test( 'readLocalSkills parses skill dirs and reports extra files', () => {
+	const dir = makeSkillsFixture();
+	fs.writeFileSync( path.join( dir, 'alpha', 'reference.md' ), '# ref' );
+	fs.mkdirSync( path.join( dir, 'no-md' ) ); // No SKILL.md — must be ignored.
+	try {
+		const skills = readLocalSkills( dir );
+		assert.deepStrictEqual( skills.map( ( s ) => s.name ), [ 'alpha', 'beta' ] );
+		assert.deepStrictEqual( skills[ 0 ].extraFiles, [ 'reference.md' ] );
+		assert.ok( skills[ 1 ].content.includes( 'body beta' ) );
+	} finally {
+		fs.rmSync( dir, { recursive: true, force: true } );
+	}
+} );
+
+test( 'readLocalSkills rejects a missing directory', () => {
+	assert.throws( () => readLocalSkills( path.join( os.tmpdir(), 'hermes-sync-nope-' + process.pid ) ), /not found/ );
+} );
+
+test( 'normalizeContent flattens CRLF to LF', () => {
+	assert.strictEqual( normalizeContent( 'a\r\nb\r\n' ), 'a\nb\n' );
+	assert.strictEqual( normalizeContent( 'a\nb\n' ), 'a\nb\n' );
+} );
+
+// ── hermes_sync_skills MCP tool ──────────────────────────────────────────────
+
+test( 'sync uploads missing skills and skips unchanged ones', async () => {
+	const webui = await startFakeWebui();
+	const skillsDir = makeSkillsFixture();
+	const ctx = { ...startServer( webui.port, { HERMES_SYNC_SKILLS_DIR: skillsDir } ), webui };
+
+	try {
+		// Pre-seed remote with beta (identical content) and gamma (remote-only).
+		webui.state.skillBodies.beta = BETA_CONTENT;
+		webui.state.skillBodies.gamma = 'body gamma';
+
+		const res = await rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_sync_skills', arguments: {} }, 30 );
+		const payload = JSON.parse( res.result.content[ 0 ].text );
+
+		assert.deepStrictEqual( payload.synced, [ 'alpha' ], 'only the missing skill is uploaded' );
+		assert.deepStrictEqual( payload.unchanged, [ 'beta' ] );
+		assert.deepStrictEqual( payload.removed, [], 'no removal by default' );
+		assert.strictEqual( payload.remote_count, 2, 'remote seeds: beta + gamma' );
+		assert.strictEqual( webui.state.saveCalls.length, 1 );
+		assert.strictEqual( webui.state.saveCalls[ 0 ].name, 'alpha' );
+		assert.ok( 'gamma' in webui.state.skillBodies, 'remote-only skill survives a default sync' );
+	} finally {
+		await stop( ctx );
+		fs.rmSync( skillsDir, { recursive: true, force: true } );
+	}
+} );
+
+test( 'sync updates a skill whose remote content differs', async () => {
+	const webui = await startFakeWebui();
+	const skillsDir = makeSkillsFixture();
+	const ctx = { ...startServer( webui.port, { HERMES_SYNC_SKILLS_DIR: skillsDir } ), webui };
+
+	try {
+		webui.state.skillBodies.beta = 'stale remote body';
+
+		const res = await rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_sync_skills', arguments: {} }, 31 );
+		const payload = JSON.parse( res.result.content[ 0 ].text );
+
+		assert.deepStrictEqual( payload.synced.sort(), [ 'alpha', 'beta' ] );
+		assert.strictEqual( webui.state.skillBodies.beta, BETA_CONTENT );
+	} finally {
+		await stop( ctx );
+		fs.rmSync( skillsDir, { recursive: true, force: true } );
+	}
+} );
+
+test( 'sync respects the names filter', async () => {
+	const webui = await startFakeWebui();
+	const skillsDir = makeSkillsFixture();
+	const ctx = { ...startServer( webui.port, { HERMES_SYNC_SKILLS_DIR: skillsDir } ), webui };
+
+	try {
+		const res = await rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_sync_skills', arguments: { names: [ 'beta' ] } }, 32 );
+		const payload = JSON.parse( res.result.content[ 0 ].text );
+
+		assert.strictEqual( payload.local_count, 1 );
+		assert.deepStrictEqual( payload.synced, [ 'beta' ] );
+		assert.strictEqual( webui.state.saveCalls.length, 1 );
+		assert.strictEqual( webui.state.saveCalls[ 0 ].name, 'beta' );
+	} finally {
+		await stop( ctx );
+		fs.rmSync( skillsDir, { recursive: true, force: true } );
+	}
+} );
+
+test( 'sync with remove_missing prunes remote-only skills, names-scoped', async () => {
+	const webui = await startFakeWebui();
+	const skillsDir = makeSkillsFixture();
+	const ctx = { ...startServer( webui.port, { HERMES_SYNC_SKILLS_DIR: skillsDir } ), webui };
+
+	try {
+		webui.state.skillBodies.gamma = 'body gamma';
+
+		const res = await rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_sync_skills', arguments: { remove_missing: true } }, 33 );
+		const payload = JSON.parse( res.result.content[ 0 ].text );
+
+		assert.deepStrictEqual( payload.removed, [ 'gamma' ] );
+		assert.deepStrictEqual( webui.state.deleteCalls.map( ( d ) => d.name ), [ 'gamma' ] );
+		assert.ok( ! ( 'gamma' in webui.state.skillBodies ) );
+
+		// With a names filter, out-of-scope remote skills are left alone.
+		webui.state.skillBodies.gamma = 'body gamma';
+		const res2 = await rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_sync_skills', arguments: { names: [ 'alpha' ], remove_missing: true } }, 34 );
+		const payload2 = JSON.parse( res2.result.content[ 0 ].text );
+
+		assert.deepStrictEqual( payload2.removed, [] );
+		assert.ok( 'gamma' in webui.state.skillBodies, 'names-scoped remove_missing must not touch other skills' );
+	} finally {
+		await stop( ctx );
+		fs.rmSync( skillsDir, { recursive: true, force: true } );
+	}
+} );
+
+test( 'startup auto-sync uploads repo skills right after initialize', async () => {
+	const webui = await startFakeWebui();
+	const skillsDir = makeSkillsFixture();
+
+	const child = spawn( process.execPath, [ SERVER ], {
+		env: {
+			...process.env,
+			HERMES_WEBUI_URL: `http://127.0.0.1:${ webui.port }`,
+			HERMES_WEBUI_PASSWORD: 'test-password',
+			HERMES_SYNC_SKILLS_DIR: skillsDir,
+			HERMES_SYNC_SKILLS_ON_START: '1',
+		},
+		stdio: [ 'pipe', 'pipe', 'pipe' ],
+		windowsHide: true,
+	} );
+	const lines = [];
+	readline.createInterface( { input: child.stdout } ).on( 'line', ( l ) => lines.push( l ) );
+	const exit = new Promise( ( resolve ) => child.once( 'exit', ( code ) => resolve( code ) ) );
+
+	try {
+		await rpc( child, lines, 'initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'zed', version: '0.224.0' } }, 1 );
+
+		const deadline = Date.now() + 10000;
+		while ( Date.now() < deadline && webui.state.saveCalls.length < 2 ) {
+			await new Promise( ( r ) => setTimeout( r, 25 ) );
+		}
+		assert.deepStrictEqual(
+			webui.state.saveCalls.map( ( s ) => s.name ).sort(),
+			[ 'alpha', 'beta' ],
+			'startup sync uploads every fixture skill'
+		);
+	} finally {
+		child.stdin.end();
+		await exit;
+		fs.rmSync( skillsDir, { recursive: true, force: true } );
+		await webui.close();
+	}
+} );
+
+test( 'standalone CLI syncs skills and exits 0', async () => {
+	const webui = await startFakeWebui();
+	const skillsDir = makeSkillsFixture();
+	// Empty env file so the real ~/.nvoos-bridge.env can never leak in.
+	const envFile = path.join( os.tmpdir(), `hermes-cli-test-${ process.pid }.env` );
+	fs.writeFileSync( envFile, '' );
+
+	const child = spawn( process.execPath, [ path.join( __dirname, 'sync-skills-to-hermes.js' ), '--json', `--dir=${ skillsDir }` ], {
+		env: {
+			...process.env,
+			HERMES_WEBUI_URL: `http://127.0.0.1:${ webui.port }`,
+			HERMES_WEBUI_PASSWORD: 'test-password',
+			MCP_AI_ENV_FILE: envFile,
+		},
+		stdio: [ 'ignore', 'pipe', 'pipe' ],
+		windowsHide: true,
+	} );
+	let stdout = '';
+	let stderr = '';
+	child.stdout.on( 'data', ( c ) => { stdout += c; } );
+	child.stderr.on( 'data', ( c ) => { stderr += c; } );
+	const exit = new Promise( ( resolve ) => child.once( 'exit', ( code ) => resolve( code ) ) );
+
+	try {
+		const code = await exit;
+		assert.strictEqual( code, 0, `CLI failed (${ code }): ${ stderr }` );
+		const summary = JSON.parse( stdout.trim() );
+		assert.deepStrictEqual( summary.synced.sort(), [ 'alpha', 'beta' ] );
+		assert.strictEqual( webui.state.saveCalls.length, 2 );
+	} finally {
+		fs.rmSync( skillsDir, { recursive: true, force: true } );
+		fs.unlinkSync( envFile );
+		await webui.close();
+	}
+} );
+
+// ── Response decoding (in-process module reuse) ──────────────────────────────
+
+test( 'response chunks are joined before UTF-8 decoding', async () => {
+	// Regression: the request() helper used to decode every TCP chunk on its
+	// own, so a multi-byte character split across two chunks came back as
+	// mojibake — which made the skill sync re-upload unchanged skills forever.
+	const { readConfig, authedRequest } = require( './hermes-mcp-server.js' );
+	const body = JSON.stringify( { content: 'x├───┤y' } );
+	const rawBuf = Buffer.from( body, 'utf8' );
+
+	const fake = http.createServer( ( req, res ) => {
+		res.writeHead( 200, { 'Content-Type': 'application/json' } );
+		// Split inside the box-drawing sequence so the multi-byte run straddles the boundary.
+		const cut = rawBuf.indexOf( Buffer.from( '├─' ) ) + 1;
+		res.write( rawBuf.subarray( 0, cut ) );
+		setTimeout( () => {
+			res.write( rawBuf.subarray( cut ) );
+			res.end();
+		}, 10 );
+	} );
+	await new Promise( ( r ) => fake.listen( 0, '127.0.0.1', r ) );
+
+	const prevUrl = process.env.HERMES_WEBUI_URL;
+	const prevPw = process.env.HERMES_WEBUI_PASSWORD;
+	try {
+		process.env.HERMES_WEBUI_URL = `http://127.0.0.1:${ fake.address().port }`;
+		process.env.HERMES_WEBUI_PASSWORD = 'test-password';
+		readConfig();
+
+		const { statusCode, data } = await authedRequest( 'GET', '/api/x', null, 30000 );
+		assert.strictEqual( statusCode, 200 );
+		assert.strictEqual( data.content, 'x├───┤y', 'multi-byte content must round-trip intact' );
+	} finally {
+		if ( undefined === prevUrl ) {
+			delete process.env.HERMES_WEBUI_URL;
+		} else {
+			process.env.HERMES_WEBUI_URL = prevUrl;
+		}
+		if ( undefined === prevPw ) {
+			delete process.env.HERMES_WEBUI_PASSWORD;
+		} else {
+			process.env.HERMES_WEBUI_PASSWORD = prevPw;
+		}
+		readConfig();
+		await new Promise( ( r ) => fake.close( r ) );
 	}
 } );

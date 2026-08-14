@@ -21,6 +21,11 @@
  *   HERMES_CHAT_TIMEOUT     Chat request timeout in ms (default 300000 —
  *                           agent runs with tools can take minutes)
  *   HERMES_WEBUI_INSECURE   Set to 1 to skip TLS verification (self-signed)
+ *   HERMES_SYNC_SKILLS_ON_START
+ *                           Sync .agents/skills/ to the agent after the MCP
+ *                           handshake (default 1; set 0 to disable)
+ *   HERMES_SYNC_SKILLS_DIR  Override the local skills directory (default
+ *                           .agents/skills in the repo root)
  *
  * Example Zed context server entry (Settings → AI → MCP Servers → Add Local
  * Server, or settings.json):
@@ -35,6 +40,9 @@
  *   hermes_chat            — send a message to the agent and wait for the
  *                            answer (optionally in a specific session)
  *   hermes_session_detail  — full detail for one session
+ *   hermes_sync_skills     — sync .agents/skills/ to the agent's skills via
+ *                            the WebUI skills API (also runs once after the
+ *                            MCP handshake unless HERMES_SYNC_SKILLS_ON_START=0)
  */
 
 'use strict';
@@ -43,10 +51,11 @@ const http = require( 'http' );
 const https = require( 'https' );
 const readline = require( 'readline' );
 const { loadEnvFile } = require( './utils/env-file.js' );
+const { syncSkillsToWebui, DEFAULT_SKILLS_DIR } = require( './hermes-skill-sync.js' );
 
 const LOG = '[hermes-mcp]';
 const SERVER_NAME = 'hermes-webui';
-const SERVER_VERSION = '1.0.0';
+const SERVER_VERSION = '1.1.0';
 const PROTOCOL_VERSION = '2024-11-05';
 
 /**
@@ -80,6 +89,22 @@ function readConfig() {
 	INSECURE = '1' === process.env.HERMES_WEBUI_INSECURE;
 	const timeoutRaw = parseInt( process.env.HERMES_CHAT_TIMEOUT || '', 10 );
 	CHAT_TIMEOUT_MS = Number.isFinite( timeoutRaw ) && timeoutRaw >= 1000 ? timeoutRaw : 300000;
+}
+
+/**
+ * Snapshot of the current runtime configuration (used by the standalone
+ * sync CLI, bin/sync-skills-to-hermes.js, to reuse this module's HTTP/auth).
+ *
+ * @returns {object} {baseUrl, password, defaultSessionId, insecure, chatTimeoutMs}.
+ */
+function getConfig() {
+	return {
+		baseUrl: BASE_URL,
+		password: PASSWORD,
+		defaultSessionId: DEFAULT_SESSION_ID,
+		insecure: INSECURE,
+		chatTimeoutMs: CHAT_TIMEOUT_MS,
+	};
 }
 
 let cookie = null;
@@ -124,10 +149,13 @@ function request( method, route, body, timeoutMs ) {
 			if ( setCookie && setCookie.length ) {
 				cookie = String( setCookie[ 0 ] ).split( ';' )[ 0 ];
 			}
-			let raw = '';
-			res.on( 'data', ( chunk ) => { raw += chunk; } );
+			const chunks = [];
+			res.on( 'data', ( chunk ) => { chunks.push( chunk ); } );
 			res.on( 'end', () => {
-				const trimmed = raw.trim();
+				// Join bytes BEFORE decoding: a multi-byte UTF-8 sequence can
+				// straddle two TCP chunks, and per-chunk toString('utf8') would
+				// corrupt it (e.g. box-drawing chars in SKILL.md diagrams).
+				const trimmed = Buffer.concat( chunks ).toString( 'utf8' ).trim();
 				if ( '' === trimmed ) {
 					resolve( { statusCode: res.statusCode, data: null } );
 					return;
@@ -287,6 +315,27 @@ async function toolSessionDetail( args ) {
 	return data;
 }
 
+/**
+ * Sync the repo's .agents/skills/ tree to the Hermes agent.
+ *
+ * @param {object} args  {names?, remove_missing?}.
+ * @returns {Promise<object>} Tool result payload.
+ */
+async function toolSyncSkills( args ) {
+	const skillsDir = process.env.HERMES_SYNC_SKILLS_DIR || DEFAULT_SKILLS_DIR;
+	let names = null;
+	if ( Array.isArray( args.names ) ) {
+		names = args.names.map( ( n ) => String( n ).trim() ).filter( Boolean );
+	}
+	return syncSkillsToWebui( {
+		authedRequest,
+		skillsDir,
+		names,
+		removeMissing: !! args.remove_missing,
+		log,
+	} );
+}
+
 // ── MCP surface ──────────────────────────────────────────────────────────────
 
 const TOOLS = [
@@ -322,6 +371,24 @@ const TOOLS = [
 			required: [ 'session_id' ],
 		},
 	},
+	{
+		name: 'hermes_sync_skills',
+		description: 'Sync skills from the repo .agents/skills/ directory to the Hermes agent via the WebUI skills API. Uploads new or changed SKILL.md files and skips unchanged ones; optionally removes remote skills that no longer exist locally.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				names: {
+					type: 'array',
+					items: { type: 'string' },
+					description: 'Optional: only sync these skill names.',
+				},
+				remove_missing: {
+					type: 'boolean',
+					description: 'Optional: delete remote skills absent from .agents/skills (default false — the agent may have self-authored skills).',
+				},
+			},
+		},
+	},
 ];
 
 /**
@@ -342,6 +409,9 @@ async function dispatchToolCall( params ) {
 	}
 	if ( 'hermes_session_detail' === name ) {
 		return { content: [ { type: 'text', text: JSON.stringify( await toolSessionDetail( args ), null, 2 ) } ] };
+	}
+	if ( 'hermes_sync_skills' === name ) {
+		return { content: [ { type: 'text', text: JSON.stringify( await toolSyncSkills( args ), null, 2 ) } ] };
 	}
 	throw new Error( `Unknown tool: ${ name }` );
 }
@@ -373,6 +443,50 @@ function main() {
 	// still awaiting its HTTP response (some clients half-close stdin right
 	// after writing the final request).
 	let inFlight = 0;
+
+	// One-shot guard: the startup skill sync runs once per server lifetime.
+	let startupSyncStarted = false;
+
+	/**
+	 * Refresh the Hermes agent's skills from .agents/skills/ once, right after
+	 * the MCP handshake. Fire-and-forget: results go to stderr only, so the
+	 * protocol stream stays clean. The in-flight counter keeps the process
+	 * alive until the sync drains.
+	 *
+	 * Opt out with HERMES_SYNC_SKILLS_ON_START=0.
+	 */
+	function maybeStartupSync() {
+		if ( startupSyncStarted ) {
+			return;
+		}
+		startupSyncStarted = true;
+		if ( '0' === process.env.HERMES_SYNC_SKILLS_ON_START ) {
+			return;
+		}
+
+		const skillsDir = process.env.HERMES_SYNC_SKILLS_DIR || DEFAULT_SKILLS_DIR;
+		log( `syncing ${ skillsDir } → Hermes (startup)` );
+		inFlight += 1;
+		( async () => {
+			try {
+				const summary = await syncSkillsToWebui( {
+					authedRequest,
+					skillsDir,
+					names: null,
+					removeMissing: false,
+					log,
+				} );
+				log(
+					`startup skill sync complete — ${ summary.synced.length } uploaded, ` +
+					`${ summary.unchanged.length } unchanged, ${ summary.remote_count } remote`
+				);
+			} catch ( e ) {
+				log( `startup skill sync failed: ${ e.message }` );
+			} finally {
+				inFlight -= 1;
+			}
+		} )();
+	}
 
 	rl.on( 'line', async ( line ) => {
 		const trimmed = line.trim();
@@ -406,6 +520,7 @@ function main() {
 							serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
 						},
 					} );
+					maybeStartupSync();
 					return;
 
 				case 'tools/list':
@@ -452,4 +567,4 @@ if ( require.main === module ) {
 	main();
 }
 
-module.exports = { request, login, authedRequest, toolListSessions, toolChat, toolSessionDetail, TOOLS, main };
+module.exports = { request, login, authedRequest, readConfig, getConfig, toolListSessions, toolChat, toolSessionDetail, toolSyncSkills, TOOLS, main };

@@ -381,7 +381,7 @@
       // Drives the remote Hermes Agent through bin/hermes-mcp-server.js (a
       // stdio MCP server configured under context_servers — add the server
       // entry to your user settings; see bin/README.md → hermes-mcp-server).
-      // Only the three hermes_* tools are exposed, so the agent can only
+      // Only the four hermes_* tools are exposed, so the agent can only
       // talk to Hermes — no repo tools.
       "hermes": {
         "name": "Hermes Console",
@@ -394,7 +394,8 @@
             "tools": {
               "hermes_chat": true,
               "hermes_list_sessions": true,
-              "hermes_session_detail": true
+              "hermes_session_detail": true,
+              "hermes_sync_skills": true
             }
           }
         }

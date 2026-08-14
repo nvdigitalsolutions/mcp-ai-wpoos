@@ -439,8 +439,11 @@ closes the pipe and ssh exits — no stray tunnels. Tests:
 
 For driving a **Hermes Agent** (Nous Research) itself rather than the NV oOS
 console — its WebUI API over public HTTPS — see `bin/hermes-mcp-server.js`
-(tools: `hermes_chat`, `hermes_list_sessions`, `hermes_session_detail`;
-runbook: `docs/operations/fleet/hermes-operator-setup.md` §7).
+(tools: `hermes_chat`, `hermes_list_sessions`, `hermes_session_detail`,
+`hermes_sync_skills`; runbook: `docs/operations/fleet/hermes-operator-setup.md`
+§7). The server also auto-syncs `.agents/skills/` to the agent on startup
+(`HERMES_SYNC_SKILLS_ON_START=1`, default); the standalone CLI
+`bin/sync-skills-to-hermes.js` does the same from cron or a git post-merge hook.
 
 ---
 
