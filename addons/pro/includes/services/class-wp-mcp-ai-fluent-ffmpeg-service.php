@@ -470,11 +470,12 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 	 * Check whether video processing can be offloaded to the Media Worker.
 	 *
 	 * Requires a reachable sidecar and the cURL extension (multipart uploads).
+	 * Delegates to the shared trait check (is_sidecar_upload_supported).
 	 *
 	 * @return bool True when video operations can use the sidecar.
 	 */
 	public function is_sidecar_video_processing_available() {
-		return function_exists( 'curl_file_create' ) && $this->is_sidecar_available();
+		return $this->is_sidecar_upload_supported();
 	}
 
 	/**

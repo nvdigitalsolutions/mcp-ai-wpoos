@@ -140,9 +140,36 @@ class WP_MCP_AI_OCR_Service {
 			}
 		}
 
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured or the health check fails). The
+		// worker OCRs the uploaded file itself, so the image must be sent
+		// as a multipart upload — never as a local path.
+		if ( $this->is_sidecar_upload_supported() ) {
+			$sidecar = $this->sidecar_upload(
+				'/api/ocr/recognize',
+				$image_path,
+				array(
+					'language' => isset( $options['language'] ) ? $options['language'] : 'eng',
+				),
+				120
+			);
+			if ( ! is_wp_error( $sidecar ) && isset( $sidecar['text'] ) ) {
+				// Clean up preprocessed temp file if created.
+				if ( isset( $processed_image ) && ! is_wp_error( $processed_image ) && $processed_image !== $image_path ) {
+					if ( file_exists( $processed_image ) ) {
+						wp_delete_file( $processed_image );
+					}
+				}
+				return $sidecar['text'];
+			}
+		}
+
 		// Allow custom OCR implementation via filter.
 		/**
 		 * Filter to allow custom OCR text extraction.
+		 *
+		 * Runs after the sidecar attempt: legacy local-Node handlers only
+		 * execute when a local Node.js is installed.
 		 *
 		 * @param string|false $result Extracted text or false.
 		 * @param array        $params Extraction parameters (image_path, options).
@@ -158,25 +185,11 @@ class WP_MCP_AI_OCR_Service {
 		if ( false !== $filter_result ) {
 			// Clean up preprocessed temp file if created.
 			if ( isset( $processed_image ) && ! is_wp_error( $processed_image ) && $processed_image !== $image_path ) {
-				@unlink( $processed_image );
+				if ( file_exists( $processed_image ) ) {
+					wp_delete_file( $processed_image );
+				}
 			}
 			return $filter_result;
-		}
-
-		// Try Media Worker sidecar first (automatic — no config needed with Docker).
-		$sidecar = $this->sidecar_request(
-			'/api/ocr/recognize',
-			array(
-				'image_path' => $image_path,
-				'language'   => isset( $options['language'] ) ? $options['language'] : 'eng',
-			)
-		);
-		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['text'] ) ) {
-			// Clean up preprocessed temp file if created.
-			if ( isset( $processed_image ) && ! is_wp_error( $processed_image ) && $processed_image !== $image_path ) {
-				@unlink( $processed_image );
-			}
-			return $sidecar['text'];
 		}
 
 		// Determine provider.
@@ -222,7 +235,9 @@ class WP_MCP_AI_OCR_Service {
 
 		// Clean up preprocessed temp file if created.
 		if ( isset( $processed_image ) && ! is_wp_error( $processed_image ) && $processed_image !== $image_path ) {
-			@unlink( $processed_image );
+			if ( file_exists( $processed_image ) ) {
+				wp_delete_file( $processed_image );
+			}
 		}
 
 		return $result;
@@ -265,7 +280,9 @@ class WP_MCP_AI_OCR_Service {
 			$text = $this->extract_text_from_image( $image_path, $options );
 
 			// Clean up temp image.
-			@unlink( $image_path );
+			if ( file_exists( $image_path ) ) {
+				wp_delete_file( $image_path );
+			}
 
 			if ( is_wp_error( $text ) ) {
 				$error_message  = $text->get_error_message();
@@ -348,7 +365,7 @@ class WP_MCP_AI_OCR_Service {
 		$sharp_available = $this->is_sharp_available();
 
 		if ( $sharp_available ) {
-			return $this->preprocess_with_sharp( $image_path, $options );
+			return $this->preprocess_with_sharp( $image_path );
 		}
 
 		// Fallback to Imagick if available.
@@ -364,10 +381,9 @@ class WP_MCP_AI_OCR_Service {
 	 * Preprocess image using Sharp (Node.js).
 	 *
 	 * @param string $image_path Path to image file.
-	 * @param array  $options    Processing options.
 	 * @return string|WP_Error Path to processed image or error.
 	 */
-	protected function preprocess_with_sharp( $image_path, $options = array() ) {
+	protected function preprocess_with_sharp( $image_path ) {
 		$service_path = WP_MCP_AI_PRO_PATH . 'node-services/image-preprocess-service.js';
 
 		if ( ! file_exists( $service_path ) ) {
@@ -388,16 +404,46 @@ class WP_MCP_AI_OCR_Service {
 			)
 		);
 
-		$cmd = sprintf(
-			'node %s preprocess %s 2>&1',
-			escapeshellarg( $service_path ),
-			escapeshellarg( $args )
+		// Run via the Process Service (array command, bounded timeout) —
+		// the same invocation the rest of the codebase uses instead of
+		// raw exec().
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$process_result  = $process_service->run_silent(
+			array( 'node', $service_path, 'preprocess', $args ),
+			array( 'timeout' => 120 )
 		);
 
-		exec( $cmd, $output, $return_code );
+		if ( isset( $process_result['disabled'] ) && $process_result['disabled'] ) {
+			if ( file_exists( $temp_output ) ) {
+				wp_delete_file( $temp_output );
+			}
+			return $this->log_and_return_error(
+				'preprocessing_failed',
+				'ocr_sharp_failed',
+				'Sharp preprocessing failed: process execution is disabled on this server',
+				array()
+			);
+		}
+
+		if ( isset( $process_result['timeout'] ) && $process_result['timeout'] ) {
+			if ( file_exists( $temp_output ) ) {
+				wp_delete_file( $temp_output );
+			}
+			return $this->log_and_return_error(
+				'preprocessing_failed',
+				'ocr_sharp_timeout',
+				'Sharp preprocessing command timed out',
+				array()
+			);
+		}
+
+		$return_code = $process_result['exit_code'];
+		$output      = explode( "\n", $process_result['output'] . $process_result['error'] );
 
 		if ( 0 !== $return_code ) {
-			@unlink( $temp_output );
+			if ( file_exists( $temp_output ) ) {
+				wp_delete_file( $temp_output );
+			}
 			return $this->log_and_return_error(
 				'preprocessing_failed',
 				'ocr_sharp_failed',
@@ -526,7 +572,7 @@ class WP_MCP_AI_OCR_Service {
 			// Clean up any temp files created before the error.
 			foreach ( $images as $temp_file ) {
 				if ( file_exists( $temp_file ) ) {
-					@unlink( $temp_file );
+					wp_delete_file( $temp_file );
 				}
 			}
 
@@ -908,13 +954,21 @@ class WP_MCP_AI_OCR_Service {
 
 		if ( 0 === $return_code && file_exists( $text_file ) ) {
 			$text = file_get_contents( $text_file );
-			@unlink( $text_file );
-			@unlink( $output_file );
+			if ( file_exists( $text_file ) ) {
+				wp_delete_file( $text_file );
+			}
+			if ( file_exists( $output_file ) ) {
+				wp_delete_file( $output_file );
+			}
 			return trim( $text );
 		}
 
-		@unlink( $text_file );
-		@unlink( $output_file );
+		if ( file_exists( $text_file ) ) {
+			wp_delete_file( $text_file );
+		}
+		if ( file_exists( $output_file ) ) {
+			wp_delete_file( $output_file );
+		}
 
 		return $this->log_and_return_error(
 			'tesseract_failed',

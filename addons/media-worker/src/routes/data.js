@@ -225,10 +225,12 @@ dataRouter.post('/render-chart', async (req, res) => {
     const height = options?.height || 400;
     const renderer = new ChartJSNodeCanvas({ width, height, backgroundColour: options?.background || 'white' });
     const config = { type, data, options: options?.chartOptions || {} };
-    const image = await renderer.renderToBuffer(config);
-    const outPath = tempFile( req, 'png' );
-    fs.writeFileSync(outPath, image);
-    res.json({ success: true, output_path: outPath, size: image.length, width, height });
+    		const image = await renderer.renderToBuffer(config);
+    		const outPath = tempFile( req, 'png' );
+    		fs.writeFileSync(outPath, image);
+    		// data_base64 is the plugin contract: `output_path` points at the
+    		// WORKER's filesystem and is useless to the calling WordPress site.
+    		res.json({ success: true, output_path: outPath, data_base64: image.toString('base64'), size: image.length, width, height });
   } catch (err) {
     if ('ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code) {
       return res.status(503).json({

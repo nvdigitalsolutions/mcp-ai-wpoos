@@ -80,6 +80,32 @@ emailRouter.post('/compile-mjml', async (req, res) => {
   }
 });
 
+// ── POST /verify — verify SMTP connectivity without sending ──
+emailRouter.post('/verify', async (req, res) => {
+  try {
+    const smtp = req.body?.smtp || {};
+    const nodemailer = (await import('nodemailer')).default;
+    const port = parseInt(smtp.port || process.env.SMTP_PORT || '587', 10);
+    const transporter = nodemailer.createTransport({
+      host: smtp.host || process.env.SMTP_HOST || 'localhost',
+      port,
+      secure: smtp.secure ?? (port === 465),
+      auth: smtp.user || process.env.SMTP_USER
+        ? { user: smtp.user || process.env.SMTP_USER, pass: smtp.pass || process.env.SMTP_PASS || '' }
+        : undefined,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
+    });
+    const verified = await transporter.verify();
+    res.json({ success: true, connected: true, verified });
+  } catch (err) {
+    // A failed verification is a structured result (connected: false),
+    // not a transport error — return 200 so callers can read it.
+    res.json({ success: false, connected: false, error: err.message });
+  }
+});
+
 // ── POST /parse — parse raw email (headers, body, attachments) ─
 emailRouter.post('/parse', async (req, res) => {
   try {

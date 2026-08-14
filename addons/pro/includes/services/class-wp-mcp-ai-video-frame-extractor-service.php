@@ -152,9 +152,72 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 	 * @return array|WP_Error Array of frame file paths, or error.
 	 */
 	public function extract_frames( $video_path, $frame_count = null ) {
+		if ( ! file_exists( $video_path ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_video_not_found',
+				__( 'Video file not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Validate and sanitize frame count (used by both sidecar and local paths).
+		if ( null === $frame_count ) {
+			$frame_count = $this->default_frame_count;
+		}
+		$frame_count = absint( $frame_count );
+		if ( $frame_count > $this->max_frame_count ) {
+			$frame_count = $this->max_frame_count;
+		}
+		if ( $frame_count < 1 ) {
+			$frame_count = 1;
+		}
+
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured or the health check fails).
+		if ( $this->is_sidecar_upload_supported() ) {
+			$sidecar = $this->sidecar_upload(
+				'/api/video/process',
+				$video_path,
+				array(
+					'operation' => 'extract_frames',
+					'format'    => 'jpg',
+					'count'     => $frame_count,
+				),
+				330
+			);
+			if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['output_files'] ) && is_array( $sidecar['output_files'] ) ) {
+				$temp_dir = $this->create_temp_directory();
+				if ( ! is_wp_error( $temp_dir ) ) {
+					$frames   = array();
+					$download = null;
+					foreach ( $sidecar['output_files'] as $i => $name ) {
+						$destination = trailingslashit( $temp_dir ) . sprintf( 'frame_%03d.jpg', $i + 1 );
+						$download    = $this->sidecar_download( $name, $destination );
+						if ( is_wp_error( $download ) ) {
+							break;
+						}
+						$frames[] = $download;
+					}
+					if ( ! is_wp_error( $download ) && count( $frames ) === count( $sidecar['output_files'] ) ) {
+						return $frames;
+					}
+					// Remove partial frames before falling through to local paths.
+					foreach ( $frames as $frame ) {
+						if ( file_exists( $frame ) ) {
+							// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+							unlink( $frame );
+						}
+					}
+				}
+			}
+		}
+
 		// Allow custom frame extraction via filter.
 		/**
 		 * Filter to allow custom video frame extraction.
+		 *
+		 * Runs after the sidecar attempt: legacy local-Node handlers only
+		 * execute when a local Node.js is installed.
 		 *
 		 * @param array|false $result Array of frame paths or false.
 		 * @param array       $params Extraction parameters.
@@ -171,18 +234,6 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 			return $filter_result;
 		}
 
-		// Try Media Worker sidecar first (automatic — no config needed with Docker).
-		$sidecar = $this->sidecar_request(
-			'/api/video/extract-frames',
-			array(
-				'video_path'  => $video_path,
-				'frame_count' => $frame_count,
-			)
-		);
-		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['frames'] ) ) {
-			return $sidecar['frames'];
-		}
-
 		// Check FFmpeg availability.
 		if ( ! $this->is_ffmpeg_available() ) {
 			return new WP_Error(
@@ -195,26 +246,6 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 					),
 				)
 			);
-		}
-
-		if ( ! file_exists( $video_path ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_video_not_found',
-				__( 'Video file not found.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 404 )
-			);
-		}
-
-		// Validate and sanitize frame count.
-		if ( null === $frame_count ) {
-			$frame_count = $this->default_frame_count;
-		}
-		$frame_count = absint( $frame_count );
-		if ( $frame_count > $this->max_frame_count ) {
-			$frame_count = $this->max_frame_count;
-		}
-		if ( $frame_count < 1 ) {
-			$frame_count = 1;
 		}
 
 		// Get video duration.
@@ -482,6 +513,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 			finfo_close( $finfo );
 
 			// Create base64 data URL.
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Data-URL transport for client-side frame preview, not obfuscation.
 			$base64   = base64_encode( $image_data );
 			$data_url = 'data:' . $mime_type . ';base64,' . $base64;
 

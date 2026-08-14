@@ -451,6 +451,101 @@ $video_api_ready = $video_api_ready && $dl_ok;
 
 probe_out( '  Video API:      ' . ( $video_api_ready ? 'current build — plugin FFmpeg services can use the sidecar' : 'INCOMPLETE — FFmpeg ops need a worker redeploy (see FAILs above)' ) );
 
+// Image API fingerprint: plugin image GENERATION does not route through
+// the worker (it calls providers directly), but the worker's own image
+// surface needs provider keys. These checks confirm the routes exist and
+// report which providers the deployed worker has credentials for.
+probe_out();
+probe_out( '  -- Image API fingerprint (no keys required for these checks) --' );
+$ip = probe_get_json( rtrim( $url, '/' ) . '/api/image/providers', $sidecar_headers, 10 );
+$providers_ok   = ( 200 === $ip['status'] && is_array( $ip['body'] ) );
+$configured_ai  = array();
+if ( $providers_ok ) {
+	foreach ( $ip['body'] as $pid => $pdata ) {
+		if ( is_array( $pdata ) && ! empty( $pdata['configured'] ) ) {
+			$configured_ai[] = $pid;
+		}
+	}
+}
+probe_result(
+	'GET /api/image/providers',
+	$providers_ok,
+	$ip['error'] ? $ip['error'] : ( $providers_ok ? 'configured providers: ' . ( empty( $configured_ai ) ? 'NONE — set provider keys on the worker to enable generation' : implode( ', ', $configured_ai ) ) : 'HTTP ' . $ip['status'] )
+);
+
+$ig = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/image/generate',
+	array(
+		'timeout' => 10,
+		'headers' => array_merge( $sidecar_headers, array( 'Content-Type' => 'application/json' ) ),
+		'body'    => '{}',
+	)
+);
+$ig_status = is_wp_error( $ig ) ? 0 : (int) wp_remote_retrieve_response_code( $ig );
+$ig_body   = is_wp_error( $ig ) ? null : json_decode( wp_remote_retrieve_body( $ig ), true );
+$ig_ok     = ( 400 === $ig_status && isset( $ig_body['error'] ) );
+probe_result(
+	'POST /api/image/generate (no prompt)',
+	$ig_ok,
+	is_wp_error( $ig ) ? $ig->get_error_message() : 'HTTP ' . $ig_status . ( isset( $ig_body['error'] ) ? ' — ' . $ig_body['error'] : '' )
+);
+
+// Extended contract checks for the routes fixed alongside the video API.
+probe_out();
+probe_out( '  -- Extended contract (OCR / email verify / chart) --' );
+$oc = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/ocr/recognize',
+	array(
+		'timeout' => 10,
+		'headers' => array_merge( $sidecar_headers, array( 'Content-Type' => 'application/json' ) ),
+		'body'    => '{}',
+	)
+);
+$oc_status = is_wp_error( $oc ) ? 0 : (int) wp_remote_retrieve_response_code( $oc );
+$oc_body   = is_wp_error( $oc ) ? null : json_decode( wp_remote_retrieve_body( $oc ), true );
+$oc_ok     = ( 400 === $oc_status && isset( $oc_body['error'] ) );
+probe_result(
+	'POST /api/ocr/recognize (no input)',
+	$oc_ok,
+	is_wp_error( $oc ) ? $oc->get_error_message() : 'HTTP ' . $oc_status . ( isset( $oc_body['error'] ) ? ' — ' . $oc_body['error'] : '' )
+);
+
+$ev = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/email/verify',
+	array(
+		'timeout' => 20,
+		'headers' => array_merge( $sidecar_headers, array( 'Content-Type' => 'application/json' ) ),
+		'body'    => wp_json_encode( array( 'smtp' => array( 'host' => '127.0.0.1', 'port' => 1 ) ) ),
+	)
+);
+$ev_status = is_wp_error( $ev ) ? 0 : (int) wp_remote_retrieve_response_code( $ev );
+$ev_body   = is_wp_error( $ev ) ? null : json_decode( wp_remote_retrieve_body( $ev ), true );
+$ev_ok     = ( 200 === $ev_status && isset( $ev_body['connected'] ) );
+if ( $ev_ok ) {
+	probe_result( 'POST /api/email/verify', true, 'route present — structured connected:false result (expected for an unreachable SMTP)' );
+} elseif ( 404 === $ev_status ) {
+	probe_result( 'POST /api/email/verify', false, 'HTTP 404 — verify route missing (older worker build)' );
+} else {
+	probe_result( 'POST /api/email/verify', false, is_wp_error( $ev ) ? $ev->get_error_message() : 'HTTP ' . $ev_status );
+}
+
+$rc = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/data/render-chart',
+	array(
+		'timeout' => 10,
+		'headers' => array_merge( $sidecar_headers, array( 'Content-Type' => 'application/json' ) ),
+		'body'    => '{}',
+	)
+);
+$rc_status = is_wp_error( $rc ) ? 0 : (int) wp_remote_retrieve_response_code( $rc );
+$rc_body   = is_wp_error( $rc ) ? null : json_decode( wp_remote_retrieve_body( $rc ), true );
+$rc_ok     = ( 400 === $rc_status && isset( $rc_body['error'] ) );
+probe_result(
+	'POST /api/data/render-chart (no type)',
+	$rc_ok,
+	is_wp_error( $rc ) ? $rc->get_error_message() : 'HTTP ' . $rc_status . ( isset( $rc_body['error'] ) ? ' — ' . $rc_body['error'] : '' )
+);
+
 // ── [5] Local JS fallback presence ────────────────────────────────────
 probe_section( '5) LOCAL JS FALLBACK PRESENCE (what would run if sidecar fails)' );
 
