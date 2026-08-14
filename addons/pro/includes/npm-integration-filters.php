@@ -1262,6 +1262,81 @@ function wp_mcp_ai_generate_qr_code_via_api( $data, $format, $options ) {
 }
 
 /**
+ * Send a JSON POST to the Media Worker sidecar.
+ *
+ * Procedural helper for filter handlers and utility functions that cannot
+ * use the WP_MCP_AI_Media_Worker_Client trait. Fails fast when no sidecar
+ * URL is configured.
+ *
+ * @param string $endpoint API path (e.g. '/api/data/translate').
+ * @param array  $body     Request payload.
+ * @param int    $timeout  Timeout in seconds (default 30).
+ * @return array|WP_Error Decoded response body or error.
+ */
+function wp_mcp_ai_sidecar_json_post( $endpoint, $body = array(), $timeout = 30 ) {
+	$url = defined( 'WP_MEDIA_WORKER_URL' ) && WP_MEDIA_WORKER_URL
+		? WP_MEDIA_WORKER_URL
+		: get_option( 'wp_mcp_ai_media_worker_url', '' );
+	if ( empty( $url ) ) {
+		return new WP_Error(
+			'wp_mcp_ai_sidecar_not_configured',
+			__( 'Media Worker sidecar URL is not configured.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	$token = defined( 'WP_MEDIA_WORKER_TOKEN' ) && WP_MEDIA_WORKER_TOKEN
+		? WP_MEDIA_WORKER_TOKEN
+		: get_option( 'wp_mcp_ai_media_worker_token', '' );
+	if ( empty( $token ) ) {
+		$token = wp_hash( home_url() );
+	}
+
+	$response = wp_remote_post(
+		rtrim( $url, '/' ) . '/' . ltrim( $endpoint, '/' ),
+		array(
+			'timeout' => $timeout,
+			'headers' => array(
+				'Content-Type' => 'application/json',
+				'X-Site-Token' => $token,
+				'X-Site-Url'   => home_url(),
+			),
+			'body'    => wp_json_encode( $body ),
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return $response;
+	}
+
+	$status  = wp_remote_retrieve_response_code( $response );
+	$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	if ( 200 !== $status && 202 !== $status ) {
+		$error_msg = isset( $decoded['error'] )
+			? $decoded['error']
+			: sprintf( 'HTTP %d: %s', $status, substr( wp_remote_retrieve_body( $response ), 0, 200 ) );
+
+		return new WP_Error(
+			'wp_mcp_ai_sidecar_error',
+			$error_msg,
+			array(
+				'status'   => $status,
+				'response' => $decoded,
+			)
+		);
+	}
+
+	if ( null === $decoded ) {
+		return new WP_Error(
+			'wp_mcp_ai_sidecar_invalid_json',
+			__( 'Media Worker returned invalid JSON.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return $decoded;
+}
+
+/**
  * Generate QR code for TOTP authentication
  *
  * Uses qrcode NPM package to generate QR codes for authenticator apps.
@@ -1288,11 +1363,45 @@ function wp_mcp_ai_generate_qr_code( $data, $format = 'data-url', $options = arr
 
 	$options = wp_parse_args( $options, $defaults );
 
-	// Use the pre-packaged service file (qrcode and its deps are vendored under
+	// Try the Media Worker sidecar first (sidecar-first routing — the
+	// connected worker generates the QR code instead of the plugin's
+	// bundled JS). Fails fast when no sidecar URL is configured.
+	$sidecar = wp_mcp_ai_sidecar_json_post(
+		'/api/data/qrcode',
+		array(
+			'text'    => $data,
+			'options' => array(
+				'format'          => 'svg' === $format ? 'svg' : 'png',
+				'width'           => isset( $options['width'] ) ? absint( $options['width'] ) : 200,
+				'margin'          => isset( $options['margin'] ) ? absint( $options['margin'] ) : 2,
+				'colorDark'       => isset( $options['color']['dark'] ) ? $options['color']['dark'] : '#000000',
+				'colorLight'      => isset( $options['color']['light'] ) ? $options['color']['light'] : '#ffffff',
+				'errorCorrection' => isset( $options['errorCorrectionLevel'] ) ? $options['errorCorrectionLevel'] : 'M',
+			),
+		),
+		15
+	);
+	if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['data_url'] ) ) {
+		// 'svg' callers expect the raw SVG markup (same as the local service
+		// and external API fallback) — unwrap the worker's data URL.
+		if ( 'svg' === $format && 0 === strpos( $sidecar['data_url'], 'data:image/svg+xml;base64,' ) ) {
+			$svg = base64_decode( substr( $sidecar['data_url'], strlen( 'data:image/svg+xml;base64,' ) ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Unwrapping the worker's SVG data URL is the transport contract.
+			if ( false !== $svg ) {
+				return $svg;
+			}
+		}
+		// 'base64' callers expect bare base64 without the data URL prefix.
+		if ( 'base64' === $format && 0 === strpos( $sidecar['data_url'], 'data:image/png;base64,' ) ) {
+			return substr( $sidecar['data_url'], strlen( 'data:image/png;base64,' ) );
+		}
+		return $sidecar['data_url'];
+	}
+
+	// Fallback: local Node.js service (qrcode and its deps are vendored under
 	// assets/vendor/qrcode/ so no npm install is required on the server).
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/qrcode-service.js';
 
-	if ( wp_mcp_ai_is_nodejs_available() && file_exists( $service_file ) ) {
+	if ( wp_mcp_ai_has_local_nodejs() && file_exists( $service_file ) ) {
 		$params = array(
 			'data'    => $data,
 			'format'  => $format,
@@ -1467,6 +1576,20 @@ function wp_mcp_ai_validator_phone_handler( $result, $params ) {
 function wp_mcp_ai_translate_text_handler( $result, $params ) {
 	if ( false !== $result ) {
 		return $result;
+	}
+
+	// Try the Media Worker sidecar first (procedural handler — no trait).
+	$sidecar = wp_mcp_ai_sidecar_json_post(
+		'/api/data/translate',
+		array(
+			'text' => isset( $params['text'] ) ? $params['text'] : '',
+			'to'   => isset( $params['target_language'] ) ? $params['target_language'] : '',
+			'from' => isset( $params['source_language'] ) ? $params['source_language'] : '',
+		),
+		15
+	);
+	if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['translated'] ) ) {
+		return $sidecar['translated'];
 	}
 
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/translate-service.js';

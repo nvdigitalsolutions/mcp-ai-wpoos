@@ -813,17 +813,76 @@ router.post('/batch', upload.array('files', 20), async (req, res) => {
   }
 });
 
-// ── POST /vectorize — raster to SVG (potrace) ───────────────
+// ── POST /vectorize — raster to SVG (VTracer via @neplex/vectorizer) ──
+// String values mirror the plugin's local bin/vectorize-image.js contract
+// (color/binary, stacked/cutout, spline/polygon/none); the v0.0.5 API
+// expects numeric TypeScript enum values, so map them here.
+const VECTORIZE_ENUMS = {
+  colorMode: { color: 0, binary: 1 },
+  hierarchical: { stacked: 0, cutout: 1 },
+  mode: { none: 0, polygon: 1, spline: 2 },
+};
+const VECTORIZE_NUMERIC = new Set([
+  'colorPrecision',
+  'filterSpeckle',
+  'layerDifference',
+  'cornerThreshold',
+  'lengthThreshold',
+  'maxIterations',
+  'spliceThreshold',
+  'pathPrecision',
+]);
+
+/**
+ * Parse the optional multipart `options` field (JSON) into a v0.0.5
+ * vectorize() config. Unknown or invalid keys are ignored; enum strings
+ * are mapped to their numeric equivalents.
+ *
+ * @param {string|undefined} raw Raw options field value.
+ * @return {Object|undefined} Config object or undefined.
+ */
+function parseVectorizeOptions(raw) {
+  if (!raw) {
+    return undefined;
+  }
+  let options;
+  try {
+    options = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    return undefined;
+  }
+  if (!options || typeof options !== 'object' || Array.isArray(options)) {
+    return undefined;
+  }
+  const config = {};
+  for (const [key, value] of Object.entries(options)) {
+    if (VECTORIZE_ENUMS[key]) {
+      const mapped = VECTORIZE_ENUMS[key][String(value).toLowerCase()];
+      if (mapped !== undefined) {
+        config[key] = mapped;
+      }
+    } else if (VECTORIZE_NUMERIC.has(key)) {
+      const n = Number(value);
+      if (Number.isFinite(n)) {
+        config[key] = n;
+      }
+    }
+  }
+  return Object.keys(config).length ? config : undefined;
+}
+
 router.post('/vectorize', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-    const { vectorizer } = await import('@neplex/vectorizer');
-    const result = await vectorizer({ input: req.file.buffer, output: 'svg' });
+    // v0.0.5 API: named `vectorize(buffer, config)` export returning an SVG string.
+    const { vectorize } = await import('@neplex/vectorizer');
+    const config = parseVectorizeOptions(req.body?.options);
+    const svg = await vectorize(req.file.buffer, config);
     res.json({
       success: true,
-      svg: result.toString(),
+      svg,
       original_size: req.file.size,
     });
   } catch (err) {

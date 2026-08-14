@@ -546,6 +546,45 @@ probe_result(
 	is_wp_error( $rc ) ? $rc->get_error_message() : 'HTTP ' . $rc_status . ( isset( $rc_body['error'] ) ? ' — ' . $rc_body['error'] : '' )
 );
 
+// PDF extract + vectorize routes: the plugin's extract_pdf_text tool and the
+// SVG vectorizer upload raster/PDF files to these routes. A file-less POST
+// must answer with the route's validation error — reaching validation proves
+// the route exists on the deployed worker build.
+probe_out();
+probe_out( '  -- PDF extract / vectorize contract (route fingerprinting) --' );
+
+$pe = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/pdf/extract',
+	array(
+		'timeout' => 10,
+		'headers' => $sidecar_headers,
+	)
+);
+$pe_status = is_wp_error( $pe ) ? 0 : (int) wp_remote_retrieve_response_code( $pe );
+$pe_body   = is_wp_error( $pe ) ? null : json_decode( wp_remote_retrieve_body( $pe ), true );
+$pe_ok     = ( 400 === $pe_status && isset( $pe_body['error'] ) );
+probe_result(
+	'POST /api/pdf/extract (no file)',
+	$pe_ok,
+	is_wp_error( $pe ) ? $pe->get_error_message() : 'HTTP ' . $pe_status . ( isset( $pe_body['error'] ) ? ' — ' . $pe_body['error'] : '' )
+);
+
+$vz = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/image/vectorize',
+	array(
+		'timeout' => 10,
+		'headers' => $sidecar_headers,
+	)
+);
+$vz_status = is_wp_error( $vz ) ? 0 : (int) wp_remote_retrieve_response_code( $vz );
+$vz_body   = is_wp_error( $vz ) ? null : json_decode( wp_remote_retrieve_body( $vz ), true );
+$vz_ok     = ( 400 === $vz_status && isset( $vz_body['error'] ) );
+probe_result(
+	'POST /api/image/vectorize (no file)',
+	$vz_ok,
+	is_wp_error( $vz ) ? $vz->get_error_message() : 'HTTP ' . $vz_status . ( isset( $vz_body['error'] ) ? ' — ' . $vz_body['error'] : '' )
+);
+
 // ── [5] Local JS fallback presence ────────────────────────────────────
 probe_section( '5) LOCAL JS FALLBACK PRESENCE (what would run if sidecar fails)' );
 

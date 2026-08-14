@@ -154,11 +154,14 @@ dataRouter.post('/qrcode', async (req, res) => {
 
     const outPath = pathGuard( req.site, outputPath ) || tempFile( req, qrOpts.type );
 
+    let dataUrl;
     if (qrOpts.type === 'svg') {
       const svg = await QRCode.toString(text, { ...qrOpts, type: 'svg' });
       fs.writeFileSync(outPath, svg);
+      dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
     } else {
       await QRCode.toFile(outPath, text, qrOpts);
+      dataUrl = await QRCode.toDataURL(text, qrOpts);
     }
 
     const stats = fs.statSync(outPath);
@@ -168,6 +171,9 @@ dataRouter.post('/qrcode', async (req, res) => {
       output_path: outPath,
       size: stats.size,
       format: qrOpts.type,
+      // data_url is the plugin contract: output_path points at the
+      // WORKER's filesystem and is unusable by the calling site.
+      data_url: dataUrl,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
