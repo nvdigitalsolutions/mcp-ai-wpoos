@@ -585,6 +585,73 @@ probe_result(
 	is_wp_error( $vz ) ? $vz->get_error_message() : 'HTTP ' . $vz_status . ( isset( $vz_body['error'] ) ? ' — ' . $vz_body['error'] : '' )
 );
 
+// Document generation routes: the pro-pdf/pro-word/pro-excel tools send
+// JSON payloads; the merge/watermark tools upload PDFs. A file-less POST
+// must answer with the route's validation error — reaching validation
+// proves the route exists on the deployed worker build.
+probe_out();
+probe_out( '  -- Document generation contract (route fingerprinting) --' );
+
+$doc_checks = array(
+	'POST /api/document/excel (no sheets)' => array( '/api/document/excel', '{}' ),
+	'POST /api/document/word (no content)' => array( '/api/document/word', '{}' ),
+	'POST /api/pdf/generate (no html)'     => array( '/api/pdf/generate', '{}' ),
+);
+foreach ( $doc_checks as $label => $doc_check ) {
+	list( $doc_route, $doc_body ) = $doc_check;
+	$dc = wp_remote_post(
+		rtrim( $url, '/' ) . $doc_route,
+		array(
+			'timeout' => 10,
+			'headers' => array_merge( $sidecar_headers, array( 'Content-Type' => 'application/json' ) ),
+			'body'    => $doc_body,
+		)
+	);
+	$dc_status = is_wp_error( $dc ) ? 0 : (int) wp_remote_retrieve_response_code( $dc );
+	$dc_body   = is_wp_error( $dc ) ? null : json_decode( wp_remote_retrieve_body( $dc ), true );
+	$dc_ok     = ( 400 === $dc_status && isset( $dc_body['error'] ) );
+	probe_result(
+		$label,
+		$dc_ok,
+		is_wp_error( $dc ) ? $dc->get_error_message() : 'HTTP ' . $dc_status . ( isset( $dc_body['error'] ) ? ' — ' . $dc_body['error'] : '' )
+	);
+}
+
+// Merge route must accept uploads — a file-less POST answers with the
+// multipart validation error (older builds answer with the sources-path
+// error; both prove the route exists, upload support needs the live test).
+$mg = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/pdf/merge',
+	array(
+		'timeout' => 10,
+		'headers' => $sidecar_headers,
+	)
+);
+$mg_status = is_wp_error( $mg ) ? 0 : (int) wp_remote_retrieve_response_code( $mg );
+$mg_body   = is_wp_error( $mg ) ? null : json_decode( wp_remote_retrieve_body( $mg ), true );
+$mg_ok     = ( 400 === $mg_status && isset( $mg_body['error'] ) );
+probe_result(
+	'POST /api/pdf/merge (no input)',
+	$mg_ok,
+	is_wp_error( $mg ) ? $mg->get_error_message() : 'HTTP ' . $mg_status . ( isset( $mg_body['error'] ) ? ' — ' . $mg_body['error'] : '' )
+);
+
+$wm = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/pdf/watermark',
+	array(
+		'timeout' => 10,
+		'headers' => $sidecar_headers,
+	)
+);
+$wm_status = is_wp_error( $wm ) ? 0 : (int) wp_remote_retrieve_response_code( $wm );
+$wm_body   = is_wp_error( $wm ) ? null : json_decode( wp_remote_retrieve_body( $wm ), true );
+$wm_ok     = ( 400 === $wm_status && isset( $wm_body['error'] ) );
+probe_result(
+	'POST /api/pdf/watermark (no input)',
+	$wm_ok,
+	is_wp_error( $wm ) ? $wm->get_error_message() : 'HTTP ' . $wm_status . ( isset( $wm_body['error'] ) ? ' — ' . $wm_body['error'] : '' )
+);
+
 // ── [5] Local JS fallback presence ────────────────────────────────────
 probe_section( '5) LOCAL JS FALLBACK PRESENCE (what would run if sidecar fails)' );
 

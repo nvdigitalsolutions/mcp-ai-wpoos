@@ -73,6 +73,9 @@ documentRouter.post('/excel', async (req, res) => {
       output_path: outPath,
       size: stats.size,
       sheets: workbook.worksheets.length,
+      // data_base64 is the plugin contract: output_path points at the
+      // WORKER's filesystem and is unusable by the calling site.
+      data_base64: fs.readFileSync(outPath).toString('base64'),
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -197,7 +200,14 @@ documentRouter.post('/word', async (req, res) => {
     fs.writeFileSync(outPath, buffer);
     const stats = fs.statSync(outPath);
 
-    res.json({ success: true, output_path: outPath, size: stats.size });
+    res.json({
+      success: true,
+      output_path: outPath,
+      size: stats.size,
+      // data_base64 is the plugin contract: output_path points at the
+      // WORKER's filesystem and is unusable by the calling site.
+      data_base64: buffer.toString('base64'),
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

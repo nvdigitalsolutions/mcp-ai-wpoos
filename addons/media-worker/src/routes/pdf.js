@@ -186,7 +186,15 @@ pdfRouter.post( '/generate', async ( req, res ) => {
 		await browser.close();
 
 		const stats = fs.statSync( outPath );
-		res.json( { success: true, output_path: outPath, size: stats.size, pages: 'see file' } );
+		res.json( {
+			success: true,
+			output_path: outPath,
+			size: stats.size,
+			pages: 'see file',
+			// data_base64 is the plugin contract: output_path points at the
+			// WORKER's filesystem and is unusable by the calling site.
+			data_base64: fs.readFileSync( outPath ).toString( 'base64' ),
+		} );
 	} catch ( err ) {
 		if ( browser ) await browser.close().catch( () => {} );
 		sendError( res, err );
@@ -194,51 +202,102 @@ pdfRouter.post( '/generate', async ( req, res ) => {
 } );
 
 // ── POST /merge — merge multiple PDFs ──────────────────────
-pdfRouter.post( '/merge', async ( req, res ) => {
+// Accepts multipart uploads (any field name starting with 'files', which
+// lets streaming cURL clients send files[0], files[1], …) or legacy
+// worker-side `sources` paths for shared-volume deployments.
+pdfRouter.post( '/merge', upload.any(), async ( req, res ) => {
 	try {
-		const { sources, outputPath } = req.body || {};
-		if ( ! sources || ! Array.isArray( sources ) || sources.length < 2 ) {
-			return res.status( 400 ).json( { success: false, error: 'Need at least 2 source PDF paths' } );
+		const buffers = [];
+
+		const uploaded = ( req.files || [] )
+			.filter( ( f ) => 'files' === f.fieldname || 0 === f.fieldname.indexOf( 'files[' ) )
+			.sort( ( a, b ) => {
+				const ai = parseInt( ( a.fieldname.match( /\[(\d+)\]/ ) || [ 0, 0 ] )[ 1 ], 10 );
+				const bi = parseInt( ( b.fieldname.match( /\[(\d+)\]/ ) || [ 0, 0 ] )[ 1 ], 10 );
+				return ai - bi;
+			} );
+
+		if ( uploaded.length ) {
+			for ( const f of uploaded ) {
+				buffers.push( f.buffer );
+			}
+		} else {
+			let sources = req.body?.sources;
+			if ( typeof sources === 'string' ) {
+				try {
+					sources = JSON.parse( sources );
+				} catch {
+					sources = null;
+				}
+			}
+			if ( ! sources || ! Array.isArray( sources ) || sources.length < 2 ) {
+				return res.status( 400 ).json( { success: false, error: 'Need at least 2 source PDF paths or file uploads' } );
+			}
+			for ( const rawSrc of sources ) {
+				const src = pathGuard( req.site, rawSrc );
+				if ( ! src || ! fs.existsSync( src ) ) {
+					return res.status( 404 ).json( { success: false, error: `File not found: ${ rawSrc }` } );
+				}
+				buffers.push( fs.readFileSync( src ) );
+			}
+		}
+
+		if ( buffers.length < 2 ) {
+			return res.status( 400 ).json( { success: false, error: 'Need at least 2 source PDFs' } );
 		}
 
 		const { PDFDocument } = await import( 'pdf-lib' );
 
 		const merged = await PDFDocument.create();
-		for ( const rawSrc of sources ) {
-			const src = pathGuard( req.site, rawSrc );
-			if ( ! src || ! fs.existsSync( src ) ) {
-				return res.status( 404 ).json( { success: false, error: `File not found: ${ rawSrc }` } );
-			}
-			const srcDoc = await PDFDocument.load( fs.readFileSync( src ) );
+		for ( const buf of buffers ) {
+			const srcDoc = await PDFDocument.load( buf );
 			const copiedPages = await merged.copyPages( srcDoc, srcDoc.getPageIndices() );
 			copiedPages.forEach( ( p ) => merged.addPage( p ) );
 		}
 
-		const outPath = pathGuard( req.site, outputPath ) || tempFile( req, 'pdf' );
-		fs.writeFileSync( outPath, await merged.save() );
+		const outBytes = await merged.save();
+		const outPath = pathGuard( req.site, req.body?.outputPath ) || tempFile( req, 'pdf' );
+		fs.writeFileSync( outPath, outBytes );
 		const stats = fs.statSync( outPath );
 
-		res.json( { success: true, output_path: outPath, size: stats.size, pages: merged.getPageCount() } );
+		res.json( {
+			success: true,
+			output_path: outPath,
+			size: stats.size,
+			pages: merged.getPageCount(),
+			// data_base64 is the plugin contract: output_path points at the
+			// WORKER's filesystem and is unusable by the calling site.
+			data_base64: Buffer.from( outBytes ).toString( 'base64' ),
+		} );
 	} catch ( err ) {
 		sendError( res, err );
 	}
 } );
 
 // ── POST /watermark — add watermark to PDF ─────────────────
-pdfRouter.post( '/watermark', async ( req, res ) => {
+// Accepts a multipart `file` upload (required on managed hosts) or a
+// legacy worker-side `source` path for shared-volume deployments.
+pdfRouter.post( '/watermark', upload.single( 'file' ), async ( req, res ) => {
 	try {
-		const { source, watermark, outputPath } = req.body || {};
-		if ( ! source || ! watermark ) {
-			return res.status( 400 ).json( { success: false, error: 'Missing source or watermark text' } );
-		}
-		const src = pathGuard( req.site, source );
-		if ( ! src || ! fs.existsSync( src ) ) {
-			return res.status( 404 ).json( { success: false, error: `File not found: ${ source }` } );
+		const { watermark, outputPath } = req.body || {};
+		if ( ! watermark ) {
+			return res.status( 400 ).json( { success: false, error: 'Missing watermark text' } );
 		}
 
-		const { PDFDocument, StandardFonts, rgb } = await import( 'pdf-lib' );
+		let dataBuffer;
+		if ( req.file ) {
+			dataBuffer = req.file.buffer;
+		} else {
+			const src = pathGuard( req.site, req.body?.source );
+			if ( ! src || ! fs.existsSync( src ) ) {
+				return res.status( 404 ).json( { success: false, error: `File not found: ${ req.body?.source }` } );
+			}
+			dataBuffer = fs.readFileSync( src );
+		}
 
-		const doc = await PDFDocument.load( fs.readFileSync( src ) );
+		const { PDFDocument, StandardFonts, rgb, degrees } = await import( 'pdf-lib' );
+
+		const doc = await PDFDocument.load( dataBuffer );
 		const font = await doc.embedFont( StandardFonts.Helvetica );
 		const pages = doc.getPages();
 
@@ -251,15 +310,24 @@ pdfRouter.post( '/watermark', async ( req, res ) => {
 				font,
 				color: rgb( 0.75, 0.75, 0.75 ),
 				opacity: 0.3,
-				rotate: { angle: -45, type: 0, origin: [ width / 2, height / 2 ] },
+				rotate: degrees( -45 ),
 			} );
 		}
 
+		const outBytes = await doc.save();
 		const outPath = pathGuard( req.site, outputPath ) || tempFile( req, 'pdf' );
-		fs.writeFileSync( outPath, await doc.save() );
+		fs.writeFileSync( outPath, outBytes );
 		const stats = fs.statSync( outPath );
 
-		res.json( { success: true, output_path: outPath, size: stats.size, pages: pages.length } );
+		res.json( {
+			success: true,
+			output_path: outPath,
+			size: stats.size,
+			pages: pages.length,
+			// data_base64 is the plugin contract: output_path points at the
+			// WORKER's filesystem and is unusable by the calling site.
+			data_base64: Buffer.from( outBytes ).toString( 'base64' ),
+		} );
 	} catch ( err ) {
 		sendError( res, err );
 	}

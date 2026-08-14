@@ -364,6 +364,121 @@ trait WP_MCP_AI_Media_Worker_Client {
 	}
 
 	/**
+	 * Upload MULTIPLE local files to the sidecar as one multipart/form-data
+	 * request (e.g. PDF merge sources).
+	 *
+	 * Files are sent with cURL CURLFile parts named files[0], files[1], … so
+	 * they stream from disk without loading into memory; the worker accepts
+	 * any field name starting with "files[". Gate callers with
+	 * is_sidecar_upload_supported().
+	 *
+	 * @param string $endpoint   API path (e.g. '/api/pdf/merge').
+	 * @param array  $file_paths Local file paths, in merge order.
+	 * @param array  $fields     Extra form fields sent alongside the files.
+	 * @param int    $timeout    Request timeout in seconds.
+	 * @return array|WP_Error Decoded JSON body or error.
+	 */
+	protected function sidecar_upload_multi( $endpoint, $file_paths, $fields = array(), $timeout = 330 ) {
+		if ( ! function_exists( 'curl_file_create' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_curl_required',
+				__( 'Multipart uploads require the cURL extension.', 'mcp-ai-wpoos' )
+			);
+		}
+		if ( empty( $file_paths ) || ! is_array( $file_paths ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_files',
+				__( 'No files provided for upload.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+		foreach ( $file_paths as $file_path ) {
+			if ( ! file_exists( $file_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_file_not_found',
+					__( 'File not found.', 'mcp-ai-wpoos' ),
+					array( 'status' => 404 )
+				);
+			}
+		}
+		$url = $this->get_sidecar_url();
+		if ( empty( $url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_sidecar_not_configured',
+				__( 'Media Worker sidecar URL is not configured.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$postfields = $fields;
+		foreach ( array_values( $file_paths ) as $index => $file_path ) {
+			$filetype = wp_check_filetype( $file_path );
+			$mime     = ! empty( $filetype['type'] ) ? $filetype['type'] : 'application/octet-stream';
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_file_create -- cURL streaming multipart upload; the WordPress HTTP API cannot stream file parts.
+			$postfields[ 'files[' . $index . ']' ] = curl_file_create( $file_path, $mime, basename( $file_path ) );
+		}
+
+		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_init,WordPress.WP.AlternativeFunctions.curl_curl_setopt,WordPress.WP.AlternativeFunctions.curl_curl_exec,WordPress.WP.AlternativeFunctions.curl_curl_errno,WordPress.WP.AlternativeFunctions.curl_curl_error,WordPress.WP.AlternativeFunctions.curl_curl_getinfo,WordPress.WP.AlternativeFunctions.curl_curl_close -- Streaming multipart upload via cURL; see method docblock.
+		$ch = curl_init( rtrim( $url, '/' ) . '/' . ltrim( $endpoint, '/' ) );
+		if ( false === $ch ) {
+			return new WP_Error( 'wp_mcp_ai_curl_init_failed', __( 'Failed to initialise cURL.', 'mcp-ai-wpoos' ) );
+		}
+
+		curl_setopt( $ch, CURLOPT_POST, true );
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, $postfields );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $ch, CURLOPT_TIMEOUT, (int) $timeout );
+		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 15 );
+		curl_setopt(
+			$ch,
+			CURLOPT_HTTPHEADER,
+			array(
+				'X-Site-Token: ' . $this->get_sidecar_token(),
+				'X-Site-Url: ' . home_url(),
+			)
+		);
+
+		$raw = curl_exec( $ch );
+		if ( false === $raw ) {
+			$errno = curl_errno( $ch );
+			$error = curl_error( $ch );
+			curl_close( $ch );
+			$this->sidecar_available = false;
+			return new WP_Error( 'wp_mcp_ai_sidecar_error', sprintf( 'cURL %d: %s', $errno, $error ) );
+		}
+
+		$status = (int) curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
+		curl_close( $ch );
+		// phpcs:enable
+
+		$decoded = json_decode( $raw, true );
+
+		if ( 200 !== $status && 202 !== $status ) {
+			$error_msg = isset( $decoded['error'] )
+				? $decoded['error']
+				: sprintf( 'HTTP %d: %s', $status, substr( $raw, 0, 200 ) );
+
+			return new WP_Error(
+				'wp_mcp_ai_sidecar_error',
+				$error_msg,
+				array(
+					'status'   => $status,
+					'response' => $decoded,
+				)
+			);
+		}
+
+		if ( null === $decoded ) {
+			return new WP_Error(
+				'wp_mcp_ai_sidecar_invalid_json',
+				__( 'Media Worker returned invalid JSON.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$this->sidecar_available = true;
+		return $decoded;
+	}
+
+	/**
 	 * Download a processed output file from the sidecar to a local path.
 	 *
 	 * Uses cURL with CURLOPT_FILE so large outputs stream to disk instead of

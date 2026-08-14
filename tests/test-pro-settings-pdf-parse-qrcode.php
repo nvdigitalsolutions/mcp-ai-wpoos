@@ -294,7 +294,7 @@ class WP_MCP_AI_Pro_Settings_Pdf_Parse_Qrcode_Test extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		set_transient( 'wp_mcp_ai_worker_health', array( 'ok' => true ), 5 * MINUTE_IN_SECONDS );
-		$status = $method->invoke( null, 'exceljs' );
+		$status = $method->invoke( null, 'csv-parse' );
 		delete_transient( 'wp_mcp_ai_worker_health' );
 
 		$this->assertNotEquals( 'sidecar', $status['source'] );
