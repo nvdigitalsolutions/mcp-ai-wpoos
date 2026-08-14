@@ -16,6 +16,7 @@
 
 import { rateLimit } from 'express-rate-limit';
 import { parseTokenMap } from './auth.js';
+import { getRedis } from '../queue.js';
 
 /**
  * Shared 429 responder.
@@ -36,6 +37,9 @@ const GROUPS = {
 	workflow: { windowMs: 10 * 60 * 1000, limit: 30, envKey: 'WORKFLOW' },
 };
 
+/** All limiter instances (in-memory store by default; swappable). */
+const ALL_LIMITERS = [];
+
 /**
  * Build a limiter.
  *
@@ -46,7 +50,7 @@ const GROUPS = {
  * @return {import('express-rate-limit').RateLimitRequestHandler} Limiter.
  */
 function makeLimiter( { windowMs, limit, keyPrefix } ) {
-	return rateLimit( {
+	const limiter = rateLimit( {
 		windowMs,
 		limit,
 		standardHeaders: true,
@@ -54,6 +58,8 @@ function makeLimiter( { windowMs, limit, keyPrefix } ) {
 		keyGenerator: ( req ) => ( keyPrefix ? `${ keyPrefix }:${ req.ip }` : req.ip ),
 		handler: json429,
 	} );
+	ALL_LIMITERS.push( limiter );
+	return limiter;
 }
 
 /**
@@ -120,6 +126,35 @@ function limiterFor( req, group ) {
 
 /** Global limiter applied to every request. */
 export const globalLimiter = DEFAULT_LIMITERS.global;
+
+/**
+ * Swap every limiter onto a shared Redis store (Phase 3 W4). Opt-in via
+ * RATE_LIMIT_REDIS=1 + REDIS_URL; otherwise the in-memory store is used
+ * exactly as before. `rate-limit-redis` is an optional dependency, so a
+ * missing/failed store never breaks boot — it logs and keeps memory mode.
+ */
+export async function initRateLimitStore() {
+	if ( '1' !== process.env.RATE_LIMIT_REDIS || ! process.env.REDIS_URL ) {
+		return;
+	}
+	try {
+		const { RedisStore } = await import( 'rate-limit-redis' );
+		const redis = await getRedis();
+		if ( ! redis ) {
+			console.warn( '[RateLimit] Redis unavailable — keeping the in-memory rate-limit store.' );
+			return;
+		}
+		const store = new RedisStore( {
+			sendCommand: ( ...args ) => redis.sendCommand( args ),
+		} );
+		for ( const limiter of ALL_LIMITERS ) {
+			limiter.store = store;
+		}
+		console.log( '[RateLimit] Using the shared Redis store (cluster-safe).' );
+	} catch ( err ) {
+		console.warn( '[RateLimit] Redis store init failed — keeping the in-memory store:', err.message );
+	}
+}
 
 /** Image generation — expensive (external API credits). */
 export const imageLimiter = ( req, res, next ) => limiterFor( req, 'image' )( req, res, next );

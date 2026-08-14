@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load the document response trait from base plugin.
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-client.php';
 
 /**
  * Add watermark to PDF documents.
@@ -28,6 +29,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * {@inheritdoc}
@@ -220,6 +222,52 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 				@unlink( $temp_file );
 			}
 			return new WP_Error( 'invalid_file', __( 'File is not a valid PDF.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured). The worker watermarks with
+		// pdf-lib instead of requiring TCPDF on this host.
+		if ( $this->is_sidecar_upload_supported() ) {
+			$sidecar = $this->sidecar_upload( '/api/pdf/watermark', $file_path, array( 'watermark' => $text ), 120 );
+			if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['data_base64'] ) ) {
+				$watermarked_bytes = base64_decode( $sidecar['data_base64'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding the worker's data_base64 payload is the transport contract.
+				if ( false !== $watermarked_bytes && '' !== $watermarked_bytes ) {
+					$out_file = wp_mcp_ai_tempnam( 'watermarked_pdf_', '.pdf' );
+					if ( ! is_wp_error( $out_file ) && false !== file_put_contents( $out_file, $watermarked_bytes ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing the worker-returned bytes into a temp file consumed by media_handle_sideload.
+						$original_filename = basename( $file_path, '.pdf' );
+						$file_array        = array(
+							'name'     => $original_filename . '-watermarked.pdf',
+							'tmp_name' => $out_file,
+						);
+
+						$new_attachment_id = media_handle_sideload( $file_array, 0 );
+						@unlink( $out_file );
+
+						if ( ! is_wp_error( $new_attachment_id ) ) {
+							if ( $temp_file ) {
+								@unlink( $temp_file );
+							}
+
+							$attachment_url = wp_get_attachment_url( $new_attachment_id );
+							$new_file_path  = get_attached_file( $new_attachment_id );
+							$file_size      = filesize( $new_file_path );
+
+							return array(
+								'attachment_id' => $new_attachment_id,
+								'url'           => $attachment_url,
+								'filename'      => basename( $new_file_path ),
+								'mime_type'     => 'application/pdf',
+								'size'          => $file_size,
+								'text'          => sprintf(
+									/* translators: %s: watermark text */
+									__( 'Successfully added watermark "%s" to PDF.', 'mcp-ai-wpoos-pro' ),
+									$text
+								),
+							);
+						}
+					}
+				}
+			}
 		}
 
 		// Try TCPDF library.

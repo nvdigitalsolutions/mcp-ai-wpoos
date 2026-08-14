@@ -86,16 +86,17 @@ class WP_MCP_AI_Nodemailer_Service {
 			$params['attachments'] = $email_data['attachments'];
 		}
 
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured).
+		$sidecar = $this->sidecar_request( '/api/email/send', $params );
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['success'] ) ) {
+			return $sidecar;
+		}
+
 		// Allow custom Node.js implementation via filter.
 		$result = apply_filters( 'wp_mcp_ai_nodemailer_send_email', false, $params );
 		if ( false !== $result ) {
 			return $result;
-		}
-
-		// Try Media Worker sidecar (automatic — no config needed with Docker).
-		$sidecar = $this->sidecar_request( '/api/email/send', $params );
-		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['success'] ) ) {
-			return $sidecar;
 		}
 
 		return new WP_Error(
@@ -142,22 +143,20 @@ class WP_MCP_AI_Nodemailer_Service {
 	 * @return array|WP_Error Verification result or error.
 	 */
 	public function verify_connection( $smtp_config ) {
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured).
+		$sidecar = $this->sidecar_request(
+			'/api/email/verify',
+			array( 'smtp' => $smtp_config )
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['connected'] ) ) {
+			return $sidecar;
+		}
+
 		// Allow custom Node.js implementation via filter.
 		$result = apply_filters( 'wp_mcp_ai_nodemailer_verify_connection', false, $smtp_config );
 		if ( false !== $result ) {
 			return $result;
-		}
-
-		// Try Media Worker sidecar.
-		$sidecar = $this->sidecar_request(
-			'/api/email/send',
-			array(
-				'action' => 'verify_connection',
-				'config' => $smtp_config,
-			)
-		);
-		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['connected'] ) ) {
-			return $sidecar;
 		}
 
 		return new WP_Error(

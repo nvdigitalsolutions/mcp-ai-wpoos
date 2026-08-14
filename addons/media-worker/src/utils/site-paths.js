@@ -18,6 +18,20 @@ import path from 'path';
 const SLUG_RE = /^[a-z0-9-]{1,32}$/;
 
 /**
+ * Scratch groups with their default TTLs (ms). Each group gets its own
+ * subdirectory under the site namespace in multi-tenant mode; the env var
+ * TEMP_TTL_<GROUP> overrides the default. Single-tenant mode is unaffected
+ * (os.tmpdir(), OS-managed).
+ */
+export const TTL_GROUPS = {
+	upload: 7 * 24 * 60 * 60 * 1000,   // user uploads (video/PDF inputs)
+	video: 60 * 60 * 1000,             // processed video outputs
+	browser: 60 * 60 * 1000,           // screenshots / PDFs
+	doc: 24 * 60 * 60 * 1000,          // excel / word / data outputs
+	scratch: 24 * 60 * 60 * 1000,      // everything else
+};
+
+/**
  * Whether multi-tenant mode is active (SITE_TOKENS env var set).
  *
  * @return {boolean} True in multi-tenant mode.
@@ -63,15 +77,47 @@ export function siteBaseDir( slug ) {
 }
 
 /**
- * Upload/scratch directory for a site, created lazily.
+ * Effective TTL for a group (env override or default).
+ *
+ * @param {string} group Group name (key of TTL_GROUPS).
+ * @return {number} TTL in milliseconds.
+ */
+export function groupTtl( group ) {
+	const fallback = TTL_GROUPS[ group ] || TTL_GROUPS.scratch;
+	const envKey = `TEMP_TTL_${ String( group ).toUpperCase() }`;
+	if ( group === 'scratch' && process.env.TEMP_TTL ) {
+		const global = Number( process.env.TEMP_TTL );
+		return Number.isFinite( global ) && global > 0 ? global : fallback;
+	}
+	const envValue = Number( process.env[ envKey ] );
+	return Number.isFinite( envValue ) && envValue > 0 ? envValue : fallback;
+}
+
+/**
+ * Directory for a site's scratch group, created lazily. In single-tenant
+ * mode returns os.tmpdir() regardless of group (legacy behavior).
+ *
+ * @param {string} slug  Site slug.
+ * @param {string} group Group name (key of TTL_GROUPS).
+ * @return {string} Absolute directory (created).
+ */
+export function siteDirFor( slug, group ) {
+	if ( ! isMultiTenant() ) {
+		return os.tmpdir();
+	}
+	const dir = path.join( siteBaseDir( slug ), TTL_GROUPS[ group ] ? group : 'scratch' );
+	fs.mkdirSync( dir, { recursive: true } );
+	return dir;
+}
+
+/**
+ * Upload directory for a site (the 'upload' group), created lazily.
  *
  * @param {string} slug Site slug.
  * @return {string} Absolute directory (created).
  */
 export function siteUploadDir( slug ) {
-	const dir = siteBaseDir( slug );
-	fs.mkdirSync( dir, { recursive: true } );
-	return dir;
+	return siteDirFor( slug, 'upload' );
 }
 
 /**
@@ -124,41 +170,33 @@ export function pathGuard( slug, raw ) {
 }
 
 /**
- * TTL cleanup of site scratch directories. Files older than ttlMs inside
- * TEMP_ROOT/sites are removed. No-op in single-tenant mode (the OS owns
- * os.tmpdir()). Never throws.
+ * TTL cleanup of site scratch directories. Each group directory is pruned
+ * with its own TTL. No-op in single-tenant mode (the OS owns os.tmpdir()).
+ * Never throws.
  *
- * @param {number} ttlMs Age threshold in milliseconds.
+ * @return {Object|null} { files, bytes } pruned, or null when no-op.
  */
-export function cleanupSiteTemp( ttlMs ) {
+export function cleanupSiteTemp() {
 	if ( ! isMultiTenant() ) {
-		return;
+		return null;
 	}
 	const root = process.env.TEMP_ROOT || path.join( os.tmpdir(), 'mw' );
 	const sitesDir = path.join( root, 'sites' );
-	let pruned = 0;
+	const pruned = { files: 0, bytes: 0 };
 	try {
 		if ( ! fs.existsSync( sitesDir ) ) {
-			return;
+			return pruned;
 		}
-		const cutoff = Date.now() - ttlMs;
+		const now = Date.now();
 		for ( const slug of fs.readdirSync( sitesDir ) ) {
-			const dir = path.join( sitesDir, slug );
+			const siteDir = path.join( sitesDir, slug );
 			try {
-				if ( ! fs.statSync( dir ).isDirectory() ) {
+				if ( ! fs.statSync( siteDir ).isDirectory() ) {
 					continue;
 				}
-				for ( const file of fs.readdirSync( dir ) ) {
-					const full = path.join( dir, file );
-					try {
-						const st = fs.statSync( full );
-						if ( st.isFile() && st.mtimeMs < cutoff ) {
-							fs.unlinkSync( full );
-							pruned++;
-						}
-					} catch {
-						// Best effort per file.
-					}
+				for ( const [ group, ttl ] of Object.entries( TTL_GROUPS ) ) {
+					const groupDir = path.join( siteDir, group );
+					pruneDir( groupDir, now - groupTtl( group ), pruned );
 				}
 			} catch {
 				// Best effort per site directory.
@@ -166,9 +204,108 @@ export function cleanupSiteTemp( ttlMs ) {
 		}
 	} catch ( err ) {
 		console.warn( '[Temp] cleanup error:', err.message );
+		return pruned;
+	}
+	if ( pruned.files > 0 ) {
+		console.log(
+			`[Temp] pruned ${ pruned.files } file(s), ${ pruned.bytes } byte(s)`
+		);
+	}
+	return pruned;
+}
+
+/**
+ * Prune files older than the cutoff inside a directory (flat, non-recursive).
+ *
+ * @param {string} dir     Directory to prune.
+ * @param {number} cutoff  Age threshold (epoch ms).
+ * @param {Object} pruned  Accumulator { files, bytes }.
+ */
+function pruneDir( dir, cutoff, pruned ) {
+	let entries;
+	try {
+		entries = fs.readdirSync( dir );
+	} catch {
 		return;
 	}
-	if ( pruned > 0 ) {
-		console.log( `[Temp] pruned ${ pruned } file(s) older than ${ ttlMs }ms` );
+	for ( const file of entries ) {
+		const full = path.join( dir, file );
+		try {
+			const st = fs.statSync( full );
+			if ( st.isFile() && st.mtimeMs < cutoff ) {
+				fs.unlinkSync( full );
+				pruned.files++;
+				pruned.bytes += st.size;
+			}
+		} catch {
+			// Best effort per file.
+		}
+	}
+}
+
+/**
+ * Temp storage stats for /api/health/full: per-site file counts, bytes,
+ * and oldest file age, plus totals. No-op in single-tenant mode.
+ *
+ * @return {Object|null} Stats, or null when no-op.
+ */
+export function tempStats() {
+	if ( ! isMultiTenant() ) {
+		return null;
+	}
+	const root = process.env.TEMP_ROOT || path.join( os.tmpdir(), 'mw' );
+	const sitesDir = path.join( root, 'sites' );
+	const perSite = {};
+	const totals = { files: 0, bytes: 0 };
+	try {
+		if ( ! fs.existsSync( sitesDir ) ) {
+			return { per_site: perSite, totals, oldest_ms: null };
+		}
+		let oldestMs = null;
+		const now = Date.now();
+		for ( const slug of fs.readdirSync( sitesDir ) ) {
+			const siteDir = path.join( sitesDir, slug );
+			let siteFiles = 0;
+			let siteBytes = 0;
+			try {
+				if ( ! fs.statSync( siteDir ).isDirectory() ) {
+					continue;
+				}
+				for ( const group of Object.keys( TTL_GROUPS ) ) {
+					const groupDir = path.join( siteDir, group );
+					let entries;
+					try {
+						entries = fs.readdirSync( groupDir );
+					} catch {
+						continue;
+					}
+					for ( const file of entries ) {
+						try {
+							const st = fs.statSync( path.join( groupDir, file ) );
+							if ( ! st.isFile() ) {
+								continue;
+							}
+							siteFiles++;
+							siteBytes += st.size;
+							const age = now - st.mtimeMs;
+							if ( null === oldestMs || age > oldestMs ) {
+								oldestMs = age;
+							}
+						} catch {
+							// Best effort per file.
+						}
+					}
+				}
+			} catch {
+				// Best effort per site directory.
+			}
+			perSite[ slug ] = { files: siteFiles, bytes: siteBytes };
+			totals.files += siteFiles;
+			totals.bytes += siteBytes;
+		}
+		return { per_site: perSite, totals, oldest_ms: oldestMs };
+	} catch ( err ) {
+		console.warn( '[Temp] stats error:', err.message );
+		return { per_site: perSite, totals, oldest_ms: null };
 	}
 }

@@ -72,12 +72,41 @@ export function parseTokenMap( raw ) {
 }
 
 /**
+ * Collect per-site token env vars (Phase 3 W3): every SITE_TOKEN_<SLUG>
+ * (slug uppercased, hyphens -> underscores) with a non-empty value. These
+ * merge OVER the SITE_TOKENS JSON so platform env-size limits can be
+ * worked around one site at a time.
+ *
+ * @return {Object} Map of site slug -> token.
+ */
+export function collectSiteTokenEnv() {
+	const map = {};
+	for ( const [ key, value ] of Object.entries( process.env ) ) {
+		const match = /^SITE_TOKEN_([A-Z0-9_]+)$/.exec( key );
+		if ( match && 'string' === typeof value && value ) {
+			map[ match[ 1 ].toLowerCase().replace( /_/g, '-' ) ] = value;
+		}
+	}
+	return map;
+}
+
+/**
+ * Effective site -> token map: SITE_TOKENS JSON merged with the per-site
+ * SITE_TOKEN_<SLUG> env vars (env wins).
+ *
+ * @return {Object} Map of site slug -> token.
+ */
+export function siteTokenMap() {
+	return { ...( parseTokenMap( process.env.SITE_TOKENS ) || {} ), ...collectSiteTokenEnv() };
+}
+
+/**
  * Whether multi-tenant mode is active.
  *
- * @return {boolean} True when SITE_TOKENS is set.
+ * @return {boolean} True when any site token is configured.
  */
 export function isMultiTenantMode() {
-	return Boolean( process.env.SITE_TOKENS );
+	return Object.keys( siteTokenMap() ).length > 0;
 }
 
 /**
@@ -86,8 +115,7 @@ export function isMultiTenantMode() {
  * @return {string[]} Slugs (empty in single-tenant mode).
  */
 export function configuredSites() {
-	const map = parseTokenMap( process.env.SITE_TOKENS );
-	return map ? Object.keys( map ) : [];
+	return Object.keys( siteTokenMap() );
 }
 
 /**
@@ -98,12 +126,9 @@ export function configuredSites() {
  * @return {string|null} Site slug, or null when unknown.
  */
 export function resolveSite( provided ) {
-	const map = parseTokenMap( process.env.SITE_TOKENS );
-	if ( map ) {
-		for ( const [ slug, token ] of Object.entries( map ) ) {
-			if ( typeof token === 'string' && tokenMatches( provided, token ) ) {
-				return slug;
-			}
+	for ( const [ slug, token ] of Object.entries( siteTokenMap() ) ) {
+		if ( typeof token === 'string' && tokenMatches( provided, token ) ) {
+			return slug;
 		}
 	}
 	const previousMap = parseTokenMap( process.env.SITE_TOKENS_PREVIOUS );

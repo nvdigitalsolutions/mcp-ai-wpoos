@@ -268,7 +268,15 @@ function wp_mcp_ai_get_npm_package_status( $package_name ) {
 /**
  * Check if Node.js is available
  *
- * @return bool True if Node.js is available.
+ * NOTE: this deliberately conflates two things so the admin notice can show
+ * a single status: it returns true when a LOCAL `node` command exists, or
+ * the string 'sidecar' when only the Media Worker sidecar is reachable.
+ * Code that actually executes the local binary must use
+ * wp_mcp_ai_has_local_nodejs() instead — the sidecar serves HTTP, not a
+ * local process.
+ *
+ * @return bool|string True if local Node.js exists, 'sidecar' if only the
+ *                     Media Worker sidecar is reachable, false otherwise.
  */
 function wp_mcp_ai_is_nodejs_available() {
 	static $available = null;
@@ -300,6 +308,29 @@ function wp_mcp_ai_is_nodejs_available() {
 }
 
 /**
+ * Check whether Node.js is available as a LOCAL command on this server.
+ *
+ * Unlike wp_mcp_ai_is_nodejs_available(), this never reports the Media
+ * Worker sidecar: the sidecar serves HTTP, not a local `node` binary, so
+ * legacy local-execution paths (wp_mcp_ai_exec_node_service and the filter
+ * handlers below) gate on this check to avoid spawning `node` on
+ * sidecar-only hosts.
+ *
+ * @since 1.1.55
+ * @return bool True when the local `node` command is available.
+ */
+function wp_mcp_ai_has_local_nodejs() {
+	static $available = null;
+
+	if ( null === $available ) {
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$available       = $process_service->is_command_available( 'node' );
+	}
+
+	return $available;
+}
+
+/**
  * Execute Node.js service script
  *
  * @param string $service_file Service file path.
@@ -309,7 +340,7 @@ function wp_mcp_ai_is_nodejs_available() {
  * @return string|WP_Error Result or error.
  */
 function wp_mcp_ai_exec_node_service( $service_file, $action, $params, $timeout = 30 ) {
-	if ( ! wp_mcp_ai_is_nodejs_available() ) {
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
 		return new WP_Error(
 			'nodejs_not_available',
 			__( 'Node.js is not available on this server.', 'mcp-ai-wpoos-pro' )
@@ -397,6 +428,12 @@ function wp_mcp_ai_prettier_format_code_handler( $result, $params ) {
 		return $result;
 	}
 
+	// No local Node.js — pass through (return false) so the service cascade
+	// can try the Media Worker sidecar or surface its own accurate error.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
+	}
+
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/prettier-service.js';
 	$output       = wp_mcp_ai_exec_node_service( $service_file, 'format', $params, 30 );
 
@@ -414,6 +451,12 @@ function wp_mcp_ai_prettier_check_syntax_handler( $result, $params ) {
 	// If already handled by another filter, return it.
 	if ( false !== $result ) {
 		return $result;
+	}
+
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
 	}
 
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/prettier-service.js';
@@ -446,6 +489,12 @@ function wp_mcp_ai_mjml_compile_handler( $result, $params ) {
 		return $result;
 	}
 
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
+	}
+
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/mjml-service.js';
 	$output       = wp_mcp_ai_exec_node_service( $service_file, 'compile', $params, 30 );
 
@@ -463,6 +512,12 @@ function wp_mcp_ai_mjml_validate_handler( $result, $params ) {
 	// If already handled by another filter, return it.
 	if ( false !== $result ) {
 		return $result;
+	}
+
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
 	}
 
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/mjml-service.js';
@@ -506,6 +561,12 @@ function wp_mcp_ai_fluent_ffmpeg_get_metadata_handler( $result, $params ) {
 		return $result;
 	}
 
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
+	}
+
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/ffmpeg-service.js';
 	$output       = wp_mcp_ai_exec_node_service( $service_file, 'metadata', $params, 60 );
 
@@ -536,6 +597,12 @@ function wp_mcp_ai_fluent_ffmpeg_transcode_video_handler( $result, $params ) {
 	// If already handled by another filter, return it.
 	if ( false !== $result ) {
 		return $result;
+	}
+
+	// No local Node.js — pass through so the service cascade can try the
+	// Media Worker sidecar.
+	if ( ! wp_mcp_ai_has_local_nodejs() ) {
+		return false;
 	}
 
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/ffmpeg-service.js';
@@ -1195,6 +1262,81 @@ function wp_mcp_ai_generate_qr_code_via_api( $data, $format, $options ) {
 }
 
 /**
+ * Send a JSON POST to the Media Worker sidecar.
+ *
+ * Procedural helper for filter handlers and utility functions that cannot
+ * use the WP_MCP_AI_Media_Worker_Client trait. Fails fast when no sidecar
+ * URL is configured.
+ *
+ * @param string $endpoint API path (e.g. '/api/data/translate').
+ * @param array  $body     Request payload.
+ * @param int    $timeout  Timeout in seconds (default 30).
+ * @return array|WP_Error Decoded response body or error.
+ */
+function wp_mcp_ai_sidecar_json_post( $endpoint, $body = array(), $timeout = 30 ) {
+	$url = defined( 'WP_MEDIA_WORKER_URL' ) && WP_MEDIA_WORKER_URL
+		? WP_MEDIA_WORKER_URL
+		: get_option( 'wp_mcp_ai_media_worker_url', '' );
+	if ( empty( $url ) ) {
+		return new WP_Error(
+			'wp_mcp_ai_sidecar_not_configured',
+			__( 'Media Worker sidecar URL is not configured.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	$token = defined( 'WP_MEDIA_WORKER_TOKEN' ) && WP_MEDIA_WORKER_TOKEN
+		? WP_MEDIA_WORKER_TOKEN
+		: get_option( 'wp_mcp_ai_media_worker_token', '' );
+	if ( empty( $token ) ) {
+		$token = wp_hash( home_url() );
+	}
+
+	$response = wp_remote_post(
+		rtrim( $url, '/' ) . '/' . ltrim( $endpoint, '/' ),
+		array(
+			'timeout' => $timeout,
+			'headers' => array(
+				'Content-Type' => 'application/json',
+				'X-Site-Token' => $token,
+				'X-Site-Url'   => home_url(),
+			),
+			'body'    => wp_json_encode( $body ),
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return $response;
+	}
+
+	$status  = wp_remote_retrieve_response_code( $response );
+	$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	if ( 200 !== $status && 202 !== $status ) {
+		$error_msg = isset( $decoded['error'] )
+			? $decoded['error']
+			: sprintf( 'HTTP %d: %s', $status, substr( wp_remote_retrieve_body( $response ), 0, 200 ) );
+
+		return new WP_Error(
+			'wp_mcp_ai_sidecar_error',
+			$error_msg,
+			array(
+				'status'   => $status,
+				'response' => $decoded,
+			)
+		);
+	}
+
+	if ( null === $decoded ) {
+		return new WP_Error(
+			'wp_mcp_ai_sidecar_invalid_json',
+			__( 'Media Worker returned invalid JSON.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return $decoded;
+}
+
+/**
  * Generate QR code for TOTP authentication
  *
  * Uses qrcode NPM package to generate QR codes for authenticator apps.
@@ -1221,11 +1363,45 @@ function wp_mcp_ai_generate_qr_code( $data, $format = 'data-url', $options = arr
 
 	$options = wp_parse_args( $options, $defaults );
 
-	// Use the pre-packaged service file (qrcode and its deps are vendored under
+	// Try the Media Worker sidecar first (sidecar-first routing — the
+	// connected worker generates the QR code instead of the plugin's
+	// bundled JS). Fails fast when no sidecar URL is configured.
+	$sidecar = wp_mcp_ai_sidecar_json_post(
+		'/api/data/qrcode',
+		array(
+			'text'    => $data,
+			'options' => array(
+				'format'          => 'svg' === $format ? 'svg' : 'png',
+				'width'           => isset( $options['width'] ) ? absint( $options['width'] ) : 200,
+				'margin'          => isset( $options['margin'] ) ? absint( $options['margin'] ) : 2,
+				'colorDark'       => isset( $options['color']['dark'] ) ? $options['color']['dark'] : '#000000',
+				'colorLight'      => isset( $options['color']['light'] ) ? $options['color']['light'] : '#ffffff',
+				'errorCorrection' => isset( $options['errorCorrectionLevel'] ) ? $options['errorCorrectionLevel'] : 'M',
+			),
+		),
+		15
+	);
+	if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['data_url'] ) ) {
+		// 'svg' callers expect the raw SVG markup (same as the local service
+		// and external API fallback) — unwrap the worker's data URL.
+		if ( 'svg' === $format && 0 === strpos( $sidecar['data_url'], 'data:image/svg+xml;base64,' ) ) {
+			$svg = base64_decode( substr( $sidecar['data_url'], strlen( 'data:image/svg+xml;base64,' ) ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Unwrapping the worker's SVG data URL is the transport contract.
+			if ( false !== $svg ) {
+				return $svg;
+			}
+		}
+		// 'base64' callers expect bare base64 without the data URL prefix.
+		if ( 'base64' === $format && 0 === strpos( $sidecar['data_url'], 'data:image/png;base64,' ) ) {
+			return substr( $sidecar['data_url'], strlen( 'data:image/png;base64,' ) );
+		}
+		return $sidecar['data_url'];
+	}
+
+	// Fallback: local Node.js service (qrcode and its deps are vendored under
 	// assets/vendor/qrcode/ so no npm install is required on the server).
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/qrcode-service.js';
 
-	if ( wp_mcp_ai_is_nodejs_available() && file_exists( $service_file ) ) {
+	if ( wp_mcp_ai_has_local_nodejs() && file_exists( $service_file ) ) {
 		$params = array(
 			'data'    => $data,
 			'format'  => $format,
@@ -1400,6 +1576,20 @@ function wp_mcp_ai_validator_phone_handler( $result, $params ) {
 function wp_mcp_ai_translate_text_handler( $result, $params ) {
 	if ( false !== $result ) {
 		return $result;
+	}
+
+	// Try the Media Worker sidecar first (procedural handler — no trait).
+	$sidecar = wp_mcp_ai_sidecar_json_post(
+		'/api/data/translate',
+		array(
+			'text' => isset( $params['text'] ) ? $params['text'] : '',
+			'to'   => isset( $params['target_language'] ) ? $params['target_language'] : '',
+			'from' => isset( $params['source_language'] ) ? $params['source_language'] : '',
+		),
+		15
+	);
+	if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['translated'] ) ) {
+		return $sidecar['translated'];
 	}
 
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/translate-service.js';

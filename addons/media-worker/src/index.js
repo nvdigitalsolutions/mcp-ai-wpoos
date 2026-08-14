@@ -12,8 +12,11 @@ import {
 	workflowLimiter,
 } from './middleware/rate-limit.js';
 import { detectCapabilities } from './utils/capabilities.js';
-import { isMultiTenant, cleanupSiteTemp } from './utils/site-paths.js';
+import { isMultiTenant, cleanupSiteTemp, tempStats } from './utils/site-paths.js';
 import { configuredSites } from './middleware/auth.js';
+import { configuredProviders, reloadProviderKeysFromFile, startProviderKeysWatcher } from './utils/provider-keys.js';
+import { getUsage } from './utils/usage.js';
+import { initRateLimitStore } from './middleware/rate-limit.js';
 import { imageRouter } from './routes/image.js';
 import { videoRouter } from './routes/video.js';
 import { socialRouter } from './routes/social.js';
@@ -63,7 +66,7 @@ app.get( '/api/health', (_req, res) => {
 	res.json( {
 		status: 'ok',
 		service: 'design-media-worker',
-		version: '2.4.0',
+		version: '3.0.0',
 		uptime: process.uptime(),
 	} );
 } );
@@ -97,17 +100,27 @@ app.get( '/api/health/full', async (_req, res) => {
 			linkedin: !!process.env.LINKEDIN_TOKEN,
 		};
 
+		const tenants = {
+			mode: isMultiTenant() ? 'multi' : 'single',
+			count: configuredSites().length,
+			slugs: configuredSites(),
+			sites: {},
+			usage: getUsage(),
+			temp: tempStats(),
+		};
+		if ( isMultiTenant() ) {
+			for ( const slug of configuredSites() ) {
+				tenants.sites[ slug ] = { providers: configuredProviders( slug ) };
+			}
+		}
+
 		res.json( {
 			status: 'ok',
 			service: 'design-media-worker',
-			version: '2.4.0',
+			version: '3.0.0',
 			uptime: process.uptime(),
 			environment: process.env.NODE_ENV || 'development',
-			tenants: {
-				mode: isMultiTenant() ? 'multi' : 'single',
-				count: configuredSites().length,
-				slugs: configuredSites(),
-			},
+			tenants,
 			auth: {
 				enabled: Boolean( process.env.WORKER_API_TOKEN ),
 				mode: process.env.WORKER_API_TOKEN
@@ -200,6 +213,15 @@ app.use( ( err, _req, res, _next ) => {
 
 // ── Startup ────────────────────────────────────────────────
 const server = app.listen( PORT, async () => {
+	// Phase 3 W4: swap rate-limit stores before serving traffic (opt-in).
+	await initRateLimitStore();
+
+	// Phase 3 W5: load + watch the provider-keys file (opt-in).
+	if ( process.env.PROVIDER_KEYS_FILE ) {
+		reloadProviderKeysFromFile();
+		startProviderKeysWatcher();
+	}
+
 	console.log( `[Design Worker] Running on http://localhost:${ PORT }` );
 	console.log( `[Design Worker] Environment: ${ process.env.NODE_ENV || 'development' }` );
 	console.log(
@@ -209,6 +231,10 @@ const server = app.listen( PORT, async () => {
 		console.log(
 			`[Design Worker] Multi-tenant mode: ${ configuredSites().length } site(s) — ${ configuredSites().join( ', ' ) }`
 		);
+		for ( const slug of configuredSites() ) {
+			const configured = Object.values( configuredProviders( slug ) ).filter( Boolean ).length;
+			console.log( `[Design Worker] Site "${ slug }": ${ configured } provider credential(s) configured` );
+		}
 	}
 	console.log( `[Design Worker] SSRF guard: ${ '1' === process.env.SSRF_ALLOW_PRIVATE ? 'DISABLED (SSRF_ALLOW_PRIVATE=1)' : 'enabled' }` );
 	console.log( `[Design Worker] Browser sandbox: ${ '1' === process.env.ALLOW_NO_SANDBOX ? 'fallback allowed (ALLOW_NO_SANDBOX=1)' : 'enforced' }` );
@@ -254,6 +280,23 @@ const server = app.listen( PORT, async () => {
 	console.log( '' );
 	console.log( '[Design Worker] Video:', caps.ffmpeg && caps.ffprobe ? '✅ ffmpeg + ffprobe' : '❌ ffmpeg not found — video routes return 503' );
 	console.log( '[Design Worker] Job Queue:', process.env.REDIS_URL ? '✅ Redis' : '⚠️  in-memory (single process only)' );
+
+	// PM2 sets NODE_APP_INSTANCE in cluster mode. Both the in-memory rate
+	// limiter store and the in-memory queue are per-process; cluster mode
+	// silently multiplies rate-limit budgets and isolates queue state, so
+	// warn loudly instead of degrading silently (proposal 027, Phase 2d).
+	if ( undefined !== process.env.NODE_APP_INSTANCE ) {
+		console.warn( '[Design Worker] PM2 cluster mode detected:' );
+		console.warn( '  - In-memory rate-limit counters multiply by instance count — set RATE_LIMIT_REDIS=1 with REDIS_URL.' );
+		console.warn( '  - The in-memory job queue is single-process — REDIS_URL is required in cluster mode.' );
+	}
+
+	// Phase 3 W6 (revised): notice, not a flip — the default stays
+	// permissive in single-tenant mode until the shared-volume audit lands.
+	if ( ! isMultiTenant() && '1' !== process.env.STRICT_PATHS && '1' !== process.env.STRICT_PDF_PATHS ) {
+		console.warn( '[Design Worker] PDF path checks are permissive in single-tenant mode.' );
+		console.warn( '  Set STRICT_PATHS=1 to enforce the site namespace now (see proposal 028, W6).' );
+	}
 } );
 
 // ── Hard limits & graceful shutdown (PM2-compatible) ───────
@@ -262,9 +305,9 @@ server.headersTimeout = 30000;
 server.keepAliveTimeout = 5000;
 
 // ── Multi-tenant scratch TTL cleanup (no-op in single-tenant mode) ──
-const TEMP_TTL_MS = Number( process.env.TEMP_TTL || 24 * 60 * 60 * 1000 );
-cleanupSiteTemp( TEMP_TTL_MS );
-setInterval( () => cleanupSiteTemp( TEMP_TTL_MS ), 15 * 60 * 1000 ).unref();
+// Per-group TTLs: TEMP_TTL_<GROUP> (defaults in site-paths.js TTL_GROUPS).
+cleanupSiteTemp();
+setInterval( () => cleanupSiteTemp(), 15 * 60 * 1000 ).unref();
 
 function shutdown( signal ) {
 	console.log( `[Design Worker] ${ signal } received — shutting down.` );

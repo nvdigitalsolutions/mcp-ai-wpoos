@@ -2,6 +2,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import { getQueue } from '../queue.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
+import { getCredential } from '../utils/provider-keys.js';
 
 const router = Router();
 
@@ -105,7 +106,7 @@ router.post('/social-package', async (req, res) => {
     try {
       const imageResult = await internalPost(req, '/api/image/generate', {
         prompt: `${image_style} style featured image for: ${title}. Professional, clean, modern design.`,
-        model: process.env.OPENAI_API_KEY ? 'dall-e-3' : 'stable-diffusion',
+        model: getCredential(req.site, 'OPENAI_API_KEY') ? 'dall-e-3' : 'stable-diffusion',
         size: '1792x1024',
         style: 'vivid',
       });
@@ -273,7 +274,7 @@ router.post('/brand-assets', async (req, res) => {
       try {
         const logoResult = await internalPost(req, '/api/image/generate', {
           prompt: logoPrompts[i],
-          model: process.env.OPENAI_API_KEY ? 'dall-e-3' : 'stable-diffusion',
+          model: getCredential(req.site, 'OPENAI_API_KEY') ? 'dall-e-3' : 'stable-diffusion',
           size: '1024x1024',
         });
         results.assets.logos.push({
@@ -307,7 +308,7 @@ router.post('/brand-assets', async (req, res) => {
       try {
         const banner = await internalPost(req, '/api/image/generate', {
           prompt: `Horizontal banner for "${brand_name}", ${style} style, modern design, suitable for Twitter/LinkedIn header. ${colorHint}`,
-          model: process.env.OPENAI_API_KEY ? 'dall-e-3' : 'stable-diffusion',
+          model: getCredential(req.site, 'OPENAI_API_KEY') ? 'dall-e-3' : 'stable-diffusion',
           size: '1792x1024',
         });
 
@@ -409,7 +410,7 @@ router.post('/video-pipeline', async (req, res) => {
       try {
         const poster = await internalPost(req, '/api/image/generate', {
           prompt: `Video thumbnail poster: ${title}. Eye-catching, high contrast, professional YouTube-style thumbnail.`,
-          model: process.env.OPENAI_API_KEY ? 'dall-e-3' : 'stable-diffusion',
+          model: getCredential(req.site, 'OPENAI_API_KEY') ? 'dall-e-3' : 'stable-diffusion',
           size: '1792x1024',
         });
         results.steps.poster = poster;

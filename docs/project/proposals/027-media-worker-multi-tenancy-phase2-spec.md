@@ -2,7 +2,7 @@
 
 **Based on:** `docs/project/proposals/026-media-worker-multi-tenancy-sidecar-proposal.md` (Phase 1, v2.4.0 — implemented in PR #5866)
 **Date:** 2026-08-13
-**Status:** Draft — for review
+**Status:** Approved — Phase 2 implemented 2026-08-13 (branch `feat/media-worker-phase2-provider-keys`, v2.5.0)
 **Target release:** media-worker v2.5.0 (per-site provider keys, temp TTL tuning); v2.4.1 optional for the load-testing guide
 **Standalone repo:** `nvdigitalsolutions/mcp-ai-wpoos-media-worker` (one-way subtree mirror of `addons/media-worker/`)
 
@@ -74,7 +74,7 @@ One new env var carries the per-site map (single variable keeps Velocity env lim
 SITE_PROVIDER_KEYS={"site-a":{"openai":"sk-...","gemini":"AIza...","twitter_access_token":"..."},"site-b":{...}}
 ```
 
-**Naming (flat, lowercase):** the existing env name lowercased — `OPENAI_API_KEY` → `openai`, `GEMINI_API_KEY` → `gemini`, `FIREFLY_CLIENT_ID` → `firefly_client_id`, `TWITTER_ACCESS_TOKEN_SECRET` → `twitter_access_token_secret`, etc. No nesting; multi-part providers (Firefly, Twitter) use two/four flat entries.
+**Naming (flat, lowercase):** the env var name lowercased — `OPENAI_API_KEY` → `openai_api_key`, `GEMINI_API_KEY` → `gemini_api_key`, `FIREFLY_CLIENT_ID` → `firefly_client_id`, `TWITTER_ACCESS_TOKEN_SECRET` → `twitter_access_token_secret`. No nesting; multi-part providers (Firefly, Twitter) use two/four flat entries.
 
 **Resolution order** (`getCredential(site, name)`, new `src/utils/provider-keys.js`):
 

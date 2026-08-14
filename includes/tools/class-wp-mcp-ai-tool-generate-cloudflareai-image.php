@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-client.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
@@ -26,6 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-respons
  */
 class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_Media_Worker_Client;
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Image_Response;
 
@@ -591,11 +593,11 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 	 * @return array|WP_Error SVG storage data or error.
 	 */
 	protected function convert_to_svg( array $storage, array $arguments ) {
-		// Check if Node.js is available.
-		if ( ! $this->is_nodejs_available() ) {
+		// Check if Node.js is available (or the Media Worker sidecar).
+		if ( ! $this->is_nodejs_available() && ! $this->is_sidecar_upload_supported() ) {
 			return new WP_Error(
 				'wp_mcp_ai_nodejs_required',
-				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'mcp-ai-wpoos' )
+				__( 'Node.js is required for SVG vectorization but was not found on the system. Configure the Media Worker sidecar or install Node.js.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -628,22 +630,42 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
 		);
 
-		// Execute vectorization script.
-		$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
-		$script_args = array(
-			$file_path,
-			$temp_output,
-			wp_json_encode( $vectorization_options ),
-		);
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured or the health check fails).
+		$vectorize_result = null;
+		if ( $this->is_sidecar_upload_supported() ) {
+			$sidecar = $this->sidecar_upload(
+				'/api/image/vectorize',
+				$file_path,
+				array( 'options' => wp_json_encode( $vectorization_options ) ),
+				120
+			);
+			if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['svg'] ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing the worker-returned SVG into the temp output file consumed by the shared save flow.
+				if ( false !== file_put_contents( $temp_output, $sidecar['svg'] ) ) {
+					$vectorize_result = array( 'success' => true );
+				}
+			}
+		}
 
-		$vectorize_result = $this->execute_nodejs_script(
-			$script_path,
-			$script_args,
-			array(
-				'timeout'    => 60,
-				'parse_json' => true,
-			)
-		);
+		// Fall back to the local vectorization script.
+		if ( null === $vectorize_result ) {
+			$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
+			$script_args = array(
+				$file_path,
+				$temp_output,
+				wp_json_encode( $vectorization_options ),
+			);
+
+			$vectorize_result = $this->execute_nodejs_script(
+				$script_path,
+				$script_args,
+				array(
+					'timeout'    => 60,
+					'parse_json' => true,
+				)
+			);
+		}
 
 		if ( is_wp_error( $vectorize_result ) ) {
 			wp_delete_file( $temp_output );

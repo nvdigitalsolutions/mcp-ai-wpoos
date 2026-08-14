@@ -1018,6 +1018,29 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 									<?php echo $toolkit['npm_available'] ? esc_html__( 'OK', 'mcp-ai-wpoos' ) : esc_html__( 'Missing', 'mcp-ai-wpoos' ); ?>
 								</span>
 							</summary>
+							<?php
+							$worker_routed_count = count(
+								array_filter(
+									$toolkit['npm_status'],
+									static function ( $status ) {
+										return isset( $status['source'] ) && 'sidecar' === $status['source'];
+									}
+								)
+							);
+							if ( $worker_routed_count > 0 ) :
+								?>
+								<p class="toolkit-worker-note">
+									<?php
+									echo esc_html(
+										sprintf(
+											/* translators: %d: number of packages routed through the Media Worker sidecar */
+											_n( '%d package is handled by the connected Media Worker sidecar.', '%d packages are handled by the connected Media Worker sidecar.', $worker_routed_count, 'mcp-ai-wpoos' ),
+											$worker_routed_count
+										)
+									);
+									?>
+								</p>
+							<?php endif; ?>
 							<table class="toolkit-details-table">
 								<thead>
 									<tr>
@@ -1035,6 +1058,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 														<?php echo '✓'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbol. ?>
 														<?php if ( isset( $status['source'] ) && 'cdn' === $status['source'] ) : ?>
 															<span class="status-source"><?php esc_html_e( '(CDN)', 'mcp-ai-wpoos' ); ?></span>
+														<?php elseif ( isset( $status['source'] ) && 'sidecar' === $status['source'] ) : ?>
+															<span class="status-source"><?php esc_html_e( '(Media Worker)', 'mcp-ai-wpoos' ); ?></span>
 														<?php endif; ?>
 													</span>
 												<?php else : ?>
@@ -1174,6 +1199,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						if ( isset( $status['source'] ) && 'cdn' === $status['source'] ) {
 							$status_class .= ' cdn-loaded';
 						}
+
+						// Add special CSS class for Media Worker-routed packages.
+						if ( isset( $status['source'] ) && 'sidecar' === $status['source'] ) {
+							$status_class .= ' worker-routed';
+						}
 						?>
 						<tr>
 							<td><code><?php echo esc_html( $package ); ?></code></td>
@@ -1291,6 +1321,78 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		}
 
 		/**
+		 * NPM packages whose operations are routed through the Media Worker
+		 * sidecar (package => worker API route). Only packages that the plugin
+		 * actually wires to a worker route belong here; a worker route alone
+		 * is not enough (e.g. /api/data/csv-parse exists but is not wired).
+		 */
+		private const WORKER_ROUTED_PACKAGES = array(
+			'prettier'               => '/api/code/format',
+			'mjml'                   => '/api/email/compile-mjml',
+			'nodemailer'             => '/api/email/send',
+			'qrcode'                 => '/api/data/qrcode',
+			'docx'                   => '/api/document/word',
+			'exceljs'                => '/api/document/excel',
+			'pdf-parse'              => '/api/pdf/extract',
+			'pdf-lib'                => '/api/pdf/merge',
+			'pdfkit'                 => '/api/pdf/generate',
+			'katex'                  => '/api/data/render-math',
+			'ics'                    => '/api/data/generate-ics',
+			'chart.js'               => '/api/data/render-chart',
+			'@turf/turf'             => '/api/data/analyze-geospatial',
+			'sharp'                  => '/api/image/optimize',
+			'@neplex/vectorizer'     => '/api/image/vectorize',
+			'fluent-ffmpeg'          => '/api/video/process',
+			'franc'                  => '/api/data/language-detect',
+			'google-translate-api-x' => '/api/data/translate',
+			'libphonenumber-js'      => '/api/data/phone-format',
+		);
+
+		/**
+		 * Get the worker-routed package map (package => API route).
+		 *
+		 * @return array Package to route map.
+		 */
+		public static function get_worker_routed_packages() {
+			return self::WORKER_ROUTED_PACKAGES;
+		}
+
+		/**
+		 * Check whether the Media Worker sidecar is configured and reachable.
+		 *
+		 * Uses the same URL resolution as the WP_MCP_AI_Media_Worker_Client
+		 * trait (constant, then option) and caches the health result in a
+		 * short-lived transient so the settings page does not hammer the
+		 * worker with one request per package.
+		 *
+		 * @return bool True when /api/health answers ok.
+		 */
+		public static function is_media_worker_reachable() {
+			$cached = get_transient( 'wp_mcp_ai_worker_health' );
+			if ( is_array( $cached ) && isset( $cached['ok'] ) ) {
+				return (bool) $cached['ok'];
+			}
+
+			$url = defined( 'WP_MEDIA_WORKER_URL' ) && WP_MEDIA_WORKER_URL
+				? WP_MEDIA_WORKER_URL
+				: get_option( 'wp_mcp_ai_media_worker_url', '' );
+
+			$ok = false;
+
+			if ( ! empty( $url ) ) {
+				$response = wp_remote_get( rtrim( $url, '/' ) . '/api/health', array( 'timeout' => 3 ) );
+				if ( ! is_wp_error( $response ) ) {
+					$status = wp_remote_retrieve_response_code( $response );
+					$body   = json_decode( wp_remote_retrieve_body( $response ), true );
+					$ok     = ( 200 === $status && isset( $body['status'] ) && 'ok' === $body['status'] );
+				}
+			}
+
+			set_transient( 'wp_mcp_ai_worker_health', array( 'ok' => $ok ), 5 * MINUTE_IN_SECONDS );
+			return $ok;
+		}
+
+		/**
 		 * Get detailed package status including CDN availability.
 		 *
 		 * Returns an array with 'available', 'source', and 'message' keys.
@@ -1299,6 +1401,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * @return array Status array.
 		 */
 		private static function get_package_status( $package ) {
+			// Sidecar-first: when the Media Worker is reachable and this
+			// package's operations are wired to a worker route, the worker
+			// handles it — even when nothing is installed locally.
+			$worker_routed = self::get_worker_routed_packages();
+			if ( isset( $worker_routed[ $package ] ) && self::is_media_worker_reachable() ) {
+				return array(
+					'available' => true,
+					'source'    => 'sidecar',
+					'message'   => sprintf(
+						/* translators: %s: worker API route */
+						__( 'Handled by Media Worker (%s)', 'mcp-ai-wpoos' ),
+						$worker_routed[ $package ]
+					),
+				);
+			}
+
 			// Check if Pro CDN Loader is available and package is CDN-managed.
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && class_exists( 'WP_MCP_AI_Pro_CDN_Loader' ) ) {
 				$cdn_packages = WP_MCP_AI_Pro_CDN_Loader::get_cdn_packages();
@@ -2116,6 +2234,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					. '.wp-mcp-ai-status-badge{display:inline-block;padding:3px 10px;border-radius:3px;font-size:12px;font-weight:600;text-transform:uppercase;}'
 					. '.wp-mcp-ai-status-badge.installed,.wp-mcp-ai-status-badge.enabled,.wp-mcp-ai-status-badge.active{background:#00a32a;color:#fff;}'
 					. '.wp-mcp-ai-status-badge.not-installed,.wp-mcp-ai-status-badge.disabled,.wp-mcp-ai-status-badge.inactive{background:#dba617;color:#fff;}'
+					. '.wp-mcp-ai-status-badge.cdn-loaded,.wp-mcp-ai-status-badge.worker-routed{background:#2271b1;color:#fff;}'
+					. '.toolkit-worker-note{font-size:12px;color:#2271b1;margin:10px 15px 0;padding:8px 12px;background:#f0f6fc;border-left:3px solid #2271b1;}'
 					. '.wp-mcp-ai-pro-settings .wp-list-table{margin-top:10px;}'
 					. '.wp-mcp-ai-pro-settings code{background:#f0f0f1;padding:2px 6px;border-radius:3px;font-size:13px;}'
 					. '.wp-mcp-ai-toolkit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(450px,1fr));gap:20px;margin-top:20px;}'

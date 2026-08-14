@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Load the document response trait from base plugin.
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-client.php';
 
 // Load HTML formatter class.
 require_once __DIR__ . '/class-wp-mcp-ai-html-formatter.php';
@@ -38,6 +39,7 @@ require_once __DIR__ . '/class-wp-mcp-ai-html-formatter.php';
 class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * HTML formatter instance.
@@ -677,60 +679,42 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
 		rename( $temp_file, $docx_file );
 
-		// Create JSON file with document data for Node.js script.
-		$json_file = $temp_file . '.json';
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents
-		file_put_contents( $json_file, wp_json_encode( $document_data ) );
-
-		// Get bundled Word generation script.
-		$script_file = $this->get_word_generation_script_path();
-		if ( is_wp_error( $script_file ) ) {
-			// Clean up temp files.
-			@unlink( $docx_file );
-			@unlink( $json_file );
-			return $script_file;
-		}
-
-		// Execute Node.js script to generate document.
-		$node_binary = $this->get_node_binary();
-		if ( is_wp_error( $node_binary ) ) {
-			// Clean up temp files.
-			@unlink( $docx_file );
-			@unlink( $json_file );
-			return $node_binary;
-		}
-
-		// Escape command arguments.
-		$cmd = sprintf(
-			'%s %s %s %s 2>&1',
-			escapeshellarg( $node_binary ),
-			escapeshellarg( $script_file ),
-			escapeshellarg( $json_file ),
-			escapeshellarg( $docx_file )
-		);
-
-		// Execute command.
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_file ) );
-		$return_code = $proc_result['exit_code'];
-
-		// Clean up temp files.
-		@unlink( $json_file );
-
-		if ( 0 !== $return_code ) {
-			@unlink( $docx_file );
-			return new WP_Error(
-				'wp_mcp_ai_word_generation_failed',
-				sprintf(
-					/* translators: %s: error output */
-					__( 'Word document generation failed: %s', 'mcp-ai-wpoos' ),
-					implode( "\n", $output )
-				)
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured). The worker builds the .docx
+		// with the docx npm package instead of the bundled Node script.
+		$generated = false;
+		if ( $this->is_sidecar_available() ) {
+			$sidecar = $this->sidecar_request(
+				'/api/document/word',
+				array(
+					'content' => $this->build_worker_word_content( $document_data ),
+					'options' => array(),
+				),
+				array( 'timeout' => 120 )
 			);
+			if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['data_base64'] ) ) {
+				$docx_bytes = base64_decode( $sidecar['data_base64'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding the worker's data_base64 payload is the transport contract.
+				if ( false !== $docx_bytes && '' !== $docx_bytes ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing the worker-returned bytes into the temp output file consumed by the shared save flow.
+					if ( false !== file_put_contents( $docx_file, $docx_bytes ) ) {
+						$generated = true;
+					}
+				}
+			}
+		}
+
+		if ( ! $generated ) {
+			// Fall back to the local Node.js/docx script.
+			$local_result = $this->generate_word_document_locally( $document_data, $docx_file, $temp_file );
+			if ( is_wp_error( $local_result ) ) {
+				@unlink( $docx_file );
+				return $local_result;
+			}
+			$generated = true;
 		}
 
 		// Check if document was created.
-		if ( ! file_exists( $docx_file ) || 0 === filesize( $docx_file ) ) {
+		if ( ! $generated || ! file_exists( $docx_file ) || 0 === filesize( $docx_file ) ) {
 			@unlink( $docx_file );
 			return new WP_Error(
 				'wp_mcp_ai_word_not_created',
@@ -797,6 +781,140 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			'url'           => '',
 			'attachment_id' => 0,
 		);
+	}
+
+	/**
+	 * Map the tool's document data to the worker's /api/document/word
+	 * content contract (title + paragraphs with optional headings).
+	 *
+	 * @param array $document_data Document configuration and content.
+	 * @return array Worker content payload.
+	 */
+	protected function build_worker_word_content( array $document_data ) {
+		$content = array();
+
+		if ( ! empty( $document_data['title'] ) ) {
+			$content['title'] = sanitize_text_field( $document_data['title'] );
+		}
+
+		$paragraphs = array();
+
+		if ( ! empty( $document_data['sections'] ) && is_array( $document_data['sections'] ) ) {
+			foreach ( $document_data['sections'] as $section ) {
+				if ( ! empty( $section['heading'] ) ) {
+					$paragraphs[] = array(
+						'heading' => $section['heading'],
+						'text'    => $section['heading'],
+						'level'   => $this->normalize_worker_heading_level( $section ),
+					);
+				}
+				if ( ! empty( $section['content'] ) ) {
+					foreach ( preg_split( '/\n{2,}/', $section['content'] ) as $para ) {
+						$para = trim( $para );
+						if ( '' !== $para ) {
+							$paragraphs[] = array( 'text' => $para );
+						}
+					}
+				}
+			}
+		} elseif ( ! empty( $document_data['content'] ) ) {
+			foreach ( preg_split( '/\n{2,}/', $document_data['content'] ) as $para ) {
+				$para = trim( $para );
+				if ( '' !== $para ) {
+					$paragraphs[] = array( 'text' => $para );
+				}
+			}
+		}
+
+		$content['paragraphs'] = $paragraphs;
+
+		return $content;
+	}
+
+	/**
+	 * Normalize a section heading level to a docx HeadingLevel key.
+	 *
+	 * Accepts numeric levels, h1–h6, or HEADING_1–HEADING_6; unmappable
+	 * values fall back to HEADING_2 (the worker also falls back to
+	 * HEADING_1 for unknown keys).
+	 *
+	 * @param array $section Section data.
+	 * @return string HeadingLevel key (HEADING_1..HEADING_6).
+	 */
+	protected function normalize_worker_heading_level( array $section ) {
+		if ( ! empty( $section['level'] ) ) {
+			$level = strtoupper( preg_replace( '/[^A-Z0-9_]/', '_', $section['level'] ) );
+			if ( preg_match( '/^HEADING_[1-6]$/', $level ) ) {
+				return $level;
+			}
+			if ( preg_match( '/^H?([1-6])$/', strtolower( $level ), $matches ) ) {
+				return 'HEADING_' . $matches[1];
+			}
+		}
+
+		return 'HEADING_2';
+	}
+
+	/**
+	 * Generate the Word document locally via the bundled Node.js/docx script.
+	 *
+	 * Fallback used when the Media Worker sidecar is unavailable. Writes the
+	 * generated document to $docx_file.
+	 *
+	 * @param array  $document_data Document configuration and content.
+	 * @param string $docx_file     Destination .docx path.
+	 * @param string $temp_file     Temporary file base path (for the JSON input).
+	 * @return true|WP_Error True on success.
+	 */
+	protected function generate_word_document_locally( array $document_data, $docx_file, $temp_file ) {
+		// Create JSON file with document data for Node.js script.
+		$json_file = $temp_file . '.json';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents
+		file_put_contents( $json_file, wp_json_encode( $document_data ) );
+
+		// Get bundled Word generation script.
+		$script_file = $this->get_word_generation_script_path();
+		if ( is_wp_error( $script_file ) ) {
+			@unlink( $json_file );
+			return $script_file;
+		}
+
+		// Execute Node.js script to generate document.
+		$node_binary = $this->get_node_binary();
+		if ( is_wp_error( $node_binary ) ) {
+			@unlink( $json_file );
+			return $node_binary;
+		}
+
+		// Escape command arguments.
+		$cmd = sprintf(
+			'%s %s %s %s 2>&1',
+			escapeshellarg( $node_binary ),
+			escapeshellarg( $script_file ),
+			escapeshellarg( $json_file ),
+			escapeshellarg( $docx_file )
+		);
+
+		// Execute command.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_file ) );
+		$return_code = $proc_result['exit_code'];
+
+		// Clean up temp files.
+		@unlink( $json_file );
+
+		if ( 0 !== $return_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_word_generation_failed',
+				sprintf(
+					/* translators: %s: error output */
+					__( 'Word document generation failed: %s', 'mcp-ai-wpoos' ),
+					implode( "\n", array_filter( array( $proc_result['stderr'], $proc_result['stdout'] ) ) )
+				)
+			);
+		}
+
+		return true;
 	}
 
 	/**

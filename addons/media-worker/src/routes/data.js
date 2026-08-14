@@ -19,12 +19,12 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { siteBaseDir, pathGuard } from '../utils/site-paths.js';
+import { siteDirFor, pathGuard } from '../utils/site-paths.js';
 
 export const dataRouter = Router();
 
 function tempFile( req, ext ) {
-	return path.join( siteBaseDir( req.site ), `data-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
+	return path.join( siteDirFor( req.site, 'doc' ), `data-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 // ── POST /translate ─────────────────────────────────────────
@@ -154,11 +154,14 @@ dataRouter.post('/qrcode', async (req, res) => {
 
     const outPath = pathGuard( req.site, outputPath ) || tempFile( req, qrOpts.type );
 
+    let dataUrl;
     if (qrOpts.type === 'svg') {
       const svg = await QRCode.toString(text, { ...qrOpts, type: 'svg' });
       fs.writeFileSync(outPath, svg);
+      dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
     } else {
       await QRCode.toFile(outPath, text, qrOpts);
+      dataUrl = await QRCode.toDataURL(text, qrOpts);
     }
 
     const stats = fs.statSync(outPath);
@@ -168,6 +171,9 @@ dataRouter.post('/qrcode', async (req, res) => {
       output_path: outPath,
       size: stats.size,
       format: qrOpts.type,
+      // data_url is the plugin contract: output_path points at the
+      // WORKER's filesystem and is unusable by the calling site.
+      data_url: dataUrl,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -225,10 +231,12 @@ dataRouter.post('/render-chart', async (req, res) => {
     const height = options?.height || 400;
     const renderer = new ChartJSNodeCanvas({ width, height, backgroundColour: options?.background || 'white' });
     const config = { type, data, options: options?.chartOptions || {} };
-    const image = await renderer.renderToBuffer(config);
-    const outPath = tempFile( req, 'png' );
-    fs.writeFileSync(outPath, image);
-    res.json({ success: true, output_path: outPath, size: image.length, width, height });
+    		const image = await renderer.renderToBuffer(config);
+    		const outPath = tempFile( req, 'png' );
+    		fs.writeFileSync(outPath, image);
+    		// data_base64 is the plugin contract: `output_path` points at the
+    		// WORKER's filesystem and is useless to the calling WordPress site.
+    		res.json({ success: true, output_path: outPath, data_base64: image.toString('base64'), size: image.length, width, height });
   } catch (err) {
     if ('ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code) {
       return res.status(503).json({

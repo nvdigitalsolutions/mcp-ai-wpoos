@@ -165,19 +165,13 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
-		// Check if vectorizer library is installed.
-		if ( ! WP_MCP_AI_Optional_Components::is_vectorizer_installed() ) {
-			return new WP_Error(
-				'wp_mcp_ai_vectorizer_not_installed',
-				__( 'Vectorizer library is not installed. It will be automatically downloaded in the background. Please try again in a few minutes, or contact your administrator to manually install it.', 'mcp-ai-wpoos' )
-			);
-		}
-
-		// Check if Node.js is available.
-		if ( ! $this->is_nodejs_available() ) {
+		// The vectorizer library is bundled with the base plugin
+		// (assets/js/vendor/neplex-vectorizer); no download gate exists
+		// anymore. Node.js (local) or the Media Worker sidecar is required.
+		if ( ! $this->is_nodejs_available() && ! $this->is_sidecar_upload_supported() ) {
 			return new WP_Error(
 				'wp_mcp_ai_nodejs_required',
-				__( 'Node.js is required for image vectorization but was not found on the system.', 'mcp-ai-wpoos' )
+				__( 'Node.js is required for image vectorization but was not found on the system. Configure the Media Worker sidecar or install Node.js.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -217,22 +211,42 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
 		);
 
-		// Execute vectorization script.
-		$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
-		$script_args = array(
-			$temp_input,
-			$temp_output,
-			wp_json_encode( $options ),
-		);
+		// Execute vectorization: try the Media Worker sidecar first (opt-in
+		// routing — fails fast when no sidecar URL is configured or the
+		// health check fails), then fall back to the local script.
+		$result = null;
+		if ( $this->is_sidecar_upload_supported() ) {
+			$sidecar = $this->sidecar_upload(
+				'/api/image/vectorize',
+				$temp_input,
+				array( 'options' => wp_json_encode( $options ) ),
+				120
+			);
+			if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['svg'] ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing the worker-returned SVG into the temp output file consumed by the shared save flow.
+				if ( false !== file_put_contents( $temp_output, $sidecar['svg'] ) ) {
+					$result = array( 'success' => true );
+				}
+			}
+		}
 
-		$result = $this->execute_nodejs_script(
-			$script_path,
-			$script_args,
-			array(
-				'timeout'    => 60,
-				'parse_json' => true,
-			)
-		);
+		if ( null === $result ) {
+			$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
+			$script_args = array(
+				$temp_input,
+				$temp_output,
+				wp_json_encode( $options ),
+			);
+
+			$result = $this->execute_nodejs_script(
+				$script_path,
+				$script_args,
+				array(
+					'timeout'    => 60,
+					'parse_json' => true,
+				)
+			);
+		}
 
 		// Cleanup temporary input file.
 		$this->cleanup_temp_file( $temp_input );
@@ -342,7 +356,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 	 * @param int    $user_id   User ID.
 	 * @return array|WP_Error Attachment data or WP_Error on failure.
 	 */
-	protected function save_svg_as_attachment( $svg_data, array $arguments, $user_id ) {
+	protected function save_svg_as_attachment( $svg_data, array $arguments, $user_id = 0 ) {
 		// Generate file name.
 		$base_name = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : 'vectorized-image';
 		if ( empty( $base_name ) ) {
@@ -353,12 +367,24 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		$base_name = preg_replace( '/\.(png|jpg|jpeg|gif|webp)$/i', '', $base_name );
 		$file_name = $base_name . '-' . gmdate( 'Ymd-His' ) . '.svg';
 
-		// Upload SVG file.
+		// Upload SVG file. WordPress rejects image/svg+xml by default (an
+		// XSS surface for arbitrary uploads), so allow it for this single
+		// call only — producing an SVG attachment is the entire purpose
+		// of this helper. The filter is removed immediately after.
 		if ( ! function_exists( 'wp_upload_bits' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 
+		$allow_svg_mime = static function ( $mimes ) {
+			if ( ! is_array( $mimes ) ) {
+				$mimes = array();
+			}
+			$mimes['svg'] = 'image/svg+xml';
+			return $mimes;
+		};
+		add_filter( 'upload_mimes', $allow_svg_mime );
 		$upload = wp_upload_bits( $file_name, null, $svg_data );
+		remove_filter( 'upload_mimes', $allow_svg_mime );
 
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'mcp-ai-wpoos' ), array( 'error' => $upload['error'] ) );

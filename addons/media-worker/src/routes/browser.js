@@ -14,12 +14,12 @@ import fs from 'fs';
 import path from 'path';
 import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
-import { siteBaseDir, pathGuard } from '../utils/site-paths.js';
+import { siteDirFor, pathGuard } from '../utils/site-paths.js';
 
 export const browserRouter = Router();
 
 function tempFile( req, ext ) {
-	return path.join( siteBaseDir( req.site ), `browser-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
+	return path.join( siteDirFor( req.site, 'browser' ), `browser-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 // ── POST /screenshot — capture webpage screenshot ───────────

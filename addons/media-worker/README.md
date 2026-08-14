@@ -61,7 +61,7 @@ wordpress:
 | Group | Routes |
 |---|---|
 | Image | `/api/image/generate`, `/api/image/optimize`, `/api/image/providers` |
-| Video | `/api/video/generate`, `/api/video/process`, `/api/video/info` |
+| Video | `/api/video/generate`, `/api/video/process`, `/api/video/info`, `/api/video/download/:name` |
 | Social | `/api/social/post`, `/api/social/generate-content` |
 | PDF | `/api/pdf/extract`, `/api/pdf/render`, `/api/pdf/generate`, `/api/pdf/merge`, `/api/pdf/watermark` |
 | Document | `/api/document/excel`, `/api/document/word` |

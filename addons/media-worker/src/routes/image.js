@@ -6,6 +6,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { getCredential } from '../utils/provider-keys.js';
+import { recordUsage } from '../utils/usage.js';
 
 const execAsync = promisify(exec);
 const router = Router();
@@ -27,11 +29,11 @@ const PROVIDERS = {
 };
 
 // ── GET /api/image/providers ── List available providers ──
-router.get('/providers', (_req, res) => {
+router.get('/providers', (req, res) => {
   const list = Object.entries(PROVIDERS).map(([id, p]) => ({
     id,
     name: p.name,
-    configured: !!process.env[p.key],
+    configured: !!getCredential(req.site, p.key),
     models: MODELS_BY_PROVIDER[id] || [],
   }));
   res.json({ providers: list });
@@ -54,6 +56,7 @@ const MODELS_BY_PROVIDER = {
 
 // ── POST /api/image/generate ──────────────────────────────
 router.post('/generate', async (req, res) => {
+  let activeProvider = null;
   try {
     const {
       prompt,
@@ -92,22 +95,46 @@ router.post('/generate', async (req, res) => {
     if (!providerCfg) {
       return res.status(400).json({ error: `Unknown provider: ${providerId}` });
     }
+    activeProvider = providerId;
 
-    if (!process.env[providerCfg.key]) {
+    // Per-site credential resolution (Phase 2): site key -> shared pool ->
+    // 503. Firefly additionally requires the client secret.
+    if (!getCredential(req.site, providerCfg.key)) {
+      recordUsage(req.site, providerId, 'missing_key');
       return res.status(503).json({
         error: `${providerCfg.name} API key not configured`,
+        capability: 'image_generation',
+        provider: providerId,
         env_var: providerCfg.key,
-        tip: `Set ${providerCfg.key} in .env`,
+        site: req.site,
+        tip: `Set ${providerCfg.key} in the environment or SITE_PROVIDER_KEYS for this site.`,
+      });
+    }
+    if (providerId === 'firefly' && !getCredential(req.site, 'FIREFLY_CLIENT_SECRET')) {
+      recordUsage(req.site, providerId, 'missing_key');
+      return res.status(503).json({
+        error: 'Adobe Firefly client secret not configured',
+        capability: 'image_generation',
+        provider: providerId,
+        env_var: 'FIREFLY_CLIENT_SECRET',
+        site: req.site,
+        tip: 'Set FIREFLY_CLIENT_SECRET in the environment or SITE_PROVIDER_KEYS for this site.',
       });
     }
 
     const images = await generateWithProvider(providerId, model, {
       prompt, size, style, count, negative_prompt, aspect_ratio, seed, steps, cfg_scale,
-    });
+    }, req.site);
 
+    recordUsage(req.site, providerId, 'success');
     res.json({ success: true, provider: providerId, model, images, prompt });
   } catch (err) {
     console.error('[Image Generate]', err.message);
+    if (err.status === 503) {
+      recordUsage(req.site, activeProvider, 'missing_key');
+    } else if (err.response) {
+      recordUsage(req.site, activeProvider, 'provider_error');
+    }
     const status = err.response?.status || err.status || 500;
     res.status(status).json({
       error: err.message,
@@ -118,14 +145,14 @@ router.post('/generate', async (req, res) => {
 
 // ── Provider Implementations ─────────────────────────────
 
-async function generateWithProvider(providerId, model, opts) {
+async function generateWithProvider(providerId, model, opts, site) {
   switch (providerId) {
 
     // ═══════════════════════════════════════════════
     // OpenAI — DALL·E 3 / DALL·E 2
     // ═══════════════════════════════════════════════
     case 'openai': {
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const openai = new OpenAI({ apiKey: getCredential(site, 'OPENAI_API_KEY') });
       const dalleModel = model === 'dall-e-2' ? 'dall-e-2' : 'dall-e-3';
       const response = await openai.images.generate({
         model: dalleModel,
@@ -146,7 +173,7 @@ async function generateWithProvider(providerId, model, opts) {
     // Google — Gemini / Imagen
     // ═══════════════════════════════════════════════
     case 'gemini': {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const genAI = new GoogleGenerativeAI(getCredential(site, 'GEMINI_API_KEY'));
 
       // ── Imagen via REST API ──────────────────────
       if (model.startsWith('imagen')) {
@@ -169,7 +196,7 @@ async function generateWithProvider(providerId, model, opts) {
           },
           {
             headers: { 'Content-Type': 'application/json' },
-            params: { key: process.env.GEMINI_API_KEY },
+            params: { key: getCredential(site, 'GEMINI_API_KEY') },
             timeout: 60000,
           }
         );
@@ -256,7 +283,7 @@ async function generateWithProvider(providerId, model, opts) {
           form,
           {
             headers: {
-              Authorization: `Bearer ${process.env.STABILITY_API_KEY}`,
+              Authorization: `Bearer ${getCredential(site, 'STABILITY_API_KEY')}`,
               Accept: 'application/json',
             },
             responseType: 'json',
@@ -288,7 +315,7 @@ async function generateWithProvider(providerId, model, opts) {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.STABILITY_API_KEY}`,
+            Authorization: `Bearer ${getCredential(site, 'STABILITY_API_KEY')}`,
           },
         }
       );
@@ -333,7 +360,7 @@ async function generateWithProvider(providerId, model, opts) {
         },
         {
           headers: {
-            Authorization: `Bearer ${process.env.REPLICATE_API_KEY}`,
+            Authorization: `Bearer ${getCredential(site, 'REPLICATE_API_KEY')}`,
             'Content-Type': 'application/json',
           },
         }
@@ -347,7 +374,7 @@ async function generateWithProvider(providerId, model, opts) {
         await sleep(1000);
         const pollResp = await axios.get(
           `https://api.replicate.com/v1/predictions/${predictionId}`,
-          { headers: { Authorization: `Bearer ${process.env.REPLICATE_API_KEY}` } }
+          { headers: { Authorization: `Bearer ${getCredential(site, 'REPLICATE_API_KEY')}` } }
         );
         prediction = pollResp.data;
       }
@@ -367,7 +394,7 @@ async function generateWithProvider(providerId, model, opts) {
     // Midjourney (via API services)
     // ═══════════════════════════════════════════════
     case 'midjourney': {
-      if (!process.env.MIDJOURNEY_API_KEY) {
+      if (!getCredential(site, 'MIDJOURNEY_API_KEY')) {
         throw Object.assign(new Error('Midjourney API key not configured'), { status: 503 });
       }
 
@@ -382,7 +409,7 @@ async function generateWithProvider(providerId, model, opts) {
         {
           headers: {
             'Content-Type': 'application/json',
-            'X-API-KEY': process.env.MIDJOURNEY_API_KEY,
+            'X-API-KEY': getCredential(site, 'MIDJOURNEY_API_KEY'),
           },
           timeout: 120000,
         }
@@ -396,7 +423,7 @@ async function generateWithProvider(providerId, model, opts) {
         await sleep(3000);
         const poll = await axios.get(
           `https://api.midjourneyapi.xyz/v2/result?task_id=${taskId}`,
-          { headers: { 'X-API-KEY': process.env.MIDJOURNEY_API_KEY } }
+          { headers: { 'X-API-KEY': getCredential(site, 'MIDJOURNEY_API_KEY') } }
         );
         result = poll.data;
       }
@@ -441,7 +468,7 @@ async function generateWithProvider(providerId, model, opts) {
           },
           {
             headers: {
-              Authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
+              Authorization: `Bearer ${getCredential(site, 'LEONARDO_API_KEY')}`,
               'Content-Type': 'application/json',
             },
           }
@@ -460,7 +487,7 @@ async function generateWithProvider(providerId, model, opts) {
         await sleep(2000);
         const poll = await axios.get(
           `https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`,
-          { headers: { Authorization: `Bearer ${process.env.LEONARDO_API_KEY}` } }
+          { headers: { Authorization: `Bearer ${getCredential(site, 'LEONARDO_API_KEY')}` } }
         );
         generation = poll.data.generations_by_pk;
       }
@@ -503,7 +530,7 @@ async function generateWithProvider(providerId, model, opts) {
         },
         {
           headers: {
-            'Api-Key': process.env.IDEOGRAM_API_KEY,
+            'Api-Key': getCredential(site, 'IDEOGRAM_API_KEY'),
             'Content-Type': 'application/json',
           },
         }
@@ -546,7 +573,7 @@ async function generateWithProvider(providerId, model, opts) {
         },
         {
           headers: {
-            Authorization: `Bearer ${process.env.GETIMG_API_KEY}`,
+            Authorization: `Bearer ${getCredential(site, 'GETIMG_API_KEY')}`,
             'Content-Type': 'application/json',
           },
         }
@@ -578,7 +605,7 @@ async function generateWithProvider(providerId, model, opts) {
         },
         {
           headers: {
-            'Api-Key': process.env.DEEPAI_API_KEY,
+            'Api-Key': getCredential(site, 'DEEPAI_API_KEY'),
             'Content-Type': 'application/x-www-form-urlencoded',
           },
         }
@@ -599,8 +626,8 @@ async function generateWithProvider(providerId, model, opts) {
         'https://ims-na1.adobelogin.com/ims/token/v3',
         new URLSearchParams({
           grant_type: 'client_credentials',
-          client_id: process.env.FIREFLY_CLIENT_ID,
-          client_secret: process.env.FIREFLY_CLIENT_SECRET,
+          client_id: getCredential(site, 'FIREFLY_CLIENT_ID'),
+          client_secret: getCredential(site, 'FIREFLY_CLIENT_SECRET'),
           scope: 'openid,AdobeID,firefly_api,ff_apis',
         }).toString(),
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
@@ -619,7 +646,7 @@ async function generateWithProvider(providerId, model, opts) {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'X-Api-Key': process.env.FIREFLY_CLIENT_ID,
+            'X-Api-Key': getCredential(site, 'FIREFLY_CLIENT_ID'),
             'Content-Type': 'application/json',
           },
         }
@@ -645,7 +672,7 @@ async function generateWithProvider(providerId, model, opts) {
         },
         {
           headers: {
-            'x-api-key': process.env.STABILITY_API_KEY,
+            'x-api-key': getCredential(site, 'STABILITY_API_KEY'),
             'Content-Type': 'application/json',
           },
           responseType: 'arraybuffer',
@@ -786,17 +813,76 @@ router.post('/batch', upload.array('files', 20), async (req, res) => {
   }
 });
 
-// ── POST /vectorize — raster to SVG (potrace) ───────────────
+// ── POST /vectorize — raster to SVG (VTracer via @neplex/vectorizer) ──
+// String values mirror the plugin's local bin/vectorize-image.js contract
+// (color/binary, stacked/cutout, spline/polygon/none); the v0.0.5 API
+// expects numeric TypeScript enum values, so map them here.
+const VECTORIZE_ENUMS = {
+  colorMode: { color: 0, binary: 1 },
+  hierarchical: { stacked: 0, cutout: 1 },
+  mode: { none: 0, polygon: 1, spline: 2 },
+};
+const VECTORIZE_NUMERIC = new Set([
+  'colorPrecision',
+  'filterSpeckle',
+  'layerDifference',
+  'cornerThreshold',
+  'lengthThreshold',
+  'maxIterations',
+  'spliceThreshold',
+  'pathPrecision',
+]);
+
+/**
+ * Parse the optional multipart `options` field (JSON) into a v0.0.5
+ * vectorize() config. Unknown or invalid keys are ignored; enum strings
+ * are mapped to their numeric equivalents.
+ *
+ * @param {string|undefined} raw Raw options field value.
+ * @return {Object|undefined} Config object or undefined.
+ */
+function parseVectorizeOptions(raw) {
+  if (!raw) {
+    return undefined;
+  }
+  let options;
+  try {
+    options = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    return undefined;
+  }
+  if (!options || typeof options !== 'object' || Array.isArray(options)) {
+    return undefined;
+  }
+  const config = {};
+  for (const [key, value] of Object.entries(options)) {
+    if (VECTORIZE_ENUMS[key]) {
+      const mapped = VECTORIZE_ENUMS[key][String(value).toLowerCase()];
+      if (mapped !== undefined) {
+        config[key] = mapped;
+      }
+    } else if (VECTORIZE_NUMERIC.has(key)) {
+      const n = Number(value);
+      if (Number.isFinite(n)) {
+        config[key] = n;
+      }
+    }
+  }
+  return Object.keys(config).length ? config : undefined;
+}
+
 router.post('/vectorize', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-    const { vectorizer } = await import('@neplex/vectorizer');
-    const result = await vectorizer({ input: req.file.buffer, output: 'svg' });
+    // v0.0.5 API: named `vectorize(buffer, config)` export returning an SVG string.
+    const { vectorize } = await import('@neplex/vectorizer');
+    const config = parseVectorizeOptions(req.body?.options);
+    const svg = await vectorize(req.file.buffer, config);
     res.json({
       success: true,
-      svg: result.toString(),
+      svg,
       original_size: req.file.size,
     });
   } catch (err) {

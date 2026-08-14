@@ -86,18 +86,9 @@ class WP_MCP_AI_Prettier_Service {
 			'options' => $options,
 		);
 
-		/**
-		 * Filter to allow custom Prettier code formatting.
-		 *
-		 * @param string|false $result Formatted code or false.
-		 * @param array        $params Formatting parameters.
-		 */
-		$result = apply_filters( 'wp_mcp_ai_prettier_format_code', false, $params );
-		if ( false !== $result ) {
-			return $result;
-		}
-
-		// Try Media Worker sidecar (automatic — no config needed with Docker).
+		// Try the Media Worker sidecar first (opt-in routing: runs only when
+		// a sidecar URL is configured — otherwise it fails fast and the
+		// legacy filter/local paths below behave exactly as before).
 		$sidecar = $this->sidecar_request(
 			'/api/code/format',
 			array(
@@ -107,6 +98,21 @@ class WP_MCP_AI_Prettier_Service {
 		);
 		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['formatted'] ) ) {
 			return $sidecar['formatted'];
+		}
+
+		/**
+		 * Filter to allow custom Prettier code formatting.
+		 *
+		 * Runs after the sidecar attempt: legacy local-Node handlers only
+		 * execute when a local Node.js is installed, and custom
+		 * implementations keep working when no sidecar is configured.
+		 *
+		 * @param string|false $result Formatted code or false.
+		 * @param array        $params Formatting parameters.
+		 */
+		$result = apply_filters( 'wp_mcp_ai_prettier_format_code', false, $params );
+		if ( false !== $result ) {
+			return $result;
 		}
 
 		// Fall back to local Node.js (retained for non-Docker environments).
@@ -149,18 +155,8 @@ class WP_MCP_AI_Prettier_Service {
 			'parser' => sanitize_text_field( $parser ),
 		);
 
-		/**
-		 * Filter to allow custom Prettier syntax checking.
-		 *
-		 * @param bool|WP_Error|false $result Check result, error, or false if not implemented.
-		 * @param array               $params Check parameters.
-		 */
-		$result = apply_filters( 'wp_mcp_ai_prettier_check_syntax', false, $params );
-		if ( false !== $result ) {
-			return $result;
-		}
-
-		// Try Media Worker sidecar.
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured).
 		$sidecar = $this->sidecar_request(
 			'/api/code/check-syntax',
 			array(
@@ -170,6 +166,17 @@ class WP_MCP_AI_Prettier_Service {
 		);
 		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['valid'] ) ) {
 			return $sidecar['valid'];
+		}
+
+		/**
+		 * Filter to allow custom Prettier syntax checking.
+		 *
+		 * @param bool|WP_Error|false $result Check result, error, or false if not implemented.
+		 * @param array               $params Check parameters.
+		 */
+		$result = apply_filters( 'wp_mcp_ai_prettier_check_syntax', false, $params );
+		if ( false !== $result ) {
+			return $result;
 		}
 
 		// Not implemented — return true (no validation).
