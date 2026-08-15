@@ -99,13 +99,16 @@ function startFakeWebui() {
 		if ( 'GET' === req.method && req.url.startsWith( '/api/session' ) ) {
 			const url = new URL( req.url, 'http://fake' );
 			const sessionId = url.searchParams.get( 'session_id' ) || 's1';
+			// Mirrors the live WebUI: everything is nested under `session`.
 			return json( 200, {
-				session_id: sessionId,
-				title: 'First',
-				messages: [
-					{ role: 'user', content: 'hi' },
-					{ role: 'assistant', content: 'PONG' },
-				],
+				session: {
+					session_id: sessionId,
+					title: 'First',
+					messages: [
+						{ role: 'user', content: 'hi' },
+						{ role: 'assistant', content: 'PONG' },
+					],
+				},
 			} );
 		}
 

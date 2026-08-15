@@ -311,11 +311,16 @@ function contentToText( content ) {
 /**
  * Extract the newest assistant message from a /api/session payload.
  *
+ * The live WebUI nests messages under a top-level `session` object
+ * ({ session: { messages: [...] } }); tolerate a flat { messages } shape
+ * as well.
+ *
  * @param {object|null} data  Session detail payload.
  * @returns {string} Answer text ('' when none).
  */
 function extractLastAssistantText( data ) {
-	const messages = ( data && Array.isArray( data.messages ) && data.messages ) || [];
+	const root = ( data && data.session ) || data || {};
+	const messages = ( Array.isArray( root.messages ) && root.messages ) || [];
 	let last = '';
 	for ( const msg of messages ) {
 		if ( ! msg || 'assistant' !== msg.role ) {
