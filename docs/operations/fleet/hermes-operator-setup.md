@@ -141,8 +141,8 @@ fallback for force-HTTPS redirects. Tests: `node bin/test-mcp-bridge-ssh.js`.
 Section 6 makes Zed a *second operator of the console*. If you instead want
 Zed to **talk to the Hermes agent** (start runs, read sessions) through the
 box's WebUI, use `bin/hermes-mcp-server.js` — an MCP server that speaks the
-WebUI REST API (login + session cookie + synchronous chat) over public HTTPS.
-No SSH tunnel is involved.
+WebUI REST API (login + session cookie + async submit/poll chat) over public
+HTTPS. No SSH tunnel is involved.
 
 1. Point it at the WebUI and keep the password out of settings.json:
 
@@ -164,7 +164,10 @@ No SSH tunnel is involved.
    }
    ```
 
-2. Tools exposed: `hermes_chat` (send a message, wait for the answer),
+2. Tools exposed: `hermes_chat` (async submit + poll — a run keeps executing
+   server-side even if the MCP client drops; timeout expiry returns
+   `status: "still_running"` with the `stream_id`, and the approval gate is
+   answered with the configured `HERMES_APPROVAL_MODE` choice),
    `hermes_list_sessions`, `hermes_session_detail`, and `hermes_sync_skills`
    (sync the repo `.agents/skills/` tree to the agent). Session cookies expire
    after 1h — the server re-logins automatically.

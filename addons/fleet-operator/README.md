@@ -57,7 +57,8 @@ Filters emitted:
 
 ## Context files to load alongside
 
-- `.context/` subsystem notes (conventions, security checklist, REST API).
+- [`addons/fleet-operator/.context/`](.context/README.md) — addon-level agent context tree (18 files): conventions + security checklist (always), `hermes-ops.md`, `wp-plugin-dev.md`, `mcp-integration.md`, `design-content.md`, 6 operator roles under `roles/`, and `active/` / `archive/` / `templates/` for task scratch + memory. Registered in [`AGENTS.md`](../../AGENTS.md) §2.
+- `.context/` root subsystem notes (conventions, security checklist, REST API).
 - `docs/project/proposals/024-hermes-agent-fleet-operator-implementation-plan.md` — full plan.
 - `docs/operations/fleet/hermes-operator-setup.md` — operator runbook.
 

@@ -1,5 +1,40 @@
 # oOS – Changelog
 
+## [1.1.57] - 2026-08-15
+
+### Changed — Plugin Updater: Base-Only Updates & In-Place Install (PR #5871)
+
+- **Base-only update flow** — WordPress.org base installs can now update the base plugin in place without upgrading to the complete build. New Settings → Advanced "Base Version" panel with check/update actions backed by `check_for_base_update()` and the `wp_mcp_ai_check_base_update` / `wp_mcp_ai_start_base_update` AJAX handlers; the GitHub base package (`nvdigital-open-operator-system-oos-{version}.zip`, plus legacy `mcp-ai-wpoos-base-*` naming) is resolved via the new `ASSET_BASE` asset pattern.
+- **Copy-in-place install replaces `Plugin_Upgrader`** — updates now download the ZIP and copy the extracted files over the live plugin directory (`replace_plugin_from_zip()`), taking a backup snapshot first and restoring it on failure. The plugin directory is never renamed or deleted, and ZIP top-level folder-name mismatches (e.g. complete packages extracting to `-complete` while base installs live in the plain slug) no longer break updates. Upgrade base → complete deactivates a separately installed Pro addon to avoid double-loading Pro.
+- **Pro version from plugin header** — new `WP_MCP_AI_Plugin_Updater::get_pro_installed_version()` reads the Version header of the installed Pro addon instead of the manually maintained `WP_MCP_AI_PRO_VERSION` constant (which had drifted, e.g. 1.1.50 vs 1.1.54); the constant remains as fallback for bundled Pro. The imaging admin page and `wp mcp-ai pro status` CLI now display the same source.
+- 5 files, +530/−266 lines. See [`docs/features/plugin-updater.md`](docs/features/plugin-updater.md) and [`docs/history/2026/fixes/base-update-path-fix.md`](docs/history/2026/fixes/base-update-path-fix.md).
+
+### Changed — Hermes WebUI Chat: Async Submit/Poll (PR #5872)
+
+- `hermes_chat` now submits runs via `/api/chat/start` and polls `/api/chat/stream/status` instead of blocking on a synchronous request. Runs keep executing server-side if the MCP client drops the connection; `HERMES_CHAT_TIMEOUT` budget expiry returns `status: "still_running"` with the `stream_id`, and the approval gate is answered with the configured `HERMES_APPROVAL_MODE` choice (`ask` leaves it pending and returns `status: "needs_approval"`).
+- **Fixed answer extraction for live WebUI payloads** — the streamed response shape from the production WebUI differs from the test fixtures; the answer parser now handles both.
+- `bin/README.md` and tests (19 cases) updated to match.
+
+### Added — Fleet Operator Agent Context Files (PR #5873)
+
+- New `addons/fleet-operator/.context/` tree (18 files) for the operator-agent workflow: addon conventions, Hermes ops, MCP integration, design content, WordPress plugin-dev rules, a 6-role team (analyst/architect/developer/product-manager/qa/scrum-master), active/archive scratch areas, and task/memory templates. Registered in `AGENTS.md` and `addons/fleet-operator/README.md`.
+
+### Fixed — Service Status AI-Provider Detection (PR #5874)
+
+- Provider detection in the Service Status default sources now resolves credentials through `WP_MCP_AI_Credential_Resolver` (plugin settings, WP 7.0 connectors, environment variables, PHP constants) with merged-settings fallback for early bootstrap, instead of reading raw plugin settings keys only. Ollama remains keyless (configured when a base URL is present). New test suite: `tests/test-service-status-provider-detection.php` (135 lines). See [`docs/history/2026/fixes/service-status-provider-detection-fix.md`](docs/history/2026/fixes/service-status-provider-detection-fix.md).
+
+### Versioning
+
+- Bumped to **1.1.57** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.57. Media Worker: v3.0.0 (unchanged).
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+- Bundled skills: **74** base (+ 41 Pro).
+- Total coding-time agent skills: **51** (20 wp-* + 30 design-* + 1 mcp-ai-wpoos-plugin).
+
+---
+
 ## [1.1.56] - 2026-08-14
 
 ### Added — Media Worker Multi-Tenant Shared Worker Mode, v2.4.0 (PR #5866)

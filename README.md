@@ -11,12 +11,14 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.56
-**Release Date:** 2026-08-14
+**Version:** 1.1.57
+**Release Date:** 2026-08-15
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.56 Highlights:** Media Worker v3.0.0 — multi-tenant shared worker mode (v2.4.0, per-site isolation + rate limits), Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`) with usage counters and grouped temp TTLs, Phase 3 operational scale (multisite per-blog tokens, usage reporter, opt-in Redis rate-limit store), zero-downtime token rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds, Cloudways readiness, and worker routing for document generation, OCR, frames, charts, email, QR/translate/PDF, and vectorization. New Hermes tooling: WebUI MCP server, SSH bridge, skill sync (`bin/`), and Zed Console profile.
+**🆕 v1.1.57 Highlights:** Plugin updater rework — base-only update flow for wp.org installs (Settings → Advanced "Base Version" panel), copy-in-place install with backup/rollback replaces `Plugin_Upgrader` (ZIP folder-name mismatches no longer break updates), and Pro version read from the plugin header instead of the drifted constant. Hermes WebUI chat reworked to async submit/poll with approval-gate answers and `still_running` budget expiry. Service Status AI-provider detection now uses the canonical `WP_MCP_AI_Credential_Resolver` (settings + WP 7.0 connectors + env + constants). New `addons/fleet-operator/.context/` agent-context tree (18 files, 6 operator roles).
+
+**Previous (v1.1.56):** Media Worker v3.0.0 — multi-tenant shared worker mode (v2.4.0, per-site isolation + rate limits), Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`) with usage counters and grouped temp TTLs, Phase 3 operational scale (multisite per-blog tokens, usage reporter, opt-in Redis rate-limit store), zero-downtime token rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds, Cloudways readiness, and worker routing for document generation, OCR, frames, charts, email, QR/translate/PDF, and vectorization. New Hermes tooling: WebUI MCP server, SSH bridge, skill sync (`bin/`), and Zed Console profile.
 
 **Previous (v1.1.55):** MCP agent compatibility — JSON-RPC errors return HTTP 200, legacy HTTP+SSE transport, tool rate limiter settings, raw credential headers, bounded async polling. New Hermes Fleet Operator addon (scoped operator credentials). Media Worker v2.2.0 security hardening (SSRF guard, sandboxed Puppeteer, rate limiting) + `WP_MEDIA_WORKER_TOKEN`. Database connection pooling stance (Proposal 023). PostCSS 8.5.26.
 
@@ -151,6 +153,13 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.57)
+
+- 🔄 **Plugin Updater Rework.** New base-only update flow for wp.org base installs (check + in-place install via the GitHub base package; new "Base Version" panel in Settings → Advanced). Installation no longer uses `Plugin_Upgrader` — updates are copy-in-place with a backup snapshot and automatic rollback, so ZIP top-level folder-name mismatches can't break updates. Pro version now read from the plugin header (`get_pro_installed_version()`), fixing drift in the admin page and `wp mcp-ai pro status`. (PR #5871)
+- 🤖 **Hermes Chat — Async Submit/Poll.** `hermes_chat` now submits via `/api/chat/start` and polls `/api/chat/stream/status` — runs keep executing server-side if the MCP client drops, timeout expiry returns `still_running` + `stream_id`, and the approval gate is answered with the configured `HERMES_APPROVAL_MODE` choice. Fixed answer extraction for live WebUI payloads. (PR #5872)
+- 🐛 **Service Status Provider Detection.** AI-provider detection now resolves credentials through `WP_MCP_AI_Credential_Resolver` (plugin settings, WP 7.0 Connectors, env vars, PHP constants) instead of raw settings keys; new 135-line test suite. (PR #5874)
+- 📚 **Fleet Operator Agent Context.** New `addons/fleet-operator/.context/` tree (18 files) — addon conventions, Hermes ops, MCP integration, 6 operator roles, and task/memory templates for operator-agent sessions. (PR #5873)
 
 ### ✨ What's New at a Glance (v1.1.56)
 
@@ -645,6 +654,16 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.57 — August 2026)
+
+### August 15, 2026 — Updater Rework, Hermes Async Chat, Provider Detection Fix
+
+- ✅ **Plugin Updater: Base-Only Updates & In-Place Install — PR #5871 (5 files, +530/-266 lines).** New base-only update flow for wp.org installs: `check_for_base_update()` plus the `wp_mcp_ai_check_base_update` / `wp_mcp_ai_start_base_update` AJAX handlers power a new "Base Version" panel in Settings → Advanced, resolving the GitHub base package (`ASSET_BASE` pattern, incl. legacy `mcp-ai-wpoos-base-*` naming) so base installs can update without upgrading to complete. Installation reworked from `Plugin_Upgrader` to copy-in-place (`replace_plugin_from_zip()`): the live plugin directory is never renamed, a backup snapshot is restored on failure, and base → complete upgrades deactivate a separately installed Pro addon to avoid double-loading. Pro version now read from the plugin header (`get_pro_installed_version()`, constant fallback), fixing drift in the imaging admin page and Pro CLI status. Full details: [`docs/features/plugin-updater.md`](docs/features/plugin-updater.md), [`docs/history/2026/fixes/base-update-path-fix.md`](docs/history/2026/fixes/base-update-path-fix.md).
+- ✅ **Hermes WebUI Chat — Async Submit/Poll — PR #5872 (2 files, +15/-7 lines).** `hermes_chat` submits via `/api/chat/start` and polls `/api/chat/stream/status` instead of a blocking request: runs keep executing server-side if the MCP client drops mid-run, `HERMES_CHAT_TIMEOUT` expiry returns `status: "still_running"` with the `stream_id`, and approval gates are answered with the configured `HERMES_APPROVAL_MODE` choice (`ask` leaves it pending). Answer extraction fixed for live WebUI payload shapes. [`bin/README.md`](bin/README.md) updated.
+- ✅ **Fleet Operator Agent Context — PR #5873 (18 files, +574 lines).** New `addons/fleet-operator/.context/` tree: addon conventions, Hermes ops, MCP integration, design content, wp-plugin-dev rules, 6 operator roles (analyst/architect/developer/product-manager/qa/scrum-master), active/archive scratch areas, and task/memory templates.
+- ✅ **Service Status AI-Provider Detection — PR #5874 (2 files, +168/-20 lines).** Provider detection now resolves credentials through `WP_MCP_AI_Credential_Resolver` (plugin settings, WP 7.0 Connectors, environment variables, PHP constants) with a merged-settings fallback for early bootstrap; Ollama remains keyless. New test suite `tests/test-service-status-provider-detection.php`. See [`docs/history/2026/fixes/service-status-provider-detection-fix.md`](docs/history/2026/fixes/service-status-provider-detection-fix.md).
+- 📦 **Versioning** — bumped to **1.1.57** across all version-bearing files. Pro addon: 1.1.57. Media Worker: **v3.0.0** (unchanged). Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **51**.
 
 ## 🆕 Latest Updates (v1.1.56 — August 2026)
 
