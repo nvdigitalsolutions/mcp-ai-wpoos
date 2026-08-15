@@ -8,7 +8,13 @@
  *
  *   POST /api/auth/login   → session cookie (re-login handled automatically)
  *   GET  /api/sessions     → session list
- *   POST /api/chat         → synchronous chat (agent run, returns {answer})
+ *   POST /api/chat/start   → async chat submit (returns {stream_id} right
+ *                            away; the run keeps going server-side even if
+ *                            this bridge or its MCP client disconnects)
+ *   GET  /api/chat/stream/status → poll the run (returns {active})
+ *   GET  /api/approval/pending   → check the approval gate
+ *   POST /api/approval/respond   → answer the approval gate
+ *   GET  /api/session      → session detail (answer pull after the run)
  *
  * Environment variables (also read from MCP_AI_ENV_FILE, default
  * ~/.nvoos-bridge.env; explicit process env wins):
@@ -18,8 +24,13 @@
  *   HERMES_WEBUI_PASSWORD   WebUI password (required; keep it in the env
  *                           file rather than Zed's settings.json)
  *   HERMES_SESSION_ID       Optional default session for hermes_chat
- *   HERMES_CHAT_TIMEOUT     Chat request timeout in ms (default 300000 —
- *                           agent runs with tools can take minutes)
+ *   HERMES_CHAT_TIMEOUT     Total wait budget for hermes_chat in ms
+ *                           (default 300000 — agent runs with tools can
+ *                           take minutes)
+ *   HERMES_APPROVAL_MODE     Default approval handling while a chat turn is
+ *                           parked on the approval gate: once | session |
+ *                           always | deny | ask (default once). Per-call
+ *                           override via hermes_chat's approval_choice.
  *   HERMES_WEBUI_INSECURE   Set to 1 to skip TLS verification (self-signed)
  *   HERMES_SYNC_SKILLS_ON_START
  *                           Sync .agents/skills/ to the agent after the MCP
@@ -38,7 +49,9 @@
  * Tools exposed:
  *   hermes_list_sessions   — list agent sessions (id, title, model, counts)
  *   hermes_chat            — send a message to the agent and wait for the
- *                            answer (optionally in a specific session)
+ *                            answer via async submit + poll (optionally in a
+ *                            specific session; approval_choice for the
+ *                            pending-approval gate)
  *   hermes_session_detail  — full detail for one session
  *   hermes_sync_skills     — sync .agents/skills/ to the agent's skills via
  *                            the WebUI skills API (also runs once after the
@@ -55,7 +68,7 @@ const { syncSkillsToWebui, DEFAULT_SKILLS_DIR } = require( './hermes-skill-sync.
 
 const LOG = '[hermes-mcp]';
 const SERVER_NAME = 'hermes-webui';
-const SERVER_VERSION = '1.1.0';
+const SERVER_VERSION = '1.2.0';
 const PROTOCOL_VERSION = '2024-11-05';
 
 /**
@@ -78,6 +91,21 @@ let PASSWORD = '';
 let DEFAULT_SESSION_ID = '';
 let INSECURE = false;
 let CHAT_TIMEOUT_MS = 300000;
+let APPROVAL_MODE = 'once';
+
+const APPROVAL_CHOICES = new Set( [ 'once', 'session', 'always', 'deny', 'ask' ] );
+const STREAM_POLL_INTERVAL_MS = 4000;
+const STREAM_POLL_REQUEST_TIMEOUT_MS = 20000;
+
+/**
+ * setTimeout as a promise — used by the chat poll loop.
+ *
+ * @param {number} ms  Milliseconds.
+ * @returns {Promise<void>}
+ */
+function sleep( ms ) {
+	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+}
 
 /**
  * (Re-)read all configuration from the environment.
@@ -89,13 +117,15 @@ function readConfig() {
 	INSECURE = '1' === process.env.HERMES_WEBUI_INSECURE;
 	const timeoutRaw = parseInt( process.env.HERMES_CHAT_TIMEOUT || '', 10 );
 	CHAT_TIMEOUT_MS = Number.isFinite( timeoutRaw ) && timeoutRaw >= 1000 ? timeoutRaw : 300000;
+	const approvalMode = String( process.env.HERMES_APPROVAL_MODE || 'once' ).trim().toLowerCase();
+	APPROVAL_MODE = APPROVAL_CHOICES.has( approvalMode ) ? approvalMode : 'once';
 }
 
 /**
  * Snapshot of the current runtime configuration (used by the standalone
  * sync CLI, bin/sync-skills-to-hermes.js, to reuse this module's HTTP/auth).
  *
- * @returns {object} {baseUrl, password, defaultSessionId, insecure, chatTimeoutMs}.
+ * @returns {object} {baseUrl, password, defaultSessionId, insecure, chatTimeoutMs, approvalMode}.
  */
 function getConfig() {
 	return {
@@ -104,6 +134,7 @@ function getConfig() {
 		defaultSessionId: DEFAULT_SESSION_ID,
 		insecure: INSECURE,
 		chatTimeoutMs: CHAT_TIMEOUT_MS,
+		approvalMode: APPROVAL_MODE,
 	};
 }
 
@@ -251,9 +282,65 @@ async function toolListSessions() {
 }
 
 /**
- * Send a synchronous chat message.
+ * Coerce a message `content` field (plain string or parts array) to text.
  *
- * @param {object} args  {message, session_id?, model?}.
+ * @param {*} content  Content as stored by the WebUI.
+ * @returns {string} Trimmed text ('' when empty or unrecognized).
+ */
+function contentToText( content ) {
+	if ( 'string' === typeof content ) {
+		return content.trim();
+	}
+	if ( Array.isArray( content ) ) {
+		return content
+			.map( ( part ) => {
+				if ( 'string' === typeof part ) {
+					return part;
+				}
+				if ( part && 'string' === typeof part.text ) {
+					return part.text;
+				}
+				return '';
+			} )
+			.join( '' )
+			.trim();
+	}
+	return '';
+}
+
+/**
+ * Extract the newest assistant message from a /api/session payload.
+ *
+ * @param {object|null} data  Session detail payload.
+ * @returns {string} Answer text ('' when none).
+ */
+function extractLastAssistantText( data ) {
+	const messages = ( data && Array.isArray( data.messages ) && data.messages ) || [];
+	let last = '';
+	for ( const msg of messages ) {
+		if ( ! msg || 'assistant' !== msg.role ) {
+			continue;
+		}
+		const text = contentToText( msg.content );
+		if ( text ) {
+			last = text;
+		}
+	}
+	return last;
+}
+
+/**
+ * Send a chat message and wait for the agent's answer.
+ *
+ * Submits via POST /api/chat/start (async — returns a stream_id right away)
+ * and then polls /api/chat/stream/status. Every poll is a short-lived HTTP
+ * request, so the bridge never holds one connection open for the whole agent
+ * run: if the MCP client (or this process) dies mid-run, the run continues
+ * server-side and the answer can be re-read from the session later. The
+ * approval gate is checked each round and answered with the configured
+ * choice unless it is 'ask'.
+ *
+ * @param {object} args  {message, session_id?, model?, approval_choice?, timeout_ms?}.
  * @returns {Promise<object>} Tool result payload.
  */
 async function toolChat( args ) {
@@ -273,22 +360,119 @@ async function toolChat( args ) {
 		sessionId = first.session_id;
 	}
 
+	// Validate the call shape before submitting: an invalid approval_choice
+	// must not inject a message into the conversation and start a run.
+	const timeoutRaw = parseInt( args.timeout_ms, 10 );
+	const budgetMs = Number.isFinite( timeoutRaw ) && timeoutRaw >= 1000 ? timeoutRaw : CHAT_TIMEOUT_MS;
+	const approvalChoice = String( args.approval_choice || APPROVAL_MODE ).trim().toLowerCase();
+	if ( ! APPROVAL_CHOICES.has( approvalChoice ) ) {
+		throw new Error( `Invalid approval_choice '${ approvalChoice }' — use once, session, always, deny, or ask.` );
+	}
+
 	const body = { session_id: sessionId, message };
 	if ( args.model ) {
 		body.model = String( args.model );
 	}
 
-	const { statusCode, data } = await authedRequest( 'POST', '/api/chat', body, CHAT_TIMEOUT_MS );
-	if ( 200 !== statusCode || ! data ) {
-		throw new Error( `POST /api/chat failed (HTTP ${ statusCode }): ${ JSON.stringify( data ) }` );
+	// 1. Submit the run asynchronously — returns immediately.
+	const start = await authedRequest( 'POST', '/api/chat/start', body, 20000 );
+	if ( 200 !== start.statusCode || ! start.data ) {
+		throw new Error( `POST /api/chat/start failed (HTTP ${ start.statusCode }): ${ JSON.stringify( start.data ) }` );
 	}
-	if ( data.error ) {
-		throw new Error( `Hermes error: ${ data.error }` );
+	if ( start.data.error ) {
+		throw new Error( `Hermes error: ${ start.data.error }` );
 	}
+	const streamId = String( start.data.stream_id || '' );
+	if ( ! streamId ) {
+		throw new Error( 'POST /api/chat/start returned no stream_id.' );
+	}
+	const deadline = Date.now() + budgetMs;
+	let finished = false;
+
+	// 2. Poll until the run finishes (or the wait budget runs out).
+	while ( Date.now() < deadline ) {
+		const st = await authedRequest(
+			'GET',
+			`/api/chat/stream/status?stream_id=${ encodeURIComponent( streamId ) }`,
+			null,
+			STREAM_POLL_REQUEST_TIMEOUT_MS
+		);
+		if ( 200 === st.statusCode && st.data && false === st.data.active ) {
+			finished = true;
+			break;
+		}
+		if ( 404 === st.statusCode ) {
+			// Stream record cleaned up server-side — the run is over.
+			finished = true;
+			break;
+		}
+		if ( 200 !== st.statusCode ) {
+			log( `stream status HTTP ${ st.statusCode } — will retry` );
+		}
+
+		// 3. A run parked on the approval gate stays active forever; answer
+		//    it (unless the caller wants to handle it themselves).
+		const pend = await authedRequest(
+			'GET',
+			`/api/approval/pending?session_id=${ encodeURIComponent( sessionId ) }`,
+			null,
+			15000
+		);
+		if ( pend.data && pend.data.pending ) {
+			if ( 'ask' === approvalChoice ) {
+				return {
+					session_id: sessionId,
+					stream_id: streamId,
+					status: 'needs_approval',
+					pending_count: pend.data.pending_count,
+					answer: null,
+				};
+			}
+			try {
+				await authedRequest(
+					'POST',
+					'/api/approval/respond',
+					{ session_id: sessionId, choice: approvalChoice },
+					15000
+				);
+			} catch ( e ) {
+				log( `approval respond failed: ${ e.message } — will retry` );
+			}
+		}
+
+		await sleep( STREAM_POLL_INTERVAL_MS );
+	}
+
+	if ( ! finished ) {
+		// Wait budget exhausted — the run keeps going server-side. Surface
+		// the stream handle so a follow-up call can pick up the answer.
+		return {
+			session_id: sessionId,
+			stream_id: streamId,
+			status: 'still_running',
+			answer: null,
+		};
+	}
+
+	// 4. Pull the answer from the session tail.
+	let answer = '';
+	try {
+		const detail = await authedRequest(
+			'GET',
+			`/api/session?session_id=${ encodeURIComponent( sessionId ) }&msg_limit=10`,
+			null,
+			30000
+		);
+		answer = extractLastAssistantText( detail.data );
+	} catch ( e ) {
+		log( `session answer pull failed: ${ e.message }` );
+	}
+
 	return {
 		session_id: sessionId,
-		status: data.status || 'done',
-		answer: data.answer || '',
+		stream_id: streamId,
+		status: 'done',
+		answer,
 	};
 }
 
@@ -349,13 +533,22 @@ const TOOLS = [
 	},
 	{
 		name: 'hermes_chat',
-		description: 'Send a message to the Hermes agent and wait for its answer. Optionally target a specific session by id (defaults to HERMES_SESSION_ID or the newest session).',
+		description: 'Send a message to the Hermes agent and wait for its answer. The run is submitted asynchronously and polled, so it keeps running server-side even if the MCP client disconnects. Optionally target a specific session by id (defaults to HERMES_SESSION_ID or the newest session).',
 		inputSchema: {
 			type: 'object',
 			properties: {
 				message: { type: 'string', description: 'The message to send.' },
 				session_id: { type: 'string', description: 'Optional session id.' },
 				model: { type: 'string', description: 'Optional model override.' },
+				approval_choice: {
+					type: 'string',
+					enum: [ 'once', 'session', 'always', 'deny', 'ask' ],
+					description: 'How to answer the pending-approval gate if the run parks on it: once, session, always, deny, or ask (leave it pending and return status needs_approval). Defaults to HERMES_APPROVAL_MODE (once).',
+				},
+				timeout_ms: {
+					type: 'integer',
+					description: 'Maximum wait for the answer in ms (default 300000). If the budget expires, the run continues server-side and the tool returns status still_running with the stream_id.',
+				},
 			},
 			required: [ 'message' ],
 		},
