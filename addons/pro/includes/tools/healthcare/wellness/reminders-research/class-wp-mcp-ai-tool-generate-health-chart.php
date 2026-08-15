@@ -186,27 +186,27 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 		// Check if health & wellness management is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_health_wellness_management'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Health & Wellness Management is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_health_wellness_disabled',
+				__( 'Health & Wellness Management is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate member ID.
 		$member_id = absint( $arguments['member_id'] );
 		if ( ! $member_id || get_post_type( $member_id ) !== 'member' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid member ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_invalid_member',
+				__( 'Invalid member ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Check if Chart.js is available.
 		$chartjs_available = $this->check_chartjs_availability();
 		if ( ! $chartjs_available ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Chart.js is not available. Please ensure the package is installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_chartjs_unavailable',
+				__( 'Chart.js is not available. Please ensure the package is installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -215,9 +215,9 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 		$health_data = $this->collect_health_data( $member_id, $metric_type, $arguments );
 
 		if ( empty( $health_data ) || isset( $health_data['error'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => isset( $health_data['error'] ) ? $health_data['error'] : __( 'No health data found for this member.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_no_health_data',
+				isset( $health_data['error'] ) ? $health_data['error'] : __( 'No health data found for this member.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -246,9 +246,9 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 			case 'image':
 				$image_result = $this->generate_chart_image( $chart_config );
 				if ( ! $image_result || isset( $image_result['error'] ) ) {
-					return array(
-						'success' => false,
-						'error'   => isset( $image_result['error'] ) ? $image_result['error'] : __( 'Chart image generation failed.', 'mcp-ai-wpoos-pro' ),
+					return new WP_Error(
+						'wp_mcp_ai_chart_image_failed',
+						isset( $image_result['error'] ) ? $image_result['error'] : __( 'Chart image generation failed.', 'mcp-ai-wpoos-pro' )
 					);
 				}
 				return array(
@@ -468,16 +468,34 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 			return $result;
 		}
 
-		// Try Media Worker sidecar.
+		// Try Media Worker sidecar. The worker returns the PNG as base64
+		// (data_base64) — its output_path points at the WORKER's filesystem
+		// and is unusable here, so the bytes are written to the local
+		// uploads directory.
 		$sidecar = $this->sidecar_request( '/api/data/render-chart', $config );
-		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['output_path'] ) ) {
-			return $sidecar;
+		if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['data_base64'] ) ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding worker-returned PNG bytes is the transport contract, not obfuscation.
+			$bytes = base64_decode( $sidecar['data_base64'], true );
+			if ( false !== $bytes && ! empty( $bytes ) ) {
+				$upload_dir = wp_upload_dir();
+				$filename   = 'health-chart-' . wp_generate_password( 12, false ) . '.png';
+				$file_path  = trailingslashit( $upload_dir['path'] ) . $filename;
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing a chart PNG into the site uploads directory.
+				file_put_contents( $file_path, $bytes );
+				if ( file_exists( $file_path ) && filesize( $file_path ) > 0 ) {
+					return array(
+						'path'   => $file_path,
+						'url'    => trailingslashit( $upload_dir['url'] ) . $filename,
+						'size'   => filesize( $file_path ),
+						'width'  => isset( $sidecar['width'] ) ? (int) $sidecar['width'] : 0,
+						'height' => isset( $sidecar['height'] ) ? (int) $sidecar['height'] : 0,
+					);
+				}
+			}
 		}
 
 		return array(
 			'error' => __( 'Chart image generation requires a Node.js service. Configure the Media Worker sidecar or implement the wp_mcp_ai_chartjs_generate_image filter.', 'mcp-ai-wpoos-pro' ),
 		);
-
-		return $result;
 	}
 }

@@ -9,12 +9,12 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { siteDirFor, pathGuard } from '../utils/site-paths.js';
 
 export const documentRouter = Router();
 
-function tempFile(ext) {
-  return path.join(os.tmpdir(), `doc-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`);
+function tempFile( req, ext ) {
+	return path.join( siteDirFor( req.site, 'doc' ), `doc-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 // ── POST /excel — generate Excel spreadsheet ───────────────
@@ -64,7 +64,7 @@ documentRouter.post('/excel', async (req, res) => {
       }
     }
 
-    const outPath = outputPath || tempFile('xlsx');
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, 'xlsx' );
     await workbook.xlsx.writeFile(outPath);
     const stats = fs.statSync(outPath);
 
@@ -73,6 +73,9 @@ documentRouter.post('/excel', async (req, res) => {
       output_path: outPath,
       size: stats.size,
       sheets: workbook.worksheets.length,
+      // data_base64 is the plugin contract: output_path points at the
+      // WORKER's filesystem and is unusable by the calling site.
+      data_base64: fs.readFileSync(outPath).toString('base64'),
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -193,11 +196,18 @@ documentRouter.post('/word', async (req, res) => {
     });
 
     const buffer = await Packer.toBuffer(doc);
-    const outPath = outputPath || tempFile('docx');
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, 'docx' );
     fs.writeFileSync(outPath, buffer);
     const stats = fs.statSync(outPath);
 
-    res.json({ success: true, output_path: outPath, size: stats.size });
+    res.json({
+      success: true,
+      output_path: outPath,
+      size: stats.size,
+      // data_base64 is the plugin contract: output_path points at the
+      // WORKER's filesystem and is unusable by the calling site.
+      data_base64: buffer.toString('base64'),
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

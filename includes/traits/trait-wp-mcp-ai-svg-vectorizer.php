@@ -23,6 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - WordPress file functions (wp_tempnam, wp_delete_file, etc.)
  */
 trait WP_MCP_AI_SVG_Vectorizer {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * Convert a raster image to SVG format using vectorization.
@@ -32,11 +33,11 @@ trait WP_MCP_AI_SVG_Vectorizer {
 	 * @return array|WP_Error SVG storage data or error.
 	 */
 	protected function convert_to_svg( array $storage, array $arguments ) {
-		// Check if Node.js is available.
-		if ( ! $this->is_nodejs_available() ) {
+		// Check if Node.js is available (or the Media Worker sidecar).
+		if ( ! $this->is_nodejs_available() && ! $this->is_sidecar_upload_supported() ) {
 			return new WP_Error(
 				'wp_mcp_ai_nodejs_required',
-				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'mcp-ai-wpoos' )
+				__( 'Node.js is required for SVG vectorization but was not found on the system. Configure the Media Worker sidecar or install Node.js.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -69,22 +70,44 @@ trait WP_MCP_AI_SVG_Vectorizer {
 			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
 		);
 
-		// Execute vectorization script.
-		$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
-		$script_args = array(
-			$file_path,
-			$temp_output,
-			wp_json_encode( $vectorization_options ),
-		);
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured or the health check fails). The
+		// string options mirror the local bin/vectorize-image.js contract;
+		// the worker maps them to the numeric v0.0.5 config enums.
+		$vectorize_result = null;
+		if ( $this->is_sidecar_upload_supported() ) {
+			$sidecar = $this->sidecar_upload(
+				'/api/image/vectorize',
+				$file_path,
+				array( 'options' => wp_json_encode( $vectorization_options ) ),
+				120
+			);
+			if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['svg'] ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing the worker-returned SVG into the temp output file consumed by the shared save flow.
+				if ( false !== file_put_contents( $temp_output, $sidecar['svg'] ) ) {
+					$vectorize_result = array( 'success' => true );
+				}
+			}
+		}
 
-		$vectorize_result = $this->execute_nodejs_script(
-			$script_path,
-			$script_args,
-			array(
-				'timeout'    => 60,
-				'parse_json' => true,
-			)
-		);
+		// Fall back to the local vectorization script.
+		if ( null === $vectorize_result ) {
+			$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
+			$script_args = array(
+				$file_path,
+				$temp_output,
+				wp_json_encode( $vectorization_options ),
+			);
+
+			$vectorize_result = $this->execute_nodejs_script(
+				$script_path,
+				$script_args,
+				array(
+					'timeout'    => 60,
+					'parse_json' => true,
+				)
+			);
+		}
 
 		if ( is_wp_error( $vectorize_result ) ) {
 			wp_delete_file( $temp_output );
@@ -142,12 +165,24 @@ trait WP_MCP_AI_SVG_Vectorizer {
 		$base_name = preg_replace( '/\.(png|jpg|jpeg|gif|webp)$/i', '', $base_name );
 		$file_name = $base_name . '-svg-' . gmdate( 'Ymd-His' ) . '.svg';
 
-		// Upload SVG file.
+		// Upload SVG file. WordPress rejects image/svg+xml by default (an
+		// XSS surface for arbitrary uploads), so allow it for this single
+		// call only — producing an SVG attachment is the entire purpose
+		// of this helper. The filter is removed immediately after.
 		if ( ! function_exists( 'wp_upload_bits' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 
+		$allow_svg_mime = static function ( $mimes ) {
+			if ( ! is_array( $mimes ) ) {
+				$mimes = array();
+			}
+			$mimes['svg'] = 'image/svg+xml';
+			return $mimes;
+		};
+		add_filter( 'upload_mimes', $allow_svg_mime );
 		$upload = wp_upload_bits( $file_name, null, $svg_data );
+		remove_filter( 'upload_mimes', $allow_svg_mime );
 
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'mcp-ai-wpoos' ), array( 'error' => $upload['error'] ) );

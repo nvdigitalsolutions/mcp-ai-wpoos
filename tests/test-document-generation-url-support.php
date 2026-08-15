@@ -8,6 +8,14 @@
  * @license   GPL-3.0-or-later
  */
 
+// The merge tool is required at file scope so the test stub (in
+// tests/helpers/) can extend it; individual tests' require_once calls
+// remain idempotent.
+if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-merge-pdfs.php';
+	require_once __DIR__ . '/helpers/class-wp-mcp-ai-merge-pdfs-test-stub.php';
+}
+
 /**
  * Test class for document generation tools with URL support.
  *
@@ -90,13 +98,12 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 		$tool   = new WP_MCP_AI_Tool_Extract_PDF_Text();
 		$result = $tool->execute( array(), array( 'user_id' => $this->user_id ) );
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertEquals( 'missing_input', $result['error'] );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'missing_input', $result->get_error_code() );
 		// Error report must mention all three accepted parameters.
-		$this->assertStringContainsString( 'attachment_id', $result['report'] );
-		$this->assertStringContainsString( 'file_id', $result['report'] );
-		$this->assertStringContainsString( 'url', $result['report'] );
+		$this->assertStringContainsString( 'attachment_id', $result->get_error_message() );
+		$this->assertStringContainsString( 'file_id', $result->get_error_message() );
+		$this->assertStringContainsString( 'url', $result->get_error_message() );
 	}
 
 	/**
@@ -106,17 +113,15 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-extract-pdf-text.php';
 		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
-		$tool   = new WP_MCP_AI_Tool_Extract_PDF_Text();
+		$tool = new WP_MCP_AI_Tool_Extract_PDF_Text();
 		// A file ID with an unrecognised prefix should return an error rather than crashing.
 		$result = $tool->execute(
 			array( 'file_id' => 'unknown-format-id-12345' ),
 			array( 'user_id' => $this->user_id )
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertNotEmpty( $result['report'] );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertNotEmpty( $result->get_error_message() );
 	}
 
 	/**
@@ -198,7 +203,7 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 	public function test_merge_pdfs_requires_ids_or_urls() {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-merge-pdfs.php';
 
-		$tool   = new WP_MCP_AI_Tool_Merge_PDFs();
+		$tool   = new WP_MCP_AI_Merge_PDFs_Test_Stub();
 		$result = $tool->execute( array(), array( 'user_id' => $this->user_id ) );
 
 		$this->assertIsArray( $result );
@@ -212,7 +217,7 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 	public function test_merge_pdfs_requires_minimum_two_files() {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-merge-pdfs.php';
 
-		$tool = new WP_MCP_AI_Tool_Merge_PDFs();
+		$tool = new WP_MCP_AI_Merge_PDFs_Test_Stub();
 
 		// Test with one attachment_id.
 		$result = $tool->execute(
@@ -222,7 +227,7 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'error', $result );
-		$this->assertStringContainsString( 'at least 2', $result['error'] );
+		$this->assertStringContainsString( 'At least 2', $result['error'] );
 
 		// Test with one URL.
 		$result = $tool->execute(
@@ -232,7 +237,7 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'error', $result );
-		$this->assertStringContainsString( 'at least 2', $result['error'] );
+		$this->assertStringContainsString( 'At least 2', $result['error'] );
 	}
 
 	/**

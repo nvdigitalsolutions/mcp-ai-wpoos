@@ -33,6 +33,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
  */
 class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * {@inheritdoc}
@@ -167,36 +168,37 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Media Toolkit is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_media_toolkit_disabled',
+				__( 'Media Toolkit is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Validate attachment exists and is an image.
 		$attachment_id = absint( $arguments['attachment_id'] );
 		if ( ! $attachment_id || ! wp_attachment_is_image( $attachment_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid attachment ID or not an image.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_invalid_attachment',
+				__( 'Invalid attachment ID or not an image.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Get source file path.
 		$source_path = get_attached_file( $attachment_id );
 		if ( ! $source_path || ! file_exists( $source_path ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Image file not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_image_not_found',
+				__( 'Image file not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
-		// Check if Sharp is available (Node.js package).
+		// Check if Sharp is available (Node.js package). Without local Sharp,
+		// the Media Worker sidecar can still optimize via /api/image/optimize.
 		$sharp_available = $this->check_sharp_availability();
-		if ( ! $sharp_available ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Sharp is not fully installed. Sharp requires Node.js, platform-specific binaries (libvips), and its dependencies (detect-libc, color, semver). To install: (1) Navigate to addons/pro directory, (2) Run "npm install --include=optional" to install Sharp with platform binaries, (3) Run "npm run build" to copy to vendor directory. See docs/BUILD_AND_DISTRIBUTION.md for details.', 'mcp-ai-wpoos-pro' ),
+		if ( ! $sharp_available && ! $this->is_sidecar_upload_supported() ) {
+			return new WP_Error(
+				'wp_mcp_ai_sharp_unavailable',
+				__( 'Sharp is not fully installed and no Media Worker sidecar is configured. Sharp requires Node.js, platform-specific binaries (libvips), and its dependencies (detect-libc, color, semver). To install: (1) Navigate to addons/pro directory, (2) Run "npm install --include=optional" to install Sharp with platform binaries, (3) Run "npm run build" to copy to vendor directory. Alternatively, configure the Media Worker sidecar in Settings → Media Worker to optimize via the worker. See docs/BUILD_AND_DISTRIBUTION.md for details.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -240,13 +242,16 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 			$params['rotate'] = absint( $arguments['rotate'] );
 		}
 
-		// Process image with Sharp.
-		$result = $this->process_with_sharp( $params );
+		// Process image: local Sharp subprocess when available, otherwise the
+		// Media Worker sidecar (multipart /api/image/optimize).
+		$result = $sharp_available
+			? $this->process_with_sharp( $params )
+			: $this->optimize_via_sidecar( $params );
 
 		if ( ! $result || isset( $result['error'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => isset( $result['error'] ) ? $result['error'] : __( 'Image processing failed.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_sharp_process_failed',
+				isset( $result['error'] ) ? $result['error'] : __( 'Image processing failed.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -407,6 +412,109 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Optimize an image via the Media Worker sidecar (/api/image/optimize).
+	 *
+	 * Fallback for sidecar-only sites without a local Sharp installation.
+	 * The worker route supports width scaling, format conversion, and
+	 * quality; operations it cannot do (enhance, rotate, height-only
+	 * resize) return an error so the caller surfaces it honestly.
+	 *
+	 * @param array $params Processing parameters (same shape as process_with_sharp).
+	 * @return array Result array matching the local Sharp subprocess shape
+	 *               (output_path, original_size, optimized_size,
+	 *               reduction_percent, dimensions), or array with 'error'.
+	 */
+	private function optimize_via_sidecar( $params ) {
+		$source_path = isset( $params['source'] ) ? $params['source'] : '';
+		$operation   = isset( $params['operation'] ) ? $params['operation'] : 'optimize';
+
+		$fields = array(
+			'quality' => isset( $params['quality'] ) ? absint( $params['quality'] ) : 80,
+		);
+
+		switch ( $operation ) {
+			case 'resize':
+				if ( ! empty( $params['height'] ) && empty( $params['width'] ) ) {
+					return array( 'error' => __( 'The worker resize supports width-based scaling only — install local Sharp for height-based resizes.', 'mcp-ai-wpoos-pro' ) );
+				}
+				if ( ! empty( $params['width'] ) ) {
+					$fields['width'] = absint( $params['width'] );
+				}
+				break;
+
+			case 'convert':
+				$format          = isset( $params['format'] ) ? sanitize_text_field( $params['format'] ) : 'webp';
+				$format          = preg_replace( '/[^a-zA-Z0-9]/', '', $format );
+				$fields['format'] = $format ? $format : 'webp';
+				break;
+
+			case 'enhance':
+			case 'rotate':
+				return array( 'error' => __( 'The worker image API does not support the requested operation (enhance/rotate) — install local Sharp to use it.', 'mcp-ai-wpoos-pro' ) );
+
+			case 'optimize':
+			default:
+				break;
+		}
+
+		$sidecar = $this->sidecar_upload( '/api/image/optimize', $source_path, $fields, 120 );
+
+		if ( is_wp_error( $sidecar ) ) {
+			return array( 'error' => $sidecar->get_error_message() );
+		}
+		if ( empty( $sidecar['b64'] ) ) {
+			return array( 'error' => isset( $sidecar['error'] ) ? $sidecar['error'] : __( 'Worker image optimization returned no image data.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Decode the worker bytes and write them to a local temp file, so the
+		// result matches the local Sharp subprocess shape and the rest of
+		// execute() (media upload, response fields) is unchanged.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding worker-returned image bytes is the transport contract, not obfuscation.
+		$bytes = base64_decode( $sidecar['b64'], true );
+		if ( false === $bytes || '' === $bytes ) {
+			return array( 'error' => __( 'Worker returned invalid image data.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$format = isset( $fields['format'] ) ? $fields['format'] : 'webp';
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		$base   = wp_tempnam( 'sharp-sidecar-' );
+		if ( ! $base ) {
+			return array(
+				'error' => sprintf(
+					/* translators: %s: system temp directory path */
+					__( 'Failed to create temporary file for optimized image. Check write permissions on %s.', 'mcp-ai-wpoos-pro' ),
+					get_temp_dir()
+				),
+			);
+		}
+		$final_path = $base . '.' . $format;
+		wp_delete_file( $base ); // Remove placeholder; write the ext-versioned path.
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing optimized image bytes to a site temp file.
+		if ( false === file_put_contents( $final_path, $bytes ) ) {
+			return array( 'error' => __( 'Failed to write optimized image file.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$reduction = null;
+		if ( isset( $sidecar['savings_percent'] ) ) {
+			$reduction = (float) rtrim( (string) $sidecar['savings_percent'], '%' );
+		}
+
+		return array(
+			'output_path'       => $final_path,
+			'original_size'     => isset( $sidecar['original_size'] ) ? (int) $sidecar['original_size'] : filesize( $source_path ),
+			'optimized_size'    => (int) $sidecar['optimized_size'],
+			'reduction_percent' => $reduction,
+			'dimensions'        => isset( $sidecar['width'] ) ? array(
+				'width'  => (int) $sidecar['width'],
+				'height' => null,
+			) : null,
+		);
 	}
 
 	/**

@@ -1,7 +1,7 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: March 2026.
+> Last reviewed: August 2026.
 
 ---
 
@@ -86,11 +86,57 @@ Authorization: Bearer cred_xxxxx.SECRET
 ```
 Credentials are stored hashed in post meta. Generated via `WP_MCP_AI_Credential_Manager`.
 
+Since v1.1.55 the raw credential form is also accepted on MCP routes
+(`Authorization: cred_xxxxx.SECRET` without the `Bearer ` prefix) for agent
+configs that forward the header verbatim (Cloudways Agent, etc.). Gated by
+filter `wp_mcp_ai_accept_raw_credential_header` (default `true`).
+
 ### 3. Guest Tokens
 ```http
 X-WP-MCP-AI-Guest: <guest-token>
 ```
 Temporary tokens for public chat surfaces; expire after 24 hours.
+
+---
+
+## MCP Endpoint Transport & Error Semantics
+
+`POST /mcp-ai/v1/mcp` is the JSON-RPC 2.0 endpoint (Streamable HTTP). Two
+client classes exist and are distinguished on GET by the `Accept` header:
+
+- **Streamable HTTP** — `Accept` contains `application/json` → GET returns
+  the discovery JSON, POST returns JSON-RPC over JSON.
+- **Legacy HTTP+SSE** (v1.1.55+, `WP_MCP_AI_LEGACY_SSE_ENABLED`) —
+  SSE-only `Accept: text/event-stream` or `?stream=true` → GET serves an
+  `event: endpoint` handshake with a credential-bound session
+  (`WP_MCP_AI_SSE_Session_Store`); POST with `session_id` returns 202 and
+  the JSON-RPC response is delivered as `event: message` on the GET stream.
+
+Rules for REST/controller code:
+
+1. **JSON-RPC errors must return HTTP 200** with the `{"jsonrpc","id","error"}`
+   envelope (`mcp_error_response()`). Client SDKs drop non-2xx bodies, so a
+   500 turns a tool error into a silent hang for the agent. Auth/permission
+   failures and pre-dispatch guards keep real HTTP statuses (401/403/429).
+   Filter: `wp_mcp_ai_mcp_error_http_status`.
+2. **GET/HEAD must not consume the request rate-limit budget**
+   (`check_rate_limit()` exempts them) — discovery/SSE probe retry loops
+   would otherwise exhaust the hourly quota.
+3. **Tool rate limiting** is settings-driven (`tool_rate_limit_max` /
+   `tool_rate_limit_window` / `tool_rate_limit_exempt_tokens`) and exempts
+   credential-token traffic by default. Constants `TOOL_RATE_LIMIT_MAX` /
+   `TOOL_RATE_LIMIT_WINDOW` remain only as fallbacks.
+4. **`GET /sse` is a directory stream, not an MCP message channel** — legacy
+   SSE clients get their handshake from GET `/mcp` (SSE-only Accept), never
+   from `/sse`.
+5. **Async tool waits must stay under proxy timeouts** —
+   `mcp_wait_for_async_tool()` defaults to ~45s (15 polls × 3s) and kicks
+   stuck jobs inline via `kick_inline_if_stale()`. Do not raise the poll
+   budget past ~30 polls on Cloudflare-proxied sites (524 at ~100s).
+
+See `docs/developer/implementation-plan-mcp-agent-compat.md` for the full
+rationale and the `.agents/skills/mcp-ai-wpoos-plugin` skill for operational
+client-configuration details.
 
 ---
 
@@ -174,6 +220,8 @@ flush();
 
 | Method | Route | Description |
 |--------|-------|-------------|
+| POST | `/mcp-ai/v1/mcp` | MCP JSON-RPC 2.0 endpoint (Streamable HTTP); optional `session_id` param for legacy SSE sessions |
+| GET | `/mcp-ai/v1/mcp` | Discovery JSON by default; legacy SSE handshake for SSE-only `Accept` (v1.1.55+) |
 | GET | `/mcp-ai/v1/assistants` | List available assistants (SSE support) |
 | POST | `/mcp-ai/v1/chat` | Send chat messages with streaming responses |
 | POST | `/mcp-ai/v1/tools` | Execute tools directly |
@@ -183,6 +231,9 @@ flush();
 | POST | `/mcp-ai/v1/cron-status/{job_id}/cancel` | Cancel a running async tool job (owner only) |
 | POST | `/mcp-ai/v1/cron-status/{job_id}/retry` | Re-queue a failed/cancelled async tool job (owner only) |
 | `*` | `/mcp-ai/v1/chat-memory/*` | Chat-client Memory Bridge proxy (6 routes — preferences, wake-up, recall, store, audit, `/{context_id}`) |
+| `*` | `/mcp-ai/v1/paper-store` | Paper Store CRUD + search + import/export for remote site access (v1.1.52) |
+| `*` | `/mcp-ai-pro/v1/catalogues/*` | Skill catalogue management (Pro) — discover/install skills from remote GitHub repos |
+| `*` | `/mcp-ai-pro/v1/analytics/*` | Shared Analytics Service endpoints (Pro, v1.1.53) — cross-platform social/ecommerce analytics |
 
 The cron-status routes are implemented by `WP_MCP_AI_REST_Tools_Controller` and
 delegate to `WP_MCP_AI_Tool_Async_Executor::cancel_job()` / `retry_job()` /

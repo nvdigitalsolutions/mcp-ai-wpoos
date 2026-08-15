@@ -20608,7 +20608,7 @@
 	            if (stopped) { return; }
 	            reconnectTimer = setTimeout(function() {
 	                reconnectTimer = null;
-	                if (!stopped) { errorBackoff = RECONNECT_BASE_MS; open(); }
+	                if (!stopped) { open(); }
 	            }, delayMs);
 	        }
 
@@ -20659,6 +20659,11 @@
 
             es.addEventListener('ping', function(ev) {
                 if (ev.lastEventId) { lastEventId = parseInt(ev.lastEventId, 10) || lastEventId; }
+                // Reset error backoff on first successful ping so that future
+                // network disruptions don't start from a stale inflated value.
+                if (errorBackoff > RECONNECT_BASE_MS) {
+                    errorBackoff = RECONNECT_BASE_MS;
+                }
             });
 
 	            // When the server sends [DONE] (via generic message event), close

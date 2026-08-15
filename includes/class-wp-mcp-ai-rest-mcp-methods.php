@@ -21,6 +21,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 trait WP_MCP_AI_REST_MCP_Methods {
 
 	/**
+	 * Supported MCP protocol versions in descending order (newest first).
+	 *
+	 * Used for version negotiation during initialize / server/discover.
+	 * When a client connects, the server picks the highest version both
+	 * parties support. Falls back to 2024-11-05 when the client provides
+	 * no version information, for maximum backward compatibility.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @return array Supported versions, newest first.
+	 */
+	protected function get_supported_protocol_versions() {
+		return array(
+			'2026-07-28',
+			'2025-06-18',
+			'2025-03-26',
+			'2024-11-05',
+		);
+	}
+
+	/**
 	 * Handle MCP protocol requests using JSON-RPC 2.0 format.
 	 *
 	 * This endpoint implements the Model Context Protocol (MCP) specification,
@@ -52,6 +73,66 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		return $this->process_single_mcp_message( $message, $request );
+	}
+
+	/**
+	 * Process an MCP JSON-RPC request and return raw response arrays.
+	 *
+	 * Shared by the Streamable HTTP (JSON) transport and the legacy SSE
+	 * transport: both need the JSON-RPC response payloads, but each delivers
+	 * them over a different channel. Notifications (messages without an id)
+	 * produce no response element.
+	 *
+	 * @since 1.1.55
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return array List of JSON-RPC response arrays (0..n entries).
+	 */
+	public function process_mcp_request_to_data( WP_REST_Request $request ) {
+		$body = $request->get_body();
+
+		if ( empty( $body ) ) {
+			$error = $this->mcp_error_response( null, -32700, 'Parse error: Empty request body' );
+
+			return array( $error->get_data() );
+		}
+
+		$message = json_decode( $body, true );
+
+		if ( null === $message ) {
+			$error = $this->mcp_error_response( null, -32700, 'Parse error: Invalid JSON' );
+
+			return array( $error->get_data() );
+		}
+
+		// JSON-RPC batching: process each message and collect the responses.
+		if ( is_array( $message ) && isset( $message[0] ) ) {
+			$response = $this->handle_mcp_batch( $message, $request );
+			$data     = $response instanceof WP_REST_Response ? $response->get_data() : null;
+
+			// Notifications-only batches return 202 with a null body.
+			if ( null === $data ) {
+				return array();
+			}
+
+			return is_array( $data ) ? $data : array( $data );
+		}
+
+		if ( ! is_array( $message ) ) {
+			$error = $this->mcp_error_response( null, -32700, 'Parse error: Invalid JSON' );
+
+			return array( $error->get_data() );
+		}
+
+		$response = $this->process_single_mcp_message( $message, $request );
+		$data     = $response instanceof WP_REST_Response ? $response->get_data() : null;
+
+		// Notifications return 202 with a null body — nothing to deliver.
+		if ( null === $data ) {
+			return array();
+		}
+
+		return array( $data );
 	}
 
 	/**
@@ -166,6 +247,21 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$method = $message['method'];
 		$params = isset( $message['params'] ) ? $message['params'] : array();
 		$id     = isset( $message['id'] ) ? $message['id'] : null;
+
+		// Extract request-level priority from X-Priority header or _meta param.
+		// Propagated through context to async job queuing for SLA-aware dispatch.
+		// Supported values: realtime, high, normal, low, batch.
+		$header_priority = $request->get_header( 'X-Priority' );
+		if ( null !== $header_priority ) {
+			$priority = self::normalize_priority( $header_priority );
+		} elseif ( isset( $params['_meta']['priority'] ) ) {
+			$priority = self::normalize_priority( $params['_meta']['priority'] );
+		} else {
+			$priority = null;
+		}
+		if ( null !== $priority ) {
+			$request->set_param( '_priority', $priority );
+		}
 
 		// SEP-2243: Validate Mcp-Method header against body method.
 		$header_method = $request->get_header( 'Mcp-Method' );
@@ -418,8 +514,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			}
 		}
 
+		$negotiated_version = $this->negotiate_protocol_version( $params );
+
 		$response = array(
-			'protocolVersion' => '2026-07-28',
+			'protocolVersion' => $negotiated_version,
 			'capabilities'    => array(
 				'tools'     => array( 'listChanged' => true ),
 				'resources' => array(
@@ -501,6 +599,54 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	}
 
 	/**
+	 * Negotiate the MCP protocol version with the client.
+	 *
+	 * Picks the highest version the server supports that the client also
+	 * supports, using the client's protocolVersion and optional
+	 * supportedProtocolVersions array from the initialize/discover params.
+	 * Defaults to 2024-11-05 for maximum backward compatibility when the
+	 * client provides no version information (e.g. older Zed, Claude Desktop).
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param array $params Client's initialize/discover params.
+	 * @return string Negotiated protocol version.
+	 */
+	protected function negotiate_protocol_version( $params ) {
+		// Collect all versions the client claims to support.
+		$client_versions = array();
+
+		if ( isset( $params['protocolVersion'] ) && is_string( $params['protocolVersion'] ) ) {
+			$client_versions[] = $params['protocolVersion'];
+		}
+
+		if ( isset( $params['supportedProtocolVersions'] ) && is_array( $params['supportedProtocolVersions'] ) ) {
+			foreach ( $params['supportedProtocolVersions'] as $v ) {
+				if ( is_string( $v ) ) {
+					$client_versions[] = $v;
+				}
+			}
+		}
+
+		$client_versions = array_unique( $client_versions );
+
+		if ( empty( $client_versions ) ) {
+			// No version info from client — default to 2024-11-05 for max compatibility.
+			return '2024-11-05';
+		}
+
+		// Pick the highest version both support (server list is newest-first).
+		foreach ( $this->get_supported_protocol_versions() as $server_version ) {
+			if ( in_array( $server_version, $client_versions, true ) ) {
+				return $server_version;
+			}
+		}
+
+		// No overlap — fall back to oldest widely-supported version.
+		return '2024-11-05';
+	}
+
+	/**
 	 * Handle MCP initialize request (legacy, pre-2026-07-28).
 	 *
 	 * Deprecated in favor of mcp_server_discover() per MCP 2026-07-28.
@@ -552,8 +698,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			}
 		}
 
+		$negotiated_version = $this->negotiate_protocol_version( $params );
+
 		$response = array(
-			'protocolVersion' => '2026-07-28',
+			'protocolVersion' => $negotiated_version,
 			'capabilities'    => array(
 				'tools'     => array( 'listChanged' => true ),
 				'resources' => array(
@@ -717,7 +865,6 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @return array|WP_Error
 	 */
 	protected function mcp_tools_list( $params, WP_REST_Request $request ) {
-		unset( $request ); // Required by MCP protocol method signature.
 		$assistant_id = 0;
 
 		// Check if assistant_id is provided in params.
@@ -817,6 +964,22 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		/**
+		 * Filter the tools exposed to the current MCP client.
+		 *
+		 * External-operator integrations (e.g. the fleet-operator addon)
+		 * scope tools/list to a per-credential allowlist via this filter.
+		 * Integrations MUST pair it with enforcement on tools/call (see the
+		 * wp_mcp_ai_pre_execute_tool filter) so tools hidden here cannot be
+		 * invoked by guessing their name.
+		 *
+		 * @since 1.1.52
+		 *
+		 * @param array           $mcp_tools MCP-format tool entries.
+		 * @param WP_REST_Request $request   Current REST request.
+		 */
+		$mcp_tools = apply_filters( 'wp_mcp_ai_mcp_tools_list', $mcp_tools, $request );
+
+		/**
 		 * Filter the cache TTL (in milliseconds) for the tools/list response.
 		 *
 		 * MCP 2026-07-28 (SEP-2549) requires ttlMs and cacheScope on list endpoints.
@@ -893,6 +1056,18 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// Convert REST response to MCP format.
 		$data = $result instanceof WP_REST_Response ? $result->get_data() : $result;
 
+		// Handle async tool execution: poll for completion when the tool was
+		// queued asynchronously (e.g. EZuite ERP, video generation). Without
+		// this, the pending response (status/job_id, no "result" key) would
+		// hit the guard below and return a misleading internal error.
+		if ( $this->is_mcp_async_tool_result( $data ) ) {
+			$async_result = $this->mcp_wait_for_async_tool( $data['job_id'], $tool_name );
+			if ( is_wp_error( $async_result ) ) {
+				return $async_result;
+			}
+			$data = array( 'result' => $async_result );
+		}
+
 		// Guard against missing 'result' key.
 		if ( ! isset( $data['result'] ) ) {
 			return new WP_Error(
@@ -929,6 +1104,136 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					'text' => $text_content,
 				),
 			),
+		);
+	}
+
+	/**
+	 * Check if a REST response from handle_tool_request is an async/pending result.
+	 *
+	 * When the async orchestrator queues a tool for background execution,
+	 * handle_tool_request returns {status: "pending", job_id: "…", async: true}
+	 * instead of the normal {result: …} envelope. This detects that case so
+	 * mcp_tools_call can poll for completion.
+	 *
+	 * @since 2.x.0
+	 *
+	 * @param array $data Response data from handle_tool_request.
+	 * @return bool True if the response is an async pending result.
+	 */
+	protected function is_mcp_async_tool_result( $data ) {
+		return is_array( $data )
+			&& isset( $data['async'] )
+			&& $data['async']
+			&& ! empty( $data['job_id'] );
+	}
+
+	/**
+	 * Poll for completion of an async tool job.
+	 *
+	 * Mirrors the pattern in WP_MCP_AI_Chat_Service::wait_for_async_tool_completion
+	 * so direct MCP tools/call requests get the same behaviour as the chat client.
+	 *
+	 * The default poll budget (15 polls x 3s = 45s) is deliberately kept below
+	 * typical proxy timeouts (Cloudflare 524 at ~100s): when the queue runner
+	 * is stalled, agents get a visible wp_mcp_ai_async_tool_timeout error
+	 * instead of a connection reset. Stuck jobs are kicked inline so hosts
+	 * with a dead WP-Cron loopback still make progress.
+	 *
+	 * @since 2.x.0
+	 * @since 1.1.55 Bounded default poll budget; inline kick for stuck jobs.
+	 *
+	 * @param string $job_id   Async job identifier.
+	 * @param string $tool_name Tool name for error messages.
+	 * @return array|WP_Error Final tool result or error.
+	 */
+	protected function mcp_wait_for_async_tool( $job_id, $tool_name ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+		}
+
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+
+		/**
+		 * Filter the maximum number of status polls while waiting for an async
+		 * tool job submitted via MCP tools/call.
+		 *
+		 * Default 15 (with the 3s interval, ~45s total) keeps the request
+		 * under common proxy timeouts. Raise for long-running tools, but be
+		 * aware values above ~30 risk Cloudflare 524 on proxied sites.
+		 *
+		 * @since 1.1.55
+		 *
+		 * @param int $max_polls Maximum poll count. Default 15.
+		 */
+		$max_polls = (int) apply_filters( 'wp_mcp_ai_async_max_polls', 15 );
+
+		/**
+		 * Filter the poll interval in seconds while waiting for an async tool job.
+		 *
+		 * @since 1.1.55
+		 *
+		 * @param int $poll_interval Interval between polls in seconds. Default 3.
+		 */
+		$poll_interval = (int) apply_filters( 'wp_mcp_ai_async_poll_interval', 3 );
+		$poll_count    = 0;
+
+		$required_time = ( $max_polls * $poll_interval ) + 60;
+		if ( function_exists( 'set_time_limit' ) ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			@set_time_limit( $required_time );
+		}
+
+		while ( $poll_count < $max_polls ) {
+			// Self-heal stuck jobs: on hosts where WP-Cron never fires, drive
+			// the job forward inline (no-op when the job is healthy).
+			$executor->kick_inline_if_stale( $job_id );
+
+			$job_status = $executor->get_result( $job_id );
+
+			if ( is_wp_error( $job_status ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_async_tool_failed',
+					sprintf(
+						/* translators: 1: tool name, 2: error message */
+						__( '%1$s failed: %2$s', 'mcp-ai-wpoos' ),
+						$tool_name,
+						$job_status->get_error_message()
+					)
+				);
+			}
+
+			$status = isset( $job_status['status'] ) ? $job_status['status'] : 'unknown';
+
+			if ( 'completed' === $status ) {
+				return isset( $job_status['result'] ) ? $job_status['result'] : array();
+			}
+
+			if ( 'failed' === $status ) {
+				$error_msg = isset( $job_status['error'] ) ? $job_status['error'] : __( 'Unknown error', 'mcp-ai-wpoos' );
+				return new WP_Error(
+					'wp_mcp_ai_async_tool_failed',
+					sprintf(
+						/* translators: 1: tool name, 2: error message */
+						__( '%1$s failed: %2$s', 'mcp-ai-wpoos' ),
+						$tool_name,
+						$error_msg
+					)
+				);
+			}
+
+			// Still pending — wait before next poll.
+			sleep( $poll_interval );
+			++$poll_count;
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_async_tool_timeout',
+			sprintf(
+				/* translators: 1: tool name, 2: job ID */
+				__( '%1$s did not complete within the expected time (job: %2$s).', 'mcp-ai-wpoos' ),
+				$tool_name,
+				$job_id
+			)
 		);
 	}
 
@@ -1943,6 +2248,13 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	/**
 	 * Create a JSON-RPC error response.
 	 *
+	 * JSON-RPC errors are transport-independent: the HTTP status defaults to
+	 * 200 with the error carried in the JSON-RPC envelope. Several MCP client
+	 * SDKs (e.g. the TypeScript SDK bundled with mcp-remote) silently drop
+	 * non-2xx response bodies, which turned every tool error into a silent
+	 * timeout for agent clients. Returning 200 guarantees the error reaches
+	 * the client.
+	 *
 	 * @param mixed  $id      Request ID or null.
 	 * @param int    $code    Error code.
 	 * @param string $message Error message.
@@ -1959,13 +2271,28 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			$error['data'] = $data;
 		}
 
+		/**
+		 * Filter the HTTP status used for MCP JSON-RPC error responses.
+		 *
+		 * Defaults to 200 so client SDKs that drop non-2xx bodies (e.g. the
+		 * TypeScript SDK bundled with mcp-remote) still relay the JSON-RPC
+		 * error to the agent. Set to 400/404/500 for strict HTTP semantics.
+		 *
+		 * @since 1.1.55
+		 *
+		 * @param int   $status HTTP status code. Default 200.
+		 * @param int   $code   JSON-RPC error code (e.g. -32603).
+		 * @param mixed $id     Request identifier.
+		 */
+		$status = apply_filters( 'wp_mcp_ai_mcp_error_http_status', 200, $code, $id );
+
 		$response = new WP_REST_Response(
 			array(
 				'jsonrpc' => '2.0',
 				'id'      => $id,
 				'error'   => $error,
 			),
-			- 32700 === $code ? 400 : ( -32601 === $code ? 404 : 500 )
+			$status
 		);
 		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
 		$this->add_cors_headers( $response );
@@ -2024,5 +2351,22 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		foreach ( $security_headers as $name => $value ) {
 			$response->header( $name, $value );
 		}
+	}
+
+	/**
+	 * Normalize a raw priority string to a valid priority level.
+	 *
+	 * Accepts X-Priority header values and _meta.priority params.
+	 * Unrecognized values silently fall back to null (caller defaults to normal).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $raw Raw priority value.
+	 * @return string|null Normalized priority or null if unrecognized.
+	 */
+	protected static function normalize_priority( $raw ) {
+		$valid = array( 'realtime', 'high', 'normal', 'low', 'batch' );
+		$raw   = strtolower( trim( (string) $raw ) );
+		return in_array( $raw, $valid, true ) ? $raw : null;
 	}
 }

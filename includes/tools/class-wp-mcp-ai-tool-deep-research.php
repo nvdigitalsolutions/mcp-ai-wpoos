@@ -564,7 +564,11 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return array|WP_Error Setup information or error.
 	 */
 	protected function get_ai_setup() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		// Use the merged settings (credentials + main) so API keys stored in
+		// the separate non-autoload wp_mcp_ai_credentials option are visible.
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
 
 		// Check if there's a dedicated deep research model configured.
 		if ( ! empty( $settings['deep_research_model'] ) ) {

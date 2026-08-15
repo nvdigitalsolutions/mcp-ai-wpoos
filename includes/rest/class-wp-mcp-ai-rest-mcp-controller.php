@@ -83,14 +83,14 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'permissions_check_mcp' ),
 					'callback'            => array( $this, 'handle_mcp_request' ),
 					'args'                => array(
-						'jsonrpc' => array(
+						'jsonrpc'    => array(
 							'description'       => __( 'JSON-RPC version. Must be "2.0".', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'enum'              => array( '2.0' ),
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'id'      => array(
+						'id'         => array(
 							'description' => __( 'Request identifier. Omit for notifications.', 'mcp-ai-wpoos' ),
 							'oneOf'       => array(
 								array( 'type' => 'string' ),
@@ -98,25 +98,25 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							),
 							'required'    => false,
 						),
-						'method'  => array(
+						'method'     => array(
 							'description'       => __( 'MCP method name to invoke.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
-							'enum'              => array(
-								'initialize',
-								'tools/list',
-								'tools/call',
-								'resources/list',
-								'prompts/list',
-							),
+							'validate_callback' => array( $this, 'validate_mcp_method' ),
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'params'  => array(
+						'params'     => array(
 							'description'       => __( 'Method parameters object.', 'mcp-ai-wpoos' ),
 							'type'              => 'object',
 							'required'          => false,
 							'default'           => array(),
 							'validate_callback' => array( $this->validator, 'validate_mcp_params' ),
+						),
+						'session_id' => array(
+							'description'       => __( 'Legacy SSE session ID from the GET handshake.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => array( $this, 'sanitize_sse_session_id' ),
 						),
 					),
 				),
@@ -318,6 +318,57 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			),
 			true
 		);
+	}
+
+	/**
+	 * Validate the MCP method name for the /mcp endpoint.
+	 *
+	 * Performs structural validation only. The previous strict enum allowed
+	 * five methods and rejected everything else with an HTTP 400 before the
+	 * request ever reached the JSON-RPC handler. That broke standard MCP
+	 * client handshakes: clients such as Hermes, Claude Desktop, and Zed
+	 * send `ping`, `notifications/initialized`, `notifications/cancelled`,
+	 * `resources/read`, and `prompts/get` during a normal session.
+	 *
+	 * Unknown-but-well-formed method names now pass through to the handler,
+	 * which answers with a spec-compliant JSON-RPC -32601 "method not found"
+	 * error (see WP_MCP_AI_REST_MCP_Methods::route_mcp_method()).
+	 *
+	 * @since 1.1.52
+	 *
+	 * @param string          $value   Raw method name from the request.
+	 * @param WP_REST_Request $request Current REST request.
+	 * @param string          $param   Parameter name.
+	 * @return true|WP_Error True when the method name is structurally valid.
+	 */
+	public function validate_mcp_method( $value, $request, $param ) {
+		unset( $request, $param ); // Context only; not used for structural checks.
+
+		if ( ! is_string( $value ) || '' === $value ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_method',
+				__( 'The MCP method name must be a non-empty string.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( strlen( $value ) > 200 ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_method',
+				__( 'The MCP method name exceeds the maximum length of 200 characters.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( ! preg_match( '/^[a-z0-9_\-\/.]+$/i', $value ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_method',
+				__( 'The MCP method name contains characters that are not allowed.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		return true;
 	}
 
 	/**
@@ -563,10 +614,22 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Handle MCP protocol request (JSON-RPC 2.0).
 	 *
+	 * When the request carries a legacy SSE session_id (issued by the GET
+	 * handshake), the JSON-RPC response is enqueued on the session's outbound
+	 * queue and delivered on the open event stream; the POST itself returns
+	 * 202 Accepted. Otherwise the response is returned as JSON per the
+	 * Streamable HTTP transport.
+	 *
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_mcp_request( WP_REST_Request $request ) {
+		// Legacy SSE session message path.
+		$session_id = $request->get_param( 'session_id' );
+		if ( $this->legacy_sse_enabled() && ! empty( $session_id ) ) {
+			return $this->handle_mcp_sse_message( $request, $session_id );
+		}
+
 		// Delegate to main controller's trait method if available.
 		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_mcp_request' ) ) {
 			return $this->main_controller->handle_mcp_request( $request );
@@ -578,6 +641,86 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			__( 'MCP protocol handler is not available. Please ensure the plugin is properly configured.', 'mcp-ai-wpoos' ),
 			503
 		);
+	}
+
+	/**
+	 * Sanitize a legacy SSE session ID query/body parameter.
+	 *
+	 * @since 1.1.55
+	 *
+	 * @param mixed $value Raw session ID value.
+	 * @return string Empty string when the value is not a valid session ID.
+	 */
+	public function sanitize_sse_session_id( $value ) {
+		if ( ! is_string( $value ) ) {
+			return '';
+		}
+
+		if ( 1 !== preg_match( '/^[a-f0-9-]{8,64}$/i', $value ) ) {
+			return '';
+		}
+
+		return strtolower( $value );
+	}
+
+	/**
+	 * Whether the legacy MCP HTTP+SSE transport is enabled.
+	 *
+	 * @since 1.1.55
+	 *
+	 * @return bool True when enabled.
+	 */
+	protected function legacy_sse_enabled() {
+		return ! defined( 'WP_MCP_AI_LEGACY_SSE_ENABLED' ) || WP_MCP_AI_LEGACY_SSE_ENABLED;
+	}
+
+	/**
+	 * Handle a JSON-RPC message POST bound to a legacy SSE session.
+	 *
+	 * Validates session ownership, dispatches the message through the shared
+	 * JSON-RPC core, enqueues the response on the session queue, and answers
+	 * 202 Accepted. Mirrors the MCP Python SDK's SseServerTransport.
+	 *
+	 * @since 1.1.55
+	 *
+	 * @param WP_REST_Request $request    REST request instance.
+	 * @param string          $session_id Session ID from the handshake.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	protected function handle_mcp_sse_message( WP_REST_Request $request, $session_id ) {
+		$store = new WP_MCP_AI_SSE_Session_Store();
+
+		// Ownership check first — unknown sessions and credential mismatches
+		// answer 404 identically (no existence leak).
+		if ( ! $store->is_owner( $session_id, $this->get_sse_credential_hash( $request ) ) ) {
+			return $this->error(
+				'wp_mcp_ai_sse_session_not_found',
+				__( 'SSE session not found.', 'mcp-ai-wpoos' ),
+				404
+			);
+		}
+
+		if ( null === $this->main_controller || ! method_exists( $this->main_controller, 'process_mcp_request_to_data' ) ) {
+			return $this->error(
+				'wp_mcp_ai_mcp_unavailable',
+				__( 'MCP protocol handler is not available. Please ensure the plugin is properly configured.', 'mcp-ai-wpoos' ),
+				503
+			);
+		}
+
+		// Dispatch through the shared JSON-RPC core. Notifications produce no
+		// response element.
+		$responses = $this->main_controller->process_mcp_request_to_data( $request );
+
+		foreach ( $responses as $jsonrpc_response ) {
+			$store->enqueue( $session_id, $jsonrpc_response );
+		}
+
+		$response = new WP_REST_Response( null, 202 );
+		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
+		$this->add_cors_headers( $response );
+
+		return $response;
 	}
 
 	/**
@@ -698,29 +841,173 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * This ensures compatibility with MCP clients like LM Studio that expect
 	 * JSON-RPC protocol information, not SSE streams.
 	 *
-	 * SSE streaming is opt-in via the 'stream' parameter ONLY.
-	 * Accept header is NOT used for SSE detection because LM Studio and other
-	 * MCP clients send "Accept: text/event-stream" by default even though they
-	 * expect JSON-RPC responses, not SSE streams.
+	 * Legacy MCP SSE clients (HTTP+SSE transport) are detected via an
+	 * SSE-only Accept header (no application/json) or the explicit
+	 * ?stream=true parameter, and receive a proper SSE handshake
+	 * (event: endpoint) followed by the session's event stream.
 	 *
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_mcp_get_request( WP_REST_Request $request ) {
 		// Check if client explicitly requested SSE streaming via parameter.
-		// NOTE: We do NOT check the Accept header because LM Studio and other
-		// MCP clients send "Accept: text/event-stream" by default but expect
-		// JSON-RPC responses for Streamable HTTP transport (MCP 2024-11-05 spec).
-		$wants_streaming = $request->get_param( 'stream' ) === 'true' || $request->get_param( 'stream' ) === '1';
+		// NOTE: We do NOT treat a mixed Accept header (application/json,
+		// text/event-stream) as SSE because LM Studio and other Streamable
+		// HTTP clients send that header but expect JSON responses.
+		$stream_param    = $request->get_param( 'stream' );
+		$wants_streaming = ( 'true' === $stream_param || '1' === $stream_param );
+
+		if ( $this->legacy_sse_enabled() && ! $wants_streaming ) {
+			$wants_streaming = $this->accept_wants_legacy_sse( $request->get_header( 'Accept' ) );
+		}
+
+		if ( $wants_streaming && $this->legacy_sse_enabled() ) {
+			// Legacy SSE handshake (MCP HTTP+SSE transport).
+			return $this->handle_mcp_sse_handshake( $request );
+		}
 
 		if ( $wants_streaming ) {
-			// Client explicitly wants SSE stream via ?stream=true parameter.
+			// Legacy behavior when the feature flag is off: assistant directory stream.
 			return $this->handle_sse_handshake( $request );
 		}
 
 		// Default behavior: Return discovery JSON.
 		// This is compatible with LM Studio and other Streamable HTTP (JSON-RPC) clients.
 		return $this->return_discovery_info( $request );
+	}
+
+	/**
+	 * Detect a legacy MCP SSE client from its Accept header.
+	 *
+	 * Legacy SSE clients request the event stream exclusively
+	 * (Accept: text/event-stream), while Streamable HTTP clients send a mixed
+	 * Accept header that includes application/json and expect JSON responses.
+	 *
+	 * @since 1.1.55
+	 *
+	 * @param string $accept Raw Accept header value.
+	 * @return bool True when the header asks for SSE only.
+	 */
+	protected function accept_wants_legacy_sse( $accept ) {
+		if ( ! is_string( $accept ) || '' === $accept ) {
+			return false;
+		}
+
+		$has_sse  = false;
+		$has_json = false;
+
+		foreach ( preg_split( '/\s*,\s*/', $accept ) as $token ) {
+			$media_type = trim( explode( ';', $token )[0] );
+
+			if ( 'text/event-stream' === $media_type ) {
+				$has_sse = true;
+			}
+
+			if ( 'application/json' === $media_type ) {
+				$has_json = true;
+			}
+		}
+
+		return $has_sse && ! $has_json;
+	}
+
+	/**
+	 * Compute the credential hash that owns an SSE session.
+	 *
+	 * Sessions are bound to the credential that created them; the message
+	 * POST must present the same credential.
+	 *
+	 * @since 1.1.55
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return string SHA-256 credential hash.
+	 */
+	protected function get_sse_credential_hash( WP_REST_Request $request ) {
+		$authorization = $request->get_header( 'Authorization' );
+		if ( ! empty( $authorization ) ) {
+			return hash( 'sha256', trim( $authorization ) );
+		}
+
+		$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+		if ( ! empty( $mesh_key ) ) {
+			return hash( 'sha256', 'mesh:' . trim( $mesh_key ) );
+		}
+
+		return hash( 'sha256', 'user:' . get_current_user_id() );
+	}
+
+	/**
+	 * Legacy MCP SSE handshake.
+	 *
+	 * Implements the MCP HTTP+SSE transport wire protocol:
+	 * 1. Authenticates strictly (bearer/mesh only — same policy as POST /mcp).
+	 * 2. Creates a session bound to the credential.
+	 * 3. Emits `event: endpoint` with the session-scoped POST URL.
+	 * 4. Polls the session queue and delivers JSON-RPC responses as
+	 *    `event: message` frames, with keepalive comments for proxies.
+	 *
+	 * @since 1.1.55
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_mcp_sse_handshake( WP_REST_Request $request ) {
+		// Enforce the same strict auth policy as POST /mcp.
+		$auth_result = $this->permissions_check_mcp( $request );
+		if ( true !== $auth_result ) {
+			return $auth_result instanceof WP_Error
+				? $auth_result
+				: $this->error(
+					'wp_mcp_ai_mcp_auth_required',
+					__( 'Authentication required. Use a Bearer token, OAuth 2.0, Application Password (Basic auth), or Mesh Key.', 'mcp-ai-wpoos' ),
+					401
+				);
+		}
+
+		$store = new WP_MCP_AI_SSE_Session_Store();
+
+		$session_id = $store->create( $this->get_sse_credential_hash( $request ) );
+		if ( is_wp_error( $session_id ) ) {
+			return $session_id;
+		}
+
+		$sse = new WP_MCP_AI_SSE_Handler();
+		$sse->send_sse_headers();
+
+		// Emit the endpoint event with the session-scoped POST URL.
+		$endpoint_url = add_query_arg(
+			array( 'session_id' => $session_id ),
+			rest_url( self::REST_NAMESPACE . '/mcp' )
+		);
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- SSE protocol frame; URL is built from rest_url() and the validated session ID.
+		echo 'event: endpoint' . "\n" . 'data: ' . esc_url_raw( $endpoint_url ) . "\n\n";
+		flush();
+
+		// Delivery loop: drain the queue, emit responses, keep the stream
+		// alive for proxies (Cloudflare idle cutoff ~100s).
+		$ttl       = (int) apply_filters( 'wp_mcp_ai_sse_session_ttl', 1800 );
+		$deadline  = time() + $ttl;
+		$last_beat = time();
+
+		while ( ! connection_aborted() && time() < $deadline ) {
+			$pending = $store->drain( $session_id );
+
+			foreach ( $pending as $jsonrpc_response ) {
+				$sse->send_sse_event( 'message', $jsonrpc_response );
+			}
+
+			if ( ( time() - $last_beat ) >= 15 ) {
+				$sse->send_sse_comment( 'keepalive' );
+				$store->touch( $session_id );
+				$last_beat = time();
+			}
+
+			sleep( 1 );
+		}
+
+		$store->delete( $session_id );
+		$sse->finish();
 	}
 
 	/**

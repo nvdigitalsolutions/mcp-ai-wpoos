@@ -1,5 +1,348 @@
 # oOS – Changelog
 
+## [1.1.57] - 2026-08-15
+
+### Changed — Plugin Updater: Base-Only Updates & In-Place Install (PR #5871)
+
+- **Base-only update flow** — WordPress.org base installs can now update the base plugin in place without upgrading to the complete build. New Settings → Advanced "Base Version" panel with check/update actions backed by `check_for_base_update()` and the `wp_mcp_ai_check_base_update` / `wp_mcp_ai_start_base_update` AJAX handlers; the GitHub base package (`nvdigital-open-operator-system-oos-{version}.zip`, plus legacy `mcp-ai-wpoos-base-*` naming) is resolved via the new `ASSET_BASE` asset pattern.
+- **Copy-in-place install replaces `Plugin_Upgrader`** — updates now download the ZIP and copy the extracted files over the live plugin directory (`replace_plugin_from_zip()`), taking a backup snapshot first and restoring it on failure. The plugin directory is never renamed or deleted, and ZIP top-level folder-name mismatches (e.g. complete packages extracting to `-complete` while base installs live in the plain slug) no longer break updates. Upgrade base → complete deactivates a separately installed Pro addon to avoid double-loading Pro.
+- **Pro version from plugin header** — new `WP_MCP_AI_Plugin_Updater::get_pro_installed_version()` reads the Version header of the installed Pro addon instead of the manually maintained `WP_MCP_AI_PRO_VERSION` constant (which had drifted, e.g. 1.1.50 vs 1.1.54); the constant remains as fallback for bundled Pro. The imaging admin page and `wp mcp-ai pro status` CLI now display the same source.
+- 5 files, +530/−266 lines. See [`docs/features/plugin-updater.md`](docs/features/plugin-updater.md) and [`docs/history/2026/fixes/base-update-path-fix.md`](docs/history/2026/fixes/base-update-path-fix.md).
+
+### Changed — Hermes WebUI Chat: Async Submit/Poll (PR #5872)
+
+- `hermes_chat` now submits runs via `/api/chat/start` and polls `/api/chat/stream/status` instead of blocking on a synchronous request. Runs keep executing server-side if the MCP client drops the connection; `HERMES_CHAT_TIMEOUT` budget expiry returns `status: "still_running"` with the `stream_id`, and the approval gate is answered with the configured `HERMES_APPROVAL_MODE` choice (`ask` leaves it pending and returns `status: "needs_approval"`).
+- **Fixed answer extraction for live WebUI payloads** — the streamed response shape from the production WebUI differs from the test fixtures; the answer parser now handles both.
+- `bin/README.md` and tests (19 cases) updated to match.
+
+### Added — Fleet Operator Agent Context Files (PR #5873)
+
+- New `addons/fleet-operator/.context/` tree (18 files) for the operator-agent workflow: addon conventions, Hermes ops, MCP integration, design content, WordPress plugin-dev rules, a 6-role team (analyst/architect/developer/product-manager/qa/scrum-master), active/archive scratch areas, and task/memory templates. Registered in `AGENTS.md` and `addons/fleet-operator/README.md`.
+
+### Fixed — Service Status AI-Provider Detection (PR #5874)
+
+- Provider detection in the Service Status default sources now resolves credentials through `WP_MCP_AI_Credential_Resolver` (plugin settings, WP 7.0 connectors, environment variables, PHP constants) with merged-settings fallback for early bootstrap, instead of reading raw plugin settings keys only. Ollama remains keyless (configured when a base URL is present). New test suite: `tests/test-service-status-provider-detection.php` (135 lines). See [`docs/history/2026/fixes/service-status-provider-detection-fix.md`](docs/history/2026/fixes/service-status-provider-detection-fix.md).
+
+### Versioning
+
+- Bumped to **1.1.57** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.57. Media Worker: v3.0.0 (unchanged).
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+- Bundled skills: **74** base (+ 41 Pro).
+- Total coding-time agent skills: **51** (20 wp-* + 30 design-* + 1 mcp-ai-wpoos-plugin).
+
+---
+
+## [1.1.56] - 2026-08-14
+
+### Added — Media Worker Multi-Tenant Shared Worker Mode, v2.4.0 (PR #5866)
+
+- **Multi-tenant mode** — `SITE_TOKENS` JSON map switches the worker to per-site isolation: every `/api/*` request must carry a token belonging to a known site (fail-closed with `AUTH_MODE=strict`), and temp files, job queues, and rate limits are namespaced per site (`src/utils/site-paths.js`).
+- **Per-site rate limits** — `RATE_LIMIT_*_<SITE>` overrides keep one noisy site from starving its neighbours.
+- **Rotation overlap** — `SITE_TOKENS_PREVIOUS` accepts the previous per-site token during rotation, mirroring the single-tenant semantics.
+- 21 files, +1,349/-304. Specs: `docs/project/proposals/026-media-worker-multi-tenancy-sidecar-proposal.md`, `docs/project/proposals/027-media-worker-multi-tenancy-phase2-spec.md`.
+
+### Added — Media Worker Phase 2: Per-Site Provider Keys & Observability (PR #5868)
+
+- **Per-site provider credentials** — `SITE_PROVIDER_KEYS` JSON map (site slug → credential object) resolves per-tenant AI provider keys before falling back to the shared pool; `PROVIDER_KEYS_STRICT=1` disables the shared-pool fallback entirely.
+- **Per-site usage counters** — `tenants.usage` tracks provider usage per site on image/social routes (`src/utils/usage.js`).
+- **Grouped temp TTLs + storage stats** — `TEMP_TTL_UPLOAD/VIDEO/BROWSER/DOC` per-group TTLs and temp storage statistics replace the single TTL.
+- **Cluster-mode warnings + k6 load-test kit** — loud boot warnings when PM2 cluster mode is detected; k6 kit with a split decision table under `addons/media-worker/bin/load-test/`.
+
+### Added — Media Worker Phase 3: Scale Without Breaking Changes (Proposal 028)
+
+- **Worker bumped to v3.0.0** — W1 per-blog worker tokens on WordPress multisite (additive option chain in the sidecar trait); W2 Media Worker Usage Reporter (`includes/class-wp-mcp-ai-media-worker-usage-reporter.php`, daily cron snapshots `tenants.usage` into an option, fires `wp_mcp_ai_media_worker_usage_updated`; opt-in, off by default); W3 `SITE_TOKEN_<SLUG>` / `SITE_PROVIDER_KEYS_<SLUG>` env-var merges over the JSON maps (env wins); W4 opt-in Redis rate-limit store (`RATE_LIMIT_REDIS=1`, `rate-limit-redis` optional dep); W5 `PROVIDER_KEYS_FILE` hot-reload with atomic replace and malformed-update rejection; W6 revised: permissive-mode boot notice only, the strict-path default flip is deferred; W7 manual Velocity deploy workflow. 59 unit tests passing.
+
+### Changed — Worker Routing Expansion
+
+- Media operations now route through the connected worker with unchanged local fallbacks: document generation (Word/Excel/PDF merge/watermark), OCR, video frame extraction, health charts, email (Nodemailer/MJML), QR/translate/PDF-extract, image vectorization, Prettier formatting, and FFmpeg processing. The Pro settings page lists worker-routed packages.
+- New `addons/media-worker/bin/probe-wordpress.php` probes the WordPress side (connectivity, tokens, package availability) so the worker can report routing decisions accurately.
+
+### Security — Media Worker Rotation, Canvas, Cloudways Readiness (PRs #5863–#5865)
+
+- **Zero-downtime token rotation** — `WORKER_API_TOKEN_PREVIOUS` is accepted during the rotation overlap window (PR #5864).
+- **Canvas v3 napi prebuilds** — compiler-free installs on managed hosts (PR #5865).
+- **Cloudways readiness hardening** — endpoint test script, queue and route resilience for managed deploys (PR #5863).
+
+### Fixed — Media Worker Live Route Bugs (PR #5867)
+
+- Data and PDF route bugs found during live worker testing (translation/QR and PDF pipeline paths).
+
+### Added — Hermes WebUI MCP Server, SSH Bridge & Skill Sync (PR #5862 + follow-ups)
+
+- **`bin/hermes-mcp-server.js`** — stdio MCP server that drives a Hermes Agent from Zed: serialized WebUI logins, session cookie + synchronous chat, tools `hermes_list_sessions`, `hermes_chat`, `hermes_session_detail`, `hermes_sync_skills`.
+- **`bin/mcp-bridge-ssh.js`** + `bin/utils/fake-ssh.js` — SSH MCP bridge for remote agent hosts.
+- **Skill sync** — `bin/hermes-skill-sync.js` / `bin/sync-skills-to-hermes.js` mirror the repo `.agents/skills/` tree into the agent (idempotent upsert, optional `names` filter and `remove_missing` prune).
+- **Hardened env-file parser** (`bin/utils/env-file.js`) and env-file config loading fixes.
+- **Zed** — Hermes Console agent profile added to `.zed/settings.json`.
+
+### Versioning
+
+- Bumped to **1.1.56** across all version-bearing files.
+- Pro addon: 1.1.56.
+- Media Worker: **v3.0.0** (multi-tenant mode v2.4.0, Phase 2 per-site keys, Phase 3 W1–W7).
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+- Bundled skills: **74** base (+ 41 Pro).
+- Total coding-time agent skills: **51** (20 wp-* + 30 design-* + 1 mcp-ai-wpoos-plugin).
+
+---
+
+## [1.1.55] - 2026-08-13
+
+### Fixed — RabbitMQ Status Widget (PR #5860)
+
+- The Orchestration → RabbitMQ status widget always showed "Integration Enabled: Disabled" because `WP_MCP_AI_Section_RabbitMQ` read `rabbitmq_enabled` from an undeclared `$settings` property (always `null`). It now reads through `WP_MCP_AI_Settings_Registry::get_setting()` with the `WP_MCP_AI_RABBITMQ_ENABLED` constant as override, and the previously unhooked AJAX handlers (`wp_ajax_wp_mcp_ai_rabbitmq_health` / `wp_ajax_wp_mcp_ai_rabbitmq_setup`) are now registered in the constructor with a static guard. Fix details: `docs/history/2026/fixes/rabbitmq-status-widget-disabled-fix.md`.
+
+### Fixed — MCP Agent Compatibility & Tool Reliability (PR #5859)
+
+- **JSON-RPC errors return HTTP 200** — SDKs that drop non-2xx bodies now relay tool errors to the agent instead of hanging silently. Auth/permission failures and pre-dispatch guards keep real HTTP statuses (401/403/429). Filter: `wp_mcp_ai_mcp_error_http_status`.
+- **Legacy MCP HTTP+SSE transport** — SSE-only clients (`Accept: text/event-stream` or `?stream=true`) get a credential-bound session handshake from `GET /mcp` with responses delivered as `event: message` on the GET stream. New `WP_MCP_AI_SSE_Session_Store` (327 lines) backs sessions. Gated by `WP_MCP_AI_LEGACY_SSE_ENABLED`.
+- **Tool rate limiter settings + admin UI** — `tool_rate_limit_max` / `tool_rate_limit_window` / `tool_rate_limit_exempt_tokens` now settings-driven with a security admin section; credential-token traffic exempt by default. Constants remain as fallbacks.
+- **GET/HEAD exempt from request quota** — discovery/SSE probe retry loops no longer exhaust the hourly budget.
+- **Raw credential headers accepted** — `Authorization: cred_xxxxx.SECRET` (no `Bearer` prefix) works for agent configs that forward headers verbatim. Filter: `wp_mcp_ai_accept_raw_credential_header` (default `true`).
+- **Bounded async tool polling** — `mcp_wait_for_async_tool()` defaults to ~45s (15 polls × 3s) and kicks stuck jobs inline, staying under Cloudflare 524 timeouts.
+- 8 files, +1,435/-32 lines. Full rationale: `docs/developer/implementation-plan-mcp-agent-compat.md`, `docs/developer/legacy-sse-transport-plan.md`.
+
+### Added — Hermes Fleet Operator Addon (PR #5858)
+
+- **New addon** `addons/fleet-operator/` (~2,587 lines) — scoped `op_` operator credentials with audience binding, expiry, rate limits, and instant revocation so a supervisor agent (Hermes or any MCP/A2A host) can operate the site within an allowlist.
+- **Server-side scoping** — MCP `tools/list` scoping plus `tools/call` enforcement and audit attribution via base-plugin hooks; `/mcp` method enum relaxed so ping/notifications reach the JSON-RPC handler.
+- **Ships**: admin page, WP-CLI commands, Hermes config generator, 3-skill nvoos pack (approvals, operations, site-context), runbook (`docs/operations/fleet/hermes-operator-setup.md`), and PHPUnit coverage (406 lines).
+
+### Security — Media Worker v2.2.0 Hardening (PR #5857)
+
+- **Nine controls**: timing-safe `X-Site-Token` auth, SSRF guard (OWASP controls), sandboxed Puppeteer launcher, express-rate-limit, Helmet headers, split health endpoints with real capability detection, structured request logging, graceful shutdown, unit tests.
+- **`WP_MEDIA_WORKER_TOKEN` constant** takes priority over the option in the plugin sidecar client; settings page shows constant mode, warns on cleartext URLs, links the Velocity guide.
+- **Cloud deployment**: Velocity setup guide (`docs/operations/deployment/media-worker-velocity-setup.md`), `.env.example`, CI workflow, security implementation plan.
+
+### Chore — Media Worker Subtree Sync (PR #5856)
+
+- New `sync-media-worker.yml` GitHub Action mirrors `addons/media-worker/` to the standalone `mcp-ai-wpoos-media-worker` repo on pushes to main/alpha-working.
+
+### Added — Database Connection Pooling Stance (PR #5855)
+
+- **Wave 1**: Action Scheduler fallback enqueue gated when RabbitMQ worker is active; atomic concurrency-guard slot tracking (Redis `wp_cache_incr` + InnoDB `INSERT … ON DUPLICATE KEY UPDATE` fallback); new `mcp_ai_concurrency_slots` table with daily cleanup cron.
+- **Wave 2**: PDO persistent connections in the Graphify remote SQL driver; DB polling cron gated behind RabbitMQ transport preference; queue worker batch size configurable (`--batch-size=N` + filter); Site Health checks for MySQL pool, queue depth, and RabbitMQ health.
+- **RabbitMQ admin UI**: section registered with settings registry, view added to Orchestration tab, broken `render()` fixed.
+- 16 files, +2,572/-62 lines. Full spec: `docs/project/proposals/023-database-connection-pooling-stance.md`.
+
+### Security — PostCSS 8.5.26 (GHSA-6g55-p6wh-862q)
+
+- `postcss` minimum bumped to >=8.5.26 in `addons/schedule-anything-spa/package.json` to resolve the advisory. Version constraint only.
+
+### Versioning
+
+- Bumped to **1.1.55** across all version-bearing files.
+- Pro addon: 1.1.55.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+- Bundled skills: **74** base (+ 41 Pro).
+- Total coding-time agent skills: **51** (20 wp-* + 30 design-* + 1 mcp-ai-wpoos-plugin).
+
+---
+
+## [1.1.54] - 2026-08-12
+
+### Security — PostCSS CVE-2026-69153 (PR #5850)
+
+- **PostCSS minimum bumped to 8.5.23** — resolves high-severity CVE-2026-69153 in the CSS post-processor chain. Applied in `package.json` overrides across affected addons. No functional changes — version constraint only. 2 files, +4/-4 lines.
+
+### Fixed — MCP Async Tool Response Handling (PR #5845)
+
+- **`tools/call` async response fix** — the endpoint handler was dropping responses for tools that return promises or deferred execution (video generation, deep research, batch OCR). Now correctly awaits and serializes async results. 1 file, +111 lines.
+
+### Fixed — Plugin Updater Integrity Check v2 (PR #5846)
+
+- **Phantom bridge file false-positive** — stale PHP stat cache was causing a false failure on the `bridge/` directory path in the post-install integrity check.
+- **Stat cache clearing** — added `clearstatcache()` after every file check to force fresh filesystem reads.
+- **Main-file rename edge case** — handled scenario where the old plugin main filename persists in the filesystem cache after a rename.
+- 1 file, +16/-2 lines.
+
+### Fixed — API Key Merged-Settings in Research Tools (PR #5852)
+
+- **20 research tools fixed** — `deep_research`, `web_search`, `semantic_content_search`, `semantic_context_search`, `retrieve_agent_memory`, `recall_memory`, `wake_up_context`, and 13 others were reading API keys from the global option instead of the merged provider-specific settings.
+- **Per-assistant/provider overrides now honored** — all tools now use `WP_MCP_AI_Credentials_Manager::get_merged_credentials()`, respecting the provider → assistant → global fallback chain.
+- 20 files, +37/-33 lines.
+
+### Added — Design Skills Audit & Enhancement (PR #5847)
+
+- **22 existing design-* skills enhanced** — comprehensive operational instructions, multi-step workflows, cross-references, and MCP tool-calling patterns added to all design-* agent skills.
+- **7 new pro-toolkit skills created**:
+  - `design-ai-assistant-admin` — AI assistant configuration, model providers, peer mesh networking
+  - `design-crm` — complete CRM pipeline: leads, deals, companies, contacts, BANT/MEDDIC scoring
+  - `design-project-management` — projects, tasks, sprints, events, task plans, PM workflows
+  - `design-communications` — multi-channel messaging (SMS, email, WhatsApp), contacts, delivery tracking
+  - `design-services` — service components, dependency tracking, approval workflows
+  - `design-team-management` — organizational teams, professions, role assignments
+  - `design-vault` — encrypted vault for passwords, secure notes, payment cards, digital identities
+  - `design-security-ops` — security operations, audit logging, posture management
+- Total: 29 enhanced/created skills, ~8,000 lines. 61 files, +7,971/-57 lines.
+
+### Fixed — OKF YAML Frontmatter Compliance (PRs #5844, #5849)
+
+- **Missing `type: Skill` frontmatter** (PR #5844) — added to all 22 `design-*` skills per OKF v0.2 trust-signal specification. 45 files, +68 lines.
+- **YAML spec compliance fixes** (PR #5849) — removed duplicate/invalid top-level keys from 9 design skills that violated the OKF v0.2 schema. 20 files, -100 lines.
+- All 44 skills now pass OKF v0.2 frontmatter validation.
+
+### Fixed — README TOC Anchor Links (PR #5853)
+
+- **VS16 emoji anchor fix** — emojis using Variation Selector 16 (🪲🐛🛒📊) now generate correct GitHub anchor links.
+- **U+26xx/U+27xx symbol anchor fix** — symbols like ⚠️⚡✅ now produce clickable TOC links.
+- 2 files.
+
+### Housekeeping — Stale Build Artifacts (PR #5851)
+
+- Removed 30 stale v1.1.52 build ZIPs and compiled assets superseded by v1.1.53 builds.
+
+### Versioning
+
+- Bumped to **1.1.54** across all version-bearing files.
+- Pro addon: 1.1.54.
+- Tool count: ~265 base + ~1,237 Pro (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **27**.
+- Bundled skills: **67** base.
+- Total coding-time agent skills: **44** (22 wp-* + 22 design-*).
+
+---
+
+## [1.1.53] - 2026-08-12
+
+### Added — Shared Analytics Service (PR #5836)
+
+- **Shared Analytics Service** (`addons/pro/includes/analytics/`, 1,489 lines) — unified analytics subsystem consumed by all NV oOS Pro toolkits.
+- **7 platform adapters**: Meta (Facebook + Instagram), Twitter/X, LinkedIn, TikTok, WooCommerce, Google Analytics 4, Cloudways monitoring.
+- **5 immutable DTOs**: Account, Post, Metric, TimeSeries, Report with strict coercion and `WP_Error` validation.
+- **Cross-platform normalization**: Platform-specific metric names mapped to unified schema via `WP_MCP_AI_Metric_Normalizer`.
+- **Smart caching**: Transient-based with per-data-type TTLs and cache stampede prevention via `WP_MCP_AI_Analytics_Cache`.
+- **Rate limit coordination**: Token-bucket per platform via `WP_MCP_AI_Analytics_Rate_Limiter` prevents API exhaustion.
+- **Extensible adapter pattern**: Single `WP_MCP_AI_Analytics_Adapter_Interface` — register new platforms via `$service->register_adapter()`.
+- **MCP server registration**: Analytics tools registered in the Pro toolkit MCP server fleet.
+- **Site Health integration**: Analytics health checks in the WordPress Site Health dashboard.
+- **Design Stack skill**: [`design-analytics-reporting`](.agents/skills/design-analytics-reporting/SKILL.md) — track, measure, and report on marketing performance.
+
+### Added — Circuit Breaker & Execution Pipeline Hardening (PR #5839)
+
+- **Circuit breaker protection** — added to all remaining AI provider clients that lacked it (7 providers). All 15 first-class providers now have circuit breaker protection with configurable failure thresholds and cooldown periods.
+- **Concurrency guard** — wired into the execution pipeline to prevent overlapping destructive operations across the full tool execution lifecycle.
+- **Cost tracker integration** — per-operation cost estimation now enforced at the execution pipeline level, not just at the provider client boundary.
+- **Backpressure wiring** — backpressure signals from the concurrency guard and cost tracker now feed into the agentic loop's iteration budget, automatically throttling tool calls when system load is high.
+- **Plugin updater base-only UI fix** — plugin updater no longer shows base-only UI after upgrade to the complete (base+Pro) package.
+- **Silent build asset failure fix** — plugin updater now surfaces a clear error when the complete build asset is missing from a GitHub release, instead of silently failing.
+
+### Added — Agent Skills Sync & Discovery (PR #5842)
+
+- **Project-owned skills sync** — `sync-agent-skills` now syncs project-owned design-* skills alongside the wp-* skills. The 22 new design-* coding-time skills (design-analytics-reporting through design-video-creation) are now auto-discovered by the Zed editor alongside the existing wp-* WordPress development skills.
+- **mcp-ai-wpoos-plugin skill** — new bundled skill covering complete NV oOS plugin operational guide (setup, assistant creation, MCP bridge tokens, API key bridging, Docker/WSL2 troubleshooting).
+- **Bundled skills count** — base bundled skills increased from 45 to **67** (22 new design-* + mcp-ai-wpoos-plugin).
+
+### Added — Shared Infrastructure & Tool Discovery
+
+- **`list_mcp_tools` discovery tool** (234 lines) — enables AI agent self-discovery of all available MCP tools with JSON Schema parameter definitions. Filterable by toolkit namespace and search term. Returned alongside Paper Store remote support in PR #5835.
+- **Paper Store actions in `remote_wp_connection`** — the `remote_wp_connection` tool now lists Paper Store operations as available actions on remote sites.
+
+### Fixed
+
+- **SSE stream backoff reset** (PR #5841) — fixed backoff counter not resetting between successful stream reconnections, causing unnecessary delays.
+- **SSE rate-limit counter leak** (PR #5841) — fixed rate-limit counter not being cleaned up after stream termination, causing false throttling on subsequent connections.
+- **Load Guard fatal error** (PR #5840) — fixed `WP_MCP_AI_Load_Guard` calling private `count_active_jobs()` method, causing a fatal error on PHP 8.1+ when strict visibility enforcement is enabled.
+
+### Documentation Catch-Up (this release)
+
+- **CHANGELOG** — added comprehensive v1.1.53 entry documenting Shared Analytics Service, circuit breaker hardening, skills sync, and all fixes from PRs #5836–#5842 that were missing from the v1.1.52 entry.
+- **README** — updated version to 1.1.53, refreshed "What's New" with Shared Analytics, circuit breaker, and skills sync highlights.
+- **CLAUDE.md** — updated Paper Store section with remote/REST/discovery details; updated bundled skills count (45→67); added circuit breaker/backpressure to Security Infrastructure; added Shared Analytics Service section; added context file references for new docs.
+- **AGENTS.md** — updated bundled skills count (45→67) and coding-time skills count (22→44).
+- **`.context/` files** — updated review dates to August 2026 across conventions.md, tool-registry.md, security-checklist.md, rest-api.md, and pro-vs-base.md. Added `list_mcp_tools`, design-system preset, circuit breaker, post-install integrity check, and Paper Store REST endpoint documentation.
+
+### Versioning
+
+- Bumped to **1.1.53** across all version-bearing files.
+
+---
+
+## [1.1.52] - 2026-08-11
+
+### Added — Paper Store Remote Site Support (PR #5835)
+
+- **Paper Store REST API** (`includes/rest/class-wp-mcp-ai-paper-store-rest.php`, 697 lines) — full CRUD REST controller at `mcp-ai/v1/paper-store` for remote site operations.
+- **Paper Store Remote Trait** (`includes/paper-store/trait-wp-mcp-ai-paper-store-remote.php`, 96 lines) — dispatches Paper Store operations through Remote Site Manager when `connection_id` is provided.
+- **All 8 Paper Store tools updated** — `paper_store_list`, `paper_store_read`, `paper_store_search`, `paper_store_write`, `paper_store_update`, `paper_store_delete`, `paper_store_import`, `paper_store_export` now accept optional `connection_id` parameter.
+- **`list_mcp_tools` Discovery Tool** (`includes/tools/class-wp-mcp-ai-tool-list-mcp-tools.php`, 234 lines) — enables AI agent self-discovery of available MCP tools, filterable by toolkit and search term.
+
+### Added — Remote Connection CPT Auto-Discovery (PR #5834)
+
+- **Auto-discover CPTs** in remote connection post type access controls — plugin-registered CPTs like `paper_store` now appear automatically in the admin table. No more manual slug entry, save, and reopen.
+- **`resolve_post_type_access()`** now mirrors the same discovery logic on form submission.
+- **Multi-Site Gateway Plan** (`docs/project/plans/multi-site-gateway-plan.md`, 1,429 lines) — comprehensive hub-and-spoke federation plan targeting v1.5.0+.
+
+### Added — Design System Tool Preset (PR #5837)
+
+- **Design System preset** (`design-system`) — 72 tools across 13 categories: WordPress content, image generation/analysis/processing, web search/research, charts, document generation (14 tools), Paper Store (8), video generation/processing, social media, AI/memory, and utility.
+- Added to `WP_MCP_AI_Tool_Presets_Helper::get_presets()` at `includes/helpers/class-wp-mcp-ai-tool-presets-helper.php`.
+
+### Added — Post-Install Integrity Check (PR #5833)
+
+- **Plugin Updater integrity verification** — after every update, `verify_installation_integrity()` checks 15 critical file paths against the plugin directory before reporting success.
+- **`VERIFY_FILES` safelist** — 15 critical paths loaded via `require_once` without `file_exists()` guards. Prevents silent update corruption on distributed filesystems (Cloudways).
+- **Guard REST require_once calls** — added `file_exists()` checks before 8 REST controller `require_once` calls in `class-wp-mcp-ai-rest.php`.
+
+### Fixed
+
+- **Pro addon update visibility** (PR #5832) — Pro addon update section now visible for wp.org base + standalone Pro installs.
+- **Docker chmod warnings** (PR #5831) — suppressed `chmod()` warnings during plugin install in Docker environments by checking filesystem constants.
+
+### Documentation
+
+- **3 new feature docs**: Paper Store (`docs/features/paper-store.md`), Remote Sites (`docs/features/remote-sites.md`), MCP Protocol Version Negotiation (`docs/reference/mcp-protocol-version-negotiation.md`).
+- **Updated docs**: Plugin Updater (integrity check), Tool Presets System (Design System preset), DOCUMENTATION_INDEX, QUICK_REFERENCE, README, CHANGELOG.
+
+### Versioning
+
+- Bumped to **1.1.52** across all version-bearing files.
+
+## [1.1.51] - 2026-08-11
+
+### Changed — Documentation Audit & Gap-Fill
+
+- **Documentation Audit (Past 10 Days).** Comprehensive audit of all changes from v1.1.43 through v1.1.50 against the documentation surface (README, CHANGELOG, QUICK_REFERENCE, FOR_REVIEWERS, DOCUMENTATION_INDEX, ADDON_INVENTORY, MAINTAINER_MAP, and ~30 feature/reference docs). Identified and resolved 12 gaps across P0/P1/P2 priority tiers.
+- **DOCUMENTATION_INDEX.md** — added August 2026 section indexing all new/updated docs from v1.1.43–v1.1.50 (7 versions, ~30 proposals, new addons, feature docs).
+- **README.md** — added missing "What's New at a Glance (v1.1.46)" section covering Backup & Restore, Plugin Updater, Abilities API, and 6 new default skill catalogues.
+- **ADDON_INVENTORY.md** — added Media Worker sidecar as addon #27; bumped addon count from 26 to 27.
+- **FOR_REVIEWERS.md** — updated addon count (24→27), Embedded version (0.1.0→0.2.0), tool count estimates, and added Media Worker to review tiers.
+- **QUICK_REFERENCE.md** — expanded v1.1.48 skill catalogue entry from 2 to all 6 catalogues (Brave Search, WordPress, Cloudflare, Google Workspace, OpenAI, Google).
+
+### Added — New Feature Reference Docs (6 docs)
+
+- **Backup & Restore** (`docs/features/backup-restore.md`) — architecture, 11 modular export providers (8 base + 3 Pro), admin UI, CLI usage, and import/export workflow.
+- **Plugin Updater** (`docs/features/plugin-updater.md`) — GitHub-based update mechanism, base-to-complete upgrade path, Pro addon support, cache busting, and rollback.
+- **Abilities API** (`docs/features/abilities-api.md`) — registration, discovery, 5 categories (41 abilities), MCP adapter bridge, and tool-ability interface.
+- **Self-Hosted OCR** (`docs/features/self-hosted-ocr.md`) — Unlimited-OCR + DeepSeek-OCR setup, vLLM configuration, Pro tools usage, and batch OCR.
+- **SGI Transparency & Compliance** (`docs/features/sgi-transparency-compliance.md`) — AI transparency infrastructure, SGI compliance, traceability, and chat transparency UI.
+- **Embedded Addon v0.2.0** (`docs/features/embedded-addon-v020.md`) — voice tool calling, OpenMed healthcare, MCP abilities, backend registry, and self-hosted OCR integration.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
+### Versioning
+
+- Bumped to **1.1.51** across all version-bearing files.
+
 ## [1.1.50] - 2026-08-10
 
 ### Added — Media Worker Sidecar (PRs #5822, #5823)
@@ -28,6 +371,19 @@
 
 - Repository-wide PHPCS fixes: tabs, docblock formatting, and code style corrections applied across all PHP files. No functional changes.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.50** across all version-bearing files. Pro addon: **1.1.50**.
@@ -45,6 +401,19 @@
 - **Plugin Updater** (`includes/class-wp-mcp-ai-plugin-updater.php`, +152/-18 lines) — update reactivation flow fixed; plugin now correctly handles post-update reactivation. Nonce-scoped update actions hardened.
 - **Release ZIP Cleanup** — `.distignore` and `.gitattributes` updated to exclude development-only files (`.agents/`, `.context/`, `.github/`, IDE configs) from release ZIPs. `bin/build-plugin-zip.sh` updated with new exclusion rules.
 - **OCR & Tool Cleanup** — minor fixes in OCR service, research report generator, research project tool, video analysis service, and 5 image-analysis tools.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -73,6 +442,19 @@
 - **Brave Search Skills** added to the default skill catalogue (`wp_mcp_ai_settings['default_skill_catalogues']`). Enables Brave Search web and local search tools for new assistants out of the box.
 - **WordPress Agent Skills** added to the default skill catalogue. Enables all 22 WordPress-plugin-development agent skills for new assistants out of the box.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.48** across all version-bearing files. Pro addon: **1.1.28**.
@@ -96,6 +478,19 @@
 ### Fixed — Mermaid Security Vulnerabilities
 
 - **npm Audit Fix** (`addons/canvas-toolkit/`) — mermaid 11.15.0 → 11.16.1 to resolve 5 CVEs: GHSA-3rrr-jr9j-h3q3 (Architecture diagram prototype pollution), GHSA-6x64-9x62-f2gx (CSS injection on sibling elements), GHSA-rhh3-jpg6-66xh (Radar diagram DoS), GHSA-2v8p-3f2j-5mp7 (XY Chart infinite loop DoS), GHSA-c4c3-pg64-4m4v (Config API prototype pollution). Transitive bumps: dompurify 3.4.12 → 3.4.13, nanoid 3.3.16 → 3.3.18. Canvas toolkit dist bundle regenerated (1,219 lines changed). Zero functional impact — mermaid mode is an unused stub not yet implemented.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -152,6 +547,19 @@
 - **WPCS Formatting** — indentation, alignment, and inline comment fixes applied to 100+ files across base, Pro, and core tool directories. (PRs #5798, #5804)
 - **OOS Bridge Wave 2** — `includes/bootstrap/oos-bridge-wave2.php` updated with new tool registry integrations. (PR #5799)
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.46** across all version-bearing files. Pro addon: **1.1.29**.
@@ -192,6 +600,19 @@
 ### Docs & Proposals
 
 - **Proposal 018** — Unlimited-OCR & DeepSeek-OCR integration proposal (367 lines) and implementation plan (668 lines) in `docs/project/proposals/`. (PR #5795)
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -242,6 +663,19 @@
 - **fast-uri** `>=3.1.2`/`>=3.1.3` → `>=3.1.4` across 3 package.json files. Resolves CVE-2026-16221 (host confusion via literal backslash authority delimiter). (PR #5787)
 - **ip-address** `>=10.2.0` → `>=10.4.0` across 3 package.json files. Resolves IPv4-mapped/NAT64 IPv6 SSRF bypass and CIDR suffix special-use classification suppression. (PR #5787)
 - All 11 package-lock.json files regenerated to resolve patched versions.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -301,6 +735,19 @@
 ### Dependency Updates
 
 - WPCS bumped to 3.4.1 for CVE-2026-45293. Phpactor LSP replaces Intelephense. (PR #5760, #5757)
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -364,6 +811,19 @@
 
 - **npm security sweep** — brace-expansion overrides across all addons, js-yaml and postcss security overrides, regenerated all npm lock files. (PR #5739, #5742)
 - **undici pinned to 7.x** for Node 20 compatibility in canvas-toolkit. (PR #5743)
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -480,6 +940,19 @@
 
 - Validated tool slug now correctly matches assistant allowlist (PR #5680).
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.40** across all version-bearing files.
@@ -525,6 +998,19 @@
 - **svgo** >=4.0.2 in pro, >=3.3.4 in saas-controller — fixes removeScripts bypass leaving executable scripts intact. (PR #5736)
 - **linkify-it** >=5.0.2 in pro, saas-controller, pro/assets/spa — fixes CVE-2026-59887 (quadratic-complexity DoS via mailto validator). (PR #5736)
 - **markdown-it** >=14.2.0 override in pro/assets/spa — aligns with root override, enables linkify-it 6.x. (PR #5736)
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -591,6 +1077,19 @@
 
 - Comprehensive OpenMed integration plan v2 with industry best practices (PR #5641).
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.40** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`.
@@ -650,6 +1149,19 @@
 ### Security
 
 - **OWASP ZAP DAST** — all 7 medium findings triaged as IGNORE (false positives).
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -759,6 +1271,19 @@
 
 - FlowHub and Shopify toolkit docs updated for v1.1.36 features.
 - README version and release date updated.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -943,6 +1468,19 @@
 - **Agent context sync** — AGENTS.md, CLAUDE.md, .context/pro-vs-base.md updated.
 - **CHANGELOG v1.1.36 section**.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.36** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt`, `README.md`, `CHANGELOG.md`, `QUICK_REFERENCE.md`, `ROADMAP.md`, and `DOCUMENTATION_INDEX.md`.
@@ -1063,6 +1601,19 @@
 ### Housekeeping
 
 - Stale `build/toolkit-addons` directory and build artifacts removed.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -1190,6 +1741,19 @@
 
 - Stale `build/toolkit-addons` directory and build artifacts removed.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.34** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, `CHANGELOG.md`, `DOCUMENTATION_INDEX.md`, `QUICK_REFERENCE.md`, and `ROADMAP.md`.
@@ -1283,6 +1847,19 @@
 - nvoos-graphify standalone ZIP built at v1.0.0 (353,998 bytes).
 - nvoos-graphify-ai ZIP built at v1.0.0-dev (316,367 bytes).
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to **1.1.33** across `mcp-ai-wpoos.php`, `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `readme.txt` Stable tag, `README.md`, and `CHANGELOG.md`.
@@ -1370,6 +1947,19 @@
 - Security overrides added to 8 addon `package.json` files (PR #5425).
 - `phpoffice/phpspreadsheet` lock synced 5.7.0 → 5.8.0 to match `^5.8` constraint (PR #5429).
 - `@typescript-eslint/parser` bumped to match eslint-plugin peer constraint (PR #5425).
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 
@@ -3369,6 +3959,19 @@ JetEngine custom post types and Custom Content Types are now first-class citizen
 - `docs/reference/hooks/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
 - `docs/features/agent-skills.md` updated end-to-end with the Phases 1–4 narrative.
 
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
+
 ### Versioning
 
 - Bumped to 1.1.14 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
@@ -3420,6 +4023,19 @@ The repo can now be cloned and used as a production WordPress plugin without an 
 
 - README.md and readme.txt updated with a v1.1.13 section summarising the changes above. README's older "GPT-Image-1" mentions now note that `gpt-image-2` is the new default.
 - File-header citations to the upstream MemPalace project added across the agent-memory subsystem so source attribution matches the documentation.
+
+### Added — Orchestration & Harness Gap Remediation (15 industry gaps)
+
+- **Orchestration & Harness Layer Audit.** Comprehensive audit against August 2026 standards (OWASP LLM Top 10, EU AI Act, NIST AI RMF). Reference doc: `docs/reference/orchestration/orchestration-harness-reference.md`.
+- **EU AI Act Compliance Mapping** (`docs/operations/compliance/EU_AI_ACT_2026.md`).
+- **Output Guardrail — OWASP LLM05** (`includes/harness/class-wp-mcp-ai-output-guardrail.php`, ~280 lines).
+- **Citation Verifier — OWASP LLM09** (`includes/harness/class-wp-mcp-ai-citation-verifier.php`, ~270 lines).
+- **Model Integrity Verifier — OWASP LLM03** (`includes/class-wp-mcp-ai-model-integrity-verifier.php`, ~240 lines).
+- **Semantic Cache** (`includes/class-wp-mcp-ai-semantic-cache.php`, ~280 lines).
+- **Canary Deployment** (`includes/class-wp-mcp-ai-canary-deployment.php`, ~320 lines).
+- **Automated Red Teaming** (`bin/red-team.sh`, `bin/red-team.php`). Composer: `security:red-team`.
+- **Workflow Engine V2 GA.** Graduated from feature-flag to on-by-default.
+- **Harness Profile Expansion.** Added `output_guard` and `citation_verify` to profile defaults.
 
 ### Versioning
 

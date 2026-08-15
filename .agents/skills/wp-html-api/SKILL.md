@@ -1,15 +1,17 @@
 ---
 name: wp-html-api
 description: Use WordPress' HTML API for safe server-side HTML inspection and mutation instead of regex, fragile string replacement, or DOMDocument. Covers WP_HTML_Tag_Processor, WP_HTML_Processor, set_attribute, remove_attribute, add_class, remove_class, set_modifiable_text, serialize_token, custom data attribute name mapping, and WP 6.9 behavior where attribute/text setters escape character references. Use when plugin code modifies rendered HTML, block output, shortcodes, content filters, widget markup, email fragments, or user-provided HTML.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.2 - 6.9.4
-php-min: 7.4
-last-updated: 2026-04-29
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-html-api
-source-license: MIT
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.2 - 6.9.4
+  php-min: "7.4"
+  last-updated: "2026-04-29"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-html-api"
+  source-license: MIT
 ---
 # WordPress HTML API
 

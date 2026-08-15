@@ -3,14 +3,16 @@
 /**
  * Sync WordPress-specific bundled skills to .agents/skills/ for Zed.
  *
- * Copies every wp-* skill directory from includes/bundled-skills/ into
- * .agents/skills/ so the Zed editor discovers them as project-local agent
+ * Copies wp-* and project-owned skill directories from includes/bundled-skills/
+ * into .agents/skills/ so the Zed editor discovers them as project-local agent
  * skills. Existing skills are overwritten so a plugin update that changes a
  * bundled SKILL.md is reflected after `composer run skills:sync`.
  *
- * Skills not starting with "wp-" (e.g. pdf, pptx, code-reviewer) are left
- * alone — those are general-purpose and overlap with the community skills.sh
- * registry. Developers install the general ones globally in ~/.agents/skills/.
+ * General-purpose skills not starting with "wp-" (e.g. pdf, pptx, code-reviewer)
+ * are left alone — those overlap with the community skills.sh registry and
+ * developers install them globally in ~/.agents/skills/.
+ *
+ * Project-owned skills (listed in $project_skills below) are also synced.
  *
  * @package WP_MCP_AI
  * @since   1.11.0
@@ -31,6 +33,34 @@ if ( ! file_exists( $target_dir ) && ! mkdir( $target_dir, 0755, true ) ) {
 	exit( 1 );
 }
 
+// Project-owned skills that should also be synced (not wp-* but maintained
+// in this repo). Add new project-specific skills here as they are created.
+$project_skills = array(
+	'mcp-ai-wpoos-plugin',
+	'design-analytics-reporting',
+	'design-brand-kit',
+	'design-campaign-orchestration',
+	'design-color-systems',
+	'design-content-calendar',
+	'design-content-research',
+	'design-deep-research',
+	'design-document-generation',
+	'design-email-marketing',
+	'design-image-generation',
+	'design-image-optimization',
+	'design-media-workflow',
+	'design-product-photography',
+	'design-product-research',
+	'design-pro-schedule-manager',
+	'design-pro-workflow-builder',
+	'design-seo-content',
+	'design-social-content',
+	'design-social-publishing',
+	'design-typography',
+	'design-video-creation',
+	'design-web-research',
+);
+
 $copied  = 0;
 $skipped = 0;
 $failed  = 0;
@@ -38,8 +68,11 @@ $failed  = 0;
 foreach ( glob( $bundled_dir . '/*', GLOB_ONLYDIR ) as $src_dir ) {
 	$skill_name = basename( $src_dir );
 
-	// Only sync WordPress-specific skills (wp-* prefix).
-	if ( 0 !== strpos( $skill_name, 'wp-' ) ) {
+	// Sync wp-* skills and explicit project-owned skills.
+	$is_wp_skill     = ( 0 === strpos( $skill_name, 'wp-' ) );
+	$is_project_skill = in_array( $skill_name, $project_skills, true );
+
+	if ( ! $is_wp_skill && ! $is_project_skill ) {
 		++$skipped;
 		continue;
 	}
@@ -68,6 +101,30 @@ foreach ( glob( $bundled_dir . '/*', GLOB_ONLYDIR ) as $src_dir ) {
 			$skill_ok = false;
 			break;
 		}
+
+		// Ensure SKILL.md has `type: Skill` in its frontmatter (OKF v0.1
+		// conformance — the single required field).
+		if ( 'SKILL.md' === $filename ) {
+			$content   = file_get_contents( $dst_file );
+			$has_type  = ( false !== strpos( $content, "\ntype: Skill\n" ) );
+			$has_delim = ( 0 === strpos( $content, "---\n" ) );
+
+			if ( ! $has_type ) {
+				if ( $has_delim ) {
+					// Inject type: Skill as the first frontmatter key.
+					$content = preg_replace(
+						'/^(---\n)/',
+						"\$1type: Skill\n",
+						$content,
+						1
+					);
+					file_put_contents( $dst_file, $content );
+					echo "  ⚠  Injected missing `type: Skill` into {$skill_name}/SKILL.md\n";
+				} else {
+					fwrite( STDERR, "  ⚠  Warning: {$skill_name}/SKILL.md has no frontmatter — cannot inject type: Skill.\n" );
+				}
+			}
+		}
 	}
 
 	if ( $skill_ok ) {
@@ -75,7 +132,10 @@ foreach ( glob( $bundled_dir . '/*', GLOB_ONLYDIR ) as $src_dir ) {
 	}
 }
 
-// Remove stale skills in target that no longer exist in bundled.
+// Remove stale wp-* skills in target that no longer exist in bundled.
+// Note: project-owned skills (e.g. mcp-ai-wpoos-plugin) are NOT cleaned up
+// here — the glob deliberately only matches wp-* to avoid deleting non-wp
+// skills that may have been added manually.
 foreach ( glob( $target_dir . '/wp-*', GLOB_ONLYDIR ) as $dst_dir ) {
 	$skill_name   = basename( $dst_dir );
 	$bundled_path = $bundled_dir . '/' . $skill_name;

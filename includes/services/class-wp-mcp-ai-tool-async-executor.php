@@ -165,6 +165,20 @@ class WP_MCP_AI_Tool_Async_Executor {
 		}
 	}
 
+		/**
+		 * Maximum pending jobs allowed system-wide.
+		 *
+		 * @var int
+		 */
+	const MAX_PENDING_JOBS = 500;
+
+	/**
+	 * Maximum pending jobs per user.
+	 *
+	 * @var int
+	 */
+	const MAX_PENDING_JOBS_PER_USER = 20;
+
 	/**
 	 * Queue a tool for async execution
 	 *
@@ -189,6 +203,47 @@ class WP_MCP_AI_Tool_Async_Executor {
 			if ( 'pending' === $existing_result['status'] || 'running' === $existing_result['status'] ) {
 				// Job already queued or running.
 				return $job_id;
+			}
+		}
+
+		// Queue depth backpressure (1.2.0). Reject new jobs when the system
+		// is at capacity to prevent unbounded queue growth and resource
+		// exhaustion.
+		$max_pending  = (int) apply_filters( 'wp_mcp_ai_async_max_pending_jobs', self::MAX_PENDING_JOBS );
+		$max_per_user = (int) apply_filters( 'wp_mcp_ai_async_max_pending_per_user', self::MAX_PENDING_JOBS_PER_USER );
+
+		if ( $max_pending > 0 ) {
+			$pending_count = $this->count_pending_jobs();
+			if ( $pending_count >= $max_pending ) {
+				return new WP_Error(
+					'wp_mcp_ai_queue_full',
+					__( 'The job queue is currently at capacity. Please try again later.', 'mcp-ai-wpoos' ),
+					array(
+						'status'      => 429,
+						'retry_after' => 60,
+					)
+				);
+			}
+		}
+
+		if ( $max_per_user > 0 ) {
+			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+			if ( $user_id > 0 ) {
+				$user_pending = $this->count_pending_jobs_for_user( $user_id );
+				if ( $user_pending >= $max_per_user ) {
+					return new WP_Error(
+						'wp_mcp_ai_user_queue_full',
+						sprintf(
+							/* translators: %d: maximum pending jobs per user */
+							__( 'You have %d pending jobs. Please wait for some to complete before submitting more.', 'mcp-ai-wpoos' ),
+							$max_per_user
+						),
+						array(
+							'status'      => 429,
+							'retry_after' => 30,
+						)
+					);
+				}
 			}
 		}
 
@@ -1297,5 +1352,70 @@ class WP_MCP_AI_Tool_Async_Executor {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 			WP_MCP_AI_Logger::log_error( $message, $context );
 		}
+	}
+
+	/**
+	 * Count all pending async tool jobs across all users.
+	 *
+	 * Uses a lightweight WP_Options query to count metadata transients
+	 * with status 'pending'. Avoids loading all metadata into memory.
+	 *
+	 * @since 1.2.0
+	 * @return int
+	 */
+	protected function count_pending_jobs() {
+		global $wpdb;
+		$prefix = self::METADATA_TRANSIENT_PREFIX;
+		$like   = $wpdb->esc_like( '_transient_' . $prefix ) . '%';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",
+				$like
+			)
+		);
+
+		return $count;
+	}
+
+	/**
+	 * Count pending async tool jobs for a specific user.
+	 *
+	 * Loads all metadata transients for the given user and filters
+	 * to 'pending' status. Capped at 100 loaded records for performance.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int $user_id WordPress user ID.
+	 * @return int
+	 */
+	protected function count_pending_jobs_for_user( $user_id ) {
+		global $wpdb;
+		$prefix = self::METADATA_TRANSIENT_PREFIX;
+		$like   = $wpdb->esc_like( '_transient_' . $prefix ) . '%';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT option_value FROM {$wpdb->options} WHERE option_name LIKE %s LIMIT 200",
+				$like
+			)
+		);
+
+		$count = 0;
+		foreach ( $rows as $row ) {
+			$metadata = maybe_unserialize( $row );
+			if ( ! is_array( $metadata ) ) {
+				continue;
+			}
+			$job_user_id = isset( $metadata['context']['user_id'] ) ? (int) $metadata['context']['user_id'] : 0;
+			$status      = isset( $metadata['status'] ) ? $metadata['status'] : '';
+			if ( $job_user_id === $user_id && 'pending' === $status ) {
+				++$count;
+			}
+		}
+
+		return $count;
 	}
 }

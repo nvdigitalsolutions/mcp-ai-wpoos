@@ -271,8 +271,15 @@ class WP_MCP_AI_NPM_Integration_Process_Service_Test extends WP_UnitTestCase {
 		}
 
 		// The function must not return a nodejs_not_available error code — it
-		// should always try the external API fallback first.
+		// should always try the external API fallback first. Scope the scan
+		// to the wp_mcp_ai_generate_qr_code() body: other functions in this
+		// file (e.g. wp_mcp_ai_exec_node_service) legitimately return that
+		// code for their own local-Node gate.
 		$content = file_get_contents( $this->npm_filters_file );
+
+		if ( preg_match( '/function wp_mcp_ai_generate_qr_code\s*\(.*?\)\s*\{(.*?)\n\}/s', $content, $matches ) ) {
+			$content = $matches[1];
+		}
 
 		$this->assertStringNotContainsString(
 			"'nodejs_not_available'",
@@ -385,16 +392,19 @@ class WP_MCP_AI_NPM_Integration_Process_Service_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Pro addon not available' );
 		}
 
-		$base = WP_MCP_AI_PRO_PATH . 'assets/vendor/qrcode/node_modules/';
+		// qrcode-service.js resolves ../assets/vendor/qrcode (the tracked
+		// browser bundle) — assert the actual runtime resolution, not the
+		// untracked node_modules tree used by older builds.
+		$base = WP_MCP_AI_PRO_PATH . 'assets/vendor/qrcode';
 
 		$this->assertDirectoryExists(
-			$base . 'dijkstrajs',
-			'dijkstrajs must be vendored inside assets/vendor/qrcode/node_modules/'
+			$base,
+			'qrcode browser bundle must be vendored inside assets/vendor/qrcode/'
 		);
 
-		$this->assertDirectoryExists(
-			$base . 'pngjs',
-			'pngjs must be vendored inside assets/vendor/qrcode/node_modules/'
+		$this->assertFileExists(
+			$base . '/lib/browser.js',
+			'qrcode browser bundle entry must exist at assets/vendor/qrcode/lib/browser.js'
 		);
 	}
 

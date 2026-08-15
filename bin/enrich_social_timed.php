@@ -101,7 +101,7 @@ WP_CLI::log(sprintf(
 function get_brave_key() {
     static $key = null;
     if (null === $key) {
-        $s = get_option('wp_mcp_ai_settings', array());
+        $s = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option('wp_mcp_ai_settings', array());
         $key = isset($s['brave_search_api_key']) ? $s['brave_search_api_key'] : '';
     }
     return $key;

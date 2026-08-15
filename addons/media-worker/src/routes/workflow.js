@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import axios from 'axios';
 import { getQueue } from '../queue.js';
+import { validatePublicUrl } from '../utils/safe-url.js';
+import { getCredential } from '../utils/provider-keys.js';
 
 const router = Router();
 
@@ -8,21 +10,45 @@ const router = Router();
 const WORKER_URL = `http://localhost:${process.env.PORT || 3100}`;
 
 /**
- * Helper: post to internal endpoints with retry logic.
+ * Validate a user-supplied callback URL before the workflow posts results to
+ * it (SSRF guard). Returns the normalised URL string or null when absent.
+ *
+ * @param {string} callback_url Raw callback URL from the request body.
+ * @return {string|null} Normalised URL or null.
  */
-async function internalPost(endpoint, data, retries = 2) {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const resp = await axios.post(`${WORKER_URL}${endpoint}`, data, {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 120000,
-      });
-      return resp.data;
-    } catch (err) {
-      if (i === retries) throw err;
-      await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
-    }
-  }
+function safeCallbackUrl(callback_url) {
+	if (!callback_url) {
+		return null;
+	}
+	return validatePublicUrl(callback_url).toString();
+}
+
+/**
+ * Helper: post to internal endpoints with retry logic. Forwards the
+ * original request's X-Site-Token so internal calls stay authenticated in
+ * multi-tenant mode (where WORKER_API_TOKEN is not set).
+ *
+ * @param {Object} req      Original Express request.
+ * @param {string} endpoint Internal endpoint path.
+ * @param {Object} data     JSON payload.
+ * @param {number} [retries] Retry count.
+ */
+async function internalPost( req, endpoint, data, retries = 2 ) {
+	for ( let i = 0; i <= retries; i++ ) {
+		try {
+			const resp = await axios.post( `${WORKER_URL}${endpoint}`, data, {
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Site-Token': req.get( 'X-Site-Token' ) || process.env.WORKER_API_TOKEN || '',
+				},
+				timeout: 120000,
+			} );
+			return resp.data;
+		} catch ( err ) {
+			if ( i === retries ) throw err;
+			await new Promise( ( r ) => setTimeout( r, 2000 * ( i + 1 ) ) );
+		}
+	}
 }
 
 // ── Workflow: Blog Post → Social Media Package ─────────────
@@ -50,7 +76,7 @@ router.post('/social-package', async (req, res) => {
     }
 
     if (async_mode) {
-      const queue = getQueue('workflow');
+      const queue = getQueue('workflow', req.site);
       const job = await queue.add('social-package', {
         title,
         content,
@@ -78,9 +104,9 @@ router.post('/social-package', async (req, res) => {
     // Step 1: Generate featured image
     console.log(`[Workflow] Step 1: Generating image for "${title}"`);
     try {
-      const imageResult = await internalPost('/api/image/generate', {
+      const imageResult = await internalPost(req, '/api/image/generate', {
         prompt: `${image_style} style featured image for: ${title}. Professional, clean, modern design.`,
-        model: process.env.OPENAI_API_KEY ? 'dall-e-3' : 'stable-diffusion',
+        model: getCredential(req.site, 'OPENAI_API_KEY') ? 'dall-e-3' : 'stable-diffusion',
         size: '1792x1024',
         style: 'vivid',
       });
@@ -105,7 +131,7 @@ router.post('/social-package', async (req, res) => {
       for (const plat of platforms) {
         try {
           const width = platformSizes[plat] || 1200;
-          const optResult = await internalPost('/api/image/optimize-url', {
+          const optResult = await internalPost(req, '/api/image/optimize-url', {
             url: imageUrl,
             width,
             format: 'webp',
@@ -121,7 +147,7 @@ router.post('/social-package', async (req, res) => {
     // Step 3: Generate social captions
     console.log('[Workflow] Step 3: Generating social captions');
     try {
-      const contentResult = await internalPost('/api/social/generate-content', {
+      const contentResult = await internalPost(req, '/api/social/generate-content', {
         topic: title,
         tone,
         platform: platforms,
@@ -144,7 +170,7 @@ router.post('/social-package', async (req, res) => {
         const caption = variant?.variants?.[0] || `${title}\n\n${excerpt}`;
         const platImage = results.steps.image_variants?.[plat]?.url || imageUrl;
 
-        const publishResult = await internalPost('/api/social/post', {
+        const publishResult = await internalPost(req, '/api/social/post', {
           platform: plat,
           content: caption,
           media_url: platImage,
@@ -162,7 +188,7 @@ router.post('/social-package', async (req, res) => {
     // Callback
     if (callback_url) {
       try {
-        await axios.post(callback_url, results, { timeout: 10000 });
+        await axios.post(safeCallbackUrl(callback_url), results, { timeout: 10000 });
       } catch (err) {
         console.warn('[Workflow] Callback failed:', err.message);
       }
@@ -207,7 +233,7 @@ router.post('/brand-assets', async (req, res) => {
     }
 
     if (async_mode) {
-      const queue = getQueue('workflow');
+      const queue = getQueue('workflow', req.site);
       const job = await queue.add('brand-assets', {
         brand_name,
         style,
@@ -246,9 +272,9 @@ router.post('/brand-assets', async (req, res) => {
 
     for (let i = 0; i < Math.min(num_concepts, logoPrompts.length); i++) {
       try {
-        const logoResult = await internalPost('/api/image/generate', {
+        const logoResult = await internalPost(req, '/api/image/generate', {
           prompt: logoPrompts[i],
-          model: process.env.OPENAI_API_KEY ? 'dall-e-3' : 'stable-diffusion',
+          model: getCredential(req.site, 'OPENAI_API_KEY') ? 'dall-e-3' : 'stable-diffusion',
           size: '1024x1024',
         });
         results.assets.logos.push({
@@ -266,7 +292,7 @@ router.post('/brand-assets', async (req, res) => {
       const logoUrl = results.assets.logos[0]?.url;
       try {
         if (logoUrl) {
-          const avatar = await internalPost('/api/image/optimize-url', {
+          const avatar = await internalPost(req, '/api/image/optimize-url', {
             url: logoUrl,
             width: 400,
             height: 400,
@@ -280,14 +306,14 @@ router.post('/brand-assets', async (req, res) => {
 
       // Step 3: Generate social banner (1500x500)
       try {
-        const banner = await internalPost('/api/image/generate', {
+        const banner = await internalPost(req, '/api/image/generate', {
           prompt: `Horizontal banner for "${brand_name}", ${style} style, modern design, suitable for Twitter/LinkedIn header. ${colorHint}`,
-          model: process.env.OPENAI_API_KEY ? 'dall-e-3' : 'stable-diffusion',
+          model: getCredential(req.site, 'OPENAI_API_KEY') ? 'dall-e-3' : 'stable-diffusion',
           size: '1792x1024',
         });
 
         if (banner?.url) {
-          const bannerOptimized = await internalPost('/api/image/optimize-url', {
+          const bannerOptimized = await internalPost(req, '/api/image/optimize-url', {
             url: banner.url,
             width: 1500,
             height: 500,
@@ -303,7 +329,7 @@ router.post('/brand-assets', async (req, res) => {
     // Callback
     if (callback_url) {
       try {
-        await axios.post(callback_url, results, { timeout: 10000 });
+        await axios.post(safeCallbackUrl(callback_url), results, { timeout: 10000 });
       } catch (err) {
         console.warn('[Workflow] Callback failed:', err.message);
       }
@@ -348,7 +374,7 @@ router.post('/video-pipeline', async (req, res) => {
     }
 
     if (async_mode) {
-      const queue = getQueue('workflow');
+      const queue = getQueue('workflow', req.site);
       const job = await queue.add('video-pipeline', {
         video_url,
         title,
@@ -382,9 +408,9 @@ router.post('/video-pipeline', async (req, res) => {
     // Step 2: Generate poster/thumbnail via AI
     if (title) {
       try {
-        const poster = await internalPost('/api/image/generate', {
+        const poster = await internalPost(req, '/api/image/generate', {
           prompt: `Video thumbnail poster: ${title}. Eye-catching, high contrast, professional YouTube-style thumbnail.`,
-          model: process.env.OPENAI_API_KEY ? 'dall-e-3' : 'stable-diffusion',
+          model: getCredential(req.site, 'OPENAI_API_KEY') ? 'dall-e-3' : 'stable-diffusion',
           size: '1792x1024',
         });
         results.steps.poster = poster;
@@ -406,7 +432,7 @@ router.post('/video-pipeline', async (req, res) => {
 
     if (callback_url) {
       try {
-        await axios.post(callback_url, results, { timeout: 10000 });
+        await axios.post(safeCallbackUrl(callback_url), results, { timeout: 10000 });
       } catch (err) {
         console.warn('[Workflow] Callback failed:', err.message);
       }
@@ -426,11 +452,11 @@ router.post('/video-pipeline', async (req, res) => {
 });
 
 // ── Workflow Status ────────────────────────────────────────
-router.get('/status', async (_req, res) => {
+router.get('/status', async (req, res) => {
   try {
-    const imageQueue = getQueue('image-generation');
-    const socialQueue = getQueue('social-scheduled');
-    const workflowQueue = getQueue('workflow');
+    const imageQueue = getQueue('image-generation', req.site);
+    const socialQueue = getQueue('social-scheduled', req.site);
+    const workflowQueue = getQueue('workflow', req.site);
 
     const [imageStats, socialStats, workflowStats] = await Promise.all([
       imageQueue.getStats(),
@@ -440,6 +466,7 @@ router.get('/status', async (_req, res) => {
 
     res.json({
       status: 'ok',
+      site: req.site,
       queues: {
         image_generation: imageStats,
         social_scheduled: socialStats,

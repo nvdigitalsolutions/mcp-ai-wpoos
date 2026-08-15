@@ -24,6 +24,7 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
  */
 class WP_MCP_AI_Tool_Paper_Store_Export implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Paper_Store_Remote;
 
 	/**
 	 * {@inheritdoc}
@@ -53,18 +54,19 @@ class WP_MCP_AI_Tool_Paper_Store_Export implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'collection' => array(
+				'collection'    => array(
 					'type'        => 'string',
 					'description' => __( 'Collection name to export.', 'mcp-ai-wpoos-pro' ),
 				),
-				'tags'       => array(
+				'tags'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Export only records with this tag.', 'mcp-ai-wpoos-pro' ),
 				),
-				'status'     => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional. Export only records with this status.', 'mcp-ai-wpoos-pro' ),
 				),
+				'connection_id' => $this->get_connection_id_schema(),
 			),
 			'required'   => array( 'collection' ),
 		);
@@ -86,12 +88,29 @@ class WP_MCP_AI_Tool_Paper_Store_Export implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
-		$collection = sanitize_key( $arguments['collection'] );
-		$tag        = isset( $arguments['tags'] ) ? sanitize_text_field( $arguments['tags'] ) : null;
-		$status     = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : null;
+		$collection    = sanitize_key( $arguments['collection'] );
+		$tag           = isset( $arguments['tags'] ) ? sanitize_text_field( $arguments['tags'] ) : null;
+		$status        = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : null;
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 
 		if ( empty( $collection ) ) {
 			return new WP_Error( 'missing_params', __( 'Collection name is required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Remote dispatch.
+		if ( ! empty( $connection_id ) ) {
+			$query_args = array();
+			if ( ! empty( $tag ) ) {
+				$query_args['tag'] = $tag;
+			}
+			if ( ! empty( $status ) ) {
+				$query_args['status'] = $status;
+			}
+			$endpoint = 'mcp-ai/v1/paper-store/' . $collection . '/export';
+			if ( ! empty( $query_args ) ) {
+				$endpoint .= '?' . http_build_query( $query_args );
+			}
+			return $this->execute_remote( $connection_id, $endpoint, 'GET' );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {

@@ -27,6 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-session-store.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-thread-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-threads-controller.php';
 
@@ -225,64 +226,91 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 
 			// Register Token Manager REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-token-manager.php';
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Token_Manager', 'register_routes' ) );
+			$token_manager_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-token-manager.php';
+			if ( file_exists( $token_manager_file ) ) {
+				require_once $token_manager_file;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Token_Manager', 'register_routes' ) );
+			}
 
 			// Register Cost Manager REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cost-manager.php';
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Cost_Manager', 'register_routes' ) );
+			$cost_manager_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cost-manager.php';
+			if ( file_exists( $cost_manager_file ) ) {
+				require_once $cost_manager_file;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Cost_Manager', 'register_routes' ) );
+			}
 
 			// Register Analytics Manager REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Analytics_Manager', 'register_routes' ) );
+			$analytics_manager_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
+			if ( file_exists( $analytics_manager_file ) ) {
+				require_once $analytics_manager_file;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Analytics_Manager', 'register_routes' ) );
+			}
 
 			// Register Slash Command REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-slash-command-controller.php';
-			add_action(
-				'rest_api_init',
-				function () {
-					$controller = new WP_MCP_AI_REST_Slash_Command_Controller();
-					$controller->register_routes();
-				}
-			);
+			$slash_command_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-slash-command-controller.php';
+			if ( file_exists( $slash_command_file ) ) {
+				require_once $slash_command_file;
+				add_action(
+					'rest_api_init',
+					function () {
+						$controller = new WP_MCP_AI_REST_Slash_Command_Controller();
+						$controller->register_routes();
+					}
+				);
+			}
 
 			// Register ACP Transport REST endpoints.
-			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-jsonrpc-dispatcher.php';
-			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-manager.php';
-			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
-			require_once WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-server.php';
-			require_once WP_MCP_AI_PATH . 'includes/acp/transport/class-wp-mcp-ai-acp-transport-http.php';
+			$acp_dispatcher_file = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-jsonrpc-dispatcher.php';
+			$acp_session_file    = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-manager.php';
+			$acp_bridge_file     = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-session-bridge.php';
+			$acp_server_file     = WP_MCP_AI_PATH . 'includes/acp/class-wp-mcp-ai-acp-server.php';
+			$acp_transport_file  = WP_MCP_AI_PATH . 'includes/acp/transport/class-wp-mcp-ai-acp-transport-http.php';
+			if ( file_exists( $acp_dispatcher_file ) && file_exists( $acp_session_file ) && file_exists( $acp_bridge_file ) && file_exists( $acp_server_file ) && file_exists( $acp_transport_file ) ) {
+				require_once $acp_dispatcher_file;
+				require_once $acp_session_file;
+				require_once $acp_bridge_file;
+				require_once $acp_server_file;
+				require_once $acp_transport_file;
 
-			add_action(
-				'rest_api_init',
-				function () {
-					// Only mount the ACP server if enabled in settings.
-					$settings = get_option( 'wp_mcp_ai_settings', array() );
-					if ( empty( $settings['enable_acp_server'] ) ) {
-						return;
+				add_action(
+					'rest_api_init',
+					function () {
+						// Only mount the ACP server if enabled in settings.
+						$settings = get_option( 'wp_mcp_ai_settings', array() );
+						if ( empty( $settings['enable_acp_server'] ) ) {
+							return;
+						}
+
+						$session_manager = new WP_MCP_AI_ACP_Session_Manager();
+						$session_bridge  = new WP_MCP_AI_ACP_Session_Bridge();
+						$dispatcher      = new WP_MCP_AI_ACP_JSONRPC_Dispatcher( $session_manager, $session_bridge );
+						$controller      = new WP_MCP_AI_ACP_Transport_HTTP( $dispatcher );
+						$controller->register_routes();
 					}
-
-					$session_manager = new WP_MCP_AI_ACP_Session_Manager();
-					$session_bridge  = new WP_MCP_AI_ACP_Session_Bridge();
-					$dispatcher      = new WP_MCP_AI_ACP_JSONRPC_Dispatcher( $session_manager, $session_bridge );
-					$controller      = new WP_MCP_AI_ACP_Transport_HTTP( $dispatcher );
-					$controller->register_routes();
-				}
-			);
+				);
+			}
 
 			// Register Health Check REST endpoint (load balancer / monitoring).
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-health.php';
-			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Health', 'register_routes' ) );
+			$health_file = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-health.php';
+			if ( file_exists( $health_file ) ) {
+				require_once $health_file;
+				add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Health', 'register_routes' ) );
+			}
 
 			// Register Voice REST endpoints (realtime voice sessions).
-			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-translate-client.php';
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-whisper-client.php';
-			$this->voice_controller = new WP_MCP_AI_REST_Voice_Controller();
-			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Client() );
-			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Translate_Client() );
-			$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Whisper_Client() );
-			$this->voice_controller->register_provider( new WP_MCP_AI_Gemini_Live_Client() );
+			$voice_file     = WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-controller.php';
+			$translate_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-translate-client.php';
+			$whisper_file   = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-realtime-whisper-client.php';
+			if ( file_exists( $voice_file ) && file_exists( $translate_file ) && file_exists( $whisper_file ) ) {
+				require_once $voice_file;
+				require_once $translate_file;
+				require_once $whisper_file;
+				$this->voice_controller = new WP_MCP_AI_REST_Voice_Controller();
+				$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Client() );
+				$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Translate_Client() );
+				$this->voice_controller->register_provider( new WP_MCP_AI_OpenAI_Realtime_Whisper_Client() );
+				$this->voice_controller->register_provider( new WP_MCP_AI_Gemini_Live_Client() );
+			}
 
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
@@ -2046,6 +2074,34 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
+			/**
+			 * Allow raw assistant credentials (cred_xxx.yyy) without the
+			 * "Bearer " scheme prefix.
+			 *
+			 * Mirrors the compatibility handling in permissions_check_mcp().
+			 *
+			 * @since 1.1.55
+			 *
+			 * @param bool $accept_raw_credential_header Whether to accept raw credential headers. Default true.
+			 */
+			$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+			if ( $accept_raw_credential && ! empty( $bearer ) && preg_match( '/^cred_[A-Za-z0-9]+\.[A-Za-z0-9_-]{8,}$/', trim( $bearer ) ) ) {
+				$token = trim( $bearer );
+				$local = $this->validate_local_token( $token, $request );
+
+				if ( true === $local ) {
+					// Check rate limiting for local token authenticated requests.
+					$user_id          = get_current_user_id();
+					$rate_limit_check = $this->check_rate_limit( $user_id );
+					if ( is_wp_error( $rate_limit_check ) ) {
+						return $rate_limit_check;
+					}
+					return true;
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+			}
+
 			$nonce = $request->get_header( 'X-WP-Nonce' );
 			if ( ! $requires_authenticated_user ) {
 				if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
@@ -2471,6 +2527,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
+				/**
+				 * Allow raw assistant credentials (cred_xxx.yyy) without the
+				 * "Bearer " scheme prefix.
+				 *
+				 * Some agent configurations forward the Authorization header value
+				 * verbatim as configured (e.g. Cloudways Agent). The credential
+				 * itself is the secret; the scheme label adds no security, so we
+				 * accept the raw form for compatibility. Disable this filter to
+				 * require strict RFC 6750 bearer syntax.
+				 *
+				 * @since 1.1.55
+				 *
+				 * @param bool $accept_raw_credential_header Whether to accept raw credential headers. Default true.
+				 */
+				$accept_raw_credential = apply_filters( 'wp_mcp_ai_accept_raw_credential_header', true );
+			if ( $accept_raw_credential && ! empty( $bearer ) && preg_match( '/^cred_[A-Za-z0-9]+\.[A-Za-z0-9_-]{8,}$/', trim( $bearer ) ) ) {
+				$token = trim( $bearer );
+
+				// Validate local credential token (raw form).
+				$local = $this->validate_local_token( $token, $request );
+				if ( true === $local ) {
+					return true;
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+			}
+
 				// Check for WordPress Basic auth (Application Passwords).
 			if ( ! empty( $bearer ) && 0 === stripos( $bearer, 'Basic ' ) ) {
 				$basic_result = $this->validate_wp_basic_auth( $request );
@@ -2726,6 +2809,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
+			// GET/HEAD requests are cheap, read-only probes (endpoint discovery,
+			// SSE stream checks). MCP client retry loops can legitimately issue
+			// many of them per hour, so they must not consume the budget aimed
+			// at expensive or state-changing traffic.
+			$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+			if ( in_array( strtoupper( $request_method ), array( 'GET', 'HEAD' ), true ) ) {
+				return true;
+			}
+
 			// Get rate limit configuration.
 			$max_requests = isset( $settings['rate_limit_requests'] ) ? absint( $settings['rate_limit_requests'] ) : 100;
 			$time_window  = isset( $settings['rate_limit_window'] ) ? absint( $settings['rate_limit_window'] ) : 3600;
@@ -2809,29 +2901,65 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * chat requests. Tool execution uses a shorter, tighter window to prevent
 		 * tool abuse while allowing reasonable usage.
 		 *
-		 * @since 1.2.0
+		 * Limits are configurable via the Security → Tool Rate Limiting settings
+		 * (tool_rate_limit_max / tool_rate_limit_window). Credential-token
+		 * (AI agent) traffic is exempt by default because an assistant credential
+		 * is already an explicit grant of its tool set — agents legitimately fire
+		 * tool calls in bursts. Guest and nonce (chat UI) traffic stays limited.
 		 *
-		 * @param int $user_id User ID making the request (0 for guests).
+		 * @since 1.2.0
+		 * @since 1.1.55 Added settings-driven limits and token exemption.
+		 *
+		 * @param int   $user_id      User ID making the request (0 for guests).
+		 * @param array $auth_context Optional auth context (token_authenticated flag).
 		 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
 		 */
-		protected function check_tool_rate_limit( $user_id ) {
+		protected function check_tool_rate_limit( $user_id, $auth_context = array() ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Exempt credential-token (AI agent) traffic when enabled.
+			// An assistant credential is an explicit grant of the assistant's tool
+			// set; rate limiting exists to stop chat-UI/guest abuse.
+			$exempt_tokens = isset( $settings['tool_rate_limit_exempt_tokens'] ) ? (bool) $settings['tool_rate_limit_exempt_tokens'] : true;
+			if ( $exempt_tokens && ! empty( $auth_context['token_authenticated'] ) ) {
+				return true;
+			}
+
+			// Resolve the window and max from settings, falling back to the class
+			// constants for backward compatibility.
+			$window_default = isset( $settings['tool_rate_limit_window'] ) ? absint( $settings['tool_rate_limit_window'] ) : self::TOOL_RATE_LIMIT_WINDOW;
+			$window_default = max( 10, $window_default );
+
+			$max_default = isset( $settings['tool_rate_limit_max'] ) ? absint( $settings['tool_rate_limit_max'] ) : self::TOOL_RATE_LIMIT_MAX;
+			$max_default = max( 0, $max_default );
+
 			/**
 			 * Filters the tool rate limit window in seconds.
 			 *
 			 * @since 1.2.0
 			 *
-			 * @param int $window Window in seconds. Default TOOL_RATE_LIMIT_WINDOW (60).
+			 * @param int $window Window in seconds. Defaults to the
+			 *                    tool_rate_limit_window setting (60).
 			 */
-			$window = apply_filters( 'wp_mcp_ai_tool_rate_limit_window', self::TOOL_RATE_LIMIT_WINDOW );
+			$window = apply_filters( 'wp_mcp_ai_tool_rate_limit_window', $window_default );
 
 			/**
 			 * Filters the maximum tool executions per window.
 			 *
 			 * @since 1.2.0
 			 *
-			 * @param int $max Maximum executions. Default TOOL_RATE_LIMIT_MAX (60).
+			 * @param int $max Maximum executions. Defaults to the
+			 *                 tool_rate_limit_max setting (300). 0 = unlimited.
 			 */
-			$max = apply_filters( 'wp_mcp_ai_tool_rate_limit_max', self::TOOL_RATE_LIMIT_MAX );
+			$max = apply_filters( 'wp_mcp_ai_tool_rate_limit_max', $max_default );
+
+			$window = max( 10, absint( $window ) );
+			$max    = max( 0, absint( $max ) );
+
+			// 0 disables the limiter.
+			if ( 0 === $max ) {
+				return true;
+			}
 
 			// Create a unique key. Guests (user_id=0) get an IP-based
 			// key to prevent one attacker from exhausting the global quota.
@@ -5852,7 +5980,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$is_guest     = ! empty( $auth_context['is_guest'] );
 
 			// Enforce per-user, per-tool rate limiting.
-			$tool_rate_limit = $this->check_tool_rate_limit( $user_id );
+			$tool_rate_limit = $this->check_tool_rate_limit( $user_id, $auth_context );
 			if ( is_wp_error( $tool_rate_limit ) ) {
 				return $tool_rate_limit;
 			}
@@ -5897,6 +6025,46 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Ensure agentic_loop is false for direct tools/call requests so
+			// the async orchestrator doesn't force-sync (Priority 5). This
+			// matches the behavior of execute_tool_call_internal() which sets
+			// agentic_loop => true only when called from the chat agentic loop.
+			if ( ! isset( $context['agentic_loop'] ) ) {
+				$context['agentic_loop'] = false;
+			}
+
+			// Orchestration Layer: Check if tool should execute asynchronously
+			// (1.1.44). Mirrors the async decision path in
+			// execute_tool_call_internal() for consistent behavior across the
+			// direct tools/call endpoint and the chat agentic loop.
+			$orchestrator = wp_mcp_ai_get_async_tool_orchestrator();
+			$should_async = $orchestrator->should_execute_async( $tool, $prepared_arguments, $context );
+
+			if ( $should_async ) {
+				$executor = wp_mcp_ai_get_async_tool_executor();
+				$job_id   = $executor->queue_tool( $tool_slug, $prepared_arguments, $context );
+
+				if ( ! is_wp_error( $job_id ) ) {
+					return rest_ensure_response(
+						array(
+							'assistant_id'     => $assistant_id,
+							'tool'             => $tool_slug,
+							'status'           => 'pending',
+							'job_id'           => $job_id,
+							'message'          => sprintf(
+								/* translators: 1: tool name, 2: job ID */
+								__( 'Tool "%1$s" is processing in the background (Job ID: %2$s).', 'mcp-ai-wpoos' ),
+								$tool->get_name(),
+								$job_id
+							),
+							'async'            => true,
+							'capability_flags' => $this->extract_capability_flags_from_tool( $tool ),
+						)
+					);
+				}
+				// Fall through: queueing failed → execute synchronously.
+			}
+
 			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
 			try {
 				try {
@@ -5905,6 +6073,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Destructive-ops gate: return the confirmation request as a
 					// WP_Error envelope (HTTP 428) through the normal pipeline.
 					return $wp_mcp_ai_gate_exception->to_wp_error();
+				} catch ( WP_MCP_AI_Concurrency_Limit_Reached $e ) {
+					// Concurrency guard (1.1.44): operation type at capacity.
+					return $e->to_wp_error();
+				} catch ( WP_MCP_AI_Cost_Budget_Exceeded $e ) {
+					// Cost tracker (1.1.44): assistant budget exceeded.
+					return $e->to_wp_error();
 				}
 
 				$wp_mcp_ai_tool_start = microtime( true );
@@ -11824,6 +11998,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Destructive-ops gate: return the confirmation request as a
 					// WP_Error envelope (HTTP 428) through the normal pipeline.
 					return $wp_mcp_ai_gate_exception->to_wp_error();
+				} catch ( WP_MCP_AI_Concurrency_Limit_Reached $e ) {
+					// Concurrency guard (1.1.44): operation type at capacity.
+					return $e->to_wp_error();
+				} catch ( WP_MCP_AI_Cost_Budget_Exceeded $e ) {
+					// Cost tracker (1.1.44): assistant budget exceeded.
+					return $e->to_wp_error();
 				}
 
 				$wp_mcp_ai_tool_start = microtime( true );

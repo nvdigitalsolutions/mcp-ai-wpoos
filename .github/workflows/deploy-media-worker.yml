@@ -1,0 +1,32 @@
+name: Deploy media-worker to Velocity
+
+# Manual, opt-in deploy (Phase 3 W7). Runs only when the
+# VELOCITY_DEPLOY_URL repository secret is configured; otherwise it is a
+# clean no-op. Push the subtree-synced code to Cloudways Velocity's deploy
+# remote (Velocity auto-deploys on push to main).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: git subtree split --prefix=addons/media-worker --branch=media-worker-deploy
+
+      - name: Push to Velocity deploy remote
+        env:
+          VELOCITY_DEPLOY_URL: ${{ secrets.VELOCITY_DEPLOY_URL }}
+        run: |
+          if [ -z "$VELOCITY_DEPLOY_URL" ]; then
+            echo "Skipped: VELOCITY_DEPLOY_URL secret is not set."
+            exit 0
+          fi
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          git push "$VELOCITY_DEPLOY_URL" media-worker-deploy:main --force

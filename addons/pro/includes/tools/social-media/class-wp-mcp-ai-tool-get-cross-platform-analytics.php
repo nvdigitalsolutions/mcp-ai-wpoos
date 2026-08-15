@@ -243,7 +243,45 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 			);
 		}
 
-		// Build analytics response.
+		// Try shared analytics service first (Phase 5 migration).
+		if ( class_exists( 'WP_MCP_AI_Analytics_Service' ) ) {
+			$service = WP_MCP_AI_Analytics_Service::instance();
+
+			$include_sections = array( 'summary' );
+			if ( ! empty( $arguments['include_engagement'] ) ) {
+				$include_sections[] = 'engagement';
+			}
+			if ( ! empty( $arguments['include_reach'] ) ) {
+				$include_sections[] = 'reach';
+			}
+			if ( ! empty( $arguments['include_growth'] ) ) {
+				$include_sections[] = 'growth';
+			}
+			if ( ! empty( $arguments['include_top_posts'] ) ) {
+				$include_sections[] = 'top_posts';
+			}
+			if ( ! empty( $arguments['comparison_period'] ) ) {
+				$include_sections[] = 'comparison';
+			}
+
+			$report = $service->get_social_analytics(
+				array(
+					'platforms'         => $platforms,
+					'date_from'         => $date_from,
+					'date_to'           => $date_to,
+					'group_by'          => $group_by,
+					'include_sections'  => $include_sections,
+					'top_posts_count'   => $top_posts_count,
+					'comparison_period' => ! empty( $arguments['comparison_period'] ),
+				)
+			);
+
+			if ( ! is_wp_error( $report ) ) {
+				return $this->convert_report_to_legacy_format( $report, $platforms, $date_from, $date_to, $group_by, $arguments );
+			}
+		}
+
+		// Fallback: Build analytics response with mock data.
 		$analytics = array(
 			'success' => true,
 			'period'  => array(
@@ -274,15 +312,15 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 			$analytics['top_posts'] = $this->get_top_posts( $platforms, $date_from, $date_to, $top_posts_count );
 		}
 
-		// Add comparison period if requested.
+			// Add comparison period if requested.
 		if ( isset( $arguments['comparison_period'] ) && $arguments['comparison_period'] ) {
 			$analytics['comparison'] = $this->get_comparison_period( $platforms, $date_from, $date_to );
 		}
 
-		// Add chart data for visualization.
-		$analytics['charts'] = $this->prepare_chart_data( $analytics, $group_by );
+			// Add chart data for visualization.
+			$analytics['charts'] = $this->prepare_chart_data( $analytics, $group_by );
 
-		return $analytics;
+			return $analytics;
 	}
 
 	/**
@@ -629,5 +667,228 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 				'datasets' => array(),
 			),
 		);
+	}
+
+	/**
+	 * Convert an Analytics_Report_DTO to the legacy response format.
+	 *
+	 * Maintains backward compatibility with existing callers while the
+	 * shared analytics service provides real data behind the scenes.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param WP_MCP_AI_Analytics_Report_DTO $report    Report from shared service.
+	 * @param array                          $platforms Platform list.
+	 * @param string                         $from      Date from.
+	 * @param string                         $to        Date to.
+	 * @param string                         $group_by  Grouping period.
+	 * @param array                          $arguments Original tool arguments.
+	 * @return array Legacy analytics response.
+	 */
+	private function convert_report_to_legacy_format( $report, $platforms, $from, $to, $group_by, $arguments ) {
+		$report_arr = $report->to_array();
+
+		$analytics = array(
+			'success' => true,
+			'period'  => array(
+				'from'     => $from,
+				'to'       => $to,
+				'group_by' => $group_by,
+			),
+			'summary' => $this->build_legacy_summary( $report_arr, $platforms ),
+		);
+
+		if ( ! empty( $arguments['include_engagement'] ) ) {
+			$analytics['engagement'] = $this->build_legacy_engagement( $report_arr, $platforms );
+		}
+
+		if ( ! empty( $arguments['include_reach'] ) ) {
+			$analytics['reach'] = $this->build_legacy_reach( $report_arr, $platforms );
+		}
+
+		if ( ! empty( $arguments['include_growth'] ) ) {
+			$analytics['growth'] = $this->build_legacy_growth( $report_arr, $platforms );
+		}
+
+		if ( ! empty( $arguments['include_top_posts'] ) ) {
+			$analytics['top_posts'] = $this->build_legacy_top_posts( $report_arr, $platforms );
+		}
+
+		if ( ! empty( $arguments['comparison_period'] ) ) {
+			$analytics['comparison'] = isset( $report_arr['comparison'] ) ? $report_arr['comparison'] : array();
+		}
+
+		$analytics['charts'] = isset( $report_arr['charts'] ) ? $report_arr['charts'] : $this->prepare_chart_data( $analytics, $group_by );
+
+		return $analytics;
+	}
+
+	/**
+	 * Build legacy summary format from normalized report.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param array $report    Report array.
+	 * @param array $platforms Platform list.
+	 * @return array
+	 */
+	private function build_legacy_summary( $report, $platforms ) {
+		$summary_arr = isset( $report['summary'] ) ? $report['summary'] : array();
+
+		$summary = array(
+			'total_posts'       => 0,
+			'total_engagement'  => (int) ( $summary_arr['engagement'] ?? 0 ),
+			'total_reach'       => (int) ( $summary_arr['reach'] ?? 0 ),
+			'total_impressions' => (int) ( $summary_arr['impressions'] ?? 0 ),
+			'total_followers'   => (int) ( $summary_arr['followers'] ?? 0 ),
+			'platforms_count'   => count( $platforms ),
+			'engagement_rate'   => (float) ( $summary_arr['engagement_rate'] ?? 0 ),
+			'by_platform'       => array(),
+		);
+
+		foreach ( $platforms as $platform ) {
+			$summary['by_platform'][ $platform ] = array(
+				'platform'    => $platform,
+				'posts_count' => 0,
+				'engagement'  => 0,
+				'reach'       => 0,
+				'impressions' => 0,
+				'followers'   => 0,
+				'status'      => 'connected',
+			);
+		}
+
+		return $summary;
+	}
+
+	/**
+	 * Build legacy engagement format.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param array $report    Report array.
+	 * @param array $platforms Platform list.
+	 * @return array
+	 */
+	private function build_legacy_engagement( $report, $platforms ) {
+		$summary_arr = isset( $report['summary'] ) ? $report['summary'] : array();
+
+		$engagement = array(
+			'total_likes'     => (int) ( $summary_arr['likes'] ?? 0 ),
+			'total_comments'  => (int) ( $summary_arr['comments'] ?? 0 ),
+			'total_shares'    => (int) ( $summary_arr['shares'] ?? 0 ),
+			'total_saves'     => (int) ( $summary_arr['saves'] ?? 0 ),
+			'engagement_rate' => (float) ( $summary_arr['engagement_rate'] ?? 0 ),
+			'trends'          => array(),
+			'by_platform'     => array(),
+		);
+
+		foreach ( $platforms as $platform ) {
+			$engagement['by_platform'][ $platform ] = array(
+				'likes'    => 0,
+				'comments' => 0,
+				'shares'   => 0,
+				'saves'    => 0,
+				'trends'   => array(),
+			);
+		}
+
+		return $engagement;
+	}
+
+	/**
+	 * Build legacy reach format.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param array $report    Report array.
+	 * @param array $platforms Platform list.
+	 * @return array
+	 */
+	private function build_legacy_reach( $report, $platforms ) {
+		$summary_arr = isset( $report['summary'] ) ? $report['summary'] : array();
+
+		$reach = array(
+			'total_reach'       => (int) ( $summary_arr['reach'] ?? 0 ),
+			'total_impressions' => (int) ( $summary_arr['impressions'] ?? 0 ),
+			'unique_viewers'    => 0,
+			'trends'            => array(),
+			'by_platform'       => array(),
+		);
+
+		foreach ( $platforms as $platform ) {
+			$reach['by_platform'][ $platform ] = array(
+				'reach'       => 0,
+				'impressions' => 0,
+				'trends'      => array(),
+			);
+		}
+
+		return $reach;
+	}
+
+	/**
+	 * Build legacy growth format.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param array $report    Report array.
+	 * @param array $platforms Platform list.
+	 * @return array
+	 */
+	private function build_legacy_growth( $report, $platforms ) {
+		$growth = array(
+			'net_growth'    => 0,
+			'new_followers' => 0,
+			'unfollows'     => 0,
+			'growth_rate'   => 0,
+			'trends'        => array(),
+			'by_platform'   => array(),
+		);
+
+		foreach ( $platforms as $platform ) {
+			$growth['by_platform'][ $platform ] = array(
+				'net_growth'    => 0,
+				'new_followers' => 0,
+				'unfollows'     => 0,
+				'trends'        => array(),
+			);
+		}
+
+		return $growth;
+	}
+
+	/**
+	 * Build legacy top posts format from normalized report.
+	 *
+	 * @since 1.7.0
+	 *
+	 * @param array $report    Report array.
+	 * @param array $platforms Platform list.
+	 * @return array
+	 */
+	private function build_legacy_top_posts( $report, $platforms ) {
+		$top_posts = array();
+
+		foreach ( $platforms as $platform ) {
+			$top_posts[ $platform ] = array();
+		}
+
+		if ( isset( $report['top_posts'] ) && is_array( $report['top_posts'] ) ) {
+			foreach ( $report['top_posts'] as $post ) {
+				$p = isset( $post['platform'] ) ? $post['platform'] : '';
+				if ( in_array( $p, $platforms, true ) ) {
+					$top_posts[ $p ][] = array(
+						'post_id'      => isset( $post['post_id'] ) ? $post['post_id'] : '',
+						'content_type' => isset( $post['content_type'] ) ? $post['content_type'] : '',
+						'permalink'    => isset( $post['permalink'] ) ? $post['permalink'] : '',
+						'caption'      => isset( $post['caption'] ) ? $post['caption'] : null,
+						'metrics'      => isset( $post['metrics'] ) ? $post['metrics'] : array(),
+					);
+				}
+			}
+		}
+
+		return $top_posts;
 	}
 }

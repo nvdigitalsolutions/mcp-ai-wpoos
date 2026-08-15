@@ -1,15 +1,17 @@
 ---
 name: wp-plugin-hooks
 description: "Design custom action/filter hooks emitted by a plugin: action vs filter semantics, prefixed names, docblocks, parameter stability, *_ref_array forwarding, and deprecated hook migration. Use when adding, reviewing, evolving, or deprecating a public hook surface. Triggers on do_action, apply_filters, apply_filters_deprecated, do_action_deprecated, apply_filters_ref_array, do_action_ref_array, did_action, did_filter, or hook @since docblocks."
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.5 - 6.9
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-hooks
-source-license: MIT
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.5 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-hooks"
+  source-license: MIT
 ---
 # WordPress plugin: custom hooks (the ones YOU emit)
 

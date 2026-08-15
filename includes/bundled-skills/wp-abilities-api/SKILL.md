@@ -1,16 +1,17 @@
 ---
-type: Skill
 name: wp-abilities-api
-description: Register WordPress Abilities: machine-readable plugin operations with JSON Schema contracts, required permission callbacks, optional REST exposure, and AI/MCP-friendly discovery. Covers categories, wp_register_ability, WP_Ability::execute, REST run endpoints, meta.show_in_rest, annotations, and Ability vs REST route vs custom hook decisions. Use when exposing plugin functionality to agents, admin JS, external tools, or reviewing AI integration code.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.9 - 6.9.4
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-abilities-api
-source-license: MIT
+description: "Register WordPress Abilities: machine-readable plugin operations with JSON Schema contracts, required permission callbacks, optional REST exposure, and AI/MCP-friendly discovery. Covers categories, wp_register_ability, WP_Ability::execute, REST run endpoints, meta.show_in_rest, annotations, and Ability vs REST route vs custom hook decisions. Use when exposing plugin functionality to agents, admin JS, external tools, or reviewing AI integration code."
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.9 - 6.9.4
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-abilities-api"
+  source-license: MIT
 ---
 # WordPress Abilities API
 

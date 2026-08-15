@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load required traits from base plugin.
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-client.php';
 
 /**
  * Extract text from PDF documents.
@@ -31,6 +32,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * {@inheritdoc}
@@ -500,6 +502,20 @@ Failed to extract text from PDF: %s',
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	protected function extract_text_from_pdf( $file_path, $max_pages = 0 ) {
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured or the health check fails). The
+		// worker accepts a multipart PDF upload.
+		if ( $this->is_sidecar_upload_supported() ) {
+			$fields = array();
+			if ( $max_pages > 0 ) {
+				$fields['maxPages'] = (int) $max_pages;
+			}
+			$sidecar = $this->sidecar_upload( '/api/pdf/extract', $file_path, $fields, 120 );
+			if ( ! is_wp_error( $sidecar ) && isset( $sidecar['text'] ) ) {
+				return $sidecar['text'];
+			}
+		}
+
 		// Primary method: Try Node.js pdf-parse service (fast, reliable, pre-bundled).
 		$node_result = $this->extract_with_node_service( $file_path, $max_pages );
 		if ( ! is_wp_error( $node_result ) ) {

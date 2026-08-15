@@ -61,8 +61,10 @@ emailRouter.post('/compile-mjml', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing mjml content' });
     }
 
-    const mjml2html = (await import('mjml')).default;
-    const result = mjml2html(mjmlInput, {
+    		const mjml2html = ( await import( 'mjml' ) ).default;
+    		// mjml 5.x is async (mjml 4.x returned the result synchronously —
+    		// awaiting works for both).
+    		const result = await mjml2html( mjmlInput, {
       minify: options?.minify !== false,
       validationLevel: options?.validationLevel || 'soft',
       ...options,
@@ -75,6 +77,32 @@ emailRouter.post('/compile-mjml', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /verify — verify SMTP connectivity without sending ──
+emailRouter.post('/verify', async (req, res) => {
+  try {
+    const smtp = req.body?.smtp || {};
+    const nodemailer = (await import('nodemailer')).default;
+    const port = parseInt(smtp.port || process.env.SMTP_PORT || '587', 10);
+    const transporter = nodemailer.createTransport({
+      host: smtp.host || process.env.SMTP_HOST || 'localhost',
+      port,
+      secure: smtp.secure ?? (port === 465),
+      auth: smtp.user || process.env.SMTP_USER
+        ? { user: smtp.user || process.env.SMTP_USER, pass: smtp.pass || process.env.SMTP_PASS || '' }
+        : undefined,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
+    });
+    const verified = await transporter.verify();
+    res.json({ success: true, connected: true, verified });
+  } catch (err) {
+    // A failed verification is a structured result (connected: false),
+    // not a transport error — return 200 so callers can read it.
+    res.json({ success: false, connected: false, error: err.message });
   }
 });
 

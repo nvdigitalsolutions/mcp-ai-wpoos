@@ -1,15 +1,17 @@
 ---
 name: wp-security-secrets
-description: Audits WordPress plugin/theme code for secret-handling and credential issues — hardcoded API keys, DB credentials, or signing secrets in source; weak randomness (rand, mt_rand, uniqid) used for security tokens, password reset links, nonces, or session IDs; password storage with md5/sha1/crypt instead of password_hash; insecure cookie flags (missing Secure, HttpOnly, SameSite) on sensitive cookies; secrets logged via error_log / var_dump in production code paths. Use before plugin release, when reviewing auth/registration/login features, when integrating third-party APIs, or when the user mentions "API key", "token", "session", "password reset".
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.0 - 6.9
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-security-secrets
-source-license: MIT
+description: "Audits WordPress plugin/theme code for secret-handling and credential issues — hardcoded API keys, DB credentials, or signing secrets in source; weak randomness (rand, mt_rand, uniqid) used for security tokens, password reset links, nonces, or session IDs; password storage with md5/sha1/crypt instead of password_hash; insecure cookie flags (missing Secure, HttpOnly, SameSite) on sensitive cookies; secrets logged via error_log / var_dump in production code paths. Use before plugin release, when reviewing auth/registration/login features, when integrating third-party APIs, or when the user mentions \"API key\", \"token\", \"session\", \"password reset\"."
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.0 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-security-secrets"
+  source-license: MIT
 ---
 # WordPress secrets and credentials audit
 

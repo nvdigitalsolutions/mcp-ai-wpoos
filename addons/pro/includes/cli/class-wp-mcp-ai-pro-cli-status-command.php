@@ -99,10 +99,15 @@ class WP_MCP_AI_Pro_CLI_Status_Command extends WP_MCP_AI_Pro_CLI_Base_Command {
 		$format   = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
+		// Prefer the plugin-header version over the manually-maintained constant.
+		$pro_version = method_exists( 'WP_MCP_AI_Plugin_Updater', 'get_pro_installed_version' )
+			? WP_MCP_AI_Plugin_Updater::get_pro_installed_version()
+			: ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : 'unknown' );
+
 		$info = array(
 			array(
 				'key'   => 'Pro Version',
-				'value' => defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : 'unknown',
+				'value' => $pro_version ? $pro_version : 'unknown',
 			),
 			array(
 				'key'   => 'Core Version',

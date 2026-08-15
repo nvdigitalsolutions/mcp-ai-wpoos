@@ -80,6 +80,7 @@ class WP_MCP_AI_Social_Media_MCP_Server extends WP_MCP_AI_Toolkit_Server_Base {
 				'create_social_video',
 				'auto_optimize_images',
 				'get_cross_platform_analytics',
+				'get_social_analytics',
 				'social_listening_trends',
 				'social_capture_post_performance',
 				'track_hashtag_performance',

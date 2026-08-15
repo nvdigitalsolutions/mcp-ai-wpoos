@@ -1,9 +1,12 @@
 {
 	"name": "design-media-worker",
-	"version": "2.1.0",
-	"description": "Design Stack media worker \u00e2\u20ac\u201d AI image/video generation, optimization, social publishing, document pipeline, and workflow orchestration",
+	"version": "3.0.0",
+	"description": "Design Stack media worker — AI image/video generation, optimization, social publishing, document pipeline, and workflow orchestration",
 	"main": "src/index.js",
 	"type": "module",
+	"engines": {
+		"node": ">=18"
+	},
 	"scripts": {
 		"start": "node src/index.js",
 		"dev": "node --watch src/index.js",
@@ -14,9 +17,7 @@
 		"@neplex/vectorizer": "^0.0.5",
 		"@turf/turf": "^7.0.0",
 		"axios": "^1.7.0",
-		"canvas": "^2.11.2",
 		"chart.js": "^4.4.0",
-		"chartjs-node-canvas": "^5.0.0",
 		"cheerio": "^1.0.0",
 		"cors": "^2.8.5",
 		"csv-parse": "^5.6.0",
@@ -26,11 +27,13 @@
 		"dotenv": "^16.4.0",
 		"exceljs": "^4.4.0",
 		"express": "^4.21.0",
+		"express-rate-limit": "^7.5.0",
 		"fast-csv": "^5.0.0",
 		"fluent-ffmpeg": "^2.1.3",
 		"franc": "^6.1.0",
 		"gif-encoder": "^0.7.2",
 		"google-translate-api-x": "^10.7.0",
+		"helmet": "^8.0.0",
 		"ics": "^3.7.0",
 		"ioredis": "^5.4.0",
 		"iso-639-1": "^3.1.0",
@@ -40,8 +43,8 @@
 		"marked": "^9.1.6",
 		"mathjs": "^15.2.0",
 		"mjml": "^5.0.0",
-		"multer": "^1.4.5-lts.1",
-		"nodemailer": "^8.0.5",
+		"multer": "^2.2.0",
+		"nodemailer": "^9.0.5",
 		"openai": "^4.52.0",
 		"pdf-lib": "^1.17.1",
 		"pdf-parse": "^1.1.4",
@@ -51,10 +54,15 @@
 		"puppeteer": "^22.0.0",
 		"qrcode": "^1.5.4",
 		"regression": "^2.0.1",
-		"sharp": "^0.33.0",
+		"sharp": "^0.35.3",
 		"subtitle": "^3.0.0",
 		"tesseract.js": "^5.1.1",
 		"turndown": "^7.2.0",
 		"validator": "^13.15.35"
+	},
+	"optionalDependencies": {
+		"canvas": "^3.2.3",
+		"chartjs-node-canvas": "^5.0.0",
+		"rate-limit-redis": "^4.2.0"
 	}
 }

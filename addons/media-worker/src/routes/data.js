@@ -19,12 +19,12 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { siteDirFor, pathGuard } from '../utils/site-paths.js';
 
 export const dataRouter = Router();
 
-function tempFile(ext) {
-  return path.join(os.tmpdir(), `data-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`);
+function tempFile( req, ext ) {
+	return path.join( siteDirFor( req.site, 'doc' ), `data-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 // ── POST /translate ─────────────────────────────────────────
@@ -64,18 +64,29 @@ dataRouter.post('/language-detect', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing text' });
     }
 
-    const { franc } = await import('franc');
+    const { francAll } = await import('franc');
     const iso6391 = await import('iso-639-1');
 
-    const langCode = franc(text, { minLength: 3 });
-    const langName = iso6391.default.getName(langCode) || langCode;
-    const langNative = iso6391.default.getNativeName(langCode) || langCode;
+    // franc is unreliable on very short strings and its scores are relative
+    // (the top candidate is always 1). Use the margin between the top two
+    // candidates as the confidence signal, and report 'und' (undetermined)
+    // when ambiguous so callers don't trust a confident wrong answer.
+    const candidates = francAll(text, { minLength: 3 });
+    const top = candidates && candidates[0];
+    const second = candidates && candidates[1];
+    const margin = top && second ? top[1] - second[1] : 0;
+    const confident = Boolean(top) && margin >= 0.1;
+    const langCode = confident ? top[0] : 'und';
+    const langName = confident ? iso6391.default.getName(langCode) || langCode : 'Undetermined';
+    const langNative = confident ? iso6391.default.getNativeName(langCode) || langCode : 'Undetermined';
 
     res.json({
       success: true,
       code: langCode,
       name: langName,
       native: langNative,
+      confidence: margin,
+      alternatives: ( candidates || [] ).slice( 1, 4 ).map( ( [ code, score ] ) => ( { code, score } ) ),
     });
   	} catch (err) {
   		res.status(500).json({ success: false, error: err.message });
@@ -100,7 +111,9 @@ dataRouter.post('/language-detect', async (req, res) => {
           national: phone.replace(/[^0-9]/g, ''),
           international: phone,
           valid: false,
-          country: country_code || 'US',
+          // Parsing failed — do NOT echo the default country, it is
+          // misleading for international-format numbers.
+          country: null,
         });
       }
 
@@ -139,13 +152,16 @@ dataRouter.post('/qrcode', async (req, res) => {
       errorCorrectionLevel: options?.errorCorrection || 'M',
     };
 
-    const outPath = outputPath || tempFile(qrOpts.type);
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, qrOpts.type );
 
+    let dataUrl;
     if (qrOpts.type === 'svg') {
       const svg = await QRCode.toString(text, { ...qrOpts, type: 'svg' });
       fs.writeFileSync(outPath, svg);
+      dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
     } else {
       await QRCode.toFile(outPath, text, qrOpts);
+      dataUrl = await QRCode.toDataURL(text, qrOpts);
     }
 
     const stats = fs.statSync(outPath);
@@ -155,6 +171,9 @@ dataRouter.post('/qrcode', async (req, res) => {
       output_path: outPath,
       size: stats.size,
       format: qrOpts.type,
+      // data_url is the plugin contract: output_path points at the
+      // WORKER's filesystem and is unusable by the calling site.
+      data_url: dataUrl,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -192,7 +211,7 @@ dataRouter.post('/generate-ics', async (req, res) => {
     if (error) {
       return res.status(400).json({ success: false, error: error.message || 'ICS generation failed' });
     }
-    const outPath = tempFile('ics');
+    const outPath = tempFile( req, 'ics' );
     fs.writeFileSync(outPath, value);
     res.json({ success: true, ics: value, output_path: outPath, event_count: events.length });
   } catch (err) {
@@ -212,11 +231,20 @@ dataRouter.post('/render-chart', async (req, res) => {
     const height = options?.height || 400;
     const renderer = new ChartJSNodeCanvas({ width, height, backgroundColour: options?.background || 'white' });
     const config = { type, data, options: options?.chartOptions || {} };
-    const image = await renderer.renderToBuffer(config);
-    const outPath = tempFile('png');
-    fs.writeFileSync(outPath, image);
-    res.json({ success: true, output_path: outPath, size: image.length, width, height });
+    		const image = await renderer.renderToBuffer(config);
+    		const outPath = tempFile( req, 'png' );
+    		fs.writeFileSync(outPath, image);
+    		// data_base64 is the plugin contract: `output_path` points at the
+    		// WORKER's filesystem and is useless to the calling WordPress site.
+    		res.json({ success: true, output_path: outPath, data_base64: image.toString('base64'), size: image.length, width, height });
   } catch (err) {
+    if ('ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code) {
+      return res.status(503).json({
+        error: 'capability_unavailable',
+        capability: 'chart-rendering',
+        message: 'Chart rendering is unavailable: chartjs-node-canvas or its native canvas dependency is not installed on this server.',
+      });
+    }
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -281,7 +309,7 @@ dataRouter.post('/csv-generate', async (req, res) => {
         else resolve(output);
       });
     });
-    const outPath = tempFile('csv');
+    const outPath = tempFile( req, 'csv' );
     fs.writeFileSync(outPath, csv);
     res.json({ success: true, csv, output_path: outPath, rows: data.length });
   } catch (err) {

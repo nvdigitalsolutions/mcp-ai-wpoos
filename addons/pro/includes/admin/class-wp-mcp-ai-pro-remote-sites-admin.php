@@ -5899,7 +5899,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 										'attachment' => __( 'Media / Attachments', 'mcp-ai-wpoos-pro' ),
 									);
 
-									// Add saved custom post types.
+									// Auto-discover public custom post types registered on this site.
+									$discovered_pts = get_post_types( array( 'public' => true, '_builtin' => false ), 'objects' );
+									foreach ( $discovered_pts as $slug => $obj ) {
+										if ( ! isset( $built_in_pt[ $slug ] ) ) {
+											/* translators: %1$s: post type singular label, %2$s: post type slug */
+											$built_in_pt[ $slug ] = sprintf( __( '%1$s (%2$s)', 'mcp-ai-wpoos-pro' ), $obj->labels->singular_name, $slug );
+										}
+									}
+
+									// Add saved custom post types (for post types not auto-discovered, e.g. non-public or remote-only).
 									if ( ! empty( $custom_pt_raw ) ) {
 										foreach ( explode( ',', $custom_pt_raw ) as $cpt_slug ) {
 											$cpt_slug = sanitize_key( trim( $cpt_slug ) );
@@ -5927,7 +5936,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<input type="text" name="custom_post_types" id="custom_post_types" class="regular-text"
 									value="<?php echo esc_attr( $custom_pt_raw ); ?>"
 									placeholder="<?php esc_attr_e( 'e.g. product,event,team', 'mcp-ai-wpoos-pro' ); ?>">
-								<span class="description"><?php esc_html_e( 'Save and re-open the connection to see custom types in the table above.', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="description"><?php esc_html_e( 'Public custom post types are auto-discovered. Use this field to add non-public or remote-only post types. Save and re-open the connection to see new entries in the table above.', 'mcp-ai-wpoos-pro' ); ?></span>
 							</p>
 						</div>
 					</td>
@@ -14623,7 +14632,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$built_in_types = array( 'post', 'page', 'attachment' );
 
-		// Merge custom post types from the text field.
+		// Auto-discover public custom post types registered on this site.
+		$discovered_types = array_keys( get_post_types( array( 'public' => true, '_builtin' => false ), 'names' ) );
+
+		// Merge custom post types from the text field (for non-public or remote-only types).
 		$custom_raw   = isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '';
 		$custom_types = array();
 
@@ -14636,7 +14648,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 		}
 
-		$all_types = array_unique( array_merge( $built_in_types, $custom_types ) );
+		$all_types = array_unique( array_merge( $built_in_types, $discovered_types, $custom_types ) );
 		$access    = array();
 
 		foreach ( $all_types as $post_type ) {

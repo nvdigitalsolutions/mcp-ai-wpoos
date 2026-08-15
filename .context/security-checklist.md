@@ -2,7 +2,11 @@
 
 > **GSD Context File** — Load this at the start of every AI development session.
 > This checklist must be applied to **every code change** without exception.
-> Last reviewed: July 2026.
+> **Last reviewed:** August 2026.
+> **v1.1.57 updates**: Plugin updater rework — copy-in-place install with backup/rollback replaces `Plugin_Upgrader` (live directory never renamed; nonce-scoped base-update AJAX actions); Service Status provider detection via `WP_MCP_AI_Credential_Resolver` (settings + WP 7.0 Connectors + env + constants); Hermes WebUI chat async submit/poll.
+> **v1.1.56 updates**: Media Worker v3.0.0 — multi-tenant shared worker mode (`SITE_TOKENS` fail-closed auth, per-site rate limits, token rotation), per-site provider keys (`SITE_PROVIDER_KEYS`, `PROVIDER_KEYS_STRICT`), opt-in Redis rate-limit store (`RATE_LIMIT_REDIS=1`), `PROVIDER_KEYS_FILE` hot-reload, zero-downtime rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds; worker routing with local fallbacks; Hermes MCP bridges (env-file parser hardening).
+> **v1.1.55 updates**: MCP JSON-RPC errors return HTTP 200 (SDK compat), settings-driven tool rate limiter with credential-token exemption, GET/HEAD quota exemption, raw `cred_*` header acceptance, legacy HTTP+SSE transport with credential-bound session store, Media Worker v2.2.0 sidecar hardening, database connection pooling stance (Proposal 023), PostCSS >=8.5.26 (GHSA-6g55-p6wh-862q).
+> **v1.1.54 updates**: PostCSS CVE-2026-69153 resolved, API key merged-settings enforced in 20 research tools, plugin updater integrity check v2 (stat cache fix).
 
 ---
 
@@ -297,9 +301,22 @@ The plugin ships 7 security infrastructure classes in `includes/security/`. When
 ### Other Guards
 
 - `WP_MCP_AI_URL_Guard` — URL validation/sanitization before outbound requests
-- `WP_MCP_AI_Concurrency_Guard` — prevents overlapping destructive operations
-- `WP_MCP_AI_Cost_Tracker` — per-operation cost estimation and budget enforcement
+- `WP_MCP_AI_Concurrency_Guard` — prevents overlapping destructive operations; wired into execution pipeline (v1.1.53) to auto-throttle tool calls under load
+- `WP_MCP_AI_Cost_Tracker` — per-operation cost estimation and budget enforcement; enforced at pipeline level (v1.1.53)
 - `WP_MCP_AI_Api_Key_Store` — encrypted at-rest API key storage
+- **Circuit breaker protection** (v1.1.53) — all 15 AI provider clients have configurable failure thresholds and cooldown periods
+- **MCP tool rate limiter** (v1.1.55) — settings-driven (`tool_rate_limit_max` / `tool_rate_limit_window` / `tool_rate_limit_exempt_tokens`); credential-token traffic exempt by default; GET/HEAD exempt from the request quota
+- **MCP JSON-RPC error semantics** (v1.1.55) — JSON-RPC errors return HTTP 200 with the error envelope so agent SDKs that drop non-2xx bodies relay tool errors instead of hanging; auth/permission failures keep real HTTP statuses (401/403/429)
+- **MCP raw credential headers** (v1.1.55) — `Authorization: cred_*` without `Bearer` accepted for verbatim header forwarding; filter `wp_mcp_ai_accept_raw_credential_header`
+- **Legacy MCP HTTP+SSE transport** (v1.1.55) — credential-bound sessions via `WP_MCP_AI_SSE_Session_Store`, gated by `WP_MCP_AI_LEGACY_SSE_ENABLED`
+- **Media Worker v2.2.0** (v1.1.55) — timing-safe `X-Site-Token` auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet headers; `WP_MEDIA_WORKER_TOKEN` constant in the plugin client
+- **Media Worker v2.4.0 → v3.0.0** (v1.1.56) — multi-tenant fail-closed auth (`SITE_TOKENS`, `AUTH_MODE=strict`), per-site provider keys (`SITE_PROVIDER_KEYS`), `PROVIDER_KEYS_FILE` hot-reload, opt-in Redis rate-limit store, zero-downtime token rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds
+- **Connection pooling stance** (v1.1.55) — atomic concurrency slots (`mcp_ai_concurrency_slots`), RabbitMQ gating of Action Scheduler fallback and DB polling cron, PDO persistence in Graphify
+- **PostCSS GHSA-6g55-p6wh-862q** (v1.1.55) — `postcss` minimum bumped to >=8.5.26 in `addons/schedule-anything-spa/package.json`
+- **PostCSS CVE-2026-69153** (v1.1.54) — `postcss` minimum bumped to 8.5.23; affects CSS build chain across addons
+- **API key merged-settings** (v1.1.54) — 20 research tools now use `get_merged_credentials()` honoring per-assistant/provider overrides
+- **Post-install integrity check** (v1.1.52) — verifies 15 critical file paths after every plugin update
+- **REST require_once guards** (v1.1.52) — `file_exists()` checks before all REST controller `require_once` calls
 
 Reference: `includes/security/README.md`, `docs/operations/production-hardening-guide.md`.
 

@@ -1928,7 +1928,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
-		 * Dispatch an HTTP request while honouring preemptive short-circuit filters.
+		 * Dispatch an HTTP request while honouring preemptive short-circuit filters
+		 * and provider circuit breaker protection (1.2.0).
 		 *
 		 * @param string $url  Target URL.
 		 * @param array  $args Request arguments.
@@ -1943,13 +1944,43 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $preempt;
 			}
 
+			// Provider circuit breaker (1.2.0): skip HTTP when circuit is open.
+			if ( class_exists( 'WP_MCP_AI_Provider_Circuit_Breaker' ) ) {
+				if ( ! WP_MCP_AI_Provider_Circuit_Breaker::is_allowed( 'openai' ) ) {
+					return new WP_Error(
+						'provider_circuit_open',
+						__( 'OpenAI API is temporarily unavailable due to repeated failures. Please try again shortly.', 'mcp-ai-wpoos' ),
+						array(
+							'status'      => 503,
+							'retry_after' => 60,
+						)
+					);
+				}
+			}
+
 			$method = isset( $args['method'] ) ? strtoupper( $args['method'] ) : 'POST';
 
 			if ( 'POST' === $method ) {
-				return wp_remote_post( $url, $args );
+				$response = wp_remote_post( $url, $args );
+			} else {
+				$response = wp_remote_request( $url, $args );
 			}
 
-			return wp_remote_request( $url, $args );
+			// Provider circuit breaker: track success/failure.
+			if ( class_exists( 'WP_MCP_AI_Provider_Circuit_Breaker' ) ) {
+				if ( is_wp_error( $response ) ) {
+					WP_MCP_AI_Provider_Circuit_Breaker::record_failure( 'openai' );
+				} else {
+					$status = wp_remote_retrieve_response_code( $response );
+					if ( $status >= 500 ) {
+						WP_MCP_AI_Provider_Circuit_Breaker::record_failure( 'openai' );
+					} else {
+						WP_MCP_AI_Provider_Circuit_Breaker::record_success( 'openai' );
+					}
+				}
+			}
+
+			return $response;
 		}
 
 		/**

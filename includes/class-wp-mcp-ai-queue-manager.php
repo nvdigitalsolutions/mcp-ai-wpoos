@@ -67,6 +67,28 @@ class WP_MCP_AI_Queue_Manager {
 	const ASYNC_TOOL_THRESHOLD = 10000; // 10 seconds.
 
 	/**
+	 * Feature flag constant for RabbitMQ-based queue manager.
+	 *
+	 * Set to true via wp-config.php or filter when RabbitMQ is configured
+	 * and the AMQP PHP extension is loaded. Default false — the RMQ path
+	 * is opt-in to avoid surprise activation on sites without RabbitMQ.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	const FEATURE_FLAG = 'WP_MCP_AI_RABBITMQ_ENABLED';
+
+	/**
+	 * Whether the RabbitMQ path is enabled for this request.
+	 *
+	 * Checked once per request and cached.
+	 *
+	 * @since 1.2.0
+	 * @var bool|null
+	 */
+	private static $enabled = null;
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return WP_MCP_AI_Queue_Manager
@@ -87,13 +109,47 @@ class WP_MCP_AI_Queue_Manager {
 
 	/**
 	 * Initialize hooks.
+	 *
+	 * Only registers when RabbitMQ is explicitly enabled via the
+	 * WP_MCP_AI_RABBITMQ_ENABLED constant or the
+	 * wp_mcp_ai_rabbitmq_enabled filter.
 	 */
 	private function init_hooks() {
+		if ( ! self::is_enabled() ) {
+			return;
+		}
 		// Hook into tool execution.
 		add_filter( 'wp_mcp_ai_before_tool_execute', array( $this, 'maybe_queue_tool_execution' ), 5, 4 );
 
 		// Admin AJAX for queue status.
 		add_action( 'wp_ajax_wp_mcp_ai_queue_status', array( $this, 'ajax_queue_status' ) );
+	}
+
+	/**
+	 * Check if the RabbitMQ queue manager is enabled.
+	 *
+	 * Requires the WP_MCP_AI_RABBITMQ_ENABLED constant to be truthy.
+	 * Callers may also use the wp_mcp_ai_rabbitmq_enabled filter.
+	 *
+	 * @since 1.2.0
+	 * @return bool
+	 */
+	public static function is_enabled() {
+		if ( null !== self::$enabled ) {
+			return self::$enabled;
+		}
+
+		$enabled = defined( self::FEATURE_FLAG ) && constant( self::FEATURE_FLAG );
+
+		/**
+		 * Filter whether the RabbitMQ queue manager is enabled.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param bool $enabled Whether RabbitMQ is enabled.
+		 */
+		self::$enabled = (bool) apply_filters( 'wp_mcp_ai_rabbitmq_enabled', $enabled );
+		return self::$enabled;
 	}
 
 	/**

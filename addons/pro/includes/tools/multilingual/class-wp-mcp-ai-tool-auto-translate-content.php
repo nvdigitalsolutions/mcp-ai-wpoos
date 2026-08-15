@@ -233,7 +233,7 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Use OpenAI for translation if available.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 
 		if ( ! empty( $settings['openai_api_key'] ) ) {
 			return $this->translate_with_openai( $text, $source_lang, $target_lang );
@@ -252,7 +252,7 @@ class WP_MCP_AI_Tool_Auto_Translate_Content implements WP_MCP_AI_Tool_Interface,
 	 * @return array|WP_Error Result.
 	 */
 	private function translate_with_openai( $text, $source_lang, $target_lang ) {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ? WP_MCP_AI_Admin_Settings_Base::get_settings() : get_option( 'wp_mcp_ai_settings', array() );
 		$api_key  = $settings['openai_api_key'];
 
 		$response = wp_remote_post(

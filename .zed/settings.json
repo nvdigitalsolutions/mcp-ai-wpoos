@@ -105,6 +105,40 @@
     //     "args": ["-y", "@modelcontextprotocol/server-http", "http://localhost:8000/wp-json/mcp-ai/v1/mcp"],
     //     "env": { "AUTHORIZATION": "Bearer cred_…" }
     //   }
+    // },
+
+    // SSH-only sites (no public web route — e.g. a locked-down Cloudways
+    // droplet). bin/mcp-bridge-ssh.js owns the port-forward, so no manual
+    // tunnel is needed. Requires key auth: `ssh <user>@<host>` must work
+    // non-interactively. Secrets can live in ~/.nvoos-bridge.env instead
+    // of here — values in this file are read verbatim by Zed.
+    // "nv-oos-ssh": {
+    //   "source": "custom",
+    //   "command": {
+    //     "path": "node",
+    //     "args": ["bin/mcp-bridge-ssh.js"],
+    //     "env": {
+    //       "MCP_AI_SSH_USER":        "your-ssh-user",
+    //       "MCP_AI_SSH_HOST":        "203.0.113.10",
+    //       "MCP_AI_SSH_PORT":        "2222",
+    //       "MCP_AI_SSH_REMOTE_HOST": "localhost",
+    //       "MCP_AI_SSH_REMOTE_PORT": "80",
+    //       "MCP_AI_TOKEN":          "op_…"
+    //     }
+    //   }
+    // },
+
+    // Hermes Agent (Nous Research) running on a remote box — Zed drives it
+    // through its WebUI API via bin/hermes-mcp-server.js (tools:
+    // hermes_chat, hermes_list_sessions, hermes_session_detail). Keep the
+    // password in ~/.nvoos-bridge.env, not here — the server reads it from
+    // the env file automatically.
+    // "hermes": {
+    //   "source": "custom",
+    //   "command": {
+    //     "path": "node",
+    //     "args": ["bin/hermes-mcp-server.js"]
+    //   }
     // }
   },
 
@@ -341,6 +375,30 @@
         },
         "enable_all_context_servers": false,
         "context_servers": {}
+      },
+
+      // ─── Hermes console ──────────────────────────────────────────────────
+      // Drives the remote Hermes Agent through bin/hermes-mcp-server.js (a
+      // stdio MCP server configured under context_servers — add the server
+      // entry to your user settings; see bin/README.md → hermes-mcp-server).
+      // Only the four hermes_* tools are exposed, so the agent can only
+      // talk to Hermes — no repo tools.
+      "hermes": {
+        "name": "Hermes Console",
+        "tools": {
+          "thinking": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {
+          "hermes": {
+            "tools": {
+              "hermes_chat": true,
+              "hermes_list_sessions": true,
+              "hermes_session_detail": true,
+              "hermes_sync_skills": true
+            }
+          }
+        }
       }
     }
   },

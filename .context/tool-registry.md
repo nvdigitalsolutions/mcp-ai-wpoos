@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: July 22, 2026.
+> Last reviewed: August 12, 2026.
 
 ---
 
@@ -14,9 +14,9 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,500 (~263 base + ~1,232 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,500 (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
-**New in July 2026:** 6 OKF tools (`includes/tools/okf/`) — `okf_read_concept`, `okf_browse`, `okf_traverse`, `okf_search`, `okf_write_concept`, `okf_delete_concept`. All read/read/write/delete capabilities, following the two-gate sanitisation rule and canonical return envelope. See [`docs/features/okf-integration.md`](../docs/features/okf-integration.md).
+**New in August 2026:** `list_mcp_tools` discovery tool (234 lines) — enables AI agent self-discovery of all available MCP tools. Returns tool names, descriptions, and JSON Schema parameter definitions. Filterable by toolkit namespace and search term. Design System tool preset (`design-system`) — 72 tools across 13 categories.
 
 ---
 

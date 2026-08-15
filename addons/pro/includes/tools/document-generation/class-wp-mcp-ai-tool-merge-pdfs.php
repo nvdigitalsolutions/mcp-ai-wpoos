@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load the document response trait from base plugin.
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-client.php';
 
 /**
  * Merge multiple PDFs into one.
@@ -30,6 +31,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * {@inheritdoc}
@@ -112,10 +114,13 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
-		if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+		// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02). The
+		// Media Worker sidecar path never runs a shell command, so a reachable
+		// sidecar satisfies the gate on hosts where shell tools are disabled.
+		$shell_tools_allowed = defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) && WP_MCP_AI_ALLOW_SHELL_TOOLS;
+		if ( ! $shell_tools_allowed && ! $this->is_sidecar_upload_supported() ) {
 			return array(
-				'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them, or connect a Media Worker sidecar.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -265,6 +270,53 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 				$temp_files[] = $temp_file;
 				$file_paths[] = $temp_file;
+			}
+		}
+
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured). The worker merges with pdf-lib
+		// instead of requiring pdftk/TCPDF on this host.
+		if ( $this->is_sidecar_upload_supported() ) {
+			$sidecar = $this->sidecar_upload_multi( '/api/pdf/merge', $file_paths, array(), 120 );
+			if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['data_base64'] ) ) {
+				$merged_bytes = base64_decode( $sidecar['data_base64'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding the worker's data_base64 payload is the transport contract.
+				if ( false !== $merged_bytes && '' !== $merged_bytes ) {
+					$temp_file = wp_mcp_ai_tempnam( 'merged_pdf_', '.pdf' );
+					if ( ! is_wp_error( $temp_file ) && false !== file_put_contents( $temp_file, $merged_bytes ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing the worker-returned bytes into a temp file consumed by media_handle_sideload.
+						$file_array = array(
+							'name'     => $filename . '.pdf',
+							'tmp_name' => $temp_file,
+						);
+
+						$attachment_id = media_handle_sideload( $file_array, 0 );
+						@unlink( $temp_file );
+
+						if ( ! is_wp_error( $attachment_id ) ) {
+							// Clean up downloaded temp files.
+							foreach ( $temp_files as $temp ) {
+								@unlink( $temp );
+							}
+
+							$attachment_url = wp_get_attachment_url( $attachment_id );
+							$merged_path    = get_attached_file( $attachment_id );
+							$file_size      = filesize( $merged_path );
+
+							return array(
+								'attachment_id' => $attachment_id,
+								'url'           => $attachment_url,
+								'filename'      => basename( $merged_path ),
+								'mime_type'     => 'application/pdf',
+								'size'          => $file_size,
+								'text'          => sprintf(
+									/* translators: 1: number of files merged, 2: output size */
+									__( 'Successfully merged %1$d PDF files into one document (%2$s).', 'mcp-ai-wpoos-pro' ),
+									count( $file_paths ),
+									size_format( $file_size )
+								),
+							);
+						}
+					}
+				}
 			}
 		}
 

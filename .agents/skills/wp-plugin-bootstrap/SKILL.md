@@ -1,15 +1,17 @@
 ---
 name: wp-plugin-bootstrap
 description: Scaffolds and reviews the main entry-point PHP file of a WordPress plugin — header (with Requires Plugins for WP 6.5+), ABSPATH guard, file/path/url/version constants, Composer + PSR-4 with manual spl_autoload_register fallback, register_activation_hook requirements check, Plugin class instantiation on plugins_loaded, and the WP 6.7+ rule that translation functions must not trigger before after_setup_theme. Use when scaffolding a new plugin or reviewing its main file. Triggers on Plugin Name headers, register_activation_hook, Requires Plugins, spl_autoload_register, plugins_loaded, or composer.json at the plugin root.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.5 - 6.9
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-bootstrap
-source-license: MIT
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.5 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-bootstrap"
+  source-license: MIT
 ---
 # WordPress plugin: bootstrap (main file)
 

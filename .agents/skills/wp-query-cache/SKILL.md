@@ -1,15 +1,17 @@
 ---
 name: wp-query-cache
 description: Review and implement WordPress query-cache usage on WP 6.9+, especially direct interaction with query cache groups now using salted cache helpers. Covers wp_cache_get_salted, wp_cache_set_salted, wp_cache_get_multiple_salted, wp_cache_get_last_changed, affected query groups like post-queries, term-queries, user-queries, comment-queries, site-queries, and why plugins should usually use WP_Query APIs instead of writing query cache entries directly. Use when optimizing expensive reads, persistent object cache behavior, or cache invalidation bugs.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.9 - 6.9.4
-php-min: 7.4
-last-updated: 2026-04-29
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-query-cache
-source-license: MIT
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.9 - 6.9.4
+  php-min: "7.4"
+  last-updated: "2026-04-29"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-query-cache"
+  source-license: MIT
 ---
 # WordPress Query Cache
 

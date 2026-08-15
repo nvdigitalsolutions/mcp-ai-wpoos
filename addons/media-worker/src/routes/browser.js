@@ -4,27 +4,22 @@
  * Endpoints:
  *   POST /api/browser/screenshot — capture webpage screenshot
  *   POST /api/browser/pdf        — render webpage to PDF
+ *
+ * Security: uses the hardened launcher (sandbox kept enabled) and validates
+ * every user-supplied URL before navigation (SSRF guard).
  */
 
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
+import { validatePublicUrl } from '../utils/safe-url.js';
+import { siteDirFor, pathGuard } from '../utils/site-paths.js';
 
 export const browserRouter = Router();
 
-function tempFile(ext) {
-  return path.join(os.tmpdir(), `browser-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`);
-}
-
-// ── Shared Puppeteer launcher ───────────────────────────────
-async function launchBrowser() {
-  const puppeteer = (await import('puppeteer')).default;
-  return puppeteer.launch({
-    headless: 'new',
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-  });
+function tempFile( req, ext ) {
+	return path.join( siteDirFor( req.site, 'browser' ), `browser-${ Date.now() }-${ Math.random().toString( 36 ).slice( 2 ) }.${ ext }` );
 }
 
 // ── POST /screenshot — capture webpage screenshot ───────────
@@ -36,8 +31,14 @@ browserRouter.post('/screenshot', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing url or html' });
     }
 
-    browser = await launchBrowser();
+    // SSRF guard: user-supplied URLs must be publicly routable.
+    if (url) {
+      validatePublicUrl(url);
+    }
+
+    browser = await launchHardenedBrowser();
     const page = await browser.newPage();
+    await hardenPage(page);
 
     // Viewport
     if (options?.width || options?.height) {
@@ -61,7 +62,7 @@ browserRouter.post('/screenshot', async (req, res) => {
       ...(options?.clip ? { clip: options.clip } : {}),
     };
 
-    const outPath = outputPath || tempFile(screenshotOpts.type);
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, screenshotOpts.type );
     await page.screenshot({ path: outPath, ...screenshotOpts });
     await browser.close();
 
@@ -69,7 +70,8 @@ browserRouter.post('/screenshot', async (req, res) => {
     res.json({ success: true, output_path: outPath, size: stats.size, format: screenshotOpts.type });
   } catch (err) {
     if (browser) await browser.close().catch(() => {});
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.status && err.status >= 400 && err.status < 600 ? err.status : 500)
+      .json({ success: false, error: err.message });
   }
 });
 
@@ -82,8 +84,14 @@ browserRouter.post('/pdf', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing url or html' });
     }
 
-    browser = await launchBrowser();
+    // SSRF guard: user-supplied URLs must be publicly routable.
+    if (url) {
+      validatePublicUrl(url);
+    }
+
+    browser = await launchHardenedBrowser();
     const page = await browser.newPage();
+    await hardenPage(page);
 
     if (url) {
       await page.goto(url, { waitUntil: 'networkidle0', timeout: options?.timeout || 30000 });
@@ -99,7 +107,7 @@ browserRouter.post('/pdf', async (req, res) => {
       ...options,
     };
 
-    const outPath = outputPath || tempFile('pdf');
+    const outPath = pathGuard( req.site, outputPath ) || tempFile( req, 'pdf' );
     await page.pdf({ path: outPath, ...pdfOpts });
     await browser.close();
 
@@ -107,6 +115,7 @@ browserRouter.post('/pdf', async (req, res) => {
     res.json({ success: true, output_path: outPath, size: stats.size });
   } catch (err) {
     if (browser) await browser.close().catch(() => {});
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.status && err.status >= 400 && err.status < 600 ? err.status : 500)
+      .json({ success: false, error: err.message });
   }
 });

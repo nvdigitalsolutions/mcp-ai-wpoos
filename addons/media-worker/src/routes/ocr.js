@@ -6,21 +6,37 @@
  */
 
 import { Router } from 'express';
+import multer from 'multer';
 import fs from 'fs';
 import Tesseract from 'tesseract.js';
 
 export const ocrRouter = Router();
 
+// Images are small — memory storage keeps the route stateless (no temp
+// file cleanup needed). The legacy JSON `source` path remains supported
+// for shared-volume deployments.
+const upload = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 15 * 1024 * 1024 },
+});
+
 // ── POST /recognize — OCR text from image ──────────────────
-ocrRouter.post('/recognize', async (req, res) => {
+ocrRouter.post('/recognize', upload.single('file'), async (req, res) => {
   let worker = null;
   try {
     const { source, language, options } = req.body || {};
-    if (!source) {
-      return res.status(400).json({ success: false, error: 'Missing source path' });
+
+    // Multipart upload (plugin contract) takes precedence over the legacy
+    // worker-side `source` path.
+    let input = source || '';
+    if (req.file && req.file.buffer) {
+      input = req.file.buffer;
     }
-    if (!fs.existsSync(source)) {
-      return res.status(404).json({ success: false, error: `File not found: ${source}` });
+    if (!input) {
+      return res.status(400).json({ success: false, error: 'Missing source path or file upload' });
+    }
+    if (typeof input === 'string' && !fs.existsSync(input)) {
+      return res.status(404).json({ success: false, error: `File not found: ${input}` });
     }
 
     const lang = language || 'eng';
@@ -32,7 +48,7 @@ ocrRouter.post('/recognize', async (req, res) => {
     }
     worker = await Tesseract.createWorker(lang, 1, workerOpts);
 
-    const { data } = await worker.recognize(source);
+    const { data } = await worker.recognize(input);
 
     res.json({
       success: true,

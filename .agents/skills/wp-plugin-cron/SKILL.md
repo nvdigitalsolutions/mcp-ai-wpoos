@@ -1,15 +1,17 @@
 ---
 name: wp-plugin-cron
 description: "Designs and reviews scheduled/background work in WordPress plugins: wp_schedule_event, wp_schedule_single_event, cron_schedules, wp_next_scheduled guards, activation scheduling, deactivation cleanup, WP-Cron pseudo-cron timing, DISABLE_WP_CRON/system cron, multisite per-blog cron, idempotent callbacks, chunking, and Action Scheduler graduation. Use when adding scheduled jobs, debugging late/duplicate cron events, or deciding between WP cron and Action Scheduler."
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.5 - 6.9
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-cron
-source-license: MIT
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.5 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-cron"
+  source-license: MIT
 ---
 # WordPress plugin: cron & background jobs
 

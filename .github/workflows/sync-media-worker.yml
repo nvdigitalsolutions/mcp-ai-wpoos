@@ -1,0 +1,25 @@
+name: Sync media-worker
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'addons/media-worker/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=addons/media-worker --branch=media-worker-split
+
+      - name: Push to mcp-ai-wpoos-media-worker
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.MEDIA_WORKER_REPO_TOKEN }}@github.com/nvdigitalsolutions/mcp-ai-wpoos-media-worker.git media-worker-split:main --force

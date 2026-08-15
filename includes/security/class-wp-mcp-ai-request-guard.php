@@ -285,6 +285,10 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 		/**
 		 * Acquire an SSE connection slot. Rejects if at capacity.
 		 *
+		 * Delegates to WP_MCP_AI_SSE_Rate_Limiter when available (v1.2.0 unified
+		 * tracking). Falls back to legacy transient-based tracking for backward
+		 * compatibility when the rate limiter class is not loaded.
+		 *
 		 * @since 1.2.0
 		 *
 		 * @param string $job_id Job identifier.
@@ -292,11 +296,31 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 		 * @return void
 		 */
 		public static function acquire_sse_slot( $job_id, $params ) {
+			// $params is kept for backward compatibility with the hook signature.
+			unset( $params );
+
+			// Unified path (1.2.0): delegate to SSE_Rate_Limiter.
+			if ( class_exists( 'WP_MCP_AI_SSE_Rate_Limiter' ) ) {
+				$limiter = new WP_MCP_AI_SSE_Rate_Limiter();
+				$allowed = $limiter->check_connection_allowed();
+				if ( is_wp_error( $allowed ) ) {
+					// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_die() pattern mirrors existing codebase convention for early-exit rejection.
+					wp_die( $allowed, 429 );
+					// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
+				}
+				$token = $limiter->register_connection();
+				// Store token for release_sse_slot().
+				set_transient( 'wp_mcp_ai_sse_slot_token_' . sanitize_key( $job_id ), $token, 3600 );
+				return;
+			}
+
+			// Legacy path (pre-1.2.0): transient-based counter.
 			$max   = self::get_setting( 'max_sse_connections_per_user', 5 );
 			$key   = self::get_sse_counter_key();
 			$count = absint( get_transient( $key ) );
 
 			if ( $max > 0 && $count >= $max ) {
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_die() pattern mirrors existing codebase convention.
 				wp_die(
 					new WP_Error(
 						'sse_connection_limit',
@@ -309,6 +333,7 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 					),
 					429
 				);
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
 			// Use 5-min TTL (matches SSE MAX_DURATION). Self-cleaning if
@@ -337,6 +362,9 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 		/**
 		 * Release an SSE connection slot when the stream ends.
 		 *
+		 * Delegates to WP_MCP_AI_SSE_Rate_Limiter when available (v1.2.0).
+		 * Falls back to legacy transient counter for backward compatibility.
+		 *
 		 * @since 1.2.0
 		 *
 		 * @param string $job_id  Job identifier.
@@ -344,6 +372,17 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 		 * @return void
 		 */
 		public static function release_sse_slot( $job_id, ...$args ) {
+			// Unified path (1.2.0): delegate to SSE_Rate_Limiter.
+			if ( class_exists( 'WP_MCP_AI_SSE_Rate_Limiter' ) ) {
+				$token = get_transient( 'wp_mcp_ai_sse_slot_token_' . sanitize_key( $job_id ) );
+				delete_transient( 'wp_mcp_ai_sse_slot_token_' . sanitize_key( $job_id ) );
+				if ( $token ) {
+					$limiter = new WP_MCP_AI_SSE_Rate_Limiter();
+					$limiter->release_connection( $token );
+				}
+			}
+
+			// Legacy cleanup: remove old counter keys if they exist.
 			$key   = self::get_sse_counter_key();
 			$count = absint( get_transient( $key ) );
 

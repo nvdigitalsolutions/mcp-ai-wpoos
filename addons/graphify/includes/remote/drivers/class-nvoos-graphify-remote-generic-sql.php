@@ -40,6 +40,14 @@ class NV_oOS_Graphify_Remote_Generic_SQL implements NV_oOS_Graphify_Remote_Sourc
 	private $config = array();
 
 	/**
+	 * Cached PDO instances keyed by DSN hash.
+	 *
+	 * @since 1.3.0
+	 * @var array<string, PDO>
+	 */
+	private static $pdo_instances = array();
+
+	/**
 	 * DSN schemes we will accept regardless of which PDO drivers are
 	 * available — narrowed at connect-time against PDO::getAvailableDrivers().
 	 *
@@ -174,12 +182,14 @@ class NV_oOS_Graphify_Remote_Generic_SQL implements NV_oOS_Graphify_Remote_Sourc
 			$pdo = $this->open_pdo();
 		} catch ( Exception $e ) {
 			return array(
+				// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool; internal admin connection test.
 				'success' => false,
 				'message' => $e->getMessage(),
 			);
 		}
 		if ( null === $pdo ) {
 			return array(
+				// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool; internal admin connection test.
 				'success' => false,
 				'message' => __( 'PDO is not available on this host.', 'nvoos-graphify' ),
 			);
@@ -341,13 +351,48 @@ class NV_oOS_Graphify_Remote_Generic_SQL implements NV_oOS_Graphify_Remote_Sourc
 		$pass    = isset( $this->config['password'] ) ? (string) $this->config['password'] : '';
 		$timeout = isset( $this->config['connection_timeout'] ) ? max( 1, (int) $this->config['connection_timeout'] ) : 5;
 
+		// Build a cache key from the DSN + credentials so identical
+		// configurations reuse the same connection.
+		$cache_key = md5( $dsn . '|' . $user . '|' . $pass );
+
+		// Reuse existing connection if still alive.
+		if ( isset( self::$pdo_instances[ $cache_key ] ) ) {
+			try {
+				self::$pdo_instances[ $cache_key ]->query( 'SELECT 1' );
+				return self::$pdo_instances[ $cache_key ];
+			} catch ( \PDOException $e ) {
+				// Connection lost — remove from cache and recreate.
+				unset( self::$pdo_instances[ $cache_key ] );
+			}
+		}
+
 		$options = array(
 			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
 			PDO::ATTR_EMULATE_PREPARES   => false,
 			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 			PDO::ATTR_TIMEOUT            => $timeout,
+			// Persistent connections work well with PHP-FPM (Cloudways).
+			// Disabled in CLI mode to avoid connection leakage across
+			// long-running queue worker daemons.
+			PDO::ATTR_PERSISTENT         => ( \PHP_SAPI !== 'cli' ),
 		);
-		return new PDO( $dsn, $user, $pass, $options );
+
+		self::$pdo_instances[ $cache_key ] = new PDO( $dsn, $user, $pass, $options );
+		return self::$pdo_instances[ $cache_key ];
+	}
+
+	/**
+	 * Force-close all cached PDO connections.
+	 *
+	 * Useful in queue worker daemon mode to release connections
+	 * after a batch completes. Connections are re-established
+	 * on the next open_pdo() call.
+	 *
+	 * @since 1.3.0
+	 * @return void
+	 */
+	public static function close_all_connections() {
+		self::$pdo_instances = array();
 	}
 
 	/**

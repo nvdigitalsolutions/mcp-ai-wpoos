@@ -16,12 +16,14 @@ declare(strict_types=1);
 namespace Nvoos\WordPress\Tool;
 
 use Nvoos\Core\Tool\AbstractTool;
+use WP_MCP_AI_Media_Worker_Client;
 
 /**
  * Converts raster images (PNG, JPEG, WebP, GIF) to SVG vector format
  * using the @neplex/vectorizer Node.js library.
  */
 class VectorizeImageTool extends AbstractTool {
+	use WP_MCP_AI_Media_Worker_Client;
 
 	public function getSlug(): string {
 		return 'vectorize_image';
@@ -111,19 +113,12 @@ class VectorizeImageTool extends AbstractTool {
 			return $this->errors->accessDenied( 'You do not have access to this site.' );
 		}
 
-		// Check vectorizer library.
-		if ( \class_exists( 'WP_MCP_AI_Optional_Components' ) && ! \WP_MCP_AI_Optional_Components::is_vectorizer_installed() ) {
-			return $this->errors->create(
-				'wp_mcp_ai_vectorizer_not_installed',
-				'Vectorizer library is not installed. It will be automatically downloaded. Please try again shortly.'
-			);
-		}
-
-		// Check Node.js availability.
-		if ( \method_exists( $this, 'isNodeJsAvailable' ) && ! $this->isNodeJsAvailable() ) {
+		// Node.js (local) or the Media Worker sidecar is required. The
+		// vectorizer library itself is bundled with the base plugin.
+		if ( ! $this->isNodeJsAvailable() && ! $this->is_sidecar_upload_supported() ) {
 			return $this->errors->create(
 				'wp_mcp_ai_nodejs_required',
-				'Node.js is required for image vectorization but was not found.'
+				'Node.js is required for image vectorization but was not found. Configure the Media Worker sidecar or install Node.js.'
 			);
 		}
 
@@ -175,9 +170,30 @@ class VectorizeImageTool extends AbstractTool {
 			'hierarchical'   => \sanitize_text_field( $arguments['hierarchical'] ?? 'stacked' ),
 		);
 
-		// Execute Node.js vectorizer.
-		$script_path = \WP_MCP_AI_PATH . 'bin/vectorize-image.js';
-		$result      = $this->runNodeScript( $script_path, array( $temp_input, $temp_output, \wp_json_encode( $options ) ) );
+		// Execute vectorization: try the Media Worker sidecar first (opt-in
+		// routing — fails fast when no sidecar URL is configured or the
+		// health check fails), then fall back to the local script.
+		$result = null;
+		if ( $this->is_sidecar_upload_supported() ) {
+			$sidecar = $this->sidecar_upload(
+				'/api/image/vectorize',
+				$temp_input,
+				array( 'options' => \wp_json_encode( $options ) ),
+				120
+			);
+			if ( ! \is_wp_error( $sidecar ) && ! empty( $sidecar['svg'] ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing the worker-returned SVG into the temp output file consumed by the shared save flow.
+				if ( false !== \file_put_contents( $temp_output, $sidecar['svg'] ) ) {
+					$result = array( 'success' => true );
+				}
+			}
+		}
+
+		if ( null === $result ) {
+			// Execute Node.js vectorizer.
+			$script_path = \WP_MCP_AI_PATH . 'bin/vectorize-image.js';
+			$result      = $this->runNodeScript( $script_path, array( $temp_input, $temp_output, \wp_json_encode( $options ) ) );
+		}
 
 		\wp_delete_file( $temp_input );
 
@@ -277,7 +293,18 @@ class VectorizeImageTool extends AbstractTool {
 			require_once \ABSPATH . 'wp-admin/includes/file.php';
 		}
 
+		// WordPress rejects image/svg+xml by default (an XSS surface for
+		// arbitrary uploads); allow it for this single call only.
+		$allow_svg_mime = static function ( $mimes ) {
+			if ( ! is_array( $mimes ) ) {
+				$mimes = array();
+			}
+			$mimes['svg'] = 'image/svg+xml';
+			return $mimes;
+		};
+		\add_filter( 'upload_mimes', $allow_svg_mime );
 		$upload = \wp_upload_bits( $file_name, null, $svg_data );
+		\remove_filter( 'upload_mimes', $allow_svg_mime );
 		if ( ! empty( $upload['error'] ) ) {
 			return new \WP_Error( 'wp_mcp_ai_upload_failed', 'Failed to save SVG file.' );
 		}

@@ -1,9 +1,9 @@
 # NV oOS REST API
 
-**Status:** ✅ VERIFIED - December 20, 2025  
-**Namespace:** `/wp-json/mcp-ai/v1`  
-**Endpoint Count:** 15+ REST routes across 6 controllers  
-**Last Updated:** December 20, 2025
+**Status:** ✅ VERIFIED - December 20, 2025
+**Namespace:** `/wp-json/mcp-ai/v1`
+**Endpoint Count:** 15+ REST routes across 6 controllers
+**Last Updated:** August 13, 2026 (v1.1.55 MCP transport & error semantics)
 
 The plugin exposes its REST surface at `/wp-json/mcp-ai/v1` for both chat completions and direct tool execution. This document summarises the available endpoints, request/response contracts, and common integration pitfalls.
 
@@ -243,6 +243,23 @@ Requires `manage_options` capability (administrator access). Authenticated via W
 - **400 Bad Request**: Invalid team ID or team post does not exist.【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L94-L108】【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L129-L133】
 - **403 Forbidden**: User lacks `manage_options` capability.【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L84-L86】
 - **500 Internal Server Error**: Team CPT system is not available (rare edge case).【F:includes/rest/class-wp-mcp-ai-rest-teams-controller.php†L137-L142】
+
+## MCP Endpoint (`/mcp`) — v1.1.55 transport & error semantics
+
+`POST /mcp` is the MCP JSON-RPC 2.0 endpoint (Streamable HTTP). Two client classes are distinguished on `GET` by the `Accept` header:
+
+- **Streamable HTTP** — `Accept: application/json` → `GET` returns the discovery JSON; `POST` returns JSON-RPC over JSON.
+- **Legacy HTTP+SSE** — SSE-only `Accept: text/event-stream` or `?stream=true` → `GET` serves an `event: endpoint` handshake with a credential-bound session (`WP_MCP_AI_SSE_Session_Store`); `POST` with `session_id` returns 202 and the JSON-RPC response is delivered as `event: message` on the GET stream. Gated by `WP_MCP_AI_LEGACY_SSE_ENABLED`.
+
+Error semantics:
+
+- **JSON-RPC errors return HTTP 200** with the `{"jsonrpc","id","error"}` envelope — client SDKs drop non-2xx bodies, so a 500 turns a tool error into a silent agent hang. Auth/permission failures and pre-dispatch guards keep real HTTP statuses (401/403/429). Filter: `wp_mcp_ai_mcp_error_http_status`.
+- **GET/HEAD never consume the request rate-limit budget** (`check_rate_limit()` exempts them) — discovery/SSE probe retry loops would otherwise exhaust the hourly quota.
+- **Tool rate limiting** is settings-driven (`tool_rate_limit_max` / `tool_rate_limit_window` / `tool_rate_limit_exempt_tokens`) and exempts credential-token traffic by default; `TOOL_RATE_LIMIT_MAX` / `TOOL_RATE_LIMIT_WINDOW` constants remain fallbacks.
+- **Raw credential headers** — `Authorization: cred_xxxxx.SECRET` (without `Bearer`) is accepted for agent configs that forward headers verbatim. Filter: `wp_mcp_ai_accept_raw_credential_header` (default `true`).
+- **Async tool waits stay under proxy timeouts** — `mcp_wait_for_async_tool()` defaults to ~45s (15 polls × 3s) and kicks stuck jobs inline; do not exceed ~30 polls on Cloudflare-proxied sites (524 at ~100s).
+
+Reference: `docs/developer/implementation-plan-mcp-agent-compat.md`, `docs/developer/legacy-sse-transport-plan.md`.
 
 ## Troubleshooting tips
 

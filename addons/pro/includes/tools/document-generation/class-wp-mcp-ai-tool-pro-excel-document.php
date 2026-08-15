@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Load the document response trait from base plugin.
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-media-worker-client.php';
 
 /**
  * Pro Excel Document tool for AI-powered Excel spreadsheet generation.
@@ -35,6 +36,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-resp
 class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
+	use WP_MCP_AI_Media_Worker_Client;
 
 	/**
 	 * {@inheritdoc}
@@ -569,60 +571,45 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
 		rename( $temp_file, $xlsx_file );
 
-		// Create JSON file with document data for Node.js script.
-		$json_file = $temp_file . '.json';
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents
-		file_put_contents( $json_file, wp_json_encode( $document_data ) );
-
-		// Get bundled Excel generation script.
-		$script_file = $this->get_excel_generation_script_path();
-		if ( is_wp_error( $script_file ) ) {
-			// Clean up temp files.
-			@unlink( $xlsx_file );
-			@unlink( $json_file );
-			return $script_file;
-		}
-
-		// Execute Node.js script to generate document.
-		$node_binary = $this->get_node_binary();
-		if ( is_wp_error( $node_binary ) ) {
-			// Clean up temp files.
-			@unlink( $xlsx_file );
-			@unlink( $json_file );
-			return $node_binary;
-		}
-
-		// Escape command arguments.
-		$cmd = sprintf(
-			'%s %s %s %s 2>&1',
-			escapeshellarg( $node_binary ),
-			escapeshellarg( $script_file ),
-			escapeshellarg( $json_file ),
-			escapeshellarg( $xlsx_file )
-		);
-
-		// Execute command.
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_file ) );
-		$return_code = $proc_result['exit_code'];
-
-		// Clean up temp files.
-		@unlink( $json_file );
-
-		if ( 0 !== $return_code ) {
-			@unlink( $xlsx_file );
-			return new WP_Error(
-				'wp_mcp_ai_excel_generation_failed',
-				sprintf(
-					/* translators: %s: error output */
-					__( 'Excel document generation failed: %s', 'mcp-ai-wpoos' ),
-					implode( "\n", $output )
-				)
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured). The worker builds the workbook
+		// with exceljs instead of the bundled Node script.
+		$generated = false;
+		if ( $this->is_sidecar_available() ) {
+			$sidecar = $this->sidecar_request(
+				'/api/document/excel',
+				array(
+					'sheets'  => isset( $document_data['sheets'] ) && is_array( $document_data['sheets'] ) ? $document_data['sheets'] : array(),
+					'options' => array(
+						'title'   => ! empty( $document_data['title'] ) ? $document_data['title'] : '',
+						'creator' => ! empty( $document_data['author'] ) ? $document_data['author'] : '',
+					),
+				),
+				array( 'timeout' => 120 )
 			);
+			if ( ! is_wp_error( $sidecar ) && ! empty( $sidecar['data_base64'] ) ) {
+				$xlsx_bytes = base64_decode( $sidecar['data_base64'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding the worker's data_base64 payload is the transport contract.
+				if ( false !== $xlsx_bytes && '' !== $xlsx_bytes ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing the worker-returned bytes into the temp output file consumed by the shared save flow.
+					if ( false !== file_put_contents( $xlsx_file, $xlsx_bytes ) ) {
+						$generated = true;
+					}
+				}
+			}
+		}
+
+		if ( ! $generated ) {
+			// Fall back to the local Node.js/exceljs script.
+			$local_result = $this->generate_excel_document_locally( $document_data, $xlsx_file, $temp_file );
+			if ( is_wp_error( $local_result ) ) {
+				@unlink( $xlsx_file );
+				return $local_result;
+			}
+			$generated = true;
 		}
 
 		// Check if document was created.
-		if ( ! file_exists( $xlsx_file ) || 0 === filesize( $xlsx_file ) ) {
+		if ( ! $generated || ! file_exists( $xlsx_file ) || 0 === filesize( $xlsx_file ) ) {
 			@unlink( $xlsx_file );
 			return new WP_Error(
 				'wp_mcp_ai_excel_not_created',
@@ -689,6 +676,69 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			'url'           => '',
 			'attachment_id' => 0,
 		);
+	}
+
+	/**
+	 * Generate the Excel workbook locally via the bundled Node.js/exceljs
+	 * script.
+	 *
+	 * Fallback used when the Media Worker sidecar is unavailable. Writes the
+	 * generated workbook to $xlsx_file.
+	 *
+	 * @param array  $document_data Document configuration and content.
+	 * @param string $xlsx_file     Destination .xlsx path.
+	 * @param string $temp_file     Temporary file base path (for the JSON input).
+	 * @return true|WP_Error True on success.
+	 */
+	protected function generate_excel_document_locally( array $document_data, $xlsx_file, $temp_file ) {
+		// Create JSON file with document data for Node.js script.
+		$json_file = $temp_file . '.json';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents
+		file_put_contents( $json_file, wp_json_encode( $document_data ) );
+
+		// Get bundled Excel generation script.
+		$script_file = $this->get_excel_generation_script_path();
+		if ( is_wp_error( $script_file ) ) {
+			@unlink( $json_file );
+			return $script_file;
+		}
+
+		// Execute Node.js script to generate document.
+		$node_binary = $this->get_node_binary();
+		if ( is_wp_error( $node_binary ) ) {
+			@unlink( $json_file );
+			return $node_binary;
+		}
+
+		// Escape command arguments.
+		$cmd = sprintf(
+			'%s %s %s %s 2>&1',
+			escapeshellarg( $node_binary ),
+			escapeshellarg( $script_file ),
+			escapeshellarg( $json_file ),
+			escapeshellarg( $xlsx_file )
+		);
+
+		// Execute command.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_file ) );
+		$return_code = $proc_result['exit_code'];
+
+		// Clean up temp files.
+		@unlink( $json_file );
+
+		if ( 0 !== $return_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_excel_generation_failed',
+				sprintf(
+					/* translators: %s: error output */
+					__( 'Excel document generation failed: %s', 'mcp-ai-wpoos' ),
+					implode( "\n", array_filter( array( $proc_result['stderr'], $proc_result['stdout'] ) ) )
+				)
+			);
+		}
+
+		return true;
 	}
 
 	/**

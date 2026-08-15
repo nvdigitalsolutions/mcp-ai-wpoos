@@ -158,7 +158,7 @@ class Test_Vectorize_Image_Tool extends WP_UnitTestCase {
 	 */
 	public function test_tool_grouping() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$grouping = $registry->get_tool_grouping();
+		$grouping = $registry->get_tool_group_map();
 
 		$this->assertArrayHasKey( 'vectorize_image', $grouping );
 		$this->assertEquals( 'wordpress-core', $grouping['vectorize_image'] );
@@ -172,9 +172,12 @@ class Test_Vectorize_Image_Tool extends WP_UnitTestCase {
 		$this->assertFileExists( $script_path );
 		$this->assertFileIsReadable( $script_path );
 
-		// Check if file is executable.
-		$perms = fileperms( $script_path );
-		$this->assertTrue( ( $perms & 0x0040 ) !== 0, 'Script should be executable' );
+		// Check if file is executable (meaningless on Windows filesystems,
+		// which do not set POSIX executable bits).
+		if ( 'WIN' !== strtoupper( substr( PHP_OS, 0, 3 ) ) ) {
+			$perms = fileperms( $script_path );
+			$this->assertTrue( ( $perms & 0x0040 ) !== 0, 'Script should be executable' );
+		}
 	}
 
 	/**

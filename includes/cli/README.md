@@ -62,7 +62,7 @@ Folder-specific deltas:
 - Operator-facing output goes through `WP_CLI::log` / `WP_CLI::success` / `WP_CLI::warning` / `WP_CLI::error`; never `echo` or `print_r`.
 - Mutating subcommands MUST call `$this->require_capability( 'manage_options' )` (or the specific tool capability) after input validation. The CLI is not an authentication bypass.
 - All subcommands that touch the database, options, or post types MUST declare `@when after_wp_load` in their docblock.
-- List subcommands SHOULD use `list` as the method name (PHP 7.4+ supported). Use `@subcommand list` annotation if a different internal name is needed.
+- List subcommands SHOULD use `list` as the method name (supported at this folder's PHP target). Use `@subcommand list` annotation if a different internal name is needed.
 - Long-running subcommands SHOULD accept `--dry-run` and `--batch-size=` flags where applicable; see `WP_MCP_AI_CLI_Bulk_Command` for the canonical shape.
 - Use `$this->get_format( $assoc_args )` for consistent format parsing instead of raw `$assoc_args['format'] ?? 'table'`.
 

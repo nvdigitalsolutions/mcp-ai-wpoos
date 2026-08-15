@@ -78,18 +78,8 @@ class WP_MCP_AI_MJML_Service {
 			'options' => $options,
 		);
 
-		/**
-		 * Filter to allow custom MJML compilation.
-		 *
-		 * @param string|false $result HTML output or false.
-		 * @param array        $params Compilation parameters.
-		 */
-		$result = apply_filters( 'wp_mcp_ai_mjml_compile', false, $params );
-		if ( false !== $result ) {
-			return $result;
-		}
-
-		// Try Media Worker sidecar (automatic — no config needed with Docker).
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured).
 		$sidecar = $this->sidecar_request(
 			'/api/email/compile-mjml',
 			array(
@@ -99,6 +89,21 @@ class WP_MCP_AI_MJML_Service {
 		);
 		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['html'] ) ) {
 			return $sidecar['html'];
+		}
+
+		/**
+		 * Filter to allow custom MJML compilation.
+		 *
+		 * Runs after the sidecar attempt: legacy local-Node handlers only
+		 * execute when a local Node.js is installed, and custom
+		 * implementations keep working when no sidecar is configured.
+		 *
+		 * @param string|false $result HTML output or false.
+		 * @param array        $params Compilation parameters.
+		 */
+		$result = apply_filters( 'wp_mcp_ai_mjml_compile', false, $params );
+		if ( false !== $result ) {
+			return $result;
 		}
 
 		// Fall back to local Node.js (retained for non-Docker environments).
@@ -267,6 +272,22 @@ class WP_MCP_AI_MJML_Service {
 			'mjml'   => $mjml,
 		);
 
+		// Try the Media Worker sidecar first (opt-in routing — fails fast
+		// when no sidecar URL is configured).
+		$sidecar = $this->sidecar_request(
+			'/api/email/compile-mjml',
+			array(
+				'mjml'    => $mjml,
+				'options' => array( 'validationLevel' => 'strict' ),
+			)
+		);
+		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['errors'] ) ) {
+			// The worker compiles with validationLevel=strict, which throws
+			// on hard errors — a 200 response with no reported errors means
+			// the markup is valid.
+			return empty( $sidecar['errors'] );
+		}
+
 		/**
 		 * Filter to allow custom MJML validation.
 		 *
@@ -276,18 +297,6 @@ class WP_MCP_AI_MJML_Service {
 		$result = apply_filters( 'wp_mcp_ai_mjml_validate', false, $params );
 		if ( false !== $result ) {
 			return $result;
-		}
-
-		// Try Media Worker sidecar.
-		$sidecar = $this->sidecar_request(
-			'/api/email/compile-mjml',
-			array(
-				'mjml'    => $mjml,
-				'options' => array( 'validationLevel' => 'strict' ),
-			)
-		);
-		if ( ! is_wp_error( $sidecar ) && isset( $sidecar['valid'] ) ) {
-			return $sidecar['valid'];
 		}
 
 		// Fall back to local Node.js.

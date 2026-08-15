@@ -525,7 +525,13 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sla-manager.php';
 }
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rabbitmq-client.php' ) ) {
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rabbitmq-client.php';
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rabbitmq-client.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-rabbitmq.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-rabbitmq.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-site-health-connection-pool.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-site-health-connection-pool.php';
 }
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-queue-manager.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-queue-manager.php';
@@ -666,6 +672,10 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/tool-resp
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 }
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-worker-usage-reporter.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-worker-usage-reporter.php';
+}
+WP_MCP_AI_Media_Worker_Usage_Reporter::init();
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 }

@@ -11,7 +11,7 @@ This repo is developed by multiple AI agents. Before doing work, be aware of:
 - **`.github/agents/*.agent.md`** — GitHub Custom Agents auto-discovered by Copilot Coding Agent and compatible runtimes. Each file declares one role-specific agent (its scope, tools, triggers). Per the layering rule in [`AGENTS.md` §2](../AGENTS.md), these files are intentionally slim — they **do not** restate naming/security/PHP-compat rules, so always cross-reference `AGENTS.md` + `CLAUDE.md` + `.context/` for those.
 - **`.context/*.md`** — subsystem context files loaded on-demand by all agents (conventions, security checklist, REST API, tool registry, chat UI, testing, Pro vs Base).
 - **`.bmad/agents/*.yaml`** — internal BMAD workflow agents that run inside NV oOS assistants (not coding-time agents).
-- **`.agents/skills/*.md`** — 22 coding-time agent skills for Zed editor, covering WordPress plugin development patterns (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, mcp-ai-wpoos-plugin, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text).
+- **`.agents/skills/*.md`** — 51 coding-time agent skills for Zed editor: 20 wp-* WordPress plugin development patterns (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text), 30 design-* skills, and the mcp-ai-wpoos-plugin operational guide.
 
 When making changes, check `git log` first — another agent may have already addressed part of the task. Do not duplicate scopes that are owned by an agent declared in `.github/agents/` or in the `AGENTS.md` inventory.
 
@@ -26,7 +26,7 @@ mcp-ai-wpoos/
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
 │   ├── tools/            # ~1,500 total built-in tool implementations
-│   ├── security/         # Security infrastructure (10 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, security posture)
+│   ├── security/         # Security infrastructure (10 classes: request guard, security posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard)
 │   ├── elementor/        # Elementor widget integrations
 │   ├── okf/              # OKF v0.2 engine (parser, reader, writer)
 │   ├── integrations/     # Third-party plugin integrations
@@ -39,7 +39,7 @@ mcp-ai-wpoos/
 ├── tests/                # PHPUnit test suite (including tests/security/)
 ├── docs/                 # Comprehensive documentation (~1,600 files)
 ├── bin/                  # Development scripts
-├── .agents/skills/       # 22 coding-time agent skills for Zed editor
+├── .agents/skills/       # 51 coding-time agent skills for Zed editor (20 wp-* + 30 design-* + mcp-ai-wpoos-plugin)
 ├── .bmad/                # 6 BMAD workflow agent YAML definitions
 ├── .context/             # Subsystem context files for AI agent sessions
 └── languages/            # Translation files
@@ -53,7 +53,7 @@ mcp-ai-wpoos/
 - **Optional Integrations**: JetEngine, WooCommerce, Elementor, Rank Math, WPCode
 - **OKF (Open Knowledge Format)**: Google's v0.1 vendor-neutral knowledge format for curated, deterministic knowledge with 6 MCP tools
 - **nvoos/core**: Framework-agnostic AI orchestration engine with Hexagonal Architecture (Ports & Adapters), 32 domain contracts, 21 WordPress adapters
-- **Security Infrastructure**: 7 security classes (request guard, posture scoring with 21 signals, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store) with Site Health integration
+- **Security Infrastructure**: 10 security classes (request guard, security posture scoring with 21 signals, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard) with Site Health integration
 - **Architecture**: Custom Post Types, REST API, Server-Sent Events, Hexagonal Architecture
 
 ## Development Workflow

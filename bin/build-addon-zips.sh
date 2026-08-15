@@ -21,6 +21,7 @@
 #   build/nvoos-funiq-bridge-v<funiq-bridge-version>.zip
 #   build/nvoos-crocoblock-ds-v<crocoblock-ds-version>.zip
 #   build/nvoos-page-agent-v<page-agent-version>.zip
+#   build/nvoos-fleet-operator-v<fleet-operator-version>.zip
 #   build/nvoos-schedule-anything-platform-v<schedule-anything-platform-version>.zip
 #
 # Usage:
@@ -153,6 +154,9 @@ CDS_VERSION=${CDS_VERSION:-dev}
 PAGE_AGENT_VERSION=$(_read_addon_version "addons/page-agent/nvoos-page-agent.php")
 PAGE_AGENT_VERSION=${PAGE_AGENT_VERSION:-dev}
 
+FLEET_OPERATOR_VERSION=$(_read_addon_version "addons/fleet-operator/fleet-operator.php")
+FLEET_OPERATOR_VERSION=${FLEET_OPERATOR_VERSION:-dev}
+
 if ! command -v zip >/dev/null 2>&1; then
 echo "❌ Error: zip is required but not installed."
 exit 1
@@ -181,8 +185,8 @@ echo "   Pass --strict-canvas to make missing Docker a hard failure."
 SKIP_CANVAS=true
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ] || [ ! -d "addons/crocoblock-ds" ] || [ ! -d "addons/page-agent" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, addons/schedule-anything-platform, addons/crocoblock-ds, and addons/page-agent must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ] || [ ! -d "addons/docs-hub" ] || [ ! -d "addons/saas-controller" ] || [ ! -d "addons/comic-reader" ] || [ ! -d "addons/chat-spa" ] || [ ! -d "addons/librechat" ] || [ ! -d "addons/cloudways-dashboard" ] || [ ! -d "addons/funiq-bridge" ] || [ ! -d "addons/schedule-anything-platform" ] || [ ! -d "addons/crocoblock-ds" ] || [ ! -d "addons/page-agent" ] || [ ! -d "addons/fleet-operator" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, addons/graphify, addons/docs-hub, addons/saas-controller, addons/comic-reader, addons/chat-spa, addons/librechat, addons/cloudways-dashboard, addons/funiq-bridge, addons/schedule-anything-platform, addons/crocoblock-ds, addons/page-agent, and addons/fleet-operator must exist."
 exit 1
 fi
 
@@ -213,6 +217,7 @@ FUNIQ_BRIDGE_ZIP="${OUTPUT_DIR}/nvoos-funiq-bridge-v${FUNIQ_BRIDGE_VERSION}.zip"
 SAP_ZIP="${OUTPUT_DIR}/nvoos-schedule-anything-platform-v${SAP_VERSION}.zip"
 CDS_ZIP="${OUTPUT_DIR}/nvoos-crocoblock-ds-v${CDS_VERSION}.zip"
 PAGE_AGENT_ZIP="${OUTPUT_DIR}/nvoos-page-agent-v${PAGE_AGENT_VERSION}.zip"
+FLEET_OPERATOR_ZIP="${OUTPUT_DIR}/nvoos-fleet-operator-v${FLEET_OPERATOR_VERSION}.zip"
 
 # Remove any previously built ZIPs for these slugs (they may carry a stale version stamp).
 rm -f "$OUTPUT_DIR"/nvoos-algorave-linux-x64-v*.zip
@@ -230,6 +235,7 @@ rm -f "$OUTPUT_DIR"/nvoos-funiq-bridge-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-schedule-anything-platform-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-crocoblock-ds-v*.zip
 rm -f "$OUTPUT_DIR"/nvoos-page-agent-v*.zip
+rm -f "$OUTPUT_DIR"/nvoos-fleet-operator-v*.zip
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$OUTPUT_DIR"/nvoos-canvas-linux-x64-v*.zip
 fi
@@ -645,7 +651,7 @@ SAP_SIZE=$(du -h "$SAP_ZIP" | cut -f1)
 echo "✅ ${SAP_ZIP} (${SAP_SIZE})"
 echo ""
 
-echo "[15/${TOTAL_STEPS}] Building nvoos-crocoblock-ds-v${CDS_VERSION}.zip"
+echo "[14/${TOTAL_STEPS}] Building nvoos-crocoblock-ds-v${CDS_VERSION}.zip"
 # Pure PHP addon — no JS/npm build step required.
 mkdir -p "${TMP_DIR}/cds-stage/nvoos-crocoblock-ds"
 rsync -a "addons/crocoblock-ds/" "${TMP_DIR}/cds-stage/nvoos-crocoblock-ds/" \
@@ -663,7 +669,7 @@ CDS_SIZE=$(du -h "$CDS_ZIP" | cut -f1)
 echo "✅ ${CDS_ZIP} (${CDS_SIZE})"
 echo ""
 
-echo "[16/${TOTAL_STEPS}] Building nvoos-page-agent-v${PAGE_AGENT_VERSION}.zip"
+echo "[15/${TOTAL_STEPS}] Building nvoos-page-agent-v${PAGE_AGENT_VERSION}.zip"
 # Build the JavaScript bundles if Node is available, then package.
 if [ -d "addons/page-agent/node_modules" ] || command -v npm >/dev/null 2>&1; then
 	if [ ! -d "addons/page-agent/node_modules" ]; then
@@ -696,6 +702,25 @@ rsync -a "addons/page-agent/" "${TMP_DIR}/page-agent-stage/nvoos-page-agent/" \
 )
 PAGE_AGENT_SIZE=$(du -h "$PAGE_AGENT_ZIP" | cut -f1)
 echo "✅ ${PAGE_AGENT_ZIP} (${PAGE_AGENT_SIZE})"
+echo ""
+
+echo "[16/${TOTAL_STEPS}] Building nvoos-fleet-operator-v${FLEET_OPERATOR_VERSION}.zip"
+# Pure PHP addon — no JS/npm build step required. `.context/` holds agent
+# context notes only and is not shipped in the distribution ZIP.
+mkdir -p "${TMP_DIR}/fleet-operator-stage/nvoos-fleet-operator"
+rsync -a "addons/fleet-operator/" "${TMP_DIR}/fleet-operator-stage/nvoos-fleet-operator/" \
+	--exclude 'node_modules/' \
+	--exclude '.git/' \
+	--exclude '.DS_Store' \
+	--exclude '.gitignore' \
+	--exclude 'tests/' \
+	--exclude '.context/'
+(
+	cd "${TMP_DIR}/fleet-operator-stage"
+	zip -r -q "${ROOT_DIR}/${FLEET_OPERATOR_ZIP}" nvoos-fleet-operator/
+)
+FLEET_OPERATOR_SIZE=$(du -h "$FLEET_OPERATOR_ZIP" | cut -f1)
+echo "✅ ${FLEET_OPERATOR_ZIP} (${FLEET_OPERATOR_SIZE})"
 echo ""
 
 # Canvas builds a native Linux binary (canvas.node) inside a Docker
@@ -816,6 +841,7 @@ echo "  - ${FUNIQ_BRIDGE_ZIP}"
 echo "  - ${SAP_ZIP}"
 echo "  - ${CDS_ZIP}"
 echo "  - ${PAGE_AGENT_ZIP}"
+echo "  - ${FLEET_OPERATOR_ZIP}"
 if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
 elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then

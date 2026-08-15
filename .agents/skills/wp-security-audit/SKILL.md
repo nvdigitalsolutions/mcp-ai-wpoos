@@ -1,15 +1,17 @@
 ---
 name: wp-security-audit
-description: Audits WordPress plugin or theme PHP code for the most common security mistakes — missing nonce checks, capability checks, input sanitization, output escaping, unslashing, SQL preparation, AJAX nopriv exposure, file/path traversal, and unsafe redirects. Use when reviewing pull requests, before releasing a plugin, when the user asks "is this secure", or when handling code that touches $_GET / $_POST / $_REQUEST / $_COOKIE / $_FILES / $_SERVER, admin-ajax / admin-post, REST endpoints, options, user meta, custom DB queries, or file uploads.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.0 - 6.9
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-security-audit
-source-license: MIT
+description: "Audits WordPress plugin or theme PHP code for the most common security mistakes — missing nonce checks, capability checks, input sanitization, output escaping, unslashing, SQL preparation, AJAX nopriv exposure, file/path traversal, and unsafe redirects. Use when reviewing pull requests, before releasing a plugin, when the user asks \"is this secure\", or when handling code that touches $_GET / $_POST / $_REQUEST / $_COOKIE / $_FILES / $_SERVER, admin-ajax / admin-post, REST endpoints, options, user meta, custom DB queries, or file uploads."
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.0 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/wordpress/wp-security-audit"
+  source-license: MIT
 ---
 # WordPress security audit
 

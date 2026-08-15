@@ -1,15 +1,17 @@
 ---
 name: wp-plugin-architecture
-description: Designs and reviews the internal architecture of a WordPress plugin — folder layout, PSR-4 one-class-per-file discipline, Schema/Constants placement, composition-root vs singleton decisions, conditional asset enqueueing, script config via wp_add_inline_script, and prefixed custom-hook naming. Use when scaffolding includes/src, reviewing class organization, asset enqueue code, repeated strings, or "should I make this a singleton" decisions.
-author: Soczó Kristóf
-contact: mailto:lonsdale201@hotmail.com
-plugin: wordpress
-plugin-version-tested: 6.3 - 6.9
-php-min: 7.4
-last-updated: 2026-04-28
-source: https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-architecture
-source-license: MIT
+description: "Designs and reviews the internal architecture of a WordPress plugin — folder layout, PSR-4 one-class-per-file discipline, Schema/Constants placement, composition-root vs singleton decisions, conditional asset enqueueing, script config via wp_add_inline_script, and prefixed custom-hook naming. Use when scaffolding includes/src, reviewing class organization, asset enqueue code, repeated strings, or \"should I make this a singleton\" decisions."
 license: MIT
+metadata:
+  type: Skill
+  author: Soczó Kristóf
+  contact: "mailto:lonsdale201@hotmail.com"
+  plugin: wordpress
+  plugin-version-tested: 6.3 - 6.9
+  php-min: "7.4"
+  last-updated: "2026-04-28"
+  source: "https://github.com/Lonsdale201/wp-agent-skills/tree/8684fef5b4c33bc0cd783f9fff7770b1f7f59c57/plugin-scaffold/wp-plugin-architecture"
+  source-license: MIT
 ---
 # WordPress plugin: internal architecture
 
