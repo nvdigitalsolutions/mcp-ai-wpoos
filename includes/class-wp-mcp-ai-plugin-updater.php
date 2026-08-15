@@ -44,6 +44,11 @@ class WP_MCP_AI_Plugin_Updater {
 	const ASSET_COMPLETE = 'nvdigital-open-operator-system-oos-complete';
 
 	/**
+	 * The asset filename pattern for the base package (WordPress.org submission).
+	 */
+	const ASSET_BASE = 'nvdigital-open-operator-system-oos';
+
+	/**
 	 * The asset filename pattern for the full build (same folder structure as base,
 	 * used when upgrading from base to complete).
 	 */
@@ -103,11 +108,60 @@ class WP_MCP_AI_Plugin_Updater {
 		// AJAX: start Pro addon update.
 		add_action( 'wp_ajax_wp_mcp_ai_start_pro_update', array( __CLASS__, 'ajax_start_pro_update' ) );
 
+		// AJAX: check for base plugin updates (wp.org base installs).
+		add_action( 'wp_ajax_wp_mcp_ai_check_base_update', array( __CLASS__, 'ajax_check_base_update' ) );
+
+		// AJAX: start base plugin update.
+		add_action( 'wp_ajax_wp_mcp_ai_start_base_update', array( __CLASS__, 'ajax_start_base_update' ) );
+
 		// AJAX: upgrade from base to complete.
 		add_action( 'wp_ajax_wp_mcp_ai_upgrade_to_complete', array( __CLASS__, 'ajax_upgrade_to_complete' ) );
 
 		// AJAX: check complete version availability.
 		add_action( 'wp_ajax_wp_mcp_ai_check_complete', array( __CLASS__, 'ajax_check_complete' ) );
+	}
+
+	/**
+	 * Get the installed Pro addon version.
+	 *
+	 * Prefers the Version header of the Pro addon's main plugin file, which
+	 * the build script stamps with the actual release version. The
+	 * WP_MCP_AI_PRO_VERSION constant is maintained manually and has drifted
+	 * from the shipped version in the past (e.g. Pro releases built at 1.1.54
+	 * still carried the constant value 1.1.50).
+	 *
+	 * Falls back to the constant for bundled Pro builds, which ship without a
+	 * plugin header.
+	 *
+	 * @return string|false Installed Pro version, or false when the Pro addon is not loaded.
+	 */
+	public static function get_pro_installed_version() {
+		static $version = null;
+
+		if ( null !== $version ) {
+			return $version;
+		}
+
+		$version = false;
+
+		if ( defined( 'WP_MCP_AI_PRO_FILE' ) && file_exists( WP_MCP_AI_PRO_FILE ) ) {
+			if ( ! function_exists( 'get_file_data' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
+			$header = get_file_data( WP_MCP_AI_PRO_FILE, array( 'Version' => 'Version' ) );
+			$header = isset( $header['Version'] ) ? trim( (string) $header['Version'] ) : '';
+
+			if ( '' !== $header ) {
+				$version = $header;
+			}
+		}
+
+		if ( false === $version && defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			$version = WP_MCP_AI_PRO_VERSION;
+		}
+
+		return $version;
 	}
 
 	/**
@@ -208,6 +262,18 @@ class WP_MCP_AI_Plugin_Updater {
 				if ( false !== strpos( $base, self::ASSET_PRO . '-' ) && false === strpos( $base, 'complete' ) ) {
 					return $asset['browser_download_url'];
 				}
+			} elseif ( self::ASSET_BASE === $pattern ) {
+				// Match the plain base package (nvdigital-open-operator-system-oos-{version}.zip)
+				// but not the complete/pro/core variants which share the same prefix.
+				$is_base = 0 === strpos( $base, self::ASSET_BASE . '-' )
+					&& false === strpos( $base, '-complete' )
+					&& false === strpos( $base, '-pro' )
+					&& false === strpos( $base, '-core' );
+				// Legacy naming: mcp-ai-wpoos-base-{version}.zip.
+				$is_legacy_base = 0 === strpos( $base, 'mcp-ai-wpoos-base-' );
+				if ( $is_base || $is_legacy_base ) {
+					return $asset['browser_download_url'];
+				}
 			}
 		}
 		return '';
@@ -243,7 +309,8 @@ class WP_MCP_AI_Plugin_Updater {
 	 * @return array|WP_Error Array with version info, or WP_Error on failure.
 	 */
 	public static function check_for_pro_update() {
-		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+		$installed = self::get_pro_installed_version();
+		if ( false === $installed ) {
 			return new WP_Error(
 				'pro_not_installed',
 				__( 'Pro addon is not installed.', 'mcp-ai-wpoos' )
@@ -258,9 +325,9 @@ class WP_MCP_AI_Plugin_Updater {
 		$download_url = self::find_asset_url( $release['assets'], self::ASSET_PRO );
 
 		return array(
-			'installed'        => WP_MCP_AI_PRO_VERSION,
+			'installed'        => $installed,
 			'latest'           => $release['latest_version'],
-			'update_available' => version_compare( $release['latest_version'], WP_MCP_AI_PRO_VERSION, '>' ),
+			'update_available' => version_compare( $release['latest_version'], $installed, '>' ),
 			'download_url'     => $download_url,
 			'release_notes'    => $release['release_notes'],
 			'published_at'     => $release['published_at'],
@@ -269,21 +336,47 @@ class WP_MCP_AI_Plugin_Updater {
 	}
 
 	/**
-	 * Download and install the update using WordPress's Plugin_Upgrader.
+	 * Check if a base plugin update is available.
 	 *
-	 * The upgrader handles deactivation, safe file replacement via WP_Filesystem,
-	 * and reactivation — avoiding the crash that occurs when rename() swaps the
-	 * plugin directory out from under the running PHP process.
+	 * Used by WordPress.org base installs to update the base plugin in place
+	 * without upgrading to the complete build.
+	 *
+	 * @return array|WP_Error Array with version info, or WP_Error on failure.
+	 */
+	public static function check_for_base_update() {
+		$release = self::fetch_latest_release();
+		if ( is_wp_error( $release ) ) {
+			return $release;
+		}
+
+		$download_url = self::find_asset_url( $release['assets'], self::ASSET_BASE );
+
+		return array(
+			'installed'        => WP_MCP_AI_VERSION,
+			'latest'           => $release['latest_version'],
+			'update_available' => ! empty( $download_url ) && version_compare( $release['latest_version'], WP_MCP_AI_VERSION, '>' ),
+			'download_url'     => $download_url,
+			'release_notes'    => $release['release_notes'],
+			'published_at'     => $release['published_at'],
+			'checked_at'       => $release['checked_at'],
+		);
+	}
+
+	/**
+	 * Download and install a core plugin update from the GitHub release asset.
+	 *
+	 * Replaces the plugin files in place by copying the extracted ZIP over the
+	 * live plugin directory. Unlike Plugin_Upgrader, this does not depend on
+	 * the ZIP's top-level folder name matching the installed plugin folder
+	 * (e.g. the complete package extracts to nvdigital-open-operator-system-oos-complete
+	 * while wp.org base installs live in nvdigital-open-operator-system-oos).
+	 * A backup snapshot is taken before files are replaced and restored on failure.
+	 * Used for both complete-build updates and base-only updates.
 	 *
 	 * @param string $download_url URL of the ZIP to download.
-	 * @param array  $check        Optional. Update check result from check_for_update()
-	 *                             with 'latest' and 'download_url' keys. Used to
-	 *                             temporarily register the plugin in the update_plugins
-	 *                             transient so WordPress's Plugin_Upgrader doesn't
-	 *                             reject the upgrade.
 	 * @return true|WP_Error True on success, WP_Error on failure.
 	 */
-	public static function install_update( $download_url, $check = array() ) {
+	public static function install_update( $download_url ) {
 		if ( empty( $download_url ) ) {
 			return new WP_Error(
 				'no_download_url',
@@ -291,19 +384,42 @@ class WP_MCP_AI_Plugin_Updater {
 			);
 		}
 
-		// Load WordPress upgrade internals.
+		$result = self::replace_plugin_from_zip( $download_url, false );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Clear the update cache.
+		delete_transient( self::CACHE_KEY );
+
+		return true;
+	}
+
+	/**
+	 * Replace the current plugin files with the contents of a downloaded ZIP,
+	 * in place.
+	 *
+	 * The live plugin directory is never renamed or deleted, so the running
+	 * request can keep autoloading plugin classes until it finishes. The old
+	 * files are snapshotted to a sibling backup directory first and restored
+	 * if the copy or the post-install integrity check fails.
+	 *
+	 * @param string $download_url              URL of the ZIP to download.
+	 * @param bool   $deactivate_standalone_pro Whether to deactivate a separately
+	 *                                          installed Pro addon before replacing
+	 *                                          files. Used when upgrading base →
+	 *                                          complete, which bundles Pro inside
+	 *                                          addons/pro/ and would otherwise
+	 *                                          double-load Pro code on the next request.
+	 * @return true|WP_Error True on success, WP_Error on failure.
+	 */
+	private static function replace_plugin_from_zip( $download_url, $deactivate_standalone_pro = false ) {
 		if ( ! function_exists( 'download_url' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
-		if ( ! class_exists( 'Plugin_Upgrader' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-		}
-		if ( ! function_exists( 'get_plugin_data' ) ) {
+		if ( ! function_exists( 'deactivate_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
-
-		// Get the plugin basename (e.g. 'mcp-ai-wpoos/mcp-ai-wpoos.php').
-		$plugin_basename = plugin_basename( WP_MCP_AI_FILE );
 
 		// Download the ZIP.
 		$temp_file = download_url( $download_url, 300, false );
@@ -311,87 +427,128 @@ class WP_MCP_AI_Plugin_Updater {
 			return $temp_file;
 		}
 
-		// Temporarily register this plugin in the update_plugins transient.
-		// Plugin_Upgrader::upgrade() checks get_site_transient( 'update_plugins' )
-		// and rejects upgrades for plugins not listed there. Since we manage our
-		// own updates through GitHub releases (not WordPress.org), we must inject
-		// our plugin entry so the upgrader proceeds.
-		$prev_plugins_transient = self::inject_plugin_into_update_transient(
-			$plugin_basename,
-			$temp_file,
-			isset( $check['latest'] ) ? $check['latest'] : ''
-		);
+		// Extract to a temp directory next to the plugin folder.
+		$plugin_dir = untrailingslashit( WP_MCP_AI_PATH );
+		$temp_dir   = $plugin_dir . '.tmp-update/';
+		if ( is_dir( $temp_dir ) ) {
+			self::rmdir_recursive( $temp_dir );
+		}
+		wp_mkdir_p( $temp_dir );
 
-		// Use Plugin_Upgrader to perform the update safely.
-		// It handles: deactivation → file replacement → reactivation.
-		$skin     = new WP_Ajax_Upgrader_Skin();
-		$upgrader = new Plugin_Upgrader( $skin );
-
-		$result = $upgrader->upgrade(
-			$plugin_basename,
-			array(
-				'package'                     => $temp_file,
-				'clear_destination'           => true,
-				'abort_if_destination_exists' => false,
-				'is_multi'                    => false,
-				'hook_extra'                  => array(),
-			)
-		);
-
-		// Restore the original update_plugins transient.
-		self::restore_update_transient( $prev_plugins_transient );
-
-		// Clean up the temp file if it still exists.
+		$unzip_result = unzip_file( $temp_file, $temp_dir );
 		if ( file_exists( $temp_file ) ) {
-			unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- temp file cleanup after upgrader.
+			unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- temp file cleanup after extraction.
 		}
 
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		if ( is_wp_error( $unzip_result ) ) {
+			self::rmdir_recursive( $temp_dir );
+			return $unzip_result;
 		}
 
-		if ( false === $result ) {
-			$messages = $skin->get_upgrade_messages();
-			$last_msg = ! empty( $messages ) ? end( $messages ) : '';
+		// Find the extracted top-level directory.
+		$extracted_dirs = glob( $temp_dir . '*', GLOB_ONLYDIR );
+		if ( empty( $extracted_dirs ) ) {
+			self::rmdir_recursive( $temp_dir );
 			return new WP_Error(
-				'upgrade_failed',
-				$last_msg ? $last_msg : __( 'Plugin upgrade failed for an unknown reason.', 'mcp-ai-wpoos' )
+				'extract_failed',
+				__( 'Failed to locate the extracted plugin directory.', 'mcp-ai-wpoos' )
+			);
+		}
+		$source_dir = untrailingslashit( $extracted_dirs[0] );
+
+		// The package must contain the same main plugin file as the currently
+		// installed plugin; otherwise replacing the files would orphan the
+		// active entry point.
+		$main_file = basename( WP_MCP_AI_FILE );
+		if ( ! file_exists( $source_dir . '/' . $main_file ) ) {
+			self::rmdir_recursive( $temp_dir );
+			return new WP_Error(
+				'main_file_mismatch',
+				sprintf(
+					/* translators: %s: expected main plugin file name */
+					__( 'The update package does not contain the expected main plugin file (%s). The update was cancelled and nothing was changed.', 'mcp-ai-wpoos' ),
+					$main_file
+				)
 			);
 		}
 
-		// Force reactivation if the upgrader did not reactivate us.
-		// Plugin_Upgrader normally reactivates after file replacement, but
-		// if something prevents that (e.g. PHP error in new code), try again.
-		if ( ! is_plugin_active( $plugin_basename ) ) {
-			$activated = activate_plugin( $plugin_basename, '', false, false );
-			if ( is_wp_error( $activated ) ) {
-				return new WP_Error(
-					'reactivation_failed',
-					sprintf(
-						/* translators: %s: error message from activate_plugin() */
-						__( 'Plugin updated but failed to reactivate: %s', 'mcp-ai-wpoos' ),
-						$activated->get_error_message()
-					)
-				);
+		// Snapshot the current plugin directory for rollback.
+		$backup_dir = $plugin_dir . '.backup-' . gmdate( 'YmdHis' );
+		if ( ! self::copy_dir_recursive( $plugin_dir, $backup_dir ) ) {
+			self::rmdir_recursive( $temp_dir );
+			return new WP_Error(
+				'backup_failed',
+				__( 'Failed to create a backup of the existing plugin files.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Deactivate a separately-installed Pro addon before replacing files
+		// when the new build bundles Pro.
+		$standalone_pro_basename = '';
+		$pro_is_network_active   = false;
+		if ( $deactivate_standalone_pro && defined( 'WP_MCP_AI_PRO_FILE' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$pro_base  = untrailingslashit( wp_normalize_path( WP_MCP_AI_PRO_PATH ) );
+			$main_base = untrailingslashit( wp_normalize_path( WP_MCP_AI_PATH ) );
+			if ( 0 !== strpos( $pro_base, $main_base . '/' ) ) {
+				$standalone_pro_basename = plugin_basename( WP_MCP_AI_PRO_FILE );
+				$pro_is_network_active   = is_multisite() && is_plugin_active_for_network( $standalone_pro_basename );
+
+				if ( $pro_is_network_active ) {
+					// Network-wide deactivation needs a network administrator.
+					if ( ! current_user_can( 'manage_network' ) ) {
+						self::rmdir_recursive( $backup_dir );
+						self::rmdir_recursive( $temp_dir );
+						return new WP_Error(
+							'network_pro_active',
+							__( 'The Pro addon is network-activated. Only a network administrator can install the complete version.', 'mcp-ai-wpoos' )
+						);
+					}
+					deactivate_plugins( $standalone_pro_basename, true, true );
+				} elseif ( is_plugin_active( $standalone_pro_basename ) ) {
+					deactivate_plugins( $standalone_pro_basename, true );
+				}
 			}
 		}
 
-		// Clear PHP's stat cache before verifying integrity.
-		// The Plugin_Upgrader deleted and recreated files within this same
-		// PHP process, so file_exists() may return stale results from the
-		// old inodes unless we force a fresh stat of the filesystem.
+		// Copy the new files over the live plugin directory.
+		$copied = self::copy_dir_recursive( $source_dir, $plugin_dir );
+		if ( ! $copied ) {
+			// Restore the snapshot (copy back over, leaving the live dir in place).
+			self::copy_dir_recursive( $backup_dir, $plugin_dir );
+			if ( '' !== $standalone_pro_basename ) {
+				activate_plugin( $standalone_pro_basename, '', $pro_is_network_active, true );
+			}
+			self::rmdir_recursive( $backup_dir );
+			self::rmdir_recursive( $temp_dir );
+			return new WP_Error(
+				'install_failed',
+				__( 'Failed to install the update. The previous version has been restored.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Clear PHP's stat cache before verifying integrity: files were replaced
+		// within this same PHP process, so file_exists() may return stale results
+		// from the old inodes unless we force a fresh stat of the filesystem.
 		clearstatcache( true );
 
 		// Verify that all critical files were extracted correctly.
-		// On distributed filesystems (e.g. Cloudways), unzip can silently
-		// drop files without the upgrader reporting an error.
+		// On distributed filesystems (e.g. Cloudways), unzip can silently drop
+		// files without reporting an error.
 		$integrity = self::verify_installation_integrity();
 		if ( is_wp_error( $integrity ) ) {
+			// Restore the snapshot before surfacing the error.
+			self::copy_dir_recursive( $backup_dir, $plugin_dir );
+			if ( '' !== $standalone_pro_basename ) {
+				activate_plugin( $standalone_pro_basename, '', $pro_is_network_active, true );
+			}
+			self::rmdir_recursive( $backup_dir );
+			self::rmdir_recursive( $temp_dir );
 			return $integrity;
 		}
 
-		// Clear the update cache.
-		delete_transient( self::CACHE_KEY );
+		// Clean up.
+		self::rmdir_recursive( $temp_dir );
+		self::rmdir_recursive( $backup_dir );
 
 		return true;
 	}
@@ -547,7 +704,7 @@ class WP_MCP_AI_Plugin_Updater {
 			wp_send_json_error( array( 'message' => __( 'No update available.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$result = self::install_update( $check['download_url'], $check );
+		$result = self::install_update( $check['download_url'] );
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -626,6 +783,71 @@ class WP_MCP_AI_Plugin_Updater {
 	}
 
 	/**
+	 * AJAX handler: check for base plugin updates (wp.org base installs).
+	 */
+	public static function ajax_check_base_update() {
+		check_ajax_referer( 'wp_mcp_ai_plugin_update', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		// Force a fresh check — bypass the 12h cache so the user sees live data.
+		delete_transient( self::CACHE_KEY );
+
+		$result = self::check_for_base_update();
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: start the base plugin update process.
+	 */
+	public static function ajax_start_base_update() {
+		check_ajax_referer( 'wp_mcp_ai_plugin_update', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		// Force a fresh check (bypass cache).
+		delete_transient( self::CACHE_KEY );
+		$check = self::check_for_base_update();
+
+		if ( is_wp_error( $check ) ) {
+			wp_send_json_error( array( 'message' => $check->get_error_message() ) );
+		}
+
+		if ( empty( $check['update_available'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'No base plugin update available.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		// The install routine is identical to the complete-build update: the
+		// extracted files are copied over the live plugin directory in place,
+		// with a backup snapshot and rollback on failure. A separately
+		// installed Pro addon lives in its own plugin folder and is untouched.
+		$result = self::install_update( $check['download_url'] );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: %s: new version number */
+					__( 'Base plugin updated to version %s. Please reload the page.', 'mcp-ai-wpoos' ),
+					$check['latest']
+				),
+			)
+		);
+	}
+
+	/**
 	 * Check if the complete version is available from GitHub.
 	 *
 	 * Used for base-only installs to show the upgrade path.
@@ -638,14 +860,22 @@ class WP_MCP_AI_Plugin_Updater {
 			return $release;
 		}
 
+		// Prefer the legacy '-full' asset (same folder structure as base) when
+		// present, then fall back to the complete package
+		// (nvdigital-open-operator-system-oos-complete-*.zip), which is the
+		// asset actually shipped by current releases.
 		$download_url = self::find_asset_url( $release['assets'], self::ASSET_FULL );
-		$is_newer     = version_compare( $release['latest_version'], WP_MCP_AI_VERSION, '>' );
+		if ( empty( $download_url ) ) {
+			$download_url = self::find_asset_url( $release['assets'], self::ASSET_COMPLETE );
+		}
+
+		$is_newer = version_compare( $release['latest_version'], WP_MCP_AI_VERSION, '>' );
 
 		// Determine why the complete version is/isn't available for download.
 		if ( empty( $download_url ) ) {
 			$reason = $is_newer
-				? __( 'A newer version exists but no full-build download asset was found in the GitHub release. The complete build may not have been uploaded for this release yet.', 'mcp-ai-wpoos' )
-				: __( 'No full-build download asset found in the GitHub release.', 'mcp-ai-wpoos' );
+				? __( 'A newer version exists but no complete-build download asset was found in the GitHub release. The complete build may not have been uploaded for this release yet.', 'mcp-ai-wpoos' )
+				: __( 'No complete-build download asset found in the GitHub release.', 'mcp-ai-wpoos' );
 		} elseif ( ! $is_newer ) {
 			$reason = __( 'You are already running the latest version.', 'mcp-ai-wpoos' );
 		} else {
@@ -666,15 +896,15 @@ class WP_MCP_AI_Plugin_Updater {
 	/**
 	 * Upgrade from base to complete version.
 	 *
-	 * Downloads the full build ZIP (wp-mcp-ai-{version}-full.zip) which has
-	 * the same folder structure as the base plugin, so Plugin_Upgrader can
-	 * replace it in-place.
+	 * Downloads the complete build ZIP (nvdigital-open-operator-system-oos-complete-{version}.zip)
+	 * and replaces the base plugin files in place. A separately-installed Pro
+	 * addon is deactivated first, because the complete build bundles Pro inside
+	 * addons/pro/ and an active standalone Pro plugin would double-load Pro code.
 	 *
-	 * @param string $download_url URL of the full build ZIP.
-	 * @param array  $check        Optional. Availability check result with 'latest' key.
+	 * @param string $download_url URL of the complete build ZIP.
 	 * @return true|WP_Error True on success, WP_Error on failure.
 	 */
-	public static function upgrade_to_complete( $download_url, $check = array() ) {
+	public static function upgrade_to_complete( $download_url ) {
 		if ( empty( $download_url ) ) {
 			return new WP_Error(
 				'no_download_url',
@@ -682,94 +912,17 @@ class WP_MCP_AI_Plugin_Updater {
 			);
 		}
 
-		// Load WordPress upgrade internals.
-		if ( ! function_exists( 'download_url' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
-		if ( ! class_exists( 'Plugin_Upgrader' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-		}
-		if ( ! function_exists( 'get_plugin_data' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-
-		$plugin_basename = plugin_basename( WP_MCP_AI_FILE );
-
-		$temp_file = download_url( $download_url, 300, false );
-		if ( is_wp_error( $temp_file ) ) {
-			return $temp_file;
-		}
-
-		// Temporarily register this plugin in the update_plugins transient
-		// (same rationale as install_update — Plugin_Upgrader::upgrade()
-		// requires the plugin to be listed in the transient).
-		$prev_plugins_transient = self::inject_plugin_into_update_transient(
-			$plugin_basename,
-			$temp_file,
-			isset( $check['latest'] ) ? $check['latest'] : ''
-		);
-
-		$skin     = new WP_Ajax_Upgrader_Skin();
-		$upgrader = new Plugin_Upgrader( $skin );
-
-		$result = $upgrader->upgrade(
-			$plugin_basename,
-			array(
-				'package'                     => $temp_file,
-				'clear_destination'           => true,
-				'abort_if_destination_exists' => false,
-				'is_multi'                    => false,
-				'hook_extra'                  => array(),
-			)
-		);
-
-		// Restore the original update_plugins transient.
-		self::restore_update_transient( $prev_plugins_transient );
-
-		if ( file_exists( $temp_file ) ) {
-			unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- temp file cleanup after upgrade.
-		}
-
+		$result = self::replace_plugin_from_zip( $download_url, true );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
-		if ( false === $result ) {
-			$messages = $skin->get_upgrade_messages();
-			$last_msg = ! empty( $messages ) ? end( $messages ) : '';
+		// A complete build must bundle the Pro addon.
+		if ( ! file_exists( untrailingslashit( WP_MCP_AI_PATH ) . '/addons/pro/mcp-ai-wpoos-pro.php' ) ) {
 			return new WP_Error(
-				'upgrade_failed',
-				$last_msg ? $last_msg : __( 'Upgrade to complete version failed.', 'mcp-ai-wpoos' )
+				'pro_addon_missing',
+				__( 'The complete build was installed but the bundled Pro addon could not be found. The update may have been partially extracted.', 'mcp-ai-wpoos' )
 			);
-		}
-
-		// Force reactivation if the upgrader did not reactivate us.
-		// Plugin_Upgrader normally reactivates after file replacement, but
-		// if something prevents that (e.g. PHP error in new code), try again.
-		if ( ! is_plugin_active( $plugin_basename ) ) {
-			$activated = activate_plugin( $plugin_basename, '', false, false );
-			if ( is_wp_error( $activated ) ) {
-				return new WP_Error(
-					'reactivation_failed',
-					sprintf(
-						/* translators: %s: error message from activate_plugin() */
-						__( 'Upgraded to complete version but failed to reactivate: %s', 'mcp-ai-wpoos' ),
-						$activated->get_error_message()
-					)
-				);
-			}
-		}
-
-		// Clear PHP's stat cache before verifying integrity.
-		// The Plugin_Upgrader deleted and recreated files within this same
-		// PHP process, so file_exists() may return stale results from the
-		// old inodes unless we force a fresh stat of the filesystem.
-		clearstatcache( true );
-
-		// Verify that all critical files were extracted correctly.
-		$integrity = self::verify_installation_integrity();
-		if ( is_wp_error( $integrity ) ) {
-			return $integrity;
 		}
 
 		// Clear the update cache.
@@ -823,7 +976,7 @@ class WP_MCP_AI_Plugin_Updater {
 			wp_send_json_error( array( 'message' => __( 'Complete version is not available for download.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$result = self::upgrade_to_complete( $check['download_url'], $check );
+		$result = self::upgrade_to_complete( $check['download_url'] );
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -833,7 +986,7 @@ class WP_MCP_AI_Plugin_Updater {
 			array(
 				'message' => sprintf(
 					/* translators: %s: new version number */
-					__( 'Upgraded to complete version %s. The plugin now includes all Pro toolkits and addons. Please reload the page.', 'mcp-ai-wpoos' ),
+					__( 'Upgraded to complete version %s. The plugin now includes all Pro toolkits and addons. Any separately installed Pro addon has been deactivated. Please reload the page.', 'mcp-ai-wpoos' ),
 					$check['latest']
 				),
 			)
@@ -936,84 +1089,4 @@ class WP_MCP_AI_Plugin_Updater {
 		closedir( $dir );
 		return true;
 	}
-
-	/**
-	 * Temporarily inject a plugin entry into the update_plugins transient.
-	 *
-	 * Plugin_Upgrader::upgrade() checks get_site_transient( 'update_plugins' )
-	 * and refuses to upgrade plugins not listed there. Since we manage our own
-	 * updates via GitHub releases, we inject our plugin so the upgrader proceeds.
-	 *
-	 * Call restore_update_transient() with the return value after the upgrade.
-	 *
-	 * @param string $plugin_basename Plugin basename (e.g. 'mcp-ai-wpoos/mcp-ai-wpoos.php').
-	 * @param string $package_url     URL or local path to the update ZIP.
-	 * @param string $new_version     The version being installed.
-	 * @return stdClass|null Previous update_plugins transient value (or null if unchanged).
-	 */
-	private static function inject_plugin_into_update_transient( $plugin_basename, $package_url, $new_version ) {
-		$prev = get_site_transient( 'update_plugins' );
-
-		$transient = $prev;
-		if ( ! is_object( $transient ) ) {
-			$transient = new stdClass();
-		}
-		if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
-			$transient->response = array();
-		}
-
-		$transient->response[ $plugin_basename ] = (object) array(
-			'slug'        => dirname( $plugin_basename ),
-			'plugin'      => $plugin_basename,
-			'new_version' => $new_version,
-			'package'     => $package_url,
-			'url'         => '',
-		);
-
-		// Preserve last_checked so it doesn't trigger another background check.
-		if ( ! isset( $transient->last_checked ) && isset( $prev->last_checked ) ) {
-			$transient->last_checked = $prev->last_checked;
-		}
-
-		set_site_transient( 'update_plugins', $transient );
-
-		return $prev;
-	}
-
-	/**
-	 * Restore the update_plugins transient to its previous state.
-	 *
-	 * Removes our injected entry if the original didn't have one, or
-	 * restores the original object entirely.
-	 *
-	 * @param stdClass|null $previous Previous transient value from inject_plugin_into_update_transient().
-	 */
-	private static function restore_update_transient( $previous ) {
-		if ( null === $previous ) {
-			delete_site_transient( 'update_plugins' );
-			return;
-		}
-
-		// If our injected entry is still there, remove it.
-		$plugin_basename = plugin_basename( WP_MCP_AI_FILE );
-		if ( isset( $previous->response[ $plugin_basename ] ) ) {
-			// Original had an entry — keep it.
-			set_site_transient( 'update_plugins', $previous );
-		} else {
-			// Original didn't have our entry — fetch current and remove ours.
-			$current = get_site_transient( 'update_plugins' );
-			if ( is_object( $current ) && isset( $current->response[ $plugin_basename ] ) ) {
-				unset( $current->response[ $plugin_basename ] );
-				if ( empty( $current->response ) ) {
-					// If response is now empty, restore the full original.
-					$current = $previous;
-				}
-				set_site_transient( 'update_plugins', $current );
-			} else {
-				// Our entry is already gone (upgrader may have cleared it).
-				set_site_transient( 'update_plugins', $previous );
-			}
-		}
-	}
-
 }

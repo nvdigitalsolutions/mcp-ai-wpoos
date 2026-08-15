@@ -96,6 +96,23 @@
 </rule>
 
 <!--
+	Custom capabilities registered by the Healthcare Imaging module.
+	WP_MCP_AI_Imaging_Capabilities::add_caps() grants them to the
+	administrator role on plugin activation, so the WordPress.WP.Capabilities
+	sniff should not flag them as unknown/typoed capabilities.
+-->
+<rule ref="WordPress.WP.Capabilities">
+	<properties>
+		<property name="custom_capabilities" type="array">
+			<element value="view_medical_imaging"/>
+			<element value="upload_medical_imaging"/>
+			<element value="delete_medical_imaging"/>
+			<element value="manage_medical_imaging"/>
+		</property>
+	</properties>
+</rule>
+
+<!--
 	Phase 2 boundary rule:
 	includes/domain/ must contain zero direct WordPress API calls.
 	includes/infrastructure/ implements WordPress adapters — WordPress calls

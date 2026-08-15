@@ -803,7 +803,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		$settings         = get_option( 'wp_mcp_ai_settings', array() );
 		$imaging_enabled  = ! empty( $settings['enable_healthcare_imaging'] );
 		$storage_exists   = is_dir( $storage_path );
-		$storage_writable = $storage_exists && is_writable( $storage_path );
+		$storage_writable = $storage_exists && wp_is_writable( $storage_path );
 
 		// Fetch the full audit buffer once to derive both the recent preview and the total count.
 		$all_audit_entries = class_exists( 'WP_MCP_AI_Imaging_Audit_Log' )
@@ -988,7 +988,15 @@ class WP_MCP_AI_Imaging_Admin_Page {
 						</tr>
 						<tr>
 							<th><?php esc_html_e( 'NV oOS Pro version', 'mcp-ai-wpoos-pro' ); ?></th>
-							<td><?php echo esc_html( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : __( 'N/A', 'mcp-ai-wpoos-pro' ) ); ?></td>
+							<td>
+								<?php
+								// Prefer the plugin-header version over the manually-maintained constant.
+								$imaging_pro_version = method_exists( 'WP_MCP_AI_Plugin_Updater', 'get_pro_installed_version' )
+									? WP_MCP_AI_Plugin_Updater::get_pro_installed_version()
+									: ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '' );
+								echo esc_html( $imaging_pro_version ? $imaging_pro_version : __( 'N/A', 'mcp-ai-wpoos-pro' ) );
+								?>
+							</td>
 						</tr>
 						<tr>
 							<th><?php esc_html_e( 'WP_DEBUG', 'mcp-ai-wpoos-pro' ); ?></th>

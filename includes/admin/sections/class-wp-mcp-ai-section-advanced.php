@@ -2299,8 +2299,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$is_github_build    = file_exists( $pro_addon_file );
 			$is_base_only_build = ! $is_github_build && defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;
 			$update_nonce       = wp_create_nonce( 'wp_mcp_ai_plugin_update' );
-			$update_error      = __( 'An error occurred.', 'mcp-ai-wpoos' );
-			$update_ajax_error = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+			$update_error       = __( 'An error occurred.', 'mcp-ai-wpoos' );
+			$update_ajax_error  = __( 'AJAX error: ', 'mcp-ai-wpoos' );
 
 			if ( class_exists( 'WP_MCP_AI_Plugin_Updater' ) ) :
 				?>
@@ -2352,11 +2352,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			</div>
 
 					<?php
-					$update_checking   = __( 'Checking for updates...', 'mcp-ai-wpoos' );
-					$update_updating   = __( 'Updating plugin...', 'mcp-ai-wpoos' );
-					$update_confirm    = __( 'This will download and install the latest version of the complete plugin from GitHub. A backup will be created before updating. Continue?', 'mcp-ai-wpoos' );
-					$update_uptodate   = __( 'You are running the latest version.', 'mcp-ai-wpoos' );
-					$update_available  = __( 'Update available!', 'mcp-ai-wpoos' );
+					$update_checking  = __( 'Checking for updates...', 'mcp-ai-wpoos' );
+					$update_updating  = __( 'Updating plugin...', 'mcp-ai-wpoos' );
+					$update_confirm   = __( 'This will download and install the latest version of the complete plugin from GitHub. A backup will be created before updating. Continue?', 'mcp-ai-wpoos' );
+					$update_uptodate  = __( 'You are running the latest version.', 'mcp-ai-wpoos' );
+					$update_available = __( 'Update available!', 'mcp-ai-wpoos' );
 
 					ob_start();
 					?>
@@ -2505,10 +2505,49 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				<p></p>
 			</div>
 
+			<!-- BASE UPDATE: update the base plugin in place without upgrading to complete -->
+			<div class="wp-mcp-ai-base-update-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+				<h4 style="margin-top: 0;"><?php esc_html_e( 'Base Version', 'mcp-ai-wpoos' ); ?></h4>
+				<ul style="margin: 10px 0; padding-left: 20px;">
+					<li><strong><?php esc_html_e( 'Installed:', 'mcp-ai-wpoos' ); ?></strong> <?php echo esc_html( WP_MCP_AI_VERSION ); ?></li>
+					<li><strong><?php esc_html_e( 'Latest:', 'mcp-ai-wpoos' ); ?></strong> <span id="wp-mcp-ai-base-latest-version"><?php esc_html_e( 'Checking...', 'mcp-ai-wpoos' ); ?></span></li>
+					<li id="wp-mcp-ai-base-update-status-li" style="display: none;">
+						<strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></strong>
+						<span id="wp-mcp-ai-base-update-status-text"></span>
+					</li>
+				</ul>
+			</div>
+
+			<div class="wp-mcp-ai-base-update-actions" style="margin-top: 20px;">
+				<p>
+					<button type="button" class="button button-secondary" id="wp-mcp-ai-check-base-update-btn">
+						<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+						<?php esc_html_e( 'Check for Base Updates', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<span class="description" style="margin-left: 10px;">
+						<?php esc_html_e( 'Checks GitHub releases for a newer version of the base plugin.', 'mcp-ai-wpoos' ); ?>
+					</span>
+				</p>
+
+				<p id="wp-mcp-ai-base-update-now-row" style="display: none;">
+					<button type="button" class="button button-primary" id="wp-mcp-ai-base-update-now-btn">
+						<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+						<?php esc_html_e( 'Update Base Now', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<span class="description" style="margin-left: 10px;">
+						<?php esc_html_e( 'Downloads and installs the latest base plugin. A backup is created before updating. A separately installed Pro addon is not affected.', 'mcp-ai-wpoos' ); ?>
+					</span>
+				</p>
+			</div>
+
+			<div id="wp-mcp-ai-base-update-message" class="notice" style="display: none; margin: 15px 0;">
+				<p></p>
+			</div>
+
 			<?php
 			$complete_checking  = __( 'Checking availability...', 'mcp-ai-wpoos' );
 			$complete_upgrading = __( 'Installing complete version...', 'mcp-ai-wpoos' );
-			$complete_confirm   = __( 'This will download and install the complete plugin build from GitHub, which includes the Pro addon and all toolkits. The plugin will be deactivated and reactivated during the upgrade. Continue?', 'mcp-ai-wpoos' );
+			$complete_confirm   = __( 'This will download and install the complete plugin build from GitHub, which includes the Pro addon and all toolkits. If the Pro addon is currently installed as a separate plugin, it will be deactivated to avoid loading Pro twice. Continue?', 'mcp-ai-wpoos' );
 
 			ob_start();
 			?>
@@ -2614,6 +2653,120 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			wp_print_inline_script_tag( $complete_js );
 			?>
 
+			<?php
+			$base_checking  = __( 'Checking for base updates...', 'mcp-ai-wpoos' );
+			$base_updating  = __( 'Updating base plugin...', 'mcp-ai-wpoos' );
+			$base_confirm   = __( 'This will download and install the latest base plugin from GitHub. A backup will be created before updating. A separately installed Pro addon is not affected. Continue?', 'mcp-ai-wpoos' );
+			$base_uptodate  = __( 'Base plugin is up to date.', 'mcp-ai-wpoos' );
+			$base_available = __( 'Base plugin update available!', 'mcp-ai-wpoos' );
+
+			ob_start();
+			?>
+			jQuery(document).ready(function($) {
+				var baseUpdateNonce = <?php echo wp_json_encode( $update_nonce ); ?>;
+
+				// Auto-check base on page load.
+				checkBaseUpdates(true);
+
+				function checkBaseUpdates(silent) {
+					var $btn = $('#wp-mcp-ai-check-base-update-btn');
+					var $msg = $('#wp-mcp-ai-base-update-message');
+
+					if (!silent) {
+						$btn.prop('disabled', true).find('.dashicons').addClass('spin');
+						$msg.hide().removeClass('notice-success notice-error notice-warning');
+						$('#wp-mcp-ai-base-latest-version').text(<?php echo wp_json_encode( $base_checking ); ?>);
+					}
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_check_base_update',
+							nonce: baseUpdateNonce
+						},
+						success: function(response) {
+							$btn.prop('disabled', false).find('.dashicons').removeClass('spin');
+							if (response.success && response.data) {
+								$('#wp-mcp-ai-base-latest-version').text(response.data.latest);
+								if (response.data.update_available) {
+									$('#wp-mcp-ai-base-update-status-li').show();
+									$('#wp-mcp-ai-base-update-status-text').css('color','#46b450').text(<?php echo wp_json_encode( $base_available ); ?>);
+									$('#wp-mcp-ai-base-update-now-row').show();
+								} else {
+									$('#wp-mcp-ai-base-update-status-li').show();
+									$('#wp-mcp-ai-base-update-status-text').css('color','#2271b1').text(<?php echo wp_json_encode( $base_uptodate ); ?>);
+									$('#wp-mcp-ai-base-update-now-row').hide();
+								}
+							} else {
+								$('#wp-mcp-ai-base-latest-version').text('—');
+								var errMsg = response.data && response.data.message ? response.data.message : <?php echo wp_json_encode( $update_error ); ?>;
+								if (!silent) {
+									$msg.removeClass('notice-success').addClass('notice-error').show().find('p').text(errMsg);
+								}
+							}
+						},
+						error: function() {
+							$btn.prop('disabled', false).find('.dashicons').removeClass('spin');
+							$('#wp-mcp-ai-base-latest-version').text('—');
+							if (!silent) {
+								$msg.removeClass('notice-success').addClass('notice-error').show().find('p').text(<?php echo wp_json_encode( $update_ajax_error ); ?>);
+							}
+						}
+					});
+				}
+
+				$('#wp-mcp-ai-check-base-update-btn').on('click', function() {
+					checkBaseUpdates(false);
+				});
+
+				$('#wp-mcp-ai-base-update-now-btn').on('click', function() {
+					if (!confirm(<?php echo wp_json_encode( $base_confirm ); ?>)) {
+						return;
+					}
+
+					var $btn = $(this);
+					var $msg = $('#wp-mcp-ai-base-update-message');
+
+					$btn.prop('disabled', true).find('.dashicons').addClass('spin');
+					$('#wp-mcp-ai-check-base-update-btn').prop('disabled', true);
+					$msg.hide().removeClass('notice-success notice-error notice-warning');
+					$msg.show().addClass('notice-info').find('p').text(<?php echo wp_json_encode( $base_updating ); ?>);
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_start_base_update',
+							nonce: baseUpdateNonce
+						},
+						success: function(response) {
+							$btn.prop('disabled', false).find('.dashicons').removeClass('spin');
+							$('#wp-mcp-ai-check-base-update-btn').prop('disabled', false);
+							if (response.success) {
+								$msg.removeClass('notice-info notice-error').addClass('notice-success').show()
+									.find('p').text(response.data.message);
+								$('#wp-mcp-ai-base-update-now-row').hide();
+							} else {
+								var errMsg = response.data && response.data.message ? response.data.message : <?php echo wp_json_encode( $update_error ); ?>;
+								$msg.removeClass('notice-info notice-success').addClass('notice-error').show()
+									.find('p').text(errMsg);
+							}
+						},
+						error: function() {
+							$btn.prop('disabled', false).find('.dashicons').removeClass('spin');
+							$('#wp-mcp-ai-check-base-update-btn').prop('disabled', false);
+							$msg.removeClass('notice-info notice-success').addClass('notice-error').show()
+								.find('p').text(<?php echo wp_json_encode( $update_ajax_error ); ?>);
+						}
+					});
+				});
+			});
+			<?php
+			$base_update_js = ob_get_clean();
+			wp_print_inline_script_tag( $base_update_js );
+			?>
+
 		<?php endif; ?>
 
 		<div id="wp-mcp-ai-update-message" class="notice" style="display: none; margin: 15px 0;">
@@ -2630,6 +2783,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				&& defined( 'WP_MCP_AI_PRO_PATH' )
 				&& 0 !== strpos( trailingslashit( untrailingslashit( WP_MCP_AI_PRO_PATH ) ), trailingslashit( untrailingslashit( WP_MCP_AI_PATH ) ) );
 
+				// The installed Pro version comes from the Pro addon's plugin
+				// header (stamped by the build script). The WP_MCP_AI_PRO_VERSION
+				// constant is maintained manually and has drifted from the
+				// shipped version in the past.
+				$pro_installed_version = method_exists( 'WP_MCP_AI_Plugin_Updater', 'get_pro_installed_version' )
+					? WP_MCP_AI_Plugin_Updater::get_pro_installed_version()
+					: ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '' );
+
 				if ( $pro_is_standalone ) :
 					?>
 		<div class="wp-mcp-ai-pro-updates-section" style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd;">
@@ -2641,7 +2802,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			<div class="wp-mcp-ai-pro-update-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
 				<h4 style="margin-top: 0;"><?php esc_html_e( 'Pro Addon Version', 'mcp-ai-wpoos' ); ?></h4>
 				<ul style="margin: 10px 0; padding-left: 20px;">
-					<li><strong><?php esc_html_e( 'Installed:', 'mcp-ai-wpoos' ); ?></strong> <span id="wp-mcp-ai-pro-installed-version"><?php echo esc_html( WP_MCP_AI_PRO_VERSION ); ?></span></li>
+					<li><strong><?php esc_html_e( 'Installed:', 'mcp-ai-wpoos' ); ?></strong> <span id="wp-mcp-ai-pro-installed-version"><?php echo esc_html( $pro_installed_version ); ?></span></li>
 					<li><strong><?php esc_html_e( 'Latest:', 'mcp-ai-wpoos' ); ?></strong> <span id="wp-mcp-ai-pro-latest-version"><?php esc_html_e( 'Checking...', 'mcp-ai-wpoos' ); ?></span></li>
 					<li id="wp-mcp-ai-pro-update-status-li" style="display: none;">
 						<strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></strong>
