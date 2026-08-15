@@ -144,29 +144,42 @@ class WP_MCP_AI_Service_Status_AI_Providers implements Interface_WP_MCP_AI_Servi
 	 * @return array<string, string> Map of provider slug => display label.
 	 */
 	private function get_configured_providers() {
-		$providers    = array();
-		$all_settings = function_exists( 'wp_mcp_ai_get_settings' ) ? wp_mcp_ai_get_settings() : array();
+		$keyed_providers = array(
+			'openai'     => 'OpenAI',
+			'gemini'     => 'Gemini',
+			'anthropic'  => 'Anthropic',
+			'deepseek'   => 'DeepSeek',
+			'openrouter' => 'OpenRouter',
+		);
 
-		if ( ! is_array( $all_settings ) ) {
-			$all_settings = array();
+		// Merged settings array (credentials option folded in, sensitive
+		// values decrypted). Used for the Ollama base URL and as a fallback
+		// when the credential resolver is not loaded yet.
+		$all_settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
+			? WP_MCP_AI_Admin_Settings_Base::get_settings()
+			: get_option( 'wp_mcp_ai_settings', array() );
+		$all_settings = is_array( $all_settings ) ? $all_settings : array();
+
+		$providers = array();
+
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			// Canonical source: plugin settings, WP 7.0 connectors,
+			// environment variables, and PHP constants.
+			foreach ( $keyed_providers as $slug => $label ) {
+				if ( WP_MCP_AI_Credential_Resolver::has_credentials( $slug ) ) {
+					$providers[ $slug ] = $label;
+				}
+			}
+		} else {
+			// Early-bootstrap fallback: read the merged settings directly.
+			foreach ( $keyed_providers as $slug => $label ) {
+				if ( ! empty( $all_settings[ $slug . '_api_key' ] ) ) {
+					$providers[ $slug ] = $label;
+				}
+			}
 		}
 
-		// Check each known provider for credential presence.
-		if ( ! empty( $all_settings['openai_api_key'] ) ) {
-			$providers['openai'] = 'OpenAI';
-		}
-		if ( ! empty( $all_settings['gemini_api_key'] ) ) {
-			$providers['gemini'] = 'Gemini';
-		}
-		if ( ! empty( $all_settings['anthropic_api_key'] ) ) {
-			$providers['anthropic'] = 'Anthropic';
-		}
-		if ( ! empty( $all_settings['deepseek_api_key'] ) ) {
-			$providers['deepseek'] = 'DeepSeek';
-		}
-		if ( ! empty( $all_settings['openrouter_api_key'] ) ) {
-			$providers['openrouter'] = 'OpenRouter';
-		}
+		// Ollama is keyless — configured when a base URL is present.
 		if ( ! empty( $all_settings['ollama_base_url'] ) ) {
 			$providers['ollama'] = 'Ollama';
 		}
