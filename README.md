@@ -18,10 +18,6 @@
 
 **🆕 v1.1.57 Highlights:** Plugin updater rework — base-only update flow for wp.org installs (Settings → Advanced "Base Version" panel), copy-in-place install with backup/rollback replaces `Plugin_Upgrader` (ZIP folder-name mismatches no longer break updates), and Pro version read from the plugin header instead of the drifted constant. Hermes WebUI chat reworked to async submit/poll with approval-gate answers and `still_running` budget expiry. Service Status AI-provider detection now uses the canonical `WP_MCP_AI_Credential_Resolver` (settings + WP 7.0 connectors + env + constants). New `addons/fleet-operator/.context/` agent-context tree (18 files, 6 operator roles).
 
-**Previous (v1.1.56):** Media Worker v3.0.0 — multi-tenant shared worker mode (v2.4.0, per-site isolation + rate limits), Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`) with usage counters and grouped temp TTLs, Phase 3 operational scale (multisite per-blog tokens, usage reporter, opt-in Redis rate-limit store), zero-downtime token rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds, Cloudways readiness, and worker routing for document generation, OCR, frames, charts, email, QR/translate/PDF, and vectorization. New Hermes tooling: WebUI MCP server, SSH bridge, skill sync (`bin/`), and Zed Console profile.
-
-**Previous (v1.1.55):** MCP agent compatibility — JSON-RPC errors return HTTP 200, legacy HTTP+SSE transport, tool rate limiter settings, raw credential headers, bounded async polling. New Hermes Fleet Operator addon (scoped operator credentials). Media Worker v2.2.0 security hardening (SSRF guard, sandboxed Puppeteer, rate limiting) + `WP_MEDIA_WORKER_TOKEN`. Database connection pooling stance (Proposal 023). PostCSS 8.5.26.
-
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
