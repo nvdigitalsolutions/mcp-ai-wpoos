@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.56
+Stable tag: 1.1.57
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -296,6 +296,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.57 - August 15, 2026 =
+
+Bumped to 1.1.57 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Plugin updater rework: new base-only update flow so WordPress.org base installs can update in place without upgrading to the complete build (new "Base Version" panel in Settings → Advanced), copy-in-place installation with backup and rollback replacing Plugin_Upgrader (ZIP folder-name mismatches no longer break updates), and Pro version read from the plugin header instead of the manually maintained constant. Hermes WebUI chat reworked to async submit/poll with approval-gate answers and a still_running status on timeout expiry; answer extraction fixed for live WebUI payloads. Service Status AI-provider detection now resolves credentials through the canonical credential resolver (plugin settings, WP 7.0 Connectors, environment variables, PHP constants). New fleet-operator addon agent-context tree (18 files, 6 operator roles).
 
 = 1.1.56 - August 14, 2026 =
 

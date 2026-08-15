@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 14, 2026
-**Plugin Version:** 1.1.56
+**Last Updated:** August 15, 2026
+**Plugin Version:** 1.1.57
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,8 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **AUGUST 15, 2026 UPDATE (v1.1.57):** PLUGIN UPDATER REWORK — BASE-ONLY UPDATE FLOW FOR WP.ORG INSTALLS (NEW "BASE VERSION" PANEL IN SETTINGS → ADVANCED), COPY-IN-PLACE INSTALL WITH BACKUP/ROLLBACK REPLACING `Plugin_Upgrader` (ZIP FOLDER-NAME MISMATCHES NO LONGER BREAK UPDATES), PRO VERSION READ FROM PLUGIN HEADER. HERMES WEBUI CHAT REWORKED TO ASYNC SUBMIT/POLL (`/api/chat/start` + `/api/chat/stream/status`, `still_running` TIMEOUT STATUS, `HERMES_APPROVAL_MODE` GATE ANSWERS, LIVE PAYLOAD ANSWER-EXTRACTION FIX). SERVICE STATUS AI-PROVIDER DETECTION NOW USES `WP_MCP_AI_Credential_Resolver` (SETTINGS + WP 7.0 CONNECTORS + ENV + CONSTANTS) + NEW TEST SUITE. NEW `addons/fleet-operator/.context/` AGENT-CONTEXT TREE (18 FILES, 6 OPERATOR ROLES). UPDATED `docs/features/plugin-updater.md`, 2 NEW FIX-HISTORY DOCS.
+>
 > **AUGUST 14, 2026 UPDATE (v1.1.56):** MEDIA WORKER v3.0.0 — MULTI-TENANT SHARED WORKER MODE v2.4.0 (`SITE_TOKENS` PER-SITE ISOLATION, RATE LIMITS, ROTATION), PHASE 2 PER-SITE PROVIDER KEYS (`SITE_PROVIDER_KEYS`, USAGE COUNTERS, GROUPED TEMP TTLS, CLUSTER WARNINGS + K6 LOAD-TEST KIT), PHASE 3 OPERATIONAL SCALE (MULTISITE PER-BLOG TOKENS, USAGE REPORTER, OPT-IN REDIS RATE-LIMIT STORE, `PROVIDER_KEYS_FILE` HOT-RELOAD). ZERO-DOWNTIME TOKEN ROTATION (`WORKER_API_TOKEN_PREVIOUS`) + CANVAS v3 NAPI PREBUILDS + CLOUDWAYS READINESS + LIVE ROUTE FIXES. WORKER ROUTING EXPANSION (DOCUMENT GENERATION, OCR, FRAMES, CHARTS, EMAIL, QR/TRANSLATE/PDF, VECTORIZE — LOCAL FALLBACKS). HERMES TOOLING: WEBUI MCP SERVER, SSH BRIDGE, SKILL SYNC, ZED CONSOLE PROFILE. PROPOSALS 026/027/028.
 >
 > **AUGUST 13, 2026 UPDATE (v1.1.55):** MCP AGENT COMPATIBILITY (JSON-RPC ERRORS RETURN HTTP 200, LEGACY HTTP+SSE TRANSPORT, TOOL RATE LIMITER SETTINGS, RAW CREDENTIAL HEADERS, BOUNDED ASYNC POLLING). NEW HERMES FLEET OPERATOR ADDON (SCOPED `op_` CREDENTIALS, MCP TOOLS/LIST SCOPING, WP-CLI, SKILLS PACK). MEDIA WORKER v2.2.0 SECURITY HARDENING (TIMING-SAFE TOKEN, SSRF GUARD, SANDBOXED PUPPETEER, RATE LIMITING, HELMET) + `WP_MEDIA_WORKER_TOKEN` + VELOCITY DEPLOY GUIDE. RABBITMQ STATUS WIDGET FIX. DATABASE CONNECTION POOLING STANCE (PROPOSAL 023: RABBITMQ GATING, ATOMIC CONCURRENCY SLOTS, PDO PERSISTENCE, SITE HEALTH). POSTCSS >=8.5.26 (GHSA-6g55-p6wh-862q). MEDIA WORKER SUBTREE SYNC WORKFLOW.
@@ -613,7 +615,16 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.56: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.0.0, Connection Pooling
+## 🆕 August 2026 — v1.1.55–v1.1.57: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.0.0, Connection Pooling, Updater Rework
+
+### New and updated documents (August 15, 2026, v1.1.57)
+
+- **[docs/features/plugin-updater.md](features/plugin-updater.md)** ⭐ **UPDATED** — v1.1.57 rework: base-only update flow, copy-in-place install with backup/rollback (Plugin_Upgrader removed), Pro version from plugin header, new Base Version admin panel. (August 15, 2026)
+- **[docs/history/2026/fixes/base-update-path-fix.md](history/2026/fixes/base-update-path-fix.md)** ⭐ **NEW** — Fix details: base update path, in-place install, Pro version drift. (August 15, 2026)
+- **[docs/history/2026/fixes/service-status-provider-detection-fix.md](history/2026/fixes/service-status-provider-detection-fix.md)** ⭐ **NEW** — Fix details: Service Status provider detection via `WP_MCP_AI_Credential_Resolver`. (August 15, 2026)
+- **[addons/fleet-operator/.context/](../addons/fleet-operator/.context/README.md)** ⭐ **NEW** — Addon-level agent context tree (18 files, 6 operator roles) for Fleet Operator workflows. (August 15, 2026)
+- **[AGENTS.md](../AGENTS.md)** ⭐ **UPDATED** — Hermes Console row (async chat), addon-level context-tree registration, v1.12. (August 15, 2026)
+- **[docs/operations/fleet/hermes-operator-setup.md](operations/fleet/hermes-operator-setup.md)** ⭐ **UPDATED** — §7 Hermes WebUI server: async submit/poll chat. (August 15, 2026)
 
 ### New and updated documents (August 14, 2026, v1.1.56)
 

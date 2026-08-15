@@ -1,6 +1,6 @@
 # Workspace Context Files (GSD-style)
 
-> Local instantiation of the GSD context-engineering pattern proven in the mcp-ai-wpoos repo (`F:\GITHUB\worktrees\mcp-ai-wpoos\<branch>\mcp-ai-wpoos\.context\`). The repo's files encode *plugin* conventions; these files encode *workspace/agent* conventions.
+> Local instantiation of the GSD context-engineering pattern proven in the mcp-ai-wpoos repo (root [`.context/`](../../.context/README.md)). The repo's files encode *plugin* conventions; these files encode *workspace/agent* conventions.
 
 ## Purpose
 

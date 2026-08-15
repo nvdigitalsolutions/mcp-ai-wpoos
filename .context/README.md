@@ -49,6 +49,10 @@ This is the **structural** layer of context engineering: it stays close to the c
 - Convention: [`../docs/developer/folder-readme-convention.md`](../docs/developer/folder-readme-convention.md)
 - Enforcement: `composer run docs:check-folder-readmes` (part of `composer run ci:all`)
 
+## Addon-Level Context Trees (NEW, August 2026)
+
+Addons may ship their own `.context/` tree next to the addon code (e.g. `addons/fleet-operator/.context/` — the first adopter, 18 files: addon conventions, Hermes ops, MCP integration, 6 operator roles, task/memory templates). These are **addon-scoped** instantiations of this directory's strategy: they encode addon/workspace conventions, never restate canonical root rules, and are registered in `AGENTS.md` §2 plus the addon's own `README.md` ("Context files to load alongside"). When you add a new addon-level tree, update both registration points.
+
 ## Context Loading Strategy (GSD Principle)
 
 Following the GSD 0–30% context window rule:

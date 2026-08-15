@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **August 6, 2026** · Version: **1.11**
+> Last reviewed: **August 15, 2026** · Version: **1.12**
 
 ### Related Files
 
@@ -31,7 +31,7 @@ These are the AI assistants that human maintainers invoke when working on the re
 | **Zed Agent Profiles** | Zed Industries | [`.zed/settings.json`](.zed/settings.json) + [`.zed/README.md`](.zed/README.md) | Selected from the Agent Panel profile picker | Native Zed mirror of the `examples/agents/` roster (14 profiles) — same scopes, mapped to Zed's tool registry |
 | **Zed Agent Skills** | Zed Industries | [`.agents/skills/*.md`](.agents/skills/) | Auto-discovered by Zed agent panel | 51 coding-time agent skills (20 wp-* WordPress plugin development patterns + 30 design-* skills + mcp-ai-wpoos-plugin operational guide) — distinct from runtime bundled skills |
 | **OpenAI Codex** | OpenAI | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox tasks | Sandbox-based code generation and testing |
-| **Hermes Console** | Hermes agent (WebUI) | [`.zed/settings.json`](.zed/settings.json) (Hermes Console profile) + [`bin/hermes-mcp-server.js`](bin/hermes-mcp-server.js) | Manual (Zed profile) | Drive a remote Hermes agent from Zed: list sessions, synchronous chat, session detail, and repo skill sync (`hermes_sync_skills`) via a stdio MCP bridge. SSH variant: [`bin/mcp-bridge-ssh.js`](bin/mcp-bridge-ssh.js) |
+| **Hermes Console** | Hermes agent (WebUI) | [`.zed/settings.json`](.zed/settings.json) (Hermes Console profile) + [`bin/hermes-mcp-server.js`](bin/hermes-mcp-server.js) | Manual (Zed profile) | Drive a remote Hermes agent from Zed: list sessions, async submit/poll chat, session detail, and repo skill sync (`hermes_sync_skills`) via a stdio MCP bridge. SSH variant: [`bin/mcp-bridge-ssh.js`](bin/mcp-bridge-ssh.js) |
 
 ### Internal BMAD Agents (GSD × BMAD Workflow)
 
@@ -117,6 +117,16 @@ Folder READMEs are the **persistent, code-co-located, structural** layer of cont
 - Use the canonical template at [`.context/templates/folder-readme-template.md`](.context/templates/folder-readme-template.md).
 
 Full convention: [`docs/developer/folder-readme-convention.md`](docs/developer/folder-readme-convention.md).
+
+### Addon-level context trees (per addon, opt-in)
+
+Some addons ship their own `.context/` tree alongside the addon code. These are **addon-scoped** mirrors of the root `.context/` strategy — they never restate canonical rules, only add addon-specific knowledge. The first adopter:
+
+| Addon context tree | Load When |
+|------|-----------|
+| [`addons/fleet-operator/.context/`](addons/fleet-operator/.context/README.md) | Working on the Fleet Operator addon or operator-agent workflows — conventions, `hermes-ops.md`, `mcp-integration.md`, `wp-plugin-dev.md`, 6 operator roles (`roles/`), `active/` + `archive/` scratch areas, task/memory templates |
+
+Rule: when a new addon-level `.context/` tree is added, register it here and link it from the addon's `README.md` ("Context files to load alongside").
 
 ### Feature context (loaded per active feature)
 

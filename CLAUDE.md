@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **August 6, 2026** · Version: **2.13**
+> Last reviewed: **August 15, 2026** · Version: **2.14**
 
 ### Related Files
 
@@ -399,6 +399,8 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **Media Worker v2.4.0 → v3.0.0** (v1.1.56) — multi-tenant shared worker mode (`SITE_TOKENS` per-site isolation, per-site rate limits, `SITE_TOKENS_PREVIOUS` rotation); Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`, `PROVIDER_KEYS_STRICT`), usage counters, grouped temp TTLs, cluster warnings + k6 kit; Phase 3 scale (multisite per-blog tokens, usage reporter, `SITE_TOKEN_<SLUG>` env merges, opt-in Redis rate-limit store `RATE_LIMIT_REDIS=1`, `PROVIDER_KEYS_FILE` hot-reload); zero-downtime rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds; worker routing for document generation, OCR, frames, charts, email, QR/translate/PDF, vectorize with local fallbacks.
 - **API key merged-settings enforcement** (v1.1.54) — 20 research tools now use `get_merged_credentials()` instead of reading the global API key option directly, ensuring per-assistant and per-provider API key overrides take effect.
 - **Post-install integrity check** (v1.1.52) — `WP_MCP_AI_Plugin_Updater` verifies 15 critical file paths after every update before reporting success. Prevents silent corruption on distributed filesystems (Cloudways).
+- **Plugin updater rework** (v1.1.57) — copy-in-place install with backup snapshot and automatic rollback replaces `Plugin_Upgrader` (the live plugin directory is never renamed); new base-only update flow for wp.org installs; Pro version read from the plugin header instead of the drifted constant.
+- **Service Status provider detection** (v1.1.57) — AI-provider detection now resolves credentials through `WP_MCP_AI_Credential_Resolver` (plugin settings, WP 7.0 Connectors, env vars, PHP constants) with a merged-settings fallback for early bootstrap.
 - **REST require_once guards** (v1.1.52) — all REST controller `require_once` calls in `class-wp-mcp-ai-rest.php` now guarded with `file_exists()` checks.
 - **Site Health integration** — WordPress Site Health checks for cron configuration and security posture.
 - **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.
