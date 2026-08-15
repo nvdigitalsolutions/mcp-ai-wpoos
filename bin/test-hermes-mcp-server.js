@@ -2,9 +2,10 @@
 /**
  * Tests for the Hermes WebUI MCP server (bin/hermes-mcp-server.js).
  *
- * Uses an in-process fake WebUI (login + sessions + chat routes) and drives
- * the server over its stdio channel the same way Zed does — newline-delimited
- * JSON-RPC. No real Hermes infrastructure is touched.
+ * Uses an in-process fake WebUI (login + sessions + async chat + approval
+ * routes) and drives the server over its stdio channel the same way Zed
+ * does — newline-delimited JSON-RPC. No real Hermes infrastructure is
+ * touched.
  *
  * Run:  node bin/test-hermes-mcp-server.js
  */
@@ -42,6 +43,11 @@ function startFakeWebui() {
 		expireAfterRequests: Infinity,
 		requestCount: 0,
 		chatDelayMs: 0,
+		// Async chat state: stream_id → active flag, plus the approval gate.
+		streams: new Map(),
+		nextStreamId: 1,
+		pendingApproval: null,
+		approvalResponses: [],
 		// Skills API state: name → SKILL.md content, plus call logs.
 		skillBodies: {},
 		saveCalls: [],
@@ -91,7 +97,19 @@ function startFakeWebui() {
 		}
 
 		if ( 'GET' === req.method && req.url.startsWith( '/api/session' ) ) {
-			return json( 200, { session_id: 's1', title: 'First' } );
+			const url = new URL( req.url, 'http://fake' );
+			const sessionId = url.searchParams.get( 'session_id' ) || 's1';
+			// Mirrors the live WebUI: everything is nested under `session`.
+			return json( 200, {
+				session: {
+					session_id: sessionId,
+					title: 'First',
+					messages: [
+						{ role: 'user', content: 'hi' },
+						{ role: 'assistant', content: 'PONG' },
+					],
+				},
+			} );
 		}
 
 		// ── Skills API (mirrors the real WebUI routes) ──
@@ -137,17 +155,48 @@ function startFakeWebui() {
 			return;
 		}
 
-		if ( 'POST' === req.method && '/api/chat' === req.url ) {
+		if ( 'POST' === req.method && '/api/chat/start' === req.url ) {
 			let raw = '';
 			req.on( 'data', ( c ) => { raw += c; } );
 			req.on( 'end', () => {
 				state.chatBodies.push( JSON.parse( raw || '{}' ) );
-				const send = () => json( 200, { answer: 'PONG', status: 'done' } );
+				const streamId = `stream-${ state.nextStreamId++ }`;
+				state.streams.set( streamId, true );
 				if ( state.chatDelayMs ) {
-					setTimeout( send, state.chatDelayMs );
+					// unref: long fake-run timers must not keep the test
+					// process alive after the suite finishes.
+					setTimeout( () => state.streams.set( streamId, false ), state.chatDelayMs ).unref();
 				} else {
-					send();
+					state.streams.set( streamId, false );
 				}
+				json( 200, { stream_id: streamId } );
+			} );
+			return;
+		}
+
+		if ( 'GET' === req.method && req.url.startsWith( '/api/chat/stream/status' ) ) {
+			const streamId = new URL( req.url, 'http://fake' ).searchParams.get( 'stream_id' );
+			if ( ! state.streams.has( streamId ) ) {
+				return json( 404, { error: 'stream not found' } );
+			}
+			return json( 200, { active: state.streams.get( streamId ) } );
+		}
+
+		if ( 'GET' === req.method && req.url.startsWith( '/api/approval/pending' ) ) {
+			return json( 200, {
+				pending: !! state.pendingApproval,
+				pending_count: state.pendingApproval ? 1 : 0,
+			} );
+		}
+
+		if ( 'POST' === req.method && '/api/approval/respond' === req.url ) {
+			let raw = '';
+			req.on( 'data', ( c ) => { raw += c; } );
+			req.on( 'end', () => {
+				const body = JSON.parse( raw || '{}' );
+				state.approvalResponses.push( { session_id: body.session_id, choice: body.choice } );
+				state.pendingApproval = null;
+				json( 200, { ok: true } );
 			} );
 			return;
 		}
@@ -267,6 +316,8 @@ test( 'chat targets explicit session and returns the answer', async () => {
 	const payload = JSON.parse( res.result.content[ 0 ].text );
 
 	assert.strictEqual( payload.answer, 'PONG' );
+	assert.strictEqual( payload.status, 'done' );
+	assert.ok( payload.stream_id, 'async submit returns a stream handle' );
 	assert.strictEqual( payload.session_id, 's2' );
 	assert.deepStrictEqual( webui.state.chatBodies[ 0 ], { session_id: 's2', message: 'hi' } );
 
@@ -281,7 +332,68 @@ test( 'chat falls back to the newest session when none is given', async () => {
 	const payload = JSON.parse( res.result.content[ 0 ].text );
 
 	assert.strictEqual( payload.session_id, 's1', 'first listed session is used' );
+	assert.strictEqual( payload.answer, 'PONG' );
 	assert.deepStrictEqual( webui.state.chatBodies[ 0 ], { session_id: 's1', message: 'hi' } );
+
+	await stop( ctx );
+} );
+
+test( 'chat resolves the approval gate with the configured choice', async () => {
+	const webui = await startFakeWebui();
+	webui.state.pendingApproval = { session_id: 's1' };
+	webui.state.chatDelayMs = 1500; // Run outlives the first poll round.
+	const ctx = { ...startServer( webui.port ), webui };
+
+	const res = await rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_chat', arguments: { session_id: 's1', message: 'hi', approval_choice: 'deny' } }, 6 );
+	const payload = JSON.parse( res.result.content[ 0 ].text );
+
+	assert.strictEqual( payload.status, 'done' );
+	assert.strictEqual( payload.answer, 'PONG' );
+	assert.deepStrictEqual( webui.state.approvalResponses, [ { session_id: 's1', choice: 'deny' } ] );
+	assert.strictEqual( webui.state.pendingApproval, null, 'gate cleared by the respond call' );
+
+	await stop( ctx );
+} );
+
+test( 'chat with approval_choice ask leaves the gate pending', async () => {
+	const webui = await startFakeWebui();
+	webui.state.pendingApproval = { session_id: 's1' };
+	webui.state.chatDelayMs = 60000; // Stream stays active — only 'ask' stops the loop.
+	const ctx = { ...startServer( webui.port ), webui };
+
+	const res = await rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_chat', arguments: { session_id: 's1', message: 'hi', approval_choice: 'ask' } }, 7 );
+	const payload = JSON.parse( res.result.content[ 0 ].text );
+
+	assert.strictEqual( payload.status, 'needs_approval' );
+	assert.strictEqual( payload.answer, null );
+	assert.strictEqual( payload.pending_count, 1 );
+	assert.deepStrictEqual( webui.state.approvalResponses, [], 'ask mode must not answer the gate' );
+
+	await stop( ctx );
+} );
+
+test( 'chat returns still_running when the run outlives the wait budget', async () => {
+	const webui = await startFakeWebui();
+	webui.state.chatDelayMs = 100000; // Stream stays active far past the budget.
+	const ctx = { ...startServer( webui.port ), webui };
+
+	const res = await rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_chat', arguments: { session_id: 's1', message: 'hi', timeout_ms: 1500 } }, 8 );
+	const payload = JSON.parse( res.result.content[ 0 ].text );
+
+	assert.strictEqual( payload.status, 'still_running' );
+	assert.strictEqual( payload.answer, null );
+	assert.ok( payload.stream_id, 'stream handle lets a follow-up call re-check' );
+
+	await stop( ctx );
+} );
+
+test( 'chat rejects an invalid approval_choice', async () => {
+	const webui = await startFakeWebui();
+	const ctx = { ...startServer( webui.port ), webui };
+
+	const res = await rpc( ctx.child, ctx.lines, 'tools/call', { name: 'hermes_chat', arguments: { session_id: 's1', message: 'hi', approval_choice: 'sometimes' } }, 9 );
+	assert.strictEqual( res.error.code, -32603 );
+	assert.ok( res.error.message.includes( 'Invalid approval_choice' ) );
 
 	await stop( ctx );
 } );

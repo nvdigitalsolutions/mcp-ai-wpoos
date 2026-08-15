@@ -113,13 +113,14 @@ using an in-process fake ssh + fake MCP endpoint (no infrastructure needed).
 ### `hermes-mcp-server.js` — drive a Hermes Agent from Zed
 
 MCP server that translates tool calls into the Hermes Agent **WebUI REST API**
-(login + session cookie + synchronous chat). Zed spawns it as a local stdio
-context server; it talks to the WebUI over public HTTPS — no SSH, no tunnel.
+(login + session cookie + async submit/poll chat). Zed spawns it as a local
+stdio context server; it talks to the WebUI over public HTTPS — no SSH, no
+tunnel.
 
 | Tool | What it does |
 |---|---|
 | `hermes_list_sessions` | List agent sessions (id, title, model, counts, workspace) |
-| `hermes_chat` | Send a message and wait for the agent's answer (optionally a specific `session_id`) |
+| `hermes_chat` | Send a message and wait for the agent's answer (async submit + poll; optional `session_id`, `approval_choice`, `timeout_ms`) |
 | `hermes_session_detail` | Full detail for one session |
 | `hermes_sync_skills` | Sync the repo `.agents/skills/` tree to the agent's skills (upsert `SKILL.md` files; optional `names` filter and `remove_missing` prune) |
 
@@ -128,13 +129,21 @@ context server; it talks to the WebUI over public HTTPS — no SSH, no tunnel.
 | `HERMES_WEBUI_URL` | — (required) | WebUI base URL, e.g. `https://box.example.com:9610` |
 | `HERMES_WEBUI_PASSWORD` | — (required) | WebUI login password |
 | `HERMES_SESSION_ID` | — | Default session for `hermes_chat` (else newest) |
-| `HERMES_CHAT_TIMEOUT` | `300000` | Chat request timeout (agent runs take minutes) |
+| `HERMES_CHAT_TIMEOUT` | `300000` | Total wait budget for `hermes_chat` in ms (agent runs take minutes). If the budget expires, the run keeps going server-side and the tool returns `status: "still_running"` with the `stream_id` |
+| `HERMES_APPROVAL_MODE` | `once` | Default answer to the approval gate: `once`, `session`, `always`, `deny`, or `ask` (leave it pending). Per-call override via `hermes_chat`'s `approval_choice` |
 | `HERMES_WEBUI_INSECURE` | unset | `1` to skip TLS verification (self-signed certs) |
 | `HERMES_SYNC_SKILLS_ON_START` | `1` | After the MCP handshake, diff `.agents/skills/` against the agent and upload changed/new skills. Set `0` to disable |
 | `HERMES_SYNC_SKILLS_DIR` | `.agents/skills` | Override the local skills directory |
 
 Session cookies expire (1h TTL on the WebUI) — the server re-logins
 automatically on 401/403/302 and retries once.
+
+**Async chat.** `hermes_chat` submits via `/api/chat/start` and polls
+`/api/chat/stream/status`, so a run keeps executing server-side even if
+Zed's MCP client drops the connection mid-run — reconnect and re-check the
+session for the answer. A run parked on the approval gate is answered
+automatically with the configured choice (default `once`); `ask` leaves it
+pending and returns `status: "needs_approval"`.
 
 **Skill sync.** The server refreshes the agent's skills from the repo's
 `.agents/skills/` on startup (every Zed session, so pulling updated skills and
@@ -165,9 +174,10 @@ node bin/sync-skills-to-hermes.js >> .hermes-skill-sync.log 2>&1 || true
 ```
 
 **Tests:** `node bin/test-hermes-mcp-server.js` — handshake, tool dispatch,
-session fallback, cookie-expiry re-login, stdin-EOF drain, and the skill-sync
-paths (upsert, names filter, remove_missing, startup auto-sync, CLI) against a
-fake WebUI (no real infrastructure needed).
+session fallback, async chat (submit/poll, approval gate, wait-budget expiry),
+cookie-expiry re-login, stdin-EOF drain, and the skill-sync paths (upsert,
+names filter, remove_missing, startup auto-sync, CLI) against a fake WebUI
+(no real infrastructure needed).
 
 ---
 
