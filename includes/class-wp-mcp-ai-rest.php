@@ -3300,6 +3300,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'session_key'     => $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) ),
 			);
 
+			// Capture the last user message into the assistant config BEFORE
+			// the tools payload is built. The attention router (active only
+			// for oversized tool lists) consumes `_last_user_message` to score
+			// tools against the actual query instead of the system prompt alone.
+			$assistant_config['_last_user_message'] = $last_user_message;
+
 			if ( ! empty( $attachments ) ) {
 				$assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
 			}
@@ -9108,7 +9114,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				 *
 				 * @since 2.4.0
 				 *
-				 * @param int $max_tools Maximum number of tools to include (default 50).
+				 * @param int $max_tools Maximum number of tools to include (default 100).
 				 */
 				$max_tools = (int) apply_filters( 'wp_mcp_ai_max_chat_tools', 100 );
 				$max_tools = max( 1, min( 128, $max_tools ) ); // Clamp to 1-128.
@@ -9122,14 +9128,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				 * supplements the count-based cap above — tools are included until either
 				 * limit is reached.
 				 *
-				 * Default of 32000 tokens ≈ 25% of a 128K context window, following the
-				 * industry guidance of keeping tool overhead under 25-33% of the window.
+				 * Default of 48000 tokens allows the full 100-tool payload cap
+				 * (≈480 tokens per tool on average) while staying under ~38% of a
+				 * 128K context window. Lower it on sites with smaller context
+				 * windows or unusually heavy tool schemas.
 				 *
 				 * @since 2.7.0
 				 *
-				 * @param int $max_tool_tokens Maximum combined tokens for tool definitions (default 32000).
+				 * @param int $max_tool_tokens Maximum combined tokens for tool definitions (default 48000).
 				 */
-				$max_tool_tokens = (int) apply_filters( 'wp_mcp_ai_max_chat_tool_tokens', 32000 );
+				$max_tool_tokens = (int) apply_filters( 'wp_mcp_ai_max_chat_tool_tokens', 48000 );
 				$max_tool_tokens = max( 1000, $max_tool_tokens );
 
 			if ( count( $allowed_tool_slugs ) > $max_tools ) {

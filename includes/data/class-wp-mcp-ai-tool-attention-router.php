@@ -158,10 +158,13 @@ class WP_MCP_AI_Tool_Attention_Router {
 			return $tool_slugs;
 		}
 
-		// Early exit if the vector service isn't available — return all tools.
+		// Early exit if the vector service isn't available or there is no
+		// query to score against — return all tools so no enabled tool is
+		// lost. The count cap in build_tools_payload() remains the hard
+		// guard for oversized lists.
 		$vector_service_available = function_exists( 'wp_mcp_ai_get_vector_context_service' );
 		if ( ! $vector_service_available || empty( $query_text ) ) {
-			return $this->fallback_selection( $tool_slugs, $top_k );
+			return $tool_slugs;
 		}
 
 		try {
@@ -169,11 +172,11 @@ class WP_MCP_AI_Tool_Attention_Router {
 		} catch ( Exception $e ) {
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_error(
-					'Attention router scoring failed, falling back to static selection.',
+					'Attention router scoring failed, using all tools.',
 					array( 'error' => $e->getMessage() )
 				);
 			}
-			return $this->fallback_selection( $tool_slugs, $top_k );
+			return $tool_slugs;
 		}
 
 		// Sort by descending score.
@@ -683,39 +686,6 @@ class WP_MCP_AI_Tool_Attention_Router {
 		}
 
 		return $text;
-	}
-
-	/**
-	 * Fallback selection when the vector service is unavailable.
-	 *
-	 * Returns tools in registration order (which approximates importance).
-	 *
-	 * @since 1.8.0
-	 *
-	 * @param array $tool_slugs Tool slugs.
-	 * @param int   $top_k      Number to select.
-	 * @return array Top-K slugs.
-	 */
-	private function fallback_selection( array $tool_slugs, $top_k ) {
-		// Always include mandatory tools first.
-		$selected = array();
-		foreach ( self::MANDATORY_TOOLS as $mandatory ) {
-			if ( in_array( $mandatory, $tool_slugs, true ) ) {
-				$selected[] = $mandatory;
-			}
-		}
-
-		// Fill with remaining in original order.
-		foreach ( $tool_slugs as $slug ) {
-			if ( count( $selected ) >= $top_k ) {
-				break;
-			}
-			if ( ! in_array( $slug, $selected, true ) ) {
-				$selected[] = $slug;
-			}
-		}
-
-		return $selected;
 	}
 
 	/**
