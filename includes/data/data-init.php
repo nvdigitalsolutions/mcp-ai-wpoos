@@ -75,8 +75,14 @@ function wp_mcp_ai_data_layer_ensure_loaded() {
  * Hooks into {@see 'wp_mcp_ai_attention_tool_slugs'} at priority 20 so
  * other filters can run first (e.g. capability-based filtering).
  *
- * When the vector service is unavailable, the filter returns an empty array
- * (meaning "use all tools" — the fallback behaviour), so no tools are lost.
+ * Attention routing only activates when the assistant has more tools than
+ * the `wp_mcp_ai_attention_routing_min_tools` threshold. Defaults come from
+ * the admin settings (Tools → Configuration → Attention Tool Routing;
+ * threshold default 100, matching the chat payload cap). The
+ * `wp_mcp_ai_attention_routing_enabled`, `wp_mcp_ai_attention_routing_min_tools`
+ * and `wp_mcp_ai_attention_top_k` filters remain available as code-level
+ * overrides. When the vector service is unavailable or scoring fails, all
+ * allowed tools are returned so no enabled tool is lost.
  *
  * @since 1.8.0
  *
@@ -91,13 +97,27 @@ function wp_mcp_ai_attention_filter_tool_slugs( $filtered_slugs, $allowed_slugs,
 		return $filtered_slugs;
 	}
 
-	// Don't filter if there are too few tools to matter.
-	if ( count( $allowed_slugs ) <= 30 ) {
+	// Read the admin-configured defaults (Tools → Configuration → Attention
+	// Tool Routing); the filters below remain the final override for
+	// code-level customization.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	$settings = is_array( $settings ) ? $settings : array();
+
+	// Don't filter when the assistant's tool list fits within the chat
+	// payload cap. Attention routing exists to select tools for oversized
+	// assistants, not to silently hide enabled tools from normal ones —
+	// an assistant with 96 tools was previously reduced to ~40 on every
+	// request regardless of relevance.
+	$default_min_tools = isset( $settings['attention_routing_min_tools'] ) ? absint( $settings['attention_routing_min_tools'] ) : 100;
+	$min_tools         = (int) apply_filters( 'wp_mcp_ai_attention_routing_min_tools', $default_min_tools );
+	$min_tools         = max( 0, min( 128, $min_tools ) );
+	if ( count( $allowed_slugs ) <= $min_tools ) {
 		return $allowed_slugs;
 	}
 
 	// Check if attention routing is disabled.
-	$enabled = (bool) apply_filters( 'wp_mcp_ai_attention_routing_enabled', true );
+	$default_enabled = isset( $settings['attention_routing_enabled'] ) ? (bool) $settings['attention_routing_enabled'] : true;
+	$enabled         = (bool) apply_filters( 'wp_mcp_ai_attention_routing_enabled', $default_enabled );
 	if ( ! $enabled ) {
 		return $allowed_slugs;
 	}
@@ -118,7 +138,9 @@ function wp_mcp_ai_attention_filter_tool_slugs( $filtered_slugs, $allowed_slugs,
 		$router  = WP_MCP_AI_Tool_Attention_Router::get_instance();
 		$user_id = get_current_user_id();
 
-		$top_k = (int) apply_filters( 'wp_mcp_ai_attention_top_k', WP_MCP_AI_Tool_Attention_Router::DEFAULT_TOP_K );
+		$default_top_k = isset( $settings['attention_routing_top_k'] ) ? absint( $settings['attention_routing_top_k'] ) : WP_MCP_AI_Tool_Attention_Router::DEFAULT_TOP_K;
+		$top_k         = (int) apply_filters( 'wp_mcp_ai_attention_top_k', $default_top_k );
+		$top_k         = max( 1, min( 128, $top_k ) );
 
 		$selected = $router->select_tools(
 			$query_text,
