@@ -3090,6 +3090,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $this->handle_chat_request_oos( $request );
 			}
 
+			// Canary routing (Proposal 029, Phase 4.2): assistants opted in via
+			// the _wp_mcp_ai_engine post meta run on OOS without the global flag.
+			// Gated behind the wp_mcp_ai_oos_canary filter (default off).
+			if ( function_exists( 'wp_mcp_ai_oos_canary_enabled' ) && wp_mcp_ai_oos_canary_enabled( $request ) ) {
+				return $this->handle_chat_request_oos( $request );
+			}
+
 			// Check if this is a unified team, profession test, or regular assistant request.
 			$raw_assistant_id = $request->get_param( 'assistant_id' );
 			$team_id          = $this->extract_team_id( $raw_assistant_id );

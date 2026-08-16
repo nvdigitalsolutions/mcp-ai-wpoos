@@ -470,6 +470,7 @@ class ChatOrchestrator {
 						'agentic_loop'  => true,
 						'iteration'     => $iteration,
 						'auth_provider' => $this->authProvider,
+						'shadow_mode'   => (bool) ( $options['shadow_mode'] ?? false ),
 					)
 				);
 
@@ -956,6 +957,7 @@ class ChatOrchestrator {
 						'agentic_loop'  => true,
 						'iteration'     => $iteration,
 						'auth_provider' => $this->authProvider,
+						'shadow_mode'   => (bool) ( $options['shadow_mode'] ?? false ),
 					)
 				);
 

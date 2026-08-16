@@ -30,8 +30,9 @@ namespace Nvoos\WordPress\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
+use Nvoos\Core\Domain\Contract\ToolWriteClassInterface;
 
-final class LegacyToolAdapter implements ToolInterface {
+final class LegacyToolAdapter implements ToolInterface, ToolWriteClassInterface {
 
 	/**
 	 * @var object  Duck-typed WP_MCP_AI_Tool_Interface implementation.
@@ -93,6 +94,39 @@ final class LegacyToolAdapter implements ToolInterface {
 		}
 
 		return $schema;
+	}
+
+	/**
+	 * Write-class classification for shadow-mode suppression.
+	 *
+	 * Capability flags win when present: any write-class flag makes the
+	 * tool write-class; tools that declare only read-type flags are read.
+	 * Without flags, the required capability decides (empty/read/public
+	 * → read; anything else → write, failing safe).
+	 */
+	public function isWriteClass(): bool {
+		if ( \method_exists( $this->legacy, 'get_capability_flags' ) ) {
+			$flags = (array) $this->legacy->get_capability_flags();
+
+			if ( array() !== $flags ) {
+				return array() !== \array_intersect(
+					$flags,
+					array(
+						'write',
+						'state-changing',
+						'irreversible',
+						'data-destruction',
+						'financial-impact',
+						'external-communication',
+						'access-control-change',
+					),
+				);
+			}
+		}
+
+		$capability = $this->getRequiredCapability();
+
+		return '' !== $capability && 'read' !== $capability && 'public' !== $capability;
 	}
 
 	public function getRequiredCapability(): string {

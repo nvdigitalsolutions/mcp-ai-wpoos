@@ -548,6 +548,33 @@ function wp_mcp_ai_oos_orchestrator() {
 	// native tools only. A non-null return short-circuits exactly like the
 	// legacy trait (WP_Error blocks, cache hits replace the result).
 	if ( $events instanceof Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface ) {
+		// Shadow-mode write suppression runs FIRST (higher priority) so a
+		// shadow run can never reach the parity wrapper's cache/queue filters
+		// for a write-class tool.
+		$events->listenWaterfall(
+			'tools/execute',
+			static function ( object $event, callable $next ) use ( $tool_registry ): mixed {
+				if ( empty( $event->context['shadow_mode'] ) ) {
+					return $next( $event );
+				}
+
+				$tool = $tool_registry->get( (string) $event->slug );
+				if ( null !== $tool && wp_mcp_ai_oos_tool_is_write_class( $tool ) ) {
+					// A parallel shadow run must never execute state-changing
+					// tools: reads execute live, writes are suppressed with a
+					// synthetic result the diff recorder can identify.
+					return array(
+						'success' => true,
+						'message' => '(shadow: write-class tool suppressed)',
+						'data'    => array( 'shadow_suppressed' => true ),
+					);
+				}
+
+				return $next( $event );
+			},
+			20
+		);
+
 		$events->listenWaterfall(
 			'tools/execute',
 			static function ( object $event, callable $next ) use ( $tool_registry ): mixed {
@@ -574,11 +601,21 @@ function wp_mcp_ai_oos_orchestrator() {
 				// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 
 				return $next( $event );
-			}
+			},
+			10
 		);
 	}
 
 	return $orchestrator;
+}
+
+// ─── Shadow runner registration (Proposal 029, Phase 4.1) ─────────────
+// Same-request parallel OOS runs on sampled legacy traffic. Guarded by
+// the lib/ directory presence so base (wp.org) builds stay unaffected.
+$wp_mcp_ai_oos_shadow_runner_file = WP_MCP_AI_PATH . 'includes/oos/class-wp-mcp-ai-oos-shadow-runner.php';
+if ( \file_exists( $wp_mcp_ai_oos_shadow_runner_file ) ) {
+	require_once $wp_mcp_ai_oos_shadow_runner_file;
+	WP_MCP_AI_OOS_Shadow_Runner::register();
 }
 
 // ─── Feature Flag Detection ───────────────────────────────────────────
@@ -599,6 +636,90 @@ function wp_mcp_ai_enable_session_log(): bool {
 	}
 
 	return (bool) \apply_filters( 'wp_mcp_ai_enable_session_log', false );
+}
+
+/**
+ * Whether OOS shadow mode (Proposal 029, Phase 4.1) is enabled.
+ *
+ * Shadow mode runs the OOS engine in parallel on sampled legacy-path
+ * requests and serves the legacy result — zero user exposure. Off by
+ * default; enable via the admin setting enable_oos_shadow or the
+ * wp_mcp_ai_oos_shadow_enabled filter.
+ *
+ * @return bool
+ */
+function wp_mcp_ai_oos_shadow_enabled(): bool {
+	$settings = \get_option( 'wp_mcp_ai_settings', array() );
+	if ( ! empty( $settings['enable_oos_shadow'] ) ) {
+		return true;
+	}
+
+	return (bool) \apply_filters( 'wp_mcp_ai_oos_shadow_enabled', false );
+}
+
+/**
+ * Shadow sampling rate (0.0–1.0).
+ *
+ * @return float
+ */
+function wp_mcp_ai_oos_shadow_sample_rate(): float {
+	$settings = \get_option( 'wp_mcp_ai_settings', array() );
+	$rate     = isset( $settings['oos_shadow_sample_rate'] ) ? (float) $settings['oos_shadow_sample_rate'] : 0.05;
+
+	return (float) \apply_filters( 'wp_mcp_ai_oos_shadow_sample_rate', \max( 0.0, \min( 1.0, $rate ) ) );
+}
+
+/**
+ * Shadow-run deadline in seconds (same-request execution is bounded).
+ *
+ * @return int
+ */
+function wp_mcp_ai_oos_shadow_timeout_seconds(): int {
+	return (int) \apply_filters( 'wp_mcp_ai_oos_shadow_timeout_seconds', 30 );
+}
+
+/**
+ * Whether the request's assistant is canary-opted into the OOS engine
+ * via the _wp_mcp_ai_engine post meta (Proposal 029, Phase 4.2).
+ *
+ * @param \WP_REST_Request|null $request Optional request to read the assistant from.
+ * @return bool
+ */
+function wp_mcp_ai_oos_canary_enabled( $request = null ): bool {
+	if ( ! (bool) \apply_filters( 'wp_mcp_ai_oos_canary', false ) ) {
+		return false;
+	}
+
+	$assistant_id = 0;
+	if ( $request instanceof \WP_REST_Request ) {
+		$assistant_id = (int) $request->get_param( 'assistant_id' );
+	}
+
+	if ( $assistant_id > 0 ) {
+		return 'oos' === \get_post_meta( $assistant_id, '_wp_mcp_ai_engine', true );
+	}
+
+	return false;
+}
+
+/**
+ * Classify an OOS tool as write-class for shadow suppression.
+ *
+ * @param \Nvoos\Core\Domain\Contract\ToolInterface $tool Resolved OOS tool.
+ * @return bool  True when the tool mutates state.
+ */
+function wp_mcp_ai_oos_tool_is_write_class( $tool ): bool {
+	if ( $tool instanceof Nvoos\Core\Domain\Contract\ToolWriteClassInterface ) {
+		return $tool->isWriteClass();
+	}
+
+	$capability = '';
+	if ( \method_exists( $tool, 'getRequiredCapability' ) ) {
+		$capability = (string) $tool->getRequiredCapability();
+	}
+
+	// Fail safe: any capability beyond read/public implies mutation.
+	return '' !== $capability && 'read' !== $capability && 'public' !== $capability;
 }
 
 /**

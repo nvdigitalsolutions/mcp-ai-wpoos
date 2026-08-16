@@ -177,6 +177,63 @@ final class LegacyToolAdapterTest extends TestCase {
 		$this->assertFalse( $result['success'] );
 		$this->assertSame( 'legacy_failed', $result['error']['code'] );
 	}
+
+	// ─── Write-class classification (shadow suppression) ───────────
+
+	public function testWriteFlagsMakeWriteClass(): void {
+		$legacy = new class() {
+			public function get_slug(): string {
+				return 'flagged_write';
+			}
+
+			public function get_required_capability(): string {
+				return 'read';
+			}
+
+			public function get_capability_flags(): array {
+				return array( 'read-only', 'state-changing' );
+			}
+		};
+
+		$this->assertTrue( $this->adapter( $legacy )->isWriteClass() );
+	}
+
+	public function testReadOnlyFlagsMakeReadClass(): void {
+		$legacy = new class() {
+			public function get_slug(): string {
+				return 'flagged_read';
+			}
+
+			public function get_required_capability(): string {
+				return 'manage_options';
+			}
+
+			public function get_capability_flags(): array {
+				return array( 'read-only', 'cacheable' );
+			}
+		};
+
+		$this->assertFalse( $this->adapter( $legacy )->isWriteClass() );
+	}
+
+	public function testCapabilityFallbackClassifiesWriteCapabilitiesAsWrite(): void {
+		// No capability flags → the required capability decides.
+		$this->assertTrue( $this->adapter( $this->legacyTool() )->isWriteClass() );
+	}
+
+	public function testCapabilityFallbackClassifiesReadAsRead(): void {
+		$legacy = new class() {
+			public function get_slug(): string {
+				return 'read_only_cap';
+			}
+
+			public function get_required_capability(): string {
+				return 'read';
+			}
+		};
+
+		$this->assertFalse( $this->adapter( $legacy )->isWriteClass() );
+	}
 }
 
 }

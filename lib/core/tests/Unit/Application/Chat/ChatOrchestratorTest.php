@@ -123,6 +123,7 @@ final class ChatOrchestratorTest extends TestCase {
 	private function echoTool( string $capability = '' ): array {
 		$counter       = new \stdClass();
 		$counter->runs = 0;
+		$counter->context = null;
 
 		$tool = new class( $counter, $capability ) implements ToolInterface {
 			private \stdClass $counter;
@@ -159,6 +160,7 @@ final class ChatOrchestratorTest extends TestCase {
 
 			public function execute( array $arguments = array(), array $context = array() ): mixed {
 				++$this->counter->runs;
+				$this->counter->context = $context;
 
 				return array(
 					'success' => true,
@@ -456,6 +458,45 @@ final class ChatOrchestratorTest extends TestCase {
 
 		$this->assertSame( 1, count( $dispatcher->router->receivedMessages ) );
 		$this->assertSame( 'fatal', $result['response']['code'] );
+	}
+
+	public function testShadowModePropagatesToToolContext(): void {
+		[$tool, $counter] = $this->echoTool();
+		[$orchestrator, ] = $this->orchestrator(
+			$tool,
+			array( $this->toolCallResponse(), $this->finalResponse() )
+		);
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array(
+				'tools'    => array( 'echo_tool' ),
+				'provider' => 'openai',
+				'model'    => 'gpt-4o',
+			),
+			options: array( 'shadow_mode' => true ),
+		);
+
+		$this->assertSame( 1, $counter->runs );
+		$this->assertTrue(
+			$counter->context['shadow_mode'] ?? false,
+			'Shadow mode must reach the tool-execution context.',
+		);
+	}
+
+	public function testShadowModeDefaultsFalseInToolContext(): void {
+		[$tool, $counter] = $this->echoTool();
+		[$orchestrator, ] = $this->orchestrator(
+			$tool,
+			array( $this->toolCallResponse(), $this->finalResponse() )
+		);
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertFalse( $counter->context['shadow_mode'] ?? true );
 	}
 
 	public function testTurnStoppingSerialFiresBeforeClose(): void {
