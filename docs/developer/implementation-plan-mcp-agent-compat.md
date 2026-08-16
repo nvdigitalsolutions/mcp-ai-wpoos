@@ -1,6 +1,6 @@
 # Implementation Plan: MCP Agent Compatibility & Reliability (Server-Side)
 
-**Status:** Proposed — supersedes/extends `legacy-sse-transport-plan.md`
+**Status:** Implemented (v1.1.55–v1.1.57); kept as the design record — supersedes/extends `legacy-sse-transport-plan.md`
 **Scope:** `includes/` (REST, admin, security), `addons/pro/includes/`, tests, docs
 **Goal:** Make the NV oOS MCP endpoint reliable for AI-agent clients (Cloudways
 Agent 0.19.0 "Hermes", mcp-remote bridges, Python/TS SDKs) — tool responses
@@ -207,6 +207,11 @@ calls (15–30s each) inside one PHP request → cumulative >100s → Cloudflare
    async job path + `mcp_wait_for_async_tool()` polling (already built),
    decoupling POST lifetime from execution time (also what WS-5 SSE
    message queues provide).
+5. **Update (v1.1.57, PR #5884):** direct `tools/call` requests now run
+   with agentic-loop semantics, so non-background tools complete
+   synchronously in the JSON-RPC response; the async job path above applies
+   to background-only tools (Priority 1). See
+   `docs/history/2026/fixes/mcp-tools-call-sync-dispatch-fix.md`.
 
 **Acceptance:** `list_connections` returns within ~30s with either data or a
 clear error; no 0-byte responses on repeated calls.

@@ -181,6 +181,39 @@ names filter, remove_missing, startup auto-sync, CLI) against a fake WebUI
 
 ---
 
+## Queue Worker (`queue-worker.php`)
+
+`php bin/queue-worker.php` processes async jobs from the job queue (DB table
+`wp_mcp_ai_concurrent_jobs`, or RabbitMQ when available) outside the request
+lifecycle. One-shot by default; `--daemon` runs a continuous loop.
+
+| Flag | Purpose |
+|---|---|
+| `--rabbitmq` | Consume from RabbitMQ instead of the DB queue |
+| `--daemon` | Run continuously (default: one batch, then exit) |
+| `--memory-limit=256M` | Memory ceiling — worker exits at 90% usage |
+| `--max-jobs=N` | Exit after processing N jobs |
+| `--timeout=N` | Exit after N seconds (cron deployments use `--timeout=55`) |
+| `--batch-size=N` | Jobs per batch; default comes from the `wp_mcp_ai_queue_worker_batch_size` filter (3). Passed through to the RabbitMQ batch path |
+| `--help` | Usage summary |
+
+**Boot-order constraint.** CLI args are parsed before `wp-load.php`, so
+WordPress helpers (`absint()`, `apply_filters()`) are unavailable at that
+point — cast values directly and apply the batch-size filter after bootstrap.
+
+**Empty-queue guard.** Some php-amqp builds return `null` (not `false`) from
+`AMQPQueue::get()` on an empty queue; the worker treats anything that isn't
+an `AMQPEnvelope` as "no messages".
+
+**Deployment:** Cloudways cron (`--timeout=55`), Cloudways Autonomous daemon
+(`--daemon`), or systemd — see the header comment in `bin/queue-worker.php`
+and [`docs/operations/queue-worker-systemd.md`](../docs/operations/queue-worker-systemd.md).
+Architecture:
+[`docs/project/proposals/009-rabbitmq-integration-proposal.md`](../docs/project/proposals/009-rabbitmq-integration-proposal.md),
+[`docs/project/proposals/011-queue-worker-implementation-plan.md`](../docs/project/proposals/011-queue-worker-implementation-plan.md).
+
+---
+
 ## Other Utility Scripts
 
 For information about screenshot capture tools, see [README-SCREENSHOT-TOOLS.md](README-SCREENSHOT-TOOLS.md).
