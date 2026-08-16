@@ -1043,6 +1043,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$request->set_param( 'tool', $tool_name );
 		$request->set_param( 'arguments', $arguments );
 
+		// Run with agentic-loop semantics so non-background tools complete
+		// synchronously in this response. MCP clients (Hermes, Zed bridges,
+		// Claude Desktop) consume the JSON-RPC result inline and cannot poll
+		// an async job; without this, tools with async capability flags are
+		// queued and, on hosts with an unreachable WP-Cron loopback, always
+		// exhaust the poll budget in mcp_wait_for_async_tool().
+		$request->set_param( 'agentic_loop', true );
+
 		if ( isset( $params['assistant_id'] ) ) {
 			$request->set_param( 'assistant_id', absint( $params['assistant_id'] ) );
 		}
