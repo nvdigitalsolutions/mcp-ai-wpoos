@@ -27,6 +27,14 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface;
+use Nvoos\Core\Domain\Decision\AgentPreStepDecision;
+use Nvoos\Core\Domain\Decision\AgentRequestDecision;
+use Nvoos\Core\Domain\Decision\AgentRequestErrorDecision;
+use Nvoos\Core\Domain\Event\AgentPreStep;
+use Nvoos\Core\Domain\Event\AgentRequest;
+use Nvoos\Core\Domain\Event\AgentRequestError;
+use Nvoos\Core\Domain\Event\AgentTurnStopping;
 use Nvoos\Core\Domain\Event\BeforeChatRequest;
 use Nvoos\Core\Domain\Event\AfterChatResponse;
 use Nvoos\Core\Domain\Event\AgenticIterationComplete;
@@ -49,6 +57,11 @@ class ChatOrchestrator {
 	 * Maximum agentic loop iterations. Prevents infinite loops.
 	 */
 	private const DEFAULT_MAX_ITERATIONS = 15;
+
+	/**
+	 * Maximum agent/request_error retries per provider call.
+	 */
+	private const MAX_REQUEST_RETRIES = 3;
 
 	/**
 	 * Optional token-budget manager for tool-definition capping.
@@ -258,8 +271,33 @@ class ChatOrchestrator {
 
 		$costAccumulator = self::newCostAccumulator();
 
-		// Initial LLM call.
+		// agent/pre_step policy — listeners may reject the turn or rewrite
+		// the entering batch; agent/request may replace the call config.
+		[ $messages, $preStepRejected ] = $this->applyPreStepPolicy( $messages, $assistantId, 0 );
+		if ( $preStepRejected ) {
+			$this->notifyTurnStopping( $assistantId, 0 );
+
+			return array(
+				'response'      => array(),
+				'tool_results'  => array(),
+				'iterations'    => 0,
+				'cost'          => null,
+				'cancelled'     => false,
+				'cancel_reason' => '',
+			);
+		}
+		$options = $this->applyRequestPolicy( $options, $assistantId, 0 );
+
+		// Initial LLM call with bounded retry via agent/request_error.
 		$response = $this->providers->chat( $messages, $options, $assistantConfig );
+		$retries  = 0;
+		while ( $this->errors->isError( $response )
+			&& $retries < self::MAX_REQUEST_RETRIES
+			&& $this->shouldRetryAfterError( $response, $assistantId, 0 )
+		) {
+			++$retries;
+			$response = $this->providers->chat( $messages, $options, $assistantConfig );
+		}
 		$this->accumulateUsage( $response, $costAccumulator );
 
 		if ( $this->errors->isError( $response ) ) {
@@ -384,8 +422,23 @@ class ChatOrchestrator {
 				break;
 			}
 
-			// Call LLM again with tool results.
+			// Policy for the continuation step.
+			[ $messages, $preStepRejected ] = $this->applyPreStepPolicy( $messages, $assistantId, $iteration + 1 );
+			if ( $preStepRejected ) {
+				break;
+			}
+			$options = $this->applyRequestPolicy( $options, $assistantId, $iteration + 1 );
+
+			// Call LLM again with tool results, with bounded retry.
 			$response = $this->providers->chat( $messages, $options, $assistantConfig );
+			$retries  = 0;
+			while ( $this->errors->isError( $response )
+				&& $retries < self::MAX_REQUEST_RETRIES
+				&& $this->shouldRetryAfterError( $response, $assistantId, $iteration )
+			) {
+				++$retries;
+				$response = $this->providers->chat( $messages, $options, $assistantConfig );
+			}
 			$this->accumulateUsage( $response, $costAccumulator );
 
 			if ( $this->errors->isError( $response ) ) {
@@ -432,6 +485,9 @@ class ChatOrchestrator {
 				limitReached: $limitReached,
 			)
 		);
+
+		// Turn-stopping serial notification — the turn is about to close.
+		$this->notifyTurnStopping( $assistantId, $iteration );
 
 		// Calculate cost from accumulated per-iteration usage.
 		$cost = null;
@@ -571,6 +627,25 @@ class ChatOrchestrator {
 		}
 
 		$costAccumulator = self::newCostAccumulator();
+
+		// agent/pre_step policy — reject the turn or rewrite the entering
+		// batch; agent/request may replace the call config.
+		[ $messages, $preStepRejected ] = $this->applyPreStepPolicy( $messages, $assistantId, 0 );
+		if ( $preStepRejected ) {
+			$this->sse->sendEvent( 'status', array( 'type' => 'rejected', 'message' => 'Request rejected by policy.' ) );
+			$this->sse->sendDone();
+			$this->notifyTurnStopping( $assistantId, 0 );
+
+			return array(
+				'response'      => array(),
+				'tool_results'  => array(),
+				'iterations'    => 0,
+				'cost'          => null,
+				'cancelled'     => false,
+				'cancel_reason' => '',
+			);
+		}
+		$options = $this->applyRequestPolicy( $options, $assistantId, 0 );
 
 		$response = $this->providers->stream(
 			$messages,
@@ -719,6 +794,13 @@ class ChatOrchestrator {
 				break;
 			}
 
+			// Policy for the continuation step.
+			[ $messages, $preStepRejected ] = $this->applyPreStepPolicy( $messages, $assistantId, $iteration + 1 );
+			if ( $preStepRejected ) {
+				break;
+			}
+			$options = $this->applyRequestPolicy( $options, $assistantId, $iteration + 1 );
+
 			// Status: analyzing results.
 			$this->sse->sendEvent(
 				'status',
@@ -772,6 +854,9 @@ class ChatOrchestrator {
 				limitReached: $limitReached,
 			)
 		);
+
+		// Turn-stopping serial notification — the turn is about to close.
+		$this->notifyTurnStopping( $assistantId, $iteration );
 
 		$cost = null;
 		if ( \is_array( $response ) ) {
@@ -947,6 +1032,100 @@ class ChatOrchestrator {
 		$accumulator['total_prompt_tokens']     += (int) ( $usage['prompt_tokens'] ?? 0 );
 		$accumulator['total_completion_tokens'] += (int) ( $usage['completion_tokens'] ?? 0 );
 		// cost_usd is recomputed by CostCalculator when the final cost is built.
+	}
+
+	/**
+	 * Run the agent/pre_step waterfall (feature-detected).
+	 *
+	 * @return array{0: array, 1: bool}  [messages, rejected]
+	 */
+	private function applyPreStepPolicy( array $messages, int $assistantId, int $iteration ): array {
+		if ( ! $this->events instanceof WaterfallEventDispatcherInterface ) {
+			return array( $messages, false );
+		}
+
+		$decision = $this->events->waterfall(
+			'agent/pre_step',
+			new AgentPreStep( messages: $messages, assistantId: $assistantId, iteration: $iteration ),
+			static function ( object $event ): AgentPreStepDecision {
+				return AgentPreStepDecision::enter( $event->messages );
+			},
+		);
+
+		if ( ! $decision instanceof AgentPreStepDecision ) {
+			// A misbehaving listener returned an unexpected type — keep the batch.
+			return array( $messages, false );
+		}
+
+		if ( AgentPreStepDecision::KIND_REJECT === $decision->kind ) {
+			return array( $messages, true );
+		}
+
+		return array( $decision->messages, false );
+	}
+
+	/**
+	 * Run the agent/request waterfall (feature-detected).
+	 *
+	 * @return array  The (possibly replaced) call options.
+	 */
+	private function applyRequestPolicy( array $options, int $assistantId, int $iteration ): array {
+		if ( ! $this->events instanceof WaterfallEventDispatcherInterface ) {
+			return $options;
+		}
+
+		$decision = $this->events->waterfall(
+			'agent/request',
+			new AgentRequest( options: $options, assistantId: $assistantId, iteration: $iteration ),
+			static function ( object $event ): AgentRequestDecision {
+				return AgentRequestDecision::keep();
+			},
+		);
+
+		if ( $decision instanceof AgentRequestDecision
+			&& AgentRequestDecision::KIND_REPLACE === $decision->kind
+			&& is_array( $decision->options )
+		) {
+			// Merge so listeners can override selectively while the required
+			// keys (provider, model, tools) remain present downstream.
+			return \array_merge( $options, $decision->options );
+		}
+
+		return $options;
+	}
+
+	/**
+	 * Whether the agent/request_error waterfall owns recovery via retry.
+	 */
+	private function shouldRetryAfterError( mixed $error, int $assistantId, int $iteration ): bool {
+		if ( ! $this->events instanceof WaterfallEventDispatcherInterface ) {
+			return false;
+		}
+
+		$decision = $this->events->waterfall(
+			'agent/request_error',
+			new AgentRequestError( error: $error, assistantId: $assistantId, iteration: $iteration ),
+			static function ( object $event ): AgentRequestErrorDecision {
+				return AgentRequestErrorDecision::terminal();
+			},
+		);
+
+		return $decision instanceof AgentRequestErrorDecision
+			&& AgentRequestErrorDecision::KIND_RETRY === $decision->kind;
+	}
+
+	/**
+	 * Notify serial listeners that the turn is about to close.
+	 */
+	private function notifyTurnStopping( int $assistantId, int $totalIterations ): void {
+		if ( ! $this->events instanceof WaterfallEventDispatcherInterface ) {
+			return;
+		}
+
+		$this->events->serial(
+			'agent/turn_stopping',
+			new AgentTurnStopping( assistantId: $assistantId, totalIterations: $totalIterations ),
+		);
 	}
 
 	/**

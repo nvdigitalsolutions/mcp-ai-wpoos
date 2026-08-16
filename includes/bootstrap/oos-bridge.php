@@ -533,6 +533,43 @@ function wp_mcp_ai_oos_orchestrator() {
 		}
 	);
 
+	// Parity bridge for the wp_mcp_ai_before_tool_execute filter (necessity
+	// gate, queue manager, workflow-optimizer cache). Legacy tools fire it
+	// themselves via their native trait; migrated (native) OOS tools skip it,
+	// so run the same filter as a tools/execute around-dispatch wrapper for
+	// native tools only. A non-null return short-circuits exactly like the
+	// legacy trait (WP_Error blocks, cache hits replace the result).
+	if ( $events instanceof Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface ) {
+		$events->listenWaterfall(
+			'tools/execute',
+			static function ( object $event, callable $next ) use ( $tool_registry ): mixed {
+				// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+				$tool = $tool_registry->get( (string) $event->slug );
+				if ( null === $tool || $tool instanceof Nvoos\WordPress\Tool\LegacyToolAdapter ) {
+					return $next( $event );
+				}
+
+				$pre = \apply_filters(
+					'wp_mcp_ai_before_tool_execute',
+					null,
+					$event->slug,
+					$event->arguments,
+					$event->context
+				);
+
+				if ( null !== $pre ) {
+					// WP_Error blocks; other values (queue placeholders, cache
+					// hits) replace the dispatch result, matching the legacy
+					// trait's short-circuit semantics.
+					return $pre;
+				}
+				// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+
+				return $next( $event );
+			}
+		);
+	}
+
 	return $orchestrator;
 }
 

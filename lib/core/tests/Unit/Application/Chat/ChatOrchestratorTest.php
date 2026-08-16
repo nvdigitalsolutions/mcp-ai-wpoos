@@ -20,13 +20,16 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
-use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
+use Nvoos\Core\Domain\Decision\AgentPreStepDecision;
+use Nvoos\Core\Domain\Decision\AgentRequestDecision;
+use Nvoos\Core\Domain\Decision\AgentRequestErrorDecision;
 use Nvoos\Core\Domain\ValueObject\CancellationToken;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\Core\Tests\Unit\Support\InMemoryDispatcher;
 use PHPUnit\Framework\TestCase;
 
 final class ChatOrchestratorTest extends TestCase {
@@ -76,20 +79,33 @@ final class ChatOrchestratorTest extends TestCase {
 	/**
 	 * Scripted provider router — returns queued responses in order.
 	 */
-	private function router( array $responses, ErrorFactoryInterface $errors ): ProviderRouter {
+	private function router( array $responses, ErrorFactoryInterface $errors, ?InMemoryDispatcher $capture = null ): ProviderRouter {
 		$settings = $this->createMock( SettingsStoreInterface::class );
 
-		return new class( $responses, $errors, $settings ) extends ProviderRouter {
+		return new class( $responses, $errors, $settings, $capture ) extends ProviderRouter {
 
 			/** @var array<int, array> */
 			private array $queue;
 
-			public function __construct( array $queue, ErrorFactoryInterface $errors, SettingsStoreInterface $settings ) {
+			/** @var array<int, array> */
+			public array $receivedMessages = array();
+
+			/** @var array<int, array> */
+			public array $receivedOptions = array();
+
+			public function __construct( array $queue, ErrorFactoryInterface $errors, SettingsStoreInterface $settings, ?InMemoryDispatcher $capture ) {
 				parent::__construct( $settings, $errors );
 				$this->queue = array_values( $queue );
+
+				if ( null !== $capture ) {
+					$capture->router = $this;
+				}
 			}
 
 			public function chat( array $messages, array $options = array(), array $assistantConfig = array() ): mixed {
+				$this->receivedMessages[] = $messages;
+				$this->receivedOptions[] = $options;
+
 				if ( array() === $this->queue ) {
 					return array( 'choices' => array() );
 				}
@@ -160,19 +176,14 @@ final class ChatOrchestratorTest extends TestCase {
 	 */
 	private function orchestrator( ToolInterface $tool, array $responses, ?AuthProviderInterface $auth = null ): array {
 		$errors     = $this->errors();
-		$dispatcher = $this->createMock( EventDispatcherInterface::class );
-		$dispatcher->method( 'dispatch' )->willReturnCallback(
-			static function ( object $event ): object {
-				return $event;
-			}
-		);
+		$dispatcher = new InMemoryDispatcher();
 
 		$registry = new ToolRegistry( $dispatcher, $errors );
 		$registry->register( $tool );
 
 		$orchestrator = new ChatOrchestrator(
 			$registry,
-			$this->router( $responses, $errors ),
+			$this->router( $responses, $errors, $dispatcher ),
 			$dispatcher,
 			$errors,
 			new CostCalculator(),
@@ -183,7 +194,7 @@ final class ChatOrchestratorTest extends TestCase {
 			$orchestrator->setAuthProvider( $auth );
 		}
 
-		return array( $orchestrator, $errors );
+		return array( $orchestrator, $errors, $dispatcher );
 	}
 
 	private function toolCallResponse(): array {
@@ -332,5 +343,138 @@ final class ChatOrchestratorTest extends TestCase {
 
 		$this->assertSame( 1, $counter->runs );
 		$this->assertFalse( $result['cancelled'] );
+	}
+
+	// ─── Loop waterfalls (R2) ─────────────────────────────────────
+
+	public function testPreStepRejectSkipsProviderAndClosesTurn(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , $dispatcher] = $this->orchestrator( $tool, array( $this->finalResponse() ) );
+
+		$dispatcher->listenWaterfall(
+			'agent/pre_step',
+			static function ( object $event, callable $next ): AgentPreStepDecision {
+				return AgentPreStepDecision::reject();
+			}
+		);
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( array(), $result['response'] );
+		$this->assertSame( 0, $result['iterations'] );
+		$this->assertSame( array(), $dispatcher->router->receivedMessages, 'Provider must not be called on reject.' );
+	}
+
+	public function testPreStepEnterRewritesEnteringBatch(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , $dispatcher] = $this->orchestrator( $tool, array( $this->finalResponse() ) );
+
+		$dispatcher->listenWaterfall(
+			'agent/pre_step',
+			static function ( object $event, callable $next ): AgentPreStepDecision {
+				$messages   = $event->messages;
+				$messages[] = array( 'role' => 'system', 'content' => 'injected-by-policy' );
+
+				return AgentPreStepDecision::enter( $messages );
+			}
+		);
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$sent = $dispatcher->router->receivedMessages[0];
+		$this->assertSame( 'injected-by-policy', $sent[ count( $sent ) - 1 ]['content'] );
+	}
+
+	public function testRequestPolicyReplacesCallConfigWithMerge(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , $dispatcher] = $this->orchestrator( $tool, array( $this->finalResponse() ) );
+
+		$dispatcher->listenWaterfall(
+			'agent/request',
+			static function ( object $event, callable $next ): AgentRequestDecision {
+				return AgentRequestDecision::replace( array( 'model' => 'gpt-4o-mini' ) );
+			}
+		);
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$options = $dispatcher->router->receivedOptions[0];
+		$this->assertSame( 'gpt-4o-mini', $options['model'] );
+		$this->assertSame( 'openai', $options['provider'], 'Merge must preserve untouched keys.' );
+	}
+
+	public function testRequestErrorRetryRecoversWhenListenerOwnsRecovery(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , $dispatcher] = $this->orchestrator(
+			$tool,
+			array(
+				array( 'success' => false, 'error' => array( 'code' => 'transient', 'message' => 'Boom.' ) ),
+				$this->finalResponse(),
+			)
+		);
+
+		$dispatcher->listenWaterfall(
+			'agent/request_error',
+			static function ( object $event, callable $next ): AgentRequestErrorDecision {
+				return AgentRequestErrorDecision::retry();
+			}
+		);
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( 2, count( $dispatcher->router->receivedMessages ), 'Retry must issue a second provider call.' );
+		$this->assertSame( 'Done.', $result['response']['choices'][0]['message']['content'] );
+		$this->assertFalse( $result['cancelled'] );
+	}
+
+	public function testRequestErrorStaysTerminalWithoutRetryDecision(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , $dispatcher] = $this->orchestrator(
+			$tool,
+			array(
+				array( 'success' => false, 'error' => array( 'code' => 'fatal', 'message' => 'Boom.' ) ),
+			)
+		);
+
+		// No agent/request_error listener — the default is terminal.
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( 1, count( $dispatcher->router->receivedMessages ) );
+		$this->assertSame( 'fatal', $result['response']['code'] );
+	}
+
+	public function testTurnStoppingSerialFiresBeforeClose(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , $dispatcher] = $this->orchestrator( $tool, array( $this->finalResponse() ) );
+
+		$seen = array();
+		$dispatcher->listenSerial(
+			'agent/turn_stopping',
+			static function ( object $event ) use ( &$seen ): void {
+				$seen[] = \get_class( $event );
+			}
+		);
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertContains( 'Nvoos\Core\Domain\Event\AgentTurnStopping', $seen );
 	}
 }

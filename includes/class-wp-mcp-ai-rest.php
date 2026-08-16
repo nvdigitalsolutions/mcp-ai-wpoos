@@ -12760,6 +12760,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$assistant_id
 				);
 
+				// Parity with the legacy loop: resolve the system prompt through the
+				// harness-layer filters (Prompt Injector cues, Guardrails instructions,
+				// Necessity Gate instructions) before it reaches the provider.
+				$assistant_config['system_prompt'] = (string) apply_filters(
+					'wp_mcp_ai_resolved_system_prompt',
+					isset( $assistant_config['system_prompt'] ) ? (string) $assistant_config['system_prompt'] : '',
+					(int) $assistant_id,
+					array(
+						'surface' => 'rest_chat',
+						'request' => $request,
+					)
+				);
+
 				// Merge profession configuration when testing a profession.
 			if ( $profession_id ) {
 				$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
@@ -12791,6 +12804,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 				$messages = $sanitized['messages'];
+
+			// Parity with the legacy loop: run the Guardrails message-screening
+			// filter over the latest user message before the orchestrator runs.
+			$last_user_message = '';
+			foreach ( \array_reverse( $messages ) as $msg ) {
+				if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+					$last_user_message = is_string( $msg['content'] ?? null ) ? $msg['content'] : '';
+					break;
+				}
+			}
+
+			if ( '' !== $last_user_message ) {
+				$screen_result = apply_filters(
+					'wp_mcp_ai_pre_chat_message',
+					null,
+					$last_user_message,
+					(int) $assistant_id,
+					array(
+						'surface' => 'rest_chat',
+						'request' => $request,
+					)
+				);
+
+				if ( is_wp_error( $screen_result ) ) {
+					return $screen_result;
+				}
+			}
 
 				// Inject system prompt from assistant config as the first message.
 				// The OOS ChatOrchestrator passes messages directly to the provider;
