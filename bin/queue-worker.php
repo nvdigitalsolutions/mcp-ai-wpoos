@@ -441,7 +441,10 @@ function process_rabbitmq_queue( &$should_exit, $batch_size = 5 ) {
 
 				$envelope = $queue->get();
 
-				if ( false === $envelope ) {
+				// php-amqp returns false for an empty queue, but some builds
+				// return null instead — guard against anything that isn't
+				// a real envelope.
+				if ( ! $envelope instanceof AMQPEnvelope ) {
 					// No messages available.
 					break;
 				}
