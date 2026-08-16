@@ -29,6 +29,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
+use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface;
 use Nvoos\Core\Domain\Decision\AgentPreStepDecision;
 use Nvoos\Core\Domain\Decision\AgentRequestDecision;
@@ -87,6 +88,9 @@ class ChatOrchestrator {
 
 	/**
 	 * Optional context compressor for token-aware truncation.
+	 *
+	 * @deprecated 1.3.0 Superseded by setCompactionProvider() — kept for
+	 *     API stability only; compaction now flows through the provider.
 	 */
 	private ?ContextCompressionInterface $contextCompressor = null;
 
@@ -112,6 +116,23 @@ class ChatOrchestrator {
 	 * Optional persistence sink for the session log.
 	 */
 	private ?SessionLogStoreInterface $sessionLogStore = null;
+
+	/**
+	 * Optional scoped tool resolver (Phase 5, R4).
+	 *
+	 * When wired, tool VISIBILITY resolves through the scope (shadowing
+	 * + restriction intersection); execution still happens on the
+	 * registry, which owns the policy pipeline.
+	 */
+	private ?ToolResolverInterface $toolResolver = null;
+
+	/**
+	 * Optional compaction provider (Phase 5, R6).
+	 *
+	 * Triggers budget-driven context compaction between continuation
+	 * steps; compaction facts are recorded in the session log.
+	 */
+	private ?CompactionProvider $compactionProvider = null;
 
 	public function __construct(
 		private readonly ToolRegistry $tools,
@@ -152,6 +173,8 @@ class ChatOrchestrator {
 
 	/**
 	 * Wire the context compressor for token-aware truncation.
+	 *
+	 * @deprecated 1.3.0 Use setCompactionProvider().
 	 */
 	public function setContextCompressor( ContextCompressionInterface $compressor ): void {
 		$this->contextCompressor = $compressor;
@@ -170,6 +193,20 @@ class ChatOrchestrator {
 	public function setSessionLog( ?SessionLog $log, ?SessionLogStoreInterface $store = null ): void {
 		$this->sessionLog      = $log;
 		$this->sessionLogStore = $store;
+	}
+
+	/**
+	 * Wire a scoped tool resolver for visibility resolution.
+	 */
+	public function setToolResolver( ToolResolverInterface $resolver ): void {
+		$this->toolResolver = $resolver;
+	}
+
+	/**
+	 * Wire the compaction provider for between-step context compaction.
+	 */
+	public function setCompactionProvider( CompactionProvider $provider ): void {
+		$this->compactionProvider = $provider;
 	}
 
 	/**
@@ -537,6 +574,9 @@ class ChatOrchestrator {
 				$cancelled = true;
 				break;
 			}
+
+			// Between-step compaction (Phase 5, R6): budget-driven + logged.
+			$messages = $this->maybeCompact( $messages, $options, $iteration + 1, $sessionId );
 
 			// Policy for the continuation step.
 			[ $messages, $preStepRejected ] = $this->applyPreStepPolicy( $messages, $assistantId, $iteration + 1 );
@@ -1025,6 +1065,9 @@ class ChatOrchestrator {
 				break;
 			}
 
+			// Between-step compaction (Phase 5, R6): budget-driven + logged.
+			$messages = $this->maybeCompact( $messages, $options, $iteration + 1, $sessionId );
+
 			// Policy for the continuation step.
 			[ $messages, $preStepRejected ] = $this->applyPreStepPolicy( $messages, $assistantId, $iteration + 1 );
 			if ( $preStepRejected ) {
@@ -1164,13 +1207,14 @@ class ChatOrchestrator {
 		}
 
 		$definitions = array();
+		$resolver    = $this->toolResolver ?? $this->tools;
 
 		foreach ( $allowedSlugs as $slug ) {
 			if ( ! \is_string( $slug ) || '' === $slug ) {
 				continue;
 			}
 
-			$tool = $this->tools->get( $slug );
+			$tool = $resolver->get( $slug );
 			if ( null === $tool ) {
 				// Fail loud, never silently: misconfiguration must surface.
 				$this->events->dispatch(
@@ -1230,20 +1274,6 @@ class ChatOrchestrator {
 		return null;
 	}
 
-	/**
-	 * Extract plain text content from a response.
-	 */
-	private function extractTextContent( array $response ): string {
-		$content = $response['choices'][0]['message']['content'] ?? $response['content'] ?? '';
-
-		return is_string( $content ) ? $content : '';
-	}
-
-	/**
-	 * Build an empty per-request cost accumulator.
-	 *
-	 * @return array{total_prompt_tokens: int, total_completion_tokens: int, cost_usd: float}
-	 */
 	private static function newCostAccumulator(): array {
 		return array(
 			'total_prompt_tokens'     => 0,
@@ -1389,6 +1419,52 @@ class ChatOrchestrator {
 				$this->sessionLogStore->append( $sessionId, $last->toArray() );
 			}
 		}
+	}
+
+	/**
+	 * Compact the message list between continuation steps when the
+	 * wired provider's budget policy triggers.
+	 *
+	 * Compaction facts are durable: a context_compacted entry records the
+	 * message counts before/after so resumed sessions know their history
+	 * was summarized.
+	 */
+	private function maybeCompact( array $messages, array $options, int $iteration, string $sessionId ): array {
+		$provider = $this->compactionProvider;
+
+		// Legacy bridge: the deprecated setContextCompressor() wiring folds
+		// into the provider seam so old callers keep working.
+		if ( null === $provider && null !== $this->contextCompressor ) {
+			$provider = new CompactionProvider( $this->contextCompressor, $this->compressor );
+		}
+
+		if ( null === $provider || null === $this->tokenBudget ) {
+			return $messages;
+		}
+
+		$model = (string) ( $options['model'] ?? '' );
+		$limit = $this->tokenBudget->getModelLimit( $model );
+		if ( $limit <= 0 ) {
+			$limit = 128000;
+		}
+
+		if ( ! $provider->shouldCompact( $messages, $limit, $iteration ) ) {
+			return $messages;
+		}
+
+		$compacted = $provider->compact( $messages, $model );
+
+		$this->recordSessionEvent(
+			SessionLog::TYPE_CONTEXT_COMPACTED,
+			array(
+				'iteration'           => $iteration,
+				'message_count_before' => \count( $messages ),
+				'message_count_after'  => \count( $compacted ),
+			),
+			$sessionId,
+		);
+
+		return $compacted;
 	}
 
 	/**

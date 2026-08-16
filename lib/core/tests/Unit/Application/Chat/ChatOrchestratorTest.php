@@ -564,4 +564,91 @@ final class ChatOrchestratorTest extends TestCase {
 		$this->assertContains( \Nvoos\Core\Application\Session\SessionLog::TYPE_TURN_STARTED, $types );
 		$this->assertContains( \Nvoos\Core\Application\Session\SessionLog::TYPE_TURN_ENDED, $types );
 	}
+
+	public function testCompactionTriggersBetweenStepsAndIsLogged(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , $dispatcher] = $this->orchestrator(
+			$tool,
+			array( $this->toolCallResponse(), $this->toolCallResponse(), $this->finalResponse() )
+		);
+
+		// Force-triggering compaction: any continuation step from the 3rd
+		// iteration onward compacts by appending a marker message.
+		$orchestrator->setCompactionProvider(
+			new class() extends \Nvoos\Core\Application\Chat\CompactionProvider {
+				public function shouldCompact( array $messages, int $contextLimit, int $iteration, float $threshold = 0.85 ): bool {
+					return $iteration >= 2;
+				}
+
+				public function compact( array $messages, string $model = '' ): array {
+					$messages[] = array( 'role' => 'system', 'content' => 'COMPACTED' );
+
+					return $messages;
+				}
+			}
+		);
+		$orchestrator->setTokenBudgetManager( new \Nvoos\Core\Infrastructure\Token\TokenBudgetManager() );
+		$sessionLog = new \Nvoos\Core\Application\Session\SessionLog();
+		$orchestrator->setSessionLog( $sessionLog );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		// The provider call after the compacted step carries the marker.
+		$lastCallMessages = $dispatcher->router->receivedMessages[ \count( $dispatcher->router->receivedMessages ) - 1 ];
+		$this->assertContains(
+			'COMPACTED',
+			\array_column( $lastCallMessages, 'content' ),
+			'The compacted message list must reach the provider.',
+		);
+
+		// Compaction is durable.
+		$types = \array_map(
+			static function ( \Nvoos\Core\Application\Session\SessionEvent $event ): string {
+				return $event->type;
+			},
+			$sessionLog->events(),
+		);
+		$this->assertContains( \Nvoos\Core\Application\Session\SessionLog::TYPE_CONTEXT_COMPACTED, $types );
+	}
+
+	public function testSessionLogRoundtripReplayFeedsContinuation(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , $dispatcher] = $this->orchestrator(
+			$tool,
+			array( $this->toolCallResponse(), $this->finalResponse() )
+		);
+
+		$sessionLog = new \Nvoos\Core\Application\Session\SessionLog();
+		$orchestrator->setSessionLog( $sessionLog );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		// Export → rebuild → derive: the durable history survives a full
+		// store roundtrip and can seed the next turn.
+		$rebuilt  = \Nvoos\Core\Application\Session\SessionLog::fromExported( $sessionLog->export() );
+		$derived  = $rebuilt->deriveMessages();
+
+		// Fresh orchestrator for the continuation turn.
+		[$continuation, , $continuationDispatcher] = $this->orchestrator(
+			$tool,
+			array( $this->finalResponse() )
+		);
+
+		$continuation->handleChat(
+			$derived,
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame(
+			$derived,
+			$continuationDispatcher->router->receivedMessages[0],
+			'The replayed history must reach the provider unchanged.',
+		);
+	}
 }

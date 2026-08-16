@@ -490,6 +490,15 @@ function wp_mcp_ai_oos_orchestrator() {
 		);
 	}
 
+	// Compaction seam (Proposal 029 Phase 5, R6): budget-driven between-step
+	// compaction with the WordPress adapters behind the provider contract.
+	$orchestrator->setCompactionProvider(
+		new Nvoos\Core\Application\Chat\CompactionProvider(
+			new Nvoos\WordPress\Adapter\ContextCompression(),
+			wp_mcp_ai_oos_semantic_compressor(),
+		)
+	);
+
 	// ─── WP hook parity for agentic-loop observers ─────────────────
 	// The legacy loop fires wp_mcp_ai_agentic_iteration_complete and
 	// wp_mcp_ai_agentic_loop_completed with positional args. Bridge the

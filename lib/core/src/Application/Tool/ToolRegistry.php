@@ -19,6 +19,7 @@ use Nvoos\Core\Domain\Contract\ToolInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\ToolGuardInterface;
+use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\Decision\PreToolDecision;
 use Nvoos\Core\Domain\Decision\PostToolDecision;
 use Nvoos\Core\Domain\Event\BeforeToolExecution;
@@ -28,7 +29,7 @@ use Nvoos\Core\Domain\Event\ToolsExecute;
 use Nvoos\Core\Domain\Event\ToolsPostExecute;
 use Nvoos\Core\Domain\Event\ToolsRegistered;
 
-class ToolRegistry {
+class ToolRegistry implements ToolResolverInterface {
 
 	/**
 	 * Registered tools keyed by slug.
@@ -86,6 +87,16 @@ class ToolRegistry {
 	 */
 	public function registerAlias( string $alias, string $targetSlug ): void {
 		$this->aliases[ $alias ] = $targetSlug;
+	}
+
+	/**
+	 * Create a scoped view over this registry.
+	 *
+	 * Scopes shape tool visibility for one agent/assistant; execution
+	 * always happens on this registry (the policy pipeline lives here).
+	 */
+	public function createScope(): ToolScope {
+		return new ToolScope( $this );
 	}
 
 	/**

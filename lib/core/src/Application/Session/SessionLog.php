@@ -29,6 +29,7 @@ final class SessionLog {
 	public const TYPE_TOOL_CALL        = 'tool_call';
 	public const TYPE_TOOL_RESULT      = 'tool_result';
 	public const TYPE_STEERING_MESSAGE = 'steering_message';
+	public const TYPE_CONTEXT_COMPACTED = 'context_compacted';
 
 	/** @var SessionEvent[] */
 	private array $events = array();
