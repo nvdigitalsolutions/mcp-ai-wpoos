@@ -625,6 +625,21 @@ n#### New Audit & Compliance Docs
 - **[addons/fleet-operator/.context/](../addons/fleet-operator/.context/README.md)** ⭐ **NEW** — Addon-level agent context tree (18 files, 6 operator roles) for Fleet Operator workflows. (August 15, 2026)
 - **[AGENTS.md](../AGENTS.md)** ⭐ **UPDATED** — Hermes Console row (async chat), addon-level context-tree registration, v1.12. (August 15, 2026)
 - **[docs/operations/fleet/hermes-operator-setup.md](operations/fleet/hermes-operator-setup.md)** ⭐ **UPDATED** — §7 Hermes WebUI server: async submit/poll chat. (August 15, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.57 highlights (updater rework, Hermes async chat, Service Status provider detection, fleet-operator context tree). (August 15, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.57 with full PR-level detail (PRs #5868–#5874). (August 15, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.57 entry. (August 15, 2026)
+
+### New and updated documents (August 16–17, 2026 — post-1.1.57 fixes)
+
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — post-release fixes PRs #5878–#5884 documented under [1.1.57]. (August 17, 2026)
+- **[.context/rest-api.md](../.context/rest-api.md)** ⭐ **UPDATED** — direct `tools/call` synchronous dispatch (agentic-loop semantics) and `prompts/list`/`prompts/get` assistant scoping. (August 17, 2026)
+- **[.context/security-checklist.md](../.context/security-checklist.md)** ⭐ **UPDATED** — v1.1.57 note: MCP prompt scoping + media-worker Dependabot GHSA fixes. (August 17, 2026)
+- **[bin/README.md](../bin/README.md)** ⭐ **UPDATED** — new Queue Worker section (`queue-worker.php` flags, wp-load ordering, empty-queue guard). (August 17, 2026)
+- **[docs/operations/queue-worker-systemd.md](operations/queue-worker-systemd.md)** ⭐ **NEW** — systemd unit example for self-hosted queue workers. (August 17, 2026)
+- **[docs/history/2026/fixes/attention-routing-truncation-fix.md](history/2026/fixes/attention-routing-truncation-fix.md)** ⭐ **NEW** — PR #5879 fix details. (August 17, 2026)
+- **[docs/history/2026/fixes/mcp-prompts-assistant-scoping-fix.md](history/2026/fixes/mcp-prompts-assistant-scoping-fix.md)** ⭐ **NEW** — PR #5880 fix details. (August 17, 2026)
+- **[docs/history/2026/fixes/queue-worker-cli-and-empty-queue-fixes.md](history/2026/fixes/queue-worker-cli-and-empty-queue-fixes.md)** ⭐ **NEW** — PRs #5882/#5883 fix details. (August 17, 2026)
+- **[docs/history/2026/fixes/mcp-tools-call-sync-dispatch-fix.md](history/2026/fixes/mcp-tools-call-sync-dispatch-fix.md)** ⭐ **NEW** — PR #5884 fix details. (August 17, 2026)
 
 ### New and updated documents (August 14, 2026, v1.1.56)
 
