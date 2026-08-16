@@ -6031,12 +6031,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			// Ensure agentic_loop is false for direct tools/call requests so
-			// the async orchestrator doesn't force-sync (Priority 5). This
-			// matches the behavior of execute_tool_call_internal() which sets
-			// agentic_loop => true only when called from the chat agentic loop.
+			// Direct MCP tools/call requests run with agentic-loop semantics:
+			// the client expects the complete tool result in this JSON-RPC
+			// response and has no channel to poll a background job. Async
+			// dispatch is structurally unsafe here — the shutdown-kick
+			// fallback only completes jobs AFTER the response is flushed, so
+			// on hosts with an unreachable WP-Cron loopback the 45s poll
+			// budget in mcp_wait_for_async_tool() is always exhausted before
+			// the job can run (see WP_MCP_AI_REST_MCP_Methods::mcp_tools_call
+			// which sets the 'agentic_loop' request param). Background-only
+			// tools still run async (Priority 1) regardless.
 			if ( ! isset( $context['agentic_loop'] ) ) {
-				$context['agentic_loop'] = false;
+				$context['agentic_loop'] = (bool) $request->get_param( 'agentic_loop' );
 			}
 
 			// Orchestration Layer: Check if tool should execute asynchronously
