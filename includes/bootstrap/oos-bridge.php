@@ -482,6 +482,14 @@ function wp_mcp_ai_oos_orchestrator() {
 	$orchestrator->setSemanticCompressor( wp_mcp_ai_oos_semantic_compressor() );
 	$orchestrator->setDataBudgetTracker( wp_mcp_ai_oos_data_budget_tracker( 'oos-chat' ) );
 
+	// Session logging (Proposal 029 Phase 3, R1) — opt-in via flag.
+	if ( wp_mcp_ai_enable_session_log() ) {
+		$orchestrator->setSessionLog(
+			new Nvoos\Core\Application\Session\SessionLog(),
+			new Nvoos\WordPress\Adapter\SessionLogStore(),
+		);
+	}
+
 	// ─── WP hook parity for agentic-loop observers ─────────────────
 	// The legacy loop fires wp_mcp_ai_agentic_iteration_complete and
 	// wp_mcp_ai_agentic_loop_completed with positional args. Bridge the
@@ -574,6 +582,24 @@ function wp_mcp_ai_oos_orchestrator() {
 }
 
 // ─── Feature Flag Detection ───────────────────────────────────────────
+
+/**
+ * Whether OOS session logging (Proposal 029, Phase 3) is enabled.
+ *
+ * Off by default until replay tests prove log-derived history parity.
+ * Enable via the admin setting enable_oos_session_log or the
+ * wp_mcp_ai_enable_session_log filter.
+ *
+ * @return bool
+ */
+function wp_mcp_ai_enable_session_log(): bool {
+	$settings = \get_option( 'wp_mcp_ai_settings', array() );
+	if ( ! empty( $settings['enable_oos_session_log'] ) ) {
+		return true;
+	}
+
+	return (bool) \apply_filters( 'wp_mcp_ai_enable_session_log', false );
+}
 
 /**
  * Determine whether the OOS engine should handle the current request.

@@ -477,4 +477,50 @@ final class ChatOrchestratorTest extends TestCase {
 
 		$this->assertContains( 'Nvoos\Core\Domain\Event\AgentTurnStopping', $seen );
 	}
+
+	public function testSessionLogReplayReproducesProviderMessages(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , $dispatcher] = $this->orchestrator(
+			$tool,
+			array( $this->toolCallResponse(), $this->finalResponse() )
+		);
+
+		$sessionLog = new \Nvoos\Core\Application\Session\SessionLog();
+		$orchestrator->setSessionLog( $sessionLog );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array(
+				'tools'      => array( 'echo_tool' ),
+				'provider'   => 'openai',
+				'model'      => 'gpt-4o',
+				'session_id' => 'replay-test',
+			),
+		);
+
+		$sentMessages = $dispatcher->router->receivedMessages;
+		$this->assertGreaterThanOrEqual( 2, \count( $sentMessages ), 'Scripted flow must issue two provider calls.' );
+
+		// The durable history is: everything the model saw (the final
+		// provider input) PLUS the final assistant reply (the output of
+		// that call, which the next turn would inherit).
+		$expected = $sentMessages[ \count( $sentMessages ) - 1 ];
+		$expected[] = array( 'role' => 'assistant', 'content' => 'Done.' );
+
+		$this->assertSame(
+			$expected,
+			$sessionLog->deriveMessages(),
+			'History derived from the log must reproduce the model-visible facts.',
+		);
+
+		// The turn is durable: boundaries + exit reason are recorded.
+		$types = \array_map(
+			static function ( \Nvoos\Core\Application\Session\SessionEvent $event ): string {
+				return $event->type;
+			},
+			$sessionLog->events(),
+		);
+		$this->assertContains( \Nvoos\Core\Application\Session\SessionLog::TYPE_TURN_STARTED, $types );
+		$this->assertContains( \Nvoos\Core\Application\Session\SessionLog::TYPE_TURN_ENDED, $types );
+	}
 }

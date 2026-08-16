@@ -12897,12 +12897,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Pass through temperature and max_tokens from assistant config if not
-				// already set in request options.
+			// already set in request options.
 			if ( ! isset( $options['temperature'] ) && isset( $assistant_config['temperature'] ) && null !== $assistant_config['temperature'] ) {
 				$options['temperature'] = (float) $assistant_config['temperature'];
 			}
 			if ( ! isset( $options['max_tokens'] ) && ! empty( $assistant_config['max_tokens'] ) ) {
 				$options['max_tokens'] = (int) $assistant_config['max_tokens'];
+			}
+
+			// Session logging (Proposal 029, Phase 3): pass the transcript
+			// session key through so the log can be persisted per session.
+			if ( function_exists( 'wp_mcp_ai_enable_session_log' )
+				&& wp_mcp_ai_enable_session_log()
+				&& ! empty( $transcript_context['session_key'] )
+			) {
+				$options['session_id'] = (string) $transcript_context['session_key'];
 			}
 
 				// Inject professional prompt into system message when present.

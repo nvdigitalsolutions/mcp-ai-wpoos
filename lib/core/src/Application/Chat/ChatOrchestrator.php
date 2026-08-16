@@ -24,9 +24,11 @@ declare(strict_types=1);
 namespace Nvoos\Core\Application\Chat;
 
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Session\SessionLog;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface;
 use Nvoos\Core\Domain\Decision\AgentPreStepDecision;
 use Nvoos\Core\Domain\Decision\AgentRequestDecision;
@@ -97,6 +99,20 @@ class ChatOrchestrator {
 	 */
 	private ?AuthProviderInterface $authProvider = null;
 
+	/**
+	 * Optional event-sourced session log (Phase 3, R1).
+	 *
+	 * When wired, the loop appends every model-visible fact to the log;
+	 * history can then be derived and replayed from it. Null by default —
+	 * session logging is opt-in until the replay tests prove parity.
+	 */
+	private ?SessionLog $sessionLog = null;
+
+	/**
+	 * Optional persistence sink for the session log.
+	 */
+	private ?SessionLogStoreInterface $sessionLogStore = null;
+
 	public function __construct(
 		private readonly ToolRegistry $tools,
 		private readonly ProviderRouter $providers,
@@ -149,6 +165,14 @@ class ChatOrchestrator {
 	}
 
 	/**
+	 * Wire the session log (opt-in) and its optional persistence sink.
+	 */
+	public function setSessionLog( ?SessionLog $log, ?SessionLogStoreInterface $store = null ): void {
+		$this->sessionLog      = $log;
+		$this->sessionLogStore = $store;
+	}
+
+	/**
 	 * Handle a chat request — non-streaming (returns full response).
 	 *
 	 * @param array $messages        OpenAI-format conversation messages.
@@ -196,6 +220,9 @@ class ChatOrchestrator {
 		// Merge assistant config into options.
 		$options['provider'] ??= $assistantConfig['provider'] ?? '';
 		$options['model']    ??= $assistantConfig['model'] ?? '';
+
+		// Session logging is opt-in; the session id arrives via options.
+		$sessionId = (string) ( $options['session_id'] ?? '' );
 
 		$startedAt = \microtime( true );
 
@@ -264,8 +291,34 @@ class ChatOrchestrator {
 			$options['prompt_cache_key'] = $assistantConfig['prompt_cache_key'];
 		}
 
+		// Turn boundary + entering messages are the first log facts.
+		$this->recordSessionEvent(
+			SessionLog::TYPE_TURN_STARTED,
+			array(
+				'assistant_id'   => $assistantId,
+				'user_id'        => $userId,
+				'max_iterations' => $maxIterations,
+			),
+			$sessionId,
+		);
+		foreach ( $messages as $msg ) {
+			if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+				$this->recordSessionEvent(
+					SessionLog::TYPE_USER_MESSAGE,
+					array( 'content' => is_string( $msg['content'] ?? null ) ? $msg['content'] : '' ),
+					$sessionId,
+				);
+			}
+		}
+
 		// Cooperative cancellation — checked at every provider and tool boundary.
 		if ( null !== $cancellation && $cancellation->isCancelled() ) {
+			$this->recordSessionEvent(
+				SessionLog::TYPE_TURN_ENDED,
+				array( 'reason' => 'aborted', 'iterations' => 0 ),
+				$sessionId,
+			);
+
 			return $this->cancelledResult( array(), $cancellation );
 		}
 
@@ -275,6 +328,11 @@ class ChatOrchestrator {
 		// the entering batch; agent/request may replace the call config.
 		[ $messages, $preStepRejected ] = $this->applyPreStepPolicy( $messages, $assistantId, 0 );
 		if ( $preStepRejected ) {
+			$this->recordSessionEvent(
+				SessionLog::TYPE_TURN_ENDED,
+				array( 'reason' => 'rejected', 'iterations' => 0 ),
+				$sessionId,
+			);
 			$this->notifyTurnStopping( $assistantId, 0 );
 
 			return array(
@@ -301,6 +359,12 @@ class ChatOrchestrator {
 		$this->accumulateUsage( $response, $costAccumulator );
 
 		if ( $this->errors->isError( $response ) ) {
+			$this->recordSessionEvent(
+				SessionLog::TYPE_TURN_ENDED,
+				array( 'reason' => 'request_error', 'iterations' => 0 ),
+				$sessionId,
+			);
+
 			return array(
 				'response'      => $this->errors->normalize( $response ),
 				'tool_results'  => array(),
@@ -311,15 +375,43 @@ class ChatOrchestrator {
 			);
 		}
 
+		// Model-visible facts are logged: the assistant message that just
+		// arrived (with any tool_calls it carries).
+		$this->recordSessionEvent(
+			SessionLog::TYPE_ASSISTANT_MESSAGE,
+			array(
+				'content'       => $response['choices'][0]['message']['content'] ?? null,
+				'tool_calls'    => $this->extractToolCalls( $response ),
+				'finish_reason' => $response['choices'][0]['finish_reason'] ?? null,
+			),
+			$sessionId,
+		);
+
 		// ─── Agentic loop ────────────────────────────────────────────
 
 		$cancelled = false;
+		$stepResponseLogged = false; // The initial response is logged above.
 
 		while ( $iteration < $maxIterations ) {
 			if ( null !== $cancellation && $cancellation->isCancelled() ) {
 				$cancelled = true;
 				break;
 			}
+
+			if ( $stepResponseLogged ) {
+				// The continuation response that opened this step is also a
+				// model-visible fact — log it before the loop can exit.
+				$this->recordSessionEvent(
+					SessionLog::TYPE_ASSISTANT_MESSAGE,
+					array(
+						'content'       => $response['choices'][0]['message']['content'] ?? null,
+						'tool_calls'    => $this->extractToolCalls( $response ),
+						'finish_reason' => $response['choices'][0]['finish_reason'] ?? null,
+					),
+					$sessionId,
+				);
+			}
+			$stepResponseLogged = true;
 
 			$toolCalls = $this->extractToolCalls( $response );
 
@@ -357,6 +449,18 @@ class ChatOrchestrator {
 					? ( \json_decode( $rawArgs, true ) ?: array() )
 					: ( is_array( $rawArgs ) ? $rawArgs : array() );
 
+				// Log the model-visible call before dispatch.
+				$this->recordSessionEvent(
+					SessionLog::TYPE_TOOL_CALL,
+					array(
+						'tool_call_id' => (string) $toolCallId,
+						'name'         => (string) $toolName,
+						'arguments'    => $arguments,
+						'iteration'    => $iteration,
+					),
+					$sessionId,
+				);
+
 				$result = $this->tools->execute(
 					$toolName,
 					$arguments,
@@ -387,6 +491,17 @@ class ChatOrchestrator {
 				if ( null !== $this->budgetTracker ) {
 					$this->budgetTracker->record( \strlen( $resultContent ) );
 				}
+
+				// Log the model-visible result.
+				$this->recordSessionEvent(
+					SessionLog::TYPE_TOOL_RESULT,
+					array(
+						'tool_call_id' => (string) $toolCallId,
+						'name'         => (string) $toolName,
+						'content'      => (string) $resultContent,
+					),
+					$sessionId,
+				);
 
 				// Extract images for vision models.
 				$imageMessages = $this->extractImagesFromToolResult( $result, $toolName );
@@ -489,6 +604,16 @@ class ChatOrchestrator {
 		// Turn-stopping serial notification — the turn is about to close.
 		$this->notifyTurnStopping( $assistantId, $iteration );
 
+		// Durable turn boundary with the exit reason.
+		$turnEndReason = $cancelled
+			? 'aborted'
+			: ( $limitReached ? 'iteration_limit' : 'completed' );
+		$this->recordSessionEvent(
+			SessionLog::TYPE_TURN_ENDED,
+			array( 'reason' => $turnEndReason, 'iterations' => $iteration ),
+			$sessionId,
+		);
+
 		// Calculate cost from accumulated per-iteration usage.
 		$cost = null;
 		if ( \is_array( $response ) ) {
@@ -575,6 +700,9 @@ class ChatOrchestrator {
 		$options['provider'] ??= $assistantConfig['provider'] ?? '';
 		$options['model']    ??= $assistantConfig['model'] ?? '';
 
+		// Session logging is opt-in; the session id arrives via options.
+		$sessionId = (string) ( $options['session_id'] ?? '' );
+
 		// Status: generating.
 		$this->sse->sendEvent(
 			'status',
@@ -621,6 +749,29 @@ class ChatOrchestrator {
 		}
 
 		if ( null !== $cancellation && $cancellation->isCancelled() ) {
+			$this->recordSessionEvent(
+				SessionLog::TYPE_TURN_STARTED,
+				array(
+					'assistant_id'   => $assistantId,
+					'user_id'        => $userId,
+					'max_iterations' => $maxIterations,
+				),
+				$sessionId,
+			);
+			foreach ( $messages as $msg ) {
+				if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+					$this->recordSessionEvent(
+						SessionLog::TYPE_USER_MESSAGE,
+						array( 'content' => is_string( $msg['content'] ?? null ) ? $msg['content'] : '' ),
+						$sessionId,
+					);
+				}
+			}
+			$this->recordSessionEvent(
+				SessionLog::TYPE_TURN_ENDED,
+				array( 'reason' => 'aborted', 'iterations' => 0 ),
+				$sessionId,
+			);
 			$this->sse->sendEvent( 'error', [ 'code' => 'cancelled', 'message' => 'Request cancelled.' ] );
 			$this->sse->sendDone();
 			return $this->cancelledResult( array(), $cancellation );
@@ -628,10 +779,34 @@ class ChatOrchestrator {
 
 		$costAccumulator = self::newCostAccumulator();
 
+		$this->recordSessionEvent(
+			SessionLog::TYPE_TURN_STARTED,
+			array(
+				'assistant_id'   => $assistantId,
+				'user_id'        => $userId,
+				'max_iterations' => $maxIterations,
+			),
+			$sessionId,
+		);
+		foreach ( $messages as $msg ) {
+			if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+				$this->recordSessionEvent(
+					SessionLog::TYPE_USER_MESSAGE,
+					array( 'content' => is_string( $msg['content'] ?? null ) ? $msg['content'] : '' ),
+					$sessionId,
+				);
+			}
+		}
+
 		// agent/pre_step policy — reject the turn or rewrite the entering
 		// batch; agent/request may replace the call config.
 		[ $messages, $preStepRejected ] = $this->applyPreStepPolicy( $messages, $assistantId, 0 );
 		if ( $preStepRejected ) {
+			$this->recordSessionEvent(
+				SessionLog::TYPE_TURN_ENDED,
+				array( 'reason' => 'rejected', 'iterations' => 0 ),
+				$sessionId,
+			);
 			$this->sse->sendEvent( 'status', array( 'type' => 'rejected', 'message' => 'Request rejected by policy.' ) );
 			$this->sse->sendDone();
 			$this->notifyTurnStopping( $assistantId, 0 );
@@ -657,6 +832,11 @@ class ChatOrchestrator {
 
 		if ( $this->errors->isError( $response ) ) {
 			$normalized = $this->errors->normalize( $response );
+			$this->recordSessionEvent(
+				SessionLog::TYPE_TURN_ENDED,
+				array( 'reason' => 'request_error', 'iterations' => 0 ),
+				$sessionId,
+			);
 			$this->sse->sendEvent(
 				'error',
 				array(
@@ -675,15 +855,41 @@ class ChatOrchestrator {
 			);
 		}
 
+		$this->recordSessionEvent(
+			SessionLog::TYPE_ASSISTANT_MESSAGE,
+			array(
+				'content'       => $response['choices'][0]['message']['content'] ?? null,
+				'tool_calls'    => $this->extractToolCalls( $response ),
+				'finish_reason' => $response['choices'][0]['finish_reason'] ?? null,
+			),
+			$sessionId,
+		);
+
 		// ─── Streaming agentic loop ──────────────────────────────────
 
 		$cancelled = false;
+		$stepResponseLogged = false; // The initial response is logged above.
 
 		while ( $iteration < $maxIterations ) {
 			if ( null !== $cancellation && $cancellation->isCancelled() ) {
 				$cancelled = true;
 				break;
 			}
+
+			if ( $stepResponseLogged ) {
+				// Log the continuation response that opened this step before
+				// the loop can exit.
+				$this->recordSessionEvent(
+					SessionLog::TYPE_ASSISTANT_MESSAGE,
+					array(
+						'content'       => $response['choices'][0]['message']['content'] ?? null,
+						'tool_calls'    => $this->extractToolCalls( $response ),
+						'finish_reason' => $response['choices'][0]['finish_reason'] ?? null,
+					),
+					$sessionId,
+				);
+			}
+			$stepResponseLogged = true;
 
 			$toolCalls = $this->extractToolCalls( $response );
 			if ( array() === $toolCalls ) {
@@ -718,6 +924,18 @@ class ChatOrchestrator {
 				$arguments  = is_string( $rawArgs )
 					? ( \json_decode( $rawArgs, true ) ?: array() )
 					: ( is_array( $rawArgs ) ? $rawArgs : array() );
+
+				// Log the model-visible call before dispatch.
+				$this->recordSessionEvent(
+					SessionLog::TYPE_TOOL_CALL,
+					array(
+						'tool_call_id' => (string) $toolCallId,
+						'name'         => (string) $toolName,
+						'arguments'    => $arguments,
+						'iteration'    => $iteration,
+					),
+					$sessionId,
+				);
 
 				// Stream: tool started.
 				$this->sse->sendEvent(
@@ -755,6 +973,17 @@ class ChatOrchestrator {
 				if ( null !== $this->budgetTracker ) {
 					$this->budgetTracker->record( \strlen( $resultContent ) );
 				}
+
+				// Log the model-visible result.
+				$this->recordSessionEvent(
+					SessionLog::TYPE_TOOL_RESULT,
+					array(
+						'tool_call_id' => (string) $toolCallId,
+						'name'         => (string) $toolName,
+						'content'      => (string) $resultContent,
+					),
+					$sessionId,
+				);
 
 				// Stream: tool result.
 				$this->sse->sendEvent(
@@ -857,6 +1086,16 @@ class ChatOrchestrator {
 
 		// Turn-stopping serial notification — the turn is about to close.
 		$this->notifyTurnStopping( $assistantId, $iteration );
+
+		// Durable turn boundary with the exit reason.
+		$turnEndReason = $cancelled
+			? 'aborted'
+			: ( $limitReached ? 'iteration_limit' : 'completed' );
+		$this->recordSessionEvent(
+			SessionLog::TYPE_TURN_ENDED,
+			array( 'reason' => $turnEndReason, 'iterations' => $iteration ),
+			$sessionId,
+		);
 
 		$cost = null;
 		if ( \is_array( $response ) ) {
@@ -1126,6 +1365,28 @@ class ChatOrchestrator {
 			'agent/turn_stopping',
 			new AgentTurnStopping( assistantId: $assistantId, totalIterations: $totalIterations ),
 		);
+	}
+
+	/**
+	 * Record one session-log entry when session logging is wired.
+	 *
+	 * The appended entry is persisted through the optional store when a
+	 * session id is known. Persistence failures must never break the chat
+	 * (the log is observability, not a correctness dependency).
+	 */
+	private function recordSessionEvent( string $type, array $data, string $sessionId = '' ): void {
+		if ( null === $this->sessionLog ) {
+			return;
+		}
+
+		$this->sessionLog->append( $type, $data );
+
+		if ( null !== $this->sessionLogStore && '' !== $sessionId ) {
+			$last = $this->sessionLog->lastEvent();
+			if ( null !== $last ) {
+				$this->sessionLogStore->append( $sessionId, $last->toArray() );
+			}
+		}
 	}
 
 	/**
