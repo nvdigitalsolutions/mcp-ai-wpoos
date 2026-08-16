@@ -366,3 +366,27 @@ Base wp.org distribution builds exclude `lib/core/` — all core changes are inv
 - The tool canonical envelope (`success` + `message`/`data` or `WP_Error`) and PHPCS sniffs.
 - `includes/harness` Layers A–H architecture (they gain a new home on the OOS waterfalls, but their contracts are unchanged).
 - Pro toolkits, MCP servers, Workflow Builder, Schedule Manager, CRM/health toolkits — they ride the adapter (Phase 1) without modification.
+
+## Appendix C — Implementation status (tracked on PR #5881)
+
+| # | Action | Status | Notes |
+|---|---|---|---|
+| 0.x | Foundations: collaborators, cancellation, dispatch, cost, auth | ✅ merged (Phase 0) | commit `73fd456` |
+| 1.x | Tool surface: `LegacyToolAdapter` ACL, R3 pipeline, fail-loud slug audit | ✅ merged (Phase 1) | commit `c879ef6` |
+| 2.x | Security parity: harness filters bridged, R2 waterfalls | ✅ merged (Phase 2) | commit `5c8eff9` |
+| 3.x | Session log: event-sourced `SessionLog` + `deriveMessages()` + JSONL store | ✅ merged (Phase 3) | commit `27f16a6` |
+| 4.x | Staged rollout: shadow runner, canary routing, `wp mcp-ai oos parity` CLI | ✅ merged (Phase 4) | commit `0334feb` |
+| 5.1 | R4 Scoped registries (`ToolScope`, `ToolRestriction`) | ✅ merged (Phase 5 Base) | commit `87bce1a`; seed-universe branch for non-enumerable resolvers added during the Pro pass |
+| 5.2 | R4 Agent presets as composition (Pro) | ✅ delivered | `addons/pro/includes/composition/` — `WP_MCP_AI_Pro_Composition_Service::compose()` / `compose_from()` (composeFrom semantics), `WP_MCP_AI_Pro_Legacy_Tool_Resolver`; flag-gated module `oos_composition`; the delegation wiring step (team orchestrator consuming `wp_mcp_ai_pro_compose_from_overrides`) remains for the Phase 4.2 canary |
+| 5.3 | R4 Effective-composition view (Pro admin) | ✅ delivered | `wp mcp-ai composition dump <id> [--json]` + `verify <id> [--against=<gen>]`; the `to_array()` dump is the Site Health/admin surface payload |
+| 5.4 | R5 Agent handles & steering (Pro) | ⏸ deferred | Requires Action Scheduler cross-request state + a concrete steering UX; no consumer yet. Design unchanged — revisit after canary proves the runtime |
+| 5.5 | R5 Plan mode as logged state (Pro) | ⏸ deferred | Same cross-request-state dependency as 5.4; session-log durability (Phase 3) is the prerequisite and is already in place |
+| 5.6 | R6 Compaction seam | ✅ merged (Phase 5 Base) | `CompactionProvider` + logged `context_compacted` entries; replay roundtrip test |
+| 5.7 | R6 Golden transcript replay | ✅ merged (Phase 5 Base) | export/rebuild/derive roundtrip; `composer run parity` wiring tracked in Phase 4 |
+| 5.8 | R6 Telemetry single-path | 🔜 next | Audit-logger/OTel subscribers consume `tool_result` + turn events from the log (Phase 6 cleanup pairs with loop deletion) |
+
+**Pro-pass discoveries (this slice):**
+
+1. `ToolScope` could not enumerate generic `ToolResolverInterface` parents — the Pro legacy-tool resolver wraps the WP-side registry, which is non-enumerable. Fixed with a backward-compatible `$seed_slugs` constructor branch (+ core test).
+2. `lib/wordpress-adapter/src/Tool/CreateAssistantTool.php` declared its `ErrorFactoryInterface` type relative to its namespace — a fatal type error that broke the entire OOS orchestrator pre-warm on PHP 8.3 (`Nvoos\WordPress\Tool\Nvoos\Core\Domain\Contract\ErrorFactoryInterface`). Pre-existing on `alpha-working`; fixed here because the OOS path cannot boot without it.
+3. Registered array metas (`_wp_mcp_ai_tools`, `type: array`) read back as arrays, serialized strings, or JSON strings depending on environment; `normalize_slugs()` accepts all three shapes.

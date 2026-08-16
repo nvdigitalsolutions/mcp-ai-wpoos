@@ -42,8 +42,15 @@ final class ToolScope implements ToolResolverInterface {
 	 */
 	private array $restrictions = array();
 
+	/**
+	 * @param string[] $seed_slugs Optional slug universe used when the parent
+	 *                             resolver is not enumerable — generic
+	 *                             ToolResolverInterface parents are resolved
+	 *                             through this list in inheritedTools().
+	 */
 	public function __construct(
 		private readonly ToolResolverInterface $parent,
+		private readonly array $seed_slugs = array(),
 	) {}
 
 	/**
@@ -155,7 +162,19 @@ final class ToolScope implements ToolResolverInterface {
 			return $tools;
 		}
 
-		return array();
+		// Generic resolver: enumerate the seeded universe so
+		// non-enumerable parents still produce schemas and slug views.
+		$tools = array();
+
+		foreach ( $this->seed_slugs as $slug ) {
+			$tool = $this->parent->get( $slug );
+
+			if ( null !== $tool ) {
+				$tools[ $slug ] = $tool;
+			}
+		}
+
+		return $tools;
 	}
 
 	/**

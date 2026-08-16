@@ -16,6 +16,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Application\Tool\ToolScope;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
+use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\ValueObject\ToolRestriction;
 use Nvoos\Core\Tests\Unit\Support\InMemoryDispatcher;
 use PHPUnit\Framework\TestCase;
@@ -127,5 +128,43 @@ final class ToolScopeTest extends TestCase {
 		);
 
 		$this->assertSame( array( 'read_one', 'scoped_extra' ), $names );
+	}
+
+	public function testGenericResolverParentUsesSeedUniverse(): void {
+		// A non-enumerable resolver stands in for the Pro legacy-tool
+		// resolver: it can resolve slugs but cannot enumerate them.
+		$registry = $this->registry;
+
+		$resolver = new class( $registry, array( 'read_one', 'write_one' ) ) implements ToolResolverInterface {
+			/**
+			 * @param string[] $slugs
+			 */
+			public function __construct(
+				private readonly ToolRegistry $registry,
+				private readonly array $slugs,
+			) {}
+
+			public function get( string $slug ): ?ToolInterface {
+				return $this->registry->get( $slug );
+			}
+
+			public function has( string $slug ): bool {
+				return \in_array( $slug, $this->slugs, true );
+			}
+		};
+
+		$scope = new ToolScope( $resolver, array( 'read_one', 'write_one', 'read_two' ) );
+		$scope->restrict( ToolRestriction::denyList( array( 'write_one' ) ) );
+
+		$this->assertNotNull( $scope->get( 'read_one' ) );
+		$this->assertNull( $scope->get( 'write_one' ), 'Deny restriction applies to seeded slugs.' );
+		$this->assertNotNull( $scope->get( 'read_two' ), 'Seeded slugs outside the resolver still resolve when admitted.' );
+
+		$names = array_map(
+			static fn( array $definition ): string => $definition['function']['name'],
+			$scope->schemas(),
+		);
+
+		$this->assertSame( array( 'read_one', 'read_two' ), $names );
 	}
 }
