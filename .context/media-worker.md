@@ -65,6 +65,10 @@ existing local fallbacks run unchanged.
 - Cluster mode: in-memory queue stays single-process — Redis queue requires
   `REDIS_URL`; Redis rate-limit store requires `RATE_LIMIT_REDIS=1` +
   `rate-limit-redis` optional dependency.
+- Node engine floor **≥ 22.12.0** (puppeteer 25 requirement; Docker and CI
+  images are `node:22`). Puppeteer downloads are skipped with the canonical
+  `PUPPETEER_SKIP_DOWNLOAD` env var — the legacy
+  `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` name is ignored by newer releases.
 
 ## Also Load
 
