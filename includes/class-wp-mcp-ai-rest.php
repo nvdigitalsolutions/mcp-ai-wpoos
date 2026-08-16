@@ -12901,6 +12901,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
+			// Cooperative cancellation: probe the client connection on every
+			// boundary check so a disconnected browser (SSE or long agentic
+			// loops) stops burning provider calls and tool executions.
+			$cancellation = new \Nvoos\Core\Domain\ValueObject\CancellationToken(
+				null,
+				static function (): bool {
+					return \function_exists( 'connection_aborted' ) && 1 === \connection_aborted();
+				}
+			);
+
 			try {
 				// Delegate to the framework-agnostic orchestrator.
 				$orchestrator = wp_mcp_ai_oos_orchestrator();
@@ -12921,7 +12931,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						userId: $user_id,
 						assistantId: $assistant_id,
 						options: $options,
+						cancellation: $cancellation,
 					);
+
+					// Legacy-parity telemetry: interaction log + cost hook.
+					WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $result['response'] ?? array(), $user_id );
+
+					if ( ! empty( $result['cost'] ) ) {
+						do_action( 'wp_mcp_ai_cost_calculated', $result['cost'], $assistant_id, $user_id, $result['response'] ?? array(), $request );
+					}
 
 					// Record the transcript.
 					if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
@@ -12946,6 +12964,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					userId: $user_id,
 					assistantId: $assistant_id,
 					options: $options,
+					cancellation: $cancellation,
 				);
 			} catch ( \Exception $e ) {
 				WP_MCP_AI_Logger::log_error(
@@ -12997,6 +13016,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$user_id,
 					$transcript_context
 				);
+			}
+
+			// Legacy-parity telemetry: interaction log + cost hook.
+			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $result['response'] ?? array(), $user_id );
+
+			if ( ! empty( $result['cost'] ) ) {
+				do_action( 'wp_mcp_ai_cost_calculated', $result['cost'], $assistant_id, $user_id, $result['response'] ?? array(), $request );
 			}
 
 				// Translate OOS response back to WordPress REST format.

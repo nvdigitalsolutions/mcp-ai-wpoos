@@ -31,13 +31,16 @@ use Nvoos\Core\Domain\Event\BeforeChatRequest;
 use Nvoos\Core\Domain\Event\AfterChatResponse;
 use Nvoos\Core\Domain\Event\AgenticIterationComplete;
 use Nvoos\Core\Domain\Event\AgenticLoopCompleted;
+use Nvoos\Core\Domain\Event\CostCalculated;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SemanticCompressorInterface;
 use Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface;
 use Nvoos\Core\Domain\Contract\ContextCompressionInterface;
+use Nvoos\Core\Domain\ValueObject\CancellationToken;
 
 class ChatOrchestrator {
 
@@ -45,11 +48,6 @@ class ChatOrchestrator {
 	 * Maximum agentic loop iterations. Prevents infinite loops.
 	 */
 	private const DEFAULT_MAX_ITERATIONS = 15;
-
-	/**
-	 * Estimated tokens consumed per tool definition in the system prompt.
-	 */
-	private const TOKENS_PER_TOOL_DEFINITION = 200;
 
 	/**
 	 * Optional token-budget manager for tool-definition capping.
@@ -75,6 +73,15 @@ class ChatOrchestrator {
 	 * Optional context compressor for token-aware truncation.
 	 */
 	private ?ContextCompressionInterface $contextCompressor = null;
+
+	/**
+	 * Optional auth provider for per-tool capability enforcement.
+	 *
+	 * Injected into every tool-execution context so the ToolRegistry can
+	 * resolve required_capability against the requesting user. Without it,
+	 * every tool declaring a capability would deny authenticated users.
+	 */
+	private ?AuthProviderInterface $authProvider = null;
 
 	public function __construct(
 		private readonly ToolRegistry $tools,
@@ -121,6 +128,13 @@ class ChatOrchestrator {
 	}
 
 	/**
+	 * Wire the auth provider used for per-tool capability checks.
+	 */
+	public function setAuthProvider( AuthProviderInterface $authProvider ): void {
+		$this->authProvider = $authProvider;
+	}
+
+	/**
 	 * Handle a chat request — non-streaming (returns full response).
 	 *
 	 * @param array $messages        OpenAI-format conversation messages.
@@ -128,12 +142,16 @@ class ChatOrchestrator {
 	 * @param int   $userId          Authenticated user ID (0 = guest).
 	 * @param int   $assistantId     Assistant post ID (0 = none).
 	 * @param array $options         Additional options (temperature, max_tokens, etc.).
+	 * @param CancellationToken|null $cancellation Optional cooperative
+	 *     cancellation token; checked at every provider and tool boundary.
 	 *
 	 * @return array{
 	 *     response: array,
 	 *     tool_results: array,
 	 *     iterations: int,
 	 *     cost: array|null,
+	 *     cancelled: bool,
+	 *     cancel_reason: string,
 	 * }
 	 */
 	public function handleChat(
@@ -142,6 +160,7 @@ class ChatOrchestrator {
 		int $userId = 0,
 		int $assistantId = 0,
 		array $options = array(),
+		?CancellationToken $cancellation = null,
 	): array {
 		$maxIterations = (int) ( $assistantConfig['max_agentic_iterations'] ?? self::DEFAULT_MAX_ITERATIONS );
 		$maxIterations = \max( 1, \min( 50, $maxIterations ) );
@@ -181,10 +200,12 @@ class ChatOrchestrator {
 			$rateLimitKey = 'chat:' . $userId . ':' . $assistantId;
 			if ( ! $this->rateLimiter->isAllowed( $rateLimitKey, 60, 60 ) ) {
 				return array(
-					'response'     => $this->errors->rateLimited( 'Too many requests. Please wait before sending another message.' ),
-					'tool_results' => array(),
-					'iterations'   => 0,
-					'cost'         => null,
+					'response'      => $this->errors->rateLimited( 'Too many requests. Please wait before sending another message.' ),
+					'tool_results'  => array(),
+					'iterations'    => 0,
+					'cost'          => null,
+					'cancelled'     => false,
+					'cancel_reason' => '',
 				);
 			}
 			$this->rateLimiter->record( $rateLimitKey, 60 );
@@ -192,7 +213,7 @@ class ChatOrchestrator {
 
 		// Semantic compression — reduce message size when near token limits.
 		if ( null !== $this->compressor ) {
-			$modelId = $options['model'] ?? '';
+			$modelId = (string) $options['model'];
 			$tokenLimit = null !== $this->tokenBudget
 				? $this->tokenBudget->getModelLimit( $modelId )
 				: 128000;
@@ -206,13 +227,16 @@ class ChatOrchestrator {
 				$estimatedTokens += $this->compressor->estimateTokens( $content );
 			}
 
-			// Compress if over 80% of limit.
+			// Compress if over 80% of limit. The SemanticCompressorInterface
+			// contract is compress( string, int aggressiveness, int maxTokens )
+			// — pass ints, never the legacy options array.
 			if ( $estimatedTokens > (int) ( $tokenLimit * 0.8 ) ) {
 				$result = $this->compressor->compress(
 					\json_encode( $messages ),
-					[ 'target_ratio' => 0.7, 'preserve_facts' => true ]
+					2,
+					0,
 				);
-				if ( $result['success'] ?? false ) {
+				if ( ! empty( $result['compressed'] ) && \is_string( $result['compressed'] ) ) {
 					$decoded = \json_decode( $result['compressed'], true );
 					if ( \is_array( $decoded ) ) {
 						$messages = $decoded;
@@ -226,21 +250,38 @@ class ChatOrchestrator {
 			$options['prompt_cache_key'] = $assistantConfig['prompt_cache_key'];
 		}
 
+		// Cooperative cancellation — checked at every provider and tool boundary.
+		if ( null !== $cancellation && $cancellation->isCancelled() ) {
+			return $this->cancelledResult( array(), $cancellation );
+		}
+
+		$costAccumulator = self::newCostAccumulator();
+
 		// Initial LLM call.
 		$response = $this->providers->chat( $messages, $options, $assistantConfig );
+		$this->accumulateUsage( $response, $costAccumulator );
 
 		if ( $this->errors->isError( $response ) ) {
 			return array(
-				'response'     => $this->errors->normalize( $response ),
-				'tool_results' => array(),
-				'iterations'   => 0,
-				'cost'         => null,
+				'response'      => $this->errors->normalize( $response ),
+				'tool_results'  => array(),
+				'iterations'    => 0,
+				'cost'          => null,
+				'cancelled'     => false,
+				'cancel_reason' => '',
 			);
 		}
 
 		// ─── Agentic loop ────────────────────────────────────────────
 
+		$cancelled = false;
+
 		while ( $iteration < $maxIterations ) {
+			if ( null !== $cancellation && $cancellation->isCancelled() ) {
+				$cancelled = true;
+				break;
+			}
+
 			$toolCalls = $this->extractToolCalls( $response );
 
 			if ( array() === $toolCalls ) {
@@ -250,7 +291,7 @@ class ChatOrchestrator {
 			// finish_reason-aware exit.
 			$finishReason = $response['choices'][0]['finish_reason'] ?? null;
 			if ( 'stop' === $finishReason ) {
-				$response = $this->stripOrphanedToolCalls( $response );
+				$this->stripOrphanedToolCalls( $response );
 				break;
 			}
 			if ( 'length' === $finishReason ) {
@@ -265,6 +306,11 @@ class ChatOrchestrator {
 
 			// Execute each tool.
 			foreach ( $toolCalls as $toolCall ) {
+				if ( null !== $cancellation && $cancellation->isCancelled() ) {
+					$cancelled = true;
+					break;
+				}
+
 				$toolName   = $toolCall['function']['name'] ?? '';
 				$toolCallId = $toolCall['id'] ?? '';
 				$rawArgs    = $toolCall['function']['arguments'] ?? '{}';
@@ -276,10 +322,11 @@ class ChatOrchestrator {
 					$toolName,
 					$arguments,
 					array(
-						'user_id'      => $userId,
-						'assistant_id' => $assistantId,
-						'agentic_loop' => true,
-						'iteration'    => $iteration,
+						'user_id'       => $userId,
+						'assistant_id'  => $assistantId,
+						'agentic_loop'  => true,
+						'iteration'     => $iteration,
+						'auth_provider' => $this->authProvider,
 					)
 				);
 
@@ -294,6 +341,12 @@ class ChatOrchestrator {
 				} else {
 					// Sanitize: strip base64 to save tokens in LLM context.
 					$resultContent = \json_encode( $this->sanitizeToolResult( $result ) );
+				}
+
+				// Track byte budget if wired (accounting only — spill
+				// behavior is a later-phase policy).
+				if ( null !== $this->budgetTracker ) {
+					$this->budgetTracker->record( \strlen( $resultContent ) );
 				}
 
 				// Extract images for vision models.
@@ -321,8 +374,18 @@ class ChatOrchestrator {
 				$messages[] = $toolMsg;
 			}
 
+			if ( $cancelled ) {
+				break;
+			}
+
+			if ( null !== $cancellation && $cancellation->isCancelled() ) {
+				$cancelled = true;
+				break;
+			}
+
 			// Call LLM again with tool results.
 			$response = $this->providers->chat( $messages, $options, $assistantConfig );
+			$this->accumulateUsage( $response, $costAccumulator );
 
 			if ( $this->errors->isError( $response ) ) {
 				break;
@@ -342,7 +405,7 @@ class ChatOrchestrator {
 
 		// Strip orphaned tool calls if loop hit max iterations.
 		$limitReached = $iteration >= $maxIterations;
-		if ( $limitReached ) {
+		if ( $limitReached || $cancelled ) {
 			$this->stripOrphanedToolCalls( $response );
 		}
 
@@ -369,18 +432,41 @@ class ChatOrchestrator {
 			)
 		);
 
-		// Calculate cost.
-		$cost = $this->costs->calculateFromResponse(
-			$response,
-			$options['provider'],
-			$options['model'],
+		// Calculate cost from accumulated per-iteration usage.
+		$cost = null;
+		if ( \is_array( $response ) ) {
+			$cost = $this->costs->calculateFromResponse(
+				$response,
+				$options['provider'],
+				$options['model'],
+			);
+
+			if ( null !== $cost
+				&& ( $costAccumulator['total_prompt_tokens'] > 0 || $costAccumulator['total_completion_tokens'] > 0 )
+			) {
+				$cost['prompt_tokens']            = $costAccumulator['total_prompt_tokens'];
+				$cost['completion_tokens']        = $costAccumulator['total_completion_tokens'];
+				$cost['agentic_accumulated']      = $costAccumulator;
+				$cost['agentic_iterations_count'] = $iteration;
+			}
+		}
+
+		$this->events->dispatch(
+			new CostCalculated(
+				costData: $cost ?? array(),
+				assistantId: $assistantId,
+				userId: $userId,
+				response: \is_array( $response ) ? $response : array(),
+			)
 		);
 
 		return array(
-			'response'     => $response,
-			'tool_results' => $toolResultMessages,
-			'iterations'   => $iteration,
-			'cost'         => $cost,
+			'response'      => $response,
+			'tool_results'  => $toolResultMessages,
+			'iterations'    => $iteration,
+			'cost'          => $cost,
+			'cancelled'     => $cancelled,
+			'cancel_reason' => $cancelled ? ( $cancellation?->reason() ?? '' ) : '',
 		);
 	}
 
@@ -399,6 +485,7 @@ class ChatOrchestrator {
 		int $userId = 0,
 		int $assistantId = 0,
 		array $options = array(),
+		?CancellationToken $cancellation = null,
 	): array {
 		$this->sse->sendHeaders();
 
@@ -440,7 +527,12 @@ class ChatOrchestrator {
 			)
 		);
 
-		$onStreamChunk = function ( string $token ): void {
+		$onStreamChunk = function ( string $token ) use ( $cancellation ): void {
+			// Cooperative cancellation: stop emitting chunks once cancelled.
+			if ( null !== $cancellation && $cancellation->isCancelled() ) {
+				return;
+			}
+
 			$this->sse->sendEvent(
 				'message',
 				array(
@@ -459,10 +551,25 @@ class ChatOrchestrator {
 			if ( ! $this->rateLimiter->isAllowed( $key, 60, 60 ) ) {
 				$this->sse->sendEvent( 'error', [ 'code' => 'rate_limited', 'message' => 'Too many requests.' ] );
 				$this->sse->sendDone();
-				return [ 'response' => $this->errors->rateLimited( 'Rate limited' ), 'tool_results' => [], 'iterations' => 0, 'cost' => null ];
+				return [
+					'response'      => $this->errors->rateLimited( 'Rate limited' ),
+					'tool_results'  => [],
+					'iterations'    => 0,
+					'cost'          => null,
+					'cancelled'     => false,
+					'cancel_reason' => '',
+				];
 			}
 			$this->rateLimiter->record( $key, 60 );
 		}
+
+		if ( null !== $cancellation && $cancellation->isCancelled() ) {
+			$this->sse->sendEvent( 'error', [ 'code' => 'cancelled', 'message' => 'Request cancelled.' ] );
+			$this->sse->sendDone();
+			return $this->cancelledResult( array(), $cancellation );
+		}
+
+		$costAccumulator = self::newCostAccumulator();
 
 		$response = $this->providers->stream(
 			$messages,
@@ -470,6 +577,7 @@ class ChatOrchestrator {
 			$assistantConfig,
 			$onStreamChunk,
 		);
+		$this->accumulateUsage( $response, $costAccumulator );
 
 		if ( $this->errors->isError( $response ) ) {
 			$normalized = $this->errors->normalize( $response );
@@ -482,16 +590,25 @@ class ChatOrchestrator {
 			);
 			$this->sse->sendDone();
 			return array(
-				'response'     => $normalized,
-				'tool_results' => array(),
-				'iterations'   => 0,
-				'cost'         => null,
+				'response'      => $normalized,
+				'tool_results'  => array(),
+				'iterations'    => 0,
+				'cost'          => null,
+				'cancelled'     => false,
+				'cancel_reason' => '',
 			);
 		}
 
 		// ─── Streaming agentic loop ──────────────────────────────────
 
+		$cancelled = false;
+
 		while ( $iteration < $maxIterations ) {
+			if ( null !== $cancellation && $cancellation->isCancelled() ) {
+				$cancelled = true;
+				break;
+			}
+
 			$toolCalls = $this->extractToolCalls( $response );
 			if ( array() === $toolCalls ) {
 				break;
@@ -514,6 +631,11 @@ class ChatOrchestrator {
 			}
 
 			foreach ( $toolCalls as $toolCall ) {
+				if ( null !== $cancellation && $cancellation->isCancelled() ) {
+					$cancelled = true;
+					break;
+				}
+
 				$toolName   = $toolCall['function']['name'] ?? '';
 				$toolCallId = $toolCall['id'] ?? '';
 				$rawArgs    = $toolCall['function']['arguments'] ?? '{}';
@@ -535,10 +657,11 @@ class ChatOrchestrator {
 					$toolName,
 					$arguments,
 					array(
-						'user_id'      => $userId,
-						'assistant_id' => $assistantId,
-						'agentic_loop' => true,
-						'iteration'    => $iteration,
+						'user_id'       => $userId,
+						'assistant_id'  => $assistantId,
+						'agentic_loop'  => true,
+						'iteration'     => $iteration,
+						'auth_provider' => $this->authProvider,
 					)
 				);
 
@@ -551,6 +674,10 @@ class ChatOrchestrator {
 						: \json_encode( $result );
 				} else {
 					$resultContent = \json_encode( $result );
+				}
+
+				if ( null !== $this->budgetTracker ) {
+					$this->budgetTracker->record( \strlen( $resultContent ) );
 				}
 
 				// Stream: tool result.
@@ -582,6 +709,15 @@ class ChatOrchestrator {
 				$messages[] = $toolMsg;
 			}
 
+			if ( $cancelled ) {
+				break;
+			}
+
+			if ( null !== $cancellation && $cancellation->isCancelled() ) {
+				$cancelled = true;
+				break;
+			}
+
 			// Status: analyzing results.
 			$this->sse->sendEvent(
 				'status',
@@ -597,6 +733,7 @@ class ChatOrchestrator {
 				$assistantConfig,
 				$onStreamChunk,
 			);
+			$this->accumulateUsage( $response, $costAccumulator );
 
 			if ( $this->errors->isError( $response ) ) {
 				break;
@@ -613,15 +750,17 @@ class ChatOrchestrator {
 		}
 
 		$limitReached = $iteration >= $maxIterations;
-		if ( $limitReached ) {
+		if ( $limitReached || $cancelled ) {
 			$this->stripOrphanedToolCalls( $response );
-			$this->sse->sendEvent(
-				'status',
-				array(
-					'type'    => 'max_iterations',
-					'message' => 'Reached maximum tool execution iterations.',
-				)
-			);
+			if ( $limitReached ) {
+				$this->sse->sendEvent(
+					'status',
+					array(
+						'type'    => 'max_iterations',
+						'message' => 'Reached maximum tool execution iterations.',
+					)
+				);
+			}
 		}
 
 		$this->events->dispatch(
@@ -633,10 +772,31 @@ class ChatOrchestrator {
 			)
 		);
 
-		$cost = $this->costs->calculateFromResponse(
-			$response,
-			$options['provider'],
-			$options['model'],
+		$cost = null;
+		if ( \is_array( $response ) ) {
+			$cost = $this->costs->calculateFromResponse(
+				$response,
+				$options['provider'],
+				$options['model'],
+			);
+
+			if ( null !== $cost
+				&& ( $costAccumulator['total_prompt_tokens'] > 0 || $costAccumulator['total_completion_tokens'] > 0 )
+			) {
+				$cost['prompt_tokens']            = $costAccumulator['total_prompt_tokens'];
+				$cost['completion_tokens']        = $costAccumulator['total_completion_tokens'];
+				$cost['agentic_accumulated']      = $costAccumulator;
+				$cost['agentic_iterations_count'] = $iteration;
+			}
+		}
+
+		$this->events->dispatch(
+			new CostCalculated(
+				costData: $cost ?? array(),
+				assistantId: $assistantId,
+				userId: $userId,
+				response: \is_array( $response ) ? $response : array(),
+			)
 		);
 
 		$payload = array(
@@ -650,10 +810,12 @@ class ChatOrchestrator {
 		$this->sse->sendDone();
 
 		return array(
-			'response'     => $response,
-			'tool_results' => $toolResultMessages,
-			'iterations'   => $iteration,
-			'cost'         => $cost,
+			'response'      => $response,
+			'tool_results'  => $toolResultMessages,
+			'iterations'    => $iteration,
+			'cost'          => $cost,
+			'cancelled'     => $cancelled,
+			'cancel_reason' => $cancelled ? ( $cancellation?->reason() ?? '' ) : '',
 		);
 	}
 
@@ -730,6 +892,58 @@ class ChatOrchestrator {
 		$content = $response['choices'][0]['message']['content'] ?? $response['content'] ?? '';
 
 		return is_string( $content ) ? $content : '';
+	}
+
+	/**
+	 * Build an empty per-request cost accumulator.
+	 *
+	 * @return array{total_prompt_tokens: int, total_completion_tokens: int, cost_usd: float}
+	 */
+	private static function newCostAccumulator(): array {
+		return array(
+			'total_prompt_tokens'     => 0,
+			'total_completion_tokens' => 0,
+			'cost_usd'                => 0.0,
+		);
+	}
+
+	/**
+	 * Accumulate token usage from one provider response.
+	 *
+	 * Error responses (WP_Error, DomainError, etc.) contribute nothing.
+	 *
+	 * @param mixed $response    Provider response array or error object.
+	 * @param array $accumulator Mutable accumulator from newCostAccumulator().
+	 */
+	private function accumulateUsage( mixed $response, array &$accumulator ): void {
+		if ( ! is_array( $response ) ) {
+			return;
+		}
+
+		$usage = $response['usage'] ?? array();
+		if ( ! is_array( $usage ) ) {
+			return;
+		}
+
+		$accumulator['total_prompt_tokens']     += (int) ( $usage['prompt_tokens'] ?? 0 );
+		$accumulator['total_completion_tokens'] += (int) ( $usage['completion_tokens'] ?? 0 );
+		// cost_usd is recomputed by CostCalculator when the final cost is built.
+	}
+
+	/**
+	 * Build the canonical result payload for a cancelled request.
+	 *
+	 * @return array{response: array, tool_results: array, iterations: int, cost: null, cancelled: bool, cancel_reason: string}
+	 */
+	private function cancelledResult( array $response, CancellationToken $cancellation ): array {
+		return array(
+			'response'      => $response,
+			'tool_results'  => array(),
+			'iterations'    => 0,
+			'cost'          => null,
+			'cancelled'     => true,
+			'cancel_reason' => $cancellation->reason(),
+		);
 	}
 
 	/**

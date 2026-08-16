@@ -20,8 +20,10 @@ declare(strict_types=1);
 namespace Nvoos\WordPress\Adapter;
 
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface;
+use Nvoos\Core\Domain\Event\WaterfallChain;
 
-class EventDispatcher implements EventDispatcherInterface {
+class EventDispatcher implements EventDispatcherInterface, WaterfallEventDispatcherInterface {
 
 	/**
 	 * Map of domain event class names to WordPress hook names.
@@ -46,6 +48,20 @@ class EventDispatcher implements EventDispatcherInterface {
 	 * @var array<string, array<int, callable[]>>
 	 */
 	private array $filters = array();
+
+	/**
+	 * Registered waterfall listeners keyed by event name.
+	 *
+	 * @var array<string, array<int, callable[]>>
+	 */
+	private array $waterfalls = array();
+
+	/**
+	 * Registered serial listeners keyed by event name.
+	 *
+	 * @var array<string, array<int, callable[]>>
+	 */
+	private array $serials = array();
 
 	/**
 	 * Map a domain event class to a WordPress hook name.
@@ -117,8 +133,52 @@ class EventDispatcher implements EventDispatcherInterface {
 		$this->filters[ $eventName ][ $priority ][] = $filter;
 	}
 
+	public function listenWaterfall( string $eventName, callable $listener, int $priority = 10 ): void {
+		$this->waterfalls[ $eventName ][ $priority ][] = $listener;
+	}
+
+	public function waterfall( string $eventName, object $event, callable $final ): object {
+		$listeners = $this->getSortedCallbacks( $this->waterfalls[ $eventName ] ?? array() );
+
+		return WaterfallChain::build( $listeners, $final )( $event );
+	}
+
+	public function listenSerial( string $eventName, callable $listener, int $priority = 10 ): void {
+		$this->serials[ $eventName ][ $priority ][] = $listener;
+	}
+
+	public function serial( string $eventName, object $event ): void {
+		foreach ( $this->getSortedCallbacks( $this->serials[ $eventName ] ?? array() ) as $listener ) {
+			$listener( $event );
+		}
+	}
+
 	public function removeListener( string $eventName, callable $listener ): bool {
 		$removed = false;
+
+		// Remove from waterfall listeners.
+		if ( isset( $this->waterfalls[ $eventName ] ) ) {
+			foreach ( $this->waterfalls[ $eventName ] as $priority => &$callbacks ) {
+				foreach ( $callbacks as $index => $registered ) {
+					if ( $registered === $listener ) {
+						unset( $callbacks[ $index ] );
+						$removed = true;
+					}
+				}
+			}
+		}
+
+		// Remove from serial listeners.
+		if ( isset( $this->serials[ $eventName ] ) ) {
+			foreach ( $this->serials[ $eventName ] as $priority => &$callbacks ) {
+				foreach ( $callbacks as $index => $registered ) {
+					if ( $registered === $listener ) {
+						unset( $callbacks[ $index ] );
+						$removed = true;
+					}
+				}
+			}
+		}
 
 		// Remove from WordPress hooks.
 		if ( $this->isWordPressHook( $eventName ) ) {

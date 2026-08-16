@@ -441,6 +441,47 @@ function wp_mcp_ai_oos_orchestrator() {
 		$sse,
 	);
 
+	// ─── Optional collaborator wiring (Phase 0 parity) ──────────────
+	// The orchestrator's cross-cutting services were previously never wired,
+	// leaving rate limiting, token budgets, compression, and capability
+	// checks inert on the OOS path. Wire them all here.
+
+	$orchestrator->setAuthProvider( $auth );
+	$orchestrator->setRateLimiter( wp_mcp_ai_oos_rate_limiter() );
+	$orchestrator->setTokenBudgetManager( new Nvoos\Core\Infrastructure\Token\TokenBudgetManager() );
+	$orchestrator->setSemanticCompressor( wp_mcp_ai_oos_semantic_compressor() );
+	$orchestrator->setDataBudgetTracker( wp_mcp_ai_oos_data_budget_tracker( 'oos-chat' ) );
+
+	// ─── WP hook parity for agentic-loop observers ─────────────────
+	// The legacy loop fires wp_mcp_ai_agentic_iteration_complete and
+	// wp_mcp_ai_agentic_loop_completed with positional args. Bridge the
+	// domain events to those hooks with the exact legacy signatures so
+	// subscribers (PSO optimiser, observability exporters) receive the
+	// same payloads on both paths.
+
+	$events->listen(
+		Nvoos\Core\Domain\Event\AgenticIterationComplete::class,
+		static function ( object $event ): void {
+			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+			do_action( 'wp_mcp_ai_agentic_iteration_complete', $event->iteration, $event->assistantId );
+		}
+	);
+
+	$events->listen(
+		Nvoos\Core\Domain\Event\AgenticLoopCompleted::class,
+		static function ( object $event ): void {
+			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+			do_action(
+				'wp_mcp_ai_agentic_loop_completed',
+				$event->totalIterations,
+				$event->assistantId,
+				$event->toolResults,
+				$event->limitReached
+			);
+			// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		}
+	);
+
 	return $orchestrator;
 }
 

@@ -186,31 +186,45 @@ class ToolRegistry {
 
 		$startedAt = \microtime( true );
 
-		// Before hook.
-		$this->events->dispatch(
-			new BeforeToolExecution(
-				toolSlug: $slug,
-				arguments: $arguments,
-				context: $context,
-				startedAtMicros: $startedAt,
-			)
-		);
+		// Before hook. A throwing listener (e.g., a platform gate such as the
+		// destructive-ops confirmation) must block the tool — never crash the
+		// whole agentic loop with an uncaught exception.
+		try {
+			$this->events->dispatch(
+				new BeforeToolExecution(
+					toolSlug: $slug,
+					arguments: $arguments,
+					context: $context,
+					startedAtMicros: $startedAt,
+				)
+			);
+		} catch ( \Throwable $e ) {
+			return $this->errors->create(
+				'tool_listener_blocked',
+				'Tool pre-execution listener blocked or failed: ' . $e->getMessage(),
+				array( 'listener' => \get_class( $e ) ),
+			);
+		}
 
 		$result = $tool->execute( $arguments, $context );
 
 		$durationMs = ( \microtime( true ) - $startedAt ) * 1000;
 
-		// After hook.
-		$this->events->dispatch(
-			new AfterToolExecution(
-				toolSlug: $slug,
-				arguments: $arguments,
-				context: $context,
-				result: $result,
-				isError: $this->errors->isError( $result ),
-				durationMs: $durationMs,
-			)
-		);
+		// After hook. Observability failures must never corrupt the tool result.
+		try {
+			$this->events->dispatch(
+				new AfterToolExecution(
+					toolSlug: $slug,
+					arguments: $arguments,
+					context: $context,
+					result: $result,
+					isError: $this->errors->isError( $result ),
+					durationMs: $durationMs,
+				)
+			);
+		} catch ( \Throwable $e ) {
+			// Swallow: after-the-fact observers cannot veto an executed tool.
+		}
 
 		return $result;
 	}
