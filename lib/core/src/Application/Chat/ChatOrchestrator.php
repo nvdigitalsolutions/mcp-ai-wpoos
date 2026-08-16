@@ -25,6 +25,7 @@ namespace Nvoos\Core\Application\Chat;
 
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Session\SessionLog;
+use Nvoos\Core\Application\Session\SessionTelemetry;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
@@ -134,6 +135,14 @@ class ChatOrchestrator {
 	 */
 	private ?CompactionProvider $compactionProvider = null;
 
+	/**
+	 * Optional telemetry tap on the session log (Phase 5, R6).
+	 *
+	 * Every appended log entry fans out to subscribers here — the single
+	 * path audit/telemetry consumers use instead of re-wrapping the loop.
+	 */
+	private ?SessionTelemetry $sessionTelemetry = null;
+
 	public function __construct(
 		private readonly ToolRegistry $tools,
 		private readonly ProviderRouter $providers,
@@ -207,6 +216,17 @@ class ChatOrchestrator {
 	 */
 	public function setCompactionProvider( CompactionProvider $provider ): void {
 		$this->compactionProvider = $provider;
+	}
+
+	/**
+	 * Wire the session-log telemetry tap (Phase 5, R6).
+	 *
+	 * Subscribers receive every appended log entry. Pass null to detach.
+	 *
+	 * @param SessionTelemetry|null $telemetry Telemetry tap.
+	 */
+	public function setSessionTelemetry( ?SessionTelemetry $telemetry ): void {
+		$this->sessionTelemetry = $telemetry;
 	}
 
 	/**
@@ -352,7 +372,7 @@ class ChatOrchestrator {
 		if ( null !== $cancellation && $cancellation->isCancelled() ) {
 			$this->recordSessionEvent(
 				SessionLog::TYPE_TURN_ENDED,
-				array( 'reason' => 'aborted', 'iterations' => 0 ),
+				array( 'reason' => 'aborted', 'iterations' => 0, 'assistant_id' => $assistantId, 'user_id' => $userId ),
 				$sessionId,
 			);
 
@@ -367,7 +387,7 @@ class ChatOrchestrator {
 		if ( $preStepRejected ) {
 			$this->recordSessionEvent(
 				SessionLog::TYPE_TURN_ENDED,
-				array( 'reason' => 'rejected', 'iterations' => 0 ),
+				array( 'reason' => 'rejected', 'iterations' => 0, 'assistant_id' => $assistantId, 'user_id' => $userId ),
 				$sessionId,
 			);
 			$this->notifyTurnStopping( $assistantId, 0 );
@@ -398,7 +418,7 @@ class ChatOrchestrator {
 		if ( $this->errors->isError( $response ) ) {
 			$this->recordSessionEvent(
 				SessionLog::TYPE_TURN_ENDED,
-				array( 'reason' => 'request_error', 'iterations' => 0 ),
+				array( 'reason' => 'request_error', 'iterations' => 0, 'assistant_id' => $assistantId, 'user_id' => $userId ),
 				$sessionId,
 			);
 
@@ -498,6 +518,8 @@ class ChatOrchestrator {
 					$sessionId,
 				);
 
+				$toolStartedAt = \microtime( true );
+
 				$result = $this->tools->execute(
 					$toolName,
 					$arguments,
@@ -510,6 +532,9 @@ class ChatOrchestrator {
 						'shadow_mode'   => (bool) ( $options['shadow_mode'] ?? false ),
 					)
 				);
+
+				$toolDurationMs = \max( 0.0, ( \microtime( true ) - $toolStartedAt ) * 1000.0 );
+				$toolOutcome    = $this->errors->isError( $result ) ? 'error' : 'success';
 
 				// Normalize errors for LLM consumption.
 				if ( $this->errors->isError( $result ) ) {
@@ -530,13 +555,19 @@ class ChatOrchestrator {
 					$this->budgetTracker->record( \strlen( $resultContent ) );
 				}
 
-				// Log the model-visible result.
+				// Log the model-visible result plus the execution facts
+				// telemetry needs (Phase 5, R6): outcome, duration, and
+				// the acting identity — additive keys, replay-safe.
 				$this->recordSessionEvent(
 					SessionLog::TYPE_TOOL_RESULT,
 					array(
 						'tool_call_id' => (string) $toolCallId,
 						'name'         => (string) $toolName,
 						'content'      => (string) $resultContent,
+						'outcome'      => $toolOutcome,
+						'duration_ms'  => $toolDurationMs,
+						'user_id'      => $userId,
+						'assistant_id' => $assistantId,
 					),
 					$sessionId,
 				);
@@ -651,7 +682,7 @@ class ChatOrchestrator {
 			: ( $limitReached ? 'iteration_limit' : 'completed' );
 		$this->recordSessionEvent(
 			SessionLog::TYPE_TURN_ENDED,
-			array( 'reason' => $turnEndReason, 'iterations' => $iteration ),
+			array( 'reason' => $turnEndReason, 'iterations' => $iteration, 'assistant_id' => $assistantId, 'user_id' => $userId ),
 			$sessionId,
 		);
 
@@ -810,7 +841,7 @@ class ChatOrchestrator {
 			}
 			$this->recordSessionEvent(
 				SessionLog::TYPE_TURN_ENDED,
-				array( 'reason' => 'aborted', 'iterations' => 0 ),
+				array( 'reason' => 'aborted', 'iterations' => 0, 'assistant_id' => $assistantId, 'user_id' => $userId ),
 				$sessionId,
 			);
 			$this->sse->sendEvent( 'error', [ 'code' => 'cancelled', 'message' => 'Request cancelled.' ] );
@@ -845,7 +876,7 @@ class ChatOrchestrator {
 		if ( $preStepRejected ) {
 			$this->recordSessionEvent(
 				SessionLog::TYPE_TURN_ENDED,
-				array( 'reason' => 'rejected', 'iterations' => 0 ),
+				array( 'reason' => 'rejected', 'iterations' => 0, 'assistant_id' => $assistantId, 'user_id' => $userId ),
 				$sessionId,
 			);
 			$this->sse->sendEvent( 'status', array( 'type' => 'rejected', 'message' => 'Request rejected by policy.' ) );
@@ -875,7 +906,7 @@ class ChatOrchestrator {
 			$normalized = $this->errors->normalize( $response );
 			$this->recordSessionEvent(
 				SessionLog::TYPE_TURN_ENDED,
-				array( 'reason' => 'request_error', 'iterations' => 0 ),
+				array( 'reason' => 'request_error', 'iterations' => 0, 'assistant_id' => $assistantId, 'user_id' => $userId ),
 				$sessionId,
 			);
 			$this->sse->sendEvent(
@@ -988,6 +1019,8 @@ class ChatOrchestrator {
 					)
 				);
 
+				$toolStartedAt = \microtime( true );
+
 				$result = $this->tools->execute(
 					$toolName,
 					$arguments,
@@ -1000,6 +1033,9 @@ class ChatOrchestrator {
 						'shadow_mode'   => (bool) ( $options['shadow_mode'] ?? false ),
 					)
 				);
+
+				$toolDurationMs = \max( 0.0, ( \microtime( true ) - $toolStartedAt ) * 1000.0 );
+				$toolOutcome    = $this->errors->isError( $result ) ? 'error' : 'success';
 
 				if ( $this->errors->isError( $result ) ) {
 					$normalized    = $this->errors->normalize( $result );
@@ -1016,13 +1052,19 @@ class ChatOrchestrator {
 					$this->budgetTracker->record( \strlen( $resultContent ) );
 				}
 
-				// Log the model-visible result.
+				// Log the model-visible result plus the execution facts
+				// telemetry needs (Phase 5, R6): outcome, duration, and
+				// the acting identity — additive keys, replay-safe.
 				$this->recordSessionEvent(
 					SessionLog::TYPE_TOOL_RESULT,
 					array(
 						'tool_call_id' => (string) $toolCallId,
 						'name'         => (string) $toolName,
 						'content'      => (string) $resultContent,
+						'outcome'      => $toolOutcome,
+						'duration_ms'  => $toolDurationMs,
+						'user_id'      => $userId,
+						'assistant_id' => $assistantId,
 					),
 					$sessionId,
 				);
@@ -1138,7 +1180,7 @@ class ChatOrchestrator {
 			: ( $limitReached ? 'iteration_limit' : 'completed' );
 		$this->recordSessionEvent(
 			SessionLog::TYPE_TURN_ENDED,
-			array( 'reason' => $turnEndReason, 'iterations' => $iteration ),
+			array( 'reason' => $turnEndReason, 'iterations' => $iteration, 'assistant_id' => $assistantId, 'user_id' => $userId ),
 			$sessionId,
 		);
 
@@ -1413,11 +1455,16 @@ class ChatOrchestrator {
 
 		$this->sessionLog->append( $type, $data );
 
-		if ( null !== $this->sessionLogStore && '' !== $sessionId ) {
-			$last = $this->sessionLog->lastEvent();
-			if ( null !== $last ) {
-				$this->sessionLogStore->append( $sessionId, $last->toArray() );
-			}
+		$last = $this->sessionLog->lastEvent();
+
+		if ( null !== $this->sessionLogStore && '' !== $sessionId && null !== $last ) {
+			$this->sessionLogStore->append( $sessionId, $last->toArray() );
+		}
+
+		// Telemetry single-path (Phase 5, R6): fan the appended entry out
+		// to subscribers instead of letting them re-wrap the loop.
+		if ( null !== $this->sessionTelemetry && null !== $last ) {
+			$this->sessionTelemetry->notify( $last );
 		}
 	}
 

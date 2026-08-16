@@ -519,6 +519,79 @@ final class ChatOrchestratorTest extends TestCase {
 		$this->assertContains( 'Nvoos\Core\Domain\Event\AgentTurnStopping', $seen );
 	}
 
+	public function testToolResultCarriesTelemetryFacts(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , ] = $this->orchestrator(
+			$tool,
+			array( $this->toolCallResponse(), $this->finalResponse() )
+		);
+
+		$sessionLog = new \Nvoos\Core\Application\Session\SessionLog();
+		$orchestrator->setSessionLog( $sessionLog );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array(
+				'tools'    => array( 'echo_tool' ),
+				'provider' => 'openai',
+				'model'    => 'gpt-4o',
+			),
+		);
+
+		$toolResult = null;
+
+		foreach ( $sessionLog->events() as $event ) {
+			if ( \Nvoos\Core\Application\Session\SessionLog::TYPE_TOOL_RESULT === $event->type ) {
+				$toolResult = $event->data;
+			}
+		}
+
+		$this->assertNotNull( $toolResult, 'A tool_result entry must be logged.' );
+		$this->assertSame( 'echo_tool', $toolResult['name'] );
+		$this->assertSame( 'success', $toolResult['outcome'] );
+		$this->assertIsFloat( $toolResult['duration_ms'] );
+		$this->assertGreaterThanOrEqual( 0.0, $toolResult['duration_ms'] );
+		$this->assertSame( 0, $toolResult['user_id'] );
+		$this->assertSame( 0, $toolResult['assistant_id'] );
+	}
+
+	public function testSessionTelemetryTapFansOutAppendedEvents(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, , ] = $this->orchestrator(
+			$tool,
+			array( $this->toolCallResponse(), $this->finalResponse() )
+		);
+
+		$sessionLog = new \Nvoos\Core\Application\Session\SessionLog();
+		$orchestrator->setSessionLog( $sessionLog );
+
+		$telemetry = new \Nvoos\Core\Application\Session\SessionTelemetry();
+		$seen      = array();
+
+		$telemetry->subscribe(
+			static function ( \Nvoos\Core\Application\Session\SessionEvent $event ) use ( &$seen ): void {
+				$seen[] = $event->type;
+			}
+		);
+
+		$orchestrator->setSessionTelemetry( $telemetry );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array(
+				'tools'    => array( 'echo_tool' ),
+				'provider' => 'openai',
+				'model'    => 'gpt-4o',
+			),
+		);
+
+		$this->assertContains( \Nvoos\Core\Application\Session\SessionLog::TYPE_TURN_STARTED, $seen );
+		$this->assertContains( \Nvoos\Core\Application\Session\SessionLog::TYPE_TOOL_CALL, $seen );
+		$this->assertContains( \Nvoos\Core\Application\Session\SessionLog::TYPE_TOOL_RESULT, $seen );
+		$this->assertContains( \Nvoos\Core\Application\Session\SessionLog::TYPE_TURN_ENDED, $seen );
+		$this->assertSame( $sessionLog->count(), \count( $seen ), 'The tap observes exactly the log entries.' );
+	}
+
 	public function testSessionLogReplayReproducesProviderMessages(): void {
 		[$tool, ] = $this->echoTool();
 		[$orchestrator, , $dispatcher] = $this->orchestrator(

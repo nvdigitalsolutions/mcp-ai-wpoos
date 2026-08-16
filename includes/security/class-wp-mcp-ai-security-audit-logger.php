@@ -93,6 +93,24 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
 		const EVENT_UPLOAD_BLOCKED = 'upload_blocked';
 
 		/**
+		 * Event type: an assistant tool executed (session-log sourced,
+		 * Proposal 029 Phase 5.8).
+		 *
+		 * @since 1.3.0
+		 * @var string
+		 */
+		const EVENT_TOOL_EXECUTION = 'tool_execution';
+
+		/**
+		 * Event type: a chat turn boundary (session-log sourced,
+		 * Proposal 029 Phase 5.8).
+		 *
+		 * @since 1.3.0
+		 * @var string
+		 */
+		const EVENT_CHAT_TURN = 'chat_turn';
+
+		/**
 		 * Register hooks and schedule the purge cron.
 		 *
 		 * Hooks into `rest_api_init` to register the REST endpoint and
@@ -110,6 +128,73 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Audit_Logger' ) ) {
 			}
 
 			add_action( 'wp_mcp_ai_purge_security_events', array( __CLASS__, 'purge_old_events' ) );
+
+			/**
+			 * Filters whether the audit logger consumes session-log events
+			 * (Proposal 029 Phase 5.8, telemetry single-path).
+			 *
+			 * Default OFF until the session log is promoted; audit rows
+			 * for tool executions and turn boundaries are then sourced
+			 * from the log instead of loop hooks.
+			 *
+			 * @since 1.3.0
+			 *
+			 * @param bool $enabled Default false.
+			 */
+			if ( apply_filters( 'wp_mcp_ai_audit_from_session_log_enabled', false ) ) {
+				add_action( 'wp_mcp_ai_session_log_event', array( __CLASS__, 'on_session_log_event' ), 10, 4 );
+			}
+		}
+
+		/**
+		 * Session-log-event handler: audit tool executions and turn
+		 * boundaries from the append-only log (telemetry single-path).
+		 *
+		 * @param string $type Entry type (SessionLog::TYPE_*).
+		 * @param array  $data Type-specific payload.
+		 * @param int    $seq  Monotonic entry sequence.
+		 * @param float  $time Entry timestamp.
+		 * @return void
+		 */
+		public static function on_session_log_event( $type, $data, $seq, $time ) {
+			unset( $time );
+
+			if ( ! is_array( $data ) ) {
+				return;
+			}
+
+			$user_id = isset( $data['user_id'] ) ? absint( $data['user_id'] ) : 0;
+
+			if ( 'tool_result' === $type ) {
+				self::log_event(
+					self::EVENT_TOOL_EXECUTION,
+					$user_id,
+					array(
+						'tool_slug'    => isset( $data['name'] ) ? sanitize_text_field( (string) $data['name'] ) : '',
+						'outcome'      => isset( $data['outcome'] ) ? sanitize_text_field( (string) $data['outcome'] ) : 'success',
+						'duration_ms'  => isset( $data['duration_ms'] ) && is_numeric( $data['duration_ms'] ) ? (float) $data['duration_ms'] : null,
+						'assistant_id' => isset( $data['assistant_id'] ) ? absint( $data['assistant_id'] ) : 0,
+						'seq'          => absint( $seq ),
+						'source'       => 'session_log',
+					)
+				);
+				return;
+			}
+
+			if ( 'turn_started' === $type || 'turn_ended' === $type ) {
+				self::log_event(
+					self::EVENT_CHAT_TURN,
+					$user_id,
+					array(
+						'phase'        => 'turn_started' === $type ? 'started' : 'ended',
+						'reason'       => isset( $data['reason'] ) ? sanitize_text_field( (string) $data['reason'] ) : '',
+						'iterations'   => isset( $data['iterations'] ) ? absint( $data['iterations'] ) : 0,
+						'assistant_id' => isset( $data['assistant_id'] ) ? absint( $data['assistant_id'] ) : 0,
+						'seq'          => absint( $seq ),
+						'source'       => 'session_log',
+					)
+				);
+			}
 		}
 
 		/**

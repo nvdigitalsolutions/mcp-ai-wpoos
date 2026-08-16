@@ -383,7 +383,7 @@ Base wp.org distribution builds exclude `lib/core/` — all core changes are inv
 | 5.5 | R5 Plan mode as logged state (Pro) | ⏸ deferred | Same cross-request-state dependency as 5.4; session-log durability (Phase 3) is the prerequisite and is already in place |
 | 5.6 | R6 Compaction seam | ✅ merged (Phase 5 Base) | `CompactionProvider` + logged `context_compacted` entries; replay roundtrip test |
 | 5.7 | R6 Golden transcript replay | ✅ merged (Phase 5 Base) | export/rebuild/derive roundtrip; `composer run parity` wiring tracked in Phase 4 |
-| 5.8 | R6 Telemetry single-path | 🔜 next | Audit-logger/OTel subscribers consume `tool_result` + turn events from the log (Phase 6 cleanup pairs with loop deletion) |
+| 5.8 | R6 Telemetry single-path | ✅ delivered | `SessionTelemetry` tap + `SessionTelemetryBridge` fan appended log entries out via `wp_mcp_ai_session_log_event`; `WP_MCP_AI_Session_Log_Observer` projects tool_result/turn events onto the metric collector; the audit logger consumes the same stream (both flag-gated, default off). tool_result entries enriched with outcome/duration/user/assistant; turn boundaries carry assistant/user ids. Phase 6 cleanup pairs the legacy-hook observers' retirement with loop deletion |
 
 **Pro-pass discoveries (this slice):**
 

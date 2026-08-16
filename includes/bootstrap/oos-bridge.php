@@ -488,6 +488,15 @@ function wp_mcp_ai_oos_orchestrator() {
 			new Nvoos\Core\Application\Session\SessionLog(),
 			new Nvoos\WordPress\Adapter\SessionLogStore(),
 		);
+
+		// Telemetry single-path (Proposal 029 Phase 5, R6): fan appended
+		// log entries out to WordPress consumers via one action instead
+		// of letting them re-wrap the loop. Opt-in via its own flag.
+		if ( wp_mcp_ai_enable_session_telemetry() ) {
+			$telemetry = new Nvoos\Core\Application\Session\SessionTelemetry();
+			new Nvoos\WordPress\Adapter\SessionTelemetryBridge( $telemetry );
+			$orchestrator->setSessionTelemetry( $telemetry );
+		}
 	}
 
 	// Compaction seam (Proposal 029 Phase 5, R6): budget-driven between-step
@@ -645,6 +654,28 @@ function wp_mcp_ai_enable_session_log(): bool {
 	}
 
 	return (bool) \apply_filters( 'wp_mcp_ai_enable_session_log', false );
+}
+
+/**
+ * Whether OOS session-log telemetry (Proposal 029, Phase 5.8) is enabled.
+ *
+ * Off by default: when enabled, every appended session-log entry fans out
+ * to WordPress consumers via the wp_mcp_ai_session_log_event action —
+ * the single path audit/telemetry subscribers consume instead of
+ * re-wrapping the loop. Requires session logging (above) to be enabled.
+ *
+ * Enable via the admin setting enable_oos_session_telemetry or the
+ * wp_mcp_ai_enable_session_telemetry filter.
+ *
+ * @return bool
+ */
+function wp_mcp_ai_enable_session_telemetry(): bool {
+	$settings = \get_option( 'wp_mcp_ai_settings', array() );
+	if ( ! empty( $settings['enable_oos_session_telemetry'] ) ) {
+		return true;
+	}
+
+	return (bool) \apply_filters( 'wp_mcp_ai_enable_session_telemetry', false );
 }
 
 /**
