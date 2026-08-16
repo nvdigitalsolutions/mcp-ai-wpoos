@@ -31,7 +31,7 @@ interface WaterfallEventDispatcherInterface {
 	/**
 	 * Register a waterfall listener.
 	 *
-	 * Listener signature: function( object $event, callable $next ): object
+	 * Listener signature: function( object $event, callable $next ): mixed
 	 * Higher priorities run first (WordPress convention).
 	 */
 	public function listenWaterfall( string $eventName, callable $listener, int $priority = 10 ): void;
@@ -42,11 +42,11 @@ interface WaterfallEventDispatcherInterface {
 	 * @param string   $eventName Event name identifying the listener group.
 	 * @param object   $event     The event payload passed to each listener.
 	 * @param callable $final     Fallback invoked when every listener
-	 *                            delegates: function( object $event ): object.
-	 * @return object  The chain result — either a listener short-circuit
-	 *                 value or the fallback result.
+	 *                            delegates: function( object $event ): mixed.
+	 * @return mixed  The chain result — either a listener short-circuit
+	 *                value or the fallback result.
 	 */
-	public function waterfall( string $eventName, object $event, callable $final ): object;
+	public function waterfall( string $eventName, object $event, callable $final ): mixed;
 
 	/**
 	 * Register a serial (ordered, non-short-circuiting) listener.

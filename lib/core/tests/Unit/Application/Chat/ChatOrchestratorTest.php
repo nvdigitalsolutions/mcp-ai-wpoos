@@ -161,7 +161,11 @@ final class ChatOrchestratorTest extends TestCase {
 	private function orchestrator( ToolInterface $tool, array $responses, ?AuthProviderInterface $auth = null ): array {
 		$errors     = $this->errors();
 		$dispatcher = $this->createMock( EventDispatcherInterface::class );
-		$dispatcher->method( 'dispatch' )->willReturnCallback( static fn( object $event ): object => $event );
+		$dispatcher->method( 'dispatch' )->willReturnCallback(
+			static function ( object $event ): object {
+				return $event;
+			}
+		);
 
 		$registry = new ToolRegistry( $dispatcher, $errors );
 		$registry->register( $tool );

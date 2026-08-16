@@ -25,15 +25,15 @@ final class WaterfallChain {
 	 * Compose listeners into a chain.
 	 *
 	 * @param callable[] $listeners Ordered listeners (highest priority first).
-	 * @param callable   $fallback  Innermost handler: function( object $event ): object.
-	 * @return callable  function( object $event ): object
+	 * @param callable   $fallback  Innermost handler: function( object $event ): mixed.
+	 * @return callable  function( object $event ): mixed
 	 */
 	public static function build( array $listeners, callable $fallback ): callable {
 		$chain = $fallback;
 
 		foreach ( \array_reverse( $listeners ) as $listener ) {
 			$next  = $chain;
-			$chain = static function ( object $event ) use ( $listener, $next ): object {
+			$chain = static function ( object $event ) use ( $listener, $next ): mixed {
 				return $listener( $event, $next );
 			};
 		}

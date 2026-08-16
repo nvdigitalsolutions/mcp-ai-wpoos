@@ -137,7 +137,7 @@ class EventDispatcher implements EventDispatcherInterface, WaterfallEventDispatc
 		$this->waterfalls[ $eventName ][ $priority ][] = $listener;
 	}
 
-	public function waterfall( string $eventName, object $event, callable $final ): object {
+	public function waterfall( string $eventName, object $event, callable $final ): mixed {
 		$listeners = $this->getSortedCallbacks( $this->waterfalls[ $eventName ] ?? array() );
 
 		return WaterfallChain::build( $listeners, $final )( $event );

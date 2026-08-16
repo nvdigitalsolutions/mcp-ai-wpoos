@@ -427,6 +427,36 @@ function wp_mcp_ai_oos_orchestrator() {
 	$tool_registry->register( new Nvoos\WordPress\Tool\CreateAssistantValidatedTool( $error_factory ) );
 	$tool_registry->register( new Nvoos\WordPress\Tool\PerformanceOptimizerAssistantTool( $error_factory ) );
 
+	// ─── Anti-corruption layer (Proposal 029, Phase 1) ────────────────
+	// Expose every legacy WP_MCP_AI tool to the OOS engine through a thin
+	// adapter instead of migrating ~1,500 implementations. Native tools
+	// registered above shadow their legacy counterparts automatically.
+	if ( \class_exists( 'WP_MCP_AI_Tool_Registry' ) && \method_exists( 'WP_MCP_AI_Tool_Registry', 'get_instance' ) ) {
+		$legacy_registry = \WP_MCP_AI_Tool_Registry::get_instance();
+
+		if ( \method_exists( $legacy_registry, 'get_tools' ) ) {
+			foreach ( $legacy_registry->get_tools() as $legacy_slug => $legacy_tool ) {
+				if ( ! \is_object( $legacy_tool ) || ! \method_exists( $legacy_tool, 'get_slug' ) ) {
+					continue;
+				}
+
+				// get_tools() may be a list — derive the canonical slug.
+				if ( \is_int( $legacy_slug ) ) {
+					$legacy_slug = (string) $legacy_tool->get_slug();
+				}
+
+				// Native (migrated) tools shadow legacy implementations.
+				if ( null !== $tool_registry->get( (string) $legacy_slug ) ) {
+					continue;
+				}
+
+				$tool_registry->register(
+					new Nvoos\WordPress\Tool\LegacyToolAdapter( $legacy_tool, $error_factory )
+				);
+			}
+		}
+	}
+
 	$tool_registry->notifyRegistered();
 
 	$sse   = new Nvoos\Core\Infrastructure\Streaming\SseHandler( new WP_MCP_AI_WordPress_Flush() );
@@ -479,6 +509,27 @@ function wp_mcp_ai_oos_orchestrator() {
 				$event->limitReached
 			);
 			// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		}
+	);
+
+	// Fail-loud audit: log assistant-configured tool slugs that the OOS
+	// registry cannot resolve instead of dropping them silently.
+	$events->listen(
+		Nvoos\Core\Domain\Event\UnresolvedToolRequested::class,
+		static function ( object $event ): void {
+			if ( \class_exists( 'WP_MCP_AI_Logger' ) ) {
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+				\WP_MCP_AI_Logger::log_event(
+					'oos_unresolved_tool',
+					'Assistant requested a tool that is not registered in the OOS engine.',
+					array(
+						// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+						'slug'         => $event->slug,
+						// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+						'assistant_id' => $event->assistantId,
+					)
+				);
+			}
 		}
 	);
 

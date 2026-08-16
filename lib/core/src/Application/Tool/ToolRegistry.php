@@ -17,8 +17,15 @@ namespace Nvoos\Core\Application\Tool;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface;
+use Nvoos\Core\Domain\Contract\ToolGuardInterface;
+use Nvoos\Core\Domain\Decision\PreToolDecision;
+use Nvoos\Core\Domain\Decision\PostToolDecision;
 use Nvoos\Core\Domain\Event\BeforeToolExecution;
 use Nvoos\Core\Domain\Event\AfterToolExecution;
+use Nvoos\Core\Domain\Event\ToolsPreExecute;
+use Nvoos\Core\Domain\Event\ToolsExecute;
+use Nvoos\Core\Domain\Event\ToolsPostExecute;
 use Nvoos\Core\Domain\Event\ToolsRegistered;
 
 class ToolRegistry {
@@ -43,6 +50,16 @@ class ToolRegistry {
 	 * @var array<string, string>
 	 */
 	private array $aliases = array();
+
+	/**
+	 * Monotonic deny-only guards evaluated after the pre-execute waterfall.
+	 *
+	 * Ordering cannot turn a denial back into permission — a guard either
+	 * returns a denial reason or leaves the call allowed.
+	 *
+	 * @var ToolGuardInterface[]
+	 */
+	private array $guards = array();
 
 	public function __construct(
 		private readonly EventDispatcherInterface $events,
@@ -156,9 +173,26 @@ class ToolRegistry {
 	}
 
 	/**
+	 * Register a monotonic deny-only guard.
+	 */
+	public function addGuard( ToolGuardInterface $guard ): void {
+		$this->guards[] = $guard;
+	}
+
+	/**
+	 * Remove all registered guards (test teardown / runtime reset).
+	 */
+	public function clearGuards(): void {
+		$this->guards = array();
+	}
+
+	/**
 	 * Execute a tool by slug with arguments and context.
 	 *
-	 * Fires BeforeToolExecution and AfterToolExecution domain events.
+	 * Pipeline: legacy observer hook → tools/pre_execute waterfall
+	 * (allow/deny/ask) → monotonic guards → tools/execute around-dispatch
+	 * → tool body → legacy after hook → tools/post_execute waterfall
+	 * (accept/replace/block).
 	 *
 	 * @return mixed  Tool result or error.
 	 */
@@ -206,7 +240,59 @@ class ToolRegistry {
 			);
 		}
 
-		$result = $tool->execute( $arguments, $context );
+		// tools/pre_execute waterfall — extensible allow/deny/ask policy.
+		if ( $this->events instanceof WaterfallEventDispatcherInterface ) {
+			$preDecision = $this->events->waterfall(
+				'tools/pre_execute',
+				new ToolsPreExecute( slug: $slug, arguments: $arguments, context: $context ),
+				static function ( object $event ): PreToolDecision {
+					return PreToolDecision::allow();
+				},
+			);
+
+			if ( ! $preDecision instanceof PreToolDecision ) {
+				// A misbehaving listener returned an unexpected type — fail closed.
+				$preDecision = PreToolDecision::deny( "Tool '{$slug}' policy returned an invalid decision." );
+			}
+
+			if ( PreToolDecision::KIND_DENY === $preDecision->kind ) {
+				return $this->errors->create(
+					'tool_denied',
+					'' !== $preDecision->reason ? $preDecision->reason : "Tool '{$slug}' was denied by policy.",
+				);
+			}
+
+			if ( PreToolDecision::KIND_ASK === $preDecision->kind ) {
+				// No approval service is wired yet — approval asks fail closed.
+				return $this->errors->create(
+					'approval_required',
+					'' !== $preDecision->reason ? $preDecision->reason : "Tool '{$slug}' requires approval.",
+				);
+			}
+		}
+
+		// Monotonic guards — deny-only, ordering-proof.
+		foreach ( $this->guards as $guard ) {
+			$guardReason = $guard->evaluate( $slug, $arguments, $context );
+			if ( null !== $guardReason ) {
+				return $this->errors->create( 'tool_guarded', $guardReason );
+			}
+		}
+
+		// tools/execute around-dispatch — wrappers may wrap or replace the body.
+		$executeBody = static fn(): mixed => $tool->execute( $arguments, $context );
+
+		if ( $this->events instanceof WaterfallEventDispatcherInterface ) {
+			$result = $this->events->waterfall(
+				'tools/execute',
+				new ToolsExecute( slug: $slug, arguments: $arguments, context: $context ),
+				static function ( object $event ) use ( $executeBody ): mixed {
+					return $executeBody();
+				},
+			);
+		} else {
+			$result = $executeBody();
+		}
 
 		$durationMs = ( \microtime( true ) - $startedAt ) * 1000;
 
@@ -226,7 +312,52 @@ class ToolRegistry {
 			// Swallow: after-the-fact observers cannot veto an executed tool.
 		}
 
+		// tools/post_execute waterfall — accept, replace content, or block
+		// with corrective feedback.
+		if ( $this->events instanceof WaterfallEventDispatcherInterface ) {
+			$postDecision = $this->events->waterfall(
+				'tools/post_execute',
+				new ToolsPostExecute(
+					slug: $slug,
+					arguments: $arguments,
+					context: $context,
+					result: $result,
+					isError: $this->errors->isError( $result ),
+				),
+				static function ( object $event ): PostToolDecision {
+					return PostToolDecision::accept();
+				},
+			);
+
+			if ( ! $postDecision instanceof PostToolDecision ) {
+				// A misbehaving listener returned an unexpected type — keep the
+				// dispatch result rather than destroying an executed tool.
+				$postDecision = PostToolDecision::accept();
+			}
+
+			if ( PostToolDecision::KIND_BLOCK === $postDecision->kind ) {
+				return $this->errors->create(
+					'tool_blocked_with_feedback',
+					'Tool result was blocked by policy. Feedback: ' . ( is_string( $postDecision->content ) ? $postDecision->content : self::jsonEncodeSafe( $postDecision->content ) ),
+					array( 'feedback' => $postDecision->content ),
+				);
+			}
+
+			if ( PostToolDecision::KIND_REPLACE === $postDecision->kind && ! $this->errors->isError( $result ) ) {
+				$result = $postDecision->content;
+			}
+		}
+
 		return $result;
+	}
+
+	/**
+	 * JSON-encode a value without ever failing hard.
+	 */
+	private static function jsonEncodeSafe( mixed $value ): string {
+		$json = \json_encode( $value, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE );
+
+		return false === $json ? '(unserializable feedback)' : $json;
 	}
 
 	/**

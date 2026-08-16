@@ -32,6 +32,7 @@ use Nvoos\Core\Domain\Event\AfterChatResponse;
 use Nvoos\Core\Domain\Event\AgenticIterationComplete;
 use Nvoos\Core\Domain\Event\AgenticLoopCompleted;
 use Nvoos\Core\Domain\Event\CostCalculated;
+use Nvoos\Core\Domain\Event\UnresolvedToolRequested;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
@@ -170,7 +171,7 @@ class ChatOrchestrator {
 
 		// Build tool definitions for this assistant.
 		$allowedToolSlugs = $assistantConfig['tools'] ?? array();
-		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs );
+		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs, $assistantId );
 
 		// Always replace tools with the properly-resolved definitions.
 		// If no tools resolve (e.g., none are registered in the OOS
@@ -506,7 +507,7 @@ class ChatOrchestrator {
 		);
 
 		$allowedToolSlugs = $assistantConfig['tools'] ?? array();
-		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs );
+		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs, $assistantId );
 
 		// Always replace tools with the properly-resolved definitions.
 		// If no tools resolve (e.g., none are registered in the OOS
@@ -823,8 +824,15 @@ class ChatOrchestrator {
 
 	/**
 	 * Build tool definitions for only the allowed tools.
+	 *
+	 * Unresolved slugs are never sent to the provider; instead an
+	 * UnresolvedToolRequested event is dispatched so the platform adapter
+	 * can surface a fail-loud admin notice.
+	 *
+	 * @param string[] $allowedSlugs Assistant-configured tool slugs.
+	 * @param int      $assistantId  Assistant ID for audit attribution.
 	 */
-	private function buildAllowedTools( array $allowedSlugs ): array {
+	private function buildAllowedTools( array $allowedSlugs, int $assistantId = 0 ): array {
 		if ( array() === $allowedSlugs ) {
 			return array();
 		}
@@ -832,8 +840,19 @@ class ChatOrchestrator {
 		$definitions = array();
 
 		foreach ( $allowedSlugs as $slug ) {
+			if ( ! \is_string( $slug ) || '' === $slug ) {
+				continue;
+			}
+
 			$tool = $this->tools->get( $slug );
 			if ( null === $tool ) {
+				// Fail loud, never silently: misconfiguration must surface.
+				$this->events->dispatch(
+					new UnresolvedToolRequested(
+						slug: $slug,
+						assistantId: $assistantId,
+					)
+				);
 				continue;
 			}
 

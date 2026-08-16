@@ -113,10 +113,39 @@ final class WaterfallChainTest extends TestCase {
 	}
 
 	public function testEmptyListenerListIsIdentity(): void {
-		$chain = WaterfallChain::build( array(), static fn( object $event ): object => $event );
+		$chain = WaterfallChain::build(
+			array(),
+			static function ( object $event ): object {
+				return $event;
+			}
+		);
 
 		$event = $this->event( 'kept' );
 
 		$this->assertSame( $event, $chain( $event ) );
+	}
+
+	public function testChainCarriesNonObjectResults(): void {
+		// Tool results are arrays/errors, not objects — the chain must
+		// carry mixed values through every listener boundary.
+		$chain = WaterfallChain::build(
+			array(
+				static function ( object $event, callable $next ): mixed {
+					$result = $next( $event );
+
+					return array( 'wrapped' => $result );
+				},
+			),
+			static function ( object $event ): array {
+				return array( 'success' => true, 'message' => 'done' );
+			}
+		);
+
+		$result = $chain( $this->event() );
+
+		$this->assertSame(
+			array( 'wrapped' => array( 'success' => true, 'message' => 'done' ) ),
+			$result,
+		);
 	}
 }
