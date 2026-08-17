@@ -1235,6 +1235,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				true
 			);
 
+			// Enqueue the WordPress REST API client (wp-api) on the security tab.
+			// The security section prints inline scripts (posture refresh, IP tests,
+			// snapshot restore, compliance export, self-test) that call wp.apiRequest().
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+			if ( isset( $_GET['tab'] ) && 'security' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
+				wp_enqueue_script( 'wp-api' );
+			}
+
 			// Enqueue tools manager scripts if on tools tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
 			if ( isset( $_GET['tab'] ) && 'tools' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
