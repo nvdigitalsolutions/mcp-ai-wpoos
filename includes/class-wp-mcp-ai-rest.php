@@ -3090,6 +3090,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $this->handle_chat_request_oos( $request );
 			}
 
+			// Canary routing (Proposal 029, Phase 4.2): assistants opted in via
+			// the _wp_mcp_ai_engine post meta run on OOS without the global flag.
+			// Gated behind the wp_mcp_ai_oos_canary filter (default off).
+			if ( function_exists( 'wp_mcp_ai_oos_canary_enabled' ) && wp_mcp_ai_oos_canary_enabled( $request ) ) {
+				return $this->handle_chat_request_oos( $request );
+			}
+
 			// Check if this is a unified team, profession test, or regular assistant request.
 			$raw_assistant_id = $request->get_param( 'assistant_id' );
 			$team_id          = $this->extract_team_id( $raw_assistant_id );
@@ -12766,6 +12773,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$assistant_id
 				);
 
+				// Parity with the legacy loop: resolve the system prompt through the
+				// harness-layer filters (Prompt Injector cues, Guardrails instructions,
+				// Necessity Gate instructions) before it reaches the provider.
+				$assistant_config['system_prompt'] = (string) apply_filters(
+					'wp_mcp_ai_resolved_system_prompt',
+					isset( $assistant_config['system_prompt'] ) ? (string) $assistant_config['system_prompt'] : '',
+					(int) $assistant_id,
+					array(
+						'surface' => 'rest_chat',
+						'request' => $request,
+					)
+				);
+
 				// Merge profession configuration when testing a profession.
 			if ( $profession_id ) {
 				$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
@@ -12797,6 +12817,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 				$messages = $sanitized['messages'];
+
+			// Parity with the legacy loop: run the Guardrails message-screening
+			// filter over the latest user message before the orchestrator runs.
+			$last_user_message = '';
+			foreach ( \array_reverse( $messages ) as $msg ) {
+				if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+					$last_user_message = is_string( $msg['content'] ?? null ) ? $msg['content'] : '';
+					break;
+				}
+			}
+
+			if ( '' !== $last_user_message ) {
+				$screen_result = apply_filters(
+					'wp_mcp_ai_pre_chat_message',
+					null,
+					$last_user_message,
+					(int) $assistant_id,
+					array(
+						'surface' => 'rest_chat',
+						'request' => $request,
+					)
+				);
+
+				if ( is_wp_error( $screen_result ) ) {
+					return $screen_result;
+				}
+			}
 
 				// Inject system prompt from assistant config as the first message.
 				// The OOS ChatOrchestrator passes messages directly to the provider;
@@ -12863,12 +12910,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Pass through temperature and max_tokens from assistant config if not
-				// already set in request options.
+			// already set in request options.
 			if ( ! isset( $options['temperature'] ) && isset( $assistant_config['temperature'] ) && null !== $assistant_config['temperature'] ) {
 				$options['temperature'] = (float) $assistant_config['temperature'];
 			}
 			if ( ! isset( $options['max_tokens'] ) && ! empty( $assistant_config['max_tokens'] ) ) {
 				$options['max_tokens'] = (int) $assistant_config['max_tokens'];
+			}
+
+			// Session logging (Proposal 029, Phase 3): pass the transcript
+			// session key through so the log can be persisted per session.
+			if ( function_exists( 'wp_mcp_ai_enable_session_log' )
+				&& wp_mcp_ai_enable_session_log()
+				&& ! empty( $transcript_context['session_key'] )
+			) {
+				$options['session_id'] = (string) $transcript_context['session_key'];
 			}
 
 				// Inject professional prompt into system message when present.
@@ -12907,6 +12963,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
+			// Cooperative cancellation: probe the client connection on every
+			// boundary check so a disconnected browser (SSE or long agentic
+			// loops) stops burning provider calls and tool executions.
+			$cancellation = new \Nvoos\Core\Domain\ValueObject\CancellationToken(
+				null,
+				static function (): bool {
+					return \function_exists( 'connection_aborted' ) && 1 === \connection_aborted();
+				}
+			);
+
 			try {
 				// Delegate to the framework-agnostic orchestrator.
 				$orchestrator = wp_mcp_ai_oos_orchestrator();
@@ -12927,7 +12993,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						userId: $user_id,
 						assistantId: $assistant_id,
 						options: $options,
+						cancellation: $cancellation,
 					);
+
+					// Legacy-parity telemetry: interaction log + cost hook.
+					WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $result['response'] ?? array(), $user_id );
+
+					if ( ! empty( $result['cost'] ) ) {
+						do_action( 'wp_mcp_ai_cost_calculated', $result['cost'], $assistant_id, $user_id, $result['response'] ?? array(), $request );
+					}
 
 					// Record the transcript.
 					if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
@@ -12952,6 +13026,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					userId: $user_id,
 					assistantId: $assistant_id,
 					options: $options,
+					cancellation: $cancellation,
 				);
 			} catch ( \Exception $e ) {
 				WP_MCP_AI_Logger::log_error(
@@ -13003,6 +13078,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$user_id,
 					$transcript_context
 				);
+			}
+
+			// Legacy-parity telemetry: interaction log + cost hook.
+			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $result['response'] ?? array(), $user_id );
+
+			if ( ! empty( $result['cost'] ) ) {
+				do_action( 'wp_mcp_ai_cost_calculated', $result['cost'], $assistant_id, $user_id, $result['response'] ?? array(), $request );
 			}
 
 				// Translate OOS response back to WordPress REST format.
