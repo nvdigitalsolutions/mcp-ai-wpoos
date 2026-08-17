@@ -31,7 +31,7 @@ class CreateAssistantTool extends AbstractTool {
 	protected static bool $asyncHookRegistered = false;
 
 	public function __construct(
-		Nvoos\Core\Domain\Contract\ErrorFactoryInterface $errors,
+		ErrorFactoryInterface $errors,
 	) {
 		parent::__construct( $errors );
 		if ( ! self::$asyncHookRegistered ) {

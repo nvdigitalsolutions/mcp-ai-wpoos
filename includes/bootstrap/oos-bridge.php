@@ -427,6 +427,36 @@ function wp_mcp_ai_oos_orchestrator() {
 	$tool_registry->register( new Nvoos\WordPress\Tool\CreateAssistantValidatedTool( $error_factory ) );
 	$tool_registry->register( new Nvoos\WordPress\Tool\PerformanceOptimizerAssistantTool( $error_factory ) );
 
+	// ─── Anti-corruption layer (Proposal 029, Phase 1) ────────────────
+	// Expose every legacy WP_MCP_AI tool to the OOS engine through a thin
+	// adapter instead of migrating ~1,500 implementations. Native tools
+	// registered above shadow their legacy counterparts automatically.
+	if ( \class_exists( 'WP_MCP_AI_Tool_Registry' ) && \method_exists( 'WP_MCP_AI_Tool_Registry', 'get_instance' ) ) {
+		$legacy_registry = \WP_MCP_AI_Tool_Registry::get_instance();
+
+		if ( \method_exists( $legacy_registry, 'get_tools' ) ) {
+			foreach ( $legacy_registry->get_tools() as $legacy_slug => $legacy_tool ) {
+				if ( ! \is_object( $legacy_tool ) || ! \method_exists( $legacy_tool, 'get_slug' ) ) {
+					continue;
+				}
+
+				// get_tools() may be a list — derive the canonical slug.
+				if ( \is_int( $legacy_slug ) ) {
+					$legacy_slug = (string) $legacy_tool->get_slug();
+				}
+
+				// Native (migrated) tools shadow legacy implementations.
+				if ( null !== $tool_registry->get( (string) $legacy_slug ) ) {
+					continue;
+				}
+
+				$tool_registry->register(
+					new Nvoos\WordPress\Tool\LegacyToolAdapter( $legacy_tool, $error_factory )
+				);
+			}
+		}
+	}
+
 	$tool_registry->notifyRegistered();
 
 	$sse   = new Nvoos\Core\Infrastructure\Streaming\SseHandler( new WP_MCP_AI_WordPress_Flush() );
@@ -441,10 +471,296 @@ function wp_mcp_ai_oos_orchestrator() {
 		$sse,
 	);
 
+	// ─── Optional collaborator wiring (Phase 0 parity) ──────────────
+	// The orchestrator's cross-cutting services were previously never wired,
+	// leaving rate limiting, token budgets, compression, and capability
+	// checks inert on the OOS path. Wire them all here.
+
+	$orchestrator->setAuthProvider( $auth );
+	$orchestrator->setRateLimiter( wp_mcp_ai_oos_rate_limiter() );
+	$orchestrator->setTokenBudgetManager( new Nvoos\Core\Infrastructure\Token\TokenBudgetManager() );
+	$orchestrator->setSemanticCompressor( wp_mcp_ai_oos_semantic_compressor() );
+	$orchestrator->setDataBudgetTracker( wp_mcp_ai_oos_data_budget_tracker( 'oos-chat' ) );
+
+	// Session logging (Proposal 029 Phase 3, R1) — opt-in via flag.
+	if ( wp_mcp_ai_enable_session_log() ) {
+		$orchestrator->setSessionLog(
+			new Nvoos\Core\Application\Session\SessionLog(),
+			new Nvoos\WordPress\Adapter\SessionLogStore(),
+		);
+
+		// Telemetry single-path (Proposal 029 Phase 5, R6): fan appended
+		// log entries out to WordPress consumers via one action instead
+		// of letting them re-wrap the loop. Opt-in via its own flag.
+		if ( wp_mcp_ai_enable_session_telemetry() ) {
+			$telemetry = new Nvoos\Core\Application\Session\SessionTelemetry();
+			new Nvoos\WordPress\Adapter\SessionTelemetryBridge( $telemetry );
+			$orchestrator->setSessionTelemetry( $telemetry );
+		}
+	}
+
+	// Compaction seam (Proposal 029 Phase 5, R6): budget-driven between-step
+	// compaction with the WordPress adapters behind the provider contract.
+	$orchestrator->setCompactionProvider(
+		new Nvoos\Core\Application\Chat\CompactionProvider(
+			new Nvoos\WordPress\Adapter\ContextCompression(),
+			wp_mcp_ai_oos_semantic_compressor(),
+		)
+	);
+
+	// ─── WP hook parity for agentic-loop observers ─────────────────
+	// The legacy loop fires wp_mcp_ai_agentic_iteration_complete and
+	// wp_mcp_ai_agentic_loop_completed with positional args. Bridge the
+	// domain events to those hooks with the exact legacy signatures so
+	// subscribers (PSO optimiser, observability exporters) receive the
+	// same payloads on both paths.
+
+	$events->listen(
+		Nvoos\Core\Domain\Event\AgenticIterationComplete::class,
+		static function ( object $event ): void {
+			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+			do_action( 'wp_mcp_ai_agentic_iteration_complete', $event->iteration, $event->assistantId );
+		}
+	);
+
+	$events->listen(
+		Nvoos\Core\Domain\Event\AgenticLoopCompleted::class,
+		static function ( object $event ): void {
+			// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+			do_action(
+				'wp_mcp_ai_agentic_loop_completed',
+				$event->totalIterations,
+				$event->assistantId,
+				$event->toolResults,
+				$event->limitReached
+			);
+			// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		}
+	);
+
+	// Fail-loud audit: log assistant-configured tool slugs that the OOS
+	// registry cannot resolve instead of dropping them silently.
+	$events->listen(
+		Nvoos\Core\Domain\Event\UnresolvedToolRequested::class,
+		static function ( object $event ): void {
+			if ( \class_exists( 'WP_MCP_AI_Logger' ) ) {
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+				\WP_MCP_AI_Logger::log_event(
+					'oos_unresolved_tool',
+					'Assistant requested a tool that is not registered in the OOS engine.',
+					array(
+						// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+						'slug'         => $event->slug,
+						// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+						'assistant_id' => $event->assistantId,
+					)
+				);
+			}
+		}
+	);
+
+	// Parity bridge for the wp_mcp_ai_before_tool_execute filter (necessity
+	// gate, queue manager, workflow-optimizer cache). Legacy tools fire it
+	// themselves via their native trait; migrated (native) OOS tools skip it,
+	// so run the same filter as a tools/execute around-dispatch wrapper for
+	// native tools only. A non-null return short-circuits exactly like the
+	// legacy trait (WP_Error blocks, cache hits replace the result).
+	if ( $events instanceof Nvoos\Core\Domain\Contract\WaterfallEventDispatcherInterface ) {
+		// Shadow-mode write suppression runs FIRST (higher priority) so a
+		// shadow run can never reach the parity wrapper's cache/queue filters
+		// for a write-class tool.
+		$events->listenWaterfall(
+			'tools/execute',
+			static function ( object $event, callable $next ) use ( $tool_registry ): mixed {
+				if ( empty( $event->context['shadow_mode'] ) ) {
+					return $next( $event );
+				}
+
+				$tool = $tool_registry->get( (string) $event->slug );
+				if ( null !== $tool && wp_mcp_ai_oos_tool_is_write_class( $tool ) ) {
+					// A parallel shadow run must never execute state-changing
+					// tools: reads execute live, writes are suppressed with a
+					// synthetic result the diff recorder can identify.
+					return array(
+						'success' => true,
+						'message' => '(shadow: write-class tool suppressed)',
+						'data'    => array( 'shadow_suppressed' => true ),
+					);
+				}
+
+				return $next( $event );
+			},
+			20
+		);
+
+		$events->listenWaterfall(
+			'tools/execute',
+			static function ( object $event, callable $next ) use ( $tool_registry ): mixed {
+				// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Domain events use camelCase properties (lib/core PSR-4).
+				$tool = $tool_registry->get( (string) $event->slug );
+				if ( null === $tool || $tool instanceof Nvoos\WordPress\Tool\LegacyToolAdapter ) {
+					return $next( $event );
+				}
+
+				$pre = \apply_filters(
+					'wp_mcp_ai_before_tool_execute',
+					null,
+					$event->slug,
+					$event->arguments,
+					$event->context
+				);
+
+				if ( null !== $pre ) {
+					// WP_Error blocks; other values (queue placeholders, cache
+					// hits) replace the dispatch result, matching the legacy
+					// trait's short-circuit semantics.
+					return $pre;
+				}
+				// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+
+				return $next( $event );
+			},
+			10
+		);
+	}
+
 	return $orchestrator;
 }
 
+// ─── Shadow runner registration (Proposal 029, Phase 4.1) ─────────────
+// Same-request parallel OOS runs on sampled legacy traffic. Guarded by
+// the lib/ directory presence so base (wp.org) builds stay unaffected.
+$wp_mcp_ai_oos_shadow_runner_file = WP_MCP_AI_PATH . 'includes/oos/class-wp-mcp-ai-oos-shadow-runner.php';
+if ( \file_exists( $wp_mcp_ai_oos_shadow_runner_file ) ) {
+	require_once $wp_mcp_ai_oos_shadow_runner_file;
+	WP_MCP_AI_OOS_Shadow_Runner::register();
+}
+
 // ─── Feature Flag Detection ───────────────────────────────────────────
+
+/**
+ * Whether OOS session logging (Proposal 029, Phase 3) is enabled.
+ *
+ * Off by default until replay tests prove log-derived history parity.
+ * Enable via the admin setting enable_oos_session_log or the
+ * wp_mcp_ai_enable_session_log filter.
+ *
+ * @return bool
+ */
+function wp_mcp_ai_enable_session_log(): bool {
+	$settings = \get_option( 'wp_mcp_ai_settings', array() );
+	if ( ! empty( $settings['enable_oos_session_log'] ) ) {
+		return true;
+	}
+
+	return (bool) \apply_filters( 'wp_mcp_ai_enable_session_log', false );
+}
+
+/**
+ * Whether OOS session-log telemetry (Proposal 029, Phase 5.8) is enabled.
+ *
+ * Off by default: when enabled, every appended session-log entry fans out
+ * to WordPress consumers via the wp_mcp_ai_session_log_event action —
+ * the single path audit/telemetry subscribers consume instead of
+ * re-wrapping the loop. Requires session logging (above) to be enabled.
+ *
+ * Enable via the admin setting enable_oos_session_telemetry or the
+ * wp_mcp_ai_enable_session_telemetry filter.
+ *
+ * @return bool
+ */
+function wp_mcp_ai_enable_session_telemetry(): bool {
+	$settings = \get_option( 'wp_mcp_ai_settings', array() );
+	if ( ! empty( $settings['enable_oos_session_telemetry'] ) ) {
+		return true;
+	}
+
+	return (bool) \apply_filters( 'wp_mcp_ai_enable_session_telemetry', false );
+}
+
+/**
+ * Whether OOS shadow mode (Proposal 029, Phase 4.1) is enabled.
+ *
+ * Shadow mode runs the OOS engine in parallel on sampled legacy-path
+ * requests and serves the legacy result — zero user exposure. Off by
+ * default; enable via the admin setting enable_oos_shadow or the
+ * wp_mcp_ai_oos_shadow_enabled filter.
+ *
+ * @return bool
+ */
+function wp_mcp_ai_oos_shadow_enabled(): bool {
+	$settings = \get_option( 'wp_mcp_ai_settings', array() );
+	if ( ! empty( $settings['enable_oos_shadow'] ) ) {
+		return true;
+	}
+
+	return (bool) \apply_filters( 'wp_mcp_ai_oos_shadow_enabled', false );
+}
+
+/**
+ * Shadow sampling rate (0.0–1.0).
+ *
+ * @return float
+ */
+function wp_mcp_ai_oos_shadow_sample_rate(): float {
+	$settings = \get_option( 'wp_mcp_ai_settings', array() );
+	$rate     = isset( $settings['oos_shadow_sample_rate'] ) ? (float) $settings['oos_shadow_sample_rate'] : 0.05;
+
+	return (float) \apply_filters( 'wp_mcp_ai_oos_shadow_sample_rate', \max( 0.0, \min( 1.0, $rate ) ) );
+}
+
+/**
+ * Shadow-run deadline in seconds (same-request execution is bounded).
+ *
+ * @return int
+ */
+function wp_mcp_ai_oos_shadow_timeout_seconds(): int {
+	return (int) \apply_filters( 'wp_mcp_ai_oos_shadow_timeout_seconds', 30 );
+}
+
+/**
+ * Whether the request's assistant is canary-opted into the OOS engine
+ * via the _wp_mcp_ai_engine post meta (Proposal 029, Phase 4.2).
+ *
+ * @param \WP_REST_Request|null $request Optional request to read the assistant from.
+ * @return bool
+ */
+function wp_mcp_ai_oos_canary_enabled( $request = null ): bool {
+	if ( ! (bool) \apply_filters( 'wp_mcp_ai_oos_canary', false ) ) {
+		return false;
+	}
+
+	$assistant_id = 0;
+	if ( $request instanceof \WP_REST_Request ) {
+		$assistant_id = (int) $request->get_param( 'assistant_id' );
+	}
+
+	if ( $assistant_id > 0 ) {
+		return 'oos' === \get_post_meta( $assistant_id, '_wp_mcp_ai_engine', true );
+	}
+
+	return false;
+}
+
+/**
+ * Classify an OOS tool as write-class for shadow suppression.
+ *
+ * @param \Nvoos\Core\Domain\Contract\ToolInterface $tool Resolved OOS tool.
+ * @return bool  True when the tool mutates state.
+ */
+function wp_mcp_ai_oos_tool_is_write_class( $tool ): bool {
+	if ( $tool instanceof Nvoos\Core\Domain\Contract\ToolWriteClassInterface ) {
+		return $tool->isWriteClass();
+	}
+
+	$capability = '';
+	if ( \method_exists( $tool, 'getRequiredCapability' ) ) {
+		$capability = (string) $tool->getRequiredCapability();
+	}
+
+	// Fail safe: any capability beyond read/public implies mutation.
+	return '' !== $capability && 'read' !== $capability && 'public' !== $capability;
+}
 
 /**
  * Determine whether the OOS engine should handle the current request.

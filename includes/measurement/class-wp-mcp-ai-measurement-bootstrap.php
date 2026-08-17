@@ -70,6 +70,14 @@ function wp_mcp_ai_measurement_bootstrap() {
 		WP_MCP_AI_SSE_Observer::get_instance()->attach();
 	}
 
+	// Attach the session-log observer (Proposal 029 Phase 5.8, telemetry
+	// single-path). The observer is OFF by default — enable via the
+	// wp_mcp_ai_session_log_observer_enabled filter after the session log
+	// itself is promoted.
+	if ( class_exists( 'WP_MCP_AI_Session_Log_Observer' ) ) {
+		WP_MCP_AI_Session_Log_Observer::get_instance()->attach();
+	}
+
 	// Ensure the metric-events table exists. `install()` is idempotent
 	// and short-circuits when the schema version matches — cheap enough
 	// to run on every request. This guards against the case where the

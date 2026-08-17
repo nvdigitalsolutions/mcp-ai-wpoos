@@ -499,7 +499,7 @@ v2.2.0 security release added **helmet** and **express-rate-limit**.
 | `helmet` ⭐ v2.2.0 | ^8.0.0 | MIT | Security headers (CSP, HSTS, X-Content-Type-Options, etc.). |
 | `express-rate-limit` ⭐ v2.2.0 | ^7.5.0 | MIT | Global + per-route-group rate limiting. |
 | `cors` | ^2.8.5 | MIT | Restricted CORS (`ALLOWED_ORIGINS`). |
-| `puppeteer` | ^24 | Apache-2.0 | Sandboxed headless-browser automation. |
+| `puppeteer` | ^25.7.0 | Apache-2.0 | Sandboxed headless-browser automation. |
 | `sharp` | ^0.34 | Apache-2.0 | High-performance image processing. |
 | `canvas` | ^2.11.2 | MIT | Server-side canvas rendering. |
 | `tesseract.js` | ^6 | Apache-2.0 | OCR route backend. |

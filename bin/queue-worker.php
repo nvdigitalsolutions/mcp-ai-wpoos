@@ -62,6 +62,8 @@
  */
 
 // phpcs:disable WordPress.PHP.DiscouragedPHPFunctions -- CLI script, not a web request.
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Writes to STDOUT/STDERR console streams, not the filesystem.
+// phpcs:disable WordPress.PHP.IniSet -- CLI script applies the user-supplied --memory-limit flag; wp_raise_memory_limit() does not accept arbitrary values.
 
 // ─── Parse CLI arguments ─────────────────────────────────────────────
 $options = getopt(
@@ -91,14 +93,15 @@ if ( isset( $options['help'] ) ) {
 	exit( 0 );
 }
 
+// WordPress is not bootstrapped yet at this point, so WordPress helpers
+// (absint(), apply_filters()) are unavailable. Cast CLI values directly;
+// the batch-size filter default is applied after wp-load.php below.
 $is_daemon    = isset( $options['daemon'] );
 $use_rabbitmq = isset( $options['rabbitmq'] );
-$max_jobs     = isset( $options['max-jobs'] ) ? absint( $options['max-jobs'] ) : 0;
-$timeout      = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 0;
-$memory_limit = isset( $options['memory-limit'] ) ? $options['memory-limit'] : '256M';
-$batch_size   = isset( $options['batch-size'] )
-	? absint( $options['batch-size'] )
-	: (int) apply_filters( 'wp_mcp_ai_queue_worker_batch_size', 3 );
+$max_jobs     = isset( $options['max-jobs'] ) ? (int) $options['max-jobs'] : 0;
+$timeout      = isset( $options['timeout'] ) ? (int) $options['timeout'] : 0;
+$memory_limit = isset( $options['memory-limit'] ) ? (string) $options['memory-limit'] : '256M';
+$batch_size   = isset( $options['batch-size'] ) ? (int) $options['batch-size'] : 0;
 
 // ─── Bootstrap WordPress ─────────────────────────────────────────────
 // Find WordPress root. This script lives in bin/ under the plugin dir.
@@ -106,9 +109,9 @@ $plugin_dir = dirname( __DIR__ );
 
 // Try standard WordPress directory structures.
 $wp_roots = array(
-	dirname( $plugin_dir, 3 ),          // wp-content/plugins/mcp-ai-wpoos/bin → ABSPATH
-	dirname( $plugin_dir, 4 ),          // Nested: wp-content/plugins/vendor/mcp-ai-wpoos/bin
-	dirname( dirname( $plugin_dir ) ),  // One level up from plugin dir
+	dirname( $plugin_dir, 3 ),          // wp-content/plugins/mcp-ai-wpoos/bin → ABSPATH.
+	dirname( $plugin_dir, 4 ),          // Nested: wp-content/plugins/vendor/mcp-ai-wpoos/bin.
+	dirname( dirname( $plugin_dir ) ),  // One level up from plugin dir.
 );
 
 $wp_root = null;
@@ -135,6 +138,11 @@ if ( ! defined( 'WP_DEBUG_DISPLAY' ) ) {
 }
 
 require_once $wp_root . '/wp-load.php';
+
+// Apply the batch-size filter now that WordPress is loaded (0 = flag omitted).
+if ( 0 === $batch_size ) {
+	$batch_size = (int) apply_filters( 'wp_mcp_ai_queue_worker_batch_size', 3 );
+}
 
 // ─── Verify plugin is loaded ─────────────────────────────────────────
 if ( ! class_exists( 'WP_MCP_AI_Job_Queue_Manager' ) ) {
@@ -190,9 +198,10 @@ if ( function_exists( 'pcntl_signal' ) ) {
 }
 
 // ─── Worker loop ─────────────────────────────────────────────────────
-$start_time     = time();
-$jobs_processed = 0;
-$sleep_seconds  = $is_daemon ? 1 : 0; // Daemon polls every 1s; one-shot exits after processing.
+$start_time      = time();
+$jobs_processed  = 0;
+$batch_processed = 0;
+$sleep_seconds   = $is_daemon ? 1 : 0; // Daemon polls every 1s; one-shot exits after processing.
 
 fwrite(
 	STDOUT,
@@ -226,15 +235,15 @@ do {
 
 	// Memory watchdog: exit at 90% of memory limit.
 	$mem_usage = memory_get_usage( true );
-	$mem_limit = self::parse_memory_limit( $memory_limit );
+	$mem_limit = parse_memory_limit( $memory_limit );
 
 	if ( $mem_limit > 0 && $mem_usage > ( $mem_limit * 0.9 ) ) {
 		fwrite(
 			STDERR,
 			sprintf(
 				"Memory limit approaching: %s / %s. Exiting.\n",
-				self::format_bytes( $mem_usage ),
-				self::format_bytes( $mem_limit )
+				format_bytes( $mem_usage ),
+				format_bytes( $mem_limit )
 			)
 		);
 		break;
@@ -243,7 +252,7 @@ do {
 	// Process a batch of jobs.
 	try {
 		if ( $use_rabbitmq ) {
-			$result = process_rabbitmq_queue( $should_exit );
+			$result = process_rabbitmq_queue( $should_exit, $batch_size );
 		} else {
 			$result = WP_MCP_AI_Job_Queue_Manager::process_queue( $batch_size );
 		}
@@ -309,10 +318,11 @@ exit( 0 );
  *
  * @since 1.2.0
  *
- * @param bool &$should_exit Reference to the exit flag modified by signal handlers.
+ * @param bool $should_exit Reference to the exit flag modified by signal handlers.
+ * @param int  $batch_size  Number of messages to fetch per batch (batch mode).
  * @return array Processing result with 'processed' count.
  */
-function process_rabbitmq_queue( &$should_exit ) {
+function process_rabbitmq_queue( &$should_exit, $batch_size = 5 ) {
 	if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
 		fwrite( STDERR, "Error: RabbitMQ client class not available.\n" );
 		return array( 'processed' => 0 );
@@ -422,7 +432,7 @@ function process_rabbitmq_queue( &$should_exit ) {
 			);
 		} else {
 			// ── Batch mode: consume available messages without blocking ──
-			$batch_size = 5;
+			$batch_size = max( 1, (int) $batch_size );
 
 			for ( $i = 0; $i < $batch_size; $i++ ) {
 				if ( $should_exit ) {
@@ -431,7 +441,10 @@ function process_rabbitmq_queue( &$should_exit ) {
 
 				$envelope = $queue->get();
 
-				if ( false === $envelope ) {
+				// php-amqp returns false for an empty queue, but some builds
+				// return null instead — guard against anything that isn't
+				// a real envelope.
+				if ( ! $envelope instanceof AMQPEnvelope ) {
 					// No messages available.
 					break;
 				}
@@ -539,10 +552,11 @@ function parse_memory_limit( $limit ) {
  * @return string Formatted string.
  */
 function format_bytes( $bytes ) {
-	$units = array( 'B', 'KB', 'MB', 'GB' );
-	$i     = 0;
+	$units       = array( 'B', 'KB', 'MB', 'GB' );
+	$units_count = count( $units );
+	$i           = 0;
 
-	while ( $bytes >= 1024 && $i < count( $units ) - 1 ) {
+	while ( $bytes >= 1024 && $i < $units_count - 1 ) {
 		$bytes /= 1024;
 		++$i;
 	}
