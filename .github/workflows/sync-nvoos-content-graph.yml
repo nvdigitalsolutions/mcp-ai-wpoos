@@ -1,0 +1,25 @@
+name: Sync nvoos-content-graph
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'plugins/nvoos-content-graph/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=plugins/nvoos-content-graph --branch=nvoos-content-graph-split
+
+      - name: Push to nvoos-content-graph
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.NVOOS_CONTENT_GRAPH_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-content-graph.git nvoos-content-graph-split:main --force
