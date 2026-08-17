@@ -102,7 +102,8 @@
 		"linkify-it": ">=5.0.2",
 		"mailparser": {
 			"nodemailer": ">=9.0.1"
-		}
+		},
+		"deepmerge-ts": "^8.0.0"
 	},
 	"keywords": [
 		"wordpress",

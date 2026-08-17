@@ -66,6 +66,7 @@
 		"rate-limit-redis": "^4.2.0"
 	},
 	"overrides": {
-		"uuid": "^11.1.1"
+		"uuid": "^11.1.1",
+		"deepmerge-ts": "^8.0.0"
 	}
 }
