@@ -1032,6 +1032,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'pro_composio',
+				'Composio Connect',
+				array(),
+				array(),
+				function () use ( $p ) {
+					require_once $p . 'composio/composio-init.php';
+				}
+			);
+
+			$this->add_module(
 				'pro_workflow_bridge',
 				'Workflow Bridge',
 				array(),

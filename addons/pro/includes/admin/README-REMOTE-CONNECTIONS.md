@@ -47,6 +47,7 @@ Connection types are registered in `class-wp-mcp-ai-pro-remote-sites-admin.php` 
 | `office365` | Office 365 (Outlook / OneDrive) | Microsoft | `#d83b01` |
 | `icloud` | iCloud Drive | Apple | `#3693f5` |
 | `shopify` | Shopify (E-commerce) | E-commerce | `#96bf48` |
+| `composio` | Composio Connect (AI Tool Aggregator) | Federation | `#7e57c2` |
 
 ---
 
@@ -343,6 +344,23 @@ Webhook: `wp-json/mcp-ai/v1/webhooks/icloud/{connection_id}`
 
 For Catalog API, a JWT bearer token is fetched dynamically from `https://api.shopify.com/auth/access_token`.
 
+### `composio`
+
+| Meta Key | Type | Notes |
+|----------|------|-------|
+| `url` | string | Auto-set to `https://backend.composio.dev` |
+| `base_url` | string | Optional regional/self-hosted override; must be a public HTTPS URL |
+| `api_key` | string (encrypted) | Composio project API key (`ak_...`) — the only provider-side secret WordPress stores |
+| `auth_type` | string | Always `none` (client sends `x-api-key` header) |
+| `default_user_mode` | enum | `admin_shared` \| `per_wp_user` |
+| `toolkit_allowlist` | array | Optional toolkit slugs; empty = all |
+| `webhook_secret` | string (encrypted) | Signing secret from `POST /api/v3.1/webhook_subscriptions` |
+| `webhook_subscription_id` | string | Subscription ID for lifecycle management |
+
+Auth flow: Composio Connect Links (`POST /api/v3.1/connected_accounts/link`) — provider OAuth tokens live in Composio and are never stored in WordPress.
+
+Webhook: `wp-json/mcp-ai/v1/webhooks/composio/{connection_id}` (HMAC-signed, signature-gated).
+
 ---
 
 ## Credential Encryption
@@ -363,6 +381,8 @@ All credential fields marked `(encrypted)` are processed through the `Remote_Sit
 - `consumer_secret`: validated to start with `cs_`
 - `api_key` (Shopify Admin): validated to start with `shpat_` or `shpca_`
 - `api_secret` (Shopify Catalog): validated to start with `shpss_`
+- `api_key` (Composio): required, non-empty (any `ak_` project key format)
+- `base_url` (Composio): must be a public HTTPS URL (private/reserved hosts rejected)
 - `api_key` (Telegram): validated against Bot Token format `^\d+:[A-Za-z0-9_-]+$`
 - `secret_token` (Telegram): validated to match `^[A-Za-z0-9_-]{1,256}$`
 - `graph_api_version` (WhatsApp, Messenger): validated against `^v\d+\.\d+$`

@@ -8,6 +8,12 @@
 # another_tool = bug
 #
 # Add your entries below:
+composio_list_tools = beta
+composio_get_tool_schema = beta
+composio_list_connected_accounts = beta
+composio_create_connect_link = beta
+composio_execute_tool = beta
+composio_manage_triggers = beta
 get_abandoned_carts = stable
 send_cart_recovery_email = stable
 get_uncategorised_transactions = stable
