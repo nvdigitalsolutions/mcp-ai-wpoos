@@ -1,0 +1,108 @@
+/**
+ * NV oOS Content Graph — Admin Styles
+ *
+ * @package NvoosContentGraph
+ * @since   0.5.0
+ */
+
+/* ---- Stats card ---- */
+.nvoos-content-graph-admin .nvoos-content-graph-stats-card {
+	background: #1a1a2e;
+	color: #e0e0ff;
+	border-radius: 8px;
+	padding: 20px 24px;
+	margin: 16px 0 24px;
+	max-width: 820px;
+}
+
+.nvoos-content-graph-admin .nvoos-content-graph-stats-card h2 {
+	color: #fff;
+	margin-top: 0;
+}
+
+.nvoos-content-graph-stats-grid {
+	display: flex;
+	gap: 32px;
+	flex-wrap: wrap;
+	margin-bottom: 12px;
+}
+
+.nvoos-content-graph-stat {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.nvoos-content-graph-stat-value {
+	font-size: 32px;
+	font-weight: 700;
+	color: #7c9ff2;
+	line-height: 1;
+}
+
+.nvoos-content-graph-stat-label {
+	font-size: 12px;
+	opacity: 0.7;
+	margin-top: 4px;
+}
+
+.nvoos-content-graph-last-build {
+	font-size: 12px;
+	opacity: 0.7;
+	margin: 8px 0;
+}
+
+/* ---- Explorer ---- */
+.nvoos-content-graph-explorer-wrap {
+	margin-bottom: 28px;
+	max-width: 100%;
+}
+
+.nvoos-content-graph-explorer-toolbar {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	flex-wrap: wrap;
+	margin-bottom: 8px;
+}
+
+.nvoos-content-graph-explorer-toolbar input[type="text"],
+.nvoos-content-graph-explorer-toolbar select {
+	height: 30px;
+	padding: 0 8px;
+	border: 1px solid #ccd;
+	border-radius: 4px;
+}
+
+#nvoos-content-graph-explorer {
+	background: #0f0f1a;
+	border-radius: 8px;
+	border: 1px solid #2a2a4a;
+	overflow: hidden;
+}
+
+/* ---- Sidebar ---- */
+.nvoos-content-graph-sidebar {
+	background: #fff;
+	border: 1px solid #dde;
+	border-radius: 6px;
+	padding: 14px 16px;
+	max-width: 320px;
+	margin-top: 12px;
+	font-size: 13px;
+}
+
+.nvoos-content-graph-sidebar h3 {
+	margin-top: 0;
+	font-size: 15px;
+}
+
+.nvoos-content-graph-sidebar h4 {
+	font-size: 13px;
+	margin: 10px 0 4px;
+}
+
+.nvoos-content-graph-sidebar ul {
+	margin: 0;
+	padding-left: 18px;
+}

@@ -1,0 +1,52 @@
+{
+    "name": "nvoos/content-graph-platform",
+    "description": "Platform layer for NV oOS Content Graph — agents, skills, slash-commands, harness, measurement, professions, A2A, ACP, federation, and blueprints.",
+    "type": "wordpress-plugin",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "NV Digital Solutions",
+            "email": "developer@nvdigitalsolutions.com",
+            "homepage": "https://nvdigitalsolutions.com",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://github.com/nvdigitalsolutions/nvoos-content-graph-ai-platform",
+    "require": {
+        "php": "^8.1"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require-dev": {
+        "composer/installers": "^2.0",
+        "phpunit/phpunit": "^9.0",
+        "wp-phpunit/wp-phpunit": "*",
+        "yoast/phpunit-polyfills": "^3.0",
+        "squizlabs/php_codesniffer": "^3.10",
+        "wp-coding-standards/wpcs": "^3.1"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "phpcs",
+        "format": "phpcbf"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "platform": {
+            "php": "8.1.0"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "NvoosContentGraphAiPlatform\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NvoosContentGraphAiPlatform\\Tests\\": "tests/"
+        }
+    }
+}
