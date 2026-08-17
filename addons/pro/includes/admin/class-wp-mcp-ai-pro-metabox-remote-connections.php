@@ -109,6 +109,23 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 						<?php if ( ! empty( $connection['has_woocommerce'] ) ) : ?>
 							<br><span style="color: #46b450;">● <?php esc_html_e( 'WooCommerce enabled', 'mcp-ai-wpoos-pro' ); ?></span>
 						<?php endif; ?>
+						<?php if ( 'composio' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<?php
+							// Load the client lazily for the cached account-count badge —
+							// no live API calls are made while rendering the metabox.
+							if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+								$composio_client_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-client.php';
+								if ( file_exists( $composio_client_file ) ) {
+									require_once $composio_client_file;
+								}
+							}
+							$composio_count = class_exists( 'WP_MCP_AI_Composio_Client' )
+								? WP_MCP_AI_Composio_Client::get_cached_account_count( $connection_id )
+								: false;
+							?>
+							<br><span style="color: #7e57c2;">● <?php echo false !== $composio_count ? esc_html( sprintf( /* translators: %d: connected app count */ _n( '%d connected app', '%d connected apps', $composio_count, 'mcp-ai-wpoos-pro' ), $composio_count ) ) : esc_html__( 'No apps connected yet', 'mcp-ai-wpoos-pro' ); ?></span>
+							<br><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) ) ); ?>"><?php esc_html_e( 'Connect apps →', 'mcp-ai-wpoos-pro' ); ?></a>
+						<?php endif; ?>
 					</div>
 				</div>
 			<?php endforeach; ?>

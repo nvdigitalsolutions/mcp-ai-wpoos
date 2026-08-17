@@ -269,6 +269,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['_proxy_password_encrypted'] = self::is_value_encrypted( $existing_connection['proxy_password'] );
 			}
 
+			// Preserve existing webhook_secret (Composio) if not provided.
+			if ( empty( $connection_data['webhook_secret'] ) && ! empty( $existing_connection['webhook_secret'] ) ) {
+				$connection_data['webhook_secret']            = $existing_connection['webhook_secret'];
+				$connection_data['_webhook_secret_encrypted'] = self::is_value_encrypted( $existing_connection['webhook_secret'] );
+			}
+
 			// Preserve existing upwork_username (Upwork) if not provided.
 			if ( empty( $connection_data['upwork_username'] ) && ! empty( $existing_connection['upwork_username'] ) ) {
 				$connection_data['upwork_username'] = $existing_connection['upwork_username'];
@@ -632,6 +638,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'token_expiry'                   => isset( $connection_data['token_expiry'] ) ? absint( $connection_data['token_expiry'] ) : 0,
 			// HMAC-SHA256 signing secret (Slack Events API / Teams outgoing webhooks).
 			'signing_secret'                 => isset( $connection_data['signing_secret'] ) ? $connection_data['signing_secret'] : '',
+			// Composio Connect fields.
+			'webhook_secret'                 => isset( $connection_data['webhook_secret'] ) ? $connection_data['webhook_secret'] : '',
+			'webhook_subscription_id'        => isset( $connection_data['webhook_subscription_id'] ) ? sanitize_text_field( $connection_data['webhook_subscription_id'] ) : '',
+			'base_url'                       => isset( $connection_data['base_url'] ) ? esc_url_raw( $connection_data['base_url'] ) : '',
+			'default_user_mode'              => isset( $connection_data['default_user_mode'] ) ? sanitize_key( $connection_data['default_user_mode'] ) : 'admin_shared',
+			'default_user_id'                => isset( $connection_data['default_user_id'] ) ? sanitize_text_field( $connection_data['default_user_id'] ) : '',
+			'toolkit_allowlist'              => isset( $connection_data['toolkit_allowlist'] ) && is_array( $connection_data['toolkit_allowlist'] ) ? $connection_data['toolkit_allowlist'] : array(),
 			// Telegram webhook secret token (X-Telegram-Bot-Api-Secret-Token).
 			'secret_token'                   => isset( $connection_data['secret_token'] ) ? $connection_data['secret_token'] : '',
 			// Facebook Messenger-specific fields.
@@ -757,6 +770,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( ! empty( $connection['proxy_password'] ) && empty( $connection_data['_proxy_password_encrypted'] ) ) {
 			$connection['proxy_password'] = self::encrypt_value( $connection['proxy_password'] );
+		}
+
+		if ( ! empty( $connection['webhook_secret'] ) && empty( $connection_data['_webhook_secret_encrypted'] ) ) {
+			$connection['webhook_secret'] = self::encrypt_value( $connection['webhook_secret'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
@@ -1130,6 +1147,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// Handle ShipStation V1 (Legacy) connections separately.
 		if ( 'shipstation' === $connection_type ) {
 			return self::test_shipstation_connection( $connection );
+		}
+
+		// Handle Composio connections separately.
+		if ( 'composio' === $connection_type ) {
+			return self::test_composio_connection( $connection );
 		}
 
 		// Pre-flight DNS reachability check (non-blocking diagnostic).
@@ -1589,6 +1611,42 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'carrier_count' => count( $carriers ),
 			'message'       => $message,
 		);
+	}
+
+	/**
+	 * Test Composio Connect API connection.
+	 *
+	 * Verifies the project API key by fetching the tool enum (the smallest
+	 * authenticated call on the Composio backend API).
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_composio_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$client_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_composio_client_missing',
+				__( 'The Composio client is not available. Ensure the Pro addon is up to date.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$client = WP_MCP_AI_Composio_Client::from_connection( $connection );
+		$result = $client->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -3072,6 +3130,41 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_shipstation_credentials',
 					__( 'API key and API secret are required for ShipStation connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'composio' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_composio_api_key',
+					__( 'A Composio project API key (ak_...) is required. Generate one in the Composio dashboard.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Validate the optional base_url override: must be a public HTTPS URL.
+			if ( ! empty( $connection['base_url'] ) ) {
+				$composio_base = wp_parse_url( $connection['base_url'] );
+				if ( empty( $composio_base['scheme'] ) || 'https' !== $composio_base['scheme'] || empty( $composio_base['host'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_invalid_composio_base_url',
+						__( 'The Composio API base URL must be a public HTTPS URL.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+
+				// Reject private/reserved hosts for the override (mirrors the SSRF guard).
+				if ( self::is_restricted_host( $composio_base['host'], 'generic' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_pro_restricted_composio_base_url',
+						__( 'The Composio API base URL points to a reserved or private address.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+			}
+
+			if ( ! empty( $connection['default_user_mode'] ) && ! in_array( $connection['default_user_mode'], array( 'admin_shared', 'per_wp_user' ), true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_invalid_composio_user_mode',
+					__( 'Invalid Composio identity mode.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
