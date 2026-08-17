@@ -70,6 +70,7 @@ Dual-purpose folder:
 Every attention-routing feature degrades to current behavior when dependencies are unavailable:
 
 - No vector service → attention router returns all tools (no filtering)
+- Assistant tool count ≤ `wp_mcp_ai_attention_routing_min_tools` (default 100) → all tools returned unfiltered
 - No embedding API key → semantic head scores neutral (0.5)
 - No audit trail → recency head scores neutral (0.5)
 - LLM summarization fails → extractive keyword-based fallback
@@ -77,10 +78,13 @@ Every attention-routing feature degrades to current behavior when dependencies a
 
 ## Configuration Filters (Attention Routing)
 
+Admin UI: **NV oOS → Tools & Features Configuration → Configuration subtab** (fields `attention_routing_enabled`, `attention_routing_min_tools`, `attention_routing_top_k` saved to `wp_mcp_ai_settings`). The filters below override the saved values for code-level customization.
+
 | Filter | Default | Purpose |
 |---|---|---|
-| `wp_mcp_ai_attention_routing_enabled` | `true` | Master on/off for attention-based tool selection |
-| `wp_mcp_ai_attention_top_k` | `40` | Number of tools to select |
+| `wp_mcp_ai_attention_routing_enabled` | `true` (admin checkbox) | Master on/off for attention-based tool selection |
+| `wp_mcp_ai_attention_routing_min_tools` | `100` (admin field) | Minimum assistant tool count before routing activates (matches the `wp_mcp_ai_max_chat_tools` payload cap; set to `0` to always route) |
+| `wp_mcp_ai_attention_top_k` | `40` (admin field) | Number of tools to select when routing is active |
 | `wp_mcp_ai_conversation_compression_use_llm` | `false` | Use LLM for summaries (costs a separate API call) |
 | `wp_mcp_ai_enable_conversation_compression` | option | Master on/off for sliding-window compression |
 

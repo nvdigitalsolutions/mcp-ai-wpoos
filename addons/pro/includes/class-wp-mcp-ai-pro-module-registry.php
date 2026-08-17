@@ -1099,6 +1099,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					require_once $p . 'qms/class-wp-mcp-ai-qms-init.php';
 				}
 			);
+
+			// OOS composition subsystem (Proposal 029, Phase 5.2): scoped
+			// assistant compositions + composeFrom child binding. Flag-gated
+			// (default off); the CLI dump and tests construct the service
+			// directly and do not depend on this gate.
+			$this->add_module(
+				'oos_composition',
+				'OOS Composition Service',
+				array(),
+				array(
+					'files'   => array( $p . 'composition/class-wp-mcp-ai-pro-composition-service.php' ),
+					'enabled' => (bool) apply_filters( 'wp_mcp_ai_pro_enable_oos_composition', ! empty( $settings['enable_oos_composition'] ) ),
+				),
+				function () use ( $p ) {
+					require_once $p . 'composition/class-wp-mcp-ai-pro-composition.php';
+					require_once $p . 'composition/class-wp-mcp-ai-pro-legacy-tool-resolver.php';
+					require_once $p . 'composition/class-wp-mcp-ai-pro-composition-service.php';
+					require_once $p . 'composition/composition-init.php';
+				}
+			);
 		}
 	}
 }

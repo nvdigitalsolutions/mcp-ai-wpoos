@@ -118,6 +118,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Master switch for the markup subsystem. When enabled, markup-aware tools such as edit_openai_image (mask), crop_image (crop) and edit_gemini_image (region) can pause the agentic loop and ask the user to draw on an image in the chat canvas. Turn this off to disable elicitation site-wide; affected tools will fall back to executing with whatever arguments the model already supplied.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'attention_routing_enabled'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Attention Tool Routing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically select the most relevant tools for assistants with large tool lists', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When an assistant has more tools assigned than the "minimum tools" threshold below, the plugin scores all enabled tools against the conversation and sends only the most relevant ones to the model. Assistants at or below the threshold always receive their complete tool list. Turn this off to always send every enabled tool to the model.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'attention_routing_min_tools'            => array(
+					'type'        => 'number',
+					'label'       => __( 'Minimum Tools for Routing', 'mcp-ai-wpoos' ),
+					'description' => __( 'Attention tool routing only activates when an assistant has more tools assigned than this number. Default 100 matches the maximum tools sent in a single chat payload. Set to 0 to always route.', 'mcp-ai-wpoos' ),
+					'default'     => 100,
+					'min'         => 0,
+					'max'         => 128,
+					'step'        => 1,
+					'placeholder' => '100',
+				),
+				'attention_routing_top_k'                => array(
+					'type'        => 'number',
+					'label'       => __( 'Tools to Keep When Routing', 'mcp-ai-wpoos' ),
+					'description' => __( 'When attention tool routing is active, this is how many of the most relevant tools are sent to the model per request. Lower values reduce token usage but may hide tools the model needs.', 'mcp-ai-wpoos' ),
+					'default'     => 40,
+					'min'         => 1,
+					'max'         => 128,
+					'step'        => 1,
+					'placeholder' => '40',
+				),
 				'group_email_capability'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Send Group Email Capability', 'mcp-ai-wpoos' ),
@@ -928,7 +955,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'configuration',
 					'label'  => __( 'Configuration', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
-					'fields' => array( 'web_search_provider', 'brave_search_api_key', 'tavily_api_key', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients', 'search_gmail_capability', 'search_gmail_max_results', 'search_drive_capability', 'search_drive_max_results' ),
+					'fields' => array( 'web_search_provider', 'brave_search_api_key', 'tavily_api_key', 'enable_varnish_purge', 'attention_routing_enabled', 'attention_routing_min_tools', 'attention_routing_top_k', 'group_email_capability', 'group_email_max_recipients', 'search_gmail_capability', 'search_gmail_max_results', 'search_drive_capability', 'search_drive_max_results' ),
 				),
 				'document_generation' => array(
 					'id'     => 'document_generation',
@@ -2491,9 +2518,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// configurations (e.g. xdebug.scream, custom error handlers).
 			// A leaked warning corrupts MCP JSON-RPC HTTP responses when
 			// this runs during a tools/list or tools/call request.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; failure handled below.
-			set_error_handler( '__return_true' );
-			$content = file_get_contents( $status_file );
+			set_error_handler( '__return_true' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Deliberate suppression for local file read, not debug code.
+			$content = file_get_contents( $status_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; failure handled below.
 			restore_error_handler();
 			if ( false === $content ) {
 				return $status_labels;

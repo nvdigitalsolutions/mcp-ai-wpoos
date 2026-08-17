@@ -129,10 +129,20 @@ Rules for REST/controller code:
 4. **`GET /sse` is a directory stream, not an MCP message channel** — legacy
    SSE clients get their handshake from GET `/mcp` (SSE-only Accept), never
    from `/sse`.
-5. **Async tool waits must stay under proxy timeouts** —
-   `mcp_wait_for_async_tool()` defaults to ~45s (15 polls × 3s) and kicks
-   stuck jobs inline via `kick_inline_if_stale()`. Do not raise the poll
-   budget past ~30 polls on Cloudflare-proxied sites (524 at ~100s).
+5. **Direct `tools/call` completes synchronously** — direct MCP clients
+   (Hermes, Zed bridges, Claude Desktop) consume the JSON-RPC result inline
+   and cannot poll background jobs, so `mcp_tools_call()` sets
+   `agentic_loop` and non-background tools return their result in the same
+   response. The async poll budget (`mcp_wait_for_async_tool()`, ~45s =
+   15 polls × 3s, with `kick_inline_if_stale()`) applies to background-only
+   tools (Priority 1) and other async paths. Do not raise the poll budget
+   past ~30 polls on Cloudflare-proxied sites (524 at ~100s).
+6. **`prompts/list` and `prompts/get` are assistant-scoped** — both resolve
+   the assistant the same way `tools/list` does (`resolve_assistant_id()` +
+   `apply_token_assistant_scope()`): token-bound credentials see only their
+   own assistant, unscoped auth falls back to the site's default assistant,
+   out-of-scope slugs return a not-found error, and no resolvable assistant
+   yields an empty prompt list (never every assistant on the site).
 
 See `docs/developer/implementation-plan-mcp-agent-compat.md` for the full
 rationale and the `.agents/skills/mcp-ai-wpoos-plugin` skill for operational

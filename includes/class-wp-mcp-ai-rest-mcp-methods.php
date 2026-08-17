@@ -1043,6 +1043,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$request->set_param( 'tool', $tool_name );
 		$request->set_param( 'arguments', $arguments );
 
+		// Run with agentic-loop semantics so non-background tools complete
+		// synchronously in this response. MCP clients (Hermes, Zed bridges,
+		// Claude Desktop) consume the JSON-RPC result inline and cannot poll
+		// an async job; without this, tools with async capability flags are
+		// queued and, on hosts with an unreachable WP-Cron loopback, always
+		// exhaust the poll budget in mcp_wait_for_async_tool().
+		$request->set_param( 'agentic_loop', true );
+
 		if ( isset( $params['assistant_id'] ) ) {
 			$request->set_param( 'assistant_id', absint( $params['assistant_id'] ) );
 		}
@@ -1682,53 +1690,79 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	/**
 	 * Handle MCP prompts/list request.
 	 *
-	 * @param array           $params  Method parameters.
+	 * Prompts are scoped to the assistant resolved for the authenticated
+	 * caller: token-bound credentials return only their own assistant's
+	 * prompt, while unscoped authentication (OAuth, mesh) falls back to the
+	 * site's default assistant. This mirrors the assistant scoping used by
+	 * tools/list and prevents a single connection from surfacing a prompt
+	 * for every assistant on the site.
+	 *
+	 * @param array           $params  Method parameters. Optionally includes 'assistant_id'.
 	 * @param WP_REST_Request $request REST request instance.
-	 * @return array
+	 * @return array|WP_Error MCP prompts response or error.
 	 */
 	protected function mcp_prompts_list( $params, WP_REST_Request $request ) {
-		unset( $params, $request ); // Required by MCP protocol method signature.
-		$prompts = array();
+		unset( $request ); // Required by MCP protocol method signature.
 
-		// Get all assistants as prompts.
-		$query = new WP_Query(
+		$assistant_id = 0;
+
+		// Check if assistant_id is provided in params.
+		if ( isset( $params['assistant_id'] ) ) {
+			$assistant_id = absint( $params['assistant_id'] );
+		}
+
+		$assistant_id = $this->resolve_assistant_id( $assistant_id );
+		$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
+
+		if ( is_wp_error( $scoped_id ) ) {
+			return $scoped_id;
+		}
+
+		$assistant_id = $scoped_id;
+
+		// Without a resolvable assistant, expose no prompts rather than
+		// every assistant on the site.
+		if ( ! $assistant_id ) {
+			return array( 'prompts' => array() );
+		}
+
+		$assistant_post = $this->validate_assistant_access( $assistant_id );
+
+		if ( is_wp_error( $assistant_post ) ) {
+			return $assistant_post;
+		}
+
+		// Prompts represent published assistants only, matching the
+		// prompts/get lookup which is limited to published posts.
+		if ( 'publish' !== $assistant_post->post_status ) {
+			return array( 'prompts' => array() );
+		}
+
+		$default_arguments = array(
 			array(
-				'post_type'              => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status'            => 'publish',
-				'posts_per_page'         => -1,
-				'no_found_rows'          => true,  // Performance: Skip counting total rows.
-				'update_post_term_cache' => false, // Performance: Skip term cache.
-				'update_post_meta_cache' => true,  // Keep meta cache for configs.
-			)
+				'name'        => 'context',
+				'description' => __( 'Additional context or instructions to incorporate when rendering this prompt.', 'mcp-ai-wpoos' ),
+				'required'    => false,
+			),
 		);
 
-		if ( $query->have_posts() ) {
-			foreach ( $query->posts as $post ) {
-				$default_arguments = array(
-					array(
-						'name'        => 'context',
-						'description' => __( 'Additional context or instructions to incorporate when rendering this prompt.', 'mcp-ai-wpoos' ),
-						'required'    => false,
-					),
-				);
+		/**
+		 * Filters the arguments for an individual prompt in prompts/list.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param array   $arguments    Prompt arguments schema.
+		 * @param WP_Post $post         Assistant post object.
+		 */
+		$arguments = apply_filters( 'wp_mcp_ai_prompt_arguments', $default_arguments, $assistant_post );
 
-				/**
-				 * Filters the arguments for an individual prompt in prompts/list.
-				 *
-				 * @since 2.2.0
-				 *
-				 * @param array   $arguments    Prompt arguments schema.
-				 * @param WP_Post $post         Assistant post object.
-				 */
-				$arguments = apply_filters( 'wp_mcp_ai_prompt_arguments', $default_arguments, $post );
-
-				$prompts[] = array(
-					'name'        => $post->post_name,
-					'description' => get_the_title( $post ),
-					'arguments'   => $arguments,
-				);
-			}
-		}
+		$prompts = array(
+			array(
+				'name'        => $assistant_post->post_name,
+				'description' => get_the_title( $assistant_post ),
+				'arguments'   => $arguments,
+			),
+		);
 
 		return array( 'prompts' => $prompts );
 	}
@@ -1738,6 +1772,9 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 *
 	 * Returns the rendered content of a specific prompt template identified by name.
 	 * Each prompt corresponds to a published assistant and its system prompt.
+	 * Token-bound credentials may only retrieve their own assistant's prompt;
+	 * requesting any other assistant's slug returns the same not-found error
+	 * as an unknown name, so the assistant's existence is not revealed.
 	 *
 	 * @since 2.2.0
 	 *
@@ -1793,7 +1830,39 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			);
 		}
 
-		$post          = $query->posts[0];
+		$post = $query->posts[0];
+
+		// Enforce token assistant scope: a scoped credential may only fetch
+		// its own assistant's prompt. Requests for other assistants are hidden
+		// behind the same not-found error used for unknown slugs.
+		$auth_context = $this->get_auth_context();
+
+		if ( ! empty( $auth_context['token_authenticated'] ) && 'local_token' === $auth_context['token_type'] ) {
+			$token_assistant = isset( $auth_context['assistant_id'] ) ? absint( $auth_context['assistant_id'] ) : 0;
+
+			if ( ! $token_assistant && isset( $auth_context['token_context']['credential']['assistant_id'] ) ) {
+				$token_assistant = absint( $auth_context['token_context']['credential']['assistant_id'] );
+			}
+
+			if ( $token_assistant && $token_assistant !== (int) $post->ID ) {
+				return new WP_Error(
+					'wp_mcp_ai_prompt_not_found',
+					sprintf(
+						/* translators: %s: prompt name */
+						__( 'Prompt not found: %s', 'mcp-ai-wpoos' ),
+						$name
+					),
+					array(
+						'status'  => 404,
+						'actions' => array(
+							'check_name'   => __( 'Verify the prompt name matches a published assistant slug.', 'mcp-ai-wpoos' ),
+							'list_prompts' => __( 'Call prompts/list to see available prompts.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+		}
+
 		$config        = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post->ID );
 		$system_prompt = isset( $config['system_prompt'] ) ? $config['system_prompt'] : '';
 
