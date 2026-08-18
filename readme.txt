@@ -5,11 +5,11 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.57
+Stable tag: 1.1.58
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with 13 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama. 250+ built-in tools.
+AI Assistant framework with 15 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama. 265+ built-in tools.
 
 == Submission Scope ==
 
@@ -296,6 +296,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.58 - August 18, 2026 =
+
+Bumped to 1.1.58 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Composio Connect integration (Pro): six new beta tools (composio_list_tools, composio_get_tool_schema, composio_list_connected_accounts, composio_create_connect_link, composio_execute_tool, composio_manage_triggers) with OAuth account linking, signed webhook ingestion, trigger bridge, and a remote-sites admin UI. OOS engine runtime consolidation Phases 0-5.8: parity foundations, tool-surface and security-gate parity, event-sourced session log, opt-in shadow mode with a parity CLI, canary routing, scoped tools with a compaction seam, Pro composition and child binding, and single-path telemetry. Standalone Graphify plugins renamed to Content Graph (nvoos-content-graph, nvoos-content-graph-ai, nvoos-content-graph-ai-platform v1.0.2); the Graphify knowledge-graph addon is unchanged. Fixed: Security Center wp.apiRequest error on refresh (wp-api script now enqueued on the security tab) and deepmerge-ts CVE-2026-40345 overridden in the media-worker and Pro packages. Tool count: ~265 base + ~1,243 Pro (~1,508 total; live registry authoritative).
 
 = 1.1.57 - August 15, 2026 =
 

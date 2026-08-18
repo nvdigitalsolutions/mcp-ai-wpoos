@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 15, 2026
-**Plugin Version:** 1.1.57
+**Last Updated:** August 18, 2026
+**Plugin Version:** 1.1.58
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,8 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **AUGUST 18, 2026 UPDATE (v1.1.58):** COMPOSIO CONNECT INTEGRATION (PRO) — NEW `addons/pro/includes/composio/` SUBSYSTEM (OAUTH AUTH HANDLER, API CLIENT, TRIGGER BRIDGE, SIGNED WEBHOOK CONTROLLER) + 6 NEW BETA TOOLS (`composio_list_tools`, `composio_get_tool_schema`, `composio_list_connected_accounts`, `composio_create_connect_link`, `composio_execute_tool`, `composio_manage_triggers`) + REMOTE-SITES ADMIN/METABOX PANELS. OOS RUNTIME CONSOLIDATION PHASES 0–5.8 (TOOL-SURFACE + SECURITY-GATE PARITY, EVENT-SOURCED SESSION LOG, OPT-IN SHADOW MODE + `wp mcp-ai oos parity` CLI, CANARY ROUTING, SCOPED TOOLS + COMPACTION SEAM, PRO COMPOSITION & CHILD BINDING, TELEMETRY SINGLE-PATH). STANDALONE GRAPHIFY PLUGINS RENAMED TO CONTENT GRAPH (`nvoos-content-graph`, `-ai`, `-ai-platform` V1.0.2). FIXES: SECURITY CENTER `wp.apiRequest` (WP-API ENQUEUED ON SECURITY TAB) + `deepmerge-ts` CVE-2026-40345. NEW DOCS: `docs/composio-connect.md`, `docs/toolkits/composio-connect.md`, PROPOSALS 029/030, `.context/oos-engine.md`.
+>
 > **AUGUST 15, 2026 UPDATE (v1.1.57):** PLUGIN UPDATER REWORK — BASE-ONLY UPDATE FLOW FOR WP.ORG INSTALLS (NEW "BASE VERSION" PANEL IN SETTINGS → ADVANCED), COPY-IN-PLACE INSTALL WITH BACKUP/ROLLBACK REPLACING `Plugin_Upgrader` (ZIP FOLDER-NAME MISMATCHES NO LONGER BREAK UPDATES), PRO VERSION READ FROM PLUGIN HEADER. HERMES WEBUI CHAT REWORKED TO ASYNC SUBMIT/POLL (`/api/chat/start` + `/api/chat/stream/status`, `still_running` TIMEOUT STATUS, `HERMES_APPROVAL_MODE` GATE ANSWERS, LIVE PAYLOAD ANSWER-EXTRACTION FIX). SERVICE STATUS AI-PROVIDER DETECTION NOW USES `WP_MCP_AI_Credential_Resolver` (SETTINGS + WP 7.0 CONNECTORS + ENV + CONSTANTS) + NEW TEST SUITE. NEW `addons/fleet-operator/.context/` AGENT-CONTEXT TREE (18 FILES, 6 OPERATOR ROLES). UPDATED `docs/features/plugin-updater.md`, 2 NEW FIX-HISTORY DOCS.
 >
 > **AUGUST 14, 2026 UPDATE (v1.1.56):** MEDIA WORKER v3.0.0 — MULTI-TENANT SHARED WORKER MODE v2.4.0 (`SITE_TOKENS` PER-SITE ISOLATION, RATE LIMITS, ROTATION), PHASE 2 PER-SITE PROVIDER KEYS (`SITE_PROVIDER_KEYS`, USAGE COUNTERS, GROUPED TEMP TTLS, CLUSTER WARNINGS + K6 LOAD-TEST KIT), PHASE 3 OPERATIONAL SCALE (MULTISITE PER-BLOG TOKENS, USAGE REPORTER, OPT-IN REDIS RATE-LIMIT STORE, `PROVIDER_KEYS_FILE` HOT-RELOAD). ZERO-DOWNTIME TOKEN ROTATION (`WORKER_API_TOKEN_PREVIOUS`) + CANVAS v3 NAPI PREBUILDS + CLOUDWAYS READINESS + LIVE ROUTE FIXES. WORKER ROUTING EXPANSION (DOCUMENT GENERATION, OCR, FRAMES, CHARTS, EMAIL, QR/TRANSLATE/PDF, VECTORIZE — LOCAL FALLBACKS). HERMES TOOLING: WEBUI MCP SERVER, SSH BRIDGE, SKILL SYNC, ZED CONSOLE PROFILE. PROPOSALS 026/027/028.
@@ -615,7 +617,20 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.57: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.0.0, Connection Pooling, Updater Rework
+## 🆕 August 2026 — v1.1.55–v1.1.58: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.0.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio
+
+### New and updated documents (August 18, 2026, v1.1.58)
+
+- **[docs/composio-connect.md](composio-connect.md)** ⭐ **NEW** — Composio Connect integration guide: OAuth linking, webhooks, triggers, tool reference. (August 18, 2026)
+- **[docs/toolkits/composio-connect.md](toolkits/composio-connect.md)** ⭐ **NEW** — Composio Connect toolkit reference (6 beta tools). (August 18, 2026)
+- **[docs/project/proposals/030-composio-connect-integration-proposal.md](project/proposals/030-composio-connect-integration-proposal.md)** ⭐ **NEW** — Composio Connect proposal + implementation plan. (August 18, 2026)
+- **[docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md](project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md)** ⭐ **NEW** — OOS runtime consolidation Phases 0–5.8 implementation plan. (August 18, 2026)
+- **[.context/oos-engine.md](../.context/oos-engine.md)** ⭐ **NEW** — OOS engine agent context (shadow runner, canary routing, session log, composition). (August 18, 2026)
+- **[docs/history/2026/fixes/security-center-wp-api-request-fix.md](history/2026/fixes/security-center-wp-api-request-fix.md)** ⭐ **NEW** — PR #5887 fix details. (August 18, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.58 highlights (Composio, OOS consolidation, Content Graph rename, 2 fixes). (August 18, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.58] section with PR-level detail (PRs #5881, #5887–#5890). (August 18, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.58 entry. (August 18, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.58 + changelog entry; header provider/tool counts reconciled. (August 18, 2026)
 
 ### New and updated documents (August 15, 2026, v1.1.57)
 
@@ -1693,10 +1708,10 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 - **Funiq Bridge** (`addons/funiq-bridge/`) — Payload-to-WordPress bridge with React admin SPA, REST controllers, transformers, post types (Product, Promocode, Promotion), taxonomies (Brand, Category, Color, Status)
 - **NV Platform** (`addons/ai-platform/`) — Top-level admin dashboard + CPTs (Project, Resource, Template)
 
-**Standalone Graphify Plugins:**
-- **NVOOS Graphify** (`plugins/nvoos-graphify/`) — Visual knowledge graph (Cytoscape.js), 14 graph tools, remote sources, REST API
-- **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/`) — AI addon: 13 providers, streaming chat, RAG, embeddings, 14 AI tools
-- **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/`) — Platform addon: Agents, A2A, ACP, Blueprints, Federation, Harness, Measurement, Professions, Skills, Slash Commands
+**Standalone Content Graph Plugins:**
+- **NVOOS Content Graph** (`plugins/nvoos-content-graph/`) — Visual knowledge graph (Cytoscape.js), 14 graph tools, remote sources, REST API (v1.0.2; renamed from nvoos-graphify)
+- **NVOOS Content Graph AI** (`plugins/nvoos-content-graph-ai/`) — AI addon: 13 providers, streaming chat, RAG, embeddings, 14 AI tools (v1.0.2; renamed from nvoos-graphify-ai)
+- **NVOOS Content Graph AI Platform** (`plugins/nvoos-content-graph-ai-platform/`) — Platform addon: Agents, A2A, ACP, Blueprints, Federation, Harness, Measurement, Professions, Skills, Slash Commands (v1.0.2; renamed from nvoos-graphify-ai-platform)
 
 **Telegram Mini App Health Templates:**
 - **Health & Wellness** (`health_wellness`) – Daily metrics (steps, sleep, hydration, sodium, mood), streak gamification, Chart.js charts, AI coach
