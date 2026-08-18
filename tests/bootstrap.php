@@ -388,6 +388,18 @@ function wp_mcp_ai_init_test_database_tables() {
 	if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
 		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
 	}
+
+	// Ensure the content embedding table exists for tests. In production it
+	// is created on plugin activation, which never runs under PHPUnit, but
+	// the delete_post hook fires during the WP PHPUnit bootstrap cleanup
+	// (_delete_all_posts(), which runs right after wp-settings.php loads).
+	// Without the table, every deleted post spams "no such table" database
+	// errors on SQLite test installs.
+	if ( function_exists( 'wp_mcp_ai_content_embedding_ensure_loaded' )
+		&& wp_mcp_ai_content_embedding_ensure_loaded()
+		&& class_exists( 'WP_MCP_AI_Content_Embedding_Store' ) ) {
+		WP_MCP_AI_Content_Embedding_Store::install();
+	}
 }
 
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );

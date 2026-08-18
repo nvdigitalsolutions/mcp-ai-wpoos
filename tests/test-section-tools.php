@@ -52,8 +52,9 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$this->assertNotEmpty( $fields );
 
 		// Check for known fields.
-		$this->assertArrayHasKey( 'enable_mesh_computing', $fields );
-		$this->assertArrayHasKey( 'enable_federation', $fields );
+		// Federation & Mesh settings moved to the Advanced section (enable_mesh, enable_federation).
+		$this->assertArrayHasKey( 'web_search_provider', $fields );
+		$this->assertArrayHasKey( 'enable_varnish_purge', $fields );
 		$this->assertArrayHasKey( 'enable_ai_media_library', $fields );
 		$this->assertArrayHasKey( 'enable_ai_comments_moderation', $fields );
 		$this->assertArrayHasKey( 'enable_site_creator', $fields );
@@ -474,9 +475,12 @@ class Test_Section_Tools extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that remove.bg API key field is in external_tools subtab.
+	 * Test that external_tools subtab holds the GitHub OAuth fields.
+	 *
+	 * The remove.bg API key field moved to the Integrations section
+	 * (removebg subtab) and is no longer part of external_tools here.
 	 */
-	public function test_removebg_api_key_field_in_external_tools_subtab() {
+	public function test_github_oauth_fields_in_external_tools_subtab() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
 
 		// Use reflection to access private method.
@@ -487,7 +491,9 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$subtabs = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'external_tools', $subtabs, 'external_tools subtab should exist' );
-		$this->assertContains( 'removebg_api_key', $subtabs['external_tools']['fields'], 'removebg_api_key should be in external_tools fields' );
+		$this->assertContains( 'github_client_id', $subtabs['external_tools']['fields'], 'github_client_id should be in external_tools fields' );
+		$this->assertContains( 'github_client_secret', $subtabs['external_tools']['fields'], 'github_client_secret should be in external_tools fields' );
+		$this->assertNotContains( 'removebg_api_key', $subtabs['external_tools']['fields'], 'removebg_api_key should no longer be in external_tools fields' );
 	}
 
 	/**
@@ -548,13 +554,126 @@ class Test_Section_Tools extends WP_UnitTestCase {
 
 		// Verify all toolkits have valid memory requirements.
 		// Using actual keys from memory requirements ensures test stays in sync.
-		$this->assertCount( 20, $memory_requirements, 'Should have exactly 20 pro toolkits' );
+		$this->assertCount( 33, $memory_requirements, 'Should have exactly 33 pro toolkits' );
 
 		foreach ( $memory_requirements as $toolkit => $memory_mb ) {
 			$this->assertStringStartsWith( 'enable_', $toolkit, "Toolkit key '{$toolkit}' should start with 'enable_'" );
 			$this->assertIsInt( $memory_mb, "Memory requirement for {$toolkit} should be an integer" );
 			$this->assertGreaterThan( 0, $memory_mb, "Memory requirement for {$toolkit} should be positive" );
 		}
+	}
+
+	/**
+	 * Test that sidecar offload toolkit keys all exist in the memory map.
+	 */
+	public function test_sidecar_offload_toolkits_are_defined() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		$reflection = new ReflectionClass( $section );
+
+		$memory_method = $reflection->getMethod( 'get_toolkit_memory_requirements' );
+		$memory_method->setAccessible( true );
+		$requirements = $memory_method->invoke( $section );
+
+		$offload_method = $reflection->getMethod( 'get_sidecar_offload_toolkits' );
+		$offload_method->setAccessible( true );
+		$offload_toolkits = $offload_method->invoke( $section );
+
+		$this->assertIsArray( $offload_toolkits );
+		$this->assertNotEmpty( $offload_toolkits );
+
+		foreach ( $offload_toolkits as $toolkit_key ) {
+			$this->assertArrayHasKey( $toolkit_key, $requirements, "Offload toolkit '{$toolkit_key}' must exist in the memory requirements map" );
+		}
+	}
+
+	/**
+	 * Test that a configured sidecar halves the media-heavy toolkit estimates.
+	 */
+	public function test_sidecar_offload_reduces_media_heavy_estimates() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		update_option( 'wp_mcp_ai_media_worker_url', 'http://media-worker:3100' );
+
+		$reflection = new ReflectionClass( $section );
+
+		$memory_method = $reflection->getMethod( 'get_toolkit_memory_requirements' );
+		$memory_method->setAccessible( true );
+		$base = $memory_method->invoke( $section );
+
+		$apply_method = $reflection->getMethod( 'apply_media_worker_offload' );
+		$apply_method->setAccessible( true );
+		$adjusted = $apply_method->invoke( $section, $base );
+
+		delete_option( 'wp_mcp_ai_media_worker_url' );
+
+		// Media-heavy toolkits halved.
+		$this->assertEquals( (int) round( $base['enable_video_production_toolkit'] / 2 ), $adjusted['enable_video_production_toolkit'] );
+		$this->assertEquals( (int) round( $base['enable_image_production_toolkit'] / 2 ), $adjusted['enable_image_production_toolkit'] );
+		$this->assertEquals( (int) round( $base['enable_document_generation_toolkit'] / 2 ), $adjusted['enable_document_generation_toolkit'] );
+		$this->assertEquals( (int) round( $base['enable_media_toolkit'] / 2 ), $adjusted['enable_media_toolkit'] );
+
+		// Non-media toolkits unchanged.
+		$this->assertEquals( $base['enable_quiz_system'], $adjusted['enable_quiz_system'] );
+	}
+
+	/**
+	 * Test that estimates are unchanged without a sidecar configured.
+	 */
+	public function test_no_offload_without_sidecar() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		delete_option( 'wp_mcp_ai_media_worker_url' );
+
+		$reflection = new ReflectionClass( $section );
+
+		$memory_method = $reflection->getMethod( 'get_toolkit_memory_requirements' );
+		$memory_method->setAccessible( true );
+		$base = $memory_method->invoke( $section );
+
+		$apply_method = $reflection->getMethod( 'apply_media_worker_offload' );
+		$apply_method->setAccessible( true );
+
+		$this->assertEquals( $base, $apply_method->invoke( $section, $base ) );
+	}
+
+	/**
+	 * Test that the sidecar note is shown on the features subtab when configured.
+	 */
+	public function test_sidecar_note_shown_when_configured() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		update_option( 'wp_mcp_ai_media_worker_url', 'http://media-worker:3100' );
+
+		$_GET['subtab'] = 'features';
+
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		unset( $_GET['subtab'] );
+		delete_option( 'wp_mcp_ai_media_worker_url' );
+
+		$this->assertStringContainsString( 'Media Worker sidecar configured', $output, 'Should show sidecar note when configured' );
+	}
+
+	/**
+	 * Test that the sidecar note is hidden without a sidecar.
+	 */
+	public function test_sidecar_note_hidden_without_sidecar() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		delete_option( 'wp_mcp_ai_media_worker_url' );
+
+		$_GET['subtab'] = 'features';
+
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		unset( $_GET['subtab'] );
+
+		$this->assertStringNotContainsString( 'Media Worker sidecar configured', $output, 'Should not show sidecar note without sidecar' );
 	}
 
 	/**
