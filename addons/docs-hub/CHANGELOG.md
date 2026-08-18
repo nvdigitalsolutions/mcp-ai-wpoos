@@ -1,5 +1,24 @@
 # NV oOS Docs Hub — Changelog
 
+## 0.4.1 — 2026-08-19
+
+### Fixed
+- **Rebuild not persisted after a plugin update.** The NV oOS base plugin's built-in updater replaces plugin files in place and never fires `upgrader_process_complete`, so the Docs Hub cache was never invalidated after an update — the index kept showing stale pages and a stale broken-link list. Three changes close the gap:
+  1. The base plugin updater now fires a new `wp_mcp_ai_plugin_updated` action after every successful in-place update (core, Pro addon, and base→complete flows).
+  2. The Docs Hub reacts to that action — and to NV-oOS plugin activation/deactivation — by clearing the cache **and enqueueing an async rebuild** (previously it only cleared, and only a later admin manifest request would re-enqueue). The cached remote file content is preserved during these rebuilds so a plugin update does not re-fetch every Markdown file from GitHub.
+  3. A new `admin_init` guard compares the manifest's stored addon/base versions (`version`, new `base_version` field) with the installed versions and rebuilds on the first admin visit if they differ, covering any update path that skipped the hooks (manual file replacement, restores, etc.).
+- **Broken links never showed suggestions.** The manifest predating the suggestion engine could not be regenerated because of the stale-rebuild bug above. The detection engine itself was also hardened so a rebuild actually produces useful results:
+  - `detect_broken_links()` now resolves relative links against the indexed slug map before falling back to `realpath()`. Remote sources cache files under flat content-hash names, so the filesystem check flagged every repo-relative link as broken even when the target page existed — the primary cause of "626 broken links" on a small remote-only index.
+  - `suggest_fix()` fuzzy matching is now case-insensitive and compares both the bare filename stem and the full normalized target path against full slugs and slug basenames, so files moved between directories (e.g. `features/pro-toolkit-optimization.md` → root) produce suggestions.
+  - Suggestion confidence is clamped to [0.3, 1.0]; exact basename matches previously produced values above 1.0.
+
+### Changed
+- Plugin update/activation cache invalidation is now scoped to NV-oOS-related plugins (`mcp-ai-wpoos*`, `nvoos-docs-hub`) instead of firing for every plugin on the site.
+
+### Tests
+- New `test-rebuild-job.php` covers plugin-update scoping, cache clear + rebuild enqueueing on NV-oOS plugin events, the `wp_mcp_ai_plugin_updated` notice path, and the `admin_init` version-mismatch guard.
+- New `test-indexer.php` cases cover slug-map link resolution (remote flat-cache layout), `../` parent-segment resolution, moved-file suggestions, and confidence clamping / case-insensitive matching.
+
 ## 0.4.0 — 2026-05-18
 
 ### Fixed
