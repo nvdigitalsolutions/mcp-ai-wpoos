@@ -652,6 +652,82 @@ probe_result(
 	is_wp_error( $wm ) ? $wm->get_error_message() : 'HTTP ' . $wm_status . ( isset( $wm_body['error'] ) ? ' — ' . $wm_body['error'] : '' )
 );
 
+// ── [4B] Crawl routes + Crawl4AI facade ─────────────────────────────
+// v3.1.0+ workers expose the native crawl endpoints and the
+// Crawl4AI-compatible facade (used when WP_MCP_AI_CRAWL4AI_BASE_URL points
+// at the worker). A file-less/invalid POST must answer with the route's
+// validation error — reaching validation proves the route exists on the
+// deployed worker build. Set PROBE_CRAWL_LIVE=1 for a live round-trip.
+probe_section( '4B) CRAWL ROUTES + CRAWL4AI FACADE (v3.1.0+)' );
+
+$cr = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/crawl/markdown',
+	array(
+		'timeout' => 10,
+		'headers' => array_merge( $sidecar_headers, array( 'Content-Type' => 'application/json' ) ),
+		'body'    => '{}',
+	)
+);
+$cr_status = is_wp_error( $cr ) ? 0 : (int) wp_remote_retrieve_response_code( $cr );
+$cr_body   = is_wp_error( $cr ) ? null : json_decode( wp_remote_retrieve_body( $cr ), true );
+$cr_ok     = ( 400 === $cr_status && isset( $cr_body['error'] ) );
+probe_result(
+	'POST /api/crawl/markdown (no url)',
+	$cr_ok,
+	is_wp_error( $cr ) ? $cr->get_error_message() : 'HTTP ' . $cr_status . ( isset( $cr_body['error'] ) ? ' — ' . $cr_body['error'] : '' )
+);
+
+$c4 = wp_remote_post(
+	rtrim( $url, '/' ) . '/api/crawl4ai/crawl',
+	array(
+		'timeout' => 10,
+		'headers' => array_merge( $sidecar_headers, array( 'Content-Type' => 'application/json' ) ),
+		'body'    => '{}',
+	)
+);
+$c4_status = is_wp_error( $c4 ) ? 0 : (int) wp_remote_retrieve_response_code( $c4 );
+$c4_body   = is_wp_error( $c4 ) ? null : json_decode( wp_remote_retrieve_body( $c4 ), true );
+$c4_ok     = ( 400 === $c4_status && isset( $c4_body['error'] ) );
+probe_result(
+	'POST /api/crawl4ai/crawl (no urls)',
+	$c4_ok,
+	is_wp_error( $c4 ) ? $c4->get_error_message() : 'HTTP ' . $c4_status . ( isset( $c4_body['error'] ) ? ' — ' . $c4_body['error'] : '' )
+);
+
+if ( '1' === getenv( 'PROBE_CRAWL_LIVE' ) ) {
+	$live = wp_remote_post(
+		rtrim( $url, '/' ) . '/api/crawl4ai/crawl',
+		array(
+			'timeout' => 15,
+			'headers' => array_merge( $sidecar_headers, array( 'Content-Type' => 'application/json' ) ),
+			'body'    => wp_json_encode( array( 'urls' => array( 'https://example.com' ) ) ),
+		)
+	);
+	$live_status = is_wp_error( $live ) ? 0 : (int) wp_remote_retrieve_response_code( $live );
+	$live_body   = is_wp_error( $live ) ? null : json_decode( wp_remote_retrieve_body( $live ), true );
+	$live_task   = isset( $live_body['task_id'] ) ? $live_body['task_id'] : '';
+	$live_note   = is_wp_error( $live ) ? $live->get_error_message() : 'HTTP ' . $live_status;
+	$live_ok     = false;
+
+	if ( $live_task ) {
+		sleep( 3 );
+		$poll = probe_get_json( rtrim( $url, '/' ) . '/api/crawl4ai/task/' . rawurlencode( $live_task ), $sidecar_headers, 15 );
+		if ( 200 === $poll['status'] && isset( $poll['body']['status'] ) && 'completed' === $poll['body']['status'] ) {
+			$live_ok = true;
+			$bytes   = 0;
+			if ( ! empty( $poll['body']['results'][0]['markdown'] ) ) {
+				$bytes = strlen( $poll['body']['results'][0]['markdown'] );
+			}
+			$live_note = $live_task . ' — completed, markdown ' . $bytes . ' bytes';
+		} else {
+			$live_note = $live_task . ' — poll ' . ( isset( $poll['body']['status'] ) ? $poll['body']['status'] : 'error' );
+		}
+	}
+	probe_result( 'Crawl4AI facade live round-trip', $live_ok, $live_note );
+} else {
+	probe_out( '  (live round-trip skipped — set PROBE_CRAWL_LIVE=1 to enable)' );
+}
+
 // ── [5] Local JS fallback presence ────────────────────────────────────
 probe_section( '5) LOCAL JS FALLBACK PRESENCE (what would run if sidecar fails)' );
 
