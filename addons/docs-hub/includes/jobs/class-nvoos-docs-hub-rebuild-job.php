@@ -186,7 +186,8 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	/**
 	 * Handle the upgrader_process_complete hook.
 	 *
-	 * Clears the cache when an NV oOS-related plugin is updated.
+	 * Clears the cache and enqueues an async rebuild when an
+	 * NV-oOS-related plugin was updated.
 	 *
 	 * @since 1.0.0
 	 *
@@ -194,13 +195,20 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	 * @param array  $options         Upgrade options array.
 	 * @return void
 	 */
-	public static function handle_upgrade( $upgrader_object, $options ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed
+	public static function handle_upgrade( $upgrader_object, $options ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed -- WP hook signature; only $options is inspected.
 		if ( ! isset( $options['type'] ) || 'plugin' !== $options['type'] ) {
 			return;
 		}
 
-		$cache = new NV_oOS_Docs_Hub_Cache();
-		$cache->clear();
+		// Only react to updates of NV-oOS-related plugins. When the hook
+		// payload carries no plugin list (unknown updater shape), fall back
+		// to the legacy behaviour of rebuilding for any plugin update.
+		$plugins = isset( $options['plugins'] ) && is_array( $options['plugins'] ) ? $options['plugins'] : array();
+		if ( ! empty( $plugins ) && ! self::is_docs_related_plugin( $plugins ) ) {
+			return;
+		}
+
+		self::clear_and_enqueue();
 	}
 
 	/**
@@ -211,9 +219,77 @@ class NV_oOS_Docs_Hub_Rebuild_Job {
 	 * @param string $plugin Plugin file path.
 	 * @return void
 	 */
-	public static function handle_plugin_change( $plugin ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+	public static function handle_plugin_change( $plugin ) {
+		if ( ! self::is_docs_related_plugin( array( (string) $plugin ) ) ) {
+			return;
+		}
+
+		self::clear_and_enqueue();
+	}
+
+	/**
+	 * Handle the base plugin's in-place updater notification.
+	 *
+	 * The base plugin replaces its own files without going through the
+	 * WordPress Plugin_Upgrader flow, so upgrader_process_complete never
+	 * fires for those updates. The updater emits wp_mcp_ai_plugin_updated
+	 * instead, and this method applies the same clear + rebuild treatment.
+	 *
+	 * @since 0.4.1
+	 *
+	 * @param string $plugin Updated plugin's file path relative to the plugins directory.
+	 * @return void
+	 */
+	public static function handle_plugin_update_notice( $plugin ) {
+		if ( ! self::is_docs_related_plugin( array( (string) $plugin ) ) ) {
+			return;
+		}
+
+		self::clear_and_enqueue();
+	}
+
+	/**
+	 * Whether any of the given plugin basenames ships documentation that
+	 * the Docs Hub indexes.
+	 *
+	 * @since 0.4.1
+	 *
+	 * @param array $plugins Plugin file paths relative to the plugins directory.
+	 * @return bool
+	 */
+	public static function is_docs_related_plugin( $plugins ) {
+		foreach ( $plugins as $plugin ) {
+			$basename = (string) $plugin;
+			if (
+				false !== strpos( $basename, 'mcp-ai-wpoos' ) ||
+				false !== strpos( $basename, 'nvoos-docs-hub' )
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Invalidate the cache and start an async rebuild.
+	 *
+	 * Clearing alone was insufficient: the next visitor request would only
+	 * auto-enqueue a rebuild when an admin logged in, so updates could
+	 * leave the index stale indefinitely. Enqueueing here starts the
+	 * chunked pipeline immediately. The remote file cache is preserved —
+	 * a plugin update only changes local docs, so the rebuild should not
+	 * re-fetch every remote Markdown file from GitHub.
+	 *
+	 * @since 0.4.1
+	 *
+	 * @return void
+	 */
+	public static function clear_and_enqueue() {
 		$cache = new NV_oOS_Docs_Hub_Cache();
-		$cache->clear();
+		$cache->clear( true );
+
+		self::enqueue_async();
 	}
 
 	/**

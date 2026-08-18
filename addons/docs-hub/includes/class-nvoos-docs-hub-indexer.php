@@ -182,6 +182,7 @@ class NV_oOS_Docs_Hub_Indexer {
 		$built_at = time();
 		$manifest = array(
 			'version'        => NVOOS_DOCS_HUB_VERSION,
+			'base_version'   => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '',
 			'built_at'       => $built_at,
 			'cache_version'  => md5( (string) $built_at . '|' . wp_json_encode( array_keys( $this->slug_map ) ) ),
 			'tree'           => $this->tree,
@@ -498,24 +499,99 @@ class NV_oOS_Docs_Hub_Indexer {
 			// Strip anchor fragment.
 			$href_path = preg_replace( '/#[^)]*$/', '', $href );
 
-			$resolved = realpath( $base_dir . DIRECTORY_SEPARATOR . $href_path );
-			if ( false === $resolved || ! file_exists( $resolved ) ) {
-				$suggestions = $this->suggest_fix( $href_path, $file_path );
+			// Resolve against the indexed slug map first. This is the only
+			// reliable resolution for remote sources, whose local cache
+			// files are stored flat under content-hash filenames — a
+			// filesystem realpath() there can never resolve repo-relative
+			// links even when the target page exists.
+			$resolved_slug = $this->resolve_link_to_slug( $relative_path, $href_path );
+			$is_resolved   = null !== $resolved_slug;
 
-				$entry = array(
-					'source' => $relative_path,
-					'target' => $href,
-				);
-
-				if ( ! empty( $suggestions ) ) {
-					$entry['suggestions'] = $suggestions;
-				}
-
-				$broken[] = $entry;
+			if ( ! $is_resolved ) {
+				$resolved    = realpath( $base_dir . DIRECTORY_SEPARATOR . $href_path );
+				$is_resolved = false !== $resolved && file_exists( $resolved );
 			}
+
+			if ( $is_resolved ) {
+				continue;
+			}
+
+			$suggestions = $this->suggest_fix( $href_path, $file_path );
+
+			$entry = array(
+				'source' => $relative_path,
+				'target' => $href,
+			);
+
+			if ( ! empty( $suggestions ) ) {
+				$entry['suggestions'] = $suggestions;
+			}
+
+			$broken[] = $entry;
 		}
 
 		return $broken;
+	}
+
+	/**
+	 * Resolve a link target against the indexed slug map.
+	 *
+	 * Computes the virtual path of the link target relative to the source
+	 * page, normalizes `.`/`..` segments, and maps it back to a slug using
+	 * the same normalization as {@see derive_slug()}. Returns null when the
+	 * target does not correspond to any indexed page.
+	 *
+	 * @since 0.4.1
+	 *
+	 * @param string $source_relative_path Relative path of the page containing the link.
+	 * @param string $href_path            Link target with any anchor stripped.
+	 * @return string|null Slug when the target resolves to an indexed page, null otherwise.
+	 */
+	private function resolve_link_to_slug( $source_relative_path, $href_path ) {
+		$source_dir = str_replace( DIRECTORY_SEPARATOR, '/', dirname( $source_relative_path ) );
+		if ( '.' === $source_dir ) {
+			$source_dir = '';
+		}
+
+		$target     = '' === $source_dir ? $href_path : $source_dir . '/' . $href_path;
+		$normalized = $this->normalize_link_path( $target );
+		$slug       = $this->derive_slug( $normalized );
+
+		if ( '' === $slug ) {
+			return null;
+		}
+
+		return isset( $this->slug_map[ $slug ] ) ? $slug : null;
+	}
+
+	/**
+	 * Normalize a link path by resolving `.` and `..` segments.
+	 *
+	 * Markdown links use forward slashes, but Windows paths arriving from
+	 * local scans are normalized too. The result contains only forward
+	 * slashes with all dot segments collapsed.
+	 *
+	 * @since 0.4.1
+	 *
+	 * @param string $path Raw link path.
+	 * @return string Normalized path.
+	 */
+	private function normalize_link_path( $path ) {
+		$path     = str_replace( '\\', '/', (string) $path );
+		$segments = array();
+
+		foreach ( explode( '/', $path ) as $segment ) {
+			if ( '' === $segment || '.' === $segment ) {
+				continue;
+			}
+			if ( '..' === $segment ) {
+				array_pop( $segments );
+				continue;
+			}
+			$segments[] = $segment;
+		}
+
+		return implode( '/', $segments );
 	}
 
 	/**
@@ -820,25 +896,34 @@ class NV_oOS_Docs_Hub_Indexer {
 		}
 
 		// ---- Strategy 2: Fuzzy filename matching ----
-		// Build two candidate lists:
-		//   (a) full slugs (e.g. "features/pro-toolkit-optimization")
-		//   (b) basenames of each slug (e.g. "pro-toolkit-optimization")
-		$all_slugs     = array_keys( $this->slug_map );
-		$slug_basenames = array();
-		foreach ( $all_slugs as $slug ) {
-			$slug_basenames[] = basename( $slug );
-		}
+		// Query forms: the bare filename stem and the full normalized
+		// target path. Candidate lists: full slugs and slug basenames.
+		// Every combination is compared and the best distance per slug
+		// wins, so both "features/foo.md" → "features/foo" (same path)
+		// and "features/foo.md" → "foo" (moved file) are caught.
+		$all_slugs        = array_keys( $this->slug_map );
+		$slug_basenames   = array_map( 'basename', $all_slugs );
+		$target_path_stem = preg_replace( '/\.md$/i', '', $this->normalize_link_path( $broken_target ) );
+		$queries          = array_unique( array_filter( array( $target_stem, $target_path_stem ) ) );
 
-		$matches       = $this->fuzzy_match_slug( $target_stem, $all_slugs );
-		$basename_matches = $this->fuzzy_match_slug( $target_stem, $slug_basenames );
-
-		// Merge basename matches into the full-slug results, mapping
-		// basenames back to their original slugs for deduplication.
-		foreach ( $basename_matches as $basename => $distance ) {
-			foreach ( $all_slugs as $slug ) {
-				if ( basename( $slug ) === $basename && ! isset( $matches[ $slug ] ) ) {
+		$matches = array();
+		foreach ( $queries as $query ) {
+			// Full-slug comparisons.
+			foreach ( $this->fuzzy_match_slug( $query, $all_slugs ) as $slug => $distance ) {
+				if ( ! isset( $matches[ $slug ] ) || $distance < $matches[ $slug ] ) {
 					$matches[ $slug ] = $distance;
-					break;
+				}
+			}
+
+			// Basename comparisons, mapped back to their full slugs.
+			foreach ( $this->fuzzy_match_slug( $query, $slug_basenames ) as $basename => $distance ) {
+				foreach ( $all_slugs as $slug ) {
+					if ( basename( $slug ) === $basename ) {
+						if ( ! isset( $matches[ $slug ] ) || $distance < $matches[ $slug ] ) {
+							$matches[ $slug ] = $distance;
+						}
+						break;
+					}
 				}
 			}
 		}
@@ -847,14 +932,15 @@ class NV_oOS_Docs_Hub_Indexer {
 		asort( $matches, SORT_NUMERIC );
 
 		foreach ( $matches as $match_slug => $distance ) {
-			// Avoid suggesting the same file as the source.
 			$match_data = isset( $this->slug_map[ $match_slug ] ) ? $this->slug_map[ $match_slug ] : array();
-			$match_path = isset( $match_data['relative_path'] ) ? (string) $match_data['relative_path'] : '';
+			$title      = isset( $match_data['title'] ) ? (string) $match_data['title'] : '';
 
-			$title = isset( $match_data['title'] ) ? (string) $match_data['title'] : '';
-
-			// Confidence: 0.8 at distance 1, scaling down to 0.3 at threshold.
-			$confidence = max( 0.3, 0.8 - ( ( $distance - 1 ) * 0.25 ) );
+			// Confidence: 1.0 at distance 0, 0.8 at distance 1, scaling
+			// down to a floor of 0.3 — always clamped to [0.3, 1.0].
+			$confidence = 0 === $distance
+				? 1.0
+				: max( 0.3, 0.8 - ( ( $distance - 1 ) * 0.25 ) );
+			$confidence = min( 1.0, $confidence );
 
 			$suggestions[] = array(
 				'target'     => $match_slug . '.md',
@@ -874,9 +960,11 @@ class NV_oOS_Docs_Hub_Indexer {
 			// Collect .md files from the source directory and one level of
 			// subdirectories so links like "features/target.md" can be
 			// resolved when the source file lives in the parent directory.
+			$root_glob      = glob( $source_dir . DIRECTORY_SEPARATOR . '*.md' );
+			$sub_glob       = glob( $source_dir . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.md' );
 			$neighbor_files = array_merge(
-				glob( $source_dir . DIRECTORY_SEPARATOR . '*.md' ) ?: array(),
-				glob( $source_dir . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.md' ) ?: array()
+				is_array( $root_glob ) ? $root_glob : array(),
+				is_array( $sub_glob ) ? $sub_glob : array()
 			);
 
 			if ( is_array( $neighbor_files ) ) {
@@ -991,9 +1079,10 @@ class NV_oOS_Docs_Hub_Indexer {
 	 */
 	public function fuzzy_match_slug( $stem, $all_slugs ) {
 		$results = array();
+		$stem_lc = strtolower( (string) $stem );
 
 		foreach ( $all_slugs as $slug ) {
-			$distance = levenshtein( $stem, $slug );
+			$distance = levenshtein( $stem_lc, strtolower( (string) $slug ) );
 			if ( $distance <= self::FUZZY_THRESHOLD ) {
 				$results[ $slug ] = $distance;
 			}

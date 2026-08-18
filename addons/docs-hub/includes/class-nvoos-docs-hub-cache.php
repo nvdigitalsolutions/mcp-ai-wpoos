@@ -214,12 +214,17 @@ class NV_oOS_Docs_Hub_Cache {
 	 * Clear all cached data.
 	 *
 	 * Deletes all JSON files in the cache directory and clears transients.
+	 * When `$preserve_remote` is true, the per-file remote content cache is
+	 * kept so the next rebuild does not re-fetch every Markdown file from
+	 * GitHub — useful after a plugin update, which only changes local
+	 * docs and leaves the remote refs untouched.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param bool $preserve_remote Keep cached remote file content.
 	 * @return void
 	 */
-	public function clear() {
+	public function clear( $preserve_remote = false ) {
 		$dir = $this->get_live_dir();
 		if ( ! $dir ) {
 			return;
@@ -245,13 +250,15 @@ class NV_oOS_Docs_Hub_Cache {
 		// Clear the staging namespace so any half-finished rebuild starts fresh.
 		$this->clear_staging();
 
-		// Delete remote content cache files (individual .md files fetched from
-		// GitHub). The next rebuild will re-fetch them.
-		$remote_dir = $dir . '/remote';
-		$remote_mds = is_dir( $remote_dir ) ? glob( $remote_dir . '/*.md' ) : array();
-		if ( ! empty( $remote_mds ) ) {
-			foreach ( $remote_mds as $file ) {
-				wp_delete_file( $file );
+		if ( ! $preserve_remote ) {
+			// Delete remote content cache files (individual .md files fetched from
+			// GitHub). The next rebuild will re-fetch them.
+			$remote_dir = $dir . '/remote';
+			$remote_mds = is_dir( $remote_dir ) ? glob( $remote_dir . '/*.md' ) : array();
+			if ( ! empty( $remote_mds ) ) {
+				foreach ( $remote_mds as $file ) {
+					wp_delete_file( $file );
+				}
 			}
 		}
 

@@ -41,6 +41,7 @@ class Test_Docs_Hub_Indexer extends WP_UnitTestCase {
 
 		require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-plugin.php';
 		require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-indexer.php';
+		require_once NVOOS_DOCS_HUB_PATH . 'includes/class-nvoos-docs-hub-cache.php';
 
 		$this->test_dir = sys_get_temp_dir() . '/nvoos-dh-idx-test-' . uniqid();
 		wp_mkdir_p( $this->test_dir );
@@ -219,6 +220,146 @@ class Test_Docs_Hub_Indexer extends WP_UnitTestCase {
 		$this->assertContains( 'javascript', $langs );
 		// Should be deduplicated.
 		$this->assertCount( 2, $langs );
+	}
+
+	/**
+	 * Test that relative links resolve through the slug map for remote
+	 * entries whose local files are cached under flat hash names.
+	 *
+	 * A filesystem realpath() can never resolve repo-relative links against
+	 * flat cache files, so every such link used to be flagged broken. The
+	 * slug map is authoritative and must win.
+	 *
+	 * @return void
+	 */
+	public function test_broken_links_resolve_via_slug_map() {
+		$indexer = new NV_oOS_Docs_Hub_Indexer();
+		$indexer->set_slug_map(
+			array(
+				'features/pro-toolkit-optimization' => array(
+					'path'          => $this->test_dir . '/hash-1.md',
+					'title'         => 'Pro Toolkit',
+					'source'        => 'remote',
+					'plugin_name'   => 'repo',
+					'relative_path' => 'features/pro-toolkit-optimization.md',
+				),
+			)
+		);
+
+		// The local cache file exists, but under a flat name the link can
+		// never resolve to.
+		file_put_contents( $this->test_dir . '/hash-1.md', '# Pro Toolkit' );
+
+		$broken = $indexer->detect_broken_links(
+			'[See](features/pro-toolkit-optimization.md) and [missing](features/does-not-exist.md).',
+			$this->test_dir . '/hash-0.md',
+			'DOCUMENTATION_INDEX.md'
+		);
+
+		$this->assertCount( 1, $broken );
+		$this->assertEquals( 'features/does-not-exist.md', $broken[0]['target'] );
+	}
+
+	/**
+	 * Test that a link using a `../` segment resolves through the slug map.
+	 *
+	 * @return void
+	 */
+	public function test_broken_link_parent_segment_resolution() {
+		$indexer = new NV_oOS_Docs_Hub_Indexer();
+		$indexer->set_slug_map(
+			array(
+				'getting-started' => array(
+					'path'          => $this->test_dir . '/getting-started.md',
+					'title'         => 'Getting Started',
+					'source'        => 'base',
+					'plugin_name'   => 'plugin',
+					'relative_path' => 'docs/getting-started.md',
+				),
+			)
+		);
+
+		$source_file = $this->test_dir . '/chat.md';
+		file_put_contents( $source_file, '# Chat' );
+
+		$broken = $indexer->detect_broken_links(
+			'[Intro](../getting-started.md).',
+			$source_file,
+			'docs/features/chat.md'
+		);
+
+		$this->assertEmpty( $broken );
+	}
+
+	/**
+	 * Test that a broken link to a file moved between directories gets a
+	 * suggestion (the case from the settings UI: a root page linking to
+	 * features/pro-toolkit-optimization.md when that file now lives at the
+	 * repo root).
+	 *
+	 * @return void
+	 */
+	public function test_suggestion_for_moved_file() {
+		$indexer = new NV_oOS_Docs_Hub_Indexer();
+		$indexer->set_slug_map(
+			array(
+				'pro-toolkit-optimization' => array(
+					'path'          => $this->test_dir . '/pro-toolkit-optimization.md',
+					'title'         => 'Pro Toolkit Optimization',
+					'source'        => 'remote',
+					'plugin_name'   => 'repo',
+					'relative_path' => 'pro-toolkit-optimization.md',
+				),
+			)
+		);
+
+		$source_file = $this->test_dir . '/index.md';
+		file_put_contents( $source_file, '# Index' );
+
+		$broken = $indexer->detect_broken_links(
+			'[See](features/pro-toolkit-optimization.md).',
+			$source_file,
+			'DOCUMENTATION_INDEX.md'
+		);
+
+		$this->assertCount( 1, $broken );
+		$this->assertNotEmpty( $broken[0]['suggestions'] );
+
+		$best = $broken[0]['suggestions'][0];
+		$this->assertEquals( 'pro-toolkit-optimization.md', $best['target'] );
+		$this->assertLessThanOrEqual( 1.0, $best['confidence'] );
+		$this->assertGreaterThanOrEqual( 0.0, $best['confidence'] );
+	}
+
+	/**
+	 * Test that suggest_fix() is case-insensitive and never produces a
+	 * confidence above 1.0 (regression: an exact basename match previously
+	 * yielded 1.05).
+	 *
+	 * @return void
+	 */
+	public function test_suggest_fix_is_case_insensitive_and_clamped() {
+		$indexer = new NV_oOS_Docs_Hub_Indexer();
+		$indexer->set_slug_map(
+			array(
+				'pro-toolkit-optimization' => array(
+					'path'          => $this->test_dir . '/pro-toolkit-optimization.md',
+					'title'         => 'Pro Toolkit Optimization',
+					'source'        => 'remote',
+					'plugin_name'   => 'repo',
+					'relative_path' => 'pro-toolkit-optimization.md',
+				),
+			)
+		);
+
+		$suggestions = $indexer->suggest_fix(
+			'FEATURES/PRO-TOOLKIT-OPTIMIZATION.md',
+			$this->test_dir . '/index.md'
+		);
+
+		$this->assertNotEmpty( $suggestions );
+		$this->assertEquals( 'pro-toolkit-optimization', $suggestions[0]['slug'] );
+		$this->assertEquals( 1.0, $suggestions[0]['confidence'] );
 	}
 
 	/**
