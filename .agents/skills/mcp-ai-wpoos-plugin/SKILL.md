@@ -560,6 +560,24 @@ update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'creat
 **Fix:** Set environment variables before starting Docker (Fix 3 auto-detects
 them), or set keys via WordPress admin → oOS → Providers tab.
 
+### semantic_content_search returns "No OpenAI API key has been configured"
+
+**Cause (pre-1.2.0):** the tool picked the embedding backend from the
+assistant's chat provider and hard-failed on OpenAI. Since v1.2.0 embeddings
+are resolved independently of the chat provider — configure **any** embedding
+backend:
+
+| Backend | Setting |
+|---|---|
+| OpenAI | `openai_api_key` |
+| Gemini | `gemini_api_key` |
+| Ollama (local) | `ollama_endpoint_url` |
+| DigitalOcean | `digitalocean_api_key` |
+
+Pin a specific backend with `embedding_provider` (`openai`, `gemini`,
+`ollama`, or `digitalocean`). With no backend configured, the tool falls back
+to keyword search (`fallback_mode: "keyword"`) instead of failing.
+
 ### Credential token invalid (401)
 
 **Cause:** Token malformed, expired, or revoked.

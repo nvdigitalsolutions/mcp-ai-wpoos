@@ -395,6 +395,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Research.
 					'research_blog_post',
 					// Taxonomy management.
+					'list_terms',
+					'list_taxonomies',
 					'create_term',
 					'update_term',
 					// SEO.

@@ -340,6 +340,8 @@ class WP_MCP_AI_Default_Assistants {
 						'save_post',
 						'get_recent_posts',
 						// Taxonomy Management (Base).
+						'list_terms',
+						'list_taxonomies',
 						'create_term',
 						'update_term',
 						'auto_categorize_content',

@@ -888,6 +888,18 @@ return array(
 		'profession_tags'       => array( 'content_strategist', 'seo_specialist' ),
 		'risk_level'            => 'standard',
 	),
+	'list_terms'                         => array(
+		'toolkit'               => 'content_publishing',
+		'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+		'profession_tags'       => array( 'content_strategist', 'seo_specialist' ),
+		'risk_level'            => 'info',
+	),
+	'list_taxonomies'                    => array(
+		'toolkit'               => 'content_publishing',
+		'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+		'profession_tags'       => array( 'content_strategist', 'seo_specialist' ),
+		'risk_level'            => 'info',
+	),
 	'create_image_variation'             => array(
 		'toolkit'               => 'media_processing',
 		'pattern_compatibility' => array( 'sequential' ),
