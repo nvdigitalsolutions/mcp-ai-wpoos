@@ -146,6 +146,27 @@ instruction-level JSON discipline. All responses are hardened (code fences
 and prose tolerated, balanced-JSON extraction) before parsing, and
 per-site credentials (`SITE_PROVIDER_KEYS`) apply in multi-tenant mode.
 
+### Managed Node.js hosts (Cloudways Velocity)
+
+Velocity is a Node-only managed stack — no Docker, no Python. The crawling
+surface is designed so that never matters:
+
+- Phases 1–2 are **pure Node** — no Python enters the worker image or
+  dependency set, so Velocity builds and PM2 processes are unchanged.
+- The optional Phase 3 proxy (`/api/crawl/full`, full Crawl4AI parity) is
+  env-gated: without `CRAWL4AI_FULL_URL` it answers
+  `503 service_not_configured`. On Velocity, simply don't set it.
+- If full parity is needed with a Velocity worker, host the Python
+  Crawl4AI elsewhere (VPS/container host or managed scraping API) and set
+  `CRAWL4AI_FULL_URL` to its URL — the worker acts as the SSRF-validated,
+  token-gated forwarder. Alternatively point
+  `WP_MCP_AI_CRAWL4AI_BASE_URL` at the remote service directly in
+  WordPress and skip the worker.
+- Velocity images may lack Chromium: the static crawl tier works fully,
+  the browser-fallback tier surfaces per-URL errors, and
+  `render: "never"` is the fully-supported Velocity mode (same graceful
+  degradation as the `browser_automation` capability flag).
+
 ### Crawl configuration
 
 | Env var | Default | Purpose |

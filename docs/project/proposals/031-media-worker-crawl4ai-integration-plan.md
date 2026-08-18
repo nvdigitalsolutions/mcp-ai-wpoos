@@ -279,7 +279,7 @@ The plugin remote mode expects the Crawl4AI REST shape:
 | `GET /task/{task_id}` → `{ status, results }` | `GET /api/crawl4ai/task/:task_id` — read job state from the queue's status store (same pattern as `/api/workflow/status`); map `completed → results[url]` |
 | `NoExtractionStrategy` | Phase 1 markdown pipeline (default) |
 | `JsonCssExtractionStrategy` | v1: cheerio CSS-selector extraction for simple `{selector, name}` schemas; unsupported shapes return per-URL error (documented) |
-| `LLMExtractionStrategy` | v1: `501 not_implemented` unless an `OPENAI_API_KEY` is configured; Phase 3 covers this via the sibling service |
+| `LLMExtractionStrategy` | multi-provider structured-JSON extraction (OpenAI, Gemini, Anthropic, DeepSeek, or any OpenAI-compatible `CRAWL_LLM_BASE_URL`); `501` when no provider is configured (implemented v3.2.0 — no longer a Phase 3 dependency) |
 | `word_count_threshold` | honored in the Phase 1 tier gate (return empty/skip below threshold) |
 
 Task IDs are opaque strings (same rule as `WP_MCP_AI_Crawler`). Job TTL
@@ -315,9 +315,11 @@ because it already speaks this contract.
 
 ## 7. Phase 3 (Optional) — Full Crawl4AI Sibling Container (~1 day)
 
-Only when LLM extraction strategies, deep/BFS crawling, or session reuse are
-required. Follows the repo's existing bundling recommendation and the
-Kubernetes sidecar rationale.
+Only when deep/BFS crawling, session reuse, caching, or exact upstream
+Crawl4AI feature parity are required (structured LLM extraction is no
+longer a Phase 3 reason — it is native since worker v3.2.0). Follows the
+repo's existing bundling recommendation and the Kubernetes sidecar
+rationale.
 
 1. **Compose service** next to `media-worker`:
 
@@ -340,7 +342,35 @@ Kubernetes sidecar rationale.
 3. **Routing rule:** `WP_MCP_AI_CRAWL4AI_BASE_URL` then points either at the
    facade (default) or the proxy (`/api/crawl/full`) for full parity.
 4. Document the decision matrix: Phase 1/2 covers ~90% of `run_crawl4ai_job`
-   usage; Phase 3 is for structured LLM extraction and deep crawls.
+   usage; Phase 3 is for deep crawls, session reuse, and upstream parity.
+
+### 7.1 Managed Node.js hosts (Cloudways Velocity) — compatibility rules
+
+Velocity is a managed **Node.js-only** stack (Git deploys, NGINX + PM2 —
+no Docker, no Python runtime). Phase 3 must therefore never be allowed to
+break a Velocity deployment:
+
+1. **Zero Python in the worker.** The proxy route is pure Node (HTTP
+   forwarding). The worker never imports, spawns, or bundles Python, and
+   the npm dependency set is unchanged — the Velocity build/PM2 process is
+   identical with or without Phase 3.
+2. **Inert by default.** Without `CRAWL4AI_FULL_URL` the proxy answers
+   `503 service_not_configured`. On Velocity the variable is simply never
+   set — the compose sibling cannot exist there anyway (Docker-only
+   deployments use it).
+3. **Full parity on Velocity = external hosting.** Host the Python
+   Crawl4AI elsewhere (VPS/container host or a managed scraping API) and
+   either set `CRAWL4AI_FULL_URL` on the Velocity worker (worker becomes
+   the SSRF-validated, token-gated forwarder) or point
+   `WP_MCP_AI_CRAWL4AI_BASE_URL` directly at the remote service in
+   WordPress (skips the worker entirely — the plugin's original hybrid
+   remote mode).
+4. **Velocity Chromium caveat (applies to Phase 1 too).** Velocity images
+   may lack Chromium/system libs; the crawl endpoints' static tier works
+   fully, the browser-fallback tier surfaces per-URL errors, and
+   `render: "never"` is the fully-supported Velocity mode — same graceful
+   degradation as the existing `browser_automation` capability flag
+   (see `docs/operations/deployment/media-worker-velocity-setup.md` §5).
 
 ---
 
