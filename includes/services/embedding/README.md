@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Contains the three concrete embedding provider implementations — DigitalOcean, Ollama, and OpenAI — each fulfilling the `WP_MCP_AI_Embedding_Provider_Interface` contract so `WP_MCP_AI_Vector_Context_Service` can generate vector embeddings without coupling to a single backend.
+Contains the four concrete embedding provider implementations — DigitalOcean, Gemini, Ollama, and OpenAI — each fulfilling the `WP_MCP_AI_Embedding_Provider_Interface` contract so `WP_MCP_AI_Vector_Context_Service` can generate vector embeddings without coupling to a single backend.
 
 ## Tier
 
@@ -18,6 +18,7 @@ Contains the three concrete embedding provider implementations — DigitalOcean,
 | Symbol | File | Used by |
 |---|---|---|
 | `WP_MCP_AI_Embedding_Provider_DigitalOcean` | `class-wp-mcp-ai-embedding-provider-digitalocean.php` | `WP_MCP_AI_Vector_Context_Service` |
+| `WP_MCP_AI_Embedding_Provider_Gemini` | `class-wp-mcp-ai-embedding-provider-gemini.php` | `WP_MCP_AI_Vector_Context_Service`; also used by `semantic_content_search` for Gemini-backed assistants |
 | `WP_MCP_AI_Embedding_Provider_Ollama` | `class-wp-mcp-ai-embedding-provider-ollama.php` | same |
 | `WP_MCP_AI_Embedding_Provider_OpenAI` | `class-wp-mcp-ai-embedding-provider-openai.php` | same (default when API key is present) |
 

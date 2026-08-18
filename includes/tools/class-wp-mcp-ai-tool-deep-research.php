@@ -314,22 +314,36 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$this->persist_research( $topic, $depth, $research_report, $memory_agent_id, $context );
 		}
 
-		// Cache the results for 1 hour.
+		// Cache the results for 1 hour — but never cache an empty report:
+		// caching a failed generation would poison the cache for the TTL window.
 		if ( WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
-			$cache_key = $this->get_cache_key( $topic, $depth, $focus_areas );
-			$cache_ttl = HOUR_IN_SECONDS;
+			$report_word_count = isset( $research_report['word_count'] ) ? absint( $research_report['word_count'] ) : 0;
 
-			/**
-			 * Filter the cache TTL for deep research results.
-			 *
-			 * @param int    $cache_ttl  Cache time-to-live in seconds (default: 3600).
-			 * @param string $topic      The research topic.
-			 * @param string $depth      Research depth level.
-			 * @param array  $focus_areas Focus areas.
-			 */
-			$cache_ttl = apply_filters( 'wp_mcp_ai_deep_research_cache_ttl', $cache_ttl, $topic, $depth, $focus_areas );
+			if ( $report_word_count > 0 ) {
+				$cache_key = $this->get_cache_key( $topic, $depth, $focus_areas );
+				$cache_ttl = HOUR_IN_SECONDS;
 
-			WP_MCP_AI_Cache_Helper::set( $cache_key, $research_report, $cache_ttl );
+				/**
+				 * Filter the cache TTL for deep research results.
+				 *
+				 * @param int    $cache_ttl  Cache time-to-live in seconds (default: 3600).
+				 * @param string $topic      The research topic.
+				 * @param string $depth      Research depth level.
+				 * @param array  $focus_areas Focus areas.
+				 */
+				$cache_ttl = apply_filters( 'wp_mcp_ai_deep_research_cache_ttl', $cache_ttl, $topic, $depth, $focus_areas );
+
+				WP_MCP_AI_Cache_Helper::set( $cache_key, $research_report, $cache_ttl );
+			} elseif ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'deep_research_cache_skipped',
+					'Deep research report was not cached because it is empty.',
+					array(
+						'topic' => $topic,
+						'depth' => $depth,
+					)
+				);
+			}
 		}
 
 		// Log success.
@@ -488,69 +502,244 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return array|WP_Error Analysis result or error.
 	 */
 	protected function analyze_findings( $topic, $search_results, $depth, $focus_areas, $include_sources, $context, $site_content = array(), $prior_memory = array() ) {
-		// Get AI client and model.
-		$ai_setup = $this->get_ai_setup();
+		/**
+		 * Filter the maximum number of provider attempts for report generation.
+		 *
+		 * Best practice: reject output after a small number of failures instead
+		 * of cascading retries. Each attempt walks the configured provider chain
+		 * (the failed provider is excluded for the next attempt).
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $max_attempts Default 2.
+		 */
+		$max_attempts = (int) apply_filters( 'wp_mcp_ai_deep_research_max_attempts', 2 );
+		$max_attempts = max( 1, $max_attempts );
 
-		if ( is_wp_error( $ai_setup ) ) {
-			return $ai_setup;
-		}
+		$excluded_providers  = array();
+		$last_error          = null;
+		$retry_larger_budget = false;
 
-		$client   = $ai_setup['client'];
-		$provider = $ai_setup['provider'];
-		$model    = $ai_setup['model'];
+		for ( $attempt = 0; $attempt < $max_attempts; $attempt++ ) {
+			// Get AI client and model, skipping providers that already failed.
+			$ai_setup = $this->get_ai_setup( $excluded_providers );
 
-		// Build analysis prompt.
-		$prompt = $this->build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content, $prior_memory );
+			if ( is_wp_error( $ai_setup ) ) {
+				// If at least one provider already failed, the chain is exhausted:
+				// surface the exhausted error with the salvageable sources below.
+				if ( $last_error instanceof WP_Error ) {
+					break;
+				}
 
-		// Build messages array.
-		$messages = array(
-			array(
-				'role'    => 'system',
-				'content' => __( 'You are an expert research analyst. Synthesize information from multiple sources into comprehensive, well-organized research reports. Always cite your sources and maintain objectivity.', 'mcp-ai-wpoos' ),
-			),
-			array(
-				'role'    => 'user',
-				'content' => $prompt,
-			),
-		);
+				// No provider was configured at all.
+				return $ai_setup;
+			}
 
-		// Call AI.
-		$result = $client->create_chat_completion(
-			$messages,
-			array(
-				'model'       => $model,
-				'temperature' => 0.3, // Low temperature for factual research.
-				'max_tokens'  => $this->get_max_tokens_for_depth( $depth ),
-			)
-		);
+			$client   = $ai_setup['client'];
+			$provider = $ai_setup['provider'];
+			$model    = $ai_setup['model'];
 
-		if ( is_wp_error( $result ) ) {
-			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_error(
-					'Deep research AI analysis failed: ' . $result->get_error_message(),
-					array(
-						'topic'    => $topic,
-						'provider' => $provider,
-						'model'    => $model,
-					)
+			// Build analysis prompt.
+			$prompt = $this->build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content, $prior_memory );
+
+			// Build messages array.
+			$messages = array(
+				array(
+					'role'    => 'system',
+					'content' => __( 'You are an expert research analyst. Synthesize information from multiple sources into comprehensive, well-organized research reports. Always cite your sources and maintain objectivity.', 'mcp-ai-wpoos' ),
+				),
+				array(
+					'role'    => 'user',
+					'content' => $prompt,
+				),
+			);
+
+			// When retrying after finish_reason=length truncation, double the
+			// token budget so the model can complete the report.
+			$max_tokens = $this->get_max_tokens_for_depth( $depth );
+			if ( $retry_larger_budget ) {
+				$max_tokens *= 2;
+			}
+
+			// Call AI.
+			$result = $client->create_chat_completion(
+				$messages,
+				array(
+					'model'       => $model,
+					'temperature' => 0.3, // Low temperature for factual research.
+					'max_tokens'  => $max_tokens,
+				)
+			);
+
+			if ( is_wp_error( $result ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Deep research AI analysis failed: ' . $result->get_error_message(),
+						array(
+							'topic'    => $topic,
+							'provider' => $provider,
+							'model'    => $model,
+							'attempt'  => $attempt + 1,
+						)
+					);
+				}
+
+				$last_error           = $result;
+				$excluded_providers[] = $provider;
+				continue;
+			}
+
+			// Extract content. An empty string passes isset(), so validate
+			// non-empty explicitly (reasoning models can return CoT-only output).
+			if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
+				$last_error           = new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					__( 'Invalid response from AI provider.', 'mcp-ai-wpoos' )
+				);
+				$excluded_providers[] = $provider;
+				continue;
+			}
+
+			$content = $this->extract_text_content( isset( $result['choices'][0]['message']['content'] ) ? $result['choices'][0]['message']['content'] : '' );
+
+			// Clients differ on where finish_reason lives: DeepSeek normalises it
+			// to the top level, OpenAI keeps it inside choices[0].
+			$finish_reason = '';
+			if ( isset( $result['finish_reason'] ) ) {
+				$finish_reason = sanitize_key( (string) $result['finish_reason'] );
+			} elseif ( isset( $result['choices'][0]['finish_reason'] ) ) {
+				$finish_reason = sanitize_key( (string) $result['choices'][0]['finish_reason'] );
+			}
+
+			// Reasoning fallback: DeepSeek-style reasoning models may return the
+			// chain of thought in reasoning_content with an empty final content.
+			// Use the reasoning as the report when it is all we have.
+			if ( '' === $content && ! empty( $result['reasoning_content'] ) && is_string( $result['reasoning_content'] ) ) {
+				$content = trim( $result['reasoning_content'] );
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'deep_research_reasoning_fallback',
+						'Deep research used reasoning_content because the completion content was empty.',
+						array(
+							'topic'    => $topic,
+							'provider' => $provider,
+							'model'    => $model,
+						)
+					);
+				}
+
+				return array(
+					'content'                 => $content,
+					'provider'                => $provider,
+					'model'                   => $model,
+					'used_reasoning_fallback' => true,
+					'attempts'                => $attempt + 1,
 				);
 			}
-			return $result;
-		}
 
-		// Extract content.
-		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from AI provider.', 'mcp-ai-wpoos' )
+			// Truncation: finish_reason=length means the report was cut off.
+			// Retry once with a larger budget before falling back to another provider.
+			if ( 'length' === $finish_reason ) {
+				if ( ! $retry_larger_budget ) {
+					$retry_larger_budget = true;
+					// Keep the same provider for the larger-budget retry.
+					continue;
+				}
+
+				if ( '' !== $content ) {
+					// Even after the larger budget the provider truncated: return
+					// what we have with an explicit flag instead of a silent cut.
+					return array(
+						'content'   => $content,
+						'provider'  => $provider,
+						'model'     => $model,
+						'truncated' => true,
+						'attempts'  => $attempt + 1,
+					);
+				}
+
+				$last_error           = new WP_Error(
+					'wp_mcp_ai_report_truncated',
+					__( 'The AI provider truncated the research report before producing any content. Try a lower research depth or a model with a larger output limit.', 'mcp-ai-wpoos' )
+				);
+				$excluded_providers[] = $provider;
+				continue;
+			}
+
+			// Empty completion without reasoning: treat as a transient failure.
+			if ( '' === $content ) {
+				$last_error = new WP_Error(
+					'wp_mcp_ai_empty_completion',
+					sprintf(
+						/* translators: %s: provider name */
+						__( 'The AI provider (%s) returned an empty completion for the research report.', 'mcp-ai-wpoos' ),
+						$provider
+					)
+				);
+				$excluded_providers[] = $provider;
+				continue;
+			}
+
+			// Success.
+			return array(
+				'content'  => $content,
+				'provider' => $provider,
+				'model'    => $model,
+				'attempts' => $attempt + 1,
 			);
 		}
 
-		return array(
-			'content'  => $result['choices'][0]['message']['content'],
-			'provider' => $provider,
-			'model'    => $model,
+		// All attempts exhausted: return an actionable error that still carries
+		// the gathered sources so callers can salvage the material.
+		$error_message = $last_error instanceof WP_Error
+			? $last_error->get_error_message()
+			: __( 'The AI analysis failed after multiple attempts.', 'mcp-ai-wpoos' );
+
+		$error_data = array(
+			'status' => 502,
 		);
+
+		if ( ! empty( $search_results['sources'] ) ) {
+			$error_data['sources'] = $search_results['sources'];
+		}
+		if ( ! empty( $search_results['queries'] ) ) {
+			$error_data['queries_used'] = $search_results['queries'];
+		}
+		$error_data['site_content_count']  = count( $site_content );
+		$error_data['attempted_providers'] = array_values( array_unique( $excluded_providers ) );
+
+		return new WP_Error( 'wp_mcp_ai_analysis_exhausted', $error_message, $error_data );
+	}
+
+	/**
+	 * Extract plain text from a completion content value.
+	 *
+	 * Provider clients may return `content` as a plain string or as an array
+	 * of typed segments (`array( array( 'type' => 'text', 'text' => '...' ) )`).
+	 * Normalise both shapes to a trimmed string.
+	 *
+	 * @param mixed $content Raw content value from a completion message.
+	 * @return string Trimmed plain-text content (empty when unparseable).
+	 */
+	protected function extract_text_content( $content ) {
+		if ( is_string( $content ) ) {
+			return trim( $content );
+		}
+
+		if ( is_array( $content ) ) {
+			$text = '';
+			foreach ( $content as $segment ) {
+				if ( is_string( $segment ) ) {
+					$text .= $segment;
+				} elseif ( is_array( $segment ) && isset( $segment['text'] ) && is_string( $segment['text'] ) ) {
+					$text .= $segment['text'];
+				}
+			}
+			return trim( $text );
+		}
+
+		return '';
 	}
 
 	/**
@@ -561,14 +750,27 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * optimized for research tasks (e.g., a model with larger context window or
 	 * better reasoning capabilities).
 	 *
+	 * @param array $exclude_providers Optional list of provider ids to skip
+	 *                                 (used for retry/fallback walks).
 	 * @return array|WP_Error Setup information or error.
 	 */
-	protected function get_ai_setup() {
+	protected function get_ai_setup( $exclude_providers = array() ) {
 		// Use the merged settings (credentials + main) so API keys stored in
 		// the separate non-autoload wp_mcp_ai_credentials option are visible.
 		$settings = class_exists( 'WP_MCP_AI_Admin_Settings_Base' )
 			? WP_MCP_AI_Admin_Settings_Base::get_settings()
 			: get_option( 'wp_mcp_ai_settings', array() );
+
+		$exclude_providers = is_array( $exclude_providers ) ? array_map( 'sanitize_key', $exclude_providers ) : array();
+
+		/**
+		 * Filter the list of providers skipped during deep-research fallbacks.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $exclude_providers Provider ids currently excluded.
+		 */
+		$exclude_providers = (array) apply_filters( 'wp_mcp_ai_deep_research_excluded_providers', $exclude_providers );
 
 		// Check if there's a dedicated deep research model configured.
 		if ( ! empty( $settings['deep_research_model'] ) ) {
@@ -585,8 +787,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$provider = $this->infer_provider_for_model( $model, $settings );
 			}
 
-			// Get client for specified provider.
-			if ( $provider ) {
+			// Get client for specified provider (unless excluded by a retry walk).
+			if ( $provider && ! in_array( $provider, $exclude_providers, true ) ) {
 				$client = $this->get_client_for_provider( $provider, $settings );
 				if ( ! is_wp_error( $client ) ) {
 					return array(
@@ -599,7 +801,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Fall back to trying providers in order of preference: OpenAI > Gemini > Anthropic > Cloudflare > HuggingFace > Ollama > DeepSeek > OpenRouter > NVIDIA > LM Studio > DigitalOcean > Kimi > Baseten > ZAI.
-		if ( ! empty( $settings['openai_api_key'] ) && class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+		// Providers in the exclude list are skipped so retry walks advance down the chain.
+		if ( ! in_array( 'openai', $exclude_providers, true ) && ! empty( $settings['openai_api_key'] ) && class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$client = new WP_MCP_AI_OpenAI_Client();
 			// Prefer gpt-4o for research (multimodal, fast, cost-effective) or fall back to configured default.
 			$model = ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
@@ -610,7 +813,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['gemini_api_key'] ) && class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+		if ( ! in_array( 'gemini', $exclude_providers, true ) && ! empty( $settings['gemini_api_key'] ) && class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$client = new WP_MCP_AI_Gemini_Client();
 			// Prefer gemini-3.1-pro-preview for deep research (1M context, 64K output, agentic capabilities) or fall back to configured default.
 			$model = ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3.1-pro-preview';
@@ -621,7 +824,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['anthropic_api_key'] ) && class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
+		if ( ! in_array( 'anthropic', $exclude_providers, true ) && ! empty( $settings['anthropic_api_key'] ) && class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			$client = new WP_MCP_AI_Anthropic_Client();
 			// Prefer claude-opus-4.5 for comprehensive research (highest intelligence, 200K context, persistent memory).
 			$model = 'claude-opus-4.5';
@@ -632,7 +835,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) && class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+		if ( ! in_array( 'cloudflare', $exclude_providers, true ) && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) && class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			$client = new WP_MCP_AI_Cloudflare_Client();
 			// Prefer Llama 4 or DeepSeek for research, fall back to configured default.
 			$default_model = ! empty( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : '@cf/meta/llama-4-scout-17b-instruct';
@@ -643,7 +846,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['huggingface_api_key'] ) && ! empty( $settings['huggingface_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+		if ( ! in_array( 'huggingface', $exclude_providers, true ) && ! empty( $settings['huggingface_api_key'] ) && ! empty( $settings['huggingface_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			$client = new WP_MCP_AI_Huggingface_Client();
 			// Prefer Llama 3.3 70B or DeepSeek V3.2 for research, fall back to configured default.
 			$default_model = ! empty( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : 'meta-llama/Llama-3.3-70B-Instruct';
@@ -654,7 +857,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['ollama_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
+		if ( ! in_array( 'ollama', $exclude_providers, true ) && ! empty( $settings['ollama_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			$client = new WP_MCP_AI_Ollama_Client();
 			// Prefer llama3.3 or deepseek-r1 for local research, fall back to configured default.
 			$default_model = ! empty( $settings['ollama_model'] ) ? $settings['ollama_model'] : 'llama3.3';
@@ -665,7 +868,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['deepseek_api_key'] ) && class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
+		if ( ! in_array( 'deepseek', $exclude_providers, true ) && ! empty( $settings['deepseek_api_key'] ) && class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			$client = new WP_MCP_AI_DeepSeek_Client();
 			// Prefer deepseek-reasoner for deep research (chain-of-thought reasoning) or fall back to configured default.
 			$model = ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-chat';
@@ -676,7 +879,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['openrouter_api_key'] ) && class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
+		if ( ! in_array( 'openrouter', $exclude_providers, true ) && ! empty( $settings['openrouter_api_key'] ) && class_exists( 'WP_MCP_AI_OpenRouter_Client' ) ) {
 			$client = new WP_MCP_AI_OpenRouter_Client();
 			// OpenRouter auto-routes to best model; user can override with openrouter_model setting.
 			$model = ! empty( $settings['openrouter_model'] ) ? $settings['openrouter_model'] : 'openrouter/auto';
@@ -687,7 +890,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['nvidia_api_key'] ) && class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
+		if ( ! in_array( 'nvidia', $exclude_providers, true ) && ! empty( $settings['nvidia_api_key'] ) && class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			$client = new WP_MCP_AI_Nvidia_Client();
 			$model  = ! empty( $settings['nvidia_model'] ) ? $settings['nvidia_model'] : 'meta/llama-3.1-8b-instruct';
 			return array(
@@ -697,7 +900,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['lm_studio_endpoint_url'] ) && class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
+		if ( ! in_array( 'lm_studio', $exclude_providers, true ) && ! empty( $settings['lm_studio_endpoint_url'] ) && class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$client = new WP_MCP_AI_LM_Studio_Client();
 			$model  = ! empty( $settings['lm_studio_model'] ) ? $settings['lm_studio_model'] : '';
 			return array(
@@ -707,7 +910,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['digitalocean_api_key'] ) && class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
+		if ( ! in_array( 'digitalocean', $exclude_providers, true ) && ! empty( $settings['digitalocean_api_key'] ) && class_exists( 'WP_MCP_AI_DigitalOcean_Client' ) ) {
 			$client = new WP_MCP_AI_DigitalOcean_Client();
 			$model  = ! empty( $settings['digitalocean_model'] ) ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct';
 			return array(
@@ -717,7 +920,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['kimi_api_key'] ) && class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
+		if ( ! in_array( 'kimi', $exclude_providers, true ) && ! empty( $settings['kimi_api_key'] ) && class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 			$client = new WP_MCP_AI_Kimi_Client();
 			$model  = ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k2.7-code';
 			return array(
@@ -727,7 +930,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['baseten_api_key'] ) && class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
+		if ( ! in_array( 'baseten', $exclude_providers, true ) && ! empty( $settings['baseten_api_key'] ) && class_exists( 'WP_MCP_AI_Baseten_Client' ) ) {
 			$client = new WP_MCP_AI_Baseten_Client();
 			$model  = ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';
 			return array(
@@ -737,7 +940,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		if ( ! empty( $settings['zai_api_key'] ) && class_exists( 'WP_MCP_AI_ZAI_Client' ) ) {
+		if ( ! in_array( 'zai', $exclude_providers, true ) && ! empty( $settings['zai_api_key'] ) && class_exists( 'WP_MCP_AI_ZAI_Client' ) ) {
 			$client = new WP_MCP_AI_ZAI_Client();
 			$model  = ! empty( $settings['zai_model'] ) ? $settings['zai_model'] : 'glm-4';
 			return array(
@@ -1029,6 +1232,17 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'cached'     => false,
 			'word_count' => str_word_count( $analysis['content'] ),
 		);
+
+		// Surface generation metadata so callers can see fallback/retry state.
+		if ( ! empty( $analysis['used_reasoning_fallback'] ) ) {
+			$report['used_reasoning_fallback'] = true;
+		}
+		if ( ! empty( $analysis['truncated'] ) ) {
+			$report['truncated'] = true;
+		}
+		if ( isset( $analysis['attempts'] ) ) {
+			$report['attempts'] = absint( $analysis['attempts'] );
+		}
 
 		// Add sources if requested.
 		if ( $include_sources && ! empty( $search_results['sources'] ) ) {

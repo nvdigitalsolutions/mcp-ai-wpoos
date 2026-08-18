@@ -827,7 +827,7 @@ class WP_MCP_AI_Vector_Context_Service {
 		}
 
 		if ( ! ( $provider instanceof WP_MCP_AI_Embedding_Provider_Interface ) ) {
-			return new WP_Error( 'no_embedding_provider', __( 'No embedding provider is configured. Configure an OpenAI API key or an Ollama endpoint.', 'mcp-ai-wpoos' ) );
+			return new WP_Error( 'no_embedding_provider', __( 'No embedding provider is configured. Configure an OpenAI API key, a Gemini API key, an Ollama endpoint, or a DigitalOcean API key.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! $provider->is_available() ) {
@@ -869,6 +869,7 @@ class WP_MCP_AI_Vector_Context_Service {
 		$has_openai       = ! empty( $settings['openai_api_key'] );
 		$has_ollama       = ! empty( $settings['ollama_endpoint_url'] );
 		$has_digitalocean = ! empty( $settings['digitalocean_api_key'] );
+		$has_gemini       = ! empty( $settings['gemini_api_key'] );
 		$preference       = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
 
 		// Honour an explicit preference if its backend is available.
@@ -881,14 +882,21 @@ class WP_MCP_AI_Vector_Context_Service {
 		if ( 'digitalocean' === $preference && $has_digitalocean ) {
 			return new WP_MCP_AI_Embedding_Provider_DigitalOcean();
 		}
+		if ( 'gemini' === $preference && $has_gemini ) {
+			return new WP_MCP_AI_Embedding_Provider_Gemini();
+		}
 
 		// Auto-detect: prefer OpenAI when present (preserves prior behaviour
-		// for existing installs); fall back to Ollama for local-first sites.
+		// for existing installs); fall back to Ollama for local-first sites,
+		// then Gemini and DigitalOcean.
 		if ( $has_openai ) {
 			return new WP_MCP_AI_Embedding_Provider_OpenAI();
 		}
 		if ( $has_ollama ) {
 			return new WP_MCP_AI_Embedding_Provider_Ollama();
+		}
+		if ( $has_gemini ) {
+			return new WP_MCP_AI_Embedding_Provider_Gemini();
 		}
 		if ( $has_digitalocean ) {
 			return new WP_MCP_AI_Embedding_Provider_DigitalOcean();
@@ -916,6 +924,9 @@ class WP_MCP_AI_Vector_Context_Service {
 		}
 		if ( ! class_exists( 'WP_MCP_AI_Embedding_Provider_DigitalOcean' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/services/embedding/class-wp-mcp-ai-embedding-provider-digitalocean.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Embedding_Provider_Gemini' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/embedding/class-wp-mcp-ai-embedding-provider-gemini.php';
 		}
 	}
 
