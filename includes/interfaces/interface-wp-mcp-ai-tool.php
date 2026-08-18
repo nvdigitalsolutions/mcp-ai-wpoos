@@ -366,6 +366,18 @@ interface WP_MCP_AI_Tool_Context_Restrictions_Interface {
 // Load the default capability trait so it is available wherever this interface file is included.
 require_once dirname( __DIR__ ) . '/tools/trait-wp-mcp-ai-tool-default-capability.php';
 
+// Load the legacy-definition trait so legacy-format tool classes can
+// implement this interface without restructuring their metadata.
+if ( ! trait_exists( 'WP_MCP_AI_Tool_Legacy_Definition' ) ) {
+	require_once dirname( __DIR__ ) . '/tools/trait-wp-mcp-ai-tool-legacy-definition.php';
+}
+
+// Load the legacy-tool wrapper so pre-interface tool classes can be
+// transparently wrapped into this interface at registration time.
+if ( ! class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {
+	require_once dirname( __DIR__ ) . '/tools/class-wp-mcp-ai-legacy-tool-wrapper.php';
+}
+
 // Load the safety profile interface so tool classes can reference it.
 // Guarded behind interface_exists to avoid double-declaration when loaded from other entry points.
 if ( ! interface_exists( 'WP_MCP_AI_Tool_Safety_Profile_Interface' ) ) {

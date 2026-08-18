@@ -107,6 +107,7 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'external-api',         // Makes external API calls.
 			'read-only',            // Only reads data, doesn't modify.
 			'paginated',            // Supports pagination.
+			'requires-capability',  // Checks the user's capability before running.
 			'requires-credentials', // Requires OpenAI API key.
 		);
 	}

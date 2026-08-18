@@ -676,11 +676,18 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		// AVIF: ~85% smaller than PNG, ~50% smaller than JPEG.
 		// WebP: ~30% smaller than JPEG, ~80% smaller than PNG.
 
-		$jpeg_count = $format_counts['jpeg'];
-		$png_count  = $format_counts['png'];
+		$jpeg_count   = $format_counts['jpeg'];
+		$png_count    = $format_counts['png'];
+		$format_total = array_sum( $format_counts );
 
-		$estimated_avif_savings = ( $jpeg_count * 0.50 + $png_count * 0.85 ) * ( $total_size / array_sum( $format_counts ) );
-		$estimated_webp_savings = ( $jpeg_count * 0.30 + $png_count * 0.80 ) * ( $total_size / array_sum( $format_counts ) );
+		if ( $format_total > 0 ) {
+			$estimated_avif_savings = ( $jpeg_count * 0.50 + $png_count * 0.85 ) * ( $total_size / $format_total );
+			$estimated_webp_savings = ( $jpeg_count * 0.30 + $png_count * 0.80 ) * ( $total_size / $format_total );
+		} else {
+			// Empty media library — nothing to save.
+			$estimated_avif_savings = 0;
+			$estimated_webp_savings = 0;
+		}
 
 		return array(
 			'avif_potential' => size_format( $estimated_avif_savings ),

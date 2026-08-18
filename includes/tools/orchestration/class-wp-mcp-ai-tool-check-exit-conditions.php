@@ -18,7 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Check Exit Conditions Tool
  */
-class WP_MCP_AI_Tool_Check_Exit_Conditions {
+class WP_MCP_AI_Tool_Check_Exit_Conditions implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
 	 * {@inheritdoc}

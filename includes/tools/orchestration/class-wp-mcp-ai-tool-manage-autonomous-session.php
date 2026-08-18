@@ -18,7 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Manage Autonomous Session Tool
  */
-class WP_MCP_AI_Tool_Manage_Autonomous_Session {
+class WP_MCP_AI_Tool_Manage_Autonomous_Session implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
 	 * {@inheritdoc}

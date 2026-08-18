@@ -18,7 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get Session Status Tool
  */
-class WP_MCP_AI_Tool_Get_Session_Status {
+class WP_MCP_AI_Tool_Get_Session_Status implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
 	 * {@inheritdoc}

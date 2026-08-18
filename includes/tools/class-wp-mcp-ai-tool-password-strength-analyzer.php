@@ -139,8 +139,9 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		return array(
 			'read',
 			'cacheable',
-			'consumes-tokens', // For AI suggestions.
+			'consumes-tokens',      // For AI suggestions.
 			'model-dependent',
+			'requires-capability',  // Checks the user's capability before running.
 		);
 	}
 

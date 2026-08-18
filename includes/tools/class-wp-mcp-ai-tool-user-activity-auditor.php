@@ -159,6 +159,7 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 			'read',
 			'cacheable',
 			'requires-admin',
+			'requires-capability', // Checks the user's capability before running.
 		);
 	}
 

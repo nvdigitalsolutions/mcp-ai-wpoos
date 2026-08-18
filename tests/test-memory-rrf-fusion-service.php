@@ -57,14 +57,14 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		// Stub the vector candidate stream so tests don't need a live OpenAI
 		// embedding provider. Each fixture record carries a `_vector_rank`
 		// (lower = better) and we return them in that order.
-		add_filter( 'pre_option_wp_mcp_ai_settings', array( $this, '_pre_option_settings' ), 10, 1 );
+		add_filter( 'pre_option_wp_mcp_ai_settings', array( $this, 'filter_pre_option_settings' ), 10, 1 );
 	}
 
 	/**
 	 * Tear down — strip every filter installed during the test.
 	 */
 	public function tearDown(): void {
-		remove_filter( 'pre_option_wp_mcp_ai_settings', array( $this, '_pre_option_settings' ), 10 );
+		remove_filter( 'pre_option_wp_mcp_ai_settings', array( $this, 'filter_pre_option_settings' ), 10 );
 
 		remove_all_filters( 'wp_mcp_ai_memory_rrf_enabled' );
 		remove_all_filters( 'wp_mcp_ai_memory_rrf_default_enabled' );
@@ -92,7 +92,7 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 	 *
 	 * @return array
 	 */
-	public function _pre_option_settings() {
+	public function filter_pre_option_settings() {
 		return array(
 			'openai_api_key'      => '',
 			'ollama_endpoint_url' => '',
@@ -100,9 +100,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		);
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 1. Master kill-switch
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * When the master filter returns false, the public wrapper on the vector
@@ -115,10 +117,18 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$svc = WP_MCP_AI_Vector_Context_Service::get_instance();
 
 		// search_context_rrf must fall through to search_context when the
-		// master switch is off. Both produce an error envelope without an
-		// embedding provider — but the RRF-specific keys must be absent.
+		// master switch is off. Without an embedding provider the legacy path
+		// short-circuits with a WP_Error (canonical failure envelope) — either
+		// way the RRF-specific keys must be absent.
 		$result = $svc->search_context_rrf( 'anything', 7777, 5 );
-		$this->assertIsArray( $result );
+
+		if ( is_wp_error( $result ) ) {
+			// Canonical failure envelope: no array keys at all, so the
+			// rrf_hybrid method key cannot have been emitted.
+			$this->addToAssertionCount( 1 );
+			return;
+		}
+
 		$this->assertArrayNotHasKey( 'method', $result, 'Legacy fallback must not set the rrf_hybrid method key.' );
 
 		if ( isset( $result['contexts'] ) ) {
@@ -128,9 +138,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 2. RRF math
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Given three stream rankings, the fused score equals the documented
@@ -163,15 +175,17 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$this->assertSame( 'B', $keys[0], 'B should be top — present in two streams\' rank 1 slot.' );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 3. Session diversification
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Five hits in the same session must collapse to the cap (default 3).
 	 */
 	public function test_session_diversification_caps_per_session() {
-		$scores = array(
+		$scores        = array(
 			'r1' => 0.5,
 			'r2' => 0.4,
 			'r3' => 0.3,
@@ -196,7 +210,7 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 	 * Records with no session_id treat each row as its own unique session.
 	 */
 	public function test_session_diversification_treats_missing_session_as_unique() {
-		$scores = array(
+		$scores        = array(
 			'a' => 0.5,
 			'b' => 0.4,
 			'c' => 0.3,
@@ -214,9 +228,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$this->assertCount( 4, $out, 'Records with no session id must not be collapsed by the cap.' );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 4. Missing Graphify
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Without `NV_oOS_Graphify_Memory_Bridge` loaded, the graph stream is a
@@ -232,9 +248,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$this->assertSame( array(), $graph, 'Graph stream must return empty silently.' );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 5. Missing CCT: BM25 LIKE fallback
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * With JetEngine CCT classes absent (default test env), BM25 must fall
@@ -280,16 +298,18 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$this->assertNotContains( 'ctx_like_b', $ids, 'Non-matching record must NOT surface.' );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 6. Confidence weighting
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Two records with the same fused score but different confidence_score
 	 * values must end up in confidence order.
 	 */
 	public function test_confidence_weighting_reorders_equally_fused_records() {
-		$scores = array(
+		$scores        = array(
 			'high' => 0.05,
 			'low'  => 0.05,
 		);
@@ -313,9 +333,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 0.05, $out['high'], 1e-9, '0.05 * 1.0 = 0.05.' );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 7. Legacy field preservation in RRF response shape
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * When RRF runs, the response carries both the legacy boost_breakdown
@@ -376,9 +398,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$this->assertNull( $ctx['rrf_breakdown']['graph_rank'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 8. Backward-compat: legacy search_context() shape
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * The legacy `search_context()` method must NOT add `rrf_breakdown` even
@@ -388,13 +412,17 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 	public function test_legacy_search_context_shape_has_no_rrf_breakdown() {
 		$svc = WP_MCP_AI_Vector_Context_Service::get_instance();
 
-		// Without an embedding provider this returns success=false plus an
-		// `error` key — but the important assertion is the SHAPE, not the
-		// success value: there is no `rrf_breakdown` and no `rrf_hybrid`
-		// method tag.
+		// Without an embedding provider the legacy path short-circuits with a
+		// WP_Error (canonical failure envelope) — but the important assertion
+		// is the SHAPE: there is no `rrf_breakdown` and no `rrf_hybrid`
+		// method tag on the success path.
 		$out = $svc->search_context( 'some query', 88003, 5 );
 
-		$this->assertIsArray( $out );
+		if ( is_wp_error( $out ) ) {
+			$this->addToAssertionCount( 1 );
+			return;
+		}
+
 		$this->assertArrayNotHasKey( 'method', $out );
 		if ( isset( $out['contexts'] ) ) {
 			foreach ( $out['contexts'] as $ctx ) {
@@ -403,9 +431,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		}
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 9. Per-call override: use_rrf=false
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Explicit `use_rrf=false` on `semantic_context_search` must route to
@@ -438,18 +468,25 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 			array()
 		);
 
-		// Without an OpenAI key the tool short-circuits with a message —
-		// that's fine: we just need to confirm method=rrf_hybrid is NOT set
-		// (the only branch that emits it is search_context_rrf).
-		$this->assertIsArray( $out );
+		// Without an OpenAI key the tool short-circuits with a WP_Error
+		// (canonical failure envelope) — that's fine: we just need to confirm
+		// method=rrf_hybrid is NOT set (the only branch that emits it is
+		// search_context_rrf).
+		if ( is_wp_error( $out ) ) {
+			$this->addToAssertionCount( 1 );
+			return;
+		}
+
 		if ( isset( $out['method'] ) ) {
 			$this->assertNotSame( 'rrf_hybrid', $out['method'], 'use_rrf=false must NOT take the rrf_hybrid path.' );
 		}
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 10. Per-call override: use_rrf=true even when master switch is off
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Explicit `use_rrf=true` must force the RRF path even when the master
@@ -473,9 +510,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$this->assertFalse( $m->invoke( $tool, array() ) );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 11. Cache hit / bypass
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * An identical query against the same agent + filters returns a cached
@@ -526,9 +565,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		remove_filter( 'wp_mcp_ai_memory_rrf_cache_bypass', '__return_true' );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 12. BM25 min-chars gate
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * A query shorter than `bm25_min_chars` must skip the BM25 stream
@@ -548,7 +589,12 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 			)
 		);
 
-		add_filter( 'wp_mcp_ai_memory_rrf_bm25_min_chars', static function () { return 5; } );
+		add_filter(
+			'wp_mcp_ai_memory_rrf_bm25_min_chars',
+			static function () {
+				return 5;
+			}
+		);
 		// Suppress vector + graph streams so the only contributor is BM25.
 		add_filter(
 			'wp_mcp_ai_memory_rrf_streams',
@@ -571,9 +617,11 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$this->assertIsArray( $out2 );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * Helpers
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Seed a transient-store record so `WP_MCP_AI_Agent_Context_Manager`
@@ -610,8 +658,8 @@ class Test_Memory_RRF_Fusion_Service extends WP_UnitTestCase {
 		$transient_key = 'mcp_ai_ctx_' . md5( $agent_id . '_' . $context_id );
 		set_transient( $transient_key, $full, DAY_IN_SECONDS );
 
-		$index_key   = 'mcp_ai_ctx_index_' . md5( (string) $agent_id );
-		$index       = get_transient( $index_key );
+		$index_key = 'mcp_ai_ctx_index_' . md5( (string) $agent_id );
+		$index     = get_transient( $index_key );
 		if ( ! is_array( $index ) ) {
 			$index = array();
 		}

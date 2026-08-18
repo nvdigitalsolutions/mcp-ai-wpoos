@@ -22,7 +22,12 @@ class WP_MCP_AI_New_Tools_Registration_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'generate_image_alt_text' );
 		$this->assertNotNull( $tool, 'Tool should be retrievable' );
-		$this->assertEquals( 'generate_image_alt_text', $tool->get_slug(), 'Tool slug should match' );
+
+		// get_tool() auto-upgrades to the validated variant when registered.
+		$expected_slug = $registry->is_tool_registered( 'generate_image_alt_text_validated' )
+			? 'generate_image_alt_text_validated'
+			: 'generate_image_alt_text';
+		$this->assertEquals( $expected_slug, $tool->get_slug(), 'Tool slug should match' );
 	}
 
 	/**
@@ -39,7 +44,12 @@ class WP_MCP_AI_New_Tools_Registration_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'generate_image_caption' );
 		$this->assertNotNull( $tool, 'Tool should be retrievable' );
-		$this->assertEquals( 'generate_image_caption', $tool->get_slug(), 'Tool slug should match' );
+
+		// get_tool() auto-upgrades to the validated variant when registered.
+		$expected_slug = $registry->is_tool_registered( 'generate_image_caption_validated' )
+			? 'generate_image_caption_validated'
+			: 'generate_image_caption';
+		$this->assertEquals( $expected_slug, $tool->get_slug(), 'Tool slug should match' );
 	}
 
 	/**

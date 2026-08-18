@@ -58,18 +58,18 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Configure assistant with a few test tools.
-		$config = array(
-			'provider'    => 'openai',
-			'model'       => 'gpt-4',
-			'temperature' => 0.7,
-			'tools'       => array(
-				'search_content',
-				'list_users',
-				'get_current_user',
-			),
+		// Configure assistant with a few real, registered tools.
+		update_post_meta(
+			$this->assistant_id,
+			WP_MCP_AI_Assistant_CPT::META_TOOLS,
+			array(
+				'list_cron_jobs',
+				'check_site_security',
+				'get_site_health',
+			)
 		);
-		update_post_meta( $this->assistant_id, '_mcp_ai_configuration', $config );
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, 'openai' );
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_MODEL, 'gpt-4' );
 
 		// Set as default assistant.
 		$settings                      = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -106,6 +106,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -147,6 +148,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -192,9 +194,9 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 			$data['result']['tools']
 		);
 
-		$this->assertContains( 'search_content', $tool_names );
-		$this->assertContains( 'list_users', $tool_names );
-		$this->assertContains( 'get_current_user', $tool_names );
+		$this->assertContains( 'list_cron_jobs', $tool_names );
+		$this->assertContains( 'check_site_security', $tool_names );
+		$this->assertContains( 'get_site_health', $tool_names );
 	}
 
 	/**
@@ -204,6 +206,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -257,6 +260,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -290,6 +294,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -317,7 +322,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		foreach ( $tool_names as $name ) {
 			$this->assertContains(
 				$name,
-				array( 'search_content', 'list_users', 'get_current_user' ),
+				array( 'list_cron_jobs', 'check_site_security', 'get_site_health' ),
 				"Tool '$name' should be in the allowed tools list"
 			);
 		}
@@ -330,6 +335,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -355,6 +361,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -368,7 +375,9 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
-		$this->assertSame( 404, $response->get_status() );
+		// JSON-RPC errors are delivered as HTTP 200 with an {"error":{...}}
+		// envelope (v1.1.55+ contract) so MCP SDKs can relay the error.
+		$this->assertSame( 200, $response->get_status() );
 
 		$data = $response->get_data();
 

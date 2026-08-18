@@ -68,6 +68,10 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 		'WP_MCP_AI_Tool_Edit_Gemini_Image_Validated'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image-validated.php',
 		'WP_MCP_AI_Tool_Scrape_Product_Validated'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-scrape-product-validated.php',
 		'WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job-validated.php',
+		// Plain subclass of the base Sora tool (Symfony Validator arguments
+		// class pending); registered here so the *_validated convention and
+		// registry auto-upgrade apply uniformly.
+		'WP_MCP_AI_Tool_Generate_Sora_Video_Validated'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video-validated.php',
 	);
 
 	// Register each validated tool.

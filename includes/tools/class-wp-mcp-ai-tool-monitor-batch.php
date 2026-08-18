@@ -130,6 +130,7 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'external-api',         // Makes external API calls.
 			'state-changing',       // Modifies WordPress cron state.
 			'background-only',      // Runs in background via cron.
+			'requires-capability',  // Checks the user's capability before running.
 			'requires-credentials', // Requires OpenAI API key.
 		);
 	}

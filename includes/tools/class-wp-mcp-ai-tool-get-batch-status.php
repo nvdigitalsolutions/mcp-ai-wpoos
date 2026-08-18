@@ -100,6 +100,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'external-api',         // Makes external API calls.
 			'read-only',            // Only reads data, doesn't modify.
+			'requires-capability',  // Checks the user's capability before running.
 			'requires-credentials', // Requires OpenAI API key.
 		);
 	}

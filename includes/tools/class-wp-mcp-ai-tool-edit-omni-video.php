@@ -112,7 +112,7 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Sanitize inputs (two-gate rule).
 		$edit_prompt       = isset( $arguments['edit_prompt'] ) ? sanitize_textarea_field( $arguments['edit_prompt'] ) : '';
 		$source_video_id   = isset( $arguments['source_video_id'] ) ? absint( $arguments['source_video_id'] ) : 0;
@@ -318,5 +318,59 @@ class WP_MCP_AI_Tool_Edit_Omni_Video implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'background-only' => true,
 			'timeout'         => 300,
 		);
+	}
+
+	/**
+	 * Get pre-execution metadata for async pending response.
+	 *
+	 * @param string $job_id    The async job identifier.
+	 * @param array  $arguments Tool arguments.
+	 * @param array  $context   Execution context.
+	 * @return array Metadata including expected_url and expected_filename.
+	 */
+	public function get_async_pending_metadata( $job_id, array $arguments = array(), array $context = array() ) {
+		unset( $arguments, $context );
+
+		return array(
+			'expected_url'      => '',
+			'expected_filename' => sanitize_file_name( 'omni-edit-' . $job_id ) . '.mp4',
+			'message'           => sprintf(
+				/* translators: %s: job ID */
+				__( 'Video edit started and is being processed. Job ID: %s', 'mcp-ai-wpoos' ),
+				$job_id
+			),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * Sanitize omni-video edit results for LLM context consumption.
+	 *
+	 * @param mixed $result Raw tool execution result.
+	 * @return mixed Sanitized result safe for LLM context.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		$keep_fields = array(
+			'success',
+			'message',
+			'url',
+			'expected_url',
+			'video_url',
+			'job_id',
+		);
+
+		$sanitized = array();
+		foreach ( $keep_fields as $key ) {
+			if ( isset( $result[ $key ] ) ) {
+				$sanitized[ $key ] = $result[ $key ];
+			}
+		}
+
+		return ! empty( $sanitized ) ? $sanitized : $result;
 	}
 }

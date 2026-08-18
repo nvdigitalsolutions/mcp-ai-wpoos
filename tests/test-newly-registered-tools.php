@@ -242,7 +242,13 @@ class Test_Newly_Registered_Tools extends WP_UnitTestCase {
 				$instance = new $class_name();
 				if ( method_exists( $instance, 'get_slug' ) ) {
 					$slug = $instance->get_slug();
-					if ( ! $registry->is_tool_registered( $slug ) ) {
+					// Tools gated by is_available() (optional integrations:
+					// WooCommerce, JetEngine, Elementor, Site Kit, Newsletter…)
+					// are legitimately absent from the registry when their
+					// dependency is inactive; the registry records them as
+					// unavailable.
+					if ( ! $registry->is_tool_registered( $slug )
+						&& ! in_array( $slug, $registry->get_unavailable_tool_slugs(), true ) ) {
 						$missing_tools[] = $slug;
 					}
 				}
