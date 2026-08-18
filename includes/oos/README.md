@@ -4,6 +4,14 @@
 
 Runs the opt-in OOS engine **in parallel** on sampled legacy-path chat requests for parity analysis, serving the legacy result — zero user exposure. Implements Phase 4.1 (shadow) of `docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md` and nothing else.
 
+## Conventions
+
+- Class names follow `WP_MCP_AI_OOS_{Component}`; files are `class-wp-mcp-ai-oos-{component}.php`.
+- PHP 7.4-parseable in this folder — no PHP 8-only syntax (the bridge's runtime gate handles 8.1+).
+- Shadow mode is opt-in and default off; every new gate must ship as a filterable helper in `oos-bridge.php` defaulting to off.
+- Run records are written through the canonical `WP_MCP_AI_Logger::log_event()` path — never `error_log()`.
+- All new safety-critical logic must be covered by the safety invariants list above (or extend it in the same PR).
+
 ## Tier
 
 | | |

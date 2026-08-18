@@ -7,7 +7,7 @@
 
 ## 1. What is this project? (TL;DR)
 
-NV oOS (Open Operator System) is a WordPress plugin that turns a WordPress site into an AI-powered assistant. It connects to 13 language-model providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama) and exposes ~260+ tools the AI can use — everything from creating posts to managing WooCommerce products to running shell commands (gated behind an opt-in constant).
+NV oOS (Open Operator System) is a WordPress plugin that turns a WordPress site into an AI-powered assistant. It connects to 15 language-model providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Flowhub) and exposes ~265+ tools the AI can use — everything from creating posts to managing WooCommerce products to running shell commands (gated behind an opt-in constant).
 
 Architecturally, the project has undergone a major framework extraction: the AI orchestration engine (`lib/core/`) is now a framework-agnostic Hexagonal Architecture package (`nvoos/core`) with 32 domain contracts, 21 WordPress adapters, and 109+ migrated tools. The plugin also includes the **OKF v0.1** (Open Knowledge Format) engine for curated deterministic knowledge, and the **Meta-Harness** trace optimization system.
 
@@ -19,10 +19,10 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.57 (August 2026)
+**Current version:** 1.1.58 (August 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,502 (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,508 (~265 base + ~1,243 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 

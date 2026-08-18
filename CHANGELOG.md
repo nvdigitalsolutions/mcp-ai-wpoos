@@ -1,5 +1,45 @@
 # oOS – Changelog
 
+## [1.1.58] - 2026-08-18
+
+### Added — Composio Connect Integration (PR #5889)
+
+- **Composio Connect subsystem (Pro)** — new `addons/pro/includes/composio/` subsystem bridges WordPress to the Composio MCP gateway: OAuth connection flow with state nonce (`WP_MCP_AI_Composio_Auth_Handler`), API client (`WP_MCP_AI_Composio_Client`), trigger bridge (`WP_MCP_AI_Composio_Trigger_Bridge`), and a signed webhook controller (`WP_MCP_AI_Composio_Webhook_Controller`). Registered in the Pro module registry; the remote-sites admin page and connection metabox gained Composio panels (connected-apps badge + "Connect apps" deep link).
+- **Six new beta tools** — `composio_list_tools`, `composio_get_tool_schema`, `composio_list_connected_accounts`, `composio_create_connect_link`, `composio_execute_tool`, `composio_manage_triggers` (all beta; see `docs/toolkits/composio-connect.md`).
+- +5,318 lines including 4 test classes (+887 lines). See [`docs/composio-connect.md`](docs/composio-connect.md) and proposal 030.
+
+### Changed — OOS Runtime Consolidation, Phases 0–5.8 (PR #5881)
+
+- **Phase 0–2 parity foundations** — OOS bridge (`includes/bootstrap/oos-bridge.php`, PHP 8.1 runtime gate), tool-surface parity via the new `ToolResolverInterface` / `ToolWriteClassInterface` contracts, and security-gate parity (`ToolGuardInterface`) so the OOS path enforces the same capability and destructive-op checks as the legacy path.
+- **Phase 3 event-sourced session log** — `SessionLog` / `SessionEvent` / `SessionTelemetry` domain objects plus `SessionLogStoreInterface`; `WP_MCP_AI_Session_Log_Observer` records agentic-loop decisions, tool pre/post events, and errors for parity analysis.
+- **Phase 4 shadow mode + canary routing** — opt-in `includes/oos/` shadow runner executes the OOS engine in parallel on sampled legacy chat requests and serves the legacy result (zero user exposure; default off, gated by `wp_mcp_ai_oos_shadow_enabled()`). Canary routing runs assistants opted in via `_wp_mcp_ai_engine` post meta on OOS (`wp_mcp_ai_oos_canary` filter, default off). New `wp mcp-ai oos parity` CLI reads the shadow-run store (`wp_mcp_ai_oos_shadow_runs`, capped at 100, non-autoloaded).
+- **Phase 5 scoped tools + compaction seam** — `ToolScope` restrictions (`ToolRestriction` value object), `CompactionProvider` seam, `CancellationToken` deadlines, and waterfall decision/event objects across `ChatOrchestrator`.
+- **Phase 5 Pro composition & child binding** — new `addons/pro/includes/composition/` subsystem (`WP_MCP_AI_Pro_Composition_Service`, `WP_MCP_AI_Pro_Legacy_Tool_Resolver`, `wp mcp-ai composition` CLI) for child-assistant binding; tests in `addons/pro/tests/test-oos-composition-service.php`.
+- **Phase 5.8 telemetry single-path** — session telemetry flows through one path in both engines.
+- See [`docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md`](docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md).
+
+### Changed — Graphify Standalone Plugins Renamed to Content Graph (PR #5890)
+
+- `plugins/nvoos-graphify` → **`plugins/nvoos-content-graph`** (v1.0.2), `plugins/nvoos-graphify-ai` → **`plugins/nvoos-content-graph-ai`** (v1.0.2), `plugins/nvoos-graphify-ai-platform` → **`plugins/nvoos-content-graph-ai-platform`** (v1.0.2), with matching build/sync workflow renames and `bin/build-*-content-graph*.sh` script renames. The `addons/graphify/` knowledge-graph addon is unchanged.
+
+### Fixed — Security Center wp.apiRequest Error (PR #5887)
+
+- The Security Center tab's inline scripts (posture refresh, IP tests, snapshot restore, compliance export, self-test) call `wp.apiRequest()` but the `wp-api` script was never enqueued on that tab, producing an "apiFetch is not defined" error on every refresh. The settings dashboard now enqueues `wp-api` when `?tab=security` is active. See [`docs/history/2026/fixes/security-center-wp-api-request-fix.md`](docs/history/2026/fixes/security-center-wp-api-request-fix.md).
+
+### Fixed — deepmerge-ts CVE-2026-40345 (PR #5888)
+
+- `deepmerge-ts` overridden to a patched version in `addons/media-worker/package.json` and `addons/pro/package.json` (CVE-2026-40345).
+
+### Versioning
+
+- Bumped to **1.1.58** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.58. Media Worker: v3.0.0 (unchanged).
+- Tool count: ~265 base + ~1,243 Pro (~1,508 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+
+---
+
 ## [1.1.57] - 2026-08-15
 
 ### Changed — Plugin Updater: Base-Only Updates & In-Place Install (PR #5871)

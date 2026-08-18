@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: August 12, 2026.
+> Last reviewed: August 18, 2026 (v1.1.58).
 
 ---
 
@@ -14,7 +14,9 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,500 (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,508 (~265 base + ~1,243 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in August 2026 (v1.1.58):** Composio Connect — 6 beta tools under `addons/pro/includes/tools/composio/` (`composio_list_tools`, `composio_get_tool_schema`, `composio_list_connected_accounts`, `composio_create_connect_link`, `composio_execute_tool`, `composio_manage_triggers`) backed by the `addons/pro/includes/composio/` subsystem (OAuth auth handler, API client, trigger bridge, signed webhook controller). OOS engine scoping: `ToolScope` / `ToolRestriction` domain objects (`lib/core`) + Pro composition subsystem (`addons/pro/includes/composition/`) — see [`.context/oos-engine.md`](oos-engine.md) and [`.context/tool-registry.md`](tool-registry.md).
 
 **New in August 2026:** `list_mcp_tools` discovery tool (234 lines) — enables AI agent self-discovery of all available MCP tools. Returns tool names, descriptions, and JSON Schema parameter definitions. Filterable by toolkit namespace and search term. Design System tool preset (`design-system`) — 72 tools across 13 categories.
 
