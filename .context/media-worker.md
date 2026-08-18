@@ -1,7 +1,7 @@
 # NV oOS Media Worker Sidecar
 
 > **GSD Context File** — Load this when working on the media worker (`addons/media-worker/`), the plugin sidecar client, or any Pro service that routes through the worker.
-> Last reviewed: August 2026 (v1.1.57, worker v3.0.0).
+> Last reviewed: August 2026 (v1.1.58, worker v3.0.0).
 
 ---
 
