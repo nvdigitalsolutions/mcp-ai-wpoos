@@ -1967,6 +1967,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			// Quiz tools are now loaded by the Pro addon.
 
+			// Preload shared tool traits so legacy tool classes that use them
+			// without requiring the trait file are registration-order independent.
+			$this->load_shared_tool_traits();
+
 			foreach ( $default_tools as $class => $file ) {
 				if ( file_exists( $file ) ) {
 					require_once $file;
@@ -2010,6 +2014,35 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 							$this->mark_tool_unavailable( $skipped->get_slug() );
 						}
 					}
+				}
+			}
+		}
+
+		/**
+		 * Load shared tool traits before any tool class file is required.
+		 *
+		 * Several legacy tool classes use traits such as
+		 * {@see WP_MCP_AI_Tool_WordPress_Native} without requiring the trait
+		 * file themselves. They previously survived on load-order luck (some
+		 * other tool file requiring the trait first) — which broke during
+		 * plugin activation where the registry is the first loader of those
+		 * files. Preloading the trait files makes registration
+		 * order-independent.
+		 *
+		 * @return void
+		 */
+		protected function load_shared_tool_traits() {
+			$base_traits = glob( WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-tool-*.php' );
+			$tool_traits = glob( WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-*.php' );
+
+			$trait_files = array_merge(
+				is_array( $base_traits ) ? $base_traits : array(),
+				is_array( $tool_traits ) ? $tool_traits : array()
+			);
+
+			foreach ( $trait_files as $trait_file ) {
+				if ( file_exists( $trait_file ) ) {
+					require_once $trait_file;
 				}
 			}
 		}
