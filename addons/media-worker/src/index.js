@@ -9,6 +9,7 @@ import {
 	imageLimiter,
 	videoLimiter,
 	browserLimiter,
+	crawlLimiter,
 	workflowLimiter,
 } from './middleware/rate-limit.js';
 import { detectCapabilities } from './utils/capabilities.js';
@@ -28,6 +29,8 @@ import { emailRouter } from './routes/email.js';
 import { codeRouter } from './routes/code.js';
 import { dataRouter } from './routes/data.js';
 import { browserRouter } from './routes/browser.js';
+import { crawlRouter } from './routes/crawl.js';
+import { crawl4aiRouter } from './routes/crawl4ai.js';
 
 dotenv.config();
 
@@ -66,7 +69,7 @@ app.get( '/api/health', (_req, res) => {
 	res.json( {
 		status: 'ok',
 		service: 'design-media-worker',
-		version: '3.0.0',
+		version: '3.2.0',
 		uptime: process.uptime(),
 	} );
 } );
@@ -81,6 +84,7 @@ app.get( '/api/health/full', async (_req, res) => {
 		const providers = {
 			openai: !!process.env.OPENAI_API_KEY,
 			gemini: !!process.env.GEMINI_API_KEY,
+			deepseek: !!process.env.DEEPSEEK_API_KEY,
 			stability: !!process.env.STABILITY_API_KEY,
 			replicate: !!process.env.REPLICATE_API_KEY,
 			midjourney: !!process.env.MIDJOURNEY_API_KEY,
@@ -117,7 +121,7 @@ app.get( '/api/health/full', async (_req, res) => {
 		res.json( {
 			status: 'ok',
 			service: 'design-media-worker',
-			version: '3.0.0',
+			version: '3.2.0',
 			uptime: process.uptime(),
 			environment: process.env.NODE_ENV || 'development',
 			tenants,
@@ -158,6 +162,7 @@ app.get( '/api/health/full', async (_req, res) => {
 				currency: true,
 				validation: true,
 				browser_automation: caps.chromium,
+				web_crawling: true,
 				social_publishing: Object.values( social ).some( Boolean ),
 				social_platforms: social,
 				workflows: true,
@@ -175,6 +180,8 @@ app.get( '/api/health/full', async (_req, res) => {
 				code: [ '/api/code/format', '/api/code/check-syntax' ],
 				data: [ '/api/data/translate', '/api/data/language-detect', '/api/data/phone-format', '/api/data/qrcode', '/api/data/csv-parse', '/api/data/csv-generate', '/api/data/markdown', '/api/data/math', '/api/data/render-math', '/api/data/regression', '/api/data/currency', '/api/data/validate', '/api/data/generate-ics', '/api/data/render-chart', '/api/data/analyze-geospatial' ],
 				browser: [ '/api/browser/screenshot', '/api/browser/pdf' ],
+				crawl: [ '/api/crawl/markdown', '/api/crawl/markdown-batch', '/api/crawl/links' ],
+				crawl4ai: [ '/api/crawl4ai/crawl', '/api/crawl4ai/task/:id' ],
 			},
 		} );
 	} catch {
@@ -194,6 +201,8 @@ app.use( '/api/email', emailRouter );
 app.use( '/api/code', codeRouter );
 app.use( '/api/data', dataRouter );
 app.use( '/api/browser', browserLimiter, browserRouter );
+app.use( '/api/crawl', crawlLimiter, crawlRouter );
+app.use( '/api/crawl4ai', crawlLimiter, crawl4aiRouter );
 
 // ── 404 ────────────────────────────────────────────────────
 app.use( (_req, res) => {
@@ -254,6 +263,7 @@ const server = app.listen( PORT, async () => {
 	console.log( '  Excel/Word:    ✅ exceljs + docx' );
 	console.log( '  OCR:           ✅ tesseract.js' );
 	console.log( '  Browser:       ', caps.chromium ? '✅ chromium (sandboxed)' : '❌ chromium not found — browser routes return 503' );
+	console.log( '  Crawl:         ✅ readability + turndown', caps.chromium ? '(chromium fallback)' : '(static-only — no chromium)' );
 	console.log( '  Code format:   ✅ prettier' );
 	console.log( '  Email:         ✅ nodemailer + mjml + mailparser' );
 	console.log( '' );

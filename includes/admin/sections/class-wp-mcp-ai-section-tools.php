@@ -25,6 +25,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		const ELEMENTOR_KIT_IMPORT_TRANSIENT = 'wp_mcp_ai_elementor_kit_import_result';
 
 		/**
+		 * Fraction of a media-heavy toolkit's estimated memory that is
+		 * considered to run off-host when the Media Worker sidecar is
+		 * configured. Local Node.js/FFmpeg subprocesses are replaced by
+		 * HTTP calls to the sidecar container for those toolkits.
+		 *
+		 * @var float
+		 */
+		const MEDIA_WORKER_OFFLOAD_FACTOR = 0.5;
+
+		/**
 		 * Constructor.
 		 */
 		public function __construct() {
@@ -1160,13 +1170,88 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		}
 
 		/**
+		 * Get toolkit option keys whose heavy workloads are offloaded to the
+		 * Media Worker sidecar when it is configured.
+		 *
+		 * The sidecar serves PDF/OCR/document, video, and image routes, so
+		 * the toolkits dominated by those workloads get reduced estimates.
+		 *
+		 * @return string[] Toolkit option keys.
+		 */
+		private function get_sidecar_offload_toolkits() {
+			return array(
+				'enable_media_toolkit',               // Image processing and templates -> /api/image/*.
+				'enable_document_generation_toolkit', // PDF/Word/Excel/OCR -> /api/pdf|document|ocr/*.
+				'enable_video_production_toolkit',    // FFmpeg video processing -> /api/video/*.
+				'enable_image_production_toolkit',    // AI generation and optimization -> /api/image/*.
+			);
+		}
+
+		/**
+		 * Check whether the Media Worker sidecar is configured.
+		 *
+		 * Mirrors the plugin's routing decision: the WP_MEDIA_WORKER_URL
+		 * constant wins, then the wp_mcp_ai_media_worker_url option.
+		 * Reachability is intentionally not checked here — the estimate
+		 * only needs to know whether heavy workloads are configured to
+		 * leave the WordPress host, and an HTTP health check would slow
+		 * admin renders.
+		 *
+		 * @return bool True when a sidecar URL is configured.
+		 */
+		private function is_media_worker_sidecar_configured() {
+			if ( defined( 'WP_MEDIA_WORKER_URL' ) && WP_MEDIA_WORKER_URL ) {
+				return true;
+			}
+
+			return ! empty( get_option( 'wp_mcp_ai_media_worker_url', '' ) );
+		}
+
+		/**
+		 * Apply the Media Worker sidecar offload to toolkit memory estimates.
+		 *
+		 * @param array $requirements Toolkit option key => estimated MB map.
+		 * @return array Adjusted requirements map with the same shape.
+		 */
+		private function apply_media_worker_offload( $requirements ) {
+			if ( ! $this->is_media_worker_sidecar_configured() ) {
+				return $requirements;
+			}
+
+			foreach ( $this->get_sidecar_offload_toolkits() as $toolkit_key ) {
+				if ( isset( $requirements[ $toolkit_key ] ) ) {
+					$reduction                     = (int) round( $requirements[ $toolkit_key ] * self::MEDIA_WORKER_OFFLOAD_FACTOR );
+					$requirements[ $toolkit_key ] -= $reduction;
+				}
+			}
+
+			return $requirements;
+		}
+
+		/**
 		 * Render features footer with toolkit memory usage counter.
 		 */
 		private function render_features_footer() {
 			// Count currently enabled pro toolkits and calculate memory usage.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$toolkit_memory_requirements = $this->get_toolkit_memory_requirements();
+			$base_toolkit_memory_requirements = $this->get_toolkit_memory_requirements();
+
+			// When the Media Worker sidecar is configured, heavy media
+			// workloads (PDF/OCR, video, image) run off-host in the sidecar
+			// container, so the WordPress-host estimate for those toolkits
+			// is reduced.
+			$sidecar_configured          = $this->is_media_worker_sidecar_configured();
+			$toolkit_memory_requirements = $this->apply_media_worker_offload( $base_toolkit_memory_requirements );
+
+			$sidecar_offload_mb = 0;
+			if ( $sidecar_configured ) {
+				foreach ( $base_toolkit_memory_requirements as $option => $base_mb ) {
+					if ( ! empty( $settings[ $option ] ) ) {
+						$sidecar_offload_mb += $base_mb - $toolkit_memory_requirements[ $option ];
+					}
+				}
+			}
 
 			$enabled_count   = 0;
 			$total_memory_mb = 0;
@@ -1222,6 +1307,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<?php echo esc_html( $counter_status ); ?>
 							</span>
 						</p>
+						<?php if ( $sidecar_configured ) : ?>
+							<p class="description toolkit-sidecar-note">
+								<?php
+								printf(
+									/* translators: %d: megabytes of the estimate that run off-host in the sidecar container */
+									esc_html__( 'Media Worker sidecar configured: heavy media workloads (PDF, OCR, video, image) run off-host in the sidecar container, and estimates for affected toolkits are reduced by 50%%. This currently moves %d MB off the WordPress estimate.', 'mcp-ai-wpoos' ),
+									(int) $sidecar_offload_mb
+								);
+								?>
+							</p>
+						<?php endif; ?>
 						<p class="description">
 							<?php
 							esc_html_e( 'This shows the estimated memory usage for all enabled pro toolkits. Memory requirements vary by toolkit complexity and tool count. You can enable as many toolkits as needed for your use case.', 'mcp-ai-wpoos' );
@@ -1238,10 +1334,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						.toolkit-status-badge { background: #f0f0f1; color: #2c3338; display: inline-block; }
 						.toolkit-limit-good + .toolkit-status-badge { background: #d4edda; color: #155724; }
 						.toolkit-limit-warning + .toolkit-status-badge { background: #fff3cd; color: #856404; }
-						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }'
+						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }
+						.toolkit-sidecar-note { color: #0a6e3e; }'
 					);
 
-					$toolkit_memory_json = wp_json_encode( $this->get_toolkit_memory_requirements() );
+					$toolkit_memory_json = wp_json_encode( $toolkit_memory_requirements );
 					ob_start();
 					?>
 					jQuery(document).ready(function($) {

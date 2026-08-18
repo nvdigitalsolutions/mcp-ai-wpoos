@@ -32,6 +32,7 @@ import fs from 'fs';
 const PROVIDER_NAMES = new Set( [
 	'openai_api_key',
 	'gemini_api_key',
+	'deepseek_api_key',
 	'stability_api_key',
 	'replicate_api_key',
 	'midjourney_api_key',

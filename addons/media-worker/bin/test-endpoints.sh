@@ -33,4 +33,17 @@ echo ""; echo "Document:"; test_ep "Excel" POST /api/document/excel '{"sheets":[
 test_ep "Word" POST /api/document/word '{"content":[{"type":"paragraph","text":"Hi"}]}'
 echo ""; echo "PDF:"; test_ep "Generate" POST /api/pdf/generate '{"html":"<h1>T</h1>"}'
 echo ""; echo "Browser:"; test_ep "Screenshot" POST /api/browser/screenshot '{"url":"https://example.com","format":"png"}'
+echo ""; echo "Crawl:"; test_ep "Markdown (static)" POST /api/crawl/markdown '{"url":"https://example.com","render":"never"}'
+test_ep "Links (static)" POST /api/crawl/links '{"url":"https://example.com","render":"never"}'
+echo ""; echo "Crawl4AI facade:"
+crawl4ai_roundtrip() {
+  sub=$(curl -s -X POST "$BASE/api/crawl4ai/crawl" -H "Content-Type: application/json" "${AUTH_HDR[@]}" -d '{"urls":["https://example.com"]}' --max-time 15)
+  task_id=$(echo "$sub" | grep -o '"task_id":"[^"]*"' | cut -d'"' -f4 || true)
+  if [ -z "$task_id" ]; then echo "  ❌ Crawl4AI facade submit ($sub)"; FAIL=$((FAIL+1)); return; fi
+  sleep 3
+  resp=$(curl -s -w "\n%{http_code}" "$BASE/api/crawl4ai/task/$task_id" "${AUTH_HDR[@]}" --max-time 15 2>/dev/null)
+  code=$(echo "$resp" | tail -1)
+  if [ "$code" = "200" ]; then echo "  ✅ Crawl4AI facade round-trip ($task_id)"; PASS=$((PASS+1)); else echo "  ❌ Crawl4AI facade poll (HTTP $code)"; FAIL=$((FAIL+1)); fi
+}
+crawl4ai_roundtrip
 echo ""; echo "──────────────"; echo "$PASS passed, $FAIL failed"

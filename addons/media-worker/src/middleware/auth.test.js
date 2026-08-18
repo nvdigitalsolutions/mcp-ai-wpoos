@@ -11,6 +11,7 @@ import {
 	resolveSite,
 	configuredSites,
 	isMultiTenantMode,
+	tokenForSite,
 } from './auth.js';
 
 /** Minimal mock Express response. */
@@ -235,6 +236,34 @@ test( 'authMiddleware multi-tenant fails closed on unknown tokens', () => {
 	assert.equal( nextCalled, false );
 	assert.equal( res.statusCode, 401 );
 	restoreSiteEnv();
+} );
+
+test( 'tokenForSite returns the configured token per mode', () => {
+	// Single-tenant: WORKER_API_TOKEN ('' when lenient).
+	const originalToken = process.env.WORKER_API_TOKEN;
+	const originalSites = process.env.SITE_TOKENS;
+	process.env.WORKER_API_TOKEN = 'single-token-123456789';
+	delete process.env.SITE_TOKENS;
+	assert.equal( tokenForSite( 'default' ), 'single-token-123456789' );
+
+	delete process.env.WORKER_API_TOKEN;
+	assert.equal( tokenForSite( 'default' ), '', 'lenient mode has no token' );
+
+	// Multi-tenant: per-site map; unknown sites get ''.
+	process.env.SITE_TOKENS = '{"site-a":"tokA-123456789"}';
+	assert.equal( tokenForSite( 'site-a' ), 'tokA-123456789' );
+	assert.equal( tokenForSite( 'site-b' ), '' );
+
+	if ( originalToken ) {
+		process.env.WORKER_API_TOKEN = originalToken;
+	} else {
+		delete process.env.WORKER_API_TOKEN;
+	}
+	if ( originalSites ) {
+		process.env.SITE_TOKENS = originalSites;
+	} else {
+		delete process.env.SITE_TOKENS;
+	}
 } );
 
 test( 'SITE_TOKEN_<SLUG> env vars merge over SITE_TOKENS (Phase 3 W3)', () => {

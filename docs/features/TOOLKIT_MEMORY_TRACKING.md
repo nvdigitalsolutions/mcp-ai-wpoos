@@ -25,28 +25,77 @@ The pro toolkit activation system has been upgraded from a **count-based limit**
 
 | Toolkit | Memory (MB) | Complexity | Notes |
 |---------|-------------|------------|-------|
-| **Video Production** | 256 MB | Very High | FFmpeg, video processing |
-| **Cloudways** | 192 MB | Very High | 58+ server management tools |
-| **Image Production** | 192 MB | Very High | AI generation (DALL-E, Stable Diffusion), GPU |
+| **Video Production** | 256 MB | Very High | 12 tools, FFmpeg, video processing |
+| **Cloudways** | 192 MB | Very High | 58+ tools, extensive server management |
+| **Image Production** | 192 MB | Very High | 12-15 tools, AI generation, GPU processing |
 | **Architectural Design** | 160 MB | High | 16 tools, 3D modeling, rendering |
-| **Health & Wellness** | 128 MB | High | 30+ tools, secure health data |
+| **CRE Debt** | 144 MB | High | 57 tools, CRE debt & securitization |
+| **Health & Wellness** | 128 MB | High | 30+ tools, secure health data storage |
+| **Law Firm** | 128 MB | High | 62 tools, 5 CPTs, matter management, billing/trust, compliance |
+| **Site Creator** | 104 MB | High | 26 tools, page/section/widget builders, AI automation |
 | **Document Generation** | 96 MB | High | Node.js, PDF/Word/Excel generation |
 | **Analytics** | 96 MB | High | Data warehouse integrations |
+| **Healthcare Imaging** | 96 MB | High | DICOM/Cornerstone3D medical imaging viewer |
+| **DietPi** | 96 MB | High | 18+ tools, SSH, app clients, service management |
+| **Chat Channels** | 84 MB | High | 21 tools, multi-platform messaging integration |
 | **E-commerce** | 80 MB | Medium | 20 WooCommerce tools |
 | **Financial Planner** | 80 MB | Medium | 24 tools, Plaid API |
+| **Regulatory Registration** | 80 MB | Medium | 15 tools, multi-country registration management |
 | **Multilingual** | 72 MB | Medium | Translation memory |
-| **DJ Management** | 72 MB | Medium | 15-18 tools, music APIs |
+| **DJ Management** | 72 MB | Medium | 15-18 tools, music APIs, contracts |
+| **Shopify Sync** | 72 MB | Medium | 5+ tools, Shopify GraphQL sync, CCT cache |
 | **Project Management** | 64 MB | Medium | 13 tools |
 | **Social Media** | 64 MB | Medium | 15 multi-platform tools |
 | **Calendar Booking** | 64 MB | Medium | Calendar sync APIs |
+| **FlowHub** | 64 MB | Medium | FlowHub POS API sync, CCT cache |
+| **EZuite** | 64 MB | Medium | EZuite ERP API sync, CCT cache |
 | **Places Management** | 56 MB | Medium | Google Maps API, geocoding |
-| **Media Toolkit** | 48 MB | Medium | Template management |
+| **CRM** | 56 MB | Medium | 10+ tools, contact/lead/campaign management |
+| **Media Toolkit** | 48 MB | Medium | Template management, image processing |
 | **AI Tool Builder** | 48 MB | Medium | 10 meta-tools |
 | **ECA Management** | 40 MB | Low | iSAMS integration |
 | **Quiz System** | 32 MB | Low | 7 assessment tools |
 | **AI CPT Management** | 24 MB | Low | Lightweight metabox |
+| **WebChat Integration** | 24 MB | Low | WebRTC rooms, message storage |
+| **Architect Agent** | 16 MB | Low | 4 self-editing tools (file, shell, git, search) |
 
-**Total if all enabled:** 1,844 MB (1.8 GB)
+**Total if all enabled:** 2,892 MB (2.9 GB)
+
+## Media Worker Sidecar Interaction
+
+When the optional **Media Worker sidecar** is configured (via the
+`WP_MEDIA_WORKER_URL` constant in `wp-config.php`, or Settings → Media Worker),
+heavy NPM-package workloads — PDF/OCR/document, video (FFmpeg), and image
+processing — route to the sidecar container over HTTP instead of spawning
+local Node.js/FFmpeg subprocesses on the WordPress host.
+
+The estimate adjusts automatically in that case:
+
+- Affected toolkits: **Document Generation, Video Production, Image
+  Production, Media Toolkit** (defined in
+  `get_sidecar_offload_toolkits()`).
+- Each affected estimate is reduced by **50%**
+  (`MEDIA_WORKER_OFFLOAD_FACTOR` in
+  `includes/admin/sections/class-wp-mcp-ai-section-tools.php`).
+- A green note appears under the counter, e.g. *"Media Worker sidecar
+  configured … This currently moves 296 MB off the WordPress estimate."*
+- The real-time JavaScript counter uses the same adjusted map, so live
+  checkbox updates stay consistent with the server-rendered total.
+
+| Toolkit | Base estimate | With sidecar |
+|---|---|---|
+| Video Production | 256 MB | 128 MB |
+| Image Production | 192 MB | 96 MB |
+| Document Generation | 96 MB | 48 MB |
+| Media Toolkit | 48 MB | 24 MB |
+
+The sidecar's own memory footprint lives in its own container (or managed
+Node host) and is **not** part of the WordPress PHP `memory_limit`, so it is
+not added back into this counter. The discount keys off **configured** state,
+not a live health check: if the sidecar is unreachable at runtime the plugin
+falls back to local execution, so treat the reduced estimate as the
+off-host case and disconnect the sidecar in Settings if you want the
+conservative local-execution numbers back.
 
 ## Status Indicators
 

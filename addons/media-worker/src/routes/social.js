@@ -3,8 +3,55 @@ import axios from 'axios';
 import OpenAI from 'openai';
 import { getCredential } from '../utils/provider-keys.js';
 import { recordUsage } from '../utils/usage.js';
+import { tokenForSite } from '../middleware/auth.js';
 
 const router = Router();
+
+// ── Scheduled-publish processor (lazy, per queue instance) ─
+//
+// Before v3.1.1 the schedule branch enqueued 'publish' jobs that no
+// processor ever picked up. This handler replays each due job through the
+// worker's own /api/social/post endpoint — the single source of truth for
+// per-platform publishing — with the site token reconstructed from the
+// worker's config (never stored in job data). Jobs are enqueued with
+// attempts: 1 so a lost response can never double-post.
+
+const SOCIAL_WORKER_URL = `http://localhost:${process.env.PORT || 3100}`;
+
+const handledSocialQueues = new WeakSet();
+
+/**
+ * Ensure the 'publish' job type has a processor on this queue (once per
+ * queue instance — queues are per-site singletons in multi-tenant mode).
+ *
+ * @param {Object} queue JobQueue instance.
+ */
+export function ensureSocialHandler( queue ) {
+	if ( handledSocialQueues.has( queue ) ) {
+		return;
+	}
+	handledSocialQueues.add( queue );
+
+	queue.process( 'publish', ( job ) => processScheduledPublish( job ) );
+}
+
+/**
+ * Replay a due scheduled-publish job through the sync post endpoint.
+ *
+ * @param {Object} job  Queue job ({ data: { site, scheduled_for, ...payload } }).
+ * @param {Object} [deps] Injectable ({ post }) for tests.
+ * @return {Promise<Object>} Endpoint response data.
+ */
+export async function processScheduledPublish( job, deps = {} ) {
+	const post = deps.post || axios.post;
+	const { site, scheduled_for: _scheduledFor, ...payload } = job.data || {};
+
+	const response = await post( `${ SOCIAL_WORKER_URL }/api/social/post`, payload, {
+		headers: { 'X-Site-Token': tokenForSite( site ) || '' },
+		timeout: 120000,
+	} );
+	return response.data;
+}
 
 // ── Social Media Platforms Configuration ──────────────────
 const platforms = {
@@ -93,11 +140,14 @@ router.post('/post', async (req, res) => {
         return res.status(400).json({ error: 'Schedule time must be in the future' });
       }
 
-      // Push to Redis for scheduled execution
+      // Push to Redis for scheduled execution (site-scoped, single-attempt
+      // so a lost response can never double-post).
       try {
         const { getQueue } = await import('../queue.js');
-        const queue = getQueue('social-scheduled');
+        const queue = getQueue('social-scheduled', req.site);
+        ensureSocialHandler(queue);
         await queue.add('publish', {
+          site: req.site,
           platform,
           content,
           media_url,
@@ -105,6 +155,7 @@ router.post('/post', async (req, res) => {
           scheduled_for: schedule,
         }, {
           delay: scheduledTime.getTime() - Date.now(),
+          attempts: 1,
         });
 
         return res.json({
