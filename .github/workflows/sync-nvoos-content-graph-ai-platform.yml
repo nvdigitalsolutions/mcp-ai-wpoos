@@ -1,6 +1,7 @@
 name: Sync nvoos-content-graph-ai-platform
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, alpha-working]
     paths:
