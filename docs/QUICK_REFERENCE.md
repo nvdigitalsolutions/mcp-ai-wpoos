@@ -1,11 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.58
-**Last Updated:** August 18, 2026
+**Version:** 1.1.59
+**Last Updated:** August 19, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (August 2026)
+
+- **v1.1.59** (August 19): Media Worker v3.2.0 — native `/api/crawl/*` endpoints (single-URL Markdown, batched crawling, link scans) with a static-first two-tier extraction pipeline and SSRF-guarded URLs, Crawl4AI-compatible facade for `run_crawl4ai_job` remote mode, LLM-based page extraction; toolkit memory estimate accounts for the worker sidecar. Research tools hardened — `semantic_content_search` embeddings via the shared provider abstraction (OpenAI, Gemini, Ollama, DigitalOcean; new Gemini embedding provider) with keyword fallback + model-mismatch skipping; `deep_research` provider-chain retries, reasoning-content fallback, no empty-report caching; new read-only base tools `list_terms` + `list_taxonomies`. Fixes: Docs Hub rebuild/broken-link staleness after in-place plugin updates (new `wp_mcp_ai_plugin_updated` action + version-mismatch rebuild guard; slug-map link resolution + clamped suggestions) and tool registration gaps (~32 orphaned base tools registered, legacy-format classes auto-wrapped, new `wp_mcp_ai_tools_init` hook). Tool count: ~300 base + ~1,243 Pro (~1,543 total).
 
 - **v1.1.58** (August 18): Composio Connect integration (Pro) — new `addons/pro/includes/composio/` subsystem (OAuth auth handler with state nonce, API client, trigger bridge, signed webhook controller) and six new beta tools (`composio_list_tools`, `composio_get_tool_schema`, `composio_list_connected_accounts`, `composio_create_connect_link`, `composio_execute_tool`, `composio_manage_triggers`) plus remote-sites admin/metabox panels; see `docs/composio-connect.md`. OOS runtime consolidation Phases 0–5.8 — parity foundations, tool-surface + security-gate parity, event-sourced session log, opt-in shadow mode with `wp mcp-ai oos parity` CLI, canary routing, scoped tools + compaction seam, Pro composition & child binding, telemetry single-path; see proposal 029. Standalone Graphify plugins renamed to Content Graph (`nvoos-content-graph`, `-ai`, `-ai-platform` v1.0.2); `addons/graphify/` unchanged. Fixes: Security Center `wp.apiRequest` error (`wp-api` enqueued on security tab) and deepmerge-ts CVE-2026-40345. Tool count: ~265 base + ~1,243 Pro (~1,508 total).
 

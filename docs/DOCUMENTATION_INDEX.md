@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 18, 2026
-**Plugin Version:** 1.1.58
+**Last Updated:** August 19, 2026
+**Plugin Version:** 1.1.59
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,8 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **AUGUST 19, 2026 UPDATE (v1.1.59):** MEDIA WORKER v3.2.0 — NATIVE `/api/crawl/*` ENDPOINTS (SINGLE-URL MARKDOWN, BATCHED CRAWLING, LINK SCANS) WITH STATIC-FIRST TWO-TIER EXTRACTION + SSRF GUARD, CRAWL4AI-COMPATIBLE FACADE FOR `run_crawl4ai_job` REMOTE MODE, LLM EXTRACTION UTIL. RESEARCH TOOLS HARDENED — SHARED EMBEDDING-PROVIDER ABSTRACTION (NEW GEMINI EMBEDDING PROVIDER), `deep_research` PROVIDER-CHAIN RETRIES, NEW BASE TOOLS `list_terms` + `list_taxonomies`. FIXES: DOCS HUB 0.4.1 REBUILD/BROKEN-LINK STALENESS (NEW `wp_mcp_ai_plugin_updated` ACTION + VERSION-MISMATCH GUARD) AND TOOL REGISTRATION GAPS (~32 ORPHANED TOOLS REGISTERED, LEGACY AUTO-WRAP, `wp_mcp_ai_tools_init` HOOK).
+>
 > **AUGUST 18, 2026 UPDATE (v1.1.58):** COMPOSIO CONNECT INTEGRATION (PRO) — NEW `addons/pro/includes/composio/` SUBSYSTEM (OAUTH AUTH HANDLER, API CLIENT, TRIGGER BRIDGE, SIGNED WEBHOOK CONTROLLER) + 6 NEW BETA TOOLS (`composio_list_tools`, `composio_get_tool_schema`, `composio_list_connected_accounts`, `composio_create_connect_link`, `composio_execute_tool`, `composio_manage_triggers`) + REMOTE-SITES ADMIN/METABOX PANELS. OOS RUNTIME CONSOLIDATION PHASES 0–5.8 (TOOL-SURFACE + SECURITY-GATE PARITY, EVENT-SOURCED SESSION LOG, OPT-IN SHADOW MODE + `wp mcp-ai oos parity` CLI, CANARY ROUTING, SCOPED TOOLS + COMPACTION SEAM, PRO COMPOSITION & CHILD BINDING, TELEMETRY SINGLE-PATH). STANDALONE GRAPHIFY PLUGINS RENAMED TO CONTENT GRAPH (`nvoos-content-graph`, `-ai`, `-ai-platform` V1.0.2). FIXES: SECURITY CENTER `wp.apiRequest` (WP-API ENQUEUED ON SECURITY TAB) + `deepmerge-ts` CVE-2026-40345. NEW DOCS: `docs/composio-connect.md`, `docs/toolkits/composio-connect.md`, PROPOSALS 029/030, `.context/oos-engine.md`.
 >
 > **AUGUST 15, 2026 UPDATE (v1.1.57):** PLUGIN UPDATER REWORK — BASE-ONLY UPDATE FLOW FOR WP.ORG INSTALLS (NEW "BASE VERSION" PANEL IN SETTINGS → ADVANCED), COPY-IN-PLACE INSTALL WITH BACKUP/ROLLBACK REPLACING `Plugin_Upgrader` (ZIP FOLDER-NAME MISMATCHES NO LONGER BREAK UPDATES), PRO VERSION READ FROM PLUGIN HEADER. HERMES WEBUI CHAT REWORKED TO ASYNC SUBMIT/POLL (`/api/chat/start` + `/api/chat/stream/status`, `still_running` TIMEOUT STATUS, `HERMES_APPROVAL_MODE` GATE ANSWERS, LIVE PAYLOAD ANSWER-EXTRACTION FIX). SERVICE STATUS AI-PROVIDER DETECTION NOW USES `WP_MCP_AI_Credential_Resolver` (SETTINGS + WP 7.0 CONNECTORS + ENV + CONSTANTS) + NEW TEST SUITE. NEW `addons/fleet-operator/.context/` AGENT-CONTEXT TREE (18 FILES, 6 OPERATOR ROLES). UPDATED `docs/features/plugin-updater.md`, 2 NEW FIX-HISTORY DOCS.
@@ -177,7 +179,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **WP.org Compliance Hardening** (PRs #4892, #4902) — B1/B2/B3/B5/B8/B10/B11/B12/B13 reviewer findings resolved. `WP_MCP_AI_User_Context_Helper` centralises privileged-op hardening. Full evidence: [`docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md). Reviewer response table: [`SUBMISSION.md`](../SUBMISSION.md).
 > - **Build-pipeline split** — `--wp-org` flag in `bin/build-plugin-zip.sh` produces a WP.org-submission ZIP; full GitHub Release ZIP built separately. `addons/` + `.zed` + root `*.md` excluded from the WP.org artifact.
 > - **Chat SPA addon** (`addons/chat-spa/`) — all 7 phases complete (v0.6.0): SSE adapter, tool-call cards, transcripts sidebar, memory drawer, HITL approval bar, file attachments + regenerate, `WP_MCP_AI_LEGACY_CHAT_JS` opt-out constant.
-> - **Docs Hub addon** (`addons/docs-hub/`) — evolved from v0.1.0 to v0.3.8: remote-first defaults, tree-picker UX, chunked rebuild + CLI, a11y hardening, syntax highlighting (rehype-highlight), `NV_oOS_Docs_Hub_Sitemap_Provider`, PageFooter, SSRF hardening.
+> - **Docs Hub addon** (`addons/docs-hub/`) — evolved from v0.1.0 to v0.4.1: remote-first defaults, tree-picker UX, chunked rebuild + CLI, a11y hardening, syntax highlighting (rehype-highlight), `NV_oOS_Docs_Hub_Sitemap_Provider`, PageFooter, SSRF hardening, plugin-update rebuild trigger (`wp_mcp_ai_plugin_updated`), version-mismatch rebuild guard, slug-map link resolution + case-insensitive suggestions.
 > - **Toolkit SPA Blueprint Phases 5–12** — a11y, i18n, PHPUnit tests, bundle-size CI, scaffolder auto-patch, 10 Tier-A manifests complete; canvas-toolkit v0.2.0 (whiteboard/bpmn/mermaid), document-editor v0.2.0 (GrapesJS), media-studio Phase 4.
 > - **PHPUnit + Vitest coverage campaign** (PRs #1–#11) — 271 AJAX handlers covered; PHPUnit baseline + non-regression CI gate; Vitest scaffolding for all 6 SPA addons.
 > - **Dependabot security sweep** — 33 alerts resolved across all npm manifests.
@@ -617,7 +619,21 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.58: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.0.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio
+## 🆕 August 2026 — v1.1.55–v1.1.59: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools
+
+### New and updated documents (August 19, 2026, v1.1.59)
+
+- **[docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md](project/proposals/031-media-worker-crawl4ai-integration-plan.md)** ⭐ **NEW** — Media Worker crawling & Crawl4AI facade plan (Phases 1–2 implemented, worker v3.2.0). (August 18, 2026)
+- **[docs/developer/implementation-plan-research-tools-multi-provider.md](developer/implementation-plan-research-tools-multi-provider.md)** ⭐ **NEW** — Research tools multi-provider hardening implementation plan. (August 18, 2026)
+- **[docs/reference/tools/tool-reference.md](reference/tools/tool-reference.md)** ⭐ **UPDATED** — `list_terms` / `list_taxonomies` entries, multi-provider `semantic_content_search` + hardened `deep_research` descriptions, count header reconciled. (August 19, 2026)
+- **[addons/media-worker/README.md](../addons/media-worker/README.md)** ⭐ **UPDATED** — `/api/crawl/*` + `/api/crawl4ai/*` endpoints, two-tier extraction, LLM extract, v3.2.0. (August 19, 2026)
+- **[docs/features/TOOLKIT_MEMORY_TRACKING.md](features/TOOLKIT_MEMORY_TRACKING.md)** + **[docs/admin-guides/ui-mockup-toolkit-memory.md](admin-guides/ui-mockup-toolkit-memory.md)** ⭐ **UPDATED** — toolkit memory estimate accounts for the worker sidecar. (August 18, 2026)
+- **[addons/docs-hub/CHANGELOG.md](../addons/docs-hub/CHANGELOG.md)** ⭐ **UPDATED** — 0.4.1: plugin-update rebuild trigger, version-mismatch guard, broken-link/suggestion fixes. (August 19, 2026)
+- **[addons/docs-hub/README.md](../addons/docs-hub/README.md)** ⭐ **UPDATED** — rebuild triggers and link-suggestion behavior. (August 19, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.59 highlights (worker crawling + Crawl4AI facade, research-tools hardening, Docs Hub + tool-registration fixes). (August 19, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.59] section with PR-level detail (PRs #5892–#5895). (August 19, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.59 entry. (August 19, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.59 + changelog entry; header tool count reconciled (300+). (August 19, 2026)
 
 ### New and updated documents (August 18, 2026, v1.1.58)
 

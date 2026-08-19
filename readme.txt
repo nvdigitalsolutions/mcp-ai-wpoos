@@ -5,11 +5,11 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.58
+Stable tag: 1.1.59
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with 15 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama. 265+ built-in tools.
+AI Assistant framework with 15 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama. 300+ built-in tools.
 
 == Submission Scope ==
 
@@ -296,6 +296,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.59 - August 19, 2026 =
+
+Bumped to 1.1.59 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Media Worker v3.2.0: native /api/crawl/* endpoints (single-URL markdown, batched crawling, link scans) with a static-first two-tier extraction pipeline and SSRF-guarded URLs, plus a Crawl4AI-compatible facade for the run_crawl4ai_job remote mode and LLM-based page extraction. Research tools hardened: semantic_content_search resolves embeddings through the shared provider abstraction (OpenAI, Gemini, Ollama, DigitalOcean) with keyword-search fallback and mismatched-model vector skipping; deep_research retries empty or truncated completions across the provider chain and never caches empty reports; new read-only base tools list_terms and list_taxonomies. Fixed: Docs Hub cache/rebuild staleness after in-place plugin updates (new wp_mcp_ai_plugin_updated action plus a version-mismatch rebuild guard and broken-link suggestion fixes) and tool registration gaps (~32 previously-orphaned base tools now registered, legacy-format tool classes auto-wrapped). Tool count: ~300 base + ~1,243 Pro (~1,543 total; live registry authoritative).
 
 = 1.1.58 - August 18, 2026 =
 
