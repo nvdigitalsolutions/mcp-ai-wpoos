@@ -15,6 +15,10 @@ AI chat assistant addon for NV oOS Content Graph — adds conversational AI with
 | **Requires Plugins** | `nvoos-content-graph` (WP 6.5+ header) |
 | **Framework deps** | `nvoos/core`, `nvoos/wordpress-adapter` (bundled via Composer) |
 
+## Repository Sync
+
+This directory is subtree-synced to its standalone repository [`nvdigitalsolutions/nvoos-content-graph-ai`](https://github.com/nvdigitalsolutions/nvoos-content-graph-ai) via `.github/workflows/sync-nvoos-content-graph-ai.yml` (push-triggered on `main`/`alpha-working`).
+
 ## Current State — Practical Assessment
 
 ### ✅ What Works
