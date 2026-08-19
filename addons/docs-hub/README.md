@@ -16,11 +16,11 @@ and every installed addon, presenting it in a **GitBook-style three-column inter
 | **Full-text search** | REST-powered server search + FlexSearch client-side fallback |
 | **Markdown rendering** | GFM tables, task lists, fenced code blocks, `:::note/tip/warning/danger` callouts |
 | **Dark / light theme** | CSS custom-property tokens, togglable per user, respects `prefers-color-scheme` |
-| **Caching** | Filesystem + WordPress transient two-layer cache; auto-invalidated on plugin updates |
+| **Caching** | Filesystem + WordPress transient two-layer cache; auto-invalidated on NV-oOS plugin updates (v0.4.1+) |
 | **Shortcode** | `[nvoos_docs]` embeds the SPA on any page or post — works for guests by default |
 | **Gutenberg block** | `nvoos/docs-hub` block (same output as shortcode) |
 | **WP-CLI** | `wp nvoos-docs sync / clear / status` |
-| **Cron rebuild** | Automatic nightly rebuild; also triggered on plugin activate/deactivate |
+| **Cron rebuild** | Automatic nightly rebuild; also triggered on plugin activate/deactivate and NV-oOS plugin updates (v0.4.1+) |
 
 ---
 
@@ -120,6 +120,21 @@ Base: `GET /wp-json/nvoos-docs/v1`
 | GET | `/health` | `manage_options` | Index statistics + last rebuild summary. |
 
 > Since v0.2.0, `POST /rebuild` is **asynchronous by default** — it returns immediately with HTTP 202 and a `{ job_id, status: "queued" }` body. The job runs in WP-Cron ticks; poll `/rebuild/status` to display progress. Pass `?sync=1` (legacy) to run the entire rebuild inline in one request.
+
+### Rebuild triggers (since v0.4.1)
+
+Because the NV oOS base plugin updates **in place** (the built-in updater copies files over the live plugin directory and never fires `upgrader_process_complete`), the Docs Hub subscribes to its own invalidation signals instead:
+
+| Trigger | Behaviour |
+|---|---|
+| NV-oOS plugin update (`wp_mcp_ai_plugin_updated` action) | Cache cleared + async rebuild enqueued. Cached remote file content is preserved so an update does not re-fetch every Markdown file from GitHub. |
+| NV-oOS plugin activation / deactivation | Cache cleared + async rebuild enqueued (scoped to `mcp-ai-wpoos*` / `nvoos-docs-hub` plugins only). |
+| `admin_init` version-mismatch guard | If the manifest's stored addon/base versions (`version`, `base_version`) differ from the installed versions, a rebuild is enqueued on the first admin visit — covering manual file replacement and restores. |
+
+### Broken-link detection & suggestions (since v0.4.1)
+
+- `detect_broken_links()` resolves relative links against the indexed slug map before falling back to filesystem checks, so repo-relative links on remote-only indexes are no longer flagged as broken.
+- `suggest_fix()` fuzzy matching is case-insensitive and compares both the filename stem and the normalized target path, so moved files produce correct suggestions; confidence is clamped to [0.3, 1.0].
 
 ---
 
