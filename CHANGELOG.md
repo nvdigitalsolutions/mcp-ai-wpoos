@@ -31,7 +31,7 @@
 - Pro addon: 1.1.59. Media Worker: **v3.2.0**.
 - Tool count: ~300 base + ~1,243 Pro (~1,543 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 - Provider count: **15** first-class language-model providers.
-- Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **51**.
+- Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
 
 ---
 
