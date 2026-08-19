@@ -108,18 +108,7 @@ final class Registry {
 		$rows    = Db::listRemoteSources( array( 'enabled' => 1 ) );
 		$sources = array();
 		foreach ( $rows as $row ) {
-			$config = array();
-			if ( ! empty( $row->config_json ) ) {
-				$rawConfig = json_decode( $row->config_json, true );
-				if ( is_array( $rawConfig ) ) {
-					foreach ( $rawConfig as $k => $v ) {
-						if ( is_string( $v ) && Crypto::isSensitiveKey( $k ) ) {
-							$rawConfig[ $k ] = Crypto::decrypt( $v );
-						}
-					}
-					$config = $rawConfig;
-				}
-			}
+			$config                = Crypto::decryptConfig( $row->config_json );
 			$config['_slug']       = $row->slug;
 			$config['_rate_limit'] = absint( $row->rate_limit ?? 0 );
 			$instance              = $this->getDriverInstance( $row->driver, $config );

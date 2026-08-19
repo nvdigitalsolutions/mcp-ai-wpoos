@@ -111,6 +111,38 @@ final class Crypto {
 	}
 
 	/**
+	 * Decode a stored remote-source config JSON blob, transparently decrypting
+	 * every sensitive value.
+	 *
+	 * Handles values encrypted via {@see encrypt()}, legacy base64 fallback
+	 * values, and plaintext values stored before encryption was introduced.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param mixed $config_json Raw `config_json` column value (JSON string or null).
+	 * @return array<string,mixed> Decoded config with decrypted sensitive values.
+	 */
+	public static function decryptConfig( $config_json ): array {
+		$config = array();
+		if ( ! is_string( $config_json ) || '' === $config_json ) {
+			return $config;
+		}
+
+		$decoded = \json_decode( $config_json, true );
+		if ( ! is_array( $decoded ) ) {
+			return $config;
+		}
+
+		foreach ( $decoded as $key => $value ) {
+			if ( is_string( $value ) && self::isSensitiveKey( (string) $key ) ) {
+				$decoded[ $key ] = self::decrypt( $value );
+			}
+		}
+
+		return $decoded;
+	}
+
+	/**
 	 * Determine whether a config key is sensitive and should be encrypted.
 	 *
 	 * @param string $key Config field key.
@@ -133,8 +165,10 @@ final class Crypto {
 	 * @return string 32-byte binary key.
 	 */
 	private static function getKey(): string {
-		$authKey       = \defined( 'AUTH_KEY' ) ? \AUTH_KEY : 'nvoos-content-graph-auth-key-fallback';
-		$secureAuthKey = \defined( 'SECURE_AUTH_KEY' ) ? \SECURE_AUTH_KEY : 'nvoos-content-graph-secure-key-fallback';
+		// Fall back to a fixed string when a salt is undefined OR defined but
+		// empty — an empty salt would otherwise weaken the derived key.
+		$authKey       = ( \defined( 'AUTH_KEY' ) && is_string( \AUTH_KEY ) && '' !== \AUTH_KEY ) ? \AUTH_KEY : 'nvoos-content-graph-auth-key-fallback';
+		$secureAuthKey = ( \defined( 'SECURE_AUTH_KEY' ) && is_string( \SECURE_AUTH_KEY ) && '' !== \SECURE_AUTH_KEY ) ? \SECURE_AUTH_KEY : 'nvoos-content-graph-secure-key-fallback';
 
 		// Derive via HKDF-like construction using SHA-256.
 		$salt = 'nvoos-content-graph-v1|' . \get_option( 'siteurl', '' );

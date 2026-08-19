@@ -3,7 +3,7 @@
  * NV oOS Content Graph — Frontend Embed
  *
  * Powers the [nvoos_content_graph] shortcode and Gutenberg block on the frontend.
- * Loads nodes from the REST API and renders them with Cytoscape.js (CDN).
+ * Loads nodes from the REST API and renders them with Cytoscape.js (bundled vendor files).
  *
  * @package NvoosContentGraph
  * @since   0.5.0

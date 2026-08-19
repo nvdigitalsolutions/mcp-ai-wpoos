@@ -1,6 +1,6 @@
 {
   "name": "nvoos-content-graph",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Visual knowledge graph for WordPress — maps your content into an interactive, navigable graph. Zero API keys required.",
   "private": true,
   "scripts": {

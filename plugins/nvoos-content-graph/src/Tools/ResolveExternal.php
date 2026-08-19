@@ -39,7 +39,7 @@ class ResolveExternal extends AbstractTool {
 
 	/** {@inheritdoc} */
 	public function getDescription(): string {
-		return __( 'Resolves a Wikidata QID (e.g. Q42), a schema.org URL, or a remote oOS post ID to a local knowledge-graph node. If the entity is not found locally and auto_ingest is true, it will be fetched from Wikidata and ingested as a new node. Returns the local node data including its external_id, label, type, and any existing edges.', 'nvoos-content-graph' );
+		return __( 'Resolves a Wikidata QID (e.g. Q42), a schema.org URL, or a remote oOS post ID to a local knowledge-graph node. If the entity is not found locally and auto_ingest is true (administrators only), it will be fetched from Wikidata and ingested as a new node. Returns the local node data including its external_id, label, type, and any existing edges.', 'nvoos-content-graph' );
 	}
 
 	/** {@inheritdoc} */
@@ -54,8 +54,8 @@ class ResolveExternal extends AbstractTool {
 				),
 				'auto_ingest' => array(
 					'type'        => 'boolean',
-					'description' => __( 'If true, fetch and ingest the entity from Wikidata if not found locally.', 'nvoos-content-graph' ),
-					'default'     => true,
+					'description' => __( 'If true, fetch and ingest the entity from Wikidata if not found locally. Requires administrator access.', 'nvoos-content-graph' ),
+					'default'     => false,
 				),
 			),
 			'required'             => array( 'ref' ),
@@ -63,9 +63,14 @@ class ResolveExternal extends AbstractTool {
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * State-changing only when `auto_ingest` is true — the execute() method
+	 * enforces `manage_options` in that case.
+	 */
 	public function getCapabilityFlags(): array {
-		return array( 'read-only', 'external-api' );
+		return array( 'external-api', 'state-changing' );
 	}
 
 	/**
@@ -77,12 +82,22 @@ class ResolveExternal extends AbstractTool {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$ref         = sanitize_text_field( $arguments['ref'] ?? '' );
-		$auto_ingest = isset( $arguments['auto_ingest'] ) ? (bool) $arguments['auto_ingest'] : true;
+		$auto_ingest = ! empty( $arguments['auto_ingest'] );
 
 		if ( empty( $ref ) ) {
 			return new \WP_Error(
 				'resolve_external_ref_required',
 				__( 'ref is required.', 'nvoos-content-graph' )
+			);
+		}
+
+		// Auto-ingesting a new node mutates the graph — administrators only,
+		// mirroring the REST /resolve endpoint's restriction.
+		if ( $auto_ingest && ! \current_user_can( 'manage_options' ) ) {
+			return new \WP_Error(
+				'resolve_external_forbidden',
+				__( 'Auto-ingesting external entities requires administrator access. Use auto_ingest=false for read-only resolution.', 'nvoos-content-graph' ),
+				array( 'status' => 403 )
 			);
 		}
 

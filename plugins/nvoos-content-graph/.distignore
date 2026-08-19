@@ -15,17 +15,9 @@
 # Tests
 /tests
 
-# Vendor (Composer dev dependencies)
-/vendor/bin
-/vendor/composer
-/vendor/**/tests
-/vendor/**/Tests
-/vendor/**/test
-/vendor/**/docs
-/vendor/**/examples
-/vendor/**/phpunit.xml*
-/vendor/**/.gitignore
-/vendor/**/.gitattributes
+# Vendor — ships in full. `composer install --no-dev` produces only the
+# autoloader (vendor/autoload.php + vendor/composer/), which is REQUIRED at
+# runtime. Excluding any part of it would break class loading on activation.
 
 # Build artifacts
 /bin

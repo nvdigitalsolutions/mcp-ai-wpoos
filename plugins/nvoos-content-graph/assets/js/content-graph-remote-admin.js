@@ -137,12 +137,35 @@
 		if ( ! schema || ! schema.properties ) { return ''; }
 		let html = '<table class="form-table"><tbody>';
 		Object.keys( schema.properties ).forEach( function ( key ) {
-			const field = schema.properties[ key ];
-			const type = field.secret ? 'password' : 'text';
-			html += '<tr><th scope="row"><label>' + ( field.label || key ) + '</label></th>';
-			html += '<td><input type="' + type + '" name="config[' + key + ']" class="regular-text"';
-			if ( field.required ) { html += ' required'; }
-			html += '> <p class="description">' + ( field.description || '' ) + '</p></td></tr>';
+			const field = schema.properties[ key ] || {};
+			const label = $( '<div/>' ).text( field.label || key ).html();
+			const desc  = $( '<div/>' ).text( field.description || '' ).html();
+			const escKey = $( '<div/>' ).text( key ).html();
+			const type   = field.type || 'text';
+			let control = '';
+
+			if ( 'password' === type ) {
+				control = '<input type="password" name="config[' + escKey + ']" class="regular-text" autocomplete="new-password"' + ( field.required ? ' required' : '' ) + '>';
+			} else if ( 'textarea' === type ) {
+				control = '<textarea name="config[' + escKey + ']" class="large-text" rows="4"' + ( field.required ? ' required' : '' ) + '></textarea>';
+			} else if ( 'checkbox' === type ) {
+				// Hidden input guarantees the key is submitted even when unchecked.
+				control = '<input type="hidden" name="config[' + escKey + ']" value="0">' +
+					'<label><input type="checkbox" name="config[' + escKey + ']" value="1"' + ( field.default ? ' checked' : '' ) + '>' +
+					' ' + desc + '</label>';
+			} else if ( 'number' === type ) {
+				control = '<input type="number" name="config[' + escKey + ']" class="small-text"' + ( field.required ? ' required' : '' ) + '>';
+			} else if ( 'url' === type ) {
+				control = '<input type="url" name="config[' + escKey + ']" class="regular-text"' + ( field.required ? ' required' : '' ) + '>';
+			} else {
+				control = '<input type="text" name="config[' + escKey + ']" class="regular-text"' + ( field.required ? ' required' : '' ) + '>';
+			}
+
+			html += '<tr><th scope="row"><label>' + label + '</label></th><td>' + control;
+			if ( 'checkbox' !== type && field.description ) {
+				html += ' <p class="description">' + desc + '</p>';
+			}
+			html += '</td></tr>';
 		} );
 		html += '</tbody></table>';
 		return html;

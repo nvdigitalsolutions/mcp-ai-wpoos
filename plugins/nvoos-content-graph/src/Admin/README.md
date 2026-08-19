@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Hosts every wp-admin surface for NV oOS Content Graph — settings page, graph explorer, and remote-source management — so the frontend and REST tiers stay free of admin concerns.
+Hosts every wp-admin surface for NV oOS Content Graph — settings page (which embeds the Cytoscape graph explorer) and remote-source management — so the frontend and REST tiers stay free of admin concerns.
 
 ## Tier
 
@@ -19,7 +19,6 @@ Hosts every wp-admin surface for NV oOS Content Graph — settings page, graph e
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraph\Admin\SettingsPage` | `SettingsPage.php` | `Plugin::registerAdmin()` |
-| `NvoosContentGraph\Admin\GraphExplorer` | `GraphExplorer.php` | `Plugin::registerAdmin()` |
 | `NvoosContentGraph\Admin\RemoteAdmin` | `RemoteAdmin.php` | `Plugin::registerAdmin()` |
 
 ## Inputs / Outputs / Neighbors

@@ -1,5 +1,25 @@
 # NV oOS Content Graph — Changelog
 
+## 1.0.3 — 2026-08-20
+
+### Security
+
+- Remote-source credentials (API tokens, passwords, secrets) are now encrypted with AES-256-GCM before being stored — the `Crypto::encrypt()` path is wired into `Db::saveRemoteSource()`; read paths decrypt transparently via the new `Crypto::decryptConfig()` helper
+- SSRF guard now re-validates every redirect hop; transport-level redirect following is disabled in `HttpClient`
+- Config keys are sanitized and unknown drivers are rejected in both the AJAX and REST source-creation paths
+- `Crypto::getKey()` falls back to a fixed salt when `AUTH_KEY`/`SECURE_AUTH_KEY` are defined but empty
+
+### Fixes
+
+- Fixed invalid inline JS emitted by the `[nvoos_graph]` shortcode — the frontend embed and Gutenberg block now render
+- Wired the "Scheduled Rebuild" setting to WP-Cron (added a "Never" option); the recurring build event is kept in sync on activation, boot, and settings save
+- Fixed the admin "Test" button: it tested the first source with an empty config instead of the selected source with decrypted credentials; the REST `/test` endpoint had the same config bug and now uses per-source driver instances
+- Fixed `Db::upsertNode()` silently dropping `external_id`, `source_slug`, `confidence`, and `expires_at` on updates
+- Remote Sources modal now honors schema field types (password, textarea, checkbox, number, url) instead of rendering everything as text inputs
+- Removed the unregistered `GraphExplorer` admin page (the explorer is embedded in the settings page)
+- `.distignore` no longer strips the Composer autoloader from distribution builds
+- `ResolveExternal` tool defaults to `auto_ingest=false` and requires `manage_options` for auto-ingest, matching the REST endpoint
+
 ## 1.0.2 — 2026-08-18
 
 ### WordPress.org Review Fixes

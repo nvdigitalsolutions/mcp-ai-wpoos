@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace NvoosContentGraph\Graph;
 
+use NvoosContentGraph\Remote\Crypto;
 use NvoosContentGraph\Schema;
 use function absint;
 use function current_time;
@@ -218,18 +219,41 @@ class Db {
         // phpcs:enable
 
 		if ( $existingId ) {
+			$updateData    = array(
+				'label'        => $data['label'],
+				'type'         => $data['type'],
+				'post_id'      => $data['post_id'],
+				'url'          => $data['url'],
+				'properties'   => $data['properties'],
+				'content_hash' => $data['content_hash'],
+			);
+			$updateFormats = array( '%s', '%s', '%d', '%s', '%s', '%s' );
+
+			// Identity/confidence columns are refreshed only when the caller
+			// supplied them — builders that omit them must not wipe values set
+			// by entity reconciliation or remote ingestion.
+			if ( isset( $node['external_id'] ) ) {
+				$updateData['external_id'] = $data['external_id'];
+				$updateFormats[]           = '%s';
+			}
+			if ( isset( $node['source_slug'] ) ) {
+				$updateData['source_slug'] = $data['source_slug'];
+				$updateFormats[]           = '%s';
+			}
+			if ( isset( $node['confidence'] ) ) {
+				$updateData['confidence'] = $data['confidence'];
+				$updateFormats[]          = '%f';
+			}
+			if ( array_key_exists( 'expires_at', $node ) ) {
+				$updateData['expires_at'] = $data['expires_at'];
+				$updateFormats[]          = '%s';
+			}
+
 			$wpdb->update(
 				$table,
-				array(
-					'label'        => $data['label'],
-					'type'         => $data['type'],
-					'post_id'      => $data['post_id'],
-					'url'          => $data['url'],
-					'properties'   => $data['properties'],
-					'content_hash' => $data['content_hash'],
-				),
+				$updateData,
 				array( 'node_id' => $data['node_id'] ),
-				array( '%s', '%s', '%d', '%s', '%s', '%s' ),
+				$updateFormats,
 				array( '%s' )
 			);
 			return absint( $existingId );
@@ -646,7 +670,22 @@ class Db {
 			return new \WP_Error( 'invalid_data', __( 'slug and driver are required.', 'nvoos-content-graph' ) );
 		}
 
-		$configJson = wp_json_encode( $config );
+		// Normalize config keys and encrypt sensitive credential values
+		// (API tokens, passwords, secrets) before persisting. Values are
+		// transparently decrypted on read via Crypto::decryptConfig().
+		$safeConfig = array();
+		foreach ( $config as $key => $value ) {
+			$key = sanitize_key( (string) $key );
+			if ( '' === $key ) {
+				continue;
+			}
+			if ( is_string( $value ) && '' !== $value && Crypto::isSensitiveKey( $key ) ) {
+				$value = Crypto::encrypt( $value );
+			}
+			$safeConfig[ $key ] = $value;
+		}
+
+		$configJson = wp_json_encode( $safeConfig );
 
         // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$exists = $wpdb->get_var(

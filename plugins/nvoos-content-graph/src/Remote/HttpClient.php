@@ -41,6 +41,7 @@ use function wp_parse_url;
 use function wp_remote_get;
 use function wp_remote_post;
 use function wp_remote_retrieve_body;
+use function wp_remote_retrieve_header;
 use function wp_remote_retrieve_headers;
 use function wp_remote_retrieve_response_code;
 
@@ -160,11 +161,13 @@ class HttpClient {
 			}
 		}
 
-		// Build request args.
+		// Build request args. Redirects are disabled at the transport level
+		// and followed manually below so every hop passes the SSRF guard.
 		$requestArgs = array_merge(
 			array(
-				'timeout'    => 15,
-				'user-agent' => 'NV-oOS-Content Graph/' . NVOOS_CONTENT_GRAPH_VERSION,
+				'timeout'     => 15,
+				'user-agent'  => 'NV-oOS-Content Graph/' . NVOOS_CONTENT_GRAPH_VERSION,
+				'redirection' => 0,
 			),
 			$args
 		);
@@ -174,8 +177,10 @@ class HttpClient {
 		}
 
 		// Retry loop with exponential backoff.
-		$attempt   = 0;
-		$lastError = null;
+		$attempt    = 0;
+		$redirects  = 0;
+		$lastError  = null;
+		$currentUrl = $url;
 		while ( $attempt < self::MAX_RETRIES ) {
 			if ( $attempt > 0 ) {
 				// Exponential backoff: 1s, 2s, 4s.
@@ -184,9 +189,9 @@ class HttpClient {
 			++$attempt;
 
 			if ( 'GET' === $method ) {
-				$raw = wp_remote_get( $url, $requestArgs );
+				$raw = wp_remote_get( $currentUrl, $requestArgs );
 			} else {
-				$raw = wp_remote_post( $url, $requestArgs );
+				$raw = wp_remote_post( $currentUrl, $requestArgs );
 			}
 
 			if ( is_wp_error( $raw ) ) {
@@ -200,9 +205,28 @@ class HttpClient {
 			// Server errors (5xx) are retried; 4xx and 2xx/3xx are not.
 			if ( $status >= 500 ) {
 				/* translators: %d HTTP status code, %s URL */
-				$lastError = new WP_Error( 'http_' . $status, sprintf( __( 'HTTP %1$d from %2$s', 'nvoos-content-graph' ), $status, esc_url( $url ) ) );
+				$lastError = new WP_Error( 'http_' . $status, sprintf( __( 'HTTP %1$d from %2$s', 'nvoos-content-graph' ), $status, esc_url( $currentUrl ) ) );
 				$this->recordFailure( $host );
 				continue;
+			}
+
+			// Follow redirects manually (max 3) so the SSRF guard re-runs on
+			// every hop — a public URL redirecting to a private address must
+			// be blocked just like a direct request to it.
+			if ( $status >= 300 && $status < 400 && $redirects < 3 ) {
+				$location = wp_remote_retrieve_header( $raw, 'location' );
+				$nextUrl  = $this->resolveRedirect( $currentUrl, (string) $location );
+				if ( '' !== $nextUrl ) {
+					$ssrf = $this->checkSsrf( $nextUrl );
+					if ( is_wp_error( $ssrf ) ) {
+						$lastError = $ssrf;
+						break;
+					}
+					++$redirects;
+					$currentUrl = $nextUrl;
+					--$attempt; // A redirect hop does not consume a retry.
+					continue;
+				}
 			}
 
 			// Success — reset failure count.
@@ -235,6 +259,32 @@ class HttpClient {
 	}
 
 	// ───────────────────────────────────────────────────────────────
+	// Redirect handling
+	// ───────────────────────────────────────────────────────────────
+
+	/**
+	 * Resolve a Location header value into an absolute URL for re-validation.
+	 *
+	 * @param string $currentUrl The URL that returned the redirect.
+	 * @param string $location   Raw Location header value.
+	 * @return string Absolute URL, or '' when it cannot be resolved safely.
+	 */
+	private function resolveRedirect( string $currentUrl, string $location ): string {
+		$location = trim( $location );
+		if ( '' === $location ) {
+			return '';
+		}
+
+		$resolved = \WP_Http::make_absolute_url( $location, $currentUrl );
+		if ( false === $resolved ) {
+			return '';
+		}
+
+		$resolved = esc_url_raw( $resolved );
+		return is_string( $resolved ) ? $resolved : '';
+	}
+
+	// ───────────────────────────────────────────────────────────────
 	// SSRF guard
 	// ───────────────────────────────────────────────────────────────
 
@@ -253,7 +303,7 @@ class HttpClient {
 		 * @param bool   $allow Whether to allow private IPs.
 		 * @param string $url   The URL being requested.
 		 */
-		if ( apply_filters( 'nvoos_content_graph_allow_private_remotes', false, $url ) ) {
+		if ( apply_filters( Schema::FILTER_ALLOW_PRIVATE_URLS, false, $url ) ) {
 			return true;
 		}
 

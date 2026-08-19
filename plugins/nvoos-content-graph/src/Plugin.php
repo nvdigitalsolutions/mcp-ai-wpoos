@@ -9,6 +9,10 @@ use NvoosContentGraph\Remote\Enricher;
 use NvoosContentGraph\Remote\Registry as RemoteRegistry;
 
 use function get_current_screen;
+use function in_array;
+use function wp_clear_scheduled_hook;
+use function wp_next_scheduled;
+use function wp_schedule_event;
 
 /**
  * Composition root for the NV oOS Content Graph plugin.
@@ -84,6 +88,15 @@ final class Plugin {
 		add_action( Schema::CRON_BUILD, array( $this, 'runScheduledBuild' ) );
 		add_action( Schema::CRON_ENRICH, array( $this, 'runScheduledEnrich' ) );
 		add_action( 'nvoos_content_graph/initial_build', array( $this, 'runInitialBuild' ) );
+
+		// Keep the recurring rebuild event in sync with the saved schedule.
+		$this->syncRebuildSchedule();
+		add_action(
+			'update_option_' . Schema::OPTION_SETTINGS,
+			static function (): void {
+				Plugin::instance()->syncRebuildSchedule( true );
+			}
+		);
 
 		// Embeddings reindex batches (registered here, not in the
 		// admin-only RemoteAdmin::register(), so WP-Cron requests can
@@ -280,6 +293,44 @@ final class Plugin {
 		);
 	}
 
+	/**
+	 * Ensure the recurring rebuild cron event matches the saved schedule.
+	 *
+	 * Idempotent: when `$force` is false the event is only created when
+	 * missing; when true it is cleared and re-created so interval changes
+	 * take effect immediately. Called on boot, on activation, and after
+	 * every settings save.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param bool $force Clear and re-create the event.
+	 * @return void
+	 */
+	public function syncRebuildSchedule( bool $force = false ): void {
+		$schedule = (string) Settings::get( 'rebuild_schedule', 'weekly' );
+
+		if ( ! in_array( $schedule, array( 'hourly', 'twicedaily', 'daily', 'weekly', 'never' ), true ) ) {
+			$schedule = 'weekly';
+		}
+
+		$next = wp_next_scheduled( Schema::CRON_BUILD );
+		if ( $force && $next ) {
+			wp_clear_scheduled_hook( Schema::CRON_BUILD );
+			$next = false;
+		}
+
+		if ( 'never' === $schedule ) {
+			if ( ! $force && $next ) {
+				wp_clear_scheduled_hook( Schema::CRON_BUILD );
+			}
+			return;
+		}
+
+		if ( ! $next ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, $schedule, Schema::CRON_BUILD );
+		}
+	}
+
 	// ───────────────────────────────────────────────────────────────
 	// Post save handler
 	// ───────────────────────────────────────────────────────────────
@@ -320,14 +371,8 @@ final class Plugin {
 		$screen       = get_current_screen();
 		$isPluginPage = $screen && false !== strpos( $screen->id, Admin\SettingsPage::PAGE_SLUG );
 
-		// Warn when OpenSSL is unavailable (credentials stored with weak fallback).
-		if ( class_exists( 'NvoosContentGraph\Remote\Crypto' ) && ! \NvoosContentGraph\Remote\Crypto::isAvailable() ) {
-			printf(
-				'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
-				esc_html__( 'NV oOS Content Graph: The OpenSSL PHP extension is not available. Remote-source credentials (API keys, tokens) will be stored with weak encryption. Please enable the OpenSSL extension for secure credential storage.', 'nvoos-content-graph' )
-			);
-		}
-
+		// Build-complete success notice is transient-driven and dismissible,
+		// so it is safe to show site-wide (it self-removes after one view).
 		$transientKey = Schema::TRANSIENT_PREFIX . 'build_complete';
 		if ( get_transient( $transientKey ) ) {
 			delete_transient( $transientKey );
@@ -337,15 +382,25 @@ final class Plugin {
 			);
 		}
 
-		// "Not enabled" notice is only relevant on the plugin's own page.
-		if ( $isPluginPage ) {
-			$settings = Settings::all();
-			if ( empty( $settings['enabled'] ) ) {
-				printf(
-					'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
-					esc_html__( 'NV oOS Content Graph is installed but the graph is not enabled. Go to Settings → NV oOS Content Graph to enable it.', 'nvoos-content-graph' )
-				);
-			}
+		// The remaining notices only make sense on the plugin's own page.
+		if ( ! $isPluginPage ) {
+			return;
+		}
+
+		// Warn when OpenSSL is unavailable (credentials stored with weak fallback).
+		if ( class_exists( 'NvoosContentGraph\Remote\Crypto' ) && ! \NvoosContentGraph\Remote\Crypto::isAvailable() ) {
+			printf(
+				'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+				esc_html__( 'NV oOS Content Graph: The OpenSSL PHP extension is not available. Remote-source credentials (API keys, tokens) will be stored with weak encryption. Please enable the OpenSSL extension for secure credential storage.', 'nvoos-content-graph' )
+			);
+		}
+
+		$settings = Settings::all();
+		if ( empty( $settings['enabled'] ) ) {
+			printf(
+				'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+				esc_html__( 'NV oOS Content Graph is installed but the graph is not enabled. Go to Settings → NV oOS Content Graph to enable it.', 'nvoos-content-graph' )
+			);
 		}
 	}
 

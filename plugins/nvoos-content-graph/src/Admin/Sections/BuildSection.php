@@ -80,6 +80,7 @@ class BuildSection extends Section {
 					'twicedaily' => __( 'Twice Daily', 'nvoos-content-graph' ),
 					'daily'      => __( 'Daily', 'nvoos-content-graph' ),
 					'weekly'     => __( 'Weekly', 'nvoos-content-graph' ),
+					'never'      => __( 'Never (disable scheduled rebuilds)', 'nvoos-content-graph' ),
 				),
 				'default'     => 'weekly',
 			),

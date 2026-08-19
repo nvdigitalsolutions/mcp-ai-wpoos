@@ -23,6 +23,7 @@ use function is_array;
 use function is_string;
 use function is_wp_error;
 use function json_decode;
+use function map_deep;
 use function sanitize_key;
 use function sanitize_text_field;
 use function trim;
@@ -250,13 +251,28 @@ class RemoteAdmin {
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized per key below.
 			$raw_config = wp_unslash( $_POST['config'] );
 			foreach ( $raw_config as $k => $v ) {
-				$config[ sanitize_key( $k ) ] = sanitize_text_field( $v );
+				$key = sanitize_key( (string) $k );
+				if ( '' === $key ) {
+					continue;
+				}
+				if ( is_array( $v ) ) {
+					$config[ $key ] = map_deep( $v, 'sanitize_text_field' );
+				} elseif ( is_string( $v ) ) {
+					$config[ $key ] = sanitize_text_field( $v );
+				}
+				// Non-string, non-array values from crafted requests are dropped.
 			}
 		}
         // phpcs:enable
 
 		if ( empty( $slug ) || empty( $driver ) || empty( $label ) ) {
 			wp_send_json_error( __( 'slug, driver, and label are required.', 'nvoos-content-graph' ) );
+		}
+
+		// Refuse unknown drivers instead of persisting a source that can
+		// never be instantiated.
+		if ( ! Plugin::instance()->getRemoteRegistry()->getDriver( $driver ) ) {
+			wp_send_json_error( __( 'Unknown driver.', 'nvoos-content-graph' ) );
 		}
 
 		$result = \NvoosContentGraph\Graph\Db::saveRemoteSource(
@@ -316,15 +332,24 @@ class RemoteAdmin {
 			wp_send_json_error( __( 'slug is required.', 'nvoos-content-graph' ) );
 		}
 
-		$registry = Plugin::instance()->getRemoteRegistry();
-		$sources  = \NvoosContentGraph\Graph\Db::listRemoteSources( array( 'slug' => $slug ) );
-
-		if ( empty( $sources ) ) {
+		$dbSource = \NvoosContentGraph\Graph\Db::getRemoteSource( $slug );
+		if ( ! $dbSource || empty( $dbSource->enabled ) ) {
 			wp_send_json_error( __( 'Source not found or not enabled.', 'nvoos-content-graph' ) );
 		}
 
-		$source = $sources[0];
-		$driver = $registry->getDriver( $source->driver );
+		$registry = Plugin::instance()->getRemoteRegistry();
+		$driverId = sanitize_key( $dbSource->driver ?? '' );
+		if ( ! $registry->getDriver( $driverId ) ) {
+			wp_send_json_error( __( 'Driver not registered.', 'nvoos-content-graph' ) );
+		}
+
+		// Build a per-source instance with decrypted credentials — testing
+		// the shared prototype would run without any configured values.
+		$config                = \NvoosContentGraph\Remote\Crypto::decryptConfig( $dbSource->config_json ?? '' );
+		$config['_slug']       = $slug;
+		$config['_rate_limit'] = absint( $dbSource->rate_limit ?? 0 );
+
+		$driver = $registry->getDriverInstance( $driverId, $config );
 		if ( ! $driver ) {
 			wp_send_json_error( __( 'Driver not registered.', 'nvoos-content-graph' ) );
 		}

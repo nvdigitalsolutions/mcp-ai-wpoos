@@ -187,19 +187,8 @@ class Enricher {
 			);
 		}
 
-		$registry = Plugin::instance()->getRemoteRegistry();
-		$config   = array();
-		if ( ! empty( $dbSource->config_json ) ) {
-			$decoded = json_decode( $dbSource->config_json, true );
-			if ( is_array( $decoded ) ) {
-				foreach ( $decoded as $k => $v ) {
-					if ( is_string( $v ) && Crypto::isSensitiveKey( $k ) ) {
-						$decoded[ $k ] = Crypto::decrypt( $v );
-					}
-				}
-				$config = $decoded;
-			}
-		}
+		$registry              = Plugin::instance()->getRemoteRegistry();
+		$config                = Crypto::decryptConfig( $dbSource->config_json ?? '' );
 		$config['_slug']       = $slug;
 		$config['_rate_limit'] = absint( $dbSource->rate_limit ?? 0 );
 

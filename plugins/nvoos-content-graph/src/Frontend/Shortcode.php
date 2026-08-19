@@ -7,6 +7,8 @@ use NvoosContentGraph\Graph\Db;
 use NvoosContentGraph\Settings;
 use NvoosContentGraph\Schema;
 use function shortcode_atts;
+use function str_replace;
+use function wp_add_inline_script;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
 use function wp_unique_id;
@@ -80,9 +82,13 @@ class Shortcode {
 			NVOOS_CONTENT_GRAPH_VERSION
 		);
 
+		// Expose the config under the exact global the frontend JS expects:
+		// nvoosContentGraphData_<container_id_with_underscores>.
+		$dataKey = 'nvoosContentGraphData_' . str_replace( '-', '_', $containerId );
+
 		wp_add_inline_script(
 			'nvoos-content-graph-frontend',
-			'window.nvoosContentGraphData' . wp_json_encode( $containerId ) . ' = ' . wp_json_encode(
+			'window.' . $dataKey . ' = ' . wp_json_encode(
 				array(
 					'container'    => $containerId,
 					'mode'         => $mode,
