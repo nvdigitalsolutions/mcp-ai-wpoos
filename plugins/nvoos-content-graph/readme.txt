@@ -134,10 +134,10 @@ Both libraries are served locally from `assets/vendor/` and never loaded from th
 == Screenshots ==
 
 1. Graph Explorer — interactive Cytoscape.js visualization with search and node details
-2. Settings Page — configure post types, build schedule, display options
-3. Content Gaps Report — identify orphan nodes, thin communities, missing links
-4. Export Formats — JSON, GraphML, CSV, Neo4j, Obsidian
-5. Remote Sources — connect external data (Wikidata, REST APIs, RSS)
+2. Settings — build schedule, auto-rebuild, and display options
+3. Remote Sources — connect external data (Wikidata, REST APIs, RSS)
+4. Sources — choose which post types and content types are indexed
+5. Frontend embed — the [nvoos_graph] shortcode on any page
 
 == Changelog ==
 
@@ -153,6 +153,7 @@ Both libraries are served locally from `assets/vendor/` and never loaded from th
 * Remove the unregistered Graph Explorer admin page (embedded in Settings)
 * Ship the Composer autoloader intact in distribution builds
 * Restrict tool-level auto-ingest to administrators
+* Add WordPress.org screenshot assets (.wordpress-org/assets)
 
 = 1.0.2 — 2026-08-18 =
 * Renamed from "NV oOS Graphify" to "NV oOS Content Graph" (new slug `nvoos-content-graph`)

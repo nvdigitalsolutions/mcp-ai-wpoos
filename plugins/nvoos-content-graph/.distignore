@@ -38,6 +38,9 @@
 /CHANGELOG.md
 /CREDITS.md
 
+# wp.org SVN assets — uploaded to plugins.svn.wordpress.org, not shipped in the ZIP
+/.wordpress-org
+
 # Per-folder developer READMEs (monorepo convention — not for distribution)
 src/**/README.md
 
