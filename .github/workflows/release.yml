@@ -933,7 +933,7 @@ jobs:
 
             Packages with WordPress.org-compliant text domains and naming. Extract to a stable folder name (no version in the folder).
 
-            - `nvdigital-open-operator-system-oos-${{ needs.build.outputs.version }}.zip` — **Base** (~263 tools, free).
+            - `nvdigital-open-operator-system-oos-${{ needs.build.outputs.version }}.zip` — **Base** (~300 tools, free).
             - `nvdigital-open-operator-system-oos-pro-${{ needs.build.outputs.version }}.zip` — **Pro addon** (requires base).
             - `nvdigital-open-operator-system-oos-complete-${{ needs.build.outputs.version }}.zip` — **Complete** (base + pro bundled).
 

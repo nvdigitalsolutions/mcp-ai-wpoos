@@ -1730,7 +1730,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
 - `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
 
-**✅ Still Works:** All core features, MCP server, ~265 base tools, AI conversations
+**✅ Still Works:** All core features, MCP server, ~300 base tools, AI conversations
 
 [Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
@@ -1830,15 +1830,15 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 | **WPCode** | Freemium | 1 | Code snippet management |
 | **Simple JWT Login** | Free | 1 | JWT token generation |
 
-**Total Impact:** Without these plugins, you lose **13 tools** but retain **~265 base tools** and all essential AI assistant functionality.
+**Total Impact:** Without these plugins, you lose **13 tools** but retain **~300 base tools** and all essential AI assistant functionality.
 
 ---
 
 ### Base Version (Default)
 
-**NV oOS runs in Base Version mode by default**, providing ~265 essential tools that work with vanilla WordPress without requiring any third-party plugins:
+**NV oOS runs in Base Version mode by default**, providing ~300 essential tools that work with vanilla WordPress without requiring any third-party plugins:
 
-**Base Version includes ~265 essential tools that work with vanilla WordPress:**
+**Base Version includes ~300 essential tools that work with vanilla WordPress:**
 - Content management (search, save posts, attachments)
 - AI media generation (images via OpenAI/Gemini, speech, transcription, video)
 - Research tools (web search, weather, disaster alerts)
@@ -1897,7 +1897,7 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,502 tool classes, 36 REST controllers)
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,543 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
