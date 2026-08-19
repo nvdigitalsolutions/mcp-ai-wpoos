@@ -48,17 +48,19 @@
      variable names intentionally follow the upstream OOS\Core\* convention. -->
 <exclude-pattern>*/includes/bootstrap/oos-bridge.php</exclude-pattern>
 
-<!-- NV oOS Graphify is a standalone plugin with its own PSR-4 architecture
-     and phpcs.xml.dist. Exclude it from the base plugin's WPCS scan. -->
-<exclude-pattern>*/plugins/nvoos-graphify/**</exclude-pattern>
+<!-- NV oOS Content Graph is a standalone plugin with its own PSR-4
+     architecture and phpcs.xml.dist. Exclude it from the base plugin's
+     WPCS scan. -->
+<exclude-pattern>*/plugins/nvoos-content-graph/**</exclude-pattern>
 
-<!-- NV oOS Graphify — AI is a standalone addon plugin with its own PSR-4
+<!-- NV oOS Content Graph — AI is a standalone addon plugin with its own PSR-4
      architecture and phpcs.xml.dist. Exclude from the base plugin's scan. -->
-<exclude-pattern>*/plugins/nvoos-graphify-ai/**</exclude-pattern>
+<exclude-pattern>*/plugins/nvoos-content-graph-ai/**</exclude-pattern>
 
-<!-- NV oOS Graphify — AI Platform is a standalone addon plugin with its own
-     PSR-4 architecture and phpcs.xml.dist. Exclude from the base plugin's scan. -->
-<exclude-pattern>*/plugins/nvoos-graphify-ai-platform/**</exclude-pattern>
+<!-- NV oOS Content Graph — AI Platform is a standalone addon plugin with its
+     own PSR-4 architecture and phpcs.xml.dist. Exclude from the base plugin's
+     scan. -->
+<exclude-pattern>*/plugins/nvoos-content-graph-ai-platform/**</exclude-pattern>
 
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>

@@ -60,6 +60,9 @@ jobs:
             addons/pro/vendor/**
             assets/examples/**
             tests/fixtures/**
+            plugins/nvoos-content-graph/**
+            plugins/nvoos-content-graph-ai/**
+            plugins/nvoos-content-graph-ai-platform/**
 
       - name: Run WPCS on changed files
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
@@ -203,6 +206,9 @@ jobs:
             addons/pro/vendor/**
             assets/examples/**
             tests/fixtures/**
+            plugins/nvoos-content-graph/**
+            plugins/nvoos-content-graph-ai/**
+            plugins/nvoos-content-graph-ai-platform/**
 
       - name: Run PHP Compatibility Check on changed files
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
