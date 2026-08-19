@@ -1,5 +1,40 @@
 # oOS – Changelog
 
+## [1.1.59] - 2026-08-19
+
+### Changed — Media Worker Crawling & Crawl4AI Facade (PR #5892)
+
+- **Native crawling in the worker** — new `/api/crawl/*` endpoints: single-URL Markdown (`/api/crawl/markdown`), batched crawling (`/api/crawl/markdown-batch`, sync or queued async), and link scans (`/api/crawl/links`). Two-tier extraction: static HTTP fetch → Readability → Turndown first (zero browser cost), with the hardened Chromium launcher as an automatic fallback for JS-heavy pages. Every URL passes the shared SSRF guard before any fetch or navigation.
+- **Crawl4AI-compatible facade** (`/api/crawl4ai/*`) lets the plugin's `run_crawl4ai_job` remote mode target the worker as a drop-in Crawl4AI replacement; new LLM extraction utility (`src/utils/llm-extract.js`) for structured page data. Worker bumped to **v3.2.0**.
+- Toolkit memory estimate now accounts for the worker sidecar (`docs/features/TOOLKIT_MEMORY_TRACKING.md`, section-tools UI). See plan [`031-media-worker-crawl4ai-integration-plan.md`](docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md).
+
+### Changed — Research Tools Multi-Provider Hardening (PR #5893)
+
+- `semantic_content_search` now resolves embeddings through the shared embedding-provider abstraction (OpenAI, Gemini, Ollama, or DigitalOcean) **independent of the assistant's chat provider**; degrades to keyword search (`fallback_mode: "keyword"`) when no provider is configured; skips stored vectors from mismatched embedding models (`skipped_dimension_mismatch`). New Gemini embedding provider: `includes/services/embedding/class-wp-mcp-ai-embedding-provider-gemini.php`.
+- `deep_research` validates non-empty completions, falls back to `reasoning_content` for reasoning-only models, retries `finish_reason: length` truncation with a doubled token budget, walks the provider chain on failure (max 2 attempts by default, filterable via `wp_mcp_ai_deep_research_max_attempts`), and never caches empty reports.
+- **Two new read-only base tools** — `list_terms` and `list_taxonomies` (taxonomy discovery companions to `create_term`/`update_term`). See `docs/developer/implementation-plan-research-tools-multi-provider.md`.
+
+### Fixed — Docs Hub Rebuild & Broken-Link Suggestions (PR #5894)
+
+- The plugin updater now fires a new **`wp_mcp_ai_plugin_updated` action** after every in-place update (core, Pro, and base→complete flows) — the copy-in-place updater bypasses `Plugin_Upgrader`, so `upgrader_process_complete` never fired and Docs Hub caches went stale after updates.
+- Docs Hub **0.4.1** reacts to that action (and to NV-oOS activation/deactivation) with a cache clear + async rebuild — cached remote content is preserved so updates don't re-fetch every Markdown file — plus an `admin_init` guard that rebuilds when the manifest's stored versions differ, covering manual file replacement and restores.
+- Broken-link detection now resolves relative links against the indexed slug map (fixing the "626 broken links" false positive on remote-only indexes); suggestions are case-insensitive with confidence clamped to [0.3, 1.0].
+
+### Fixed — Tool Registration & QA Infrastructure (PR #5895)
+
+- **Legacy-format tool classes are auto-wrapped** (`WP_MCP_AI_Legacy_Tool_Wrapper` + `WP_MCP_AI_Tool_Legacy_Definition` trait), **~32 previously-orphaned base tool files are now registered** (2FA setup, content freshness, batch tools, omni-video, SEO/image optimizers, Site Kit integrations, and more), and a new **`wp_mcp_ai_tools_init`** action lets side-loaders (e.g. `includes/orchestration-init.php`) register tools after defaults. The registry now tracks skipped tools in `unavailable_tool_slugs`.
+- QA container memory limits raised (`tests/qa/docker/docker-compose.qa.yml`) and `bin/install-test-plugins.sh` hardened.
+
+### Versioning
+
+- Bumped to **1.1.59** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.59. Media Worker: **v3.2.0**.
+- Tool count: ~300 base + ~1,243 Pro (~1,543 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
+
+---
+
 ## [1.1.58] - 2026-08-18
 
 ### Added — Composio Connect Integration (PR #5889)

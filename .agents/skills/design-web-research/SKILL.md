@@ -162,6 +162,18 @@ timeout              — Max wait time in seconds (default: 120, max: 600)
    }
 ```
 
+### Media Worker fallback (worker v3.2.0+)
+
+When the NV oOS media worker sidecar is connected, `run_crawl4ai_job` remote mode targets the worker's **Crawl4AI-compatible facade** (`/api/crawl4ai/*`) instead of a dedicated Crawl4AI service. The worker also exposes native crawling endpoints usable from workflow tooling:
+
+| Endpoint | Use |
+|---|---|
+| `POST /api/crawl/markdown` | Single URL → clean Markdown |
+| `POST /api/crawl/markdown-batch` | Multiple URLs (sync or queued async) |
+| `POST /api/crawl/links` | Extract links from a page |
+
+Extraction is two-tier (static fetch → Readability → Turndown first; hardened browser fallback for JS-heavy pages) and every URL passes the worker's SSRF guard.
+
 ## WP-CLI Commands
 
 Key `mcp-ai` WP-CLI commands for web research workflows. Run via `terminal`:

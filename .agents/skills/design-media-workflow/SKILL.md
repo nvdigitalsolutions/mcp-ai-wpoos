@@ -35,6 +35,8 @@ Examples (agent name varies per installation):
 | Alt text / captions | `generate_image_alt_text_validated`, `generate_image_caption_validated` | — |
 | Video frame extraction | `extract_video_frames` | — |
 | Video processing | — | `/api/video/process` (FFmpeg) |
+| Page crawling | `run_crawl4ai_job` (remote mode) | `/api/crawl/markdown`, `/api/crawl/markdown-batch`, `/api/crawl/links` (worker v3.2.0+) |
+| Crawl4AI extraction | `run_crawl4ai_job` | `/api/crawl4ai/*` (Crawl4AI-compatible facade, worker v3.2.0+) |
 | Social publishing | `schedule_social_post` | `/api/social/post` |
 | WordPress post CRUD | `create_post`, `save_post` | — |
 | JetEngine CCT operations | `jetengine` (direct CRUD) | `remote_wp_connection` (CCT via REST) |

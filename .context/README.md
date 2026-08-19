@@ -8,7 +8,7 @@ This directory contains **GSD (Get Shit Done)** context engineering files for th
 
 ## Purpose
 
-NV oOS has a complex codebase (~1,508 tools, 1,600+ docs, multiple AI providers). Without context engineering, AI agents lose track of:
+NV oOS has a complex codebase (~1,543 tools, 1,600+ docs, multiple AI providers). Without context engineering, AI agents lose track of:
 - Coding conventions and naming rules
 - Security requirements for each subsystem
 - Interdependencies between tool registry, REST API, and chat UI

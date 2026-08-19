@@ -1,7 +1,7 @@
 # NV oOS Media Worker Sidecar
 
 > **GSD Context File** — Load this when working on the media worker (`addons/media-worker/`), the plugin sidecar client, or any Pro service that routes through the worker.
-> Last reviewed: August 2026 (v1.1.58, worker v3.0.0).
+> Last reviewed: August 19, 2026 (v1.1.59, worker v3.2.0).
 
 ---
 
@@ -16,13 +16,13 @@ existing local fallbacks run unchanged.
 - Monorepo folder is mirrored one-way to the standalone repo
   `mcp-ai-wpoos-media-worker` via `.github/workflows/sync-media-worker.yml`
   — never commit to the standalone repo directly.
-- Version: **v3.0.0** (multi-tenant v2.4.0 → Phase 2 → Phase 3 W1–W7).
+- Version: **v3.2.0** (multi-tenant v2.4.0 → Phase 2 → Phase 3 W1–W7 → crawling + Crawl4AI facade).
 
 ## Key Paths
 
 | Area | Files |
 |---|---|
-| Worker server / routes | `addons/media-worker/src/` (`index.js`, `routes/*.js`, `middleware/*.js`, `utils/*.js`) |
+| Worker server / routes | `addons/media-worker/src/` (`index.js`, `routes/*.js`, `middleware/*.js`, `utils/*.js`) — incl. `routes/crawl.js` (native crawling), `routes/crawl4ai.js` (Crawl4AI facade), `utils/crawl-extract.js`, `utils/llm-extract.js` |
 | Env configuration | `addons/media-worker/.env.example` (canonical variable reference) |
 | Deployment guides | `docs/operations/deployment/media-worker-docker-setup.md`, `media-worker-velocity-setup.md` |
 | Load testing | `addons/media-worker/bin/load-test/` (k6 kit + split decision table) |
@@ -31,7 +31,7 @@ existing local fallbacks run unchanged.
 | Usage reporter | `includes/class-wp-mcp-ai-media-worker-usage-reporter.php` (daily cron, opt-in) |
 | Pro service routing | `addons/pro/includes/npm-integration-filters.php`, `addons/pro/includes/services/*` |
 | Pro settings | `addons/pro/includes/admin/class-wp-mcp-ai-media-worker-settings.php` (worker-routed packages listed) |
-| Proposals | `docs/project/proposals/025` (deployment/hardening), `026` (multi-tenancy Phase 1), `027` (Phase 2 spec), `028` (Phase 3 scale) |
+| Proposals | `docs/project/proposals/025` (deployment/hardening), `026` (multi-tenancy Phase 1), `027` (Phase 2 spec), `028` (Phase 3 scale), `031` (crawling + Crawl4AI facade) |
 
 ## Architecture Rules
 
@@ -52,10 +52,21 @@ existing local fallbacks run unchanged.
    `WP_MEDIA_WORKER_TOKEN` constant → per-blog option →
    `wp_mcp_ai_media_worker_token` site option.
 
+## Crawling & Crawl4AI Facade (v3.2.0)
+
+- `POST /api/crawl/markdown` — single URL → clean Markdown.
+- `POST /api/crawl/markdown-batch` — multiple URLs (sync or queued async via the shared queue).
+- `POST /api/crawl/links` — extract links from a page.
+- `POST /api/crawl4ai/*` — Crawl4AI-compatible facade so the plugin's `run_crawl4ai_job` remote mode can target the worker as a drop-in Crawl4AI replacement.
+- Two-tier extraction (pullmd-style): **static** HTTP fetch → Readability → Turndown first (redirect hops re-validated, zero browser cost); **browser** tier (hardened Chromium, existing SSRF request interception) used automatically when static output is too thin or via `render: "always"`.
+- **Every URL passes the shared SSRF guard** (`utils/safe-url.js` `resolvePublicUrl` / `validatePublicUrl`) before any fetch or navigation — do not bypass it in new crawl features.
+- `utils/llm-extract.js` extracts structured data from page content using a configured LLM provider (keys resolved via `utils/provider-keys.js`).
+- Toolkit memory estimate accounts for the worker sidecar — see `docs/features/TOOLKIT_MEMORY_TRACKING.md`.
+
 ## Canonical Facts (avoid drift)
 
 - 11 route groups: browser, code, data, document, email, image, ocr, pdf,
-  social, video, workflow.
+  social, video, workflow — plus `crawl` and `crawl4ai` (v3.2.0).
 - Security baseline: timing-safe `X-Site-Token` auth, SSRF guard, sandboxed
   Puppeteer, express-rate-limit, Helmet, structured logs, split health
   endpoints (`/api/health/basic`, `/api/health/full`).

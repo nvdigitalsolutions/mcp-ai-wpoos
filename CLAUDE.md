@@ -50,11 +50,11 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,508 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,543 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
-├── tools/                              ← base tool implementations (~265 classes; live count is authoritative)
+├── tools/                              ← base tool implementations (~300 classes; live count is authoritative)
 │   ├── okf/                            ← OKF knowledge tools (6 tools)
 ├── services/                           ← 30+ service classes
 ├── admin/                              ← WordPress admin UI
@@ -185,7 +185,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~265 base tool classes) or `false` (~1,508 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~300 base tool classes) or `false` (~1,543 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -406,6 +406,10 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **deepmerge-ts CVE-2026-40345** (v1.1.58) — override in `addons/media-worker/package.json` + `addons/pro/package.json`.
 - **Security Center wp-api fix** (v1.1.58) — `wp-api` enqueued on the security tab (its inline scripts call `wp.apiRequest()`).
 - **Graphify standalone plugins → Content Graph** (v1.1.58) — `plugins/nvoos-graphify*` renamed to `plugins/nvoos-content-graph*` (v1.0.2); `addons/graphify/` (knowledge-graph addon) unchanged.
+- **Media Worker crawling & Crawl4AI facade** (v1.1.59, worker v3.2.0) — new `/api/crawl/*` endpoints (markdown, markdown-batch, links) with static-first two-tier extraction and the shared SSRF guard; `/api/crawl4ai/*` facade for the plugin's `run_crawl4ai_job` remote mode; `src/utils/llm-extract.js` structured extraction. See `docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md` and `.context/media-worker.md`.
+- **Research tools multi-provider** (v1.1.59) — `semantic_content_search` embeddings resolve through the shared provider abstraction (new Gemini embedding provider in `includes/services/embedding/`); keyword fallback when unconfigured; model-mismatch vector skipping. `deep_research` retries across the provider chain and never caches empty reports. New base tools `list_terms` + `list_taxonomies`.
+- **`wp_mcp_ai_plugin_updated` action** (v1.1.59) — the copy-in-place plugin updater fires this after every successful update (core, Pro, base→complete); **addons that cache plugin files must subscribe** because `upgrader_process_complete` never fires for these updates (Docs Hub 0.4.1 does, plus an `admin_init` version-mismatch rebuild guard).
+- **Tool registration fixes** (v1.1.59) — legacy-format tool classes (pre-interface) are transparently wrapped (`WP_MCP_AI_Legacy_Tool_Wrapper` + `WP_MCP_AI_Tool_Legacy_Definition` trait); ~32 previously-orphaned base tools are registered; new `wp_mcp_ai_tools_init` action for late side-loading; registry tracks skipped tools in `unavailable_tool_slugs`.
 - **REST require_once guards** (v1.1.52) — all REST controller `require_once` calls in `class-wp-mcp-ai-rest.php` now guarded with `file_exists()` checks.
 - **Site Health integration** — WordPress Site Health checks for cron configuration and security posture.
 - **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.
