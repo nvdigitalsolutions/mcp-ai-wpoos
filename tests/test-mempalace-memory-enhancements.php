@@ -34,6 +34,13 @@ class Test_MemPalace_Memory_Enhancements extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+		// The WP test framework logs out after every test (wp_set_current_user(0)
+		// in WP_UnitTestCase::tearDown), but the memory tools resolve their
+		// capability check against the current user. Log in an administrator so
+		// every test exercises the authenticated path.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
 	}
 
 	/**
@@ -60,9 +67,11 @@ class Test_MemPalace_Memory_Enhancements extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 1. Hierarchical scoping (wings / rooms)
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Storing a context with `wing` and `room` should persist them on the
@@ -212,9 +221,11 @@ class Test_MemPalace_Memory_Enhancements extends WP_UnitTestCase {
 		$this->assertSame( 'auth-flows', $result['contexts'][0]['room'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 2. Verbatim-storage discipline
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * The verbatim flag must be persisted and surfaced.
@@ -260,12 +271,12 @@ class Test_MemPalace_Memory_Enhancements extends WP_UnitTestCase {
 		// Listener that always rewrites content. It MUST be ignored when verbatim=true.
 		add_filter(
 			'wp_mcp_ai_memory_pre_store_transform',
-			static function ( $context_data, $verbatim ) {
+			static function ( $context_data ) {
 				$context_data['content'] = '[REWRITTEN]';
 				return $context_data;
 			},
 			10,
-			2
+			1
 		);
 
 		$tool   = $this->registry->get_tool( 'store_agent_context' );
@@ -334,9 +345,11 @@ class Test_MemPalace_Memory_Enhancements extends WP_UnitTestCase {
 		$this->assertStringContainsString( '[tagged]', $lookup['contexts'][0]['content'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 3. Hybrid retrieval scoring
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * The score booster method should produce zero contribution when all
@@ -421,15 +434,21 @@ class Test_MemPalace_Memory_Enhancements extends WP_UnitTestCase {
 		$method  = new ReflectionMethod( $service, 'calculate_score_boosters' );
 		$method->setAccessible( true );
 
-		$now_iso       = current_time( 'mysql' );
-		$old_iso       = gmdate( 'Y-m-d H:i:s', time() - ( 365 * DAY_IN_SECONDS ) );
+		$now_iso = current_time( 'mysql' );
+		$old_iso = gmdate( 'Y-m-d H:i:s', time() - ( 365 * DAY_IN_SECONDS ) );
 
 		$recent = array(
-			'data'      => array( 'title' => 'A', 'content' => 'B' ),
+			'data'      => array(
+				'title'   => 'A',
+				'content' => 'B',
+			),
 			'stored_at' => $now_iso,
 		);
 		$old    = array(
-			'data'      => array( 'title' => 'A', 'content' => 'B' ),
+			'data'      => array(
+				'title'   => 'A',
+				'content' => 'B',
+			),
 			'stored_at' => $old_iso,
 		);
 
@@ -489,9 +508,24 @@ class Test_MemPalace_Memory_Enhancements extends WP_UnitTestCase {
 	 */
 	public function test_boosters_are_capped() {
 		// Force every booster to its maximum.
-		add_filter( 'wp_mcp_ai_memory_score_boost_keyword_weight', static function () { return 1.0; } );
-		add_filter( 'wp_mcp_ai_memory_score_boost_temporal_weight', static function () { return 1.0; } );
-		add_filter( 'wp_mcp_ai_memory_score_boost_exact_match_weight', static function () { return 1.0; } );
+		add_filter(
+			'wp_mcp_ai_memory_score_boost_keyword_weight',
+			static function () {
+				return 1.0;
+			}
+		);
+		add_filter(
+			'wp_mcp_ai_memory_score_boost_temporal_weight',
+			static function () {
+				return 1.0;
+			}
+		);
+		add_filter(
+			'wp_mcp_ai_memory_score_boost_exact_match_weight',
+			static function () {
+				return 1.0;
+			}
+		);
 
 		$service = WP_MCP_AI_Vector_Context_Service::get_instance();
 		$method  = new ReflectionMethod( $service, 'calculate_score_boosters' );

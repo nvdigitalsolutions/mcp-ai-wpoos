@@ -78,6 +78,15 @@ function wp_mcp_ai_register_orchestration_tools() {
 
 	$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
+	// Ensure the interface + legacy-definition trait are available so the
+	// legacy-format orchestration classes can implement the tool interface.
+	if ( ! interface_exists( 'WP_MCP_AI_Tool_Interface' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+	}
+	if ( ! trait_exists( 'WP_MCP_AI_Tool_Legacy_Definition' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-legacy-definition.php';
+	}
+
 	// Base orchestration tools directory.
 	$tools_dir = WP_MCP_AI_PATH . 'includes/tools/orchestration/';
 

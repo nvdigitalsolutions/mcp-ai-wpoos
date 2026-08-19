@@ -18,7 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Detect Completion Indicators Tool
  */
-class WP_MCP_AI_Tool_Detect_Completion_Indicators {
+class WP_MCP_AI_Tool_Detect_Completion_Indicators implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
 	 * {@inheritdoc}
@@ -160,12 +161,12 @@ class WP_MCP_AI_Tool_Detect_Completion_Indicators {
 	/**
 	 * Extract context around match
 	 *
-	 * @param string $text  Full text.
-	 * @param string $match Match string.
+	 * @param string $text       Full text.
+	 * @param string $match_text Match string.
 	 * @return string
 	 */
-	private function extract_context( $text, $match ) {
-		$pos = strpos( $text, $match );
+	private function extract_context( $text, $match_text ) {
+		$pos = strpos( $text, $match_text );
 		if ( false === $pos ) {
 			return '';
 		}

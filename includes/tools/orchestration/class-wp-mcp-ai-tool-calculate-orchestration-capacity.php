@@ -23,7 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - λ (Arrival Rate): Sessions starting per hour
  * - W (Service Time): Average session duration in hours
  */
-class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
+class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
 	 * {@inheritdoc}

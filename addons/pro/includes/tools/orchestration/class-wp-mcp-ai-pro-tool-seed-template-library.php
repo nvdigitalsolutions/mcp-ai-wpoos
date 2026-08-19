@@ -83,6 +83,16 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 			$create_tool = new WP_MCP_AI_Pro_Tool_Create_Template();
 			$result      = $create_tool->execute( $template, $context );
 
+			// The inner tool may reject the caller with a WP_Error (canonical
+			// failure envelope) — record it instead of treating it as an array.
+			if ( is_wp_error( $result ) ) {
+				$errors[] = array(
+					'name'  => $template['template_name'],
+					'error' => $result->get_error_message(),
+				);
+				continue;
+			}
+
 			if ( $result['success'] ) {
 				// Update status to published for pre-built templates.
 				$template_id = $result['template_id'];

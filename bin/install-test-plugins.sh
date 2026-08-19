@@ -139,10 +139,48 @@ install_plugin() {
 	if run_wp "${WP_PATH_ARG[@]}" plugin install "$slug" --activate 2>/dev/null; then
 		ok "$slug (installed + activated)"
 		return 0
-	else
-		fail "$slug (could not install)"
+	fi
+
+	# Fallback: some PHP images (e.g. wordpress:cli) lack the ZipArchive
+	# extension that `wp plugin install` needs for extraction. Download the
+	# zip and unpack it with the unzip binary instead.
+	if unpack_plugin_zip "https://downloads.wordpress.org/plugin/${slug}.latest-stable.zip" "$slug" "$activate"; then
+		return 0
+	fi
+
+	fail "$slug (could not install)"
+	return 1
+}
+
+# ── Helper: download a plugin zip and unpack it with unzip ────────
+# Used when WP-CLI cannot extract zips itself (ZipArchive unavailable).
+unpack_plugin_zip() {
+	local zip_url="$1"
+	local slug="$2"
+	local activate="${3:-1}"
+	local zip_file="/tmp/${slug}.zip"
+
+	if ! command -v unzip >/dev/null 2>&1; then
 		return 1
 	fi
+
+	if ! curl -fsSL "$zip_url" -o "$zip_file" 2>/dev/null; then
+		rm -f "$zip_file"
+		return 1
+	fi
+
+	if ! unzip -qo "$zip_file" -d "${WP_ROOT:-.}/wp-content/plugins/" 2>/dev/null; then
+		rm -f "$zip_file"
+		return 1
+	fi
+	rm -f "$zip_file"
+
+	if [ "$activate" -eq 1 ]; then
+		run_wp "${WP_PATH_ARG[@]}" plugin activate "$slug" 2>/dev/null || true
+	fi
+
+	ok "$slug (installed via unzip fallback)"
+	return 0
 }
 
 # ── Helper: install a plugin from a local ZIP ────────────────

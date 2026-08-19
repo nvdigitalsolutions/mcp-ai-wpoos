@@ -18,7 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get Task Plan Tool
  */
-class WP_MCP_AI_Tool_Get_Task_Plan {
+class WP_MCP_AI_Tool_Get_Task_Plan implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
 	 * {@inheritdoc}

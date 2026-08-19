@@ -51,6 +51,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		protected $unavailable_tool_messages = array();
 
 		/**
+		 * Slugs of tools skipped during registration because their
+		 * availability check failed (plugin-gated tools, missing credentials).
+		 *
+		 * Kept separate from the messages so callers (tests, admin UI) can
+		 * programmatically distinguish "known but unavailable" from
+		 * "never registered".
+		 *
+		 * @var string[]
+		 */
+		protected $unavailable_tool_slugs = array();
+
+		/**
 		 * Deprecated tool aliases keyed by the old slug.
 		 *
 		 * Used by Phase P5 Part 2 (tool decomposition) so that splitting a tool
@@ -133,6 +145,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			 * @param WP_MCP_AI_Tool_Registry $registry Registry instance.
 			 */
 			do_action( 'wp_mcp_ai_register_tools', $this );
+
+			/**
+			 * Fires after default and third-party tool registration so
+			 * side-loaders (e.g. the core orchestration tools registered by
+			 * includes/orchestration-init.php) can register their tools.
+			 *
+			 * @since 1.2.0
+			 *
+			 * @param WP_MCP_AI_Tool_Registry $registry Registry instance.
+			 */
+			do_action( 'wp_mcp_ai_tools_init', $this );
 
 			// Auto-disable tools marked with "bug" status.
 			$this->auto_disable_bug_tools();
@@ -252,6 +275,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$this->tools                     = array();
 			$this->bootstrapped              = false;
 			$this->unavailable_tool_messages = array();
+			$this->unavailable_tool_slugs    = array();
 		}
 
 		/**
@@ -1788,6 +1812,40 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Recall_Memory'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-recall-memory.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
 				'WP_MCP_AI_Tool_Check_Workflow_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php',
+				'WP_MCP_AI_Tool_Validate_Workflow'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-validate-workflow.php',
+				'WP_MCP_AI_Tool_Visualize_Workflow_Metrics' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-visualize-workflow-metrics.php',
+				'WP_MCP_AI_Tool_Evolve_Harness'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-evolve-harness.php',
+				'WP_MCP_AI_Tool_Run_Gemini_Managed_Agent'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-gemini-managed-agent.php',
+				// Previously-orphaned tool files referenced by presets (registered as of 1.2.0).
+				'WP_MCP_AI_Tool_2FA_Setup_Assistant'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-2fa-setup-assistant.php',
+				'WP_MCP_AI_Tool_Auto_Categorize_Content'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-auto-categorize-content.php',
+				'WP_MCP_AI_Tool_Content_Freshness_Checker' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-content-freshness-checker.php',
+				'WP_MCP_AI_Tool_Content_Recommendation_Engine' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-content-recommendation-engine.php',
+				'WP_MCP_AI_Tool_Create_Batch'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-batch.php',
+				'WP_MCP_AI_Tool_Edit_Omni_Video'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-omni-video.php',
+				'WP_MCP_AI_Tool_Generate_Chart'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-chart.php',
+				'WP_MCP_AI_Tool_Generate_Mermaid'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-mermaid.php',
+				'WP_MCP_AI_Tool_Generate_Omni_Video'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-omni-video.php',
+				'WP_MCP_AI_Tool_Generate_Post_Excerpt'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-post-excerpt.php',
+				'WP_MCP_AI_Tool_Get_Batch_Status'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-batch-status.php',
+				'WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-gutenberg-block-pattern-generator.php',
+				'WP_MCP_AI_Tool_Image_Alt_Text_Optimizer'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-alt-text-optimizer.php',
+				'WP_MCP_AI_Tool_Image_Format_Batch_Converter' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-format-batch-converter.php',
+				'WP_MCP_AI_Tool_List_Batches'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-batches.php',
+				'WP_MCP_AI_Tool_Login_Security_Monitor'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-login-security-monitor.php',
+				'WP_MCP_AI_Tool_Media_Library_Optimizer'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-media-library-optimizer.php',
+				'WP_MCP_AI_Tool_Monitor_Batch'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-monitor-batch.php',
+				'WP_MCP_AI_Tool_Password_Strength_Analyzer' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-password-strength-analyzer.php',
+				'WP_MCP_AI_Tool_Performance_Optimizer_Assistant' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-performance-optimizer-assistant.php',
+				'WP_MCP_AI_Tool_Responsive_Image_Validator' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-responsive-image-validator.php',
+				'WP_MCP_AI_Tool_SEO_Meta_Optimizer'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-seo-meta-optimizer.php',
+				'WP_MCP_AI_Tool_Suggest_Internal_Links'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-suggest-internal-links.php',
+				'WP_MCP_AI_Tool_User_Activity_Auditor'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-user-activity-auditor.php',
+				// Google Site Kit integration tools (orphaned files registered as of 1.2.0).
+				'WP_MCP_AI_Tool_SiteKit_AdSense'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-sitekit-adsense.php',
+				'WP_MCP_AI_Tool_SiteKit_Analytics'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-sitekit-analytics.php',
+				'WP_MCP_AI_Tool_SiteKit_PageSpeed'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-sitekit-pagespeed.php',
+				'WP_MCP_AI_Tool_SiteKit_Search_Console'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-sitekit-search-console.php',
 				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).
 				'WP_MCP_AI_Tool_Enable_Reasoning_Mode'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-enable-reasoning-mode.php',
 				'WP_MCP_AI_Tool_Analyze_Code_Sequence'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-code-sequence.php',
@@ -1909,6 +1967,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			// Quiz tools are now loaded by the Pro addon.
 
+			// Preload shared tool traits so legacy tool classes that use them
+			// without requiring the trait file are registration-order independent.
+			$this->load_shared_tool_traits();
+
 			foreach ( $default_tools as $class => $file ) {
 				if ( file_exists( $file ) ) {
 					require_once $file;
@@ -1929,8 +1991,58 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 					}
 
 					if ( $should_register ) {
-						$this->register_tool( new $class() );
+						$registered = $this->register_tool( new $class() );
+
+						// Legacy-format classes (pre-interface) are transparently
+						// wrapped so they still register with the canonical tool
+						// interface.
+						if ( ! $registered && class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {
+							$registered = $this->register_tool( new WP_MCP_AI_Legacy_Tool_Wrapper( new $class() ) );
+						}
+
+						if ( ! $registered ) {
+							$skipped = new $class();
+							if ( method_exists( $skipped, 'get_slug' ) ) {
+								$this->mark_tool_unavailable( $skipped->get_slug() );
+							}
+						}
+					} else {
+						// Track the slug of plugin-gated/unavailable tools so callers
+						// can distinguish them from tools that never existed.
+						$skipped = new $class();
+						if ( method_exists( $skipped, 'get_slug' ) ) {
+							$this->mark_tool_unavailable( $skipped->get_slug() );
+						}
 					}
+				}
+			}
+		}
+
+		/**
+		 * Load shared tool traits before any tool class file is required.
+		 *
+		 * Several legacy tool classes use traits such as
+		 * {@see WP_MCP_AI_Tool_WordPress_Native} without requiring the trait
+		 * file themselves. They previously survived on load-order luck (some
+		 * other tool file requiring the trait first) — which broke during
+		 * plugin activation where the registry is the first loader of those
+		 * files. Preloading the trait files makes registration
+		 * order-independent.
+		 *
+		 * @return void
+		 */
+		protected function load_shared_tool_traits() {
+			$base_traits = glob( WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-tool-*.php' );
+			$tool_traits = glob( WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-*.php' );
+
+			$trait_files = array_merge(
+				is_array( $base_traits ) ? $base_traits : array(),
+				is_array( $tool_traits ) ? $tool_traits : array()
+			);
+
+			foreach ( $trait_files as $trait_file ) {
+				if ( file_exists( $trait_file ) ) {
+					require_once $trait_file;
 				}
 			}
 		}
@@ -1943,6 +2055,44 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		public function get_disabled_tools() {
 			$disabled = get_option( 'wp_mcp_ai_disabled_tools', array() );
 			return is_array( $disabled ) ? $disabled : array();
+		}
+
+		/**
+		 * Get slugs of tools skipped during registration because their
+		 * availability check failed (plugin-gated tools, missing credentials).
+		 *
+		 * Distinct from {@see self::get_disabled_tools()} — these are tools the
+		 * registry declined to load, not tools an admin disabled afterwards.
+		 *
+		 * @return string[] Array of unavailable tool slugs.
+		 */
+		public function get_unavailable_tool_slugs() {
+			return $this->unavailable_tool_slugs;
+		}
+
+		/**
+		 * Record a tool slug as known-but-unavailable.
+		 *
+		 * Callers that gate registration themselves (e.g. the Pro addon's
+		 * toolkit toggles) can use this to keep the unavailable-slug list
+		 * complete, so consumers can distinguish "known but gated" from
+		 * "never existed".
+		 *
+		 * @param string|object $tool_or_slug Tool slug string or tool instance.
+		 * @return void
+		 */
+		public function mark_tool_unavailable( $tool_or_slug ) {
+			$slug = is_string( $tool_or_slug ) ? $tool_or_slug : '';
+
+			if ( is_object( $tool_or_slug ) && method_exists( $tool_or_slug, 'get_slug' ) ) {
+				$slug = (string) $tool_or_slug->get_slug();
+			}
+
+			$slug = sanitize_key( $slug );
+
+			if ( '' !== $slug && ! in_array( $slug, $this->unavailable_tool_slugs, true ) ) {
+				$this->unavailable_tool_slugs[] = $slug;
+			}
 		}
 
 		/**
