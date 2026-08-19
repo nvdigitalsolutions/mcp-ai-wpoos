@@ -1,209 +1,1509 @@
-# NV oOS Content Graph — Translation Template
 # Copyright (C) 2026 NV Digital Solutions
-# This file is distributed under GPL-3.0-or-later.
+# This file is distributed under the GPL-3.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Content Graph 1.0.0\n"
-"Report-Msgid-Bugs-To: https://github.com/nvdigitalsolutions/nvoos-content-graph/issues\n"
+"Project-Id-Version: NV oOS Content Graph 1.0.3\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-content-graph\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-05T00:00:00+00:00\n"
+"POT-Creation-Date: 2026-08-19T20:36:01+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-content-graph\n"
 
-#. Plugin Name
+#. Plugin Name of the plugin
+#: nvoos-content-graph.php
 msgid "NV oOS Content Graph"
 msgstr ""
 
-#. Plugin Description
+#. Plugin URI of the plugin
+#: nvoos-content-graph.php
+msgid "https://github.com/nvdigitalsolutions/nvoos-content-graph"
+msgstr ""
+
+#. Description of the plugin
+#: nvoos-content-graph.php
 msgid "Visual knowledge graph for WordPress. Maps your content into an interactive, navigable graph. Zero API keys required."
 msgstr ""
 
-#. Activation error
+#. Author of the plugin
+#: nvoos-content-graph.php
+msgid "NV Digital Solutions"
+msgstr ""
+
+#. Author URI of the plugin
+#: nvoos-content-graph.php
+msgid "https://nvdigitalsolutions.com"
+msgstr ""
+
+#: nvoos-content-graph.php:58
 msgid "NV oOS Content Graph requires PHP 8.1 or higher."
 msgstr ""
 
-#. Activation error title
+#: nvoos-content-graph.php:59
 msgid "Plugin Activation Failed"
 msgstr ""
 
-#. Admin notice — build complete
-msgid "NV oOS Content Graph: Knowledge graph built successfully! View it in the Graph Explorer."
+#: src/Admin/Bridge.php:39
+msgid "Post Type"
 msgstr ""
 
-#. Admin notice — not enabled
-msgid "NV oOS Content Graph is installed but the graph is not enabled. Go to Settings → NV oOS Content Graph to enable it."
+#: src/Admin/Bridge.php:40
+msgid "Include"
 msgstr ""
 
-#. Admin notice — activated
-msgid "NV oOS Content Graph activated. Visit the Knowledge Graph settings to build your first graph."
+#: src/Admin/Bridge.php:41
+msgid "Notes"
 msgstr ""
 
-#. Admin menu
-msgid "Knowledge Graph"
+#: src/Admin/Bridge.php:55
+msgid "Included by default"
 msgstr ""
 
-#. Graph Explorer page title
-msgid "Knowledge Graph Explorer"
+#: src/Admin/Bridge.php:62
+msgid "Usually excluded"
 msgstr ""
 
-#. Graph Explorer submenu
-msgid "Graph Explorer"
+#: src/Admin/Bridge.php:64
+msgid "Opt-in"
 msgstr ""
 
-#. Stats labels
-msgid "Nodes"
-msgstr ""
-msgid "Edges"
-msgstr ""
-msgid "Communities"
+#: src/Admin/Bridge.php:74
+msgid "Uncheck to exclude a post type; check to include it. Changes take effect on the next graph build."
 msgstr ""
 
-#. Toolbar
-msgid "Search nodes..."
-msgstr ""
-msgid "Refresh Graph"
-msgstr ""
-msgid "Fit to Screen"
+#: src/Admin/Bridge.php:86
+msgid "No external database tables available in the core plugin. The NV oOS Content Graph AI Platform addon adds external table sources."
 msgstr ""
 
-#. Settings tabs
-msgid "General"
-msgstr ""
-msgid "Build Settings"
-msgstr ""
-msgid "Remote Enrichment"
-msgstr ""
-msgid "Embeddings"
-msgstr ""
-msgid "NV oOS Post Types"
-msgstr ""
-msgid "NV oOS Internal Tables"
-msgstr ""
-msgid "Display"
+#: src/Admin/RemoteAdmin.php:92
+#: src/Admin/SettingsPage.php:128
+msgid "Remote Sources"
 msgstr ""
 
-#. Settings fields
-msgid "Enable Content Graph"
-msgstr ""
-msgid "Semantic Extraction"
-msgstr ""
-msgid "Incremental Builds"
-msgstr ""
-msgid "Auto-Rebuild on Save"
-msgstr ""
-msgid "Scheduled Rebuild"
-msgstr ""
-msgid "OpenAI API Key (optional)"
-msgstr ""
-msgid "Enable Remote Enrichment"
-msgstr ""
-msgid "Enrichment Budget (nodes/run)"
-msgstr ""
-msgid "Async Enrichment"
-msgstr ""
-msgid "Enable Embeddings"
-msgstr ""
-msgid "Embeddings Model"
-msgstr ""
-msgid "Indexed Post Types"
-msgstr ""
-msgid "Indexed Tables"
-msgstr ""
-msgid "Schema.org Injection"
-msgstr ""
-msgid "Related Content Widget"
-msgstr ""
-msgid "Graph Explorer Height"
-msgstr ""
-msgid "Max Explorer Nodes"
+#: src/Admin/RemoteAdmin.php:93
+msgid "Configure external knowledge-graph data sources to enrich nodes with data from Wikidata, remote oOS sites, SPARQL endpoints, REST APIs, or RSS/Sitemap feeds."
 msgstr ""
 
-#. Settings values
-msgid "Hourly"
-msgstr ""
-msgid "Twice Daily"
-msgstr ""
-msgid "Daily"
-msgstr ""
-msgid "Weekly"
+#: src/Admin/RemoteAdmin.php:96
+msgid "No remote source drivers are registered."
 msgstr ""
 
-#. Shortcode
-msgid "Related Content"
+#: src/Admin/RemoteAdmin.php:98
+msgid "Add New Source"
 msgstr ""
 
-#. Tools
-msgid "Get Graph Node"
-msgstr ""
-msgid "Query Knowledge Graph"
-msgstr ""
-msgid "Get Node Neighbors"
-msgstr ""
-msgid "Build Knowledge Graph"
-msgstr ""
-msgid "Knowledge Graph Statistics"
-msgstr ""
-msgid "Shortest Path Between Topics"
-msgstr ""
-msgid "Content Gaps Analysis"
-msgstr ""
-msgid "Knowledge Graph God Nodes"
-msgstr ""
-msgid "Suggest Internal Links"
-msgstr ""
-msgid "Retrieve Knowledge Graph Context"
-msgstr ""
-msgid "Resolve External Entity"
-msgstr ""
-msgid "List Remote Sources"
-msgstr ""
-msgid "Sync Remote Source"
-msgstr ""
-msgid "Get Knowledge Community"
+#: src/Admin/RemoteAdmin.php:115
+msgid "Add"
 msgstr ""
 
-#. Tool error messages
-msgid "Node not found. Build the graph first with content-graph_build_graph."
+#: src/Admin/RemoteAdmin.php:122
+msgid "Configured Sources"
 msgstr ""
-msgid "Building the knowledge graph requires administrator access."
+
+#: src/Admin/RemoteAdmin.php:124
+msgid "No remote sources configured yet."
 msgstr ""
-msgid "Both start and end are required."
+
+#: src/Admin/RemoteAdmin.php:129
+#: src/Admin/RemoteAdmin.php:562
+msgid "Label"
 msgstr ""
-msgid "Community not found. Provide a valid community_id, node_id, or label."
+
+#: src/Admin/RemoteAdmin.php:130
+#: src/Admin/RemoteAdmin.php:566
+msgid "Slug"
 msgstr ""
-msgid "Question is required."
+
+#: src/Admin/RemoteAdmin.php:131
+msgid "Driver"
 msgstr ""
+
+#: src/Admin/RemoteAdmin.php:132
+#: src/Admin/RemoteAdmin.php:571
+msgid "Enabled"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:133
+msgid "Circuit"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:134
+msgid "Last Sync"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:135
+msgid "Actions"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:144
+msgid "Yes"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:144
+msgid "No"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:150
+#: src/Admin/SettingsPage.php:218
+msgid "Never"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:155
+#: src/Admin/RemoteAdmin.php:621
+msgid "Sync"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:160
+msgid "Test"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:165
+msgid "Delete"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:205
+msgid "Embeddings Index"
+msgstr ""
+
+#. translators: %d number of stored embeddings
+#: src/Admin/RemoteAdmin.php:210
+#, php-format
+msgid "Stored embeddings: %d"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:216
+msgid "Model:"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:221
+msgid "Re-index All Nodes"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:240
+#: src/Admin/RemoteAdmin.php:305
+#: src/Admin/RemoteAdmin.php:327
+#: src/Admin/RemoteAdmin.php:374
+#: src/Admin/RemoteAdmin.php:405
+#: src/Admin/RemoteAdmin.php:527
+#: src/Admin/SettingsPage.php:449
+#: src/Tools/SyncRemoteSource.php:79
 msgid "Permission denied."
 msgstr ""
-msgid "slug and driver are required."
+
+#: src/Admin/RemoteAdmin.php:269
+msgid "slug, driver, and label are required."
 msgstr ""
+
+#: src/Admin/RemoteAdmin.php:275
+msgid "Unknown driver."
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:310
+#: src/Admin/RemoteAdmin.php:332
+#: src/Admin/RemoteAdmin.php:379
+#: src/Tools/SyncRemoteSource.php:89
 msgid "slug is required."
 msgstr ""
 
-#. Remote sources
-msgid "Remote Sources"
+#: src/Admin/RemoteAdmin.php:337
+#: src/Rest/Controller.php:739
+msgid "Source not found or not enabled."
 msgstr ""
+
+#: src/Admin/RemoteAdmin.php:343
+#: src/Admin/RemoteAdmin.php:354
+msgid "Driver not registered."
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:383
+#: src/Tools/SyncRemoteSource.php:110
+msgid "Remote enrichment is not available."
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:428
+msgid "The AI addon is not installed. Install the NV oOS Content Graph — AI addon to enable embeddings."
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:534
+msgid "Field map must be a string."
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:558
+#: src/Admin/RemoteAdmin.php:620
 msgid "Add Remote Source"
 msgstr ""
 
-#. Export formats
+#: src/Admin/RemoteAdmin.php:568
+msgid "Lowercase letters, numbers, hyphens and underscores only."
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:572
+msgid "Active"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:578
+msgid "Save Source"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:579
+msgid "Cancel"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:622
+msgid "Connection OK"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:623
+msgid "Delete this source?"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:624
+msgid "Reindexing…"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:625
+msgid "Done. Stored:"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:626
+msgid "Failed:"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:627
+msgid "check OpenAI API key in NV oOS settings"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:628
+msgid "Valid map"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:629
+msgid "Invalid map"
+msgstr ""
+
+#: src/Admin/RemoteAdmin.php:630
+msgid "paths"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:33
+msgid "Build"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:66
+msgid "Incremental Builds"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:67
+msgid "Only process content modified since last build."
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:71
+msgid "Auto-Rebuild on Save"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:72
+msgid "Trigger an incremental rebuild whenever a post is published or updated."
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:76
+msgid "Scheduled Rebuild"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:77
+msgid "Choose how often the graph should be rebuilt."
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:79
+msgid "Hourly"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:80
+msgid "Twice Daily"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:81
+msgid "Daily"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:82
+msgid "Weekly"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:83
+msgid "Never (disable scheduled rebuilds)"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:93
+msgid "Semantic Extraction"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:94
+msgid "Use AI to extract named entities and topics from content."
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:98
+msgid "OpenAI API Key (optional)"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:99
+msgid "Used as fallback when the oOS AI provider is not available. Leave blank to use the global oOS key."
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:129
+msgid "Unlock AI-powered features"
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:132
+msgid "Install the NV oOS Content Graph — AI addon to enable semantic extraction, AI chat, embeddings, and agent memory for your knowledge graph. Supports 13 AI providers with a single API key."
+msgstr ""
+
+#: src/Admin/Sections/BuildSection.php:136
+msgid "Learn more about NV oOS Content Graph — AI"
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:29
+msgid "Display"
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:53
+msgid "Schema.org Injection"
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:54
+msgid "Inject Schema.org JSON-LD (about, relatedLink) on singular views."
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:58
+msgid "Related Content Widget"
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:59
+msgid "Append a Related Content list from graph neighbors below singular post content."
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:63
+msgid "Graph Explorer Height"
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:64
+msgid "CSS height for the graph explorer (e.g. 600px, 80vh)."
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:69
+msgid "Max Display Nodes"
+msgstr ""
+
+#: src/Admin/Sections/DisplaySection.php:70
+msgid "Maximum nodes to render in the graph explorer. Lower values improve browser performance."
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:33
+#: src/Admin/SettingsPage.php:129
+msgid "Embeddings"
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:70
+msgid "Enable Embeddings"
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:71
+msgid "Generate and store vector embeddings for nodes (requires an API key configured in NV oOS Content Graph — AI)."
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:75
+msgid "Embeddings Model"
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:76
+msgid "OpenAI embedding model used when generating node vectors."
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:78
+msgid "text-embedding-3-small (recommended)"
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:79
+msgid "text-embedding-3-large (higher quality, slower)"
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:80
+msgid "text-embedding-ada-002 (legacy)"
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:121
+msgid "Vector embeddings require the AI addon"
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:124
+msgid "NV oOS Content Graph — AI adds vector embeddings, semantic search, RAG retrieval, and agent memory to your knowledge graph. Once installed, you can generate embeddings for every node using OpenAI, Google Gemini, or any of the 13 supported providers."
+msgstr ""
+
+#: src/Admin/Sections/EmbeddingsSection.php:128
+msgid "Get NV oOS Content Graph — AI"
+msgstr ""
+
+#: src/Admin/Sections/GeneralSection.php:28
+#: src/Admin/SettingsPage.php:126
+msgid "General"
+msgstr ""
+
+#: src/Admin/Sections/GeneralSection.php:52
+msgid "Enable Content Graph"
+msgstr ""
+
+#: src/Admin/Sections/GeneralSection.php:53
+msgid "Enable the Knowledge Graph addon."
+msgstr ""
+
+#: src/Admin/Sections/RemoteSection.php:31
+msgid "Remote Enrichment"
+msgstr ""
+
+#: src/Admin/Sections/RemoteSection.php:55
+msgid "Enable Remote Enrichment"
+msgstr ""
+
+#: src/Admin/Sections/RemoteSection.php:56
+msgid "Enrich graph nodes from configured remote sources during each build."
+msgstr ""
+
+#: src/Admin/Sections/RemoteSection.php:60
+msgid "Enrichment Budget (nodes/run)"
+msgstr ""
+
+#: src/Admin/Sections/RemoteSection.php:61
+msgid "Maximum nodes to enrich per build run (1–500). Prevents long-running builds."
+msgstr ""
+
+#: src/Admin/Sections/RemoteSection.php:68
+msgid "Async Enrichment"
+msgstr ""
+
+#: src/Admin/Sections/RemoteSection.php:69
+msgid "Run enrichment in the background via WP-Cron (recommended for large sites)."
+msgstr ""
+
+#: src/Admin/Sections/SourcesCptsSection.php:31
+msgid "Custom Post Types"
+msgstr ""
+
+#: src/Admin/Sections/SourcesCptsSection.php:52
+msgid "Choose which post types should be indexed into the knowledge graph."
+msgstr ""
+
+#: src/Admin/Sections/SourcesCptsSection.php:76
+msgid "No post types available."
+msgstr ""
+
+#: src/Admin/Sections/SourcesExtSection.php:31
+msgid "External Tables"
+msgstr ""
+
+#: src/Admin/Sections/SourcesExtSection.php:52
+msgid "Choose which database tables should be indexed into the knowledge graph."
+msgstr ""
+
+#: src/Admin/Sections/SourcesExtSection.php:76
+msgid "No external tables available."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:101
+#: src/Admin/SettingsPage.php:102
+#: src/Admin/SettingsPage.php:227
+msgid "NV Content Graph"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:127
+msgid "Sources (CPT / CCT)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:214
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:240
+msgid "Unknown"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:246
+msgid "Build Error"
+msgstr ""
+
+#. translators: 1: file path, 2: line number
+#: src/Admin/SettingsPage.php:258
+#, php-format
+msgid "File: %1$s, line %2$d"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:271
+msgid "Graph Overview"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:275
+msgid "Nodes"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:279
+msgid "Edges"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:283
+msgid "Communities"
+msgstr ""
+
+#. translators: 1: build status, 2: last build time
+#: src/Admin/SettingsPage.php:291
+#, php-format
+msgid "Status: %1$s — Last build: %2$s"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:299
+msgid "Rebuild Graph"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:307
+msgid "Graph Explorer"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:309
+msgid "Search nodes…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:311
+msgid "All types"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:313
+msgid "Agent ID…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:314
+msgid "Wing…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:315
+msgid "Show only the agent / wing combination above"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:316
+msgid "Apply"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:319
+msgid "Clear"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:321
+msgid "Fit"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:322
+msgid "Relayout"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:323
+msgid "Export PNG"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:501
+msgid "Build failed due to an unexpected error. See the error notice on the settings page for details."
+msgstr ""
+
+#: src/Frontend/RelatedContent.php:93
+msgid "Related Content"
+msgstr ""
+
+#. translators: 1: source node label, 2: target node label
+#: src/Graph/Analyzer.php:504
+#, php-format
+msgid "Consider linking \"%1$s\" to \"%2$s\" — they share a knowledge community."
+msgstr ""
+
+#: src/Graph/Db.php:670
+msgid "slug and driver are required."
+msgstr ""
+
+#: src/Graph/Exporter.php:150
 msgid "Knowledge Graph Export"
 msgstr ""
 
-#. Report questions
+#: src/Graph/Report.php:188
 msgid "Which content is most central to this knowledge graph?"
 msgstr ""
+
+#: src/Graph/Report.php:189
 msgid "What topic clusters exist in this site's content?"
 msgstr ""
+
+#: src/Graph/Report.php:190
 msgid "Which content pieces are isolated (no connections)?"
 msgstr ""
+
+#: src/Graph/Report.php:191
 msgid "What internal links are missing between related content?"
 msgstr ""
+
+#. translators: %s: top god node label
+#: src/Graph/Report.php:198
+#, php-format
+msgid "What content is connected to \"%s\" in the knowledge graph?"
+msgstr ""
+
+#: src/Graph/Report.php:204
 msgid "Which relationships in the knowledge graph need human review?"
 msgstr ""
+
+#: src/Graph/Report.php:208
 msgid "Can you describe the main topic communities in this site's content?"
+msgstr ""
+
+#. translators: 1: CCT type name, 2: numeric item ID.
+#: src/Graph/StructuralExtractor.php:383
+#, php-format
+msgid "%1$s #%2$d"
+msgstr ""
+
+#: src/Plugin.php:381
+msgid "NV oOS Content Graph: Knowledge graph built successfully! View it in the Graph Explorer."
+msgstr ""
+
+#: src/Plugin.php:394
+msgid "NV oOS Content Graph: The OpenSSL PHP extension is not available. Remote-source credentials (API keys, tokens) will be stored with weak encryption. Please enable the OpenSSL extension for secure credential storage."
+msgstr ""
+
+#: src/Plugin.php:402
+msgid "NV oOS Content Graph is installed but the graph is not enabled. Go to Settings → NV oOS Content Graph to enable it."
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:40
+msgid "CSV File Upload"
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:59
+msgid "Attachment ID"
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:60
+msgid "WordPress Media Library attachment ID of the CSV file (preferred)."
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:64
+msgid "File Path"
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:65
+msgid "Absolute path to a CSV file inside the WordPress uploads directory. Used when no attachment ID is set."
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:69
+msgid "First row contains headers"
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:74
+msgid "Field Delimiter"
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:79
+msgid "Max Rows"
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:80
+msgid "Maximum rows to ingest per sync (0 = unlimited)."
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:85
+#: src/Remote/Drivers/Webhook.php:60
+msgid "Field Map (JSON)"
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:86
+msgid "JSON map from node fields to column names: { \"id\": \"id\", \"label\": \"name\", \"url\": \"homepage\", \"type\": \"person\" }"
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:102
+msgid "CSV file is not readable."
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:107
+msgid "CSV file accessible."
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:195
+msgid "Configured attachment was not found."
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:202
+msgid "No CSV attachment_id or file_path is configured."
+msgstr ""
+
+#: src/Remote/Drivers/Csv.php:209
+msgid "CSV file path must be inside the WordPress uploads directory."
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:42
+msgid "Generic REST API"
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:63
+msgid "API Endpoint URL"
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:64
+msgid "Base URL of the REST API to fetch from."
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:69
+msgid "API Token"
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:70
+msgid "Bearer token for authorization (optional)."
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:74
+msgid "Results Path"
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:75
+msgid "Dot-notation path to results array (e.g. data.items)."
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:80
+msgid "ID Path"
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:85
+msgid "Label Path"
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:90
+msgid "URL Path"
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:95
+msgid "Type Path"
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:106
+msgid "No base_url configured."
+msgstr ""
+
+#. translators: %d HTTP status code
+#: src/Remote/Drivers/GenericRest.php:123
+#: src/Remote/Drivers/RssSitemap.php:104
+#, php-format
+msgid "HTTP %d."
+msgstr ""
+
+#: src/Remote/Drivers/GenericRest.php:129
+msgid "Connected."
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:43
+msgid "RSS / Atom / Sitemap Feed"
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:64
+msgid "Feed / Sitemap URL"
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:65
+msgid "RSS 2.0, Atom 1.0, or XML sitemap URL."
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:70
+msgid "Node Type"
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:71
+msgid "Graph node type to assign to ingested items."
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:76
+#: src/Remote/Drivers/Sparql.php:82
+msgid "Max Items"
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:77
+msgid "Maximum items to ingest per sync (0 = unlimited)."
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:88
+msgid "No feed_url configured."
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:113
+msgid "Could not parse XML from feed."
+msgstr ""
+
+#: src/Remote/Drivers/RssSitemap.php:119
+msgid "Feed accessible."
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:43
+msgid "SPARQL Endpoint (RDF)"
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:64
+msgid "SPARQL Endpoint URL"
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:65
+msgid "SPARQL 1.1 endpoint that accepts JSON results (e.g. https://query.wikidata.org/sparql)."
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:70
+msgid "SPARQL Query"
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:71
+msgid "SPARQL SELECT query that returns ?id ?label ?type ?url and optionally ?source ?target ?relation for edges."
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:76
+msgid "Default Node Type"
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:77
+msgid "Fallback node type when the result has no ?type binding."
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:83
+msgid "Max results to ingest per sync."
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:94
+msgid "No endpoint configured."
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:102
+msgid "No SPARQL query configured."
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:118
+msgid "SPARQL endpoint accessible."
+msgstr ""
+
+#: src/Remote/Drivers/Sparql.php:234
+msgid "No SPARQL endpoint configured."
+msgstr ""
+
+#: src/Remote/Drivers/Webhook.php:35
+msgid "Webhook Receiver"
+msgstr ""
+
+#: src/Remote/Drivers/Webhook.php:54
+msgid "Webhook Secret"
+msgstr ""
+
+#: src/Remote/Drivers/Webhook.php:55
+msgid "Shared secret used to verify the X-NVOOS-Signature header (HMAC-SHA256 of the raw request body). Required."
+msgstr ""
+
+#: src/Remote/Drivers/Webhook.php:61
+msgid "JSON map from incoming record fields to node properties."
+msgstr ""
+
+#: src/Remote/Drivers/Webhook.php:65
+msgid "Records Path"
+msgstr ""
+
+#: src/Remote/Drivers/Webhook.php:66
+msgid "Optional dotted path to the array of records inside the JSON body (e.g. \"data\" or \"items\"). Leave empty if the body is itself an array of records."
+msgstr ""
+
+#: src/Remote/Drivers/Webhook.php:76
+msgid "No webhook_secret configured."
+msgstr ""
+
+#: src/Remote/Drivers/Webhook.php:81
+msgid "Webhook receiver is configured. Producers should POST to the source webhook URL."
+msgstr ""
+
+#: src/Remote/Drivers/Wikidata.php:42
+msgid "Wikidata (Entity Reconciliation)"
+msgstr ""
+
+#: src/Remote/Drivers/Wikidata.php:63
+msgid "Language"
+msgstr ""
+
+#: src/Remote/Drivers/Wikidata.php:64
+msgid "BCP 47 language code (e.g. en, de, fr)."
+msgstr ""
+
+#: src/Remote/Drivers/Wikidata.php:69
+msgid "Min Confidence"
+msgstr ""
+
+#: src/Remote/Drivers/Wikidata.php:70
+msgid "Minimum match confidence threshold (0.0–1.0)."
+msgstr ""
+
+#: src/Remote/Drivers/Wikidata.php:100
+msgid "Empty results from Wikidata."
+msgstr ""
+
+#: src/Remote/Drivers/Wikidata.php:106
+msgid "Connected to Wikidata."
+msgstr ""
+
+#: src/Remote/Drivers/WooCommerce.php:32
+msgid "WooCommerce (local)"
+msgstr ""
+
+#: src/Remote/Drivers/WooCommerce.php:51
+msgid "Product Status"
+msgstr ""
+
+#: src/Remote/Drivers/WooCommerce.php:52
+msgid "Comma-separated WooCommerce product statuses to include (e.g. \"publish,draft\")."
+msgstr ""
+
+#: src/Remote/Drivers/WooCommerce.php:57
+msgid "Max Products Per Sync"
+msgstr ""
+
+#: src/Remote/Drivers/WooCommerce.php:58
+msgid "Maximum number of products to ingest per sync run."
+msgstr ""
+
+#: src/Remote/Drivers/WooCommerce.php:68
+msgid "WooCommerce is not active on this site."
+msgstr ""
+
+#: src/Remote/Drivers/WooCommerce.php:74
+msgid "WooCommerce is active. Ready to ingest products."
+msgstr ""
+
+#: src/Remote/Enricher.php:168
+#: src/Rest/Controller.php:788
+msgid "Invalid source slug."
+msgstr ""
+
+#: src/Remote/Enricher.php:173
+msgid "Remote source not found."
+msgstr ""
+
+#: src/Remote/Enricher.php:197
+msgid "Driver not found or not loaded."
+msgstr ""
+
+#: src/Remote/Enricher.php:203
+msgid "This source is already being synced."
+msgstr ""
+
+#: src/Remote/FieldMapValidator.php:74
+msgid "Field map is empty."
+msgstr ""
+
+#. translators: %s json_last_error_msg()
+#: src/Remote/FieldMapValidator.php:82
+#, php-format
+msgid "Invalid JSON: %s"
+msgstr ""
+
+#: src/Remote/FieldMapValidator.php:88
+msgid "Field map must be a JSON object."
+msgstr ""
+
+#: src/Remote/FieldMapValidator.php:98
+msgid "Field map must include at least an \"id\" or a \"label\" path."
+msgstr ""
+
+#. translators: %s top-level field key
+#: src/Remote/FieldMapValidator.php:110
+#, php-format
+msgid "Field map \"%s\" must be a string path."
+msgstr ""
+
+#. translators: %s top-level field key
+#: src/Remote/FieldMapValidator.php:118
+#, php-format
+msgid "Field map \"%s\" is empty."
+msgstr ""
+
+#: src/Remote/FieldMapValidator.php:130
+msgid "Field map \"properties\" must be a JSON object."
+msgstr ""
+
+#: src/Remote/FieldMapValidator.php:134
+msgid "Property keys must be non-empty strings."
+msgstr ""
+
+#. translators: %s property name
+#: src/Remote/FieldMapValidator.php:140
+#, php-format
+msgid "Property \"%s\" must map to a non-empty string path."
+msgstr ""
+
+#. translators: %s top-level field key
+#: src/Remote/FieldMapValidator.php:156
+#, php-format
+msgid "Unknown top-level key \"%s\" will be ignored."
+msgstr ""
+
+#. translators: %s comma-separated field paths
+#: src/Remote/FieldMapValidator.php:192
+#, php-format
+msgid "These paths did not resolve in the sample record: %s"
+msgstr ""
+
+#: src/Remote/HttpClient.php:136
+msgid "Invalid URL."
+msgstr ""
+
+#. translators: %d HTTP status code, %s URL
+#: src/Remote/HttpClient.php:208
+#, php-format
+msgid "HTTP %1$d from %2$s"
+msgstr ""
+
+#: src/Remote/HttpClient.php:258
+msgid "Request failed after retries."
+msgstr ""
+
+#: src/Remote/HttpClient.php:312
+msgid "Could not parse host from URL."
+msgstr ""
+
+#: src/Remote/HttpClient.php:318
+msgid "SSRF guard: loopback address blocked."
+msgstr ""
+
+#: src/Remote/HttpClient.php:326
+msgid "SSRF guard: could not resolve host."
+msgstr ""
+
+#: src/Remote/HttpClient.php:330
+msgid "SSRF guard: private IP address blocked."
+msgstr ""
+
+#. translators: %s hostname
+#: src/Remote/HttpClient.php:387
+#, php-format
+msgid "Circuit breaker open for host: %s"
+msgstr ""
+
+#: src/Rest/Controller.php:480
+#: src/Tools/GetNeighbors.php:99
+msgid "Node not found."
+msgstr ""
+
+#: src/Rest/Controller.php:611
+#: src/Tools/ResolveExternal.php:99
+msgid "Auto-ingesting external entities requires administrator access. Use auto_ingest=false for read-only resolution."
+msgstr ""
+
+#: src/Rest/Controller.php:656
+msgid "Unknown remote source driver."
+msgstr ""
+
+#: src/Rest/Controller.php:745
+#: src/Rest/Controller.php:756
+msgid "Driver not found."
+msgstr ""
+
+#: src/Rest/Controller.php:793
+msgid "Unknown or disabled source."
+msgstr ""
+
+#: src/Rest/Controller.php:796
+msgid "Source is not configured as a webhook receiver."
+msgstr ""
+
+#: src/Rest/Controller.php:804
+msgid "The webhook driver is not available in this build."
+msgstr ""
+
+#: src/Rest/Controller.php:813
+msgid "Invalid or missing signature."
+msgstr ""
+
+#: src/Rest/Controller.php:900
+msgid "You must be logged in to access the knowledge graph."
+msgstr ""
+
+#: src/Rest/Controller.php:914
+msgid "Administrator access required."
+msgstr ""
+
+#: src/Tools/BuildGraph.php:38
+msgid "Build Knowledge Graph"
+msgstr ""
+
+#: src/Tools/BuildGraph.php:45
+msgid "Build or rebuild the WordPress knowledge graph. Detects published posts, taxonomy terms, users, and media; extracts structural links (internal links, taxonomies, authorship) and optionally AI-powered semantic entities and topics. Returns a summary of nodes and edges created. Use incremental=true to only process content changed since the last build."
+msgstr ""
+
+#: src/Tools/BuildGraph.php:57
+msgid "Only process content modified since the last build. Faster for routine updates. Default: false."
+msgstr ""
+
+#: src/Tools/BuildGraph.php:62
+msgid "Run AI-powered semantic entity and topic extraction. Requires an AI provider. Default: true."
+msgstr ""
+
+#: src/Tools/BuildGraph.php:67
+msgid "Dispatch semantic extraction to WP Cron (non-blocking). Default: false."
+msgstr ""
+
+#: src/Tools/BuildGraph.php:72
+msgid "Truncate existing graph before building. Only applies when incremental=false. Default: false."
+msgstr ""
+
+#: src/Tools/BuildGraph.php:97
+msgid "Building the knowledge graph requires administrator access."
+msgstr ""
+
+#: src/Tools/ContentGaps.php:26
+msgid "Content Gaps Analysis"
+msgstr ""
+
+#: src/Tools/ContentGaps.php:30
+msgid "Identify knowledge gaps in the site content: orphan nodes (no connections), thin communities (under-developed topic clusters), high ambiguity in AI-extracted relationships, and hubless communities that lack a strong central piece. Returns actionable content creation suggestions."
+msgstr ""
+
+#. translators: %d: orphan count
+#: src/Tools/ContentGaps.php:64
+#, php-format
+msgid "%d isolated node"
+msgid_plural "%d isolated nodes"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: thin community count
+#: src/Tools/ContentGaps.php:71
+#, php-format
+msgid "%d under-developed community"
+msgid_plural "%d under-developed communities"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: ambiguity percentage
+#: src/Tools/ContentGaps.php:78
+#, php-format
+msgid "%s ambiguous relationships"
+msgstr ""
+
+#: src/Tools/ContentGaps.php:84
+msgid "No significant knowledge gaps found. Graph is well-connected."
+msgstr ""
+
+#: src/Tools/GetCommunity.php:32
+msgid "Get Knowledge Community"
+msgstr ""
+
+#: src/Tools/GetCommunity.php:37
+msgid "Return all nodes that belong to a specific topic cluster (community) in the knowledge graph. Communities are detected via modularity-based clustering. Provide a community_id (from nvoos_content_graph_graph_stats or nvoos_content_graph_god_nodes) or a node_id/label to look up which community a node belongs to."
+msgstr ""
+
+#: src/Tools/GetCommunity.php:47
+msgid "Community identifier (e.g. \"c_ab12cd34\"). From nvoos_content_graph_graph_stats."
+msgstr ""
+
+#: src/Tools/GetCommunity.php:51
+msgid "Look up the community that contains this node."
+msgstr ""
+
+#: src/Tools/GetCommunity.php:55
+msgid "Find the community for the node matching this label."
+msgstr ""
+
+#: src/Tools/GetCommunity.php:60
+msgid "Maximum nodes to return (default: 50)."
+msgstr ""
+
+#: src/Tools/GetCommunity.php:103
+msgid "Community not found. Provide a valid community_id, node_id, or label."
+msgstr ""
+
+#: src/Tools/GetNeighbors.php:30
+msgid "Get Node Neighbors"
+msgstr ""
+
+#: src/Tools/GetNeighbors.php:37
+msgid "Return all nodes directly connected to a given node in the knowledge graph. Optionally filter by relationship type (e.g. LINKS_TO, CATEGORIZED_BY, discusses_topic). Results include each neighbor's label, type, URL, degree, and the connecting relation."
+msgstr ""
+
+#: src/Tools/GetNeighbors.php:49
+msgid "Node identifier (e.g. \"post_123\"). Use nvoos_content_graph_get_node to look up a node_id."
+msgstr ""
+
+#: src/Tools/GetNeighbors.php:53
+msgid "Node label (alternative to node_id, uses fuzzy search)."
+msgstr ""
+
+#: src/Tools/GetNeighbors.php:58
+msgid "Filter by relation type, e.g. \"LINKS_TO\", \"CATEGORIZED_BY\", \"discusses_topic\". Leave empty for all relations."
+msgstr ""
+
+#: src/Tools/GetNeighbors.php:63
+msgid "Maximum number of neighbor edges to return (default: 100, max: 500)."
+msgstr ""
+
+#: src/Tools/GetNode.php:30
+msgid "Get Graph Node"
+msgstr ""
+
+#: src/Tools/GetNode.php:37
+msgid "Retrieve full details for a single knowledge graph node including its metadata, properties, degree count, community assignment, and direct neighbor edges. Lookup by label (fuzzy search) or by WordPress post ID."
+msgstr ""
+
+#: src/Tools/GetNode.php:49
+msgid "Node label to search for (case-insensitive, partial match). Use this or post_id."
+msgstr ""
+
+#: src/Tools/GetNode.php:54
+msgid "WordPress post ID. Use this or label."
+msgstr ""
+
+#: src/Tools/GetNode.php:59
+msgid "Exact node identifier (e.g. \"post_123\"). Use this for precise lookup."
+msgstr ""
+
+#: src/Tools/GetNode.php:95
+msgid "Node not found. Build the graph first with nvoos_content_graph_build_graph."
+msgstr ""
+
+#: src/Tools/GodNodes.php:28
+msgid "Knowledge Graph God Nodes"
+msgstr ""
+
+#: src/Tools/GodNodes.php:32
+msgid "Return the most-connected nodes in the knowledge graph — the \"god nodes\" or content pillars that act as hubs connecting many other pieces of content. High-degree nodes are ideal candidates for pillar pages, link-building targets, or topic cluster anchors."
+msgstr ""
+
+#: src/Tools/GodNodes.php:41
+msgid "Number of top nodes to return (default: 10, max: 50)."
+msgstr ""
+
+#: src/Tools/GodNodes.php:48
+msgid "Filter by node type: post, page, term, topic, entity, user, media. Leave empty for all types."
+msgstr ""
+
+#. translators: %d: node count
+#: src/Tools/GodNodes.php:74
+#, php-format
+msgid "Found %d content pillar node in the knowledge graph."
+msgid_plural "Found %d content pillar nodes in the knowledge graph."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Tools/GraphStats.php:28
+msgid "Knowledge Graph Statistics"
+msgstr ""
+
+#: src/Tools/GraphStats.php:35
+msgid "Return aggregate statistics about the site knowledge graph: total node and edge counts, breakdown by type, edge confidence distribution, number of communities, and last build timestamp. Use this to understand how well the knowledge graph has been built before running deeper analysis tools."
+msgstr ""
+
+#: src/Tools/ListRemoteSources.php:29
+msgid "List Remote Sources"
+msgstr ""
+
+#: src/Tools/ListRemoteSources.php:34
+msgid "Returns all configured remote source drivers including their slug, driver type, human-readable label, enabled status, circuit-breaker state, last sync timestamp, last error message, and the capabilities supported by their driver. Use this to discover what remote sources are available before calling nvoos_content_graph_sync_remote_source."
+msgstr ""
+
+#: src/Tools/ListRemoteSources.php:44
+msgid "If true, return only enabled sources."
+msgstr ""
+
+#: src/Tools/QueryGraph.php:30
+msgid "Query Knowledge Graph"
+msgstr ""
+
+#: src/Tools/QueryGraph.php:37
+msgid "Traverse the knowledge graph from seed nodes matching a keyword search. Returns the subgraph (nodes and edges) reachable within a given depth. Use mode=\"bfs\" for breadth-first (wide exploration) or mode=\"dfs\" for depth-first (deep paths). Returns a text summary, seed node list, subgraph nodes, and edges."
+msgstr ""
+
+#: src/Tools/QueryGraph.php:49
+msgid "Natural language question or keyword to search for seed nodes (e.g. \"SEO\", \"WordPress performance\", \"product launch\")."
+msgstr ""
+
+#: src/Tools/QueryGraph.php:56
+msgid "Traversal mode: bfs (breadth-first, default) or dfs (depth-first)."
+msgstr ""
+
+#: src/Tools/QueryGraph.php:61
+msgid "How many hops from seed nodes to traverse (1–5, default: 2)."
+msgstr ""
+
+#: src/Tools/QueryGraph.php:68
+msgid "Maximum number of nodes to return (default: 50)."
+msgstr ""
+
+#: src/Tools/QueryGraph.php:102
+msgid "A question or search keyword is required."
+msgstr ""
+
+#: src/Tools/QueryGraph.php:111
+msgid "No nodes found matching that query. Try building the graph first with nvoos_content_graph_build_graph."
+msgstr ""
+
+#. translators: 1: question, 2: node count, 3: edge count, 4: traversal mode, 5: depth
+#: src/Tools/QueryGraph.php:134
+#, php-format
+msgid "Found %2$d nodes and %3$d edges related to \"%1$s\" via %4$s traversal (depth %5$d)."
+msgstr ""
+
+#: src/Tools/ResolveExternal.php:37
+msgid "Resolve External Entity"
+msgstr ""
+
+#: src/Tools/ResolveExternal.php:42
+msgid "Resolves a Wikidata QID (e.g. Q42), a schema.org URL, or a remote oOS post ID to a local knowledge-graph node. If the entity is not found locally and auto_ingest is true (administrators only), it will be fetched from Wikidata and ingested as a new node. Returns the local node data including its external_id, label, type, and any existing edges."
+msgstr ""
+
+#: src/Tools/ResolveExternal.php:52
+msgid "A Wikidata QID (e.g. \"Q42\"), a full URL, or an external entity ID."
+msgstr ""
+
+#: src/Tools/ResolveExternal.php:57
+msgid "If true, fetch and ingest the entity from Wikidata if not found locally. Requires administrator access."
+msgstr ""
+
+#: src/Tools/ResolveExternal.php:90
+msgid "ref is required."
+msgstr ""
+
+#: src/Tools/RetrieveContext.php:35
+msgid "Retrieve Knowledge Graph Context"
+msgstr ""
+
+#: src/Tools/RetrieveContext.php:39
+msgid "Single-call RAG retrieval: given a question, returns grounded context from the knowledge graph (nodes, edges, related content) ready to paste directly into an AI prompt. Combines full-text node search with multi-hop graph traversal and optional vector similarity search for semantically rich results. Returns nodes, edges, and a pre-formatted context_text string. Use this before generating content to ground responses in your site's knowledge."
+msgstr ""
+
+#: src/Tools/RetrieveContext.php:48
+msgid "The question or topic to retrieve context for."
+msgstr ""
+
+#: src/Tools/RetrieveContext.php:53
+msgid "Number of graph hops from seed nodes for traversal (1-3)."
+msgstr ""
+
+#: src/Tools/RetrieveContext.php:60
+msgid "Maximum number of nodes to return (1-20)."
+msgstr ""
+
+#: src/Tools/RetrieveContext.php:67
+msgid "Use vector similarity search in addition to text search (requires embeddings to be indexed)."
+msgstr ""
+
+#: src/Tools/RetrieveContext.php:72
+msgid "Include edges between the returned nodes."
+msgstr ""
+
+#: src/Tools/RetrieveContext.php:102
+msgid "Question is required."
+msgstr ""
+
+#. translators: %s: the question text
+#: src/Tools/RetrieveContext.php:226
+#, php-format
+msgid "No knowledge graph context found for: %s"
+msgstr ""
+
+#: src/Tools/ShortestPath.php:27
+msgid "Shortest Path Between Topics"
+msgstr ""
+
+#: src/Tools/ShortestPath.php:31
+msgid "Find the shortest content path between two topics or posts in the knowledge graph using BFS. Returns the sequence of nodes connecting them, which reveals surprising semantic bridges. Provide start and end as labels, node_ids, or post IDs."
+msgstr ""
+
+#: src/Tools/ShortestPath.php:40
+msgid "Label or node_id of the starting node."
+msgstr ""
+
+#: src/Tools/ShortestPath.php:46
+msgid "Label or node_id of the destination node."
+msgstr ""
+
+#: src/Tools/ShortestPath.php:52
+msgid "Maximum path length to search (default: 6)."
+msgstr ""
+
+#: src/Tools/ShortestPath.php:82
+msgid "Both start and end are required."
+msgstr ""
+
+#. translators: %s: node label that was not found
+#: src/Tools/ShortestPath.php:104
+#, php-format
+msgid "Start node \"%s\" not found."
+msgstr ""
+
+#. translators: %s: node label that was not found
+#: src/Tools/ShortestPath.php:111
+#, php-format
+msgid "End node \"%s\" not found."
+msgstr ""
+
+#. translators: 1: start label, 2: end label, 3: depth limit
+#: src/Tools/ShortestPath.php:122
+#, php-format
+msgid "No path found between \"%1$s\" and \"%2$s\" within depth %3$d."
+msgstr ""
+
+#. translators: 1: start label, 2: end label, 3: path length
+#: src/Tools/ShortestPath.php:150
+#, php-format
+msgid "Shortest path from \"%1$s\" to \"%2$s\" is %3$d hop(s)."
+msgstr ""
+
+#: src/Tools/SuggestLinks.php:28
+msgid "Suggest Internal Links"
+msgstr ""
+
+#: src/Tools/SuggestLinks.php:32
+msgid "Identify missing internal links between content pieces that are in the same knowledge community. Returns ranked suggestions of post pairs that share a topic cluster but are not yet directly linked — actionable SEO and UX improvements."
+msgstr ""
+
+#: src/Tools/SuggestLinks.php:41
+msgid "Maximum link suggestions to return (default: 10, max: 50)."
+msgstr ""
+
+#: src/Tools/SuggestLinks.php:48
+msgid "Focus suggestions on a specific post ID (optional)."
+msgstr ""
+
+#: src/Tools/SuggestLinks.php:78
+msgid "No community data available for this post. Run nvoos_content_graph_build_graph first."
+msgstr ""
+
+#. translators: %d: suggestion count
+#: src/Tools/SuggestLinks.php:104
+#, php-format
+msgid "Found %d internal link opportunity."
+msgid_plural "Found %d internal link opportunities."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Tools/SyncRemoteSource.php:34
+msgid "Sync Remote Source"
+msgstr ""
+
+#: src/Tools/SyncRemoteSource.php:39
+msgid "Manually triggers a synchronisation run for a named remote source. Requires manage_options capability. In sync mode it returns the enrichment summary directly; in async mode it schedules the sync to run in the background and returns immediately. Use nvoos_content_graph_list_remote_sources first to discover available source slugs."
+msgstr ""
+
+#: src/Tools/SyncRemoteSource.php:49
+msgid "Slug of the remote source to sync."
+msgstr ""
+
+#: src/Tools/SyncRemoteSource.php:54
+msgid "Run in background (true) or wait for completion (false)."
+msgstr ""
+
+#. translators: %s source slug
+#: src/Tools/SyncRemoteSource.php:100
+#, php-format
+msgid "Remote source not found: %s"
 msgstr ""

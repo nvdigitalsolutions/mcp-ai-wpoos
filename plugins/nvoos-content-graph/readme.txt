@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 6.9
 Requires PHP: 8.1
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -40,7 +40,7 @@ Automatic structured data injection for SEO — taxonomy terms as `about` and in
 Appends graph-neighbor posts to your content based on knowledge graph proximity.
 
 = REST API =
-Full programmatic access with 14 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token; write endpoints require `manage_options`.
+Full programmatic access with 14 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
 
 = Extensible Tool System =
 14 built-in tools for graph operations: query, search, traverse, analyze, export. Addon plugins can register their own tools.
@@ -134,12 +134,26 @@ Both libraries are served locally from `assets/vendor/` and never loaded from th
 == Screenshots ==
 
 1. Graph Explorer — interactive Cytoscape.js visualization with search and node details
-2. Settings Page — configure post types, build schedule, display options
-3. Content Gaps Report — identify orphan nodes, thin communities, missing links
-4. Export Formats — JSON, GraphML, CSV, Neo4j, Obsidian
-5. Remote Sources — connect external data (Wikidata, REST APIs, RSS)
+2. Settings — build schedule, auto-rebuild, and display options
+3. Remote Sources — connect external data (Wikidata, REST APIs, RSS)
+4. Sources — choose which post types and content types are indexed
+5. Frontend embed — the [nvoos_graph] shortcode on any page
 
 == Changelog ==
+
+= 1.0.3 — 2026-08-20 =
+* Encrypt remote-source credentials (AES-256-GCM) before storing them
+* Fix `[nvoos_graph]` shortcode and block embed (invalid inline script)
+* Wire the Scheduled Rebuild setting to WP-Cron (new "Never" option)
+* Fix the admin Test button and REST /test endpoint (now use per-source credentials)
+* Reject unknown drivers and sanitize config in both source-creation paths
+* Re-validate redirects against the SSRF guard
+* Preserve external_id, source_slug, confidence, and expires_at on node updates
+* Remote Sources modal now renders schema field types correctly
+* Remove the unregistered Graph Explorer admin page (embedded in Settings)
+* Ship the Composer autoloader intact in distribution builds
+* Restrict tool-level auto-ingest to administrators
+* Add WordPress.org screenshot assets (.wordpress-org/assets)
 
 = 1.0.2 — 2026-08-18 =
 * Renamed from "NV oOS Graphify" to "NV oOS Content Graph" (new slug `nvoos-content-graph`)

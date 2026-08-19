@@ -7,6 +7,7 @@ use NvoosContentGraph\Graph\Builder;
 use NvoosContentGraph\Graph\Db;
 use NvoosContentGraph\Graph\Exporter;
 use NvoosContentGraph\Plugin;
+use NvoosContentGraph\Remote\Crypto;
 use NvoosContentGraph\Schema;
 use NvoosContentGraph\Tools\ListRemoteSources;
 use NvoosContentGraph\Tools\ResolveExternal;
@@ -24,7 +25,6 @@ use function current_user_can;
 use function function_exists;
 use function is_user_logged_in;
 use function is_wp_error;
-use function json_decode;
 use function register_rest_route;
 use function rest_ensure_response;
 use function sanitize_key;
@@ -316,8 +316,9 @@ class Controller {
 						'default' => true,
 					),
 					'config'  => array(
-						'type'    => 'object',
-						'default' => array(),
+						'type'              => 'object',
+						'default'           => array(),
+						'sanitize_callback' => array( __CLASS__, 'sanitizeSourceConfig' ),
 					),
 				),
 			)
@@ -645,6 +646,18 @@ class Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function createSource( WP_REST_Request $request ) {
+		$driver = sanitize_key( $request->get_param( 'driver' ) );
+
+		// Refuse unknown drivers instead of persisting a source that can
+		// never be instantiated.
+		if ( ! Plugin::instance()->getRemoteRegistry()->getDriver( $driver ) ) {
+			return new WP_Error(
+				'unknown_driver',
+				__( 'Unknown remote source driver.', 'nvoos-content-graph' ),
+				array( 'status' => 400 )
+			);
+		}
+
 		$config = $request->get_param( 'config' );
 		if ( ! is_array( $config ) ) {
 			$config = array();
@@ -652,7 +665,7 @@ class Controller {
 		$result = Db::saveRemoteSource(
 			array(
 				'slug'    => $request->get_param( 'slug' ),
-				'driver'  => $request->get_param( 'driver' ),
+				'driver'  => $driver,
 				'label'   => $request->get_param( 'label' ) ?? '',
 				'enabled' => (bool) $request->get_param( 'enabled' ),
 				'config'  => $config,
@@ -727,12 +740,22 @@ class Controller {
 		}
 
 		$registry = Plugin::instance()->getRemoteRegistry();
-		$driver   = $registry->getDriver( $dbSource->driver ?? '' );
-		if ( ! $driver ) {
-			return new WP_Error( 'no_driver', __( 'Driver not found.', 'nvoos-content-graph' ), array( 'status' => 500 ) );
+		$driverId = sanitize_key( $dbSource->driver ?? '' );
+		if ( ! $registry->getDriver( $driverId ) ) {
+			return new WP_Error( 'no_driver', __( 'Driver not found.', 'nvoos-content-graph' ), array( 'status' => 400 ) );
 		}
 
-		$driver->setConfig( (array) $dbSource );
+		// Build a per-source instance with decrypted credentials — testing
+		// the shared prototype would run without any configured values.
+		$config                = Crypto::decryptConfig( $dbSource->config_json ?? '' );
+		$config['_slug']       = $slug;
+		$config['_rate_limit'] = absint( $dbSource->rate_limit ?? 0 );
+
+		$driver = $registry->getDriverInstance( $driverId, $config );
+		if ( ! $driver ) {
+			return new WP_Error( 'no_driver', __( 'Driver not found.', 'nvoos-content-graph' ), array( 'status' => 400 ) );
+		}
+
 		$result = $driver->testConnection();
 
 		if ( is_wp_error( $result ) ) {
@@ -774,18 +797,7 @@ class Controller {
 		}
 
 		// Decrypt config so we can read the secret + field map.
-		$config = array();
-		if ( ! empty( $dbSource->config_json ) ) {
-			$decoded = json_decode( $dbSource->config_json, true );
-			if ( is_array( $decoded ) ) {
-				foreach ( $decoded as $k => $v ) {
-					if ( is_string( $v ) && class_exists( \NvoosContentGraph\Remote\Crypto::class ) && \NvoosContentGraph\Remote\Crypto::isSensitiveKey( $k ) ) {
-						$decoded[ $k ] = \NvoosContentGraph\Remote\Crypto::decrypt( $v );
-					}
-				}
-				$config = $decoded;
-			}
-		}
+		$config          = Crypto::decryptConfig( $dbSource->config_json ?? '' );
 		$config['_slug'] = $slug;
 
 		if ( ! class_exists( \NvoosContentGraph\Remote\Drivers\Webhook::class ) ) {
@@ -823,6 +835,47 @@ class Controller {
 				'sameAs_emitted' => $resolved,
 			)
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Sanitization helpers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Recursively sanitize a remote-source config array for the REST API.
+	 *
+	 * Used as the `sanitize_callback` for the `config` argument on
+	 * POST /sources. String values are sanitized, scalar values are kept
+	 * as-is, arrays are recursed, and everything else is dropped.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param mixed $config Raw config from the REST request.
+	 * @return array<string,mixed>
+	 */
+	public static function sanitizeSourceConfig( $config ): array {
+		if ( ! is_array( $config ) ) {
+			return array();
+		}
+
+		$clean = array();
+		foreach ( $config as $key => $value ) {
+			$key = sanitize_key( (string) $key );
+			if ( '' === $key ) {
+				continue;
+			}
+
+			if ( is_array( $value ) ) {
+				$clean[ $key ] = self::sanitizeSourceConfig( $value );
+			} elseif ( is_bool( $value ) || is_int( $value ) || is_float( $value ) ) {
+				$clean[ $key ] = $value;
+			} elseif ( is_string( $value ) ) {
+				$clean[ $key ] = sanitize_text_field( $value );
+			}
+			// nulls and objects are dropped.
+		}
+
+		return $clean;
 	}
 
 	// -------------------------------------------------------------------------
