@@ -416,6 +416,12 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 
 			$result = $store->execute( $store_args, $context );
+			// The canonical envelope allows execute() to return WP_Error
+			// (permission denied, invalid record, etc.) — never index it.
+			if ( is_wp_error( $result ) ) {
+				++$failed;
+				continue;
+			}
 			if ( ! empty( $result['success'] ) && ! empty( $result['context_id'] ) ) {
 				$mined[] = array(
 					'context_id' => $result['context_id'],
@@ -1026,7 +1032,7 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 			),
 			array()
 		);
-		if ( empty( $lookup['contexts'] ) || ! is_array( $lookup['contexts'] ) ) {
+		if ( is_wp_error( $lookup ) || empty( $lookup['contexts'] ) || ! is_array( $lookup['contexts'] ) ) {
 			return $set;
 		}
 		foreach ( $lookup['contexts'] as $ctx ) {

@@ -175,6 +175,11 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		// If context_id is provided, retrieve specific context.
 		if ( $context_id ) {
 			$specific_result = $this->retrieve_specific_context( $agent_id, $context_id, $include_expired );
+			// retrieve_specific_context() returns WP_Error when the context is
+			// missing or expired — return it untouched instead of indexing it.
+			if ( is_wp_error( $specific_result ) ) {
+				return $specific_result;
+			}
 			if ( ! empty( $vector_store_id ) ) {
 				$specific_result['vector_store_id'] = $vector_store_id;
 			}
@@ -183,6 +188,9 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 
 		// Otherwise, search all contexts for this agent.
 		$search_result = $this->search_contexts( $agent_id, $query, $filters, $limit, $include_expired );
+		if ( is_wp_error( $search_result ) ) {
+			return $search_result;
+		}
 		if ( ! empty( $vector_store_id ) ) {
 			$search_result['vector_store_id'] = $vector_store_id;
 		}

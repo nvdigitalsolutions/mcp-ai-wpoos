@@ -389,6 +389,14 @@ function wp_mcp_ai_init_test_database_tables() {
 		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
 	}
 
+	// Ensure the async job queue table exists for tests. The load guard
+	// queries it on every REST dispatch (`rest_pre_dispatch`); without the
+	// table every dispatched request spams SQL errors and slows standalone
+	// REST test runs to a crawl.
+	if ( class_exists( 'WP_MCP_AI_Async_Job_Queue' ) && method_exists( 'WP_MCP_AI_Async_Job_Queue', 'create_table' ) ) {
+		WP_MCP_AI_Async_Job_Queue::create_table();
+	}
+
 	// Ensure the content embedding table exists for tests. In production it
 	// is created on plugin activation, which never runs under PHPUnit, but
 	// the delete_post hook fires during the WP PHPUnit bootstrap cleanup

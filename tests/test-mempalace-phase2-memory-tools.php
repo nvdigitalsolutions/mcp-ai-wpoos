@@ -27,6 +27,15 @@ class Test_MemPalace_Phase2_Memory_Tools extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// The wp-phpunit framework resets the current user to 0 after each
+		// test, and the bootstrap's one-shot admin is not restored. Create a
+		// fresh authenticated admin per test so tools like store_agent_context
+		// (which checks `user_can( $user_id, 'read' )`) don't fail with
+		// `wp_mcp_ai_forbidden` for every test after the first.
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
 		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
 	}
 
@@ -231,7 +240,8 @@ class Test_MemPalace_Phase2_Memory_Tools extends WP_UnitTestCase {
 			),
 			array()
 		);
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
 	}
 
 	// --- wake_up_context ---
@@ -425,11 +435,13 @@ class Test_MemPalace_Phase2_Memory_Tools extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Agent_id is required.
+	 * Agent_id is required — the tool returns WP_Error per the canonical
+	 * envelope instead of a success array with success=false.
 	 */
 	public function test_wake_up_requires_agent_id() {
 		$tool   = $this->registry->get_tool( 'wake_up_context' );
 		$result = $tool->execute( array(), array() );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
 	}
 }

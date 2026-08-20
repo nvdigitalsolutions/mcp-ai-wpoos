@@ -32,6 +32,15 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// The wp-phpunit framework resets the current user to 0 after each
+		// test, and the bootstrap's one-shot admin is not restored. Create a
+		// fresh authenticated admin per test so tools like store_agent_context
+		// (which checks `user_can( $user_id, 'read' )`) don't fail with
+		// `wp_mcp_ai_forbidden` for every test after the first.
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
 		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
 	}
 
@@ -154,11 +163,15 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	/**
 	 * When no listener is registered (i.e. Graphify is not active) the store
 	 * call must still succeed and behave identically to before Phase 4a.
+	 *
+	 * The plugin's own CCT bridge always listens to `wp_mcp_ai_memory_stored`
+	 * in the full version, so the pre-condition checks only that the Graphify
+	 * bridge handler is absent — matching the intent of this test.
 	 */
 	public function test_store_succeeds_when_no_listener_registered() {
 		$this->assertFalse(
-			has_action( 'wp_mcp_ai_memory_stored' ),
-			'Test pre-condition: no listeners should be attached.'
+			has_action( 'wp_mcp_ai_memory_stored', array( 'NV_oOS_Graphify_Memory_Bridge', 'on_memory_stored' ) ),
+			'Test pre-condition: the Graphify listener should not be attached when the addon is inactive.'
 		);
 
 		$store  = $this->registry->get_tool( 'store_agent_context' );
@@ -442,10 +455,66 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A graph-ranked context_id that no longer resolves (expired or deleted
+	 * between ranking and fetch) makes retrieve_agent_memory return WP_Error.
+	 * wake_up_context must skip the dead id — not fatal with "Cannot use
+	 * object of type WP_Error as array" — and still serve the live records.
+	 */
+	public function test_wake_up_graph_skips_stale_context_ids() {
+		$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
+		if ( file_exists( $bridge_path ) ) {
+			require_once $bridge_path;
+		}
+		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
+			$this->markTestSkipped( 'Requires the bridge class.' );
+		}
+
+		$store = $this->registry->get_tool( 'store_agent_context' );
+		$valid = $store->execute(
+			array(
+				'agent_id'     => 41012,
+				'context_type' => 'fact',
+				'context_data' => array(
+					'title'   => 'Survives',
+					'content' => 'Still live.',
+				),
+			),
+			array()
+		);
+		$this->assertTrue( $valid['success'] );
+
+		// Graph ranking surfaces a stale id alongside the live one.
+		add_filter(
+			'wp_mcp_ai_wake_up_graph_context_ids',
+			static function () use ( $valid ) {
+				return array( 'stale-deleted-context-id', $valid['context_id'] );
+			},
+			10,
+			6
+		);
+
+		$wake = $this->registry->get_tool( 'wake_up_context' );
+		$res  = $wake->execute(
+			array(
+				'agent_id' => 41012,
+				'mode'     => 'graph',
+			),
+			array()
+		);
+
+		$this->assertTrue( $res['success'] );
+		$this->assertSame( 'graph', $res['retrieval_path'] );
+		$this->assertSame( 1, $res['count'] );
+		$this->assertSame( $valid['context_id'], $res['memories_loaded'][0]['context_id'] );
+	}
+
+	/**
 	 * Industry-standard observability: `memories_loaded[].via` should surface
 	 * the provenance signals produced by graph retrieval (mem0/Letta-style
-	 * retrieval-log convention). When the graph path serviced the request,
-	 * each entry should carry a non-empty `via` array.
+	 * retrieval-log convention). With a real Graphify graph the list is
+	 * non-empty; this test locks the plumbing (the key always exists and is
+	 * an array) using the synthetic rank-list injection the other graph-mode
+	 * tests rely on.
 	 */
 	public function test_wake_up_graph_surfaces_via_provenance() {
 		$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
@@ -459,35 +528,44 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 			array(
 				'agent_id'     => 41011,
 				'context_type' => 'fact',
-				'content'      => 'Provenance memory.',
+				'context_data' => array(
+					'title'   => 'Provenance memory',
+					'content' => 'Provenance memory.',
+				),
 				'wing'         => 'project-via',
 			),
 			array()
 		);
 		$this->assertTrue( $one['success'] );
 
+		// Inject ranked structure as if graph retrieval produced it. In this
+		// test environment the Graphify DB is absent, so `retrieve_graph`
+		// returns an empty ranked list and the real `via` payload is empty —
+		// the assertion locks the response shape, not the signal content.
 		add_filter(
 			'wp_mcp_ai_wake_up_graph_context_ids',
 			static function ( $ids, $ranked ) use ( $one ) {
-				// Inject ranked structure as if graph retrieval produced it.
 				return array( $one['context_id'] );
 			},
 			10,
 			6
 		);
 
-		// Bridge::retrieve_graph is a static method on a class only present
-		// when Graphify is loaded; in this absent-path test environment we
-		// patch the rank list in via the filter and assert that `via` from
-		// the synthetic ranked array is forwarded correctly.
-		// The wake_up tool reads `via` from the raw ranked list, so we also
-		// register a `wp_mcp_ai_wake_up_graph_context_ids` listener that
-		// modifies $ranked to include via.
-		// Skip if Bridge static is missing — we still want to lock the
-		// response shape.
-		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
-			$this->markTestSkipped( 'Graphify bridge class not loadable in absent-path env.' );
-		}
+		$wake = $this->registry->get_tool( 'wake_up_context' );
+		$res  = $wake->execute(
+			array(
+				'agent_id' => 41011,
+				'mode'     => 'graph',
+			),
+			array()
+		);
+
+		$this->assertTrue( $res['success'] );
+		$this->assertSame( 'graph', $res['retrieval_path'] );
+		$this->assertSame( 1, $res['count'] );
+		$this->assertSame( $one['context_id'], $res['memories_loaded'][0]['context_id'] );
+		$this->assertArrayHasKey( 'via', $res['memories_loaded'][0] );
+		$this->assertIsArray( $res['memories_loaded'][0]['via'] );
 	}
 
 	/**
