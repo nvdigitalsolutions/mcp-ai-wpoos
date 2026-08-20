@@ -147,8 +147,16 @@ class RestApiTest extends WP_UnitTestCase {
 		$this->assertEquals( 200, $response->get_status() );
 		$data = $response->get_data();
 		$this->assertIsArray( $data );
-		$this->assertArrayHasKey( 'nodes', $data );
-		$this->assertArrayHasKey( 'links', $data );
+		$this->assertArrayHasKey( 'format', $data );
+		$this->assertEquals( 'json', $data['format'] );
+
+		// The endpoint wraps the export payload under `data`; for JSON the
+		// payload is a JSON string (NetworkX node-link format).
+		$this->assertIsString( $data['data'] );
+		$export = json_decode( $data['data'], true );
+		$this->assertIsArray( $export );
+		$this->assertArrayHasKey( 'nodes', $export );
+		$this->assertArrayHasKey( 'links', $export );
 	}
 
 	/**

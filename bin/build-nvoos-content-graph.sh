@@ -143,8 +143,16 @@ rsync -a "${PLUGIN_DIR}/" "${TMP_DIR}/${ARTIFACT}/nvoos-content-graph/" \
 	--exclude 'tests/' \
 	--exclude 'phpcs.xml.dist' \
 	--exclude 'phpunit.xml.dist' \
+	--exclude '.phpunit.cache' \
+	--exclude '.phpunit.result.cache' \
 	--exclude 'composer.lock' \
 	--exclude 'CHANGELOG.md' \
+	--exclude 'README.md' \
+	--exclude 'WPORG-REVIEW-FINDINGS.md' \
+	--exclude 'package.json' \
+	--exclude 'package-lock.json' \
+	--exclude 'scripts/' \
+	--exclude 'src/**/README.md' \
 	--exclude '.DS_Store'
 
 echo "📁 Plugin directory contents:"

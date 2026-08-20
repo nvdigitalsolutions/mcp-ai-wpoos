@@ -3,7 +3,7 @@
 Contributors: nvdigitalsolutions, vsamtani
 Tags: knowledge graph, content visualization, cytoscape, content strategy, semantic web
 Requires at least: 6.5
-Tested up to: 6.9
+Tested up to: 7.1
 Requires PHP: 8.1
 Stable tag: 1.0.3
 License: GPL-3.0-or-later
