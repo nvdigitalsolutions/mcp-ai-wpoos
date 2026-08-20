@@ -596,4 +596,15 @@ The shared `WP_MCP_AI_Erlang_C` helper class (`includes/class-wp-mcp-ai-erlang-c
 
 ---
 
+## Conversation import
+
+Imports external AI conversation exports into the JetEngine `ai_chat_transcripts` CCT — one row per conversation — with format detection, idempotent dedupe, background-queue execution, GDPR export/erase coverage, and optional memory mining. Supports ChatGPT `conversations.json` (including ZIP archives), Google Takeout Gemini activity, Claude `conversations.jsonl`, ShareGPT datasets, and OpenAI fine-tuning JSONL. Requires JetEngine (Full version). See the [user guide](../../user-guides/conversation-import.md) and [implementation plan](../../project/plans/CONVERSATION-IMPORT-CCT-IMPLEMENTATION-PLAN.md).【F:includes/conversation-import/README.md†L1-L150】
+
+- **Detect Conversation Import Format** (`conversation_import_detect`) inspects an export file (path or media attachment ID) and reports the detected platform, byte size, and estimated conversation count without importing anything. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-conversation-import-detect.php†L1-L220】
+- **Import Conversations to CCT** (`conversation_import_run`) runs an import with dry-run previews, `skip`/`refresh` dedupe policies, batch sizing, limits, image sideloading (`sideload_media`), and checkpoint resume tokens. One CCT row is written per conversation; provenance lives in row metadata. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-conversation-import-run.php†L1-L280】
+- **Get Conversation Import Status** (`conversation_import_status`) returns the checkpoint status of a running import by its run token. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-conversation-import-status.php†L1-L180】
+- **Delete Imported Conversations** (`conversation_import_delete`) deletes imported rows scoped by platform (and optionally importing user), with dry-run counting and a 500-row safety cap. Requires `manage_options`; irreversible.【F:includes/tools/class-wp-mcp-ai-tool-conversation-import-delete.php†L1-L220】
+
+---
+
 Each tool automatically inherits the assistant context and authentication details passed through the REST layer, allowing developers to compose complex workflows or replace default behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】

@@ -1816,6 +1816,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	WP_CLI::add_command( 'mcp-ai rabbitmq', 'WP_MCP_AI_CLI_RabbitMQ_Command' );
 	WP_CLI::add_command( 'mcp-ai stdio', 'WP_MCP_AI_CLI_STDIO_Command' );
 
+	// Conversation import commands load only when the import pipeline
+	// classes were registered (JetEngine-available environments).
+	if ( class_exists( 'WP_MCP_AI_CLI_Conversation_Import_Command' ) ) {
+		WP_CLI::add_command( 'mcp-ai conversation-import', 'WP_MCP_AI_CLI_Conversation_Import_Command' );
+	}
+
 	// Register DLQ and SLA commands only if the classes were successfully loaded.
 	if ( class_exists( 'WP_MCP_AI_CLI_DLQ' ) ) {
 		WP_CLI::add_command( 'mcp-ai dlq', 'WP_MCP_AI_CLI_DLQ' );

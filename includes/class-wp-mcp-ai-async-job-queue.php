@@ -68,10 +68,11 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		/**
 		 * Job types.
 		 */
-		const TYPE_COMMAND      = 'command';
-		const TYPE_WORKFLOW     = 'workflow';
-		const TYPE_TOOL         = 'tool';
-		const TYPE_AGENTIC_LOOP = 'agentic_loop';
+		const TYPE_COMMAND             = 'command';
+		const TYPE_WORKFLOW            = 'workflow';
+		const TYPE_TOOL                = 'tool';
+		const TYPE_AGENTIC_LOOP        = 'agentic_loop';
+		const TYPE_CONVERSATION_IMPORT = 'conversation_import';
 
 		/**
 		 * Cron hook for job processing.
@@ -732,6 +733,9 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				case self::TYPE_AGENTIC_LOOP:
 					return self::execute_agentic_loop_job( $job );
 
+				case self::TYPE_CONVERSATION_IMPORT:
+					return self::execute_conversation_import_job( $job );
+
 				default:
 					throw new Exception(
 						sprintf(
@@ -741,6 +745,24 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 						)
 					);
 			}
+		}
+
+		/**
+		 * Execute a conversation import job.
+		 *
+		 * Delegates to the conversation import queue bridge, which runs the
+		 * import manager and updates job progress after every batch.
+		 *
+		 * @param array $job Job data.
+		 * @return array Import report.
+		 * @throws Exception If the import bridge is unavailable.
+		 */
+		private static function execute_conversation_import_job( $job ) {
+			if ( ! class_exists( 'WP_MCP_AI_Conversation_Import_Queue' ) ) {
+				throw new Exception( __( 'Conversation import bridge not available.', 'mcp-ai-wpoos' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception thrown, not echoed to output.
+			}
+
+			return WP_MCP_AI_Conversation_Import_Queue::execute( $job['job_data'], (int) $job['id'] );
 		}
 
 		/**

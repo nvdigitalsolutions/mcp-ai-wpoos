@@ -1005,6 +1005,58 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	}
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-migrator.php';
 	WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
+	// Conversation import pipeline (external exports → ai_chat_transcripts CCT).
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/interface-wp-mcp-ai-conversation-import-adapter.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/interface-wp-mcp-ai-conversation-import-adapter.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-conversation.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-conversation.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-chatgpt.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-chatgpt.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-gemini.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-gemini.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-claude.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-claude.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-sharegpt.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-sharegpt.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-openai-jsonl.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-openai-jsonl.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-media.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-media.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-memory-miner.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-memory-miner.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-archive.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-archive.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-format-detector.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-format-detector.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-cct-writer.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-cct-writer.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-manager.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-manager.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-deleter.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-deleter.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-privacy.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-privacy.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-queue.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-queue.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-conversation-import-admin.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-conversation-import-admin.php';
+	}
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	}
@@ -1065,6 +1117,58 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	}
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-migrator.php';
 	WP_MCP_AI_Agent_Memory_CCT_Migrator::bootstrap();
+	// Conversation import pipeline (external exports → ai_chat_transcripts CCT).
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/interface-wp-mcp-ai-conversation-import-adapter.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/interface-wp-mcp-ai-conversation-import-adapter.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-conversation.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-conversation.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-chatgpt.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-chatgpt.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-gemini.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-gemini.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-claude.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-claude.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-sharegpt.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-sharegpt.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-openai-jsonl.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-adapter-openai-jsonl.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-media.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-media.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-memory-miner.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-memory-miner.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-archive.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-archive.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-format-detector.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-format-detector.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-cct-writer.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-cct-writer.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-manager.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-manager.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-deleter.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-deleter.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-privacy.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-privacy.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-queue.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/conversation-import/class-wp-mcp-ai-conversation-import-queue.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-conversation-import-admin.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-conversation-import-admin.php';
+	}
 }
 
 // MemPalace Capture Framework Phase A — capture service + tier manager are
@@ -1469,6 +1573,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	}
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cli-command.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cli-command.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cli-conversation-import-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cli-conversation-import-command.php';
 	}
 }
 
