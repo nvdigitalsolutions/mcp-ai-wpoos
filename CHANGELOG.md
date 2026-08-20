@@ -1,5 +1,19 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — Restricted-User Flagging & Unblocking
+
+- New `WP_MCP_AI_Restriction_Registry` (`includes/class-wp-mcp-ai-restriction-registry.php`) converts ephemeral enforcement events into persistent, enumerable restriction records. Subscribes to the existing `wp_mcp_ai_tool_token_limit_exceeded` and `wp_mcp_ai_per_session_limit_exceeded` hooks plus the new `wp_mcp_ai_rate_limit_exceeded` action; records live in user meta with a fast lookup index (`wp_mcp_ai_active_restrictions`), auto-expire on the daily cleanup cron, and are audit-logged via the security audit logger.
+- The OOS rate-limiter adapter (`lib/wordpress-adapter/src/Adapter/RateLimiter.php`) now fires `wp_mcp_ai_rate_limit_exceeded` when a window is exhausted and maintains an enumerable key index (`wp_mcp_ai_rl_index`) so windows can be reset when an admin lifts a restriction.
+- The hardcoded chat rate limit (60 requests/minute) is now configurable via the **`wp_mcp_ai_chat_rate_limit`** and **`wp_mcp_ai_chat_rate_limit_window`** filters (applied in the WordPress bridge; the `ChatOrchestrator` gains `setChatRateLimit()` with clamped defaults).
+- **Admin surfaces:** a "Restricted Users" panel with one-click lift buttons on the Token Manager (Base), and a new **Restrictions** tab (KPI cards, live table, lift actions, nav badge, overview banner) on the Pro Command Center, plus dismissible admin notices.
+- **API surface:** REST `GET /mcp-ai/v1/restrictions`, `GET|POST /mcp-ai/v1/users/{id}/restrictions`, `DELETE /mcp-ai/v1/users/{id}/restrictions/{type}`; AJAX `wp_mcp_ai_lift_user_restriction`, `wp_mcp_ai_get_restrictions`, `wp_mcp_ai_dismiss_restriction_notice`; WP-CLI `wp mcp-ai restrictions list|lift|add`.
+- Security posture gains an informational `restriction_registry_on` signal.
+- **Standards polish:** IETF-style response headers (`RateLimit-Policy`, `RateLimit`, `Retry-After`) on rate-limited REST responses via `WP_MCP_AI_Rate_Limit_Headers`; blocked users are told to contact the site administrator; the admin notice is toggleable from Settings → Orchestration → Restriction Notifications (`enable_restriction_admin_notices`); full feature reference at `docs/features/security/user-restrictions.md`.
+
+---
+
 ## [1.1.59] - 2026-08-19
 
 ### Changed — Media Worker Crawling & Crawl4AI Facade (PR #5892)

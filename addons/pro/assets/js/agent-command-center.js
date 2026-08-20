@@ -63,6 +63,12 @@
 			$( '#acc-analytics-range' ).on( 'change', function() {
 				self.loadAnalytics( $( this ).val() );
 			} );
+
+			// Restriction lift buttons.
+			$( document ).on( 'click', '.acc-lift-restriction', function( e ) {
+				e.preventDefault();
+				self.handleLiftRestriction( $( this ) );
+			} );
 		},
 
 		/**
@@ -355,9 +361,64 @@
 		},
 
 		/**
-		 * Handle approval action.
+		 * Handle a restriction lift click.
 		 *
-		 * @param {jQuery} $button The clicked button.
+		 * @param {jQuery} $button Clicked button.
+		 */
+		handleLiftRestriction: function( $button ) {
+			var self = this;
+			var userId = parseInt( $button.data( 'user-id' ), 10 );
+			var type = $button.data( 'type' ) || 'all';
+
+			// eslint-disable-next-line no-alert
+			if ( ! window.confirm( this.config.strings.confirmLift ) ) {
+				return;
+			}
+
+			$button.prop( 'disabled', true );
+
+			$.ajax( {
+				url: self.config.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_acc_lift_restriction',
+					nonce: self.config.nonce,
+					user_id: userId,
+					type: type
+				},
+				success: function( response ) {
+					if ( response && response.success ) {
+						// Remove the lifted row; reload when the table empties.
+						$button.closest( 'tr' ).fadeOut( 200, function() {
+							$( this ).remove();
+							if ( ! $( '#acc-restrictions-table tbody tr' ).length ) {
+								window.location.reload();
+							}
+						} );
+						if ( typeof response.data === 'object' && response.data.rows ) {
+							$( '#kpi-restrictions-total' ).text( response.data.rows.total );
+							$( '#acc-restrictions-kpi-row' ).find( '.acc-kpi-card' ).each( function() {
+								$( this ).find( '.acc-kpi-value' ).text( '…' );
+							} );
+						}
+					} else {
+						// eslint-disable-next-line no-alert
+						window.alert( self.config.strings.liftFailed );
+						$button.prop( 'disabled', false );
+					}
+				},
+				error: function() {
+					// eslint-disable-next-line no-alert
+					window.alert( self.config.strings.liftFailed );
+					$button.prop( 'disabled', false );
+				}
+			} );
+		},
+
+		/**
+		 * Handle an approval decision click.
+		 *
+		 * @param {jQuery} $button Clicked button.
 		 */
 		handleApproval: function( $button ) {
 			var self = this;

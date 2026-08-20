@@ -108,6 +108,99 @@ class WP_MCP_AI_Admin_Token_Manager {
 		wp_register_style( 'wp-mcp-ai-token-manager-inline', false );
 		wp_enqueue_style( 'wp-mcp-ai-token-manager-inline' );
 		wp_add_inline_style( 'wp-mcp-ai-token-manager-inline', $inline_css );
+
+		// Restriction lift/dismiss helpers.
+		wp_enqueue_script(
+			'wp-mcp-ai-restrictions-admin',
+			WP_MCP_AI_URL . 'assets/js/restrictions-admin.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+		wp_localize_script(
+			'wp-mcp-ai-restrictions-admin',
+			'wpMcpAiRestrictionsAdmin',
+			array(
+				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+				'nonce'       => wp_create_nonce( 'wp_mcp_ai_dashboard' ),
+				'confirmLift' => __( 'Lift this restriction? The user will immediately regain access to AI features.', 'mcp-ai-wpoos' ),
+				'liftFailed'  => __( 'Failed to lift the restriction. Please try again.', 'mcp-ai-wpoos' ),
+			)
+		);
+	}
+
+	/**
+	 * Render the restricted-users panel listing active restrictions.
+	 *
+	 * Each row offers a one-click lift action backed by the
+	 * wp_mcp_ai_lift_user_restriction AJAX endpoint.
+	 */
+	private function render_restrictions_panel() {
+		if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+			return;
+		}
+
+		$data = WP_MCP_AI_Restriction_Registry::get_active(
+			array(
+				'per_page' => 50,
+				'page'     => 1,
+			)
+		);
+		?>
+		<div class="wp-mcp-ai-restrictions-panel" style="margin:1.5rem 0;">
+			<h2><?php esc_html_e( 'Restricted Users', 'mcp-ai-wpoos' ); ?></h2>
+			<p><?php esc_html_e( 'Users blocked by rate limits, token overages, or session budgets. Lifting a restriction also resets the user\'s counters so they can continue immediately.', 'mcp-ai-wpoos' ); ?></p>
+			<?php if ( empty( $data['rows'] ) ) : ?>
+				<p><em><?php esc_html_e( 'No active restrictions.', 'mcp-ai-wpoos' ); ?></em></p>
+			<?php else : ?>
+				<div class="wp-mcp-ai-token-manager__table-wrapper">
+					<table class="wp-mcp-ai-token-manager__table">
+						<thead>
+							<tr>
+								<th scope="col"><?php esc_html_e( 'User', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Type', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Scope', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Reason', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Triggered', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $data['rows'] as $row ) : ?>
+								<?php
+								$triggered = ! empty( $row['triggered_at'] )
+									? get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $row['triggered_at'] ), get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
+									: '-';
+								?>
+								<tr>
+									<td>
+										<strong><?php echo esc_html( $row['display_name'] ); ?></strong>
+										<?php if ( ! empty( $row['user_login'] ) ) : ?>
+											<br><small><?php echo esc_html( $row['user_login'] ); ?></small>
+										<?php endif; ?>
+									</td>
+									<td><span class="wp-mcp-ai-token-manager__status wp-mcp-ai-token-manager__status--revoked"><?php echo esc_html( $row['type_label'] ); ?></span></td>
+									<td><?php echo esc_html( $row['scope'] ); ?></td>
+									<td><?php echo esc_html( '' !== $row['reason'] ? $row['reason'] : '-' ); ?></td>
+									<td><?php echo esc_html( $triggered ); ?></td>
+									<td class="wp-mcp-ai-token-manager__actions">
+										<button
+											type="button"
+											class="button button-secondary wp-mcp-ai-lift-restriction"
+											data-user-id="<?php echo esc_attr( $row['user_id'] ); ?>"
+											data-type="<?php echo esc_attr( $row['type'] ); ?>"
+										>
+											<?php esc_html_e( 'Lift Restriction', 'mcp-ai-wpoos' ); ?>
+										</button>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			<?php endif; ?>
+		</div>
+		<?php
 	}
 
 	/**
@@ -294,6 +387,8 @@ class WP_MCP_AI_Admin_Token_Manager {
 				<p><?php esc_html_e( 'The Token Manager provides centralized control over all external agent access tokens issued for your AI Assistants. These tokens allow external applications (like Codex CLI, MCP clients, or custom integrations) to authenticate with specific assistants.', 'mcp-ai-wpoos' ); ?></p>
 				<p><?php esc_html_e( 'Industry best practices implemented: Tokens are shown only once upon creation, support granular revocation, and include full audit trails. Revoked tokens remain visible for security auditing but cannot be used for authentication.', 'mcp-ai-wpoos' ); ?></p>
 			</div>
+
+			<?php $this->render_restrictions_panel(); ?>
 
 			<?php
 			// Display action status messages.

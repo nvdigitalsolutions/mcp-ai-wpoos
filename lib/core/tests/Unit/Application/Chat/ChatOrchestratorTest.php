@@ -20,6 +20,7 @@ use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
 use Nvoos\Core\Domain\Decision\AgentPreStepDecision;
@@ -233,6 +234,43 @@ final class ChatOrchestratorTest extends TestCase {
 			),
 			'usage'   => array( 'prompt_tokens' => 150, 'completion_tokens' => 5 ),
 		);
+	}
+
+	/**
+	 * A recording rate limiter that always allows and captures the limit
+	 * arguments the orchestrator consults.
+	 *
+	 * @return array{0: RateLimiterInterface, 1: \stdClass}
+	 */
+	private function recordingRateLimiter(): array {
+		$capture            = new \stdClass();
+		$capture->isAllowed = array();
+		$capture->record    = array();
+
+		$limiter = new class( $capture ) implements RateLimiterInterface {
+			private \stdClass $capture;
+
+			public function __construct( \stdClass $capture ) {
+				$this->capture = $capture;
+			}
+
+			public function isAllowed( string $key, int $maxRequests, int $windowSeconds ): bool {
+				$this->capture->isAllowed[] = array( $key, $maxRequests, $windowSeconds );
+				return true;
+			}
+
+			public function record( string $key, int $windowSeconds = 60 ): void {
+				$this->capture->record[] = array( $key, $windowSeconds );
+			}
+
+			public function remaining( string $key, int $maxRequests, int $windowSeconds ): int {
+				return $maxRequests;
+			}
+
+			public function reset( string $key ): void {}
+		};
+
+		return array( $limiter, $capture );
 	}
 
 	public function testAccumulatesCostAcrossAgenticIterations(): void {
@@ -723,5 +761,64 @@ final class ChatOrchestratorTest extends TestCase {
 			$continuationDispatcher->router->receivedMessages[0],
 			'The replayed history must reach the provider unchanged.',
 		);
+	}
+
+	public function testChatRateLimitDefaultsToSixtyRequestsPerSixtySeconds(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, ] = $this->orchestrator( $tool, array( $this->finalResponse() ) );
+
+		[$limiter, $capture] = $this->recordingRateLimiter();
+		$orchestrator->setRateLimiter( $limiter );
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+			userId: 7,
+		);
+
+		$this->assertSame( 'Done.', $result['response']['choices'][0]['message']['content'] ?? null, 'The turn completed normally (not rate limited).' );
+		$this->assertCount( 1, $capture->isAllowed );
+		$this->assertSame( array( 'chat:7:0', 60, 60 ), $capture->isAllowed[0] );
+		$this->assertSame( array( 'chat:7:0', 60 ), $capture->record[0] );
+	}
+
+	public function testChatRateLimitIsConfigurableViaSetter(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, ] = $this->orchestrator( $tool, array( $this->finalResponse() ) );
+
+		[$limiter, $capture] = $this->recordingRateLimiter();
+		$orchestrator->setRateLimiter( $limiter );
+		$orchestrator->setChatRateLimit( 120, 30 );
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+			userId: 7,
+		);
+
+		$this->assertSame( 'Done.', $result['response']['choices'][0]['message']['content'] ?? null, 'The turn completed normally (not rate limited).' );
+		$this->assertCount( 1, $capture->isAllowed );
+		$this->assertSame( array( 'chat:7:0', 120, 30 ), $capture->isAllowed[0] );
+		$this->assertSame( array( 'chat:7:0', 30 ), $capture->record[0] );
+	}
+
+	public function testChatRateLimitWindowDefaultsToSixtySeconds(): void {
+		[$tool, ] = $this->echoTool();
+		[$orchestrator, ] = $this->orchestrator( $tool, array( $this->finalResponse() ) );
+
+		[$limiter, $capture] = $this->recordingRateLimiter();
+		$orchestrator->setRateLimiter( $limiter );
+		$orchestrator->setChatRateLimit( 120 );
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Say hello.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+			userId: 7,
+		);
+
+		$this->assertSame( 'Done.', $result['response']['choices'][0]['message']['content'] ?? null, 'The turn completed normally (not rate limited).' );
+		$this->assertCount( 1, $capture->isAllowed );
+		$this->assertSame( array( 'chat:7:0', 120, 60 ), $capture->isAllowed[0] );
+		$this->assertSame( array( 'chat:7:0', 60 ), $capture->record[0] );
 	}
 }

@@ -478,6 +478,27 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	$orchestrator->setAuthProvider( $auth );
 	$orchestrator->setRateLimiter( wp_mcp_ai_oos_rate_limiter() );
+
+	/**
+	 * Filter the per-user chat rate limit: requests allowed per window,
+	 * keyed by chat:{user_id}:{assistant_id}.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int $max_requests Requests per window. Default 60.
+	 */
+	$chat_rate_limit = apply_filters( 'wp_mcp_ai_chat_rate_limit', 60 );
+
+	/**
+	 * Filter the per-user chat rate limit window length in seconds.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int $window_seconds Window length in seconds. Default 60.
+	 */
+	$chat_rate_limit_window = apply_filters( 'wp_mcp_ai_chat_rate_limit_window', 60 );
+
+	$orchestrator->setChatRateLimit( (int) $chat_rate_limit, (int) $chat_rate_limit_window );
 	$orchestrator->setTokenBudgetManager( new Nvoos\Core\Infrastructure\Token\TokenBudgetManager() );
 	$orchestrator->setSemanticCompressor( wp_mcp_ai_oos_semantic_compressor() );
 	$orchestrator->setDataBudgetTracker( wp_mcp_ai_oos_data_budget_tracker( 'oos-chat' ) );

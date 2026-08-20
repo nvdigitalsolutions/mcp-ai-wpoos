@@ -219,6 +219,12 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			WP_MCP_AI_Usage_Tracker::init();
 			WP_MCP_AI_Tool_Token_Limits::init();
 
+			// Restriction registry: flags users blocked by rate limits or token
+			// overages and exposes admin lift/unblock operations.
+			if ( class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+				WP_MCP_AI_Restriction_Registry::register();
+			}
+
 			// Initialize database optimizations for token management.
 			if ( class_exists( 'WP_MCP_AI_Token_DB_Optimizer' ) ) {
 				WP_MCP_AI_Token_DB_Optimizer::init();
