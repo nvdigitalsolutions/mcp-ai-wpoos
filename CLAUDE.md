@@ -50,7 +50,7 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,543 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,547 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
@@ -185,7 +185,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~300 base tool classes) or `false` (~1,543 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~300 base tool classes) or `false` (~1,547 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -410,6 +410,11 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **Research tools multi-provider** (v1.1.59) — `semantic_content_search` embeddings resolve through the shared provider abstraction (new Gemini embedding provider in `includes/services/embedding/`); keyword fallback when unconfigured; model-mismatch vector skipping. `deep_research` retries across the provider chain and never caches empty reports. New base tools `list_terms` + `list_taxonomies`.
 - **`wp_mcp_ai_plugin_updated` action** (v1.1.59) — the copy-in-place plugin updater fires this after every successful update (core, Pro, base→complete); **addons that cache plugin files must subscribe** because `upgrader_process_complete` never fires for these updates (Docs Hub 0.4.1 does, plus an `admin_init` version-mismatch rebuild guard).
 - **Tool registration fixes** (v1.1.59) — legacy-format tool classes (pre-interface) are transparently wrapped (`WP_MCP_AI_Legacy_Tool_Wrapper` + `WP_MCP_AI_Tool_Legacy_Definition` trait); ~32 previously-orphaned base tools are registered; new `wp_mcp_ai_tools_init` action for late side-loading; registry tracks skipped tools in `unavailable_tool_slugs`.
+- **Restricted-user flagging** (v1.1.60) — `WP_MCP_AI_Restriction_Registry` (`includes/class-wp-mcp-ai-restriction-registry.php`) turns rate-limit / token-budget blocks into persistent, audit-logged restriction records with auto-expiry; REST routes (`/mcp-ai/v1/restrictions`, `/users/{id}/restrictions`), AJAX lift actions, `wp mcp-ai restrictions` CLI, Token Manager panel + Pro Command Center Restrictions tab; IETF `RateLimit-*` headers on rate-limited responses; chat rate limits filterable (`wp_mcp_ai_chat_rate_limit` / `wp_mcp_ai_chat_rate_limit_window`); posture signal `restriction_registry_on`. See `docs/features/security/user-restrictions.md`.
+- **Conversation import to transcript CCT** (v1.1.60) — `includes/conversation-import/` imports ChatGPT / Gemini Takeout / Claude / ShareGPT / OpenAI JSONL into the JetEngine `ai_chat_transcripts` CCT (4 new JetEngine-gated tools, admin page, `wp mcp-ai conversation-import` CLI, GDPR + memory mining). See `docs/user-guides/conversation-import.md`.
+- **Tool schema normalization** (v1.1.60) — tool argument schemas are normalized before provider payloads (DeepSeek client, REST `/tools` output, `WP_MCP_AI_Tool_Service`, `ChatOrchestrator`); the registry logs registrations skipped for a missing tool contract.
+- **WP_Error fatals fixed** (v1.1.60) — memory tools, request guard, and the REST chat-memory controller now handle `WP_Error` returns before array/object access.
+- **nvoos-content-graph v1.0.3** (v1.1.60) — wp.org resubmission: WPCS + review fixes, screenshot assets, standalone build ZIP.
 - **REST require_once guards** (v1.1.52) — all REST controller `require_once` calls in `class-wp-mcp-ai-rest.php` now guarded with `file_exists()` checks.
 - **Site Health integration** — WordPress Site Health checks for cron configuration and security posture.
 - **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.

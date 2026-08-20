@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.59
+Stable tag: 1.1.60
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -122,6 +122,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * Capability-based access control
 * API key management (never stored in plain text)
 * Rate limiting per user/model
+* Restricted-user flagging — persistent, reviewable restriction records with one-click lift (Token Manager panel), REST/AJAX/WP-CLI operations, and IETF rate-limit response headers
 * Comprehensive audit logging
 * GDPR-ready with data export options
 
@@ -133,6 +134,7 @@ NV oOS works perfectly standalone. Optional integrations add enhanced functional
   - AI metaboxes for all JetEngine CPTs and taxonomies
   - Research & Add pages with automatic field mapping
   - Server-side chat transcript storage via CCT
+  - Conversation import — bring ChatGPT, Gemini Takeout, Claude, ShareGPT, and OpenAI JSONL history into the transcript CCT (v1.1.60)
 * **WooCommerce** (free) - E-commerce automation tools
 * **Elementor** (freemium) - Template management, pre-built widgets
 * **Rank Math SEO** (freemium) - SEO analysis and optimization
@@ -296,6 +298,14 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.60 - August 21, 2026 =
+
+Restricted-user flagging & unblocking: new restriction registry (includes/class-wp-mcp-ai-restriction-registry.php) converts ephemeral rate-limit and token-budget blocks into persistent, reviewable restriction records with auto-expiry and audit logging; admin surfaces (Token Manager "Restricted Users" panel, Pro Command Center Restrictions tab) plus REST (GET /mcp-ai/v1/restrictions, GET|POST /mcp-ai/v1/users/{id}/restrictions, DELETE /mcp-ai/v1/users/{id}/restrictions/{type}), AJAX, and WP-CLI (wp mcp-ai restrictions list|lift|add) operations; IETF rate-limit response headers; configurable chat rate limits (wp_mcp_ai_chat_rate_limit / wp_mcp_ai_chat_rate_limit_window filters); new restriction_registry_on security-posture signal. Full reference: docs/features/security/user-restrictions.md.
+
+Conversation import to transcript CCT (Full version, JetEngine): new includes/conversation-import/ subsystem imports ChatGPT, Gemini Takeout, Claude, ShareGPT, and OpenAI fine-tuning JSONL exports into the JetEngine ai_chat_transcripts CCT with format detection, dedupe, batching, and resume tokens; four new tools (conversation_import_detect/run/status/delete), an admin page, and WP-CLI (wp mcp-ai conversation-import detect|import|status|delete); GDPR export/erase and optional memory mining. Guide: docs/user-guides/conversation-import.md.
+
+Tool schemas are now normalized before provider payloads (DeepSeek client, REST /tools output, Tool Service, ChatOrchestrator), preventing provider streaming errors; the registry logs registrations skipped for missing tool contracts. Fixed WP_Error fatals in the memory layer and REST chat-memory paths. nvoos-content-graph standalone plugin bumped to v1.0.3 for wp.org resubmission. Tool count: ~300 base + ~1,247 Pro (~1,547 total; live registry authoritative).
 
 = 1.1.59 - August 19, 2026 =
 

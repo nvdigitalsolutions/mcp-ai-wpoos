@@ -34,6 +34,7 @@ The folder's external contract is the **`wp mcp-ai <subcommand>`** invocation, n
 | `WP_MCP_AI_CLI_Measurement_Command` → `wp mcp-ai measurement` | `class-wp-mcp-ai-cli-measurement-command.php` | CI-grade: `run`, `alert_check`, `list_runs` | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Memory_Command` → `wp mcp-ai memory` | `class-wp-mcp-ai-cli-memory-command.php` | `recall`, `store`, `forget`, `stats`, `audit` (accepts `--assistant`/`--assistant-id`) | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Provider_Command` → `wp mcp-ai provider` | `class-wp-mcp-ai-cli-provider-command.php` | `list`, `test`, `models` | WP-CLI runtime |
+| `WP_MCP_AI_CLI_Restriction_Command` → `wp mcp-ai restrictions` | `class-wp-mcp-ai-cli-restriction-command.php` | `list`, `lift`, `add` (gated: `manage_options`) | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Settings_Command` → `wp mcp-ai settings` | `class-wp-mcp-ai-cli-settings-command.php` | `get`, `set`, `reset` (gated: `manage_options`) | WP-CLI runtime |
 | `WP_MCP_AI_CLI_SLA` → `wp mcp-ai sla` | `class-wp-mcp-ai-cli-sla.php` | `status`, `tune`, `analyze`, `enable`, `disable` | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Slash_Command` → `wp mcp-ai slash` | `class-wp-mcp-ai-cli-slash-command.php` | `execute`, `list`, `help` | WP-CLI runtime |
@@ -42,7 +43,7 @@ The folder's external contract is the **`wp mcp-ai <subcommand>`** invocation, n
 | `WP_MCP_AI_CLI_Transcript_Command` → `wp mcp-ai transcript` | `class-wp-mcp-ai-cli-transcript-command.php` | `mine`/`list`, `status`, `cancel` (accepts `--assistant`/`--assistant-id`) | WP-CLI runtime |
 | `WP_MCP_AI_CLI_Version_Command` → `wp mcp-ai version` | `../class-wp-mcp-ai-cli-command.php` | Plugin version information | WP-CLI runtime |
 
-The umbrella verbs (`mcp-ai`, `mcp-ai plugins`, `mcp-ai queue`, `mcp-ai token`, `mcp-ai rabbitmq`, `mcp-ai stdio`) live in the top-level `includes/class-wp-mcp-ai-cli-command.php` for historical reasons.
+The umbrella verbs (`mcp-ai`, `mcp-ai plugins`, `mcp-ai queue`, `mcp-ai token`, `mcp-ai rabbitmq`, `mcp-ai stdio`) live in the top-level `includes/class-wp-mcp-ai-cli-command.php` for historical reasons. The `mcp-ai conversation-import` umbrella (`detect`, `import`, `status`, `delete`) lives in the sibling top-level class `includes/class-wp-mcp-ai-cli-conversation-import-command.php` (JetEngine-gated).
 
 ## Inputs / Outputs / Neighbors
 

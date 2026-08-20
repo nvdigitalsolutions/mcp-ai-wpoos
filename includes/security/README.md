@@ -26,9 +26,10 @@ basis.
 
 ### `WP_MCP_AI_Security_Posture`
 
-Computes a 0-100 weighted posture score from ~17 signals (HTTPS, HSTS, root
-key, audit log, rate limiting, security headers, 2FA consistency,
-IP-whitelist consistency, prompt-injection detector, PII filter, etc.).
+Computes a 0-100 weighted posture score from 23 signals (HTTPS, HSTS, root
+key, audit log, rate limiting, per-user rate limits, restriction registry,
+security headers, 2FA consistency, IP-whitelist consistency,
+prompt-injection detector, PII filter, etc.).
 
 ```php
 $posture = new WP_MCP_AI_Security_Posture();

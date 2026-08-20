@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: August 19, 2026 (v1.1.59).
+> Last reviewed: August 21, 2026 (v1.1.60).
 
 ---
 
@@ -14,7 +14,9 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,543 (~300 base + ~1,243 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,547 (~300 base + ~1,247 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.60:** Four JetEngine-gated conversation-import tools — `conversation_import_detect`, `conversation_import_run`, `conversation_import_status`, `conversation_import_delete` (`includes/tools/`, `manage_options`, unavailable without JetEngine) — import external conversation exports into the `ai_chat_transcripts` CCT. Tool argument schemas are now normalized before being embedded in provider payloads (DeepSeek client, REST `/tools` schema output, `WP_MCP_AI_Tool_Service`, and the OOS `ChatOrchestrator`), preventing provider streaming failures from non-compliant schemas; registrations skipped for a missing tool contract are logged.
 
 **New in v1.1.59:** Two read-only base discovery tools — `list_terms` and `list_taxonomies` (`includes/tools/`, wordpress-core group) — companions to `create_term`/`update_term`. ~32 previously-orphaned base tool files are now registered (2FA setup, content freshness, batch tools, omni-video, SEO/image optimizers, Site Kit integrations…). Legacy-format tool classes (pre-interface) are transparently wrapped by `WP_MCP_AI_Legacy_Tool_Wrapper` + `WP_MCP_AI_Tool_Legacy_Definition` (`includes/tools/`), so old-style `get_definition()`/`execute()` classes register without refactoring. New **`wp_mcp_ai_tools_init`** action fires after default + third-party registration so side-loaders (e.g. `includes/orchestration-init.php`) can register late. The registry tracks availability-check failures in `unavailable_tool_slugs` (alongside the existing `unavailable_tool_messages`), letting callers distinguish "known but unavailable" from "never registered".
 

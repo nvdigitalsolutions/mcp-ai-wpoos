@@ -5,8 +5,8 @@ license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.50"
-  plugin-version-tested: "1.1.55"
-  last-updated: "2026-08-13"
+  plugin-version-tested: "1.1.60"
+  last-updated: "2026-08-21"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -42,7 +42,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~300 base / ~1,543 full tools
+     │  Tool Registry     │  ~300 base / ~1,547 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -470,6 +470,49 @@ returns HTTP 500 with a `-32603 "Tool rate limit exceeded"` error body —
 which mcp-remote-style SDKs silently drop, so the agent sees no response
 at all. With v1.1.55+ the same condition returns a visible JSON-RPC error
 (and is unlikely to trip for agent tokens).
+
+---
+
+## Restricted Users & Chat Rate Limits (v1.1.60+)
+
+The plugin converts ephemeral rate-limit and token-budget blocks into
+**persistent restriction records** (`WP_MCP_AI_Restriction_Registry`) so
+admins can review, lift, or add them.
+
+- **Chat rate limit** — the hardcoded 60 req/min chat cap is now filterable:
+  `wp_mcp_ai_chat_rate_limit` and `wp_mcp_ai_chat_rate_limit_window`
+  (WordPress bridge → `ChatOrchestrator::setChatRateLimit()`).
+- **Enforcement hooks** — `wp_mcp_ai_tool_token_limit_exceeded`,
+  `wp_mcp_ai_per_session_limit_exceeded`, and the new
+  `wp_mcp_ai_rate_limit_exceeded` (fired by the OOS `RateLimiter` adapter)
+  feed the registry; records auto-expire on a daily cleanup cron and are
+  audit-logged.
+- **Admin surfaces** — Token Manager "Restricted Users" panel (Base) with
+  one-click lift; Pro Command Center **Restrictions** tab (KPI cards, live
+  table, lift actions); dismissible notices toggled from Settings →
+  Orchestration → Restriction Notifications (`enable_restriction_admin_notices`).
+- **WP-CLI** — `wp mcp-ai restrictions list|lift|add`.
+- **REST** — `GET /mcp-ai/v1/restrictions`,
+  `GET|POST /mcp-ai/v1/users/{id}/restrictions`,
+  `DELETE /mcp-ai/v1/users/{id}/restrictions/{type}`; rate-limited responses
+  carry IETF headers (`RateLimit-Policy`, `RateLimit`, `Retry-After`).
+- Full reference: `docs/features/security/user-restrictions.md`.
+
+## Conversation Import (v1.1.60+, JetEngine)
+
+Import external AI conversation exports into the JetEngine
+`ai_chat_transcripts` CCT (one row per conversation):
+
+- **Formats** — ChatGPT `conversations.json` (incl. ZIP), Google Takeout
+  Gemini activity, Claude `conversations.jsonl`, ShareGPT, OpenAI
+  fine-tuning JSONL.
+- **Tools** — `conversation_import_detect|run|status|delete` (require
+  `manage_options`; JetEngine must be active).
+- **WP-CLI** — `wp mcp-ai conversation-import detect|import|status|delete`
+  (`--dry-run`, `--policy=skip|refresh`, `--resume-token=`).
+- **Admin** — upload/preview page with progress reporting; GDPR
+  export/erase + retention coverage; optional memory mining via
+  `mine_agent_memory`. Guide: `docs/user-guides/conversation-import.md`.
 
 ---
 

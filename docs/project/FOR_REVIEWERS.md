@@ -19,10 +19,10 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.1.59 (August 2026)
+**Current version:** 1.1.60 (August 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,543 (~300 base + ~1,243 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,547 (~300 base + ~1,247 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 
@@ -35,7 +35,7 @@ The repo is a **monorepo** containing:
 | Is it safe to run on production? | The base plugin passes all WP.org guidelines. The April 2026 security audit found 0 Critical, 5 High (3 Fixed, 2 Partially Fixed — both in addons). May–June 2026 hardening resolved 1 Critical + 5 Warnings. July–August 2026 Phase 3 hardening added 10 security classes, CORS posture, error-verbosity control, auth brute-force detection, and asset-fingerprinting prevention. See [Security Posture](../operations/security/SECURITY_POSTURE.md). |
 | What PHP version is required? | **Base: 7.4+** · **Pro addon: 8.1+** (due to npm packages like sharp/fluent-ffmpeg) · **lib/core: 8.1+** |
 | What WP version? | 6.0+, tested up to 6.10 |
-| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,230 advanced tools (commercial license). Base never gates features behind a license check. |
+| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,247 advanced tools (commercial license). Base never gates features behind a license check. |
 | Was it rejected from WordPress.org? | Yes — the 90-day window expired before all fixes were completed. All rejection reasons are now resolved. See [Compliance Traceability](../operations/compliance/TRACEABILITY.md). |
 | Can it be resubmitted to .org? | Possibly, but the window has closed. The author is seeking professional review before deciding next steps. |
 
@@ -50,7 +50,7 @@ includes/                     ← 1,060 PHP files
 ├── class-wp-mcp-ai-plugin.php ← Kernel / DI container / singleton
 ├── class-wp-mcp-ai-rest.php   ← REST route registration (151 calls, 36 files)
 ├── class-wp-mcp-ai-tool-registry.php ← Central tool registry
-├── tools/                     ← ~263 base tool classes
+├── tools/                     ← ~300 base tool classes (~1,547 total registered through the singleton registry)
 ├── admin/                     ← Admin UI, settings, dashboards
 ├── rest/                      ← REST controllers (chat, MCP, webhooks)
 ├── assistants/                ← Assistant CPT & CCT management
@@ -213,7 +213,7 @@ If you have limited budget for a review, focus on this order:
 ### Phase 2: Architecture review (~3-4 hours)
 4. **Plugin architecture** — DI container usage, class loading, lifecycle hooks (60+), singleton patterns
 5. **Base/Pro separation** — Verify no pro feature gating in base plugin
-6. **Tool registry** — How ~1,540 tools are registered and discovered
+6. **Tool registry** — How ~1,547 tools are registered and discovered
 7. **lib/core extraction** — Hexagonal Architecture (32 domain contracts, 21 WordPress adapters), agentic loop, provider routing, 109+ migrated tools. `includes/bridge/` adapters.
 
 ### Phase 3: Deep dives (~4-6 hours, if budget allows)
@@ -251,6 +251,8 @@ If you have limited budget for a review, focus on this order:
 | 13 | `docs/operations/compliance/SECURITY_AUDIT_2026_04.md` | April 2026 audit findings |
 | 14 | `docs/operations/security/SECURITY_POSTURE.md` | Current security posture (including Phase 3 hardening) |
 | 15 | `docs/project/ADDON_INVENTORY.md` | What each addon does and its status |
+| 16 | `docs/features/security/user-restrictions.md` | User-restriction registry + admin/REST/CLI surfaces (v1.1.60) |
+| 17 | `docs/user-guides/conversation-import.md` | Conversation import → transcript CCT (v1.1.60) |
 
 ---
 
@@ -263,7 +265,7 @@ The project currently employs:
 - **GitHub Copilot** — inline suggestions and code completion
 - **OpenAI Codex** — prototyping and exploration
 - **BMAD Agents** — 6 internal workflow agents (`.bmad/agents/*.yaml`) running inside NV oOS assistants
-- **Zed Agent Skills** — 21 coding-time skills (`.agents/skills/`) covering WordPress plugin development patterns
+- **Zed Agent Skills** — 52 coding-time skills (`.agents/skills/`: 20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide)
 
 See [AI-Assisted Development](../developer/AI_ASSISTED_DEVELOPMENT.md) for full transparency about the tools, workflow, and what this means for code review.
 
