@@ -23,10 +23,15 @@
         </include>
     </coverage>
 
+    <!--
+        WP_TESTS_DOMAIN / WP_TESTS_EMAIL / WP_TESTS_TITLE / WP_PHP_BINARY are
+        intentionally NOT defined here: wp-phpunit 7.x runs its installer in a
+        fresh PHP subprocess that only loads wp-tests-config.php, so those
+        constants must be defined in the test config file (loaded via the
+        WP_PHPUNIT__TESTS_CONFIG environment variable). Defining them here too
+        triggers "constant already defined" warnings on every run.
+    -->
     <php>
         <const name="WP_DEBUG" value="true" />
-        <const name="WP_TESTS_DOMAIN" value="example.org" />
-        <const name="WP_TESTS_EMAIL" value="admin@example.org" />
-        <const name="WP_TESTS_TITLE" value="Test Blog" />
     </php>
 </phpunit>
