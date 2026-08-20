@@ -92,6 +92,8 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		add_action( 'wp_ajax_wp_mcp_ai_acc_get_activity_log', array( $this, 'ajax_get_activity_log' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_acc_handle_approval', array( $this, 'ajax_handle_approval' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_acc_get_analytics', array( $this, 'ajax_get_analytics' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_acc_get_restrictions', array( $this, 'ajax_get_restrictions' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_acc_lift_restriction', array( $this, 'ajax_lift_restriction' ) );
 
 		// Record agent events for activity tracking.
 		add_action( 'wp_mcp_ai_after_tool_execution', array( $this, 'record_tool_execution' ), 10, 4 );
@@ -210,6 +212,10 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 					'apiCalls'         => __( 'API Calls', 'mcp-ai-wpoos-pro' ),
 					'avgResponseTime'  => __( 'Avg Response', 'mcp-ai-wpoos-pro' ),
 					'successRate'      => __( 'Success Rate', 'mcp-ai-wpoos-pro' ),
+					'noRestrictions'   => __( 'No users are currently restricted.', 'mcp-ai-wpoos-pro' ),
+					'liftRestriction'  => __( 'Lift', 'mcp-ai-wpoos-pro' ),
+					'confirmLift'      => __( 'Lift this restriction? The user will immediately regain access to AI features.', 'mcp-ai-wpoos-pro' ),
+					'liftFailed'       => __( 'Failed to lift the restriction. Please try again.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -222,7 +228,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 */
 	public function render_page() {
 		// Valid tabs.
-		$valid_tabs = array( 'overview', 'activity', 'tasks', 'approvals', 'analytics', 'uptime', 'strategy' );
+		$valid_tabs = array( 'overview', 'activity', 'tasks', 'approvals', 'analytics', 'uptime', 'strategy', 'restrictions' );
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; validated against allowlist.
 		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
@@ -255,45 +261,65 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			<nav class="nav-tab-wrapper acc-nav-tabs" aria-label="<?php esc_attr_e( 'Command Center tabs', 'mcp-ai-wpoos-pro' ); ?>">
 				<?php
 				$tabs = array(
-					'overview'  => array(
+					'overview'     => array(
 						'icon'  => 'dashicons-dashboard',
 						'label' => __( 'Overview', 'mcp-ai-wpoos-pro' ),
 					),
-					'activity'  => array(
+					'activity'     => array(
 						'icon'  => 'dashicons-list-view',
 						'label' => __( 'Activity Log', 'mcp-ai-wpoos-pro' ),
 					),
-					'tasks'     => array(
+					'tasks'        => array(
 						'icon'  => 'dashicons-clipboard',
 						'label' => __( 'Active Tasks', 'mcp-ai-wpoos-pro' ),
 					),
-					'approvals' => array(
+					'approvals'    => array(
 						'icon'  => 'dashicons-yes-alt',
 						'label' => __( 'Approvals', 'mcp-ai-wpoos-pro' ),
 					),
-					'analytics' => array(
+					'analytics'    => array(
 						'icon'  => 'dashicons-chart-area',
 						'label' => __( 'Analytics', 'mcp-ai-wpoos-pro' ),
 					),
-					'uptime'    => array(
+					'uptime'       => array(
 						'icon'  => 'dashicons-heart',
 						'label' => __( 'Uptime & Health', 'mcp-ai-wpoos-pro' ),
 					),
-					'strategy'  => array(
+					'strategy'     => array(
 						'icon'  => 'dashicons-lightbulb',
 						'label' => __( 'Strategy', 'mcp-ai-wpoos-pro' ),
 					),
+					'restrictions' => array(
+						'icon'  => 'dashicons-lock',
+						'label' => __( 'Restrictions', 'mcp-ai-wpoos-pro' ),
+					),
 				);
+
+				$active_restriction_count = 0;
+				if ( class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+					$active_restriction_count = WP_MCP_AI_Restriction_Registry::count_active();
+				}
 
 				foreach ( $tabs as $slug => $tab ) {
 					$url   = admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=' . $slug );
 					$class = 'nav-tab' . ( $current_tab === $slug ? ' nav-tab-active' : '' );
+					$badge = '';
+					if ( 'restrictions' === $slug && $active_restriction_count > 0 ) {
+						$badge = ' <span class="acc-nav-badge" title="' . esc_attr(
+							sprintf(
+								/* translators: %d: number of active restrictions */
+								_n( '%d active restriction', '%d active restrictions', $active_restriction_count, 'mcp-ai-wpoos-pro' ),
+								$active_restriction_count
+							)
+						) . '">' . esc_html( $active_restriction_count ) . '</span>';
+					}
 					printf(
-						'<a href="%s" class="%s"><span class="dashicons %s"></span> %s</a>',
+						'<a href="%s" class="%s"><span class="dashicons %s"></span> %s%s</a>',
 						esc_url( $url ),
 						esc_attr( $class ),
 						esc_attr( $tab['icon'] ),
-						esc_html( $tab['label'] )
+						esc_html( $tab['label'] ),
+						$badge // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Badge markup built from escaped parts above.
 					);
 				}
 				?>
@@ -321,6 +347,9 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 					case 'strategy':
 						$this->render_strategy_tab();
 						break;
+					case 'restrictions':
+						$this->render_restrictions_tab();
+						break;
 					case 'overview':
 					default:
 						$this->render_overview_tab();
@@ -345,7 +374,35 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		$assistants    = $this->get_all_assistants();
 		$session_data  = $this->get_session_overview();
 		$recent_events = $this->get_recent_activity_events( 5 );
+
+		$restriction_count = 0;
+		if ( class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+			$restriction_count = WP_MCP_AI_Restriction_Registry::count_active();
+		}
 		?>
+		<?php if ( $restriction_count > 0 ) : ?>
+			<div class="acc-restrictions-banner notice notice-warning inline">
+				<p>
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %d: number of active restrictions */
+							_n(
+								'%d user is currently blocked by rate limits or token budgets.',
+								'%d users are currently blocked by rate limits or token budgets.',
+								$restriction_count,
+								'mcp-ai-wpoos-pro'
+							),
+							$restriction_count
+						)
+					);
+					?>
+					<a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=restrictions' ) ); ?>">
+						<?php esc_html_e( 'Review restrictions', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				</p>
+			</div>
+		<?php endif; ?>
 		<!-- KPI Row -->
 		<div class="acc-kpi-row" id="acc-kpi-row">
 			<div class="acc-kpi-card" data-kpi="total-agents">
@@ -1550,6 +1607,224 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		$range = isset( $_POST['range'] ) ? sanitize_key( wp_unslash( $_POST['range'] ) ) : '7d';
 
 		wp_send_json_success( $this->get_analytics_data( $range ) );
+	}
+
+	/**
+	 * AJAX handler: Get active restrictions.
+	 *
+	 * @since 2.1.0
+	 */
+	public function ajax_get_restrictions() {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+			wp_send_json_success(
+				array(
+					'rows'  => array(),
+					'total' => 0,
+				)
+			);
+			return;
+		}
+
+		$type = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : '';
+
+		wp_send_json_success(
+			WP_MCP_AI_Restriction_Registry::get_active(
+				array(
+					'type'     => $type,
+					'per_page' => 100,
+					'page'     => 1,
+				)
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: Lift a restriction.
+	 *
+	 * @since 2.1.0
+	 */
+	public function ajax_lift_restriction() {
+		check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
+		$type    = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : 'all';
+
+		if ( ! $user_id || ! get_userdata( $user_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'User not found.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Restriction registry unavailable.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$result = WP_MCP_AI_Restriction_Registry::lift( $user_id, $type, get_current_user_id() );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		$this->log_activity(
+			'restriction_lifted',
+			$user_id,
+			'',
+			sprintf(
+				/* translators: 1: user ID, 2: restriction type */
+				__( 'Restriction (%2$s) lifted for user #%1$d.', 'mcp-ai-wpoos-pro' ),
+				$user_id,
+				$type
+			)
+		);
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Restriction lifted.', 'mcp-ai-wpoos-pro' ),
+				'rows'    => WP_MCP_AI_Restriction_Registry::get_active(
+					array(
+						'per_page' => 100,
+						'page'     => 1,
+					)
+				),
+			)
+		);
+	}
+
+	// =========================================================================
+	// TAB: Restrictions
+	// =========================================================================
+
+	/**
+	 * Render the restrictions tab listing users blocked by rate limits,
+	 * token overages, and session budgets.
+	 *
+	 * @since 2.1.0
+	 */
+	private function render_restrictions_tab() {
+		$rows = array();
+		if ( class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+			$data = WP_MCP_AI_Restriction_Registry::get_active(
+				array(
+					'per_page' => 100,
+					'page'     => 1,
+				)
+			);
+			$rows = $data['rows'];
+		}
+
+		$rate_limit_count    = 0;
+		$token_overage_count = 0;
+		$other_count         = 0;
+		foreach ( $rows as $row ) {
+			if ( 'rate_limit' === $row['type'] ) {
+				++$rate_limit_count;
+			} elseif ( 'token_overage' === $row['type'] ) {
+				++$token_overage_count;
+			} else {
+				++$other_count;
+			}
+		}
+		?>
+		<div class="acc-restrictions-tab">
+			<div class="acc-kpi-row" id="acc-restrictions-kpi-row">
+				<div class="acc-kpi-card" data-kpi="restrictions-total">
+					<div class="acc-kpi-icon"><span class="dashicons dashicons-lock"></span></div>
+					<div class="acc-kpi-content">
+						<div class="acc-kpi-value" id="kpi-restrictions-total"><?php echo esc_html( count( $rows ) ); ?></div>
+						<div class="acc-kpi-label"><?php esc_html_e( 'Active Restrictions', 'mcp-ai-wpoos-pro' ); ?></div>
+					</div>
+				</div>
+				<div class="acc-kpi-card accent-red" data-kpi="restrictions-rate-limit">
+					<div class="acc-kpi-icon"><span class="dashicons dashicons-clock"></span></div>
+					<div class="acc-kpi-content">
+						<div class="acc-kpi-value" id="kpi-restrictions-rate-limit"><?php echo esc_html( $rate_limit_count ); ?></div>
+						<div class="acc-kpi-label"><?php esc_html_e( 'Rate Limits', 'mcp-ai-wpoos-pro' ); ?></div>
+					</div>
+				</div>
+				<div class="acc-kpi-card accent-amber" data-kpi="restrictions-token-overage">
+					<div class="acc-kpi-icon"><span class="dashicons dashicons-chart-pie"></span></div>
+					<div class="acc-kpi-content">
+						<div class="acc-kpi-value" id="kpi-restrictions-token-overage"><?php echo esc_html( $token_overage_count ); ?></div>
+						<div class="acc-kpi-label"><?php esc_html_e( 'Token Overages', 'mcp-ai-wpoos-pro' ); ?></div>
+					</div>
+				</div>
+				<div class="acc-kpi-card" data-kpi="restrictions-other">
+					<div class="acc-kpi-icon"><span class="dashicons dashicons-shield"></span></div>
+					<div class="acc-kpi-content">
+						<div class="acc-kpi-value" id="kpi-restrictions-other"><?php echo esc_html( $other_count ); ?></div>
+						<div class="acc-kpi-label"><?php esc_html_e( 'Other / Manual', 'mcp-ai-wpoos-pro' ); ?></div>
+					</div>
+				</div>
+			</div>
+
+			<?php if ( empty( $rows ) ) : ?>
+				<div class="acc-restrictions-empty">
+					<span class="dashicons dashicons-smiley"></span>
+					<p><?php esc_html_e( 'No users are currently restricted.', 'mcp-ai-wpoos-pro' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Users who exceed rate limits or token budgets will be flagged here automatically.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+			<?php else : ?>
+				<div class="acc-restrictions-table-wrap">
+					<table class="widefat striped" id="acc-restrictions-table">
+						<thead>
+							<tr>
+								<th scope="col"><?php esc_html_e( 'User', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Scope', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Reason', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Triggered', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Auto-release', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $rows as $row ) : ?>
+								<?php
+								$triggered = ! empty( $row['triggered_at'] )
+									? get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $row['triggered_at'] ), get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
+									: '-';
+								$released  = ! empty( $row['released_at'] )
+									? get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $row['released_at'] ), get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
+									: __( 'Until lifted', 'mcp-ai-wpoos-pro' );
+								?>
+								<tr data-user-id="<?php echo esc_attr( $row['user_id'] ); ?>" data-type="<?php echo esc_attr( $row['type'] ); ?>">
+									<td>
+										<strong><?php echo esc_html( $row['display_name'] ); ?></strong>
+										<?php if ( ! empty( $row['user_login'] ) ) : ?>
+											<br><small>@<?php echo esc_html( $row['user_login'] ); ?></small>
+										<?php endif; ?>
+									</td>
+									<td><span class="acc-restriction-pill acc-restriction-pill--<?php echo esc_attr( $row['type'] ); ?>"><?php echo esc_html( $row['type_label'] ); ?></span></td>
+									<td><?php echo esc_html( $row['scope'] ); ?><?php echo ( ! empty( $row['tool_slug'] ) ? ' · ' . esc_html( $row['tool_slug'] ) : '' ); ?></td>
+									<td><?php echo esc_html( '' !== $row['reason'] ? $row['reason'] : '-' ); ?></td>
+									<td><?php echo esc_html( $triggered ); ?></td>
+									<td><?php echo esc_html( $released ); ?></td>
+									<td>
+										<button
+											type="button"
+											class="button button-small acc-lift-restriction"
+											data-user-id="<?php echo esc_attr( $row['user_id'] ); ?>"
+											data-type="<?php echo esc_attr( $row['type'] ); ?>"
+										>
+											<?php esc_html_e( 'Lift', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			<?php endif; ?>
+		</div>
+		<?php
 	}
 
 	// =========================================================================

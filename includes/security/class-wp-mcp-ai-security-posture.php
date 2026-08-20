@@ -220,6 +220,17 @@ class WP_MCP_AI_Security_Posture {
 				'subtab' => 'network',
 				'anchor' => 'rate_limit_by',
 			),
+			array(
+				'id'     => 'restriction_registry_on',
+				'label'  => __( 'Restriction registry flags blocked users', 'mcp-ai-wpoos' ),
+				'weight' => 0,
+				'passed' => class_exists( 'WP_MCP_AI_Restriction_Registry' ) && method_exists( 'WP_MCP_AI_Restriction_Registry', 'flag' ),
+				'detail' => ( class_exists( 'WP_MCP_AI_Restriction_Registry' ) && method_exists( 'WP_MCP_AI_Restriction_Registry', 'flag' ) )
+					? __( 'Users blocked by rate limits or token overages are flagged for admin review.', 'mcp-ai-wpoos' )
+					: __( 'The restriction registry is unavailable — blocked users cannot be flagged or unblocked from the admin.', 'mcp-ai-wpoos' ),
+				'subtab' => 'network',
+				'anchor' => '',
+			),
 			// ── Audit logging ────────────────────────────────────────────
 			array(
 				'id'     => 'audit_log_on',
