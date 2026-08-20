@@ -186,15 +186,45 @@ class WP_MCP_AI_Tool_Service {
 				'function' => array(
 					'name'        => $tool_slug,
 					'description' => $description,
-					'parameters'  => $tool_definition['parameters'] ?? array(
-						'type'       => 'object',
-						'properties' => array(),
-					),
+					// An empty array must not bypass the fallback: providers
+					// reject `parameters: []` ("[] is not of type 'object'").
+					'parameters'  => ( ! empty( $tool_definition['parameters'] ) && is_array( $tool_definition['parameters'] ) )
+						? $this->normalize_parameters_schema( $tool_definition['parameters'] )
+						: array(
+							'type'       => 'object',
+							'properties' => array(),
+						),
 				),
 			);
 		}
 
 		return $tools_payload;
+	}
+
+	/**
+	 * Normalize a tool parameter schema into a valid JSON Schema object.
+	 *
+	 * Some tool definitions ship a bare property map (no object root) or a
+	 * malformed structure. Providers validate function schemas strictly, so
+	 * ensure every emitted schema has a `type` of `object` and a `properties`
+	 * array before it is sent to the model.
+	 *
+	 * @param array $schema Raw parameter schema.
+	 * @return array Normalized object schema.
+	 */
+	private function normalize_parameters_schema( array $schema ) {
+		if ( ! isset( $schema['type'] ) ) {
+			$schema = array(
+				'type'       => 'object',
+				'properties' => $schema,
+			);
+		}
+
+		if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
+			$schema['properties'] = array();
+		}
+
+		return $schema;
 	}
 
 	/**

@@ -223,6 +223,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			}
 
 			if ( ! $tool instanceof WP_MCP_AI_Tool_Interface ) {
+				// Fail loud: classes without the tool contract are dropped here,
+				// which historically shipped broken tools (the legacy-format
+				// wait_for_user class reached providers with an empty schema).
+				// Log the skip so misconfigured classes surface in the admin
+				// error log instead of vanishing silently.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'error',
+						'Tool class was not registered: missing WP_MCP_AI_Tool_Interface.',
+						array(
+							'class' => is_object( $tool ) ? get_class( $tool ) : (string) $tool,
+						)
+					);
+				}
+
 				return false;
 			}
 
