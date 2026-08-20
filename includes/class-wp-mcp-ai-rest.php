@@ -9232,19 +9232,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						continue;
 					}
 
-					// Empty schemas serialize to `[]`, which providers reject
-					// ("[] is not of type 'object'"). Normalize to an open object.
-					if ( array() === $schema || ! isset( $schema['type'] ) ) {
-						$schema = array(
-							'type'       => 'object',
-							'properties' => array() === $schema ? array() : $schema,
-						);
-					}
-
-					if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-						$schema['properties'] = array();
-					}
-
 					$description = $tool->get_description();
 
 					// Add provider-specific fallback text for tools that require a different provider.

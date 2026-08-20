@@ -1273,43 +1273,12 @@ class ChatOrchestrator {
 				'function' => array(
 					'name'        => $slug,
 					'description' => $tool->getDescription(),
-					'parameters'  => self::normalizeToolSchema( $tool->getParametersSchema() ),
+					'parameters'  => $tool->getParametersSchema(),
 				),
 			);
 		}
 
 		return $definitions;
-	}
-
-	/**
-	 * Normalize a tool parameter schema into a valid JSON Schema object.
-	 *
-	 * Providers (DeepSeek in particular) validate tool schemas strictly and
-	 * reject empty arrays with errors like "[] is not of type 'object'".
-	 * Any schema that is empty, or that lacks the object root, is converted
-	 * to an open-object schema so the payload always serializes as an object.
-	 */
-	private static function normalizeToolSchema( array $schema ): array {
-		if ( array() === $schema ) {
-			return array(
-				'type'       => 'object',
-				'properties' => array(),
-			);
-		}
-
-		if ( ! isset( $schema['type'] ) ) {
-			// A bare property map without the object root — wrap it.
-			$schema = array(
-				'type'       => 'object',
-				'properties' => $schema,
-			);
-		}
-
-		if ( ! isset( $schema['properties'] ) || ! \is_array( $schema['properties'] ) ) {
-			$schema['properties'] = array();
-		}
-
-		return $schema;
 	}
 
 	/**
