@@ -18,6 +18,7 @@ const path = require( 'path' );
 const BASE_URL = process.env.WORDPRESS_URL || 'http://localhost:8000';
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'StrongPassword123!';
+const EMBED_PAGE_ID = process.env.EMBED_PAGE_ID || '45';
 const OUT_DIR = path.join( __dirname, '..', 'plugins', 'nvoos-content-graph', '.wordpress-org', 'assets' );
 
 async function main() {
@@ -29,6 +30,12 @@ async function main() {
 	} );
 	const page = await context.newPage();
 
+	// The QA site boots a heavy plugin stack, so single-page responses can
+	// take 20–60s. Give every navigation and selector a generous budget
+	// instead of Playwright's 30s defaults.
+	page.setDefaultTimeout( 120000 );
+	page.setDefaultNavigationTimeout( 120000 );
+
 	try {
 		// ── Login ────────────────────────────────────────────────
 		console.log( 'Logging in...' );
@@ -39,13 +46,13 @@ async function main() {
 			page.waitForURL( /wp-admin/ ),
 			page.click( '#wp-submit' ),
 		] );
-		await page.waitForSelector( '#wpadminbar', { timeout: 20000 } );
+		await page.waitForSelector( '#wpadminbar', { timeout: 60000 } );
 		console.log( 'Logged in.' );
 
 		// ── 1. Graph Explorer ───────────────────────────────────
 		console.log( 'Capturing screenshot-1.png (Graph Explorer)...' );
 		await page.goto( `${ BASE_URL }/wp-admin/admin.php?page=nvoos-content-graph`, { waitUntil: 'load' } );
-		await page.waitForSelector( '#nvoos-content-graph-explorer canvas', { timeout: 20000 } );
+		await page.waitForSelector( '#nvoos-content-graph-explorer canvas', { timeout: 60000 } );
 		await page.waitForTimeout( 5000 ); // Let the fcose layout settle.
 		await page.locator( '.nvoos-content-graph-explorer-wrap' ).screenshot( { path: path.join( OUT_DIR, 'screenshot-1.png' ) } );
 
@@ -69,8 +76,8 @@ async function main() {
 
 		// ── 5. Frontend shortcode embed ──────────────────────────
 		console.log( 'Capturing screenshot-5.png (Frontend embed)...' );
-		await page.goto( `${ BASE_URL }/?page_id=45`, { waitUntil: 'load' } );
-		await page.waitForSelector( '.nvoos-content-graph-embed canvas', { timeout: 20000 } );
+		await page.goto( `${ BASE_URL }/?page_id=${ EMBED_PAGE_ID }`, { waitUntil: 'load' } );
+		await page.waitForSelector( '.nvoos-content-graph-embed canvas', { timeout: 60000 } );
 		await page.waitForTimeout( 5000 );
 		await page.addStyleTag( { content: '#wpadminbar { display: none !important; }' } );
 		await page.screenshot( { path: path.join( OUT_DIR, 'screenshot-5.png' ), fullPage: true } );
