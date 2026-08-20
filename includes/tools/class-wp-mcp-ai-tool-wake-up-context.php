@@ -314,11 +314,14 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 						),
 						$context
 					);
-					if ( empty( $single['success'] ) || empty( $single['contexts'] ) ) {
+					// The tool contract allows execute() to return WP_Error
+					// (e.g. the graph-ranked context expired or was deleted
+					// between ranking and fetch). Never index it like an array.
+					if ( is_wp_error( $single ) || empty( $single['success'] ) || empty( $single['contexts'] ) ) {
 						continue;
 					}
 					$record = $single['contexts'][0];
-					if ( ! $this->matches_wake_filters( $record, $filters ) ) {
+					if ( ! is_array( $record ) || ! $this->matches_wake_filters( $record, $filters ) ) {
 						continue;
 					}
 					$contexts[] = $record;
@@ -342,7 +345,8 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( null === $result ) {
 			$result = $retrieve->execute( $retrieve_args, $context );
 		}
-		if ( empty( $result['success'] ) || empty( $result['contexts'] ) ) {
+		// WP_Error is a valid execute() return per the canonical envelope.
+		if ( is_wp_error( $result ) || empty( $result['success'] ) || empty( $result['contexts'] ) ) {
 			self::record_retrieval_telemetry( $retrieval_path );
 			return array(
 				'success'        => true,

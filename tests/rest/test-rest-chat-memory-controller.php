@@ -44,7 +44,8 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		parent::setUp();
 
 		global $wp_rest_server;
-		$this->server = $wp_rest_server = new WP_REST_Server();
+		$wp_rest_server = new WP_REST_Server();
+		$this->server   = $wp_rest_server;
 		do_action( 'rest_api_init' );
 
 		$this->editor_id     = self::factory()->user->create( array( 'role' => 'editor' ) );
@@ -64,6 +65,35 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		delete_user_meta( $this->subscriber_id, WP_MCP_AI_REST_Chat_Memory_Controller::USER_META_ENABLED );
 
 		parent::tearDown();
+	}
+
+	/**
+	 * Build a REST request for the current user, adding the WordPress REST
+	 * nonce header when a user is logged in.
+	 *
+	 * The controller's authenticator requires a valid `wp_rest` nonce for
+	 * cookie-style auth; without the header every dispatched request falls
+	 * through to the 401 unauthenticated branch regardless of
+	 * `wp_set_current_user()`. This mirrors the trait helper
+	 * `WP_MCP_AI_REST_Test_Helper::create_authenticated_request()`.
+	 *
+	 * @param string $method HTTP method (GET, POST, ...).
+	 * @param string $route  REST route path.
+	 * @param array  $params Optional request parameters.
+	 * @return WP_REST_Request
+	 */
+	private function request_for_current_user( $method, $route, $params = array() ) {
+		$request = new WP_REST_Request( $method, $route );
+
+		foreach ( $params as $key => $value ) {
+			$request->set_param( $key, $value );
+		}
+
+		if ( get_current_user_id() > 0 ) {
+			$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		}
+
+		return $request;
 	}
 
 	/**
@@ -140,7 +170,7 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 	public function test_get_preferences_returns_defaults() {
 		wp_set_current_user( $this->editor_id );
 
-		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/preferences' );
+		$request  = $this->request_for_current_user( 'GET', '/mcp-ai/v1/chat-memory/preferences' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
@@ -155,10 +185,14 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 	public function test_update_preferences_persists_values() {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-memory/preferences' );
-		$request->set_param( 'enabled', false );
-		$request->set_param( 'autosummarize', true );
-
+		$request  = $this->request_for_current_user(
+			'POST',
+			'/mcp-ai/v1/chat-memory/preferences',
+			array(
+				'enabled'       => false,
+				'autosummarize' => true,
+			)
+		);
 		$response = $this->server->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );
 
@@ -174,8 +208,7 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 		update_user_meta( $this->editor_id, WP_MCP_AI_REST_Chat_Memory_Controller::USER_META_ENABLED, 0 );
 
-		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/recall' );
-		$request->set_param( 'agent_id', 1 );
+		$request  = $this->request_for_current_user( 'GET', '/mcp-ai/v1/chat-memory/recall', array( 'agent_id' => 1 ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertSame( 403, $response->get_status() );
@@ -189,26 +222,30 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 	public function test_subscriber_cannot_store() {
 		wp_set_current_user( $this->subscriber_id );
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-memory/store' );
-		$request->set_param( 'agent_id', 1 );
-		$request->set_param( 'content', 'remember me' );
-
+		$request  = $this->request_for_current_user(
+			'POST',
+			'/mcp-ai/v1/chat-memory/store',
+			array(
+				'agent_id' => 1,
+				'content'  => 'remember me',
+			)
+		);
 		$response = $this->server->dispatch( $request );
 		$this->assertSame( 403, $response->get_status() );
 	}
 
 	/**
-	 * sanitize_context_id() must strip everything outside [A-Za-z0-9_-].
+	 * The sanitize_context_id() helper must strip everything outside [A-Za-z0-9_-].
 	 */
 	public function test_sanitize_context_id_strips_unsafe_characters() {
 		$controller = new WP_MCP_AI_REST_Chat_Memory_Controller();
 		$this->assertSame( 'ctx_abc-123', $controller->sanitize_context_id( 'ctx_abc-123' ) );
-		$this->assertSame( 'ctx_abc123', $controller->sanitize_context_id( 'ctx/../abc 123' ) );
+		$this->assertSame( 'ctxabc123', $controller->sanitize_context_id( 'ctx/../abc 123' ) );
 		$this->assertSame( '', $controller->sanitize_context_id( '!@#$%^&*()' ) );
 	}
 
 	/**
-	 * sanitize_session_id() must strip everything outside [A-Za-z0-9_-].
+	 * The sanitize_session_id() helper must strip everything outside [A-Za-z0-9_-].
 	 */
 	public function test_sanitize_session_id_strips_unsafe_characters() {
 		$controller = new WP_MCP_AI_REST_Chat_Memory_Controller();
@@ -223,12 +260,13 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 	public function test_audit_requires_login() {
 		wp_set_current_user( 0 );
 
-		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
 		$request->set_param( 'agent_id', 1 );
 		$response = $this->server->dispatch( $request );
 
-		// Logged-out users get the same `chat_memory_disabled` 403 the rest of the surface uses.
-		$this->assertSame( 403, $response->get_status() );
+		// Unauthenticated requests are rejected by the authenticator with 401
+		// before the route-level permission callback ever runs.
+		$this->assertSame( 401, $response->get_status() );
 	}
 
 	/**
@@ -238,8 +276,7 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 		update_user_meta( $this->editor_id, WP_MCP_AI_REST_Chat_Memory_Controller::USER_META_ENABLED, 0 );
 
-		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
-		$request->set_param( 'agent_id', 1 );
+		$request  = $this->request_for_current_user( 'GET', '/mcp-ai/v1/chat-memory/audit', array( 'agent_id' => 1 ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertSame( 403, $response->get_status() );
@@ -274,9 +311,14 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 	public function test_audit_returns_success_envelope_for_editor() {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
-		$request->set_param( 'agent_id', 'user_' . $this->editor_id );
-		$request->set_param( 'limit', 10 );
+		$request  = $this->request_for_current_user(
+			'GET',
+			'/mcp-ai/v1/chat-memory/audit',
+			array(
+				'agent_id' => 'user_' . $this->editor_id,
+				'limit'    => 10,
+			)
+		);
 		$response = $this->server->dispatch( $request );
 
 		$status = $response->get_status();
@@ -306,8 +348,11 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 			)
 		);
 
-		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/sessions/' . $session_id );
-		$request->set_param( 'limit', 10 );
+		$request  = $this->request_for_current_user(
+			'GET',
+			'/mcp-ai/v1/chat-memory/sessions/' . $session_id,
+			array( 'limit' => 10 )
+		);
 		$response = $this->server->dispatch( $request );
 
 		WP_MCP_AI_Chat_Session_Frame_Buffer::flush( $session_id );
