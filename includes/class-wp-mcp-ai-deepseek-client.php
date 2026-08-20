@@ -520,8 +520,6 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			// and the assembly code that runs after curl_exec() completes.
 			$sse_buffer          = '';
 			$http_status         = 0;
-			$retry_after         = 0;
-			$raw_body            = '';
 			$accumulated_content = '';
 			$accumulated_reason  = '';
 			$tool_calls_by_idx   = array();
@@ -564,25 +562,16 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 					CURLOPT_SSL_VERIFYPEER => true,
 					CURLOPT_SSL_VERIFYHOST => 2,
 
-					// Capture the HTTP status code and Retry-After header from the response.
-					CURLOPT_HEADERFUNCTION => function ( $_curl_handle, $header ) use ( &$http_status, &$retry_after ) {
+					// Capture the HTTP status code from the response header line.
+					CURLOPT_HEADERFUNCTION => function ( $_curl_handle, $header ) use ( &$http_status ) {
 						if ( preg_match( '/^HTTP\/[\d.]+ (\d+)/', $header, $matches ) ) {
 							$http_status = (int) $matches[1];
-						} elseif ( preg_match( '/^Retry-After:\s*(\d+)/i', $header, $matches ) ) {
-							$retry_after = (int) $matches[1];
 						}
 						return strlen( $header );
 					},
 
 					// Process SSE data as it arrives.
-					CURLOPT_WRITEFUNCTION  => function ( $_curl_handle, $data ) use ( &$sse_buffer, &$raw_body, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
-						// Keep a bounded copy of the raw response for error diagnostics.
-						// Error responses are plain JSON, not SSE, so the parser below
-						// skips them and the reason for the failure would be lost.
-						if ( strlen( $raw_body ) < 65536 ) {
-							$raw_body .= substr( $data, 0, 65536 - strlen( $raw_body ) );
-						}
-
+					CURLOPT_WRITEFUNCTION  => function ( $_curl_handle, $data ) use ( &$sse_buffer, &$accumulated_content, &$accumulated_reason, &$tool_calls_by_idx, &$response_id, &$finish_reason, &$usage, &$found_done, $stream_callback ) {
 						$sse_buffer .= $data;
 
 						while ( false !== ( $newline_pos = strpos( $sse_buffer, "\n" ) ) ) {
@@ -711,65 +700,17 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			}
 
 			if ( $http_status >= 400 ) {
-				// Error responses from DeepSeek are plain JSON, not SSE, so decode
-				// the buffered body to surface the real reason (e.g. 402 balance,
-				// 429 rate limit) instead of the generic streaming message.
-				$error_body  = json_decode( trim( $raw_body ), true );
-				$api_message = ( is_array( $error_body ) && isset( $error_body['error']['message'] ) && is_string( $error_body['error']['message'] ) )
-					? trim( $error_body['error']['message'] )
-					: '';
-				$api_code    = ( is_array( $error_body ) && isset( $error_body['error']['code'] ) && is_string( $error_body['error']['code'] ) )
-					? $error_body['error']['code']
-					: '';
-
-				$error_message = sprintf(
-					/* translators: %d: HTTP status code returned by the DeepSeek API. */
-					__( 'DeepSeek returned an error during streaming (HTTP %d).', 'mcp-ai-wpoos' ),
-					$http_status
-				);
-
-				if ( '' !== $api_message ) {
-					$error_message .= ' ' . $api_message;
-				}
-
-				$error_data = array( 'status' => $http_status );
-				$error_code = 'wp_mcp_ai_deepseek_api_error';
-
-				if ( 401 === $http_status ) {
-					$error_code            = 'wp_mcp_ai_deepseek_auth_error';
-					$error_data['actions'] = array(
-						'auth_info' => __( 'Verify your DeepSeek API key in NV oOS → Providers → DeepSeek.', 'mcp-ai-wpoos' ),
-					);
-				} elseif ( 429 === $http_status ) {
-					$error_code = 'wp_mcp_ai_rate_limit_exceeded';
-					if ( $retry_after > 0 ) {
-						$error_data['retry_after'] = $retry_after;
-					}
-					$error_data['actions'] = array(
-						'rate_limit_info' => __( 'The DeepSeek API rate limit has been exceeded. Try again in a few moments.', 'mcp-ai-wpoos' ),
-					);
-				}
-
-				$body_preview = is_array( $error_body ) ? wp_json_encode( $error_body ) : $raw_body;
-				if ( ! is_string( $body_preview ) ) {
-					$body_preview = '';
-				} elseif ( strlen( $body_preview ) > 2000 ) {
-					$body_preview = substr( $body_preview, 0, 2000 );
-				}
-
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_error(
 						'DeepSeek real-time streaming returned HTTP error.',
-						array(
-							'code'     => $http_status,
-							'api_code' => $api_code,
-							'message'  => $api_message,
-							'body'     => $body_preview,
-						)
+						array( 'code' => $http_status )
 					);
 				}
-
-				return new WP_Error( $error_code, $error_message, $error_data );
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					__( 'DeepSeek returned an error during streaming.', 'mcp-ai-wpoos' ),
+					array( 'status' => $http_status )
+				);
 			}
 
 			if ( ! $found_done ) {
