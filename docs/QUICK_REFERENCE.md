@@ -1,11 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.59
-**Last Updated:** August 19, 2026
+**Version:** 1.1.60
+**Last Updated:** August 21, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (August 2026)
+
+- **v1.1.60** (August 21): Restricted-user flagging & unblocking — restriction registry (`WP_MCP_AI_Restriction_Registry`) converts ephemeral rate-limit/token-budget blocks into persistent, reviewable records with auto-expiry and audit logging; admin surfaces (Token Manager "Restricted Users" panel + Pro Command Center Restrictions tab), REST routes (`GET /restrictions`, `GET|POST /users/{id}/restrictions`, `DELETE /users/{id}/restrictions/{type}`), AJAX lift actions, and `wp mcp-ai restrictions list|lift|add` CLI; IETF rate-limit response headers; chat rate limits filterable via `wp_mcp_ai_chat_rate_limit` / `wp_mcp_ai_chat_rate_limit_window`; new `restriction_registry_on` posture signal. Conversation import to transcript CCT (Full, JetEngine) — new `includes/conversation-import/` subsystem imports ChatGPT / Gemini Takeout / Claude / ShareGPT / OpenAI JSONL into the `ai_chat_transcripts` CCT with 4 new tools (`conversation_import_detect|run|status|delete`), admin page, and `wp mcp-ai conversation-import` CLI. Tool schemas normalized before provider payloads (DeepSeek/REST/Tool Service/ChatOrchestrator). Fixed WP_Error fatals in memory/REST paths. `nvoos-content-graph` v1.0.3 (wp.org resubmission). Tool count: ~300 base + ~1,247 Pro (~1,547 total). See `docs/features/security/user-restrictions.md`, `docs/user-guides/conversation-import.md`.
 
 - **v1.1.59** (August 19): Media Worker v3.2.0 — native `/api/crawl/*` endpoints (single-URL Markdown, batched crawling, link scans) with a static-first two-tier extraction pipeline and SSRF-guarded URLs, Crawl4AI-compatible facade for `run_crawl4ai_job` remote mode, LLM-based page extraction; toolkit memory estimate accounts for the worker sidecar. Research tools hardened — `semantic_content_search` embeddings via the shared provider abstraction (OpenAI, Gemini, Ollama, DigitalOcean; new Gemini embedding provider) with keyword fallback + model-mismatch skipping; `deep_research` provider-chain retries, reasoning-content fallback, no empty-report caching; new read-only base tools `list_terms` + `list_taxonomies`. Fixes: Docs Hub rebuild/broken-link staleness after in-place plugin updates (new `wp_mcp_ai_plugin_updated` action + version-mismatch rebuild guard; slug-map link resolution + clamped suggestions) and tool registration gaps (~32 orphaned base tools registered, legacy-format classes auto-wrapped, new `wp_mcp_ai_tools_init` hook). Tool count: ~300 base + ~1,243 Pro (~1,543 total).
 

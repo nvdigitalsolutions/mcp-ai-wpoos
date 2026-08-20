@@ -17,6 +17,8 @@ The OOS engine is the framework-agnostic orchestrator in `lib/core` (`ChatOrches
 
 The bridge (`includes/bootstrap/oos-bridge.php`) is the composition root: PHP 8.1 runtime gate, erlang-c concurrency, rate limiter, semantic compressor, data-budget tracker, tool resolver, and the shadow-runner bootstrap.
 
+**Rate limiting (v1.1.60):** the chat rate limit (previously a hardcoded 60 requests/minute) is configurable via the **`wp_mcp_ai_chat_rate_limit`** and **`wp_mcp_ai_chat_rate_limit_window`** filters applied in the WordPress bridge (`ChatOrchestrator::setChatRateLimit()` clamps values). The `RateLimiter` adapter fires **`wp_mcp_ai_rate_limit_exceeded`** when a window is exhausted — the restriction registry subscribes to persist a reviewable restriction record (see `docs/features/security/user-restrictions.md`).
+
 ## Key subsystems & files
 
 | Subsystem | Location | Notes |

@@ -91,7 +91,7 @@ packages/                              ← 9 standalone NPM packages
 
 | Constant | Default | Effect |
 |---|---|---|
-| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = ~300 base tools; `false` = ~1,543 total |
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = ~300 base tools; `false` = ~1,547 total |
 | `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks — do not redefine |
 | `WP_MCP_AI_PRO_VERSION` | set by Pro at boot | Prevents double-loading of Pro addon |
 | `WP_DEBUG` | WordPress default | Enables extra error logging throughout |
@@ -131,7 +131,7 @@ npm test                      # Jest unit tests
 | | Base plugin | Pro addon |
 |---|---|---|
 | **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
-| **Tools** | ~300 core tools | +~1,243 Pro tools = **~1,543 total** |
+| **Tools** | ~300 core tools | +~1,247 Pro tools = **~1,547 total** |
 | **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
 | **PHP minimum** | 7.4 | 8.1 |
 | **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (phpspreadsheet etc.) |

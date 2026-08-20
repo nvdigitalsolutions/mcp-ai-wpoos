@@ -619,7 +619,13 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.59: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools
+## 🆕 August 2026 — v1.1.55–v1.1.60: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import
+
+### New and updated documents (August 21, 2026, v1.1.60)
+
+- **[docs/features/security/user-restrictions.md](features/security/user-restrictions.md)** ⭐ **NEW** — User Restrictions feature reference: restriction registry, admin surfaces (Token Manager panel, Pro Command Center Restrictions tab), REST/AJAX/WP-CLI operations, rate-limit headers, filters, and audit trail. (August 21, 2026)
+- **[docs/reference/api/rest-api.md](reference/api/rest-api.md)** ⭐ **UPDATED** — new User restrictions section (`/restrictions`, `/users/{id}/restrictions` routes + IETF rate-limit headers). (August 21, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — v1.1.60: restricted-user flagging, conversation import, tool schema normalization, WP_Error fatals fix, nvoos-content-graph v1.0.3. (August 21, 2026)
 
 ### New and updated documents (August 20, 2026, v1.1.60-dev)
 
@@ -1732,7 +1738,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 - **NV Platform** (`addons/ai-platform/`) — Top-level admin dashboard + CPTs (Project, Resource, Template)
 
 **Standalone Content Graph Plugins:**
-- **NVOOS Content Graph** (`plugins/nvoos-content-graph/`) — Visual knowledge graph (Cytoscape.js), 14 graph tools, remote sources, REST API (v1.0.2; renamed from nvoos-graphify)
+- **NVOOS Content Graph** (`plugins/nvoos-content-graph/`) — Visual knowledge graph (Cytoscape.js), 14 graph tools, remote sources, REST API (v1.0.3; renamed from nvoos-graphify)
 - **NVOOS Content Graph AI** (`plugins/nvoos-content-graph-ai/`) — AI addon: 13 providers, streaming chat, RAG, embeddings, 14 AI tools (v1.0.2; renamed from nvoos-graphify-ai)
 - **NVOOS Content Graph AI Platform** (`plugins/nvoos-content-graph-ai-platform/`) — Platform addon: Agents, A2A, ACP, Blueprints, Federation, Harness, Measurement, Professions, Skills, Slash Commands (v1.0.2; renamed from nvoos-graphify-ai-platform)
 

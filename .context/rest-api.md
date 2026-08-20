@@ -244,6 +244,9 @@ flush();
 | `*` | `/mcp-ai/v1/paper-store` | Paper Store CRUD + search + import/export for remote site access (v1.1.52) |
 | `*` | `/mcp-ai-pro/v1/catalogues/*` | Skill catalogue management (Pro) — discover/install skills from remote GitHub repos |
 | `*` | `/mcp-ai-pro/v1/analytics/*` | Shared Analytics Service endpoints (Pro, v1.1.53) — cross-platform social/ecommerce analytics |
+| GET | `/mcp-ai/v1/restrictions` | List active user-restriction records (v1.1.60) |
+| GET/POST | `/mcp-ai/v1/users/{id}/restrictions` | List / add restrictions for a user (v1.1.60, `manage_options` on writes) |
+| DELETE | `/mcp-ai/v1/users/{id}/restrictions/{type}` | Lift a restriction by type (v1.1.60, `manage_options`) |
 
 The cron-status routes are implemented by `WP_MCP_AI_REST_Tools_Controller` and
 delegate to `WP_MCP_AI_Tool_Async_Executor::cancel_job()` / `retry_job()` /
@@ -256,6 +259,11 @@ delegate to `WP_MCP_AI_Tool_Async_Executor::cancel_job()` / `retry_job()` /
 The chat-memory bridge is implemented by
 `WP_MCP_AI_REST_Chat_Memory_Controller`; full reference:
 [`docs/features/memory/chat-client-integration.md`](../docs/features/memory/chat-client-integration.md).
+
+The restriction routes are implemented by `WP_MCP_AI_REST_Restrictions_Controller`
+(backed by `WP_MCP_AI_Restriction_Registry`); `WP_MCP_AI_Rate_Limit_Headers` adds
+IETF rate-limit headers to rate-limited responses; full reference:
+[`docs/features/security/user-restrictions.md`](../docs/features/security/user-restrictions.md).
 
 ---
 

@@ -1,8 +1,8 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.60] - 2026-08-21
 
-### Added — Restricted-User Flagging & Unblocking
+### Added — Restricted-User Flagging & Unblocking (PR #5901)
 
 - New `WP_MCP_AI_Restriction_Registry` (`includes/class-wp-mcp-ai-restriction-registry.php`) converts ephemeral enforcement events into persistent, enumerable restriction records. Subscribes to the existing `wp_mcp_ai_tool_token_limit_exceeded` and `wp_mcp_ai_per_session_limit_exceeded` hooks plus the new `wp_mcp_ai_rate_limit_exceeded` action; records live in user meta with a fast lookup index (`wp_mcp_ai_active_restrictions`), auto-expire on the daily cleanup cron, and are audit-logged via the security audit logger.
 - The OOS rate-limiter adapter (`lib/wordpress-adapter/src/Adapter/RateLimiter.php`) now fires `wp_mcp_ai_rate_limit_exceeded` when a window is exhausted and maintains an enumerable key index (`wp_mcp_ai_rl_index`) so windows can be reset when an admin lifts a restriction.
@@ -11,6 +11,34 @@
 - **API surface:** REST `GET /mcp-ai/v1/restrictions`, `GET|POST /mcp-ai/v1/users/{id}/restrictions`, `DELETE /mcp-ai/v1/users/{id}/restrictions/{type}`; AJAX `wp_mcp_ai_lift_user_restriction`, `wp_mcp_ai_get_restrictions`, `wp_mcp_ai_dismiss_restriction_notice`; WP-CLI `wp mcp-ai restrictions list|lift|add`.
 - Security posture gains an informational `restriction_registry_on` signal.
 - **Standards polish:** IETF-style response headers (`RateLimit-Policy`, `RateLimit`, `Retry-After`) on rate-limited REST responses via `WP_MCP_AI_Rate_Limit_Headers`; blocked users are told to contact the site administrator; the admin notice is toggleable from Settings → Orchestration → Restriction Notifications (`enable_restriction_admin_notices`); full feature reference at `docs/features/security/user-restrictions.md`.
+
+### Added — Conversation Import to Transcript CCT (PR #5898)
+
+- New `includes/conversation-import/` subsystem imports external AI conversation exports — ChatGPT `conversations.json` (including ZIP archives), Google Takeout Gemini activity, Claude `conversations.jsonl`, ShareGPT datasets, and OpenAI fine-tuning JSONL — into the JetEngine `ai_chat_transcripts` CCT, one row per conversation, with format detection, tree/branch linearization, idempotent dedupe (`skip`/`refresh` policies), batching, and checkpoint resume tokens.
+- Four new tools (JetEngine-gated, Full version): `conversation_import_detect`, `conversation_import_run` (dry-run previews, image sideloading, limits), `conversation_import_status`, `conversation_import_delete` (dry-run counting, 500-row safety cap).
+- Admin page (upload, preview, policy controls, progress bar, report), WP-CLI `wp mcp-ai conversation-import detect|import|status|delete`, async job-queue integration with progress reporting, GDPR exporter/eraser + retention coverage, and opt-in memory mining through the existing `mine_agent_memory` flow.
+- Docs: `docs/user-guides/conversation-import.md`, `docs/project/plans/CONVERSATION-IMPORT-CCT-IMPLEMENTATION-PLAN.md`; five PHPUnit suites (`test-conversation-import*.php`).
+
+### Changed — Tool Schema Normalization for Provider Payloads (PR #5903)
+
+- Tool argument schemas are now normalized before being embedded in provider payloads — `WP_MCP_AI_DeepSeek_Client`, the REST `/tools` schema output, `WP_MCP_AI_Tool_Service`, and the OOS `ChatOrchestrator` — preventing provider streaming errors from non-compliant tool schemas.
+- The tool registry now logs tool registrations skipped for a missing tool contract, alongside the `unavailable_tool_slugs` tracking.
+
+### Fixed — WP_Error Fatals in Memory & REST Paths (PR #5905)
+
+- Fixed WP_Error fatals in the memory layer and REST chat-memory paths — `mine_agent_memory`, `retrieve_agent_memory`, `wake_up_context`, the request guard, and the REST chat-memory controller now handle `WP_Error` returns before array/object access.
+
+### Changed — nvoos-content-graph wp.org Resubmission v1.0.3 (PRs #5897, #5899, #5904)
+
+- `plugins/nvoos-content-graph` prepared for wp.org resubmission and bumped to **v1.0.3**: WPCS fixes for the renamed plugins, wp.org review fixes, readme/README polish, `.wordpress-org` screenshot assets, and the standalone build ZIP.
+
+### Versioning
+
+- Bumped to **1.1.60** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.60. Media Worker: **v3.2.0** (unchanged).
+- Tool count: ~300 base + ~1,247 Pro (~1,547 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
 
 ---
 

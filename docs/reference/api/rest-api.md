@@ -261,6 +261,23 @@ Error semantics:
 
 Reference: `docs/developer/implementation-plan-mcp-agent-compat.md`, `docs/developer/legacy-sse-transport-plan.md`.
 
+## User restrictions (v1.1.60)
+
+Admin-facing restriction routes backed by `WP_MCP_AI_Restriction_Registry`:
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/mcp-ai/v1/restrictions` | List active restriction records (optionally filtered by user / type) |
+| GET | `/mcp-ai/v1/users/{id}/restrictions` | List a specific user's active restrictions |
+| POST | `/mcp-ai/v1/users/{id}/restrictions` | Manually flag a user with a restriction |
+| DELETE | `/mcp-ai/v1/users/{id}/restrictions/{type}` | Lift a restriction by type (re-enables the user) |
+
+- All mutating routes require `manage_options`; the registry audit-logs every flag/lift and auto-expires records on a daily cleanup cron.
+- Rate-limited REST responses carry IETF-style headers via `WP_MCP_AI_Rate_Limit_Headers`: `RateLimit-Policy` (quota semantics), `RateLimit` (window counters), `Retry-After` (suggested wait).
+- The OOS rate-limiter adapter fires `wp_mcp_ai_rate_limit_exceeded` when a window is exhausted — the registry subscribes and persists the restriction.
+- Chat rate limits are filterable via `wp_mcp_ai_chat_rate_limit` / `wp_mcp_ai_chat_rate_limit_window`.
+- Full reference: [`docs/features/security/user-restrictions.md`](../../features/security/user-restrictions.md).
+
 ## Troubleshooting tips
 
 - Verify that the authenticated account retains the capability enforced by `wp_mcp_ai_get_required_chat_capability()` (defaults to `edit_posts`) when testing with WordPress nonces.【F:mcp-ai-wpoos.php†L21-L67】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】
