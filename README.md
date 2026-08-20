@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.59
-**Release Date:** 2026-08-19
+**Version:** 1.1.60
+**Release Date:** 2026-08-21
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.59 Highlights:** Media Worker v3.2.0 — native `/api/crawl/*` endpoints (single-URL Markdown, batched crawling, link scans) with a static-first two-tier extraction pipeline, plus a Crawl4AI-compatible facade for the `run_crawl4ai_job` remote mode. Research tools hardened — multi-provider embeddings (new Gemini embedding provider), `deep_research` provider-chain retries, and new read-only base tools `list_terms` + `list_taxonomies`. Fixes: Docs Hub rebuild/broken-link staleness after in-place plugin updates (new `wp_mcp_ai_plugin_updated` action) and tool-registration gaps (~32 orphaned tools registered, legacy classes auto-wrapped).
+**🆕 v1.1.60 Highlights:** Restricted-user flagging & unblocking — persistent, reviewable restriction records with one-click lift (Token Manager "Restricted Users" panel + Pro Command Center Restrictions tab), REST/AJAX/WP-CLI operations, IETF rate-limit headers, and filterable chat rate limits. Conversation import to the transcript CCT (Full, JetEngine) — ChatGPT, Gemini Takeout, Claude, ShareGPT, and OpenAI JSONL exports with four new tools. Fixes: tool schemas normalized before provider payloads (prevents provider streaming errors), WP_Error fatals in the memory/REST paths, and `nvoos-content-graph` v1.0.3 (wp.org resubmission).
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
