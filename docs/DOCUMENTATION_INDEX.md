@@ -621,6 +621,13 @@ n#### New Audit & Compliance Docs
 
 ## 🆕 August 2026 — v1.1.55–v1.1.59: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools
 
+### New and updated documents (August 20, 2026, v1.1.60-dev)
+
+- **[docs/user-guides/conversation-import.md](user-guides/conversation-import.md)** ⭐ **NEW** — Conversation Import user guide: supported formats, admin page / WP-CLI / MCP-tool flows, storage mapping, privacy & retention, optional memory mining. (August 20, 2026)
+- **[docs/project/plans/CONVERSATION-IMPORT-CCT-IMPLEMENTATION-PLAN.md](project/plans/CONVERSATION-IMPORT-CCT-IMPLEMENTATION-PLAN.md)** ⭐ **NEW** — Conversation Import to CCT implementation plan (Phases 1–4 implemented: adapters, async queue, admin UI, privacy, deletion, media sideload, memory mining). (August 20, 2026)
+- **[docs/reference/tools/tool-reference.md](reference/tools/tool-reference.md)** ⭐ **UPDATED** — new Conversation import section covering `conversation_import_detect` / `_run` / `_status` / `_delete`. (August 20, 2026)
+- **[includes/conversation-import/README.md](../includes/conversation-import/README.md)** ⭐ **NEW** — folder context for the conversation import pipeline (public surface, neighbors, tests). (August 20, 2026)
+
 ### New and updated documents (August 19, 2026, v1.1.59)
 
 - **[docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md](project/proposals/031-media-worker-crawl4ai-integration-plan.md)** ⭐ **NEW** — Media Worker crawling & Crawl4AI facade plan (Phases 1–2 implemented, worker v3.2.0). (August 18, 2026)

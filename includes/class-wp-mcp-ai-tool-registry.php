@@ -1920,6 +1920,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-submissions.php',
 				'WP_MCP_AI_Tool_List_JetEngine_Routes'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php',
 				'WP_MCP_AI_Tool_Invoke_JetEngine_Route'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php',
+				// Conversation import (JetEngine CCT) tools.
+				'WP_MCP_AI_Tool_Conversation_Import_Detect' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-conversation-import-detect.php',
+				'WP_MCP_AI_Tool_Conversation_Import_Run'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-conversation-import-run.php',
+				'WP_MCP_AI_Tool_Conversation_Import_Status' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-conversation-import-status.php',
+				'WP_MCP_AI_Tool_Conversation_Import_Delete' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-conversation-import-delete.php',
 				'WP_MCP_AI_Tool_Get_RankMath_SEO'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-rankmath-seo.php',
 				'WP_MCP_AI_Tool_Generate_Simple_JWT_Token' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php',
 				'WP_MCP_AI_Tool_Vision_Product_Search'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-product-search.php',
