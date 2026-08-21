@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **August 15, 2026** · Version: **2.14**
+> Last reviewed: **August 22, 2026** · Version: **2.15**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,025+ tools (~195 base + ~830+ Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,552 tools (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,12 +50,12 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,547 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,552 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
-├── tools/                              ← base tool implementations (~300 classes; live count is authoritative)
-│   ├── okf/                            ← OKF knowledge tools (6 tools)
+├── tools/                              ← base tool implementations (~303 classes; live count is authoritative)
+│   ├── okf/                            ← OKF knowledge tools (10 tools)
 ├── services/                           ← 30+ service classes
 ├── admin/                              ← WordPress admin UI
 ├── blueprints/                         ← Unified blueprint installer + import tools
@@ -185,7 +185,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~300 base tool classes) or `false` (~1,547 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~303 base tool classes) or `false` (~1,552 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -418,6 +418,10 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **Agent identity bridging in memory** (v1.1.61) — `WP_MCP_AI_Agent_Identity_Resolver` (`includes/services/class-wp-mcp-ai-agent-identity-resolver.php`) canonicalises virtual agent keys (e.g. `nvoos-pro-spa-memory-drawer`, `virtual_planner_1`) to the canonical assistant post ID; alias map in `wp_mcp_ai_agent_id_aliases` (bounded 200, never autoloaded, sanitised). `store_agent_context` resolves on store (envelope + `wp_mcp_ai_memory_stored` carry `original_agent_id`/`agent_id_resolved`); REST chat-memory recall merges alias buckets (`stored_under` per record, `merged_sources`, default limit 25); drawers show scope chips, agent-ID diagnostic, show-all-scopes toggle, store-triggered refresh. `wake_up_context` graph-bridge failures fall back to the transient path; scoped wake-up/recall retries unscoped.
 - **OKF skill-knowledge bundle generator** (v1.1.61) — `WP_MCP_AI_OKF_Skill_Knowledge_Generator` (`includes/okf/`) auto-generates the `skill-knowledge` bundle from `includes/bundled-skills/` on bootstrap (priority 32, when missing or version changed) and after admin bundled-skill reinstall — fixes "OKF bundle not found: skill-knowledge" on every okf_* tool.
 - **undici ^7.29.0 pin** (v1.1.61) — jsdom 29.1.1 breaks on undici 8 (removed `lib/handler/wrap-handler.js`); override pinned to ^7.29.0 (newest 7.x, CVE fixes retained) across seven addon manifests.
+- **OKF bundle management** (v1.1.62, PR #5914) — `WP_MCP_AI_OKF_Bundle_Manager` (`includes/okf/`) is the single authority for OKF bundle paths + lifecycle (create/rename/archive/delete, ZipSlip-safe ZIP import/export, stats, log maintenance); `skill-knowledge` is auto-generated and protected (`okf_protected_bundle`); 3 new base tools (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`) + `okf_write_concept` provenance schema (OKF surface = 10 tools); Bundle Manager admin screen (`wp-mcp-ai-okf-bundle-manager`) with nonce + `manage_options` AJAX. See `docs/features/okf-integration.md`.
+- **OKF Pro knowledge routing** (v1.1.62, PR #5914) — `pro_okf_skill_bridge` (`WP_MCP_AI_OKF_Skill_Bridge`): `load_skill` resolves `bundle:concept_id` via `wp_mcp_ai_load_skill_external`, gated by per-assistant grants (`_wp_mcp_ai_okf_concepts`, fail-closed), draft status, trust tier; `WP_MCP_AI_OKF_Enrichment_Agent` + `okf_enrich_site_content`, `WP_MCP_AI_Hybrid_Knowledge_Router` + `route_knowledge_query` (`addons/pro/includes/okf/`).
+- **Pro SPA v2 OKF drawer + REST** (v1.1.62, PRs #5915/#5916) — read-only `mcp-ai-pro/v1/okf` surface (`WP_MCP_AI_Pro_REST_OKF`, `addons/pro/includes/rest/`) powers the `OkfDrawer`; concept routes allow `%` + `rawurldecode()` in the handler (%2F IDs); `WP_MCP_AI::$admin_okf_bundle_manager` declared (PHP 8.2 dynamic-property fix).
+- **Vector store Responses API migration** (v1.1.62, PR #5917) — OpenAI removes the Assistants API 2026-08-26: all vector-store call sites drop the `OpenAI-Beta: assistants=v2` header; ingestion via `file_batches` (bounded polling, single-file fallback); `filter`/`ranking_options` support. Do not reintroduce the beta header.
 - **REST require_once guards** (v1.1.52) — all REST controller `require_once` calls in `class-wp-mcp-ai-rest.php` now guarded with `file_exists()` checks.
 - **Site Health integration** — WordPress Site Health checks for cron configuration and security posture.
 - **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.

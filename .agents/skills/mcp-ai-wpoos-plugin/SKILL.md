@@ -4,9 +4,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.61"
-  plugin-version-tested: "1.1.61"
-  last-updated: "2026-08-21"
+  plugin-version: "1.1.62"
+  plugin-version-tested: "1.1.62"
+  last-updated: "2026-08-22"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -42,7 +42,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~300 base / ~1,547 full tools
+     │  Tool Registry     │  ~303 base / ~1,552 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -523,9 +523,37 @@ Import external AI conversation exports into the JetEngine
   `original_agent_id` / `agent_id_resolved`. Chat-memory recall merges alias
   buckets (`stored_under` per record) and the memory drawers show
   scope/stored-under chips, the agent ID, and a show-all-scopes toggle.
-- **OKF bundle** — the `skill-knowledge` bundle is auto-generated from
+**OKF bundle.** The `skill-knowledge` bundle is auto-generated from
   bundled skills on bootstrap (and after bundled-skill reinstall), so
   `okf_search` works out of the box (no more "OKF bundle not found").
+
+## OKF Bundle Management & Pro Knowledge Routing (v1.1.62+)
+
+- **Bundle Manager (Base)** — `WP_MCP_AI_OKF_Bundle_Manager` owns the OKF
+  bundle lifecycle: create/list/rename/archive/delete, ZipSlip-safe ZIP
+  import/export, health stats, log maintenance; `skill-knowledge` is
+  protected from tool writes (`okf_protected_bundle` — curated knowledge
+  belongs in `site-knowledge`). Admin screen under Assistants:
+  `edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-okf-bundle-manager`
+  (Bundles/Browser/Editor/Import-Export/Validate; `manage_options`).
+- **Tools** — three new base tools (`okf_list_bundles`, `okf_validate_bundle`,
+  `okf_import_bundle`) plus the `okf_write_concept` provenance schema
+  (`resource`/`sources`/`usage_window`/`verified`) — OKF tool surface: 10.
+  Two new Pro tools: `okf_enrich_site_content` (`manage_options`) and
+  `route_knowledge_query` (`read`).
+- **Pro knowledge routing** — `load_skill` resolves `bundle:concept_id`
+  names (OKF-to-Skill Bridge, per-assistant grants + trust gating); the
+  enrichment agent crawls site content into OKF concepts; the hybrid
+  knowledge router classifies queries across OKF / vector / Paper stores.
+- **Pro SPA v2 drawer** — in-chat OKF Skills Drawer backed by the read-only
+  `mcp-ai-pro/v1/okf` REST surface (bundles, concept browse/search,
+  assistant skill grants); `%2F`-encoded concept IDs decode correctly.
+- **Vector stores** — all vector-store tools now run on the Responses API
+  (no `OpenAI-Beta: assistants=v2` header; `file_batches` ingestion with
+  bounded polling + fallback) ahead of the 2026-08-26 Assistants API
+  removal.
+- Guide: `docs/features/okf-integration.md`; roadmap:
+  `docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md`.
 
 ---
 
