@@ -1,8 +1,8 @@
 # OKF Integration — Open Knowledge Format v0.1
 
-**Status:** Implemented (Phases 1–5)
-**Merged:** July 20, 2026 (PR #5719)
-**Tier:** Base
+**Status:** Implemented (Phases 1–5) · Bundle Management Phases A–H complete (1.1.62)
+**Merged:** July 20, 2026 (PR #5719) · updated 1.1.62 (PRs #5914–#5916)
+**Tier:** Base (Pro features: skill bridge, enrichment agent, hybrid router, SPA skills drawer)
 
 ---
 
@@ -181,6 +181,22 @@ of the box — previously the documented bundle was never created and every
 - **Validate** — on-demand `validate_bundle()` report (advisory issues only).
 
 All state changes flow through the Bundle Manager and are nonce + `manage_options` gated.
+
+### 4.9 Pro SPA v2 Skills Drawer & REST Surface (1.1.62)
+
+`WP_MCP_AI_Pro_REST_OKF` (`addons/pro/includes/rest/class-wp-mcp-ai-pro-rest-okf.php`)
+exposes a **read-only** `mcp-ai-pro/v1/okf` namespace — bundle list + health stats,
+concept browse + search, and per-assistant skill grants (`_wp_mcp_ai_okf_concepts`) —
+registered through the Pro module registry and served to the SPA via the loader config.
+
+The Pro SPA v2 gains an **OKF Skills Drawer** (`OkfDrawer` in
+`addons/pro/assets/spa-v2/src/components/shared/OkfDrawer.tsx`): browse bundles,
+search concepts, inspect concept markdown, and reference OKF concepts from the
+conversation without leaving the chat surface.
+
+Concept IDs containing `/` arrive percent-encoded (`%2F`) from the SPA client; the
+concept route pattern allows `%` and the handler `rawurldecode()`s the value before
+the reader lookup (v1.1.62 fix).
 
 ---
 
