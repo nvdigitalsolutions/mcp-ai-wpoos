@@ -148,7 +148,7 @@ rsync -a "${PLUGIN_DIR}/" "${TMP_DIR}/${ARTIFACT}/nvoos-content-graph/" \
 	--exclude 'composer.lock' \
 	--exclude 'CHANGELOG.md' \
 	--exclude 'README.md' \
-	--exclude 'WPORG-REVIEW-FINDINGS.md' \
+	--exclude 'WPORG-REVIEW-*.md' \
 	--exclude 'package.json' \
 	--exclude 'package-lock.json' \
 	--exclude 'scripts/' \

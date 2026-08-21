@@ -33,7 +33,7 @@
 # Docs (keep readme.txt only)
 /docs
 /README.md
-/WPORG-REVIEW-FINDINGS.md
+/WPORG-REVIEW-*.md
 /CONTRIBUTING.md
 /CHANGELOG.md
 /CREDITS.md
