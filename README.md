@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.60
+**Version:** 1.1.61
 **Release Date:** 2026-08-21
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.60 Highlights:** Restricted-user flagging & unblocking — persistent, reviewable restriction records with one-click lift (Token Manager "Restricted Users" panel + Pro Command Center Restrictions tab), REST/AJAX/WP-CLI operations, IETF rate-limit headers, and filterable chat rate limits. Conversation import to the transcript CCT (Full, JetEngine) — ChatGPT, Gemini Takeout, Claude, ShareGPT, and OpenAI JSONL exports with four new tools. Fixes: tool schemas normalized before provider payloads (prevents provider streaming errors), WP_Error fatals in the memory/REST paths, and `nvoos-content-graph` v1.0.3 (wp.org resubmission).
+**🆕 v1.1.61 Highlights:** Agent identity bridging in the memory stack — virtual agent keys (SPA drawers, virtual planners) now resolve to the canonical assistant ID when storing agent context, and recall merges every alias bucket with a stored-under stamp, so the memory drawers finally show everything an agent remembers (plus new scope chips, an agent-ID diagnostic, a show-all-scopes toggle, and store-triggered refresh). OKF tools work out of the box — the skill-knowledge bundle is now auto-generated from bundled skills. Fixes: undici pinned to ^7.29.0 (jsdom/vitest compatibility across seven addons, CVE fixes retained) and content-graph CI checksum drift; nvoos-content-graph ships its wp.org review reply + detailed report.
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -149,6 +149,13 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.61)
+
+- 🧠 **Agent Identity Bridging in Memory Store & Recall.** New `WP_MCP_AI_Agent_Identity_Resolver` (`includes/services/`) resolves virtual agent keys (e.g. `nvoos-pro-spa-memory-drawer`, `virtual_planner_1`) to the canonical assistant post ID when storing agent context; chat-memory recall merges every alias bucket with per-record `stored_under` stamps. Memory drawers (base, chat-spa, pro-spa) show wing/room/stored-under chips, an agent-ID diagnostic, a show-all-scopes toggle, and refresh automatically on store events; graph-bridge and scoped-recall failures degrade gracefully. See [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md).
+- 📚 **OKF Skill-Knowledge Bundle Generator.** The `skill-knowledge` OKF bundle is now auto-generated from bundled skills on bootstrap (and refreshed after bundled-skill reinstall) — `okf_search` and the other OKF tools work out of the box instead of failing with "OKF bundle not found: skill-knowledge". (PR #5911)
+- 🔧 **undici ^7.29.0 jsdom Compatibility.** The undici override is pinned to 7.29.0 — jsdom 29.1.1 breaks on undici 8, which had vitest suites failing in seven addons; all CVE fixes are retained. (PR #5910)
+- 📦 **nvoos-content-graph wp.org Review Reply & Report** shipped and excluded from distribution ZIPs; content-graph CI checksum sync fixed. (PRs #5912, #5906)
 
 ### ✨ What's New at a Glance (v1.1.60)
 
@@ -673,6 +680,17 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.61 — August 2026)
+
+### August 21, 2026 — Agent Identity Bridging, OKF Bundle Generator, undici Pin
+
+- ✅ **Agent Identity Bridging in Memory Store & Recall (29 files, +1,416/-165 lines).** New `WP_MCP_AI_Agent_Identity_Resolver` (`includes/services/class-wp-mcp-ai-agent-identity-resolver.php`) canonicalises virtual agent keys (SPA drawer aliases, `virtual_planner_*`) to the canonical assistant post ID; the alias map (`wp_mcp_ai_agent_id_aliases`) is bounded (200), never autoloaded, and sanitised. `store_agent_context` resolves on store and echoes `original_agent_id` / `agent_id_resolved`; REST chat-memory recall merges alias buckets (`stored_under` per record, `merged_sources`, default limit 25); wing/room-scoped recall keeps single-bucket semantics. Drawers (base, chat-spa, pro-spa) show wing/room/stored-under chips, an agent-ID diagnostic, a show-all-scopes toggle, and store-triggered refresh; `wake_up_context` graph failures fall back to the transient path and scoped wake-up/recall errors retry unscoped. New tests: `tests/test-agent-identity-resolver.php`, memory-drawer JS/SPA additions. Reference: [`docs/features/memory/chat-client-integration.md`](docs/features/memory/chat-client-integration.md).
+- ✅ **OKF Skill-Knowledge Bundle Generator — PR #5911 (6 files, +817/-1 lines).** `WP_MCP_AI_OKF_Skill_Knowledge_Generator` generates the `skill-knowledge` bundle from `includes/bundled-skills/` on bootstrap (priority 32) when missing or when the plugin version changed, and regenerates after admin bundled-skill reinstall — every `okf_*` tool now works out of the box instead of failing with "OKF bundle not found: skill-knowledge". Reference: [`docs/features/okf-integration.md`](docs/features/okf-integration.md).
+- ✅ **undici ^7.29.0 jsdom Compatibility — PR #5910 (14 files).** jsdom 29.1.1 deep-requires `lib/handler/wrap-handler.js` (removed in undici 8), breaking vitest in seven addons; the override is pinned to ^7.29.0 — newest 7.x, all CVE fixes retained.
+- ✅ **nvoos-content-graph wp.org Review Reply & Report — PR #5912 (5 files, +260/-3 lines).** `WPORG-REVIEW-REPLY.md` + `WPORG-REVIEW-DETAILED-REPORT.md`; `WPORG-REVIEW-*.md` excluded from distribution ZIPs.
+- ✅ **Content Graph CI ZIP Checksum Sync — PR #5906 (2 files).** Build jobs upload and commit the matching `${ARTIFACT}.zip.sha256` (previously `${ARTIFACT}.sha256`), ending checksum drift for CI-rebuilt ZIPs.
+- 📦 **Versioning** — bumped to **1.1.61** across all version-bearing files. Pro addon: 1.1.61. Media Worker: **v3.2.0** (unchanged). Tool count: ~300 base + ~1,247 Pro (~1,547 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
 
 ## 🆕 Latest Updates (v1.1.60 — August 2026)
 
