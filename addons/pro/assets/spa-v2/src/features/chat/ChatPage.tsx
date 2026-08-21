@@ -29,6 +29,7 @@ import { AgentPanel } from './AgentPanel';
 import { MemoryDrawer, type MemoryTab } from '../../components/shared/MemoryDrawer';
 import { HitlApprovalBar } from '../../components/shared/HitlApprovalBar';
 import { ToolShortcutsDrawer } from './ToolShortcutsDrawer';
+import { OkfDrawer } from '../../components/shared/OkfDrawer';
 import { SlashCommandsDrawer } from './SlashCommandsDrawer';
 import { KeyboardShortcutsHelp } from '../../components/shared/KeyboardShortcutsHelp';
 import { SuggestedPrompts } from '../../components/shared/SuggestedPrompts';
@@ -323,13 +324,18 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const [ tasksOpen, setTasksOpen ] = useState< boolean >( false );
 	const tasksToggleRef = useRef< HTMLButtonElement | null >( null );
 
+	// ---- Skills & OKF knowledge drawer (v2.1.1) ----
+	const [ okfOpen, setOkfOpen ] = useState< boolean >( false );
+	const okfToggleRef = useRef< HTMLButtonElement | null >( null );
+
 	// Shared callback: close one drawer when another opens.
 	const openDrawer = useCallback(
-		( which: 'memory' | 'tools' | 'commands' | 'tasks' ) => {
+		( which: 'memory' | 'tools' | 'commands' | 'tasks' | 'okf' ) => {
 			setMemoryOpen( which === 'memory' );
 			setToolsOpen( which === 'tools' );
 			setCommandsOpen( which === 'commands' );
 			setTasksOpen( which === 'tasks' );
+			setOkfOpen( which === 'okf' );
 		},
 		[]
 	);
@@ -387,6 +393,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const hasApprovals = typeof endpoints?.approvals === 'string' && endpoints.approvals.length > 0;
 	const hasShortcuts = typeof endpoints?.shortcuts === 'string' && endpoints.shortcuts.length > 0;
 	const hasSlashCommands = typeof endpoints?.slashCommands === 'string' && endpoints.slashCommands.length > 0;
+	const hasOkf = typeof endpoints?.okf === 'string' && endpoints.okf.length > 0;
 
 	// ── Console: Slash Commands (v2.1.1 — mirrors legacy slash-commands.js) ───
 	useEffect( () => {
@@ -615,6 +622,19 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 												<span className="nvoos-pro-spa-tasks-badge nvoos-pro-spa-tasks-badge--error">!</span>
 											) }
 										</button>
+										{/* Skills & OKF knowledge drawer toggle (v2.1.1) */}
+										{ hasOkf && (
+											<button
+												type="button"
+												ref={ okfToggleRef }
+												className="nvoos-pro-spa-chat-page__okf-btn nvoos-pro-spa-btn"
+												onClick={ () => openDrawer( 'okf' ) }
+												aria-label={ __( 'Toggle skills & knowledge drawer', 'nvoos-pro-spa' ) }
+												aria-expanded={ okfOpen }
+											>
+												{ __( 'Skills', 'nvoos-pro-spa' ) }
+											</button>
+										) }
 										{/* Theme toggle (v0.9.0) */}
 										<button type="button" className="nvoos-pro-spa-btn"
 											onClick={ () => setTheme( theme === 'dark' ? 'light' : 'dark' ) }
@@ -741,6 +761,25 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				onDismissJob={ jobBus.dismissJob }
 				onDismissAll={ jobBus.dismissAllTerminal }
 			/>
+
+			{/* Skills & OKF knowledge drawer (v2.1.1) */}
+			{ hasOkf && (
+				<OkfDrawer
+					endpoint={ endpoints!.okf }
+					nonce={ nonce }
+					assistantId={ assistantId }
+					isOpen={ okfOpen }
+					onClose={ () => setOkfOpen( false ) }
+					onInsertPrompt={ ( prompt, autoSubmit ) => {
+						if ( autoSubmit ) {
+							sendMessage( prompt );
+						} else {
+							handleInputChange( prompt );
+						}
+					} }
+					toggleRef={ okfToggleRef }
+				/>
+			) }
 
 		{/* Keyboard shortcuts help modal (v0.9.0) */}
 		<KeyboardShortcutsHelp isOpen={ ks.isHelpOpen } onClose={ ks.closeHelp } />

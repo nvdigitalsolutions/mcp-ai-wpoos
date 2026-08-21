@@ -108,6 +108,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $admin_conversation_import;
 
 		/**
+		 * Admin OKF bundle manager page instance.
+		 *
+		 * @var WP_MCP_AI_OKF_Bundle_Manager_Admin_Page
+		 */
+		public $admin_okf_bundle_manager;
+
+		/**
 		 * Resource manager instance.
 		 *
 		 * @var WP_MCP_AI_Resource_Manager
