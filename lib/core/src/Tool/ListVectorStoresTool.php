@@ -104,7 +104,6 @@ class ListVectorStoresTool extends AbstractTool {
 				$url,
 				array(
 					'Authorization' => "Bearer {$apiKey}",
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 			);
 

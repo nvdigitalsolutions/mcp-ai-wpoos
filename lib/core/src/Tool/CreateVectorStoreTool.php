@@ -113,7 +113,6 @@ class CreateVectorStoreTool extends AbstractTool {
 				array(
 					'Authorization' => "Bearer {$apiKey}",
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				\json_encode( $body ),
 			);

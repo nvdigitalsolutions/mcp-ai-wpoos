@@ -5840,8 +5840,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ) );
 			}
 
-			$request_headers                = $this->build_request_headers( $api_key );
-			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+			$request_headers = $this->build_request_headers( $api_key );
 
 			$request_args = array(
 				'headers' => $request_headers,
@@ -5935,8 +5934,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$endpoint .= '?' . http_build_query( $query_params );
 			}
 
-			$request_headers                = $this->build_request_headers( $api_key );
-			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+			$request_headers = $this->build_request_headers( $api_key );
 
 			$request_args = array(
 				'headers' => $request_headers,
@@ -6002,8 +6000,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id );
 
-			$request_headers                = $this->build_request_headers( $api_key );
-			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+			$request_headers = $this->build_request_headers( $api_key );
 
 			$request_args = array(
 				'headers' => $request_headers,
@@ -6069,8 +6066,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id );
 
-			$request_headers                = $this->build_request_headers( $api_key );
-			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+			$request_headers = $this->build_request_headers( $api_key );
 
 			$request_args = array(
 				'headers' => $request_headers,
@@ -6103,11 +6099,21 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		/**
 		 * Add files to a vector store.
 		 *
+		 * Uses the Responses API file_batches endpoint (one call for all file IDs,
+		 * no beta header). Falls back to headerless single-file adds when the
+		 * batch endpoint is unavailable (404).
+		 *
 		 * @param string $vector_store_id Vector store ID.
 		 * @param array  $file_ids Array of file IDs to add.
-		 * @return array|WP_Error Operation result or error.
+		 * @param array  $options Optional parameters:
+		 *                        - poll: Whether to wait for the batch to finish. Default true.
+		 *                        - poll_max_seconds: Max seconds to poll. Default 10 (1-60).
+		 *                        - chunking_strategy: Chunking strategy applied to the batch.
+		 *                        - attributes: File attributes applied to the batch.
+		 *                        - timeout: Request timeout in seconds.
+		 * @return array|WP_Error Normalized result: batch_id, status, file_counts, results.
 		 */
-		public function add_vector_store_files( $vector_store_id, array $file_ids ) {
+		public function add_vector_store_files( $vector_store_id, array $file_ids, array $options = array() ) {
 			$api_key = $this->get_api_key();
 
 			if ( empty( $api_key ) ) {
@@ -6132,7 +6138,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			if ( empty( $file_ids ) || ! is_array( $file_ids ) ) {
+			$file_ids = array_map( 'sanitize_text_field', $file_ids );
+			$file_ids = array_values( array_filter( $file_ids ) );
+
+			if ( empty( $file_ids ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_file_ids',
 					__( 'File IDs are required.', 'mcp-ai-wpoos' ),
@@ -6141,32 +6150,171 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files' );
+			$batch = $this->create_vector_store_file_batch( $vector_store_id, $file_ids, $options );
 
-			$payload = array(
-				'file_id' => sanitize_text_field( $file_ids[0] ), // OpenAI API accepts one file at a time.
+			if ( is_wp_error( $batch ) ) {
+				$error_data = $batch->get_error_data();
+				$http_code  = is_array( $error_data ) && isset( $error_data['status'] ) ? (int) $error_data['status'] : 0;
+
+				// Only fall back when the batch endpoint itself is missing; real
+				// API errors (invalid files, auth, rate limits) must surface.
+				if ( 404 === $http_code ) {
+					return $this->add_vector_store_files_individually( $vector_store_id, $file_ids, $timeout );
+				}
+
+				return $batch;
+			}
+
+			$batch_id = isset( $batch['id'] ) ? sanitize_text_field( $batch['id'] ) : '';
+
+			// Optionally wait for the batch to reach a terminal state.
+			$should_poll = ! array_key_exists( 'poll', $options ) || (bool) $options['poll'];
+			if ( $should_poll && '' !== $batch_id && isset( $batch['status'] ) ) {
+				$batch = $this->poll_vector_store_file_batch( $vector_store_id, $batch_id, $batch, $options );
+			}
+
+			$status = isset( $batch['status'] ) ? sanitize_key( $batch['status'] ) : 'in_progress';
+
+			// Map batch status onto per-file results for the tool contract.
+			$results  = array();
+			$statuses = array();
+
+			if ( in_array( $status, array( 'completed', 'failed', 'cancelled' ), true ) && '' !== $batch_id ) {
+				$per_file = $this->list_vector_store_file_batch_files( $vector_store_id, $batch_id, array( 'limit' => 100 ) );
+
+				if ( ! is_wp_error( $per_file ) && isset( $per_file['data'] ) && is_array( $per_file['data'] ) ) {
+					foreach ( $per_file['data'] as $item ) {
+						if ( isset( $item['id'], $item['status'] ) ) {
+							$statuses[ sanitize_text_field( $item['id'] ) ] = sanitize_key( $item['status'] );
+						}
+					}
+				}
+			}
+
+			foreach ( $file_ids as $file_id ) {
+				if ( isset( $statuses[ $file_id ] ) ) {
+					$file_status = $statuses[ $file_id ];
+				} elseif ( in_array( $status, array( 'completed', 'failed', 'cancelled' ), true ) ) {
+					$file_status = 'completed' === $status ? 'completed' : 'failed';
+				} else {
+					$file_status = 'in_progress';
+				}
+
+				$results[] = array(
+					'file_id' => $file_id,
+					'status'  => $file_status,
+				);
+			}
+
+			return array(
+				'batch_id'    => $batch_id,
+				'id'          => $batch_id,
+				'object'      => isset( $batch['object'] ) ? sanitize_text_field( $batch['object'] ) : 'vector_store.files_batch',
+				'status'      => $status,
+				'file_counts' => isset( $batch['file_counts'] ) ? $batch['file_counts'] : array(),
+				'results'     => $results,
 			);
+		}
+
+		/**
+		 * Create a vector store file batch (Responses API file ingestion).
+		 *
+		 * One call attaches up to 2000 files to a vector store. No beta header
+		 * is required — this is the Responses API surface, not the deprecated
+		 * Assistants API.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param array  $file_ids Array of file IDs (max 2000).
+		 * @param array  $options Optional parameters (chunking_strategy, attributes, timeout).
+		 * @return array|WP_Error Decoded batch object or error.
+		 */
+		public function create_vector_store_file_batch( $vector_store_id, array $file_ids, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$file_ids = array_map( 'sanitize_text_field', $file_ids );
+			$file_ids = array_values( array_filter( $file_ids ) );
+
+			if ( empty( $file_ids ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_file_ids',
+					__( 'File IDs are required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( count( $file_ids ) > 2000 ) {
+				return new WP_Error(
+					'wp_mcp_ai_too_many_file_ids',
+					__( 'A file batch accepts at most 2000 files.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$payload = array( 'file_ids' => $file_ids );
+
+			if ( ! empty( $options['chunking_strategy'] ) && is_array( $options['chunking_strategy'] ) ) {
+				$payload['chunking_strategy'] = $options['chunking_strategy'];
+			}
+
+			if ( ! empty( $options['attributes'] ) && is_array( $options['attributes'] ) ) {
+				$payload['attributes'] = $options['attributes'];
+			}
 
 			$encoded_payload = wp_json_encode( $payload );
 			if ( false === $encoded_payload ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ) );
 			}
 
-			$request_headers                = $this->build_request_headers( $api_key );
-			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/file_batches' );
 
 			$request_args = array(
-				'headers' => $request_headers,
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 				'body'    => $encoded_payload,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_vector_store_file_batch_create',
+				'Creating vector store file batch.',
+				array(
+					'vector_store_id' => $vector_store_id,
+					'file_count'      => count( $file_ids ),
+				)
 			);
 
 			$response = wp_remote_post( $endpoint, $request_args );
 
 			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'openai_vector_store_file_batch_create_error', 'Vector store file batch creation failed.', array( 'error' => $response->get_error_message() ) );
 				return $response;
 			}
 
@@ -6175,7 +6323,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI add vector store files request failed.', 'mcp-ai-wpoos' );
+				$error_message = __( 'OpenAI vector store file batch creation failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -6187,10 +6335,264 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * Retrieve a vector store file batch.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param string $batch_id File batch ID.
+		 * @return array|WP_Error Decoded batch object or error.
+		 */
+		public function retrieve_vector_store_file_batch( $vector_store_id, $batch_id ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			$batch_id        = sanitize_text_field( $batch_id );
+
+			if ( empty( $vector_store_id ) || empty( $batch_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'Vector store ID and batch ID are required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/file_batches/' . $batch_id );
+
+			$request_args = array(
+				'headers' => $this->build_request_headers( $api_key ),
+				'timeout' => $timeout,
+			);
+
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI retrieve vector store file batch request failed.', 'mcp-ai-wpoos' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * List files belonging to a vector store file batch.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param string $batch_id File batch ID.
+		 * @param array  $options Optional parameters (limit, order, after, before).
+		 * @return array|WP_Error Files list or error.
+		 */
+		public function list_vector_store_file_batch_files( $vector_store_id, $batch_id, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			$batch_id        = sanitize_text_field( $batch_id );
+
+			if ( empty( $vector_store_id ) || empty( $batch_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'Vector store ID and batch ID are required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$query_params = array();
+
+			if ( isset( $options['limit'] ) ) {
+				$query_params['limit'] = absint( $options['limit'] );
+			}
+
+			if ( isset( $options['order'] ) ) {
+				$query_params['order'] = sanitize_key( $options['order'] );
+			}
+
+			if ( isset( $options['after'] ) ) {
+				$query_params['after'] = sanitize_text_field( $options['after'] );
+			}
+
+			if ( isset( $options['before'] ) ) {
+				$query_params['before'] = sanitize_text_field( $options['before'] );
+			}
+
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/file_batches/' . $batch_id . '/files' );
+			if ( ! empty( $query_params ) ) {
+				$endpoint .= '?' . http_build_query( $query_params );
+			}
+
+			$request_args = array(
+				'headers' => $this->build_request_headers( $api_key ),
+				'timeout' => $timeout,
+			);
+
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI list vector store file batch files request failed.', 'mcp-ai-wpoos' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Poll a vector store file batch until it reaches a terminal state or
+		 * the configured time cap expires.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param string $batch_id File batch ID.
+		 * @param array  $batch Decoded batch object from the creation call.
+		 * @param array  $options Optional parameters (poll_max_seconds).
+		 * @return array Decoded batch object (possibly still in_progress at the cap).
+		 */
+		private function poll_vector_store_file_batch( $vector_store_id, $batch_id, array $batch, array $options ) {
+			$poll_max_seconds = isset( $options['poll_max_seconds'] ) ? max( 1, min( 60, absint( $options['poll_max_seconds'] ) ) ) : 10;
+
+			/**
+			 * Filter the max number of seconds to wait for a vector store file
+			 * batch to reach a terminal state.
+			 *
+			 * @param int $poll_max_seconds Poll cap in seconds (1-60).
+			 */
+			$poll_max_seconds = apply_filters( 'wp_mcp_ai_vector_store_batch_poll_max_seconds', $poll_max_seconds );
+
+			$status = isset( $batch['status'] ) ? $batch['status'] : 'in_progress';
+			$start  = microtime( true );
+
+			while ( 'in_progress' === $status && ( microtime( true ) - $start ) < $poll_max_seconds ) {
+				usleep( 500000 );
+
+				$fetched = $this->retrieve_vector_store_file_batch( $vector_store_id, $batch_id );
+
+				if ( ! is_wp_error( $fetched ) && is_array( $fetched ) ) {
+					$batch  = $fetched;
+					$status = isset( $fetched['status'] ) ? $fetched['status'] : $status;
+				}
+			}
+
+			return $batch;
+		}
+
+		/**
+		 * Headerless single-file adds — fallback for gateways without file_batches.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param array  $file_ids Array of file IDs to add.
+		 * @param int    $timeout Request timeout in seconds.
+		 * @return array Normalized result: status, results, errors.
+		 */
+		private function add_vector_store_files_individually( $vector_store_id, array $file_ids, $timeout ) {
+			$api_key = $this->get_api_key();
+			$results = array();
+			$errors  = array();
+
+			foreach ( $file_ids as $file_id ) {
+				$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files' );
+
+				$payload         = array( 'file_id' => $file_id );
+				$encoded_payload = wp_json_encode( $payload );
+				if ( false === $encoded_payload ) {
+					$errors[] = array(
+						'file_id' => $file_id,
+						'error'   => __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ),
+					);
+					continue;
+				}
+
+				$request_args = array(
+					'headers' => $this->build_request_headers( $api_key ),
+					'timeout' => $timeout,
+					'body'    => $encoded_payload,
+				);
+
+				$response = wp_remote_post( $endpoint, $request_args );
+
+				if ( is_wp_error( $response ) ) {
+					$errors[] = array(
+						'file_id' => $file_id,
+						'error'   => $response->get_error_message(),
+					);
+					continue;
+				}
+
+				$http_code = wp_remote_retrieve_response_code( $response );
+				$decoded   = json_decode( wp_remote_retrieve_body( $response ), true );
+
+				if ( 200 !== $http_code ) {
+					$error_message = __( 'OpenAI add vector store files request failed.', 'mcp-ai-wpoos' );
+					if ( isset( $decoded['error']['message'] ) ) {
+						$error_message = sanitize_text_field( $decoded['error']['message'] );
+					}
+					$errors[] = array(
+						'file_id' => $file_id,
+						'error'   => $error_message,
+					);
+					continue;
+				}
+
+				$results[] = array(
+					'file_id' => $file_id,
+					'status'  => isset( $decoded['status'] ) ? sanitize_key( $decoded['status'] ) : 'added',
+				);
+			}
+
+			return array(
+				'status'  => empty( $errors ) ? 'completed' : 'failed',
+				'results' => $results,
+				'errors'  => $errors,
+			);
+		}
+
+		/**
 		 * List files in a vector store.
 		 *
 		 * @param string $vector_store_id Vector store ID.
-		 * @param array  $options Optional parameters (limit, order, after, before).
+		 * @param array  $options Optional parameters (limit, order, after, before, filter).
 		 * @return array|WP_Error Files list or error.
 		 */
 		public function list_vector_store_files( $vector_store_id, array $options = array() ) {
@@ -6240,13 +6642,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$query_params['before'] = sanitize_text_field( $options['before'] );
 			}
 
+			// Optional status filter (Responses API): in_progress, completed, failed, cancelled.
+			if ( isset( $options['filter'] ) && in_array( $options['filter'], array( 'in_progress', 'completed', 'failed', 'cancelled' ), true ) ) {
+				$query_params['filter'] = sanitize_key( $options['filter'] );
+			}
+
 			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files' );
 			if ( ! empty( $query_params ) ) {
 				$endpoint .= '?' . http_build_query( $query_params );
 			}
 
-			$request_headers                = $this->build_request_headers( $api_key );
-			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+			$request_headers = $this->build_request_headers( $api_key );
 
 			$request_args = array(
 				'headers' => $request_headers,
@@ -6315,8 +6721,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files/' . $file_id );
 
-			$request_headers                = $this->build_request_headers( $api_key );
-			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+			$request_headers = $this->build_request_headers( $api_key );
 
 			$request_args = array(
 				'headers' => $request_headers,
@@ -6357,6 +6762,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @param array  $options         Optional parameters:
 		 *                                - max_num_results (int, 1-50): Maximum results to return. Default 10.
 		 *                                - filters (array): Attribute filters to narrow results.
+		 *                                  Note: under the Responses API these are *attribute*
+		 *                                  filters (ComparisonFilter/CompoundFilter), not the
+		 *                                  deprecated Assistants metadata filters.
+		 *                                - ranking_options (array): ranker and score_threshold.
 		 * @return array|WP_Error Search results array or WP_Error on failure.
 		 *                        Success structure:
 		 *                        - data: array of result objects, each with file_id, filename, score, content
@@ -6415,10 +6824,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$body['filters'] = $options['filters'];
 			}
 
+			if ( ! empty( $options['ranking_options'] ) && is_array( $options['ranking_options'] ) ) {
+				$body['ranking_options'] = $options['ranking_options'];
+			}
+
 			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/search' );
 
-			$request_headers                = $this->build_request_headers( $api_key );
-			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+			$request_headers = $this->build_request_headers( $api_key );
 
 			$request_args = array(
 				'headers' => $request_headers,

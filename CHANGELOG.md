@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed — Vector store tools migrate off the Assistants API (Responses API)
+
+- All vector store operations (`create_vector_store`, `list_vector_stores`, `get_vector_store`, `manage_vector_store_files` in both `WP_MCP_AI_OpenAI_Client` and the `lib/core` engine tools) no longer send the deprecated `OpenAI-Beta: assistants=v2` header; OpenAI removes the Assistants API on 2026-08-26.
+- `add_vector_store_files()` and `ManageVectorStoreFilesTool` now ingest files via the Responses API `file_batches` endpoint (one call, up to 2000 files) with bounded status polling (`wp_mcp_ai_vector_store_batch_poll_max_seconds` filter, default 10 s) and a headerless single-file fallback when batches are unavailable (404).
+- New client methods: `create_vector_store_file_batch()`, `retrieve_vector_store_file_batch()`, `list_vector_store_file_batch_files()`. `list_vector_store_files()` gains a `filter` status param; `search_vector_store()` gains `ranking_options` (filters are now attribute-based under the Responses API).
+- Fixed `WP_MCP_AI_HTTP_Test_Helper` unsetting `$args` before callable stubs could receive them.
+- Tests: `tests/test-openai-vector-store-client-migration.php` (12 tests) plus expanded `lib/core` `BatchTwoCToolsTest`.
+
 ### Added — OKF Phases G-H: Enrichment Agent & Hybrid Router (Pro, roadmap Phases 7-8)
 
 - New Pro `WP_MCP_AI_OKF_Enrichment_Agent` crawls published WordPress content (any public post type, optionally public taxonomy terms) and generates OKF concepts into a bundle (default `site-content`, created on first run) — post-type-namespaced concept IDs (`post/<slug>`, `page/<slug>`, `terms/<taxonomy>/<slug>`), the Phase C provenance schema, cross-links extracted from internal `<a>` links, regenerated indexes. Deterministic and idempotent (re-runs overwrite the same files; no bundled LLM); `wp_mcp_ai_okf_enrichment_description` filter upgrades the excerpt to an AI summary. Protected bundles are always refused.

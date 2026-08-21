@@ -82,7 +82,6 @@ class GetVectorStoreTool extends AbstractTool {
 				"https://api.openai.com/v1/vector_stores/{$storeId}",
 				array(
 					'Authorization' => "Bearer {$apiKey}",
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 			);
 
