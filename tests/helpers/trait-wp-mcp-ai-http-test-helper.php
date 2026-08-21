@@ -338,7 +338,7 @@ trait WP_MCP_AI_HTTP_Test_Helper {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	public function filter_pre_http_request( $preempt, $args, $url ) {
-		unset( $preempt, $args );
+		unset( $preempt );
 
 		++$this->__http_request_count;
 		$this->__http_request_urls[] = $url;
