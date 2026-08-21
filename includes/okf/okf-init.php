@@ -23,6 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once __DIR__ . '/class-wp-mcp-ai-okf-parser.php';
 require_once __DIR__ . '/class-wp-mcp-ai-okf-reader.php';
 require_once __DIR__ . '/class-wp-mcp-ai-okf-writer.php';
+require_once __DIR__ . '/class-wp-mcp-ai-okf-skill-knowledge-generator.php';
 
 // Load tool classes.
 require_once WP_MCP_AI_PATH . 'includes/tools/okf/class-wp-mcp-ai-tool-okf-read-concept.php';
@@ -38,6 +39,10 @@ require_once WP_MCP_AI_PATH . 'includes/tools/okf/class-wp-mcp-ai-tool-okf-valid
  *
  * Hooked at priority 32 — after Paper Store at priority 30.
  */
+// Auto-generate the skill-knowledge bundle from bundled skills so the OKF
+// tools work out of the box. Hooks the same action at priority 32.
+WP_MCP_AI_OKF_Skill_Knowledge_Generator::init();
+
 add_action(
 	'wp_mcp_ai_bootstrapped',
 	function () {
