@@ -104,6 +104,12 @@
 | **Analytics page (real)** | **P2** | Replace placeholder with actual charts (API usage, token counts, costs) |
 | **Workflows page (real)** | **P2** | Visual workflow builder |
 
+### ✨ Post-migration additions
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Skills & OKF Knowledge Drawer** | ✅ **DONE** | `OkfDrawer.tsx` (Knowledge/Skills tabs, trust badges, cross-bundle search, cross-link drill-down) + `api/okf.ts` backed by `WP_MCP_AI_Pro_REST_Okf` (`mcp-ai-pro/v1/okf`). 18 tests in `__tests__/okf.test.tsx`. |
+
 ---
 
 ## 2. Immediate Next Steps (Concrete Tasks)

@@ -606,6 +606,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_okf',
+				'OKF Skills & Knowledge REST',
+				array(),
+				array(),
+				function () use ( $p ) {
+					$f = $p . 'rest/class-wp-mcp-ai-pro-rest-okf.php';
+					if ( file_exists( $f ) ) {
+						require_once $f;
+						add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_REST_Okf', 'register_routes' ) );
+					}
+				}
+			);
+
+			$this->add_module(
 				'spa_loader',
 				'SPA Loader',
 				array(),

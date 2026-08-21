@@ -219,6 +219,9 @@ class WP_MCP_AI_Pro_SPA_Loader {
 					: '',
 				'shortcuts'     => esc_url_raw( rest_url( 'mcp-ai-pro/v1/tool-shortcuts' ) ),
 				'slashCommands' => esc_url_raw( rest_url( 'mcp-ai-pro/v1/slash-commands' ) ),
+				'okf'           => class_exists( 'WP_MCP_AI_OKF_Bundle_Manager' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/okf' ) )
+					: '',
 			),
 			'user'         => array(
 				'id'           => $user_id,
