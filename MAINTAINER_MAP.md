@@ -66,7 +66,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
   ├─ Load npm-integration-filters.php   (Node.js microservice bridges)
   ├─ Load Pro CDN loader, CPT meta schema, product type helper,
   │   remote connection manager, ERP connector
-  ├─ Register Pro tool classes (~1,247 Pro tools via pro.php class-loader)
+  ├─ Register Pro tool classes (~1,249 Pro tools via pro.php class-loader)
   └─ do_action('wp_mcp_ai_pro_init')
 ```
 
@@ -74,7 +74,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
 
 | Constant | Default | Effect |
 |---|---|---|
-| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~300 tool classes); `false` = full mode (~1,547 tools: ~300 base + ~1,247 Pro) |
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~303 tool classes); `false` = full mode (~1,552 tools: ~303 base + ~1,249 Pro) |
 | `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks |
 | `WP_MCP_AI_PRO_VERSION` | set by Pro | Prevents double-loading of Pro addon |
 | `WP_DEBUG` | WordPress default | Enables extra error logging throughout |

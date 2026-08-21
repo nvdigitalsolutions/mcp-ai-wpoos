@@ -35,7 +35,7 @@ The repo is a **monorepo** containing:
 | Is it safe to run on production? | The base plugin passes all WP.org guidelines. The April 2026 security audit found 0 Critical, 5 High (3 Fixed, 2 Partially Fixed — both in addons). May–June 2026 hardening resolved 1 Critical + 5 Warnings. July–August 2026 Phase 3 hardening added 10 security classes, CORS posture, error-verbosity control, auth brute-force detection, and asset-fingerprinting prevention. See [Security Posture](../operations/security/SECURITY_POSTURE.md). |
 | What PHP version is required? | **Base: 7.4+** · **Pro addon: 8.1+** (due to npm packages like sharp/fluent-ffmpeg) · **lib/core: 8.1+** |
 | What WP version? | 6.0+, tested up to 6.10 |
-| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,247 advanced tools (commercial license). Base never gates features behind a license check. |
+| Is there a Pro/freemium model? | Yes. Base is fully functional GPLv3. Pro addon adds ~1,249 advanced tools (commercial license). Base never gates features behind a license check. |
 | Was it rejected from WordPress.org? | Yes — the 90-day window expired before all fixes were completed. All rejection reasons are now resolved. See [Compliance Traceability](../operations/compliance/TRACEABILITY.md). |
 | Can it be resubmitted to .org? | Possibly, but the window has closed. The author is seeking professional review before deciding next steps. |
 
