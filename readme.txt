@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.61
+Stable tag: 1.1.62
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -299,9 +299,9 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
-= 1.1.62 - Unreleased =
+= 1.1.62 - August 22, 2026 =
 
-OKF bundle management (Base): new WP_MCP_AI_OKF_Bundle_Manager gives OKF knowledge bundles a full lifecycle (create, list, rename, archive, delete, ZipSlip-safe ZIP import/export, health stats) with the auto-generated skill-knowledge bundle protected from writes; three new tools (okf_list_bundles, okf_validate_bundle, okf_import_bundle) and the extended okf_write_concept provenance schema (resource/sources/usage_window/verified) bring the OKF tool surface to 10; a new OKF Bundle Manager admin screen (Bundles/Browser/Editor/Import-Export/Validate) mirrors the Skill Manager UX. Pro: OKF-to-Skill Bridge resolves load_skill bundle:concept_id names with per-assistant grants and trust gating; the auto-enrichment agent generates OKF concepts from published site content (deterministic/idempotent, okf_enrich_site_content tool); the hybrid knowledge router (route_knowledge_query) classifies queries across OKF/vector/Paper stores. Tool count: ~303 base + ~1,249 Pro (~1,552 total; live registry authoritative).
+OKF bundle management (Base): new WP_MCP_AI_OKF_Bundle_Manager gives OKF knowledge bundles a full lifecycle (create, list, rename, archive, delete, ZipSlip-safe ZIP import/export, health stats) with the auto-generated skill-knowledge bundle protected from writes; three new tools (okf_list_bundles, okf_validate_bundle, okf_import_bundle) and the extended okf_write_concept provenance schema (resource/sources/usage_window/verified) bring the OKF tool surface to 10; a new OKF Bundle Manager admin screen (Bundles/Browser/Editor/Import-Export/Validate) mirrors the Skill Manager UX. Pro: OKF-to-Skill Bridge resolves load_skill bundle:concept_id names with per-assistant grants and trust gating; the auto-enrichment agent generates OKF concepts from published site content (deterministic/idempotent, okf_enrich_site_content tool); the hybrid knowledge router (route_knowledge_query) classifies queries across OKF/vector/Paper stores; the Pro SPA v2 gains an OKF Skills Drawer backed by a new read-only mcp-ai-pro/v1/okf REST surface (bundles, concept browse/search, assistant skill grants). Vector store tools migrated off the deprecated Assistants API to the Responses API (headerless calls, file_batches ingestion with bounded polling + fallback) ahead of OpenAI's 2026-08-26 Assistants API removal. Fixed: 404 on percent-encoded OKF concept routes (%2F now decoded in the handler). Tool count: ~303 base + ~1,249 Pro (~1,552 total; live registry authoritative).
 
 = 1.1.61 - August 21, 2026 =
 

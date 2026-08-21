@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.61
-**Release Date:** 2026-08-21
+**Version:** 1.1.62
+**Release Date:** 2026-08-22
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.61 Highlights:** Agent identity bridging in the memory stack — virtual agent keys (SPA drawers, virtual planners) now resolve to the canonical assistant ID when storing agent context, and recall merges every alias bucket with a stored-under stamp, so the memory drawers finally show everything an agent remembers (plus new scope chips, an agent-ID diagnostic, a show-all-scopes toggle, and store-triggered refresh). OKF tools work out of the box — the skill-knowledge bundle is now auto-generated from bundled skills. Fixes: undici pinned to ^7.29.0 (jsdom/vitest compatibility across seven addons, CVE fixes retained) and content-graph CI checksum drift; nvoos-content-graph ships its wp.org review reply + detailed report.
+**🆕 v1.1.62 Highlights:** OKF knowledge management goes end-to-end — the new `WP_MCP_AI_OKF_Bundle_Manager` (Base) gives bundles a full lifecycle (create, list, rename, archive, delete, ZipSlip-safe ZIP import/export, health stats) with a new OKF Bundle Manager admin screen and three new tools (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`); Pro adds the OKF-to-Skill Bridge (`load_skill` resolves `bundle:concept_id` with per-assistant grants + trust gating), the auto-enrichment agent, the hybrid knowledge router (`route_knowledge_query`), and an OKF Skills Drawer in the Pro SPA v2 backed by a read-only `mcp-ai-pro/v1/okf` REST surface. Vector store tools migrated off the deprecated Assistants API to the Responses API ahead of OpenAI's 2026-08-26 removal. Fixed: 404s on percent-encoded OKF concept routes.
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -155,6 +155,8 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - 📚 **OKF Bundle Management (Base).** New `WP_MCP_AI_OKF_Bundle_Manager` gives OKF knowledge bundles a full lifecycle — create, list, rename, archive, delete, ZipSlip-safe ZIP import/export, and health statistics — with the auto-generated `skill-knowledge` bundle protected from writes. Three new tools (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`) join the extended `okf_write_concept` provenance schema (`resource`/`sources`/`usage_window`/`verified`), and a new **OKF Bundle Manager** admin screen (Bundles / Browser / Editor / Import-Export / Validate) mirrors the Skill Manager UX. See [`docs/features/okf-integration.md`](docs/features/okf-integration.md).
 - 🔗 **OKF → Skill Bridge (Pro).** `load_skill` now resolves `bundle:concept_id` names into OKF concepts as loadable skills, gated per assistant (grant metabox, fail-closed), lifecycle (drafts rejected), and an optional minimum trust tier.
 - 🤖 **OKF Auto-Enrichment & Hybrid Knowledge Router (Pro).** The enrichment agent crawls published site content (posts, pages, taxonomy terms) into OKF concepts with cross-links — deterministic and idempotent, AI summaries opt-in via filter — while `route_knowledge_query` classifies questions across OKF / vector / Paper stores and performs the OKF lookup when it is the primary route.
+- 🧭 **OKF Skills Drawer in Pro SPA v2 (Pro).** A new read-only `mcp-ai-pro/v1/okf` REST surface (bundles, concept browse/search, assistant skill grants) powers an in-chat OKF drawer: browse bundles and concepts and reference them from the conversation without leaving the chat surface.
+- ⚡ **Vector Store Tools on the Responses API.** OpenAI removes the Assistants API on 2026-08-26 — all vector-store operations now run headerless on the Responses API with `file_batches` ingestion (bounded polling + single-file fallback); `list_vector_store_files` gains `filter`, `search_vector_store` gains `ranking_options`. Fixed: 404s on percent-encoded OKF concept routes (`%2F` now decoded).
 
 ### ✨ What's New at a Glance (v1.1.61)
 
@@ -496,9 +498,9 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/reference/EXTERNAL_SERVICES.md) for all 20 services.  
 
-The plugin works standalone with **~300 base tools** and optionally extends through the **Pro addon**, which adds **~1,247 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging, Composio Connect) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,547 built-in tools** (~300 base + ~1,247 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+The plugin works standalone with **~303 base tools** and optionally extends through the **Pro addon**, which adds **~1,249 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging, Composio Connect) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,552 built-in tools** (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~300 tools) works standalone. The full version requires the Pro addon and provides ~1,547 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, Composio Connect, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~303 tools) works standalone. The full version requires the Pro addon and provides ~1,552 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, Composio Connect, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
 **Addon Ecosystem:** NV oOS ships a growing family of 26 installable addons: **Pro** (`addons/pro/` — ~1,247 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Media Worker** (`addons/media-worker/` — Docker-based Node.js media sidecar, v3.2.0: multi-tenant shared worker mode, per-site provider keys, worker routing with local fallbacks, native `/api/crawl/*` endpoints + Crawl4AI facade), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **Fleet Operator** (`addons/fleet-operator/` — scoped `op_` operator credentials for MCP/A2A supervisor agents like Hermes), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Page Agent** (`addons/page-agent/` — AI-powered browser page control copilot), **Algorave**, **Cornerstone3D**, **Crocoblock DS**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Content Graph** (`plugins/nvoos-content-graph/` — visual knowledge graph), **NVOOS Content Graph AI** (`plugins/nvoos-content-graph-ai/` — AI providers + chat + RAG), **NVOOS Content Graph AI Platform** (`plugins/nvoos-content-graph-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
@@ -565,7 +567,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
 - **15 language-model providers** — OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, Flowhub
-- **~1,547 tool classes** (~300 base + ~1,247 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
+- **~1,552 tool classes** (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **36 REST controllers** (16 base + 20 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
@@ -686,6 +688,16 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.62 — August 2026)
+
+### August 21–22, 2026 — OKF Bundle Management, Pro Skills Drawer, Vector Store Responses API Migration
+
+- ✅ **OKF Bundle Management & Pro Knowledge Routing — PR #5914 (47 files, +8,453/-284 lines).** Ships the full OKF enhancement roadmap (Phases A–H): `WP_MCP_AI_OKF_Bundle_Manager` bundle lifecycle (create, rename, archive, delete, ZipSlip-safe ZIP import/export, health stats) with `skill-knowledge` protected; three new base tools (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`) plus the `okf_write_concept` provenance schema — OKF tool surface now 10 tools; a new Bundle Manager admin screen (Bundles/Browser/Editor/Import-Export/Validate, nonce + capability-gated AJAX); Pro OKF-to-Skill Bridge (`load_skill` resolves `bundle:concept_id` with per-assistant grants + trust gating), auto-enrichment agent (`okf_enrich_site_content`), and hybrid knowledge router (`route_knowledge_query`). 10 new OKF test suites (116 tests) + 3 manual smoke scripts. Reference: [`docs/features/okf-integration.md`](docs/features/okf-integration.md), [`docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md`](docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md).
+- ✅ **OKF Skills Drawer in Pro SPA v2 — PR #5915 (15 files, +3,148/-65 lines).** New read-only `mcp-ai-pro/v1/okf` REST surface (bundle list/stats, concept browse + search, assistant skill grants) wired through the Pro module registry + SPA loader; new `OkfDrawer` component (1,020 lines) lets users browse OKF bundles/concepts and reference them from chat. Also declares `WP_MCP_AI::$admin_okf_bundle_manager` (PHP 8.2 dynamic-property fix).
+- ✅ **Percent-encoded OKF Concept Route Fix — PR #5916 (2 files, +52/-3 lines).** Concept IDs containing `/` arrive as `%2F` and 404'd; the route pattern now allows `%` and the handler `rawurldecode()`s before the reader lookup.
+- ✅ **Vector Store Tools → Responses API — PR #5917 (10 files, +1,222/-73 lines).** OpenAI removes the Assistants API on 2026-08-26: every vector-store call site drops the `OpenAI-Beta: assistants=v2` header, file ingestion moves to `file_batches` with bounded polling (`wp_mcp_ai_vector_store_batch_poll_max_seconds`) and a headerless single-file fallback, and the clients gain `filter` / `ranking_options` support. New migration test suite (12 tests).
+- 📦 **Versioning** — bumped to **1.1.62** across all version-bearing files. Pro addon: 1.1.62. Media Worker: **v3.2.0** (unchanged). Tool count: ~303 base + ~1,249 Pro (~1,552 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
 
 ## 🆕 Latest Updates (v1.1.61 — August 2026)
 
@@ -1707,11 +1719,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all ~1,547 tools (~300 base + ~1,247 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+2. You now have the **complete version** with all ~1,552 tools (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
 
-- ✅ The full codebase — all ~1,543 built-in tools ready to use (~300 base + ~1,243 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- ✅ The full codebase — all ~1,552 built-in tools ready to use (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -1945,7 +1957,7 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,543 tools documented (~300 base + ~1,243 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,552 tools documented (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
