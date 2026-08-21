@@ -1032,6 +1032,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'pro_okf_skill_bridge',
+				'OKF Pro Features',
+				array(),
+				array(),
+				function () use ( $p ) {
+					require_once $p . 'okf/okf-pro-init.php';
+				}
+			);
+
+			$this->add_module(
 				'pro_composio',
 				'Composio Connect',
 				array(),

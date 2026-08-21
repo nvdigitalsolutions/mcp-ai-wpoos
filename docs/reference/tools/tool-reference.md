@@ -1,7 +1,7 @@
 # Built-in tool reference
 
 **Status:** ✅ UPDATED - August 2026
-**Tool Count:** ~300 base tools + ~1,247 Pro tools = ~1,547 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Tool Count:** ~303 base tools + ~1,249 Pro tools = ~1,552 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 **Last Updated:** August 19, 2026
 
 NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
@@ -460,6 +460,25 @@ Each tool automatically inherits the assistant context and authentication detail
 - **List Vector Stores** (`list_vector_stores`) lists all OpenAI vector stores with optional filtering and pagination. Use this to discover available knowledge bases. Requires `read` capability.【F:includes/tools/class-wp-mcp-ai-tool-list-vector-stores.php†L17-L150】
 - **Get Vector Store** (`get_vector_store`) retrieves detailed information about a specific OpenAI vector store including file counts, status, and metadata. When no ID is supplied, uses the assistant's configured vector store.【F:includes/tools/class-wp-mcp-ai-tool-get-vector-store.php†L17-L150】
 - **Manage Vector Store Files** (`manage_vector_store_files`) adds, removes, or lists files in an OpenAI vector store. Manages the knowledge base contents for RAG applications. Best file formats: PDF, TXT, DOCX, MD, JSON, HTML. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-manage-vector-store-files.php†L17-L200】
+
+---
+
+## OKF knowledge bundles (Open Knowledge Format)
+
+Curated, deterministic knowledge in vendor-neutral OKF bundles (markdown concepts with YAML frontmatter, OKF v0.2 trust signals). Bundles live under `wp-content/uploads/mcp-ai-wpoos/knowledge/` and are never served over HTTP. All bundle paths resolve through `WP_MCP_AI_OKF_Bundle_Manager` (strict slug validation, `realpath` containment). The `skill-knowledge` bundle is auto-generated from bundled skills and protected from writes.
+
+- **Read OKF Concept** (`okf_read_concept`) reads a single concept's frontmatter and body from a bundle. Requires `read`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-read-concept.php†L17-L151】
+- **Browse OKF Bundle** (`okf_browse`) lists a bundle directory's entries via its `index.md` (progressive disclosure). Requires `read`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-browse.php†L17-L143】
+- **Traverse OKF Cross-Links** (`okf_traverse`) follows cross-links from a concept up to a configurable depth. Requires `read`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-traverse.php†L17-L123】
+- **Search OKF Concepts** (`okf_search`) searches a bundle by type, tag, trust tier, or full text, with staleness filtering. Requires `read`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-search.php†L17-L169】
+- **List OKF Bundles** (`okf_list_bundles`) lists every bundle with health statistics — concept count, stale/deprecated counts, conformance, issues, types, and a trust-tier histogram. Filesystem paths are deliberately not exposed. Requires `read`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-list-bundles.php†L17-L110】
+- **Validate OKF Attestation** (`okf_validate_attestation`) validates an Attested Computation concept's contract (runtime, parameters, computation, executor, attester). Requires `read`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-validate-attestation.php†L17-L470】
+- **Validate OKF Bundle** (`okf_validate_bundle`) runs the advisory OKF v0.2 conformance report for a bundle (issues, stale/deprecated counts, broken cross-links — never blocks reading). Requires `read`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-validate-bundle.php†L17-L144】
+- **Write OKF Concept** (`okf_write_concept`) creates or updates a concept. Creates the bundle on first write (strict slug names), regenerates the root index, appends `log.md`, and accepts the OKF v0.2 provenance/trust fields (`resource`, `sources`, `usage_window`, `verified`). Refuses the protected `skill-knowledge` bundle. Requires `edit_posts`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-write-concept.php†L17-L379】
+- **Delete OKF Concept** (`okf_delete_concept`) soft-deletes a concept (renames to `.deleted.<timestamp>` for manual recovery) and appends `log.md`. Refuses the protected `skill-knowledge` bundle. Requires `delete_posts`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-delete-concept.php†L17-L140】
+- **Import OKF Bundle** (`okf_import_bundle`) imports a bundle from a server-side ZIP archive with ZipSlip/symlink rejection, entry/size caps, and a minimum-concept check; stamps `okf_version` on the imported root index. Requires `manage_options`.【F:includes/tools/okf/class-wp-mcp-ai-tool-okf-import-bundle.php†L17-L112】
+- **Enrich OKF from Site Content** (`okf_enrich_site_content`) **[PRO]** crawls published posts, pages (any public post type), and optionally taxonomy terms, generating OKF concepts with the provenance schema and cross-links into a bundle (default `site-content`, created on first run). Deterministic and idempotent; descriptions upgradeable to AI summaries via the `wp_mcp_ai_okf_enrichment_description` filter. Requires `manage_options`.【F:addons/pro/includes/tools/okf/class-wp-mcp-ai-tool-okf-enrich-site-content.php†L17-L138】
+- **Route Knowledge Query** (`route_knowledge_query`) **[PRO]** classifies a knowledge query into an ordered routing plan across OKF / vector / Paper stores (deterministic keyword signals, overridable via `wp_mcp_ai_hybrid_router_signals` and `wp_mcp_ai_hybrid_router_decision`) and, when OKF is the primary route, returns the top token-overlap matches from a bundle. Requires `read`.【F:addons/pro/includes/tools/okf/class-wp-mcp-ai-tool-route-knowledge-query.php†L17-L157】
 
 ---
 

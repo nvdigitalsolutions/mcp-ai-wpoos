@@ -27,6 +27,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_OKF_Writer {
 
 	/**
+	 * OKF specification version this writer targets.
+	 *
+	 * Stamped into the frontmatter of bundle-root index.md files
+	 * (OKF v0.2 §12 — the only place index frontmatter is permitted).
+	 *
+	 * @since 1.1.62
+	 * @var string
+	 */
+	const OKF_VERSION = '0.2';
+
+	/**
 	 * Parser instance.
 	 *
 	 * @since 2.1.0
@@ -221,8 +232,11 @@ class WP_MCP_AI_OKF_Writer {
 	 *
 	 * Scans the directory for concepts and subdirectories, reads their
 	 * frontmatter for titles/descriptions, and writes an up-to-date index.md.
+	 * Bundle-root indexes additionally carry an `okf_version` frontmatter
+	 * block (OKF v0.2 §12).
 	 *
 	 * @since 2.1.0
+	 * @since 1.1.62 — Bundle-root index.md now declares okf_version.
 	 *
 	 * @param string $path Directory path relative to bundle root (empty string for root).
 	 * @return true|WP_Error
@@ -284,7 +298,14 @@ class WP_MCP_AI_OKF_Writer {
 			}
 		}
 
-		$content    = implode( "\n", $lines ) . "\n";
+		$content = implode( "\n", $lines ) . "\n";
+
+		// Bundle-root indexes may carry an okf_version frontmatter block
+		// (OKF v0.2 §12 — the only index frontmatter the spec permits).
+		if ( '' === $path ) {
+			$content = "---\nokf_version: \"" . self::OKF_VERSION . "\"\n---\n\n" . $content;
+		}
+
 		$index_path = $dir_path . '/index.md';
 
 		if ( $this->fs ) {
@@ -313,14 +334,20 @@ class WP_MCP_AI_OKF_Writer {
 	 * 4. (v0.2) `stale_after` is a valid date when present.
 	 * 5. (v0.2) `status` is a recognised value when present.
 	 * 6. (v0.2) Concepts past their `stale_after` date are flagged as stale.
+	 * 7. (advisory) Bundle-internal cross-links are reported when broken —
+	 *    OKF v0.2 §6.1 forbids rejecting a bundle for broken links, so they
+	 *    are surfaced in `broken_links` and never affect `conformant`.
 	 *
 	 * @since 2.1.0
 	 * @since 2.5.0 — Added OKF v0.2 trust-signal checks.
+	 * @since 1.1.62 — Added broken-link reporting (advisory).
 	 *
-	 * @return array{conformant: bool, issues: string[], concept_count: int, stale_count: int, deprecated_count: int}
+	 * @return array{conformant: bool, issues: string[], concept_count: int,
+	 *               stale_count: int, deprecated_count: int, broken_links: array}
 	 */
 	public function validate_bundle() {
 		$issues           = array();
+		$broken_links     = array();
 		$reader           = new WP_MCP_AI_OKF_Reader( $this->bundle_root );
 		$stale_count      = 0;
 		$deprecated_count = 0;
@@ -400,6 +427,13 @@ class WP_MCP_AI_OKF_Writer {
 					++$stale_count;
 				}
 			}
+
+			// Advisory: report bundle-internal broken cross-links (§6.1 —
+			// never affects conformance).
+			$concept_broken = $reader->find_broken_links( $concept_id );
+			if ( ! empty( $concept_broken ) ) {
+				$broken_links = array_merge( $broken_links, $concept_broken );
+			}
 		}
 
 		return array(
@@ -408,6 +442,7 @@ class WP_MCP_AI_OKF_Writer {
 			'concept_count'    => count( $files ),
 			'stale_count'      => $stale_count,
 			'deprecated_count' => $deprecated_count,
+			'broken_links'     => $broken_links,
 		);
 	}
 
@@ -493,7 +528,12 @@ class WP_MCP_AI_OKF_Writer {
 	/**
 	 * Ensure the bundle root directory exists.
 	 *
+	 * Creates the directory (recursively) when missing and fires the
+	 * documented `wp_mcp_ai_okf_bundle_initialized` event in that case.
+	 *
 	 * @since 2.1.0
+	 * @since 1.1.62 — Fires `wp_mcp_ai_okf_bundle_initialized` when it creates
+	 *                 a missing bundle directory.
 	 * @return true|WP_Error
 	 */
 	public function ensure_bundle_root() {
@@ -508,6 +548,16 @@ class WP_MCP_AI_OKF_Writer {
 				__( 'Failed to create OKF bundle root directory.', 'mcp-ai-wpoos' )
 			);
 		}
+
+		/**
+		 * Fires after a new OKF bundle directory has been created.
+		 *
+		 * @since 1.1.62
+		 *
+		 * @param string $bundle_path   Absolute path to the new bundle directory.
+		 * @param int    $concept_count Number of concepts in the bundle (0 for a brand-new bundle).
+		 */
+		do_action( 'wp_mcp_ai_okf_bundle_initialized', $this->bundle_root, 0 );
 
 		return true;
 	}

@@ -98,6 +98,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'okf_traverse',
 					'okf_search',
 					'okf_validate_attestation',
+					'okf_list_bundles',
+					'okf_validate_bundle',
 					// Users & system.
 					'get_user_info',
 					// Communication.
@@ -944,9 +946,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'okf_browse',
 					'okf_traverse',
 					'okf_search',
+					'okf_list_bundles',
 					'okf_write_concept',
 					'okf_delete_concept',
 					'okf_validate_attestation',
+					'okf_validate_bundle',
+					'okf_import_bundle',
 				),
 			),
 

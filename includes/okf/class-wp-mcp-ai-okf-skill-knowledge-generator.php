@@ -216,21 +216,32 @@ class WP_MCP_AI_OKF_Skill_Knowledge_Generator {
 	/**
 	 * Get the absolute path to the skill-knowledge bundle directory.
 	 *
-	 * The bundle lives under `wp-content/uploads/mcp-ai-wpoos/knowledge/`,
-	 * matching the path resolution used by every OKF MCP tool.
+	 * Resolved through the OKF Bundle Manager so the `wp_mcp_ai_okf_knowledge_root`
+	 * filter and the knowledge-root security guards apply to the generated
+	 * bundle exactly as they do to every tool-resolved bundle.
 	 *
 	 * @since 1.1.61
+	 * @since 1.1.62 — Routed through WP_MCP_AI_OKF_Bundle_Manager.
 	 * @return string Absolute normalized path, or empty string when the
 	 *                uploads directory is unavailable.
 	 */
 	public static function get_bundle_root() {
-		$upload_dir = wp_upload_dir();
+		if ( ! class_exists( 'WP_MCP_AI_OKF_Bundle_Manager' ) ) {
+			$upload_dir = wp_upload_dir();
 
-		if ( empty( $upload_dir['basedir'] ) ) {
+			return empty( $upload_dir['basedir'] )
+				? ''
+				: wp_normalize_path( $upload_dir['basedir'] . '/mcp-ai-wpoos/knowledge/' . self::BUNDLE_NAME );
+		}
+
+		$manager = new WP_MCP_AI_OKF_Bundle_Manager();
+		$root    = $manager->get_knowledge_root();
+
+		if ( is_wp_error( $root ) ) {
 			return '';
 		}
 
-		return wp_normalize_path( $upload_dir['basedir'] . '/mcp-ai-wpoos/knowledge/' . self::BUNDLE_NAME );
+		return wp_normalize_path( $root . '/' . self::BUNDLE_NAME );
 	}
 
 	/**
@@ -405,8 +416,14 @@ class WP_MCP_AI_OKF_Skill_Knowledge_Generator {
 		}
 
 		$index_path = $bundle_path . '/index.md';
+
+		$content = implode( "\n", $lines ) . "\n";
+		// Bundle-root indexes may carry an okf_version frontmatter block
+		// (OKF v0.2 §12 — the only index frontmatter the spec permits).
+		$content = "---\nokf_version: \"" . WP_MCP_AI_OKF_Writer::OKF_VERSION . "\"\n---\n\n" . $content;
+
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Local filesystem write of a plugin-generated index. OKF bundles are local filesystem only.
-		$written = file_put_contents( $index_path, implode( "\n", $lines ) . "\n", LOCK_EX );
+		$written = file_put_contents( $index_path, $content, LOCK_EX );
 		if ( false === $written ) {
 			$errors[] = sprintf(
 				/* translators: %s: file path */
