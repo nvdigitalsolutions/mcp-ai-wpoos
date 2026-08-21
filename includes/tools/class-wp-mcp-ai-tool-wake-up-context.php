@@ -251,15 +251,25 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$graph_via = array();
 
 		if ( $use_graph ) {
-			$ranked = NV_oOS_Graphify_Memory_Bridge::retrieve_graph(
-				array(
-					'agent_id' => $agent_id,
-					'wing'     => $wing,
-					'room'     => $room,
-					'query'    => $query,
-					'limit'    => $top_n,
-				)
-			);
+			// The graph bridge is advisory — any failure (WP_Error, throwable,
+			// malformed rows) must degrade to the transient retrieval path
+			// instead of surfacing as a fatal tool error (fix #5).
+			try {
+				$ranked = NV_oOS_Graphify_Memory_Bridge::retrieve_graph(
+					array(
+						'agent_id' => $agent_id,
+						'wing'     => $wing,
+						'room'     => $room,
+						'query'    => $query,
+						'limit'    => $top_n,
+					)
+				);
+			} catch ( \Throwable $e ) {
+				$ranked = array();
+			}
+			if ( is_wp_error( $ranked ) || ! is_array( $ranked ) ) {
+				$ranked = array();
+			}
 
 			foreach ( $ranked as $r ) {
 				if ( ! empty( $r['context_id'] ) ) {

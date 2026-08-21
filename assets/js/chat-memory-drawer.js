@@ -66,6 +66,29 @@
 	let pendingSseToasts = 0;
 
 	/**
+	 * Drawers attached to live chat containers, tracked so a server-side
+	 * `memory_event` store frame can refresh open drawers in place (fix #4).
+	 *
+	 * @type {Array<{container: HTMLElement, controller: Object}>}
+	 */
+	const activeDrawers = [];
+
+	/**
+	 * Refresh every open drawer after a memory store event.
+	 */
+	function refreshOpenDrawers() {
+		activeDrawers.forEach(function(entry) {
+			try {
+				if (entry.controller && entry.controller.isOpen && entry.controller.isOpen()) {
+					entry.controller.refresh();
+				}
+			} catch (e) {
+				// Never let a refresh failure break the SSE handler.
+			}
+		});
+	}
+
+	/**
 	 * Build the toast copy for a memory op.
 	 *
 	 * @param {boolean} retrieved
@@ -102,6 +125,12 @@
 		}
 		pendingSseToasts++;
 		announceToast(memoryToastCopy(retrieved, stored), 'info');
+
+		// Fix #4 — a memory was stored server-side: refresh any open drawer
+		// so the new record appears without a manual reload.
+		if (stored) {
+			refreshOpenDrawers();
+		}
 	}
 
 	function memoryService() {
@@ -321,6 +350,46 @@
 		}
 
 		item.appendChild(header);
+
+		// Wing/room scope — surfaced on every item so memories stored without
+		// a scope remain identifiable in the list (explicit "Unscoped" chip)
+		// instead of silently blending in with scoped records.
+		const wing = memory.wing || (memory.context_data && memory.context_data.wing) || '';
+		const room = memory.room || (memory.context_data && memory.context_data.room) || '';
+		const scopeList = document.createElement('div');
+		scopeList.className = 'wp-mcp-ai-memory-item__scope';
+		if (wing || room) {
+			if (wing) {
+				const wingChip = document.createElement('span');
+				wingChip.className = 'wp-mcp-ai-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--wing';
+				wingChip.setAttribute('data-testid', 'wp-mcp-ai-memory-wing-chip');
+				wingChip.textContent = wing;
+				scopeList.appendChild(wingChip);
+			}
+			if (room) {
+				const roomChip = document.createElement('span');
+				roomChip.className = 'wp-mcp-ai-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--room';
+				roomChip.setAttribute('data-testid', 'wp-mcp-ai-memory-room-chip');
+				roomChip.textContent = room;
+				scopeList.appendChild(roomChip);
+			}
+		} else {
+			const unscopedChip = document.createElement('span');
+			unscopedChip.className = 'wp-mcp-ai-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--unscoped';
+			unscopedChip.setAttribute('data-testid', 'wp-mcp-ai-memory-unscoped-chip');
+			unscopedChip.textContent = __( 'Unscoped', 'mcp-ai-wpoos' );
+			scopeList.appendChild(unscopedChip);
+		}
+		// Fix #3 — records merged from a virtual agent bucket are tagged so
+		// the user can see they were stored under a different agent key.
+		if (memory.stored_under) {
+			const storedUnderChip = document.createElement('span');
+			storedUnderChip.className = 'wp-mcp-ai-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--stored-under';
+			storedUnderChip.setAttribute('data-testid', 'wp-mcp-ai-memory-stored-under');
+			storedUnderChip.textContent = __( 'stored under', 'mcp-ai-wpoos' ) + ': ' + memory.stored_under;
+			scopeList.appendChild(storedUnderChip);
+		}
+		item.appendChild(scopeList);
 
 		const body = document.createElement('p');
 		body.className = 'wp-mcp-ai-memory-item__content';
@@ -544,6 +613,19 @@
 		memoriesPanel.className = 'wp-mcp-ai-memory-drawer__panel';
 		memoriesPanel.setAttribute('role', 'tabpanel');
 
+		// Diagnostic: the exact agent_id this drawer recalls under. Memories
+		// are indexed per-agent server-side, so an ID mismatch between store
+		// and recall makes records invisible — surfacing the ID makes that
+		// diagnosable without opening DevTools.
+		const agentMeta = document.createElement('p');
+		agentMeta.className = 'wp-mcp-ai-memory-drawer__agent';
+		agentMeta.setAttribute('data-testid', 'wp-mcp-ai-memory-agent-id');
+		agentMeta.textContent = i18n.sprintf(
+			__( 'Memory for agent %s', 'mcp-ai-wpoos' ),
+			agentId && agentId !== '0' ? '#' + agentId : __( '(user scope)', 'mcp-ai-wpoos' )
+		);
+		memoriesPanel.appendChild(agentMeta);
+
 		const filterRow = document.createElement('div');
 		filterRow.className = 'wp-mcp-ai-memory-drawer__filter';
 
@@ -626,6 +708,20 @@
 		scopeForm.appendChild(wingLabel);
 		scopeForm.appendChild(roomLabel);
 		scopeForm.appendChild(scopeSaveBtn);
+
+		// Fix #6 — one-click way to view every memory regardless of the
+		// active wing/room scope: recall runs unscoped while checked.
+		const allScopesLabel = document.createElement('label');
+		allScopesLabel.className = 'wp-mcp-ai-memory-drawer__all-scopes';
+		const allScopesInput = document.createElement('input');
+		allScopesInput.type = 'checkbox';
+		allScopesInput.setAttribute('data-testid', 'wp-mcp-ai-memory-all-scopes');
+		allScopesLabel.appendChild(allScopesInput);
+		allScopesLabel.appendChild(document.createTextNode(' ' + __( 'Show all scopes (ignore wing/room)', 'mcp-ai-wpoos' )));
+		scopeForm.appendChild(allScopesLabel);
+		allScopesInput.addEventListener('change', function() {
+			loadMemories();
+		});
 
 		scopeForm.addEventListener('submit', function(e) {
 			e.preventDefault();
@@ -809,10 +905,11 @@
 			loading.textContent = __( 'Loading memories…', 'mcp-ai-wpoos' );
 			list.appendChild(loading);
 
+			const ignoreScope = allScopesInput.checked;
 			const filters = {
 				agentId: agentId,
-				wing: config.memoryWing || '',
-				room: config.memoryRoom || '',
+				wing: ignoreScope ? '' : (config.memoryWing || ''),
+				room: ignoreScope ? '' : (config.memoryRoom || ''),
 				limit: 25
 			};
 
@@ -1282,10 +1379,11 @@
 			exportInFlight = true;
 			exportBtn.disabled = true;
 
+			const ignoreScope = allScopesInput.checked;
 			const filters = {
 				agentId: agentId,
-				wing: config.memoryWing || '',
-				room: config.memoryRoom || '',
+				wing: ignoreScope ? '' : (config.memoryWing || ''),
+				room: ignoreScope ? '' : (config.memoryRoom || ''),
 				limit: 200
 			};
 
@@ -1451,6 +1549,10 @@
 		container.__wpMcpAiMemoryDrawer = controller;
 		injectToggle(container, controller);
 		registerAutoSummary(container, state);
+
+		if (!activeDrawers.some(function(entry) { return entry.container === container; })) {
+			activeDrawers.push({ container: container, controller: controller });
+		}
 	}
 
 	/**

@@ -525,7 +525,7 @@ function MemoryItem( { memory, onDelete }: MemoryItemProps ): JSX.Element {
 		'';
 
 	return (
-		<li className="nvoos-pro-spa-memory-item">
+		<li className="nvoos-pro-spa-memory-item" data-testid="nvoos-pro-spa-memory-item">
 			{ title && (
 				<strong className="nvoos-pro-spa-memory-item-title">{ String( title ) }</strong>
 			) }
@@ -535,6 +535,14 @@ function MemoryItem( { memory, onDelete }: MemoryItemProps ): JSX.Element {
 			{ importance && (
 				<span className={ `nvoos-pro-spa-memory-item-importance nvoos-pro-spa-memory-item-importance--${ importance }` }>
 					{ String( importance ) }
+				</span>
+			) }
+			{ typeof memory.stored_under === 'string' && memory.stored_under !== '' && (
+				<span
+					className="nvoos-pro-spa-memory-item-stored-under"
+					data-testid="nvoos-pro-spa-memory-stored-under"
+				>
+					{ __( 'stored under', 'nvoos-pro-spa' ) }: { String( memory.stored_under ) }
 				</span>
 			) }
 			{ onDelete && (

@@ -225,6 +225,24 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		$context_data = $this->sanitize_context_data( $arguments['context_data'] );
 		$ttl          = isset( $arguments['ttl'] ) ? absint( $arguments['ttl'] ) : 2592000; // 30 days default.
 
+		// Agent identity resolution (memory-layer fix #1): when the caller
+		// passes a virtual / non-numeric agent key, resolve it to the
+		// canonical assistant post ID carried in the execution context so the
+		// record lands in the same bucket the chat-memory drawer recalls
+		// from. The alias is persisted so future stores resolve identically
+		// even without context.
+		$original_agent_id = $agent_id;
+		$agent_resolution  = array(
+			'agent_id'  => $agent_id,
+			'original'  => (string) $agent_id,
+			'resolved'  => false,
+			'canonical' => is_numeric( $agent_id ),
+		);
+		if ( class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' ) ) {
+			$agent_resolution = WP_MCP_AI_Agent_Identity_Resolver::resolve( $agent_id, $context );
+			$agent_id         = $agent_resolution['agent_id'];
+		}
+
 		// Sanitize MemPalace-inspired hierarchical scope and verbatim discipline fields.
 		$wing     = isset( $arguments['wing'] ) ? sanitize_text_field( $arguments['wing'] ) : '';
 		$room     = isset( $arguments['room'] ) ? sanitize_text_field( $arguments['room'] ) : '';
@@ -423,7 +441,9 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		 *
 		 * Payload keys:
 		 *   - context_id      string   Stable identifier (`ctx_*`).
-		 *   - agent_id        int|str  Agent post ID or virtual agent slug.
+		 *   - agent_id        int|str  Resolved agent id (canonical post ID when the caller passed a virtual key).
+		 *   - original_agent_id int|str Caller-supplied agent id before resolution (same as agent_id when unresolved).
+		 *   - agent_id_resolved bool   Whether the virtual key was remapped to a canonical ID.
 		 *   - context_type    string   Sanitized type slug (e.g. `learning`, `fact`).
 		 *   - content         string   Final stored content (post-transform unless verbatim).
 		 *   - title           string   Final stored title.
@@ -446,37 +466,43 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		do_action(
 			'wp_mcp_ai_memory_stored',
 			array(
-				'context_id'     => $context_id,
-				'agent_id'       => $agent_id,
-				'context_type'   => $context_type,
-				'content'        => isset( $context_data['content'] ) ? (string) $context_data['content'] : '',
-				'title'          => isset( $context_data['title'] ) ? (string) $context_data['title'] : '',
-				'importance'     => isset( $context_data['importance'] ) ? (string) $context_data['importance'] : 'medium',
-				'tags'           => isset( $context_data['tags'] ) && is_array( $context_data['tags'] ) ? array_values( $context_data['tags'] ) : array(),
-				'wing'           => $wing,
-				'room'           => $room,
-				'verbatim'       => $verbatim,
-				'source_post_id' => $src_post_id,
-				'source_url'     => $src_url,
-				'source_type'    => $src_type,
-				'stored_at'      => $context_record['stored_at'],
-				'expires_at'     => $context_record['expires_at'],
-				'ttl'            => $ttl,
+				'context_id'        => $context_id,
+				'agent_id'          => $agent_id,
+				'original_agent_id' => $original_agent_id,
+				'agent_id_resolved' => (bool) $agent_resolution['resolved'],
+				'context_type'      => $context_type,
+				'content'           => isset( $context_data['content'] ) ? (string) $context_data['content'] : '',
+				'title'             => isset( $context_data['title'] ) ? (string) $context_data['title'] : '',
+				'importance'        => isset( $context_data['importance'] ) ? (string) $context_data['importance'] : 'medium',
+				'tags'              => isset( $context_data['tags'] ) && is_array( $context_data['tags'] ) ? array_values( $context_data['tags'] ) : array(),
+				'wing'              => $wing,
+				'room'              => $room,
+				'verbatim'          => $verbatim,
+				'source_post_id'    => $src_post_id,
+				'source_url'        => $src_url,
+				'source_type'       => $src_type,
+				'stored_at'         => $context_record['stored_at'],
+				'expires_at'        => $context_record['expires_at'],
+				'ttl'               => $ttl,
 			)
 		);
 
+		// Fix #2 — echo the resolved identity back so the assistant can
+		// detect "I saved under X, the drawer watches Y" immediately.
 		return array(
-			'success'         => true,
-			'message'         => __( 'Context stored successfully.', 'mcp-ai-wpoos' ),
-			'context_id'      => $context_id,
-			'agent_id'        => $agent_id,
-			'wing'            => $wing,
-			'room'            => $room,
-			'verbatim'        => $verbatim,
-			'stored_at'       => $context_record['stored_at'],
-			'expires_at'      => $context_record['expires_at'],
-			'ttl_seconds'     => $ttl,
-			'ttl_human'       => $this->format_ttl( $ttl ),
+			'success'           => true,
+			'message'           => __( 'Context stored successfully.', 'mcp-ai-wpoos' ),
+			'context_id'        => $context_id,
+			'agent_id'          => $agent_id,
+			'original_agent_id' => $original_agent_id,
+			'agent_id_resolved' => (bool) $agent_resolution['resolved'],
+			'wing'              => $wing,
+			'room'              => $room,
+			'verbatim'          => $verbatim,
+			'stored_at'         => $context_record['stored_at'],
+			'expires_at'        => $context_record['expires_at'],
+			'ttl_seconds'       => $ttl,
+			'ttl_human'         => $this->format_ttl( $ttl ),
 			'storage'         => array(
 				'method' => 'WordPress Transient',
 				'key'    => $transient_key,

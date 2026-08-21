@@ -27,13 +27,24 @@ const MIN_WATERFALL_BAR_WIDTH_PERCENT = 6;
 
 let pendingSseToasts = 0;
 
+// Drawers attached to live chat containers — a server-side memory_event
+// store frame refreshes open drawers in place (fix #4).
+const activeDrawers: Array< { container: HTMLElement; controller: DrawerController } > = [];
+
+function refreshOpenDrawers(): void {
+	for ( const entry of activeDrawers ) {
+		try { if ( entry.controller?.isOpen?.() ) { entry.controller.refresh(); } } catch { /* never break the SSE handler */ }
+	}
+}
+
 // ── Types ────────────────────────────────────────────────────────────
 
 interface MemoryRecord {
 	context_id?: string; id?: string; uuid?: string;
 	title?: string; content?: string; tags?: string[];
 	tier?: string; memory_tier?: string; importance?: string;
-	context_data?: { title?: string; content?: string; tags?: string[]; importance?: string };
+	wing?: string; room?: string; stored_under?: string;
+	context_data?: { title?: string; content?: string; tags?: string[]; importance?: string; wing?: string; room?: string };
 	agent_id?: string;
 	rrf_breakdown?: { bm25_rank?: number; vector_rank?: number; graph_rank?: number };
 	boost_breakdown?: { keyword?: number; temporal?: number; exact_match?: number };
@@ -92,6 +103,7 @@ export function handleSseMemoryEvent( payload: { action?: string } ): void {
 	if ( ! retrieved && ! stored ) { return; }
 	pendingSseToasts++;
 	announceToast( memoryToastCopy( retrieved, stored ), 'info' );
+	if ( stored ) { refreshOpenDrawers(); }
 }
 
 function ensureToastRegion(): HTMLElement {
@@ -162,6 +174,16 @@ function renderMemoryItem( memory: MemoryRecord, onUpdate: ( m: MemoryRecord, ap
 	if ( tier || importance ) { const meta = document.createElement( 'span' ); meta.className = 'wp-mcp-ai-memory-item__meta'; meta.textContent = [ tier, importance ].filter( Boolean ).join( ' \u00b7 ' ); header.appendChild( meta ); }
 	item.appendChild( header );
 
+	// Wing/room scope — surfaced on every item so memories stored without
+	// a scope remain identifiable (explicit "Unscoped" chip) instead of
+	// silently blending in with scoped records.
+	const wing = memory.wing || memory.context_data?.wing || '';
+	const room = memory.room || memory.context_data?.room || '';
+	const scopeList = document.createElement( 'div' ); scopeList.className = 'wp-mcp-ai-memory-item__scope';
+	if ( wing || room ) { if ( wing ) { const wingChip = document.createElement( 'span' ); wingChip.className = 'wp-mcp-ai-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--wing'; wingChip.setAttribute( 'data-testid', 'wp-mcp-ai-memory-wing-chip' ); wingChip.textContent = wing; scopeList.appendChild( wingChip ); } if ( room ) { const roomChip = document.createElement( 'span' ); roomChip.className = 'wp-mcp-ai-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--room'; roomChip.setAttribute( 'data-testid', 'wp-mcp-ai-memory-room-chip' ); roomChip.textContent = room; scopeList.appendChild( roomChip ); } } else { const unscopedChip = document.createElement( 'span' ); unscopedChip.className = 'wp-mcp-ai-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--unscoped'; unscopedChip.setAttribute( 'data-testid', 'wp-mcp-ai-memory-unscoped-chip' ); unscopedChip.textContent = __( 'Unscoped' ); scopeList.appendChild( unscopedChip ); }
+	if ( memory.stored_under ) { const storedUnderChip = document.createElement( 'span' ); storedUnderChip.className = 'wp-mcp-ai-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--stored-under'; storedUnderChip.setAttribute( 'data-testid', 'wp-mcp-ai-memory-stored-under' ); storedUnderChip.textContent = __( 'stored under' ) + ': ' + memory.stored_under; scopeList.appendChild( storedUnderChip ); }
+	item.appendChild( scopeList );
+
 	const body = document.createElement( 'p' ); body.className = 'wp-mcp-ai-memory-item__content'; body.textContent = content; item.appendChild( body );
 	if ( tags.length ) { const tl = document.createElement( 'div' ); tl.className = 'wp-mcp-ai-memory-item__tags'; for ( const t of tags ) { const c = document.createElement( 'span' ); c.className = 'wp-mcp-ai-memory-item__tag'; c.textContent = String( t ); tl.appendChild( c ); } item.appendChild( tl ); }
 
@@ -211,8 +233,13 @@ function buildDrawer( container: HTMLElement, state: ChatState ): DrawerControll
 	const makeEmpty = ( text: string ): HTMLParagraphElement => { const p = document.createElement( 'p' ); p.className = 'wp-mcp-ai-memory-drawer__empty'; p.hidden = true; p.textContent = text; return p; };
 	const makeError = (): HTMLParagraphElement => { const p = document.createElement( 'p' ); p.className = 'wp-mcp-ai-memory-drawer__error'; p.setAttribute( 'role', 'alert' ); p.hidden = true; return p; };
 
-	// Memories panel
+	// Memories panel.
 	const memoriesPanel = makePanel(); memoriesPanel.hidden = false;
+	// Diagnostic: the exact agent_id this drawer recalls under. Memories
+	// are indexed per-agent server-side, so an ID mismatch between store
+	// and recall makes records invisible — surfacing the ID makes that
+	// diagnosable without opening DevTools.
+	const agentMeta = document.createElement( 'p' ); agentMeta.className = 'wp-mcp-ai-memory-drawer__agent'; agentMeta.setAttribute( 'data-testid', 'wp-mcp-ai-memory-agent-id' ); agentMeta.textContent = i18n.sprintf( __( 'Memory for agent %s' ), agentId && agentId !== '0' ? '#' + agentId : __( '(user scope)' ) ); memoriesPanel.appendChild( agentMeta );
 	const filterRow = makeFilterRow();
 	const queryInput = document.createElement( 'input' ); queryInput.type = 'search'; queryInput.className = 'wp-mcp-ai-memory-drawer__query'; queryInput.placeholder = __( 'Filter memories\u2026' ); queryInput.setAttribute( 'aria-label', __( 'Search memories' ) ); queryInput.setAttribute( 'data-testid', 'wp-mcp-ai-memory-query' ); filterRow.appendChild( queryInput );
 	const refreshBtn = makeRefreshBtn( __( 'Refresh' ) ); filterRow.appendChild( refreshBtn );
@@ -229,6 +256,10 @@ function buildDrawer( container: HTMLElement, state: ChatState ): DrawerControll
 	const scopeForm = document.createElement( 'form' ); scopeForm.className = 'wp-mcp-ai-memory-drawer__scope-form'; scopeForm.setAttribute( 'data-testid', 'wp-mcp-ai-memory-scope-form' );
 	const scopeSave = document.createElement( 'button' ); scopeSave.type = 'submit'; scopeSave.textContent = __( 'Apply scope' );
 	[ [ __( 'Wing (project / matter)' ), wingInput ], [ __( 'Room (topic)' ), roomInput ] ].forEach( ( [ l, i ] ) => { const el = document.createElement( 'label' ); el.textContent = l as string; el.appendChild( i as HTMLInputElement ); scopeForm.appendChild( el ); } );
+	// Fix #6 — one-click way to view every memory regardless of scope.
+	const allScopesInput = document.createElement( 'input' ); allScopesInput.type = 'checkbox'; allScopesInput.setAttribute( 'data-testid', 'wp-mcp-ai-memory-all-scopes' );
+	const allScopesLabel = document.createElement( 'label' ); allScopesLabel.className = 'wp-mcp-ai-memory-drawer__all-scopes'; allScopesLabel.appendChild( allScopesInput ); allScopesLabel.appendChild( document.createTextNode( ' ' + __( 'Show all scopes (ignore wing/room)' ) ) );
+	scopeForm.appendChild( allScopesLabel ); allScopesInput.addEventListener( 'change', loadMemories );
 	scopeForm.appendChild( scopeSave ); scopePanel.appendChild( scopeForm );
 	scopeForm.addEventListener( 'submit', ( e ) => { e.preventDefault(); config.memoryWing = wingInput.value; config.memoryRoom = roomInput.value; announceToast( config.memoryWing ? i18n.sprintf( __( 'Scope set to wing "%s".' ), config.memoryWing ) : __( 'Scope cleared.' ), 'success' ); loadMemories(); } );
 
@@ -303,7 +334,7 @@ function buildDrawer( container: HTMLElement, state: ChatState ): DrawerControll
 		if ( ! isAvailable() ) { return; }
 		memError.hidden = true; memEmpty.hidden = true; waterfall.hidden = true; clearList();
 		list.innerHTML = '<li class="wp-mcp-ai-memory-drawer__loading">' + __( 'Loading memories\u2026' ) + '</li>';
-		memoryService()!.recall( ( queryInput as HTMLInputElement ).value || '', { agentId, wing: config.memoryWing || '', room: config.memoryRoom || '', limit: 25 } ).then( ( r ) => {
+		memoryService()!.recall( ( queryInput as HTMLInputElement ).value || '', { agentId, wing: allScopesInput.checked ? '' : ( config.memoryWing || '' ), room: allScopesInput.checked ? '' : ( config.memoryRoom || '' ), limit: 25 } ).then( ( r ) => {
 			clearList(); const records = extractRecords( r as unknown as Record< string, unknown > ); const wf = extractWaterfall( records, r as { retrieval_path?: string } ); if ( wf ) { renderWaterfall( wf ); } else { waterfall.hidden = true; }
 			if ( ! records.length ) { memEmpty.hidden = false; return; }
 			for ( const rec of records ) { const item = renderMemoryItem( rec, ( u, a ) => { const rep = renderMemoryItem( a ? u : rec, arguments[ 0 ], arguments[ 1 ] ); item.parentNode?.replaceChild( rep, item ); }, ( delId ) => { list.removeChild( list.querySelector( '[data-context-id="' + delId + '"]' ) as HTMLElement ); if ( ! list.children.length ) { memEmpty.hidden = false; } } ); list.appendChild( item ); }
@@ -321,7 +352,7 @@ function buildDrawer( container: HTMLElement, state: ChatState ): DrawerControll
 
 	// Export
 	let exportInFlight = false;
-	exportBtn.addEventListener( 'click', () => { if ( exportInFlight ) { return; } if ( ! isAvailable() ) { announceToast( __( 'Memory is not available right now.' ), 'error' ); return; } exportInFlight = true; exportBtn.disabled = true; memoryService()!.recall( ( queryInput as HTMLInputElement ).value, { agentId, wing: config.memoryWing || '', room: config.memoryRoom || '', limit: 200 } ).then( ( r ) => { const records = extractRecords( r as unknown as Record< string, unknown > ); const json = JSON.stringify( { exported_at: new Date().toISOString(), agent_id: agentId, scope: { wing: config.memoryWing || null, room: config.memoryRoom || null, query: ( queryInput as HTMLInputElement ).value }, count: records.length, memories: records }, null, 2 ); const blob = new Blob( [ json ], { type: 'application/json' } ); const url = URL.createObjectURL( blob ); const a = document.createElement( 'a' ); a.href = url; a.download = 'mcp-ai-memory-' + agentId.replace( /[^A-Za-z0-9_-]/g, '_' ) + '-' + new Date().toISOString().replace( /[:.]/g, '-' ) + '.json'; a.style.display = 'none'; document.body.appendChild( a ); a.click(); document.body.removeChild( a ); setTimeout( () => URL.revokeObjectURL( url ), 0 ); announceToast( i18n.sprintf( __( "Exported %d memor(y/ies)." ), String( records.length ) ), 'success' ); } ).catch( ( err: { message?: string } ) => { announceToast( err?.message || __( 'Could not export memories.' ), 'error' ); } ).finally( () => { exportInFlight = false; exportBtn.disabled = false; } ); } );
+	exportBtn.addEventListener( 'click', () => { if ( exportInFlight ) { return; } if ( ! isAvailable() ) { announceToast( __( 'Memory is not available right now.' ), 'error' ); return; } exportInFlight = true; exportBtn.disabled = true; memoryService()!.recall( ( queryInput as HTMLInputElement ).value, { agentId, wing: allScopesInput.checked ? '' : ( config.memoryWing || '' ), room: allScopesInput.checked ? '' : ( config.memoryRoom || '' ), limit: 200 } ).then( ( r ) => { const records = extractRecords( r as unknown as Record< string, unknown > ); const json = JSON.stringify( { exported_at: new Date().toISOString(), agent_id: agentId, scope: { wing: allScopesInput.checked ? null : ( config.memoryWing || null ), room: allScopesInput.checked ? null : ( config.memoryRoom || null ), query: ( queryInput as HTMLInputElement ).value }, count: records.length, memories: records }, null, 2 ); const blob = new Blob( [ json ], { type: 'application/json' } ); const url = URL.createObjectURL( blob ); const a = document.createElement( 'a' ); a.href = url; a.download = 'mcp-ai-memory-' + agentId.replace( /[^A-Za-z0-9_-]/g, '_' ) + '-' + new Date().toISOString().replace( /[:.]/g, '-' ) + '.json'; a.style.display = 'none'; document.body.appendChild( a ); a.click(); document.body.removeChild( a ); setTimeout( () => URL.revokeObjectURL( url ), 0 ); announceToast( i18n.sprintf( __( "Exported %d memor(y/ies)." ), String( records.length ) ), 'success' ); } ).catch( ( err: { message?: string } ) => { announceToast( err?.message || __( 'Could not export memories.' ), 'error' ); } ).finally( () => { exportInFlight = false; exportBtn.disabled = false; } ); } );
 
 	let opened = false, releaseTrap: ( () => void ) | null = null, lastFocus: HTMLElement | null = null;
 
@@ -353,6 +384,7 @@ export function attach( container: HTMLElement ): void {
 	( container as unknown as Record< string, unknown > ).__wpMcpAiMemoryDrawer = controller;
 	injectToggle( container, controller );
 	registerAutoSummary( container, state );
+	if ( ! activeDrawers.some( ( e ) => e.container === container ) ) { activeDrawers.push( { container, controller } ); }
 }
 
 export function registerAutoSummary( _container: HTMLElement, state: ChatState ): void {

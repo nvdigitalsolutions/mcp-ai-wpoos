@@ -106,6 +106,46 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test store_agent_context resolves a virtual agent key to the canonical
+	 * assistant_id from the execution context (identity fix #1/#2).
+	 */
+	public function test_store_agent_context_resolves_virtual_agent_key() {
+		$tool = $this->registry->get_tool( 'store_agent_context' );
+
+		$result = $tool->execute(
+			array(
+				'agent_id'     => 'nvoos-pro-spa-memory-drawer',
+				'context_type' => 'fact',
+				'context_data' => array(
+					'title'   => 'Virtual-key fact',
+					'content' => 'Stored under a virtual key, resolved to 953.',
+				),
+			),
+			array(
+				'user_id'      => get_current_user_id(),
+				'assistant_id' => 953,
+			)
+		);
+
+		$this->assertTrue( $result['success'], 'Execution should succeed' );
+		$this->assertSame( 953, $result['agent_id'], 'Memory should be stored under the canonical assistant ID' );
+		$this->assertTrue( $result['agent_id_resolved'], 'The virtual key should be reported as resolved' );
+		$this->assertSame( 'nvoos-pro-spa-memory-drawer', $result['original_agent_id'], 'The caller key should be echoed back' );
+
+		// The alias must be persisted so future stores resolve without context.
+		$this->assertSame( 953, WP_MCP_AI_Agent_Identity_Resolver::get_canonical( 'nvoos-pro-spa-memory-drawer' ) );
+
+		// And the record must be retrievable under the canonical ID — the
+		// exact bucket the chat-memory drawer recalls from.
+		$retrieve = $this->registry->get_tool( 'retrieve_agent_memory' );
+		$recall   = $retrieve->execute( array( 'agent_id' => 953, 'limit' => 10 ), array() );
+
+		$this->assertTrue( $recall['success'] );
+		$this->assertNotEmpty( $recall['contexts'], 'The stored record should appear in the canonical bucket' );
+		$this->assertSame( $result['context_id'], $recall['contexts'][0]['context_id'] );
+	}
+
+	/**
 	 * Test store_agent_context with missing required fields.
 	 */
 	public function test_store_agent_context_missing_fields() {
