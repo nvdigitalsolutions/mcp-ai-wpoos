@@ -4,8 +4,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.50"
-  plugin-version-tested: "1.1.60"
+  plugin-version: "1.1.61"
+  plugin-version-tested: "1.1.61"
   last-updated: "2026-08-21"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -513,6 +513,19 @@ Import external AI conversation exports into the JetEngine
 - **Admin** — upload/preview page with progress reporting; GDPR
   export/erase + retention coverage; optional memory mining via
   `mine_agent_memory`. Guide: `docs/user-guides/conversation-import.md`.
+
+## Agent Identity Bridging & OKF Bundle (v1.1.61+)
+
+- **Agent identity bridging** — `store_agent_context` resolves virtual agent
+  keys (e.g. `nvoos-pro-spa-memory-drawer`) to the canonical assistant post
+  ID (`WP_MCP_AI_Agent_Identity_Resolver`, alias map in the
+  `wp_mcp_ai_agent_id_aliases` option); the envelope echoes
+  `original_agent_id` / `agent_id_resolved`. Chat-memory recall merges alias
+  buckets (`stored_under` per record) and the memory drawers show
+  scope/stored-under chips, the agent ID, and a show-all-scopes toggle.
+- **OKF bundle** — the `skill-knowledge` bundle is auto-generated from
+  bundled skills on bootstrap (and after bundled-skill reinstall), so
+  `okf_search` works out of the box (no more "OKF bundle not found").
 
 ---
 

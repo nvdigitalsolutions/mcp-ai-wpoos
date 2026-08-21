@@ -245,6 +245,17 @@ uses a singleton `#wp-mcp-ai-memory-toasts` ARIA-live region. The chat
 container needs `position: relative`; the CSS rule for that lives at the
 bottom of `assets/css/chat.css`.
 
+**v1.1.61 — agent identity bridging:** the drawer now surfaces where each
+memory came from and which agent it belongs to. Every item renders a
+wing/room scope row (with an explicit "Unscoped" chip when a memory has no
+scope) plus a `stored under: <bucket>` chip when recall merged a virtual
+alias bucket. The panel header shows the exact agent ID it recalls under
+("Memory for agent #…", `data-testid="wp-mcp-ai-memory-agent-id"`), and a
+show-all-scopes toggle flips between scoped and unscoped views. Open
+drawers refresh in place when a `memory_event` store SSE frame arrives
+(`refreshOpenDrawers()`), so a just-saved memory appears without a manual
+refresh.
+
 See `docs/features/memory/chat-client-integration.md` for the full reference.
 
 ---

@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: August 21, 2026 (v1.1.60).
+> Last reviewed: August 21, 2026 (v1.1.61).
 
 ---
 
@@ -15,6 +15,8 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
 **Total tools:** ~1,547 (~300 base + ~1,247 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.61:** No new tools — behavior change in the memory tools. `store_agent_context` now resolves virtual / non-numeric agent keys to the canonical assistant post ID via `WP_MCP_AI_Agent_Identity_Resolver` (alias map `wp_mcp_ai_agent_id_aliases`, bounded, never autoloaded) and echoes `original_agent_id` / `agent_id_resolved` in its envelope; the `wp_mcp_ai_memory_stored` action payload carries the same fields. `wake_up_context` degrades to the transient retrieval path when the Graphify memory bridge errors (advisory use only).
 
 **New in v1.1.60:** Four JetEngine-gated conversation-import tools — `conversation_import_detect`, `conversation_import_run`, `conversation_import_status`, `conversation_import_delete` (`includes/tools/`, `manage_options`, unavailable without JetEngine) — import external conversation exports into the `ai_chat_transcripts` CCT. Tool argument schemas are now normalized before being embedded in provider payloads (DeepSeek client, REST `/tools` schema output, `WP_MCP_AI_Tool_Service`, and the OOS `ChatOrchestrator`), preventing provider streaming failures from non-compliant schemas; registrations skipped for a missing tool contract are logged.
 
