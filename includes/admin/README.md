@@ -26,6 +26,8 @@ The classes below are referenced from outside `includes/admin/`. Everything else
 | `WP_MCP_AI_Settings_Section` (abstract) | `sections/abstract-wp-mcp-ai-settings-section.php` | Every concrete section in `sections/` plus Pro sections |
 | `WP_MCP_AI_Section_Security` | `sections/class-wp-mcp-ai-section-security.php` | **Security Center** — five sub-tabs (overview, access, network, ai\_safety, audit) including posture score, IP dry-run, header preview, AI safety controls, snapshot/restore |
 | `WP_MCP_AI_Admin_AJAX_Handlers` | `class-wp-mcp-ai-admin-ajax-handlers.php` | `Admin_Settings`, `Settings_Dashboard`, Pro addon |
+| `WP_MCP_AI_Conversation_Import_Admin` | `class-wp-mcp-ai-conversation-import-admin.php` | `includes/bootstrap/loader.php` — JetEngine-gated conversation-import screen (upload, preview, progress) |
+| `WP_MCP_AI_Admin_Token_Manager` | `class-wp-mcp-ai-admin-token-manager.php` | `Settings_Dashboard` — credential tokens + "Restricted Users" panel (one-click lift) |
 | `WP_MCP_AI_Admin_Scripts` | `class-wp-mcp-ai-admin-scripts.php` | Bootstrap (admin-only) |
 | `WP_MCP_AI_Pro_Dashboard` / `_REST` / `_Helper` | `class-wp-mcp-ai-pro-dashboard*.php` | Bootstrap, Pro addon |
 | `WP_MCP_AI_Settings_Section_*` (~22 sections) | `sections/class-wp-mcp-ai-section-*.php` | Registered via `settings-dashboard-init.php` |
@@ -48,7 +50,7 @@ Subfolders own their own internal surfaces:
 ## Conventions
 
 - New settings tabs MUST extend `WP_MCP_AI_Settings_Section` and register through `settings-dashboard-init.php` — never call `add_settings_section()` directly here.
-- AJAX endpoints belong in `class-wp-mcp-ai-admin-ajax-handlers.php` (or a dedicated `*-ajax.php` class) and must use the `wp_mcp_ai_*_nonce` family declared by `Admin_Scripts`.
+- AJAX endpoints belong in `class-wp-mcp-ai-admin-ajax-handlers.php` (or a dedicated `*-ajax.php` class) and must use the `wp_mcp_ai_*_nonce` family declared by `Admin_Scripts`. The Restricted Users panel adds `wp_mcp_ai_lift_user_restriction`, `wp_mcp_ai_get_restrictions`, and `wp_mcp_ai_dismiss_restriction_notice` (frontend in `assets/js/restrictions-admin.js`).
 - Screens that depend on optional plugins (Elementor / JetEngine / WooCommerce / Auth0) MUST short-circuit when the dependency is missing — see the existing `*-integration.php` classes for the pattern.
 - The legacy `class-wp-mcp-ai-admin-settings.php` stays untouched for backwards compatibility; new work goes through the dashboard registry. Toggle order is documented in `README-SETTINGS-DASHBOARD.md`.
 - Asset enqueueing flows through `WP_MCP_AI_Admin_Scripts` — do not call `wp_enqueue_*` directly from screen classes.

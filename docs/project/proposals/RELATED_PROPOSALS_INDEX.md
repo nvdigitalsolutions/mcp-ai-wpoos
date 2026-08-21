@@ -95,6 +95,7 @@ Documents that define the Node.js media worker sidecar, its multi-tenant shared-
 | [`026-media-worker-multi-tenancy-sidecar-proposal.md`](./026-media-worker-multi-tenancy-sidecar-proposal.md) | ✅ Phase 1 merged (v2.4.0) | **Shared worker mode** — `SITE_TOKENS` per-site isolation, per-site rate limits, token rotation |
 | [`027-media-worker-multi-tenancy-phase2-spec.md`](./027-media-worker-multi-tenancy-phase2-spec.md) | ✅ Implemented (PR #5868) | **Phase 2 spec** — per-site provider keys, usage counters, grouped temp TTLs, k6 load-test kit |
 | [`028-media-worker-phase3-proposal.md`](./028-media-worker-phase3-proposal.md) | ✅ Implemented (v3.0.0, W6 flip deferred) | **Phase 3 scale** — multisite per-blog tokens, usage reporter, Redis rate-limit store, provider-keys hot-reload |
+| [`031-media-worker-crawl4ai-integration-plan.md`](./031-media-worker-crawl4ai-integration-plan.md) | ✅ Phases 1–2 implemented (worker v3.2.0) | **Crawling in the worker** — native `/api/crawl/*` endpoints, Crawl4AI-compatible facade for the plugin's `run_crawl4ai_job` remote mode, optional full Crawl4AI sibling container |
 
 ---
 

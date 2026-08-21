@@ -92,14 +92,14 @@ The memory usage display appears at the bottom of the Features subtab, below all
 - Health & Wellness (128 MB)
 - **Total: 1,204 MB**
 
-### Scenario 4: Maximum Load (All 20 Toolkits)
+### Scenario 4: Maximum Load (All 33 Toolkits)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 📊 Pro Toolkit Memory Usage                                     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│ 1,844 MB estimated memory usage (20 toolkits enabled) [High Usage]
+│ 2,892 MB estimated memory usage (33 toolkits enabled) [High Usage]
 │ ^^^^^^^^^                                                ^^^^^^^^^ │
 │ RED TEXT                                                 RED BADGE │
 │                                                                  │
@@ -169,7 +169,7 @@ When a user checks or unchecks a toolkit checkbox, the display updates immediate
 ### What Users Can Do
 ✅ Check any toolkit checkbox - **No restrictions**
 ✅ Uncheck any toolkit checkbox - **No restrictions**
-✅ Enable all 20 toolkits simultaneously - **Allowed**
+✅ Enable all 33 toolkits simultaneously - **Allowed**
 ✅ See memory update in real-time - **Instant feedback**
 ✅ Save settings with any combination - **No blocking**
 
@@ -266,7 +266,7 @@ private function get_toolkit_memory_requirements() {
     return array(
         'enable_quiz_system'                   => 32,
         'enable_media_toolkit'                 => 48,
-        // ... all 20 toolkits
+        // ... all 33 toolkits
     );
 }
 ```

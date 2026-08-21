@@ -50,11 +50,23 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		// Get all registered tool slugs.
-		$registered_tools = array();
-		foreach ( $registry->get_tools() as $tool ) {
-			$registered_tools[] = $tool->get_slug();
-		}
+		// Presets reference three kinds of slugs:
+		// 1. Registered tools (available on this install).
+		// 2. Plugin-gated tools the registry declined to load.
+		// 3. Pro toolkit-gated tools (toggled off via enable_* settings) and
+		// tools registered by scattered toolkit loaders — still known, valid
+		// slugs whose class files ship with the plugin.
+		$known_tools = array_merge(
+			array_map(
+				static function ( $tool ) {
+					return $tool->get_slug();
+				},
+				$registry->get_tools()
+			),
+			$registry->get_unavailable_tool_slugs(),
+			$this->get_pro_candidate_slugs(),
+			$this->get_file_backed_tool_slugs()
+		);
 
 		// Create a reflection class to access protected method.
 		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
@@ -69,11 +81,137 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 			foreach ( $preset_data['tools'] as $tool_slug ) {
 				$this->assertContains(
 					$tool_slug,
-					$registered_tools,
-					"Tool '{$tool_slug}' in preset '{$preset_key}' should be a registered tool."
+					$known_tools,
+					"Tool '{$tool_slug}' in preset '{$preset_key}' should be a registered (or known plugin/toolkit-gated) tool."
 				);
 			}
 		}
+	}
+
+	/**
+	 * Derive the Pro candidate-slug universe, including toolkit-gated tools.
+	 *
+	 * The Pro addon's tool group map enumerates every Pro tool slug, but its
+	 * toolkit sections are gated on enable_* settings. We temporarily force
+	 * every enable_* toggle on (enumerated from the Pro source so toggles that
+	 * are absent from the stored settings are covered too), collect the
+	 * group-map keys, then restore the settings — no side effects, since the
+	 * map callback only reads settings.
+	 *
+	 * @return string[] Candidate Pro tool slugs.
+	 */
+	private function get_pro_candidate_slugs() {
+		if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) || ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			return array();
+		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$forced   = is_array( $settings ) ? $settings : array();
+
+		// Force every toolkit toggle the Pro plugin knows about, including
+		// toggles that are not present in the stored settings.
+		$pro_main = file_get_contents( WP_MCP_AI_PRO_PATH . 'mcp-ai-wpoos-pro.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Test-local source scan to enumerate enable_* toggles.
+		if ( false !== $pro_main ) {
+			preg_match_all( "/settings\\['(enable_[a-z0-9_]+)'\\]/", $pro_main, $matches );
+			if ( ! empty( $matches[1] ) ) {
+				foreach ( array_unique( $matches[1] ) as $key ) {
+					$forced[ $key ] = 1;
+				}
+			}
+		}
+
+		update_option( 'wp_mcp_ai_settings', $forced );
+		$group_map = apply_filters( 'wp_mcp_ai_tool_group_map', array() );
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		if ( ! is_array( $group_map ) ) {
+			return array();
+		}
+
+		return array_keys( $group_map );
+	}
+
+	/**
+	 * Derive every preset-referenced slug that has a shipped tool class file.
+	 *
+	 * Covers tools registered by scattered toolkit loaders whose slugs never
+	 * reach the registry (or the group map) when their toolkit is toggled off.
+	 *
+	 * @return string[] Preset slugs backed by a shipped tool file.
+	 */
+	private function get_file_backed_tool_slugs() {
+		static $slugs = null;
+
+		if ( null !== $slugs ) {
+			return $slugs;
+		}
+
+		// Index every slug declared by shipped tool files (base, Pro, and
+		// addons) by reading each file's get_slug() return value. This covers
+		// tools whose file names differ from their slugs and tools registered
+		// by scattered toolkit loaders.
+		$shipped = array();
+
+		$roots = array( WP_MCP_AI_PATH . 'includes/tools' );
+		if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$roots[] = WP_MCP_AI_PRO_PATH . 'includes/tools';
+		}
+
+		// Addon tool roots (fantasy-football, graphify, etc.).
+		$addons_dir = WP_MCP_AI_PATH . 'addons';
+		if ( is_dir( $addons_dir ) ) {
+			foreach ( scandir( $addons_dir ) as $addon ) {
+				if ( '.' === $addon || '..' === $addon ) {
+					continue;
+				}
+				$addon_tools = $addons_dir . '/' . $addon . '/includes/tools';
+				if ( is_dir( $addon_tools ) ) {
+					$roots[] = $addon_tools;
+				}
+			}
+		}
+
+		foreach ( $roots as $root ) {
+			if ( ! is_dir( $root ) ) {
+				continue;
+			}
+
+			$iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $root, FilesystemIterator::SKIP_DOTS ) );
+			foreach ( $iterator as $file ) {
+				if ( ! $file->isFile() || 'php' !== $file->getExtension() ) {
+					continue;
+				}
+
+				$content = file_get_contents( $file->getPathname() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Test-local tool-file scan to extract slugs.
+				if ( false === $content || ! preg_match_all( "/return\s+'([a-z0-9_]+)';/", $content, $matches ) ) {
+					continue;
+				}
+
+				foreach ( $matches[1] as $slug ) {
+					$shipped[ $slug ] = true;
+				}
+			}
+		}
+
+		// Return only the preset-referenced slugs that are shipped somewhere.
+		$slugs = array();
+
+		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( WP_MCP_AI_Tool_Registry::get_instance() );
+		$reflection    = new ReflectionClass( $assistant_cpt );
+		$method        = $reflection->getMethod( 'get_tool_presets' );
+		$method->setAccessible( true );
+		$presets = $method->invoke( $assistant_cpt );
+
+		foreach ( $presets as $preset ) {
+			foreach ( $preset['tools'] as $slug ) {
+				if ( isset( $shipped[ (string) $slug ] ) ) {
+					$slugs[] = (string) $slug;
+				}
+			}
+		}
+
+		$slugs = array_values( array_unique( $slugs ) );
+		return $slugs;
 	}
 
 	/**
@@ -289,6 +427,20 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 		}
 		$tools_in_presets = array_unique( $tools_in_presets );
 
+		// Find tools that are registered but not in any preset. Validated
+		// variants (`foo_validated`) are transparent replacements for their
+		// base slug (`foo`) — presets reference the base slug, so a base
+		// entry covers the validated variant too.
+		$tools_in_presets = array_merge(
+			$tools_in_presets,
+			array_map(
+				static function ( $slug ) {
+					return $slug . '_validated';
+				},
+				$tools_in_presets
+			)
+		);
+
 		// Find tools that are registered but not in any preset.
 		$missing_tools = array_diff( $registered_tools, $tools_in_presets );
 
@@ -367,10 +519,10 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 
 		// Test Google Site Kit tools in seo_marketing preset.
 		$sitekit_tools = array(
-			'sitekit_adsense',
-			'sitekit_analytics',
-			'sitekit_pagespeed',
-			'sitekit_search_console',
+			'sitekit_get_adsense',
+			'sitekit_get_analytics',
+			'sitekit_get_pagespeed',
+			'sitekit_get_search_console',
 		);
 
 		if ( isset( $presets['seo_marketing']['tools'] ) ) {

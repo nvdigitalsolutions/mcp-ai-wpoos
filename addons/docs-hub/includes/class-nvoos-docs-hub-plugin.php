@@ -45,6 +45,16 @@ class NV_oOS_Docs_Hub_Plugin {
 		add_action( 'deactivated_plugin', array( __CLASS__, 'clear_cache_on_change' ) );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_complete' ), 10, 2 );
 
+		// The base plugin's built-in updater replaces files in place and never
+		// fires upgrader_process_complete — it emits this action instead.
+		add_action( 'wp_mcp_ai_plugin_updated', array( __CLASS__, 'on_base_plugin_updated' ) );
+
+		// Deterministic safety net: when an admin loads any admin page, a
+		// version mismatch between the cached manifest and the installed
+		// plugins triggers a rebuild. Covers update paths that never fired
+		// any hook (e.g. manual file replacement).
+		add_action( 'admin_init', array( __CLASS__, 'maybe_rebuild_after_version_change' ) );
+
 		// Auto-trigger a rebuild when settings that affect the index are changed
 		// (sources, remote_repos, context_enabled, include_addon_readmes).
 		add_action( 'update_option_' . self::OPTION_KEY, array( __CLASS__, 'on_settings_changed' ), 10, 2 );
@@ -203,6 +213,56 @@ class NV_oOS_Docs_Hub_Plugin {
 	 */
 	public static function on_upgrader_complete( $upgrader_object, $options ) {
 		NV_oOS_Docs_Hub_Rebuild_Job::handle_upgrade( $upgrader_object, $options );
+	}
+
+	/**
+	 * Handle the base plugin updater's post-update notification.
+	 *
+	 * @since 0.4.1
+	 *
+	 * @param string $basename Updated plugin's file path relative to the plugins directory.
+	 * @return void
+	 */
+	public static function on_base_plugin_updated( $basename ) {
+		NV_oOS_Docs_Hub_Rebuild_Job::handle_plugin_update_notice( $basename );
+	}
+
+	/**
+	 * Rebuild the index when the base plugin or this addon changed version.
+	 *
+	 * The manifest records the plugin versions it was built against. When
+	 * either differs from the installed version, the cache is cleared and
+	 * an async rebuild is enqueued. This guarantees the index refreshes
+	 * after an update even when no hook fired (in-place updater, manual
+	 * file replacement, plugin restore from backup).
+	 *
+	 * @since 0.4.1
+	 *
+	 * @return void
+	 */
+	public static function maybe_rebuild_after_version_change() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$cache    = new NV_oOS_Docs_Hub_Cache();
+		$manifest = $cache->get_manifest();
+		if ( ! is_array( $manifest ) ) {
+			// Nothing cached yet — the first manifest request auto-enqueues
+			// a rebuild, so there is nothing to reconcile here.
+			return;
+		}
+
+		$built_addon  = isset( $manifest['version'] ) ? (string) $manifest['version'] : '';
+		$built_base   = isset( $manifest['base_version'] ) ? (string) $manifest['base_version'] : '';
+		$current_base = defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '';
+
+		if ( NVOOS_DOCS_HUB_VERSION === $built_addon && $current_base === $built_base ) {
+			return;
+		}
+
+		$cache->clear( true );
+		NV_oOS_Docs_Hub_Rebuild_Job::enqueue_async();
 	}
 
 	/**

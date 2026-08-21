@@ -492,6 +492,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'admin.conversation_import',
+			function () {
+				return new WP_MCP_AI_Conversation_Import_Admin();
+			}
+		);
+
+		$this->singleton(
 			'admin.token_manager',
 			function () {
 				return new WP_MCP_AI_Admin_Token_Manager();

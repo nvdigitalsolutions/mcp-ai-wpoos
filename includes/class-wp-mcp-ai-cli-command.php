@@ -1799,6 +1799,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	if ( ! class_exists( 'WP_MCP_AI_CLI_Approval_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-approval-command.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-approval-command.php';
 	}
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Restriction_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-restriction-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-restriction-command.php';
+	}
 
 	if ( ! class_exists( 'WP_MCP_AI_CLI_Harness_Search_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-harness-search-command.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-harness-search-command.php';
@@ -1816,12 +1819,23 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	WP_CLI::add_command( 'mcp-ai rabbitmq', 'WP_MCP_AI_CLI_RabbitMQ_Command' );
 	WP_CLI::add_command( 'mcp-ai stdio', 'WP_MCP_AI_CLI_STDIO_Command' );
 
+	// Conversation import commands load only when the import pipeline
+	// classes were registered (JetEngine-available environments).
+	if ( class_exists( 'WP_MCP_AI_CLI_Conversation_Import_Command' ) ) {
+		WP_CLI::add_command( 'mcp-ai conversation-import', 'WP_MCP_AI_CLI_Conversation_Import_Command' );
+	}
+
 	// Register DLQ and SLA commands only if the classes were successfully loaded.
 	if ( class_exists( 'WP_MCP_AI_CLI_DLQ' ) ) {
 		WP_CLI::add_command( 'mcp-ai dlq', 'WP_MCP_AI_CLI_DLQ' );
 	}
 	if ( class_exists( 'WP_MCP_AI_CLI_SLA' ) ) {
 		WP_CLI::add_command( 'mcp-ai sla', 'WP_MCP_AI_CLI_SLA' );
+	}
+
+	// Register restriction management commands.
+	if ( class_exists( 'WP_MCP_AI_CLI_Restriction_Command' ) ) {
+		WP_CLI::add_command( 'mcp-ai restrictions', 'WP_MCP_AI_CLI_Restriction_Command' );
 	}
 
 	// Register Profession Orchestration commands.

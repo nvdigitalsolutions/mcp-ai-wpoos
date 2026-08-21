@@ -74,8 +74,10 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$claim   = sanitize_text_field( $arguments['claim'] );
-		$sources = $arguments['sources'];
+		unset( $context );
+
+		$claim   = isset( $arguments['claim'] ) ? sanitize_text_field( $arguments['claim'] ) : '';
+		$sources = isset( $arguments['sources'] ) && is_array( $arguments['sources'] ) ? $arguments['sources'] : array();
 
 		$matches       = 0;
 		$total         = count( $sources );
@@ -132,18 +134,17 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 			'sources_checked' => $total,
 			'supporting'      => $supporting,
 			'contradicting'   => $contradicting,
-			'recommendation'  => $this->get_recommendation( $verdict, $confidence ),
+			'recommendation'  => $this->get_recommendation( $verdict ),
 		);
 	}
 
 	/**
 	 * Get recommendation.
 	 *
-	 * @param string $verdict    Verification verdict.
-	 * @param float  $confidence Confidence score.
+	 * @param string $verdict Verification verdict.
 	 * @return string
 	 */
-	private function get_recommendation( $verdict, $confidence ) {
+	private function get_recommendation( $verdict ) {
 		if ( 'verified' === $verdict ) {
 			return 'Information is well-supported across sources';
 		} elseif ( 'partially_verified' === $verdict ) {

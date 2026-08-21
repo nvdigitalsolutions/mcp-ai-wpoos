@@ -1,6 +1,6 @@
 # Features — Security
 
-Security features: master key rotation, root security key, and hardening.
+Security features: master key rotation, root security key, user restrictions, and hardening.
 
 ## What belongs here
 
@@ -8,6 +8,7 @@ Security features: master key rotation, root security key, and hardening.
 - Root security key
 - Security checks reference
 - Security hardening guide
+- User restrictions — flagging, lifting, and audit trail (`user-restrictions.md`)
 
 ## What doesn't belong here
 

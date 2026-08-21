@@ -5,6 +5,7 @@
 # smoke test that locks the contract for every registered tool: get_slug(),
 # parameter-schema validity, required_capability resolution, and execute() denial).
 #
+wp-mcp-ai-legacy-tool-wrapper
 wp-mcp-ai-tool-2fa-setup-assistant
 wp-mcp-ai-tool-add-model-config
 wp-mcp-ai-tool-aggregate-agent-results
@@ -161,9 +162,12 @@ wp-mcp-ai-tool-list-available-models
 wp-mcp-ai-tool-list-batches
 wp-mcp-ai-tool-list-cron-jobs
 wp-mcp-ai-tool-list-jetengine-routes
+wp-mcp-ai-tool-list-mcp-tools
 wp-mcp-ai-tool-list-openai-files
 wp-mcp-ai-tool-list-professions
 wp-mcp-ai-tool-list-prompt-cues
+wp-mcp-ai-tool-list-taxonomies
+wp-mcp-ai-tool-list-terms
 wp-mcp-ai-tool-list-vector-stores
 wp-mcp-ai-tool-load-skill
 wp-mcp-ai-tool-login-security-monitor
@@ -181,6 +185,13 @@ wp-mcp-ai-tool-newsletter-get-emails
 wp-mcp-ai-tool-newsletter-get-subscribers
 wp-mcp-ai-tool-newsletter-get-subscriber-stats
 wp-mcp-ai-tool-newsletter-unsubscribe
+wp-mcp-ai-tool-okf-browse
+wp-mcp-ai-tool-okf-delete-concept
+wp-mcp-ai-tool-okf-read-concept
+wp-mcp-ai-tool-okf-search
+wp-mcp-ai-tool-okf-traverse
+wp-mcp-ai-tool-okf-validate-attestation
+wp-mcp-ai-tool-okf-write-concept
 wp-mcp-ai-tool-openai-usage-analytics
 wp-mcp-ai-tool-open-openai-logs
 wp-mcp-ai-tool-open-openai-usage

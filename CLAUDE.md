@@ -50,11 +50,11 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,502 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,547 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
-├── tools/                              ← base tool implementations (~265 classes; live count is authoritative)
+├── tools/                              ← base tool implementations (~300 classes; live count is authoritative)
 │   ├── okf/                            ← OKF knowledge tools (6 tools)
 ├── services/                           ← 30+ service classes
 ├── admin/                              ← WordPress admin UI
@@ -185,7 +185,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~265 base tool classes) or `false` (~1,502 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~300 base tool classes) or `false` (~1,547 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -394,13 +394,27 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **PostCSS CVE-2026-69153** (v1.1.54) — `postcss` minimum bumped to 8.5.23 to resolve high-severity CVE in the CSS post-processor chain.
 - **PostCSS GHSA-6g55-p6wh-862q** (v1.1.55) — `postcss` minimum bumped to >=8.5.26 in `addons/schedule-anything-spa/package.json`.
 - **MCP tool rate limiter** (v1.1.55) — settings-driven (`tool_rate_limit_max` / `tool_rate_limit_window` / `tool_rate_limit_exempt_tokens`) with credential-token exemption; GET/HEAD exempt from the request quota.
-- **Connection-pooling stance** (v1.1.55, Proposal 023) — atomic concurrency-guard slot tracking (Redis `wp_cache_incr` + InnoDB upsert fallback, `mcp_ai_concurrency_slots` table), RabbitMQ gating of Action Scheduler fallback and DB polling cron, PDO persistent connections in Graphify, Site Health checks for MySQL pool / queue depth / RabbitMQ.
+- **Connection-pooling stance** (v1.1.55, Proposal 023) — atomic concurrency-guard slot tracking (Redis `wp_cache_incr` + InnoDB upsert fallback, `mcp_ai_concurrency_slots` table), RabbitMQ gating of Action Scheduler fallback and DB polling cron, PDO persistent connections in the Content Graph standalone plugins (formerly Graphify), Site Health checks for MySQL pool / queue depth / RabbitMQ.
 - **Media Worker v2.2.0** (v1.1.55) — sidecar hardening: timing-safe `X-Site-Token` auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet headers; `WP_MEDIA_WORKER_TOKEN` constant in the plugin client trait.
 - **Media Worker v2.4.0 → v3.0.0** (v1.1.56) — multi-tenant shared worker mode (`SITE_TOKENS` per-site isolation, per-site rate limits, `SITE_TOKENS_PREVIOUS` rotation); Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`, `PROVIDER_KEYS_STRICT`), usage counters, grouped temp TTLs, cluster warnings + k6 kit; Phase 3 scale (multisite per-blog tokens, usage reporter, `SITE_TOKEN_<SLUG>` env merges, opt-in Redis rate-limit store `RATE_LIMIT_REDIS=1`, `PROVIDER_KEYS_FILE` hot-reload); zero-downtime rotation (`WORKER_API_TOKEN_PREVIOUS`), Canvas v3 napi prebuilds; worker routing for document generation, OCR, frames, charts, email, QR/translate/PDF, vectorize with local fallbacks.
 - **API key merged-settings enforcement** (v1.1.54) — 20 research tools now use `get_merged_credentials()` instead of reading the global API key option directly, ensuring per-assistant and per-provider API key overrides take effect.
 - **Post-install integrity check** (v1.1.52) — `WP_MCP_AI_Plugin_Updater` verifies 15 critical file paths after every update before reporting success. Prevents silent corruption on distributed filesystems (Cloudways).
 - **Plugin updater rework** (v1.1.57) — copy-in-place install with backup snapshot and automatic rollback replaces `Plugin_Upgrader` (the live plugin directory is never renamed); new base-only update flow for wp.org installs; Pro version read from the plugin header instead of the drifted constant.
 - **Service Status provider detection** (v1.1.57) — AI-provider detection now resolves credentials through `WP_MCP_AI_Credential_Resolver` (plugin settings, WP 7.0 Connectors, env vars, PHP constants) with a merged-settings fallback for early bootstrap.
+- **OOS runtime consolidation** (v1.1.58, Proposal 029 Phases 0–5.8) — the OOS engine reaches parity with the legacy path: tool-surface + security-gate parity (`ToolGuardInterface`), event-sourced session log (`SessionLog`/`SessionEvent`/`SessionTelemetry`), opt-in shadow mode (`includes/oos/`, `wp_mcp_ai_oos_shadow_enabled()` default off) + `wp mcp-ai oos parity` CLI, canary routing (`wp_mcp_ai_oos_canary` default off), scoped tools (`ToolScope`/`ToolRestriction`) + compaction seam (`CompactionProvider`), Pro composition & child binding (`addons/pro/includes/composition/`), telemetry single-path. See `.context/oos-engine.md`.
+- **Composio Connect** (v1.1.58) — Pro subsystem `addons/pro/includes/composio/` (OAuth auth handler with state nonce, API client, trigger bridge, signed webhook controller) + 6 beta `composio_*` tools + remote-sites admin/metabox panels.
+- **deepmerge-ts CVE-2026-40345** (v1.1.58) — override in `addons/media-worker/package.json` + `addons/pro/package.json`.
+- **Security Center wp-api fix** (v1.1.58) — `wp-api` enqueued on the security tab (its inline scripts call `wp.apiRequest()`).
+- **Graphify standalone plugins → Content Graph** (v1.1.58) — `plugins/nvoos-graphify*` renamed to `plugins/nvoos-content-graph*` (v1.0.2); `addons/graphify/` (knowledge-graph addon) unchanged.
+- **Media Worker crawling & Crawl4AI facade** (v1.1.59, worker v3.2.0) — new `/api/crawl/*` endpoints (markdown, markdown-batch, links) with static-first two-tier extraction and the shared SSRF guard; `/api/crawl4ai/*` facade for the plugin's `run_crawl4ai_job` remote mode; `src/utils/llm-extract.js` structured extraction. See `docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md` and `.context/media-worker.md`.
+- **Research tools multi-provider** (v1.1.59) — `semantic_content_search` embeddings resolve through the shared provider abstraction (new Gemini embedding provider in `includes/services/embedding/`); keyword fallback when unconfigured; model-mismatch vector skipping. `deep_research` retries across the provider chain and never caches empty reports. New base tools `list_terms` + `list_taxonomies`.
+- **`wp_mcp_ai_plugin_updated` action** (v1.1.59) — the copy-in-place plugin updater fires this after every successful update (core, Pro, base→complete); **addons that cache plugin files must subscribe** because `upgrader_process_complete` never fires for these updates (Docs Hub 0.4.1 does, plus an `admin_init` version-mismatch rebuild guard).
+- **Tool registration fixes** (v1.1.59) — legacy-format tool classes (pre-interface) are transparently wrapped (`WP_MCP_AI_Legacy_Tool_Wrapper` + `WP_MCP_AI_Tool_Legacy_Definition` trait); ~32 previously-orphaned base tools are registered; new `wp_mcp_ai_tools_init` action for late side-loading; registry tracks skipped tools in `unavailable_tool_slugs`.
+- **Restricted-user flagging** (v1.1.60) — `WP_MCP_AI_Restriction_Registry` (`includes/class-wp-mcp-ai-restriction-registry.php`) turns rate-limit / token-budget blocks into persistent, audit-logged restriction records with auto-expiry; REST routes (`/mcp-ai/v1/restrictions`, `/users/{id}/restrictions`), AJAX lift actions, `wp mcp-ai restrictions` CLI, Token Manager panel + Pro Command Center Restrictions tab; IETF `RateLimit-*` headers on rate-limited responses; chat rate limits filterable (`wp_mcp_ai_chat_rate_limit` / `wp_mcp_ai_chat_rate_limit_window`); posture signal `restriction_registry_on`. See `docs/features/security/user-restrictions.md`.
+- **Conversation import to transcript CCT** (v1.1.60) — `includes/conversation-import/` imports ChatGPT / Gemini Takeout / Claude / ShareGPT / OpenAI JSONL into the JetEngine `ai_chat_transcripts` CCT (4 new JetEngine-gated tools, admin page, `wp mcp-ai conversation-import` CLI, GDPR + memory mining). See `docs/user-guides/conversation-import.md`.
+- **Tool schema normalization** (v1.1.60) — tool argument schemas are normalized before provider payloads (DeepSeek client, REST `/tools` output, `WP_MCP_AI_Tool_Service`, `ChatOrchestrator`); the registry logs registrations skipped for a missing tool contract.
+- **WP_Error fatals fixed** (v1.1.60) — memory tools, request guard, and the REST chat-memory controller now handle `WP_Error` returns before array/object access.
+- **nvoos-content-graph v1.0.3** (v1.1.60) — wp.org resubmission: WPCS + review fixes, screenshot assets, standalone build ZIP.
 - **REST require_once guards** (v1.1.52) — all REST controller `require_once` calls in `class-wp-mcp-ai-rest.php` now guarded with `file_exists()` checks.
 - **Site Health integration** — WordPress Site Health checks for cron configuration and security posture.
 - **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.

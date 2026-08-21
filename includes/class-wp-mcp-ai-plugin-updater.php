@@ -363,6 +363,27 @@ class WP_MCP_AI_Plugin_Updater {
 	}
 
 	/**
+	 * Notify listeners that plugin files were replaced in place.
+	 *
+	 * This updater copies files over the live plugin directory instead of
+	 * going through the WordPress Plugin_Upgrader flow, so core never fires
+	 * `upgrader_process_complete` for these updates. Addons (e.g. the Docs
+	 * Hub) subscribe to this namespaced action to rebuild their caches after
+	 * an update.
+	 *
+	 * @param string $updated_file Absolute path to the updated plugin's main file.
+	 * @return void
+	 */
+	private static function notify_plugin_updated( $updated_file ) {
+		/**
+		 * Fires after the NV oOS plugin performs an in-place update.
+		 *
+		 * @param string $basename Updated plugin's file path relative to the plugins directory.
+		 */
+		do_action( 'wp_mcp_ai_plugin_updated', plugin_basename( $updated_file ) );
+	}
+
+	/**
 	 * Download and install a core plugin update from the GitHub release asset.
 	 *
 	 * Replaces the plugin files in place by copying the extracted ZIP over the
@@ -391,6 +412,9 @@ class WP_MCP_AI_Plugin_Updater {
 
 		// Clear the update cache.
 		delete_transient( self::CACHE_KEY );
+
+		// Notify addons so they can rebuild caches derived from plugin files.
+		self::notify_plugin_updated( WP_MCP_AI_FILE );
 
 		return true;
 	}
@@ -656,6 +680,9 @@ class WP_MCP_AI_Plugin_Updater {
 
 		// Clear the update cache.
 		delete_transient( self::CACHE_KEY );
+
+		// Notify addons so they can rebuild caches derived from Pro files.
+		self::notify_plugin_updated( defined( 'WP_MCP_AI_PRO_FILE' ) ? WP_MCP_AI_PRO_FILE : WP_MCP_AI_FILE );
 
 		return true;
 	}
@@ -927,6 +954,9 @@ class WP_MCP_AI_Plugin_Updater {
 
 		// Clear the update cache.
 		delete_transient( self::CACHE_KEY );
+
+		// Notify addons so they can rebuild caches derived from plugin files.
+		self::notify_plugin_updated( WP_MCP_AI_FILE );
 
 		return true;
 	}

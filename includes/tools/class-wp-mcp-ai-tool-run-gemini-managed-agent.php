@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$operation     = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
 		$session_id    = isset( $arguments['session_id'] ) ? sanitize_text_field( $arguments['session_id'] ) : '';
 		$task          = isset( $arguments['task'] ) ? sanitize_textarea_field( $arguments['task'] ) : '';
@@ -395,5 +395,37 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 			'capabilities' => array( 'function-calling' ),
 			'required'     => true,
 		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * Sanitize managed-agent results for LLM context consumption by
+	 * stripping verbose trace/log fields that bloat context windows.
+	 *
+	 * @param mixed $result Raw tool execution result.
+	 * @return mixed Sanitized result safe for LLM context.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		$strip_keys = array(
+			'execution_trace',
+			'full_log',
+			'detailed_logs',
+			'raw_response',
+		);
+
+		foreach ( $strip_keys as $key ) {
+			unset( $result[ $key ] );
+
+			if ( isset( $result['data'] ) && is_array( $result['data'] ) ) {
+				unset( $result['data'][ $key ] );
+			}
+		}
+
+		return $result;
 	}
 }

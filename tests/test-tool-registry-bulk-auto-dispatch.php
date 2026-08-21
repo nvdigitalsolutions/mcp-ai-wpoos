@@ -19,6 +19,24 @@ require_once __DIR__ . '/fixtures/class-phase2-test-inline-tool.php';
 class Test_Tool_Registry_Bulk_Auto_Dispatch extends WP_UnitTestCase {
 
 	/**
+	 * Log in an administrator so the bulk-dispatch path passes the
+	 * required edit_posts capability check.
+	 */
+	public function set_up() {
+		parent::set_up();
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// The job-queue table is created on plugin activation, which the test
+		// bootstrap does not run. Create it so queue_job() can persist the
+		// dispatched job and the async envelope is returned.
+		if ( class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
+			WP_MCP_AI_Async_Job_Queue::create_table();
+		}
+	}
+
+	/**
 	 * Reset filters and unregister fixtures between tests.
 	 */
 	public function tear_down() {

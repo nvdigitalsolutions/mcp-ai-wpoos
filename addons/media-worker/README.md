@@ -23,7 +23,9 @@ addons/media-worker/
         ├── email.js      # Nodemailer + MJML
         ├── code.js       # Prettier formatting
         ├── data.js       # Translate, language detect, QR, math, ICS, charts, geospatial
-        └── browser.js    # Puppeteer screenshot + PDF
+        ├── browser.js    # Puppeteer screenshot + PDF
+        ├── crawl.js      # URL → clean Markdown (static + Chromium tiers)
+        └── crawl4ai.js   # Crawl4AI-compatible task facade for the WP plugin
 ```
 
 ## Quick Start (Standalone)
@@ -70,6 +72,8 @@ wordpress:
 | Code | `/api/code/format`, `/api/code/check-syntax` |
 | Data | `/api/data/translate`, `/api/data/language-detect`, `/api/data/qrcode`, `/api/data/render-math`, `/api/data/generate-ics`, `/api/data/render-chart`, `/api/data/analyze-geospatial` |
 | Browser | `/api/browser/screenshot`, `/api/browser/pdf` |
+| Crawl | `/api/crawl/markdown`, `/api/crawl/markdown-batch`, `/api/crawl/links` |
+| Crawl4AI facade | `/api/crawl4ai/crawl`, `/api/crawl4ai/task/:task_id` |
 | Health | `GET /api/health` |
 
 ## Plugin Integration
@@ -81,6 +85,128 @@ define( 'WP_MEDIA_WORKER_URL', 'http://media-worker:3100' );
 ```
 
 Or configure via **Settings → Media Worker** in the WordPress admin.
+
+## Crawling (v3.1.0+)
+
+The worker doubles as a crawler service, so `run_crawl4ai_job` can offload
+browser rendering to the sidecar instead of the plugin's local HTTP
+fallback.
+
+### Native crawl endpoints
+
+- `POST /api/crawl/markdown` — single URL → `{ title, markdown, word_count,
+  status_code, rendered, final_url }`. Extraction tiers:
+  - **static first** — plain HTTP fetch (every redirect hop re-validated by
+    the SSRF guard) → Mozilla Readability → Turndown. Zero browser cost.
+  - **Chromium fallback** — the existing hardened, sandboxed browser when
+    the static tier yields too little text (`render: "auto"`), or
+    explicitly via `render: "always"`. `render: "never"` disables it.
+- `POST /api/crawl/markdown-batch` — `{ urls: [...], async_mode, callback_url }`;
+  sync by default (per-URL errors never fail the batch), queued async on the
+  Redis/in-memory job queue when `async_mode` is set.
+- `POST /api/crawl/links` — link scan (`internal_only` filter), backing the
+  `link_scan` mode of `run_crawl4ai_job`.
+
+### Crawl4AI-compatible facade
+
+The facade mirrors the remote Crawl4AI REST contract the WordPress plugin
+already speaks (`POST /crawl` → immediate `task_id`; `GET /task/:id` →
+`{ status, results }`), backed by the worker's job queue. Point the plugin at
+the worker with **zero plugin code changes**:
+
+```php
+// wp-config.php
+define( 'WP_MCP_AI_CRAWL4AI_BASE_URL', 'http://media-worker:3100/api/crawl4ai' );
+```
+
+The WP-Cron poller, admin Crawl4AI monitor, and chat Jobs/Tasks drawer then
+work exactly as they do against a Python Crawl4AI service. Strategies:
+`NoExtractionStrategy` (Markdown pipeline), `JsonCssExtractionStrategy`
+(Cheerio CSS schema, static HTML only), and `LLMExtractionStrategy`
+(multi-provider structured JSON — see below).
+
+### LLM extraction providers
+
+`LLMExtractionStrategy` resolves its provider automatically — no per-request
+configuration needed:
+
+1. `CRAWL_LLM_PROVIDER` explicit override (`openai`, `gemini`, `anthropic`,
+   `deepseek`)
+2. `CRAWL_LLM_BASE_URL` — any OpenAI-compatible endpoint (Ollama, Groq,
+   OpenRouter, vLLM, …); key optional
+3. Autodetect from the first configured credential:
+   `OPENAI_API_KEY` → `GEMINI_API_KEY` → `ANTHROPIC_API_KEY` →
+   `DEEPSEEK_API_KEY`
+4. Nothing configured → the submission answers `501` with a clear message
+
+Provider details: OpenAI and DeepSeek use the OpenAI SDK with
+`response_format: json_object`; Gemini uses `responseMimeType:
+application/json`; Anthropic uses the REST `/v1/messages` contract with an
+instruction-level JSON discipline. All responses are hardened (code fences
+and prose tolerated, balanced-JSON extraction) before parsing, and
+per-site credentials (`SITE_PROVIDER_KEYS`) apply in multi-tenant mode.
+
+### Managed Node.js hosts (Cloudways Velocity)
+
+Velocity is a Node-only managed stack — no Docker, no Python. The crawling
+surface is designed so that never matters:
+
+- Phases 1–2 are **pure Node** — no Python enters the worker image or
+  dependency set, so Velocity builds and PM2 processes are unchanged.
+- The optional Phase 3 proxy (`/api/crawl/full`, full Crawl4AI parity) is
+  env-gated: without `CRAWL4AI_FULL_URL` it answers
+  `503 service_not_configured`. On Velocity, simply don't set it.
+- If full parity is needed with a Velocity worker, host the Python
+  Crawl4AI elsewhere (VPS/container host or managed scraping API) and set
+  `CRAWL4AI_FULL_URL` to its URL — the worker acts as the SSRF-validated,
+  token-gated forwarder. Alternatively point
+  `WP_MCP_AI_CRAWL4AI_BASE_URL` at the remote service directly in
+  WordPress and skip the worker.
+- Velocity images may lack Chromium: the static crawl tier works fully,
+  the browser-fallback tier surfaces per-URL errors, and
+  `render: "never"` is the fully-supported Velocity mode (same graceful
+  degradation as the `browser_automation` capability flag).
+
+### Crawl configuration
+
+| Env var | Default | Purpose |
+|---|---|---|
+| `CRAWL_TIMEOUT_MS` | 30000 | Per-URL fetch/render budget |
+| `CRAWL_MAX_BYTES` | 5 MB | Maximum response size (static tier) |
+| `CRAWL_MAX_URLS_BATCH` | 10 | Batch/task URL cap |
+| `CRAWL_MIN_TEXT_CHARS` | 200 | Static-tier text floor before the browser tier is tried |
+| `CRAWL_MAX_REDIRECTS` | 5 | Redirect hop cap (each hop SSRF-validated) |
+| `CRAWL_USER_AGENT` | `nvoos-media-worker/3.1 (…)` | Outbound user agent |
+| `CRAWL_TASK_TTL_MS` | 1800000 | Facade task retention (in-memory store) |
+| `CRAWL_LLM_PROVIDER` | — (autodetect) | Force one of `openai`, `gemini`, `anthropic`, `deepseek` |
+| `CRAWL_LLM_BASE_URL` | — | Any OpenAI-compatible endpoint (Ollama, Groq, …) |
+| `CRAWL_LLM_MODEL` | `gpt-4o-mini` | OpenAI / OpenAI-compatible model |
+| `CRAWL_LLM_MODEL_GEMINI` | `gemini-2.5-flash` | Gemini model |
+| `CRAWL_LLM_MODEL_ANTHROPIC` | `claude-sonnet-4-5` | Anthropic model |
+| `CRAWL_LLM_MODEL_DEEPSEEK` | `deepseek-chat` | DeepSeek model |
+| `CRAWL_LLM_TIMEOUT_MS` | 60000 | LLM extraction call budget |
+| `RATE_LIMIT_CRAWL` | 20 / 10 min | Crawl-group rate limit (per-site overrides supported) |
+
+## Job Queue Processors (v3.1.1+)
+
+Queue processors were previously never registered — `async_mode` workflow
+jobs and scheduled social posts were enqueued but nothing ever ran them.
+Since v3.1.1 every enqueued job type has a lazy processor that replays the
+job through the worker's own sync endpoint (the single source of truth):
+
+| Queue | Job type | Processor |
+|---|---|---|
+| `workflow` | `social-package` | → `POST /api/workflow/social-package` (sync) |
+| `workflow` | `brand-assets` | → `POST /api/workflow/brand-assets` (sync) |
+| `workflow` | `video-pipeline` | → `POST /api/workflow/video-pipeline` (sync) |
+| `social-scheduled` | `publish` | → `POST /api/social/post` (immediate, `attempts: 1`) |
+| `crawl` | `markdown-batch` | inline batch crawler |
+| `crawl4ai` | `crawl4ai-task` | inline facade task runner |
+
+Processors register lazily on first enqueue (no idle polling at boot) and
+reconstruct the caller's `X-Site-Token` from the worker's own config
+(`SITE_TOKENS` / `WORKER_API_TOKEN`) — secrets are never stored in queued
+job data.
 
 ## Security Model (v2.2.0+)
 

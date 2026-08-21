@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **August 15, 2026** (v1.1.57)
+> Last reviewed: **August 21, 2026** (v1.1.60)
 
 ### Related Files
 
@@ -66,7 +66,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
   ├─ Load npm-integration-filters.php   (Node.js microservice bridges)
   ├─ Load Pro CDN loader, CPT meta schema, product type helper,
   │   remote connection manager, ERP connector
-  ├─ Register Pro tool classes (~635 tools via pro.php class-loader)
+  ├─ Register Pro tool classes (~1,247 Pro tools via pro.php class-loader)
   └─ do_action('wp_mcp_ai_pro_init')
 ```
 
@@ -74,7 +74,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
 
 | Constant | Default | Effect |
 |---|---|---|
-| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~195 tool classes); `false` = full ~830-tool mode (~195 base + ~635 Pro) |
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~300 tool classes); `false` = full mode (~1,547 tools: ~300 base + ~1,247 Pro) |
 | `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks |
 | `WP_MCP_AI_PRO_VERSION` | set by Pro | Prevents double-loading of Pro addon |
 | `WP_DEBUG` | WordPress default | Enables extra error logging throughout |
@@ -94,8 +94,12 @@ mcp-ai-wpoos/
 │   ├─ class-wp-mcp-ai-plugin.php  ← Main singleton, DI container wiring
 │   ├─ class-wp-mcp-ai-container.php + container-helpers.php  ← Service locator / DI
 │   ├─ class-wp-mcp-ai-language-model-router.php  ← DSpark tiered model routing
+│   ├─ class-wp-mcp-ai-restriction-registry.php  ← Persistent user-restriction records (flag/lift/auto-expire/audit, v1.1.60)
+│   ├─ class-wp-mcp-ai-conversation-import-admin.php  ← Conversation-import admin screen (v1.1.60)
+│   ├─ class-wp-mcp-ai-cli-conversation-import-command.php  ← `wp mcp-ai conversation-import` (v1.1.60)
+│   ├─ conversation-import/      ← External AI conversation import pipeline → JetEngine CCT (17 classes, v1.1.60)
 │   │
-│   ├─ tools/                  ← Tool classes (~234 class files; ~195 extend the tool base class)
+│   ├─ tools/                  ← Tool classes (~1,547 total implementations registered through the singleton registry; live count authoritative)
 │   │   └─ class-wp-mcp-ai-tool-{name}.php   (one file per tool)
 │   │   └─ orchestration/      ← Tool routing / multi-tool orchestration
 │   │
@@ -107,7 +111,7 @@ mcp-ai-wpoos/
 │   │
 │   ├─ assistants/             ← Assistant CPT registration and metaboxes
 │   ├─ blueprints/             ← Unified blueprint installer + import tools
-│   ├─ security/               ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
+│   ├─ security/               ← Security infrastructure (10 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard)
 │   ├─ bridge/                 ← WordPress adapters for nvoos/core domain contracts (21 adapters)
 │   ├─ services/               ← Business logic (30+ service classes)
 │   │   ├─ class-wp-mcp-ai-dspark-hooks.php ← DSpark efficiency data collectors
@@ -117,7 +121,11 @@ mcp-ai-wpoos/
 │   │   └─ class-wp-mcp-ai-orchestration-preset-service.php ← Orchestration presets
 │   ├─ rest/                   ← REST controllers
 │   │   ├─ class-wp-mcp-ai-rest-chat-memory-controller.php  ← Chat-client memory bridge proxy
-│   │   └─ class-wp-mcp-ai-rest-transcript-mining-controller.php  ← Transcript mining REST API
+│   │   ├─ class-wp-mcp-ai-rest-transcript-mining-controller.php  ← Transcript mining REST API
+│   │   ├─ class-wp-mcp-ai-rest-restrictions-controller.php  ← User-restriction routes (v1.1.60)
+│   │   └─ class-wp-mcp-ai-rate-limit-headers.php  ← IETF rate-limit response headers (v1.1.60)
+│   ├─ cli/                     ← WP-CLI subcommands (`wp mcp-ai …`)
+│   │   └─ class-wp-mcp-ai-cli-restriction-command.php  ← `wp mcp-ai restrictions list|lift|add` (v1.1.60)
 │   ├─ harness/                ← LLM Harnessing subsystem (Layers A–G)
 │   │   ├─ class-wp-mcp-ai-prompt-cue-library.php  ← Layer A: cue templates
 │   │   ├─ class-wp-mcp-ai-reasoning-trace.php     ← Layer B: reasoning traces
@@ -170,7 +178,7 @@ mcp-ai-wpoos/
 │   ├─ src/Infrastructure/     ← 12 AI provider clients, SSE handler, cost calculator
 │   └─ src/Tool/               ← 109 framework-agnostic tool classes
 │
-├─ .agents/skills/             ← 21 coding-time agent skills for Zed editor (wp-* patterns)
+├─ .agents/skills/             ← 52 coding-time agent skills for Zed editor (20 wp-* + 31 design-* + mcp-ai-wpoos-plugin)
 ├─ .bmad/                      ← 6 BMAD workflow agent YAML definitions + team composition
 ├─ .context/                   ← Subsystem context files (8 topics + 5 templates + active/archive)
 │
@@ -369,7 +377,7 @@ This repository is developed with multiple AI coding agents. Each agent has a de
 | **GitHub Copilot** | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | Repo-level instructions for Copilot chat and completions |
 | **OpenAI Codex** | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox bootstrap script |
 | **BMAD Agents** | [`.bmad/agents/*.yaml`](.bmad/agents/) | Six specialized roles for the GSD × BMAD workflow |
-| **Zed Agent Skills** | [`.agents/skills/*.md`](.agents/skills/) | 21 coding-time WordPress development skills auto-discovered by Zed |
+| **Zed Agent Skills** | [`.agents/skills/*.md`](.agents/skills/) | 52 coding-time skills (20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide) auto-discovered by Zed |
 
 The full agent inventory, capabilities, and context-loading strategy are documented in [`AGENTS.md`](AGENTS.md).
 

@@ -3,11 +3,75 @@ import axios from 'axios';
 import { getQueue } from '../queue.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
 import { getCredential } from '../utils/provider-keys.js';
+import { tokenForSite } from '../middleware/auth.js';
 
 const router = Router();
 
 // Internal service URLs
 const WORKER_URL = `http://localhost:${process.env.PORT || 3100}`;
+
+// ── Queue processors (lazy, per queue instance) ────────────
+//
+// Before v3.1.1 the async_mode branches enqueued jobs that no processor
+// ever picked up (the JobQueue API was only ever called with .add()). These
+// handlers replay each job through the worker's own sync endpoints — the
+// single source of truth for each pipeline — with the site token
+// reconstructed from the worker's config (never stored in job data).
+//
+// Transport errors bubble up so the queue retries; per-step failures are
+// captured by the endpoints themselves and do NOT retry the whole job.
+
+const WORKFLOW_ENDPOINTS = {
+	'social-package': '/api/workflow/social-package',
+	'brand-assets': '/api/workflow/brand-assets',
+	'video-pipeline': '/api/workflow/video-pipeline',
+};
+
+const handledWorkflowQueues = new WeakSet();
+
+/**
+ * Ensure every workflow job type has a processor on this queue (once per
+ * queue instance — queues are per-site singletons in multi-tenant mode).
+ *
+ * @param {Object} queue JobQueue instance.
+ */
+export function ensureWorkflowHandlers( queue ) {
+	if ( handledWorkflowQueues.has( queue ) ) {
+		return;
+	}
+	handledWorkflowQueues.add( queue );
+
+	for ( const type of Object.keys( WORKFLOW_ENDPOINTS ) ) {
+		queue.process( type, ( job ) => processWorkflowJob( job ) );
+	}
+}
+
+/**
+ * Replay a queued workflow job through its sync endpoint.
+ *
+ * @param {Object} job  Queue job ({ data: { site, ...payload } }).
+ * @param {Object} [deps] Injectable ({ post }) for tests.
+ * @return {Promise<Object>} Endpoint response data.
+ */
+export async function processWorkflowJob( job, deps = {} ) {
+	const post = deps.post || axios.post;
+	const { site, callback_url: callbackUrl, ...payload } = job.data || {};
+	const endpoint = WORKFLOW_ENDPOINTS[ job.type ];
+
+	if ( ! endpoint ) {
+		throw new Error( `No workflow endpoint for job type: ${ job.type }` );
+	}
+
+	const response = await post( `${ WORKER_URL }${ endpoint }`, {
+		...payload,
+		async_mode: false,
+		callback_url: callbackUrl || null,
+	}, {
+		headers: { 'X-Site-Token': tokenForSite( site ) || '' },
+		timeout: 300000,
+	} );
+	return response.data;
+}
 
 /**
  * Validate a user-supplied callback URL before the workflow posts results to
@@ -77,7 +141,9 @@ router.post('/social-package', async (req, res) => {
 
     if (async_mode) {
       const queue = getQueue('workflow', req.site);
+      ensureWorkflowHandlers(queue);
       const job = await queue.add('social-package', {
+        site: req.site,
         title,
         content,
         platforms,
@@ -234,7 +300,9 @@ router.post('/brand-assets', async (req, res) => {
 
     if (async_mode) {
       const queue = getQueue('workflow', req.site);
+      ensureWorkflowHandlers(queue);
       const job = await queue.add('brand-assets', {
+        site: req.site,
         brand_name,
         style,
         color_palette,
@@ -375,7 +443,9 @@ router.post('/video-pipeline', async (req, res) => {
 
     if (async_mode) {
       const queue = getQueue('workflow', req.site);
+      ensureWorkflowHandlers(queue);
       const job = await queue.add('video-pipeline', {
+        site: req.site,
         video_url,
         title,
         platforms,
@@ -457,11 +527,15 @@ router.get('/status', async (req, res) => {
     const imageQueue = getQueue('image-generation', req.site);
     const socialQueue = getQueue('social-scheduled', req.site);
     const workflowQueue = getQueue('workflow', req.site);
+    const crawlQueue = getQueue('crawl', req.site);
+    const crawl4aiQueue = getQueue('crawl4ai', req.site);
 
-    const [imageStats, socialStats, workflowStats] = await Promise.all([
+    const [imageStats, socialStats, workflowStats, crawlStats, crawl4aiStats] = await Promise.all([
       imageQueue.getStats(),
       socialQueue.getStats(),
       workflowQueue.getStats(),
+      crawlQueue.getStats(),
+      crawl4aiQueue.getStats(),
     ]);
 
     res.json({
@@ -471,6 +545,8 @@ router.get('/status', async (req, res) => {
         image_generation: imageStats,
         social_scheduled: socialStats,
         workflow: workflowStats,
+        crawl: crawlStats,
+        crawl4ai: crawl4aiStats,
       },
       worker: {
         uptime: process.uptime(),

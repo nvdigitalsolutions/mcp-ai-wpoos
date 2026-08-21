@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Pro plugin constants.
 if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-	define( 'WP_MCP_AI_PRO_VERSION', '1.1.57' );
+	define( 'WP_MCP_AI_PRO_VERSION', '1.1.60' );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_FILE' ) ) {
 	define( 'WP_MCP_AI_PRO_FILE', __FILE__ );
@@ -457,6 +457,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Evaluate_Logic_Gate'           => WP_MCP_AI_PRO_PATH . 'includes/tools/math/class-wp-mcp-ai-tool-evaluate-logic-gate.php',
 			'WP_MCP_AI_Tool_Generate_Truth_Table'          => WP_MCP_AI_PRO_PATH . 'includes/tools/math/class-wp-mcp-ai-tool-generate-truth-table.php',
 			'WP_MCP_AI_Tool_Evaluate_Eml'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/developer/class-wp-mcp-ai-tool-evaluate-eml.php',
+			// Vector storage preparation tool (orphaned file registered as of 1.2.0).
+			'WP_MCP_AI_Tool_Prepare_File_For_Vector_Store' => WP_MCP_AI_PRO_PATH . 'includes/tools/vector-storage/class-wp-mcp-ai-tool-prepare-file-for-vector-store.php',
 			// Remote WordPress/WooCommerce Connection tool.
 			'WP_MCP_AI_Tool_Remote_WP_Connection'          => WP_MCP_AI_PRO_PATH . 'includes/tools/remote-connections/class-wp-mcp-ai-tool-remote-wp-connection.php',
 			// Printful Print-on-Demand tool.
@@ -1337,7 +1339,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Competitor_Analysis'       => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-competitor-analysis.php',
 				'WP_MCP_AI_Tool_Influencer_Identification' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-influencer-identification.php',
 				// Unified social analytics (Phase 4 shared service).
-				'WP_MCP_AI_Tool_Get_Social_Analytics'   => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-get-social-analytics.php',
+				'WP_MCP_AI_Tool_Get_Social_Analytics'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-get-social-analytics.php',
 				// Content Management tools.
 				'WP_MCP_AI_Tool_Create_Content_Calendar'   => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-create-content-calendar.php',
 				'WP_MCP_AI_Tool_Generate_Post_Ideas'       => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-generate-post-ideas.php',
@@ -1836,7 +1838,28 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 					}
 
 					if ( $should_register ) {
-						$registry->register_tool( new $class() );
+						$registered = $registry->register_tool( new $class() );
+
+						// Legacy-format classes (pre-interface) are transparently
+						// wrapped so they still register with the canonical tool
+						// interface.
+						if ( ! $registered && class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {
+							$registered = $registry->register_tool( new WP_MCP_AI_Legacy_Tool_Wrapper( new $class() ) );
+						}
+
+						if ( ! $registered && method_exists( $registry, 'mark_tool_unavailable' ) ) {
+							$skipped = new $class();
+							if ( method_exists( $skipped, 'get_slug' ) ) {
+								$registry->mark_tool_unavailable( $skipped->get_slug() );
+							}
+						}
+					} elseif ( method_exists( $registry, 'mark_tool_unavailable' ) ) {
+						// Keep the registry's "known but gated" slug list complete
+						// so consumers can distinguish toolkit-gated Pro tools.
+						$skipped = new $class();
+						if ( method_exists( $skipped, 'get_slug' ) ) {
+							$registry->mark_tool_unavailable( $skipped->get_slug() );
+						}
 					}
 				}
 			}

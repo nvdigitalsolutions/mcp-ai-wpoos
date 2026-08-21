@@ -38,6 +38,8 @@ All controllers extend `WP_MCP_AI_REST_Controller_Base` and share its `REST_NAME
 | `WP_MCP_AI_REST_Commands_Controller` | `class-wp-mcp-ai-rest-commands-controller.php` | Command palette (1 route) |
 | `WP_MCP_AI_REST_Workflow_CPT_Controller`, `WP_MCP_AI_REST_Workflow_Run_Controller`, `WP_MCP_AI_REST_Triggers_Controller` | `class-wp-mcp-ai-rest-workflow-*.php`, `class-wp-mcp-ai-rest-triggers-controller.php` | Workflow CRUD + runs + triggers |
 | `WP_MCP_AI_REST_Transcript_Mining_Controller` | `class-wp-mcp-ai-rest-transcript-mining-controller.php` | Background transcript-mining jobs |
+| `WP_MCP_AI_REST_Restrictions_Controller` | `class-wp-mcp-ai-rest-restrictions-controller.php` | User-restriction routes: `GET /restrictions`, `GET|POST /users/{id}/restrictions`, `DELETE /users/{id}/restrictions/{type}` |
+| `WP_MCP_AI_Rate_Limit_Headers` | `class-wp-mcp-ai-rate-limit-headers.php` | IETF rate-limit response headers (`RateLimit-Policy`, `RateLimit`, `Retry-After`) on rate-limited REST responses |
 | `WP_MCP_AI_REST_Analytics_Manager`, `WP_MCP_AI_REST_Cost_Manager`, `WP_MCP_AI_REST_Token_Manager` | `class-wp-mcp-ai-rest-{analytics,cost,token}-manager.php` | Admin analytics dashboards |
 | `WP_MCP_AI_SSE_Handler` | `class-wp-mcp-ai-sse-handler.php` | Server-Sent Events transport |
 | `WP_MCP_AI_Asset_Inventory_REST`, `WP_MCP_AI_Security_Training_REST`, `WP_MCP_AI_Supplier_Security_REST` | `class-wp-mcp-ai-{asset-inventory,security-training,supplier-security}-rest.php` | Compliance dashboard routes |
@@ -48,7 +50,7 @@ All controllers extend `WP_MCP_AI_REST_Controller_Base` and share its `REST_NAME
 - **Writes to:** `WP_REST_Response` (or SSE frames); credential post meta; chat transcripts (localStorage + optional JetEngine CCT); job queues; the logger
 - **Upstream callers:** chat-bubble frontend (`assets/js/chat.js`), Elementor widgets, external MCP clients, Auth0-authenticated apps, mesh peers, guest chat surfaces
 - **Downstream collaborators:** [`includes/tools/`](../tools/), [`includes/services/`](../services/), [`includes/repositories/`](../repositories/), [`includes/markup/`](../markup/) (for `markup_elicitation` SSE frames), [`includes/validators/`](../validators/), [`includes/cache/`](../cache/) (REST response cache)
-- **Events fired:** `wp_mcp_ai_rest_request_start`, `wp_mcp_ai_rest_request_complete`, `wp_mcp_ai_chat_message_received`, `wp_mcp_ai_tool_invoked_via_rest`, plus standard WP REST filters
+- **Events fired:** `wp_mcp_ai_rest_request_start`, `wp_mcp_ai_rest_request_complete`, `wp_mcp_ai_chat_message_received`, `wp_mcp_ai_tool_invoked_via_rest`, `wp_mcp_ai_rate_limit_exceeded` (fired by the OOS rate-limiter adapter, consumed by the restriction registry), plus standard WP REST filters
 - **Events listened to:** `rest_api_init` (each controller registers there), `rest_authentication_errors` (authenticator), `rest_pre_dispatch` (cache lookup), `rest_post_dispatch` (security headers)
 
 ## Conventions
@@ -70,6 +72,10 @@ vendor/bin/phpunit tests/test-rest-authenticator.php
 vendor/bin/phpunit tests/test-rest-chat-controller.php
 vendor/bin/phpunit tests/test-rest-tools-controller.php
 vendor/bin/phpunit tests/test-rest-mcp-controller.php
+vendor/bin/phpunit tests/test-rest-restrictions-controller.php
+vendor/bin/phpunit tests/test-rate-limit-headers.php
+vendor/bin/phpunit tests/test-restriction-registry.php
+vendor/bin/phpunit tests/test-restriction-instrumentation.php
 vendor/bin/phpunit tests/rest/      # additional REST endpoint suite
 vendor/bin/phpunit tests/rest-api/  # REST integration suite
 ```
@@ -83,7 +89,7 @@ Full `tests/test-rest-*.php` set covers permission callbacks, authentication mod
 - [`.context/rest-api.md`](../../.context/rest-api.md) — canonical REST patterns, auth modes, error envelope
 - [`.context/tool-registry.md`](../../.context/tool-registry.md) — for `/tools` and chat tool-invocation paths
 - [`.context/chat-ui.md`](../../.context/chat-ui.md) — for `/chat`, `/sse`, transcript routes
-- [`docs/reference/rest-api.md`](../../docs/reference/rest-api.md) — operator-facing endpoint reference
+- [`docs/reference/api/rest-api.md`](../../docs/reference/api/rest-api.md) — operator-facing endpoint reference
 
 ## See Also
 

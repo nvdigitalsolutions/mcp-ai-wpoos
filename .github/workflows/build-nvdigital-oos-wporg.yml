@@ -297,7 +297,7 @@ jobs:
 
             | Package | File | Description |
             |---------|------|-------------|
-            | **Base** | `nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip` | Free base plugin (~263 tools) |
+            | **Base** | `nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip` | Free base plugin (~300 tools) |
             | **Pro** | `nvdigital-open-operator-system-oos-pro-${{ steps.version.outputs.version }}.zip` | Pro addon (requires base) |
             | **Complete** | `nvdigital-open-operator-system-oos-complete-${{ steps.version.outputs.version }}.zip` | Base + Pro combined |
 

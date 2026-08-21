@@ -4,9 +4,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.50"
-  plugin-version-tested: "1.1.50"
-  last-updated: "2026-08-10"
+  plugin-version: "1.1.60"
+  plugin-version-tested: "1.1.60"
+  last-updated: "2026-08-21"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -42,7 +42,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~300 base / ~1,500 full tools
+     │  Tool Registry     │  ~300 base / ~1,547 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -281,6 +281,38 @@ and `inputSchema` (JSON Schema).
 Response is in `result.content[0].text` as a JSON string. Canonical envelope:
 success returns an array; errors return a `WP_Error` object serialized as
 `{"code":"...", "message":"...", "data":{...}}`.
+
+---
+
+## Rate Limiting, Restricted Users & Conversation Import (v1.1.60+)
+
+**Restricted users.** Ephemeral rate-limit and token-budget blocks become
+persistent, reviewable restriction records (`WP_MCP_AI_Restriction_Registry`)
+with auto-expiry and audit logging:
+
+- Chat rate limit filterable via `wp_mcp_ai_chat_rate_limit` and
+  `wp_mcp_ai_chat_rate_limit_window` (was hardcoded 60 req/min).
+- Enforcement hooks: `wp_mcp_ai_tool_token_limit_exceeded`,
+  `wp_mcp_ai_per_session_limit_exceeded`, `wp_mcp_ai_rate_limit_exceeded`.
+- Admin: Token Manager "Restricted Users" panel (Base) + Pro Command Center
+  **Restrictions** tab; notice toggle at Settings → Orchestration →
+  Restriction Notifications (`enable_restriction_admin_notices`).
+- WP-CLI: `wp mcp-ai restrictions list|lift|add`.
+- REST: `GET /mcp-ai/v1/restrictions`,
+  `GET|POST /mcp-ai/v1/users/{id}/restrictions`,
+  `DELETE /mcp-ai/v1/users/{id}/restrictions/{type}`; rate-limited responses
+  carry IETF `RateLimit-Policy` / `RateLimit` / `Retry-After` headers.
+- Reference: `docs/features/security/user-restrictions.md`.
+
+**Conversation import (JetEngine).** Imports ChatGPT, Gemini Takeout, Claude,
+ShareGPT, and OpenAI JSONL exports into the `ai_chat_transcripts` CCT:
+
+- Tools: `conversation_import_detect|run|status|delete` (require
+  `manage_options`).
+- WP-CLI: `wp mcp-ai conversation-import detect|import|status|delete`
+  (`--dry-run`, `--policy=skip|refresh`, `--resume-token=`).
+- Admin upload/preview page, GDPR export/erase, optional memory mining via
+  `mine_agent_memory`. Guide: `docs/user-guides/conversation-import.md`.
 
 ---
 

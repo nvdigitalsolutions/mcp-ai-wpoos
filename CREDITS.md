@@ -533,6 +533,8 @@ v2.2.0 security release added **helmet** and **express-rate-limit**.
 | `dotenv` | ^16.4.0 | BSD-2-Clause | Environment configuration. |
 | `prettier` | ^3 | MIT | Code formatting (build-time). |
 | `@neplex/vectorizer` | ^0.0.5 | MIT | Vector embedding helpers. |
+| `@mozilla/readability` ⭐ v3.1.0 | ^0.6.0 | Apache-2.0 | Main-content extraction (Firefox Reader View engine) for the crawl routes. |
+| `jsdom` ⭐ v3.1.0 | ^26.1.0 | MIT | DOM for Readability (scripts never execute) in the crawl pipeline. |
 
 Deployment: Docker image (`addons/media-worker/Dockerfile`). Mirrored one-way to the
 standalone repo `nvdigitalsolutions/mcp-ai-wpoos-media-worker` via

@@ -10,6 +10,7 @@ How-to guides for end users of NV oOS.
 - **professionals/** — profession knowledge base, reseeding, base seeding
 - **slash-commands/** — slash command reference and usage guides
 - **project-management/** — project management interface guides
+- **[conversation-import.md](conversation-import.md)** — importing external AI conversation history (ChatGPT, Gemini, Claude, ShareGPT, OpenAI JSONL)
 
 ## Related
 

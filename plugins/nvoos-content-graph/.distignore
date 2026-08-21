@@ -1,0 +1,55 @@
+# Files and directories to exclude from wp.org distribution.
+# Only production PHP, assets, and documentation should ship.
+
+# Development
+/.git
+/.gitignore
+/.github
+/node_modules
+/composer.lock
+/phpcs.xml.dist
+/phpunit.xml.dist
+/.phpunit.cache
+/.phpunit.result.cache
+
+# Tests
+/tests
+
+# Vendor — ships in full. `composer install --no-dev` produces only the
+# autoloader (vendor/autoload.php + vendor/composer/), which is REQUIRED at
+# runtime. Excluding any part of it would break class loading on activation.
+
+# Build artifacts
+/bin
+/build
+/dist
+/coverage
+
+# IDE
+/.idea
+/.vscode
+/*.sublime-*
+
+# Docs (keep readme.txt only)
+/docs
+/README.md
+/WPORG-REVIEW-FINDINGS.md
+/CONTRIBUTING.md
+/CHANGELOG.md
+/CREDITS.md
+
+# wp.org SVN assets — uploaded to plugins.svn.wordpress.org, not shipped in the ZIP
+/.wordpress-org
+
+# Per-folder developer READMEs (monorepo convention — not for distribution)
+src/**/README.md
+
+# JS tooling (vendor files are pre-bundled in assets/vendor/)
+/package.json
+/package-lock.json
+/scripts
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db

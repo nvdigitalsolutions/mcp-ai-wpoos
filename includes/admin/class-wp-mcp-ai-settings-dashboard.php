@@ -60,6 +60,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_test_plaid_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_lift_user_restriction', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_get_restrictions', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_dismiss_restriction_notice', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_tool_settings', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_apply_orchestration_preset', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -1234,6 +1237,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$dashboard_js['version'],
 				true
 			);
+
+			// Enqueue the WordPress REST API client (wp-api) on the security tab.
+			// The security section prints inline scripts (posture refresh, IP tests,
+			// snapshot restore, compliance export, self-test) that call wp.apiRequest().
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+			if ( isset( $_GET['tab'] ) && 'security' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
+				wp_enqueue_script( 'wp-api' );
+			}
 
 			// Enqueue tools manager scripts if on tools tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.

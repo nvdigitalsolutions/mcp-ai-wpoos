@@ -114,6 +114,7 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	public function get_capability_flags() {
 		return array(
 			'external-api',         // Makes external API calls.
+			'requires-capability',  // Checks the user's capability before running.
 			'consumes-tokens',      // Uses AI credits (at 50% reduced cost).
 			'async',                // Long-running asynchronous operation.
 			'deferred-result',      // Result available later, not immediately.

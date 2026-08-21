@@ -68,6 +68,16 @@ class ChatOrchestrator {
 	private const MAX_REQUEST_RETRIES = 3;
 
 	/**
+	 * Default per-user chat rate limit: requests per window.
+	 */
+	private const DEFAULT_CHAT_RATE_LIMIT = 60;
+
+	/**
+	 * Default per-user chat rate limit: window length in seconds.
+	 */
+	private const DEFAULT_CHAT_RATE_LIMIT_WINDOW = 60;
+
+	/**
 	 * Optional token-budget manager for tool-definition capping.
 	 */
 	private ?TokenBudgetManager $tokenBudget = null;
@@ -76,6 +86,19 @@ class ChatOrchestrator {
 	 * Optional rate limiter for API call gating.
 	 */
 	private ?RateLimiterInterface $rateLimiter = null;
+
+	/**
+	 * Per-user chat rate limit: max requests allowed per window.
+	 *
+	 * Configurable via setChatRateLimit(); the WordPress bridge feeds this
+	 * from the wp_mcp_ai_chat_rate_limit filter.
+	 */
+	private int $chatRateLimitMax = self::DEFAULT_CHAT_RATE_LIMIT;
+
+	/**
+	 * Per-user chat rate limit: window length in seconds.
+	 */
+	private int $chatRateLimitWindow = self::DEFAULT_CHAT_RATE_LIMIT_WINDOW;
 
 	/**
 	 * Optional semantic compressor for message reduction.
@@ -164,6 +187,17 @@ class ChatOrchestrator {
 	 */
 	public function setRateLimiter( RateLimiterInterface $rateLimiter ): void {
 		$this->rateLimiter = $rateLimiter;
+	}
+
+	/**
+	 * Configure the per-user chat rate limit.
+	 *
+	 * Both values are clamped to a minimum of 1 so a misconfigured filter
+	 * cannot silently disable the gate or divide the window to zero.
+	 */
+	public function setChatRateLimit( int $maxRequests, int $windowSeconds = self::DEFAULT_CHAT_RATE_LIMIT_WINDOW ): void {
+		$this->chatRateLimitMax    = \max( 1, $maxRequests );
+		$this->chatRateLimitWindow = \max( 1, $windowSeconds );
 	}
 
 	/**
@@ -296,9 +330,9 @@ class ChatOrchestrator {
 		// Rate limit check — reject if user/exceeded quota.
 		if ( null !== $this->rateLimiter ) {
 			$rateLimitKey = 'chat:' . $userId . ':' . $assistantId;
-			if ( ! $this->rateLimiter->isAllowed( $rateLimitKey, 60, 60 ) ) {
+			if ( ! $this->rateLimiter->isAllowed( $rateLimitKey, $this->chatRateLimitMax, $this->chatRateLimitWindow ) ) {
 				return array(
-					'response'      => $this->errors->rateLimited( 'Too many requests. Please wait before sending another message.' ),
+					'response'      => $this->errors->rateLimited( 'Too many requests. Please wait before sending another message. If you believe this is an error, contact the site administrator.' ),
 					'tool_results'  => array(),
 					'iterations'    => 0,
 					'cost'          => null,
@@ -306,7 +340,7 @@ class ChatOrchestrator {
 					'cancel_reason' => '',
 				);
 			}
-			$this->rateLimiter->record( $rateLimitKey, 60 );
+			$this->rateLimiter->record( $rateLimitKey, $this->chatRateLimitWindow );
 		}
 
 		// Semantic compression — reduce message size when near token limits.
@@ -805,11 +839,11 @@ class ChatOrchestrator {
 		// Rate limit + compression before streaming call.
 		if ( null !== $this->rateLimiter ) {
 			$key = 'chat:' . $userId . ':' . $assistantId;
-			if ( ! $this->rateLimiter->isAllowed( $key, 60, 60 ) ) {
-				$this->sse->sendEvent( 'error', [ 'code' => 'rate_limited', 'message' => 'Too many requests.' ] );
+			if ( ! $this->rateLimiter->isAllowed( $key, $this->chatRateLimitMax, $this->chatRateLimitWindow ) ) {
+				$this->sse->sendEvent( 'error', [ 'code' => 'rate_limited', 'message' => 'Too many requests. Please wait before sending another message. If you believe this is an error, contact the site administrator.' ] );
 				$this->sse->sendDone();
 				return [
-					'response'      => $this->errors->rateLimited( 'Rate limited' ),
+					'response'      => $this->errors->rateLimited( 'Too many requests. Please wait before sending another message. If you believe this is an error, contact the site administrator.' ),
 					'tool_results'  => [],
 					'iterations'    => 0,
 					'cost'          => null,
@@ -817,7 +851,7 @@ class ChatOrchestrator {
 					'cancel_reason' => '',
 				];
 			}
-			$this->rateLimiter->record( $key, 60 );
+			$this->rateLimiter->record( $key, $this->chatRateLimitWindow );
 		}
 
 		if ( null !== $cancellation && $cancellation->isCancelled() ) {
@@ -1273,12 +1307,43 @@ class ChatOrchestrator {
 				'function' => array(
 					'name'        => $slug,
 					'description' => $tool->getDescription(),
-					'parameters'  => $tool->getParametersSchema(),
+					'parameters'  => self::normalizeToolSchema( $tool->getParametersSchema() ),
 				),
 			);
 		}
 
 		return $definitions;
+	}
+
+	/**
+	 * Normalize a tool parameter schema into a valid JSON Schema object.
+	 *
+	 * Providers (DeepSeek in particular) validate tool schemas strictly and
+	 * reject empty arrays with errors like "[] is not of type 'object'".
+	 * Any schema that is empty, or that lacks the object root, is converted
+	 * to an open-object schema so the payload always serializes as an object.
+	 */
+	private static function normalizeToolSchema( array $schema ): array {
+		if ( array() === $schema ) {
+			return array(
+				'type'       => 'object',
+				'properties' => array(),
+			);
+		}
+
+		if ( ! isset( $schema['type'] ) ) {
+			// A bare property map without the object root — wrap it.
+			$schema = array(
+				'type'       => 'object',
+				'properties' => $schema,
+			);
+		}
+
+		if ( ! isset( $schema['properties'] ) || ! \is_array( $schema['properties'] ) ) {
+			$schema['properties'] = array();
+		}
+
+		return $schema;
 	}
 
 	/**

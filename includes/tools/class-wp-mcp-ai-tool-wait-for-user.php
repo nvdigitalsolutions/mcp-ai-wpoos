@@ -24,11 +24,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Wait for User tool class.
- *
- * Note: NV oOS tools are standalone classes implementing the tool pattern
- * (get_slug, get_definition, execute). There is no base class to extend.
  */
-class WP_MCP_AI_Tool_Wait_For_User {
+class WP_MCP_AI_Tool_Wait_For_User implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
 	 * Get the unique tool slug.
@@ -37,6 +35,13 @@ class WP_MCP_AI_Tool_Wait_For_User {
 	 */
 	public function get_slug() {
 		return 'wait_for_user';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_required_capability() {
+		return 'read';
 	}
 
 	/**
@@ -69,7 +74,7 @@ class WP_MCP_AI_Tool_Wait_For_User {
 	 * @param array $context   Execution context.
 	 * @return array Success envelope.
 	 */
-	public function execute( $arguments = array(), $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		unset( $arguments, $context );
 
 		return array(

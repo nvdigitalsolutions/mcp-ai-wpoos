@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.57
-**Release Date:** 2026-08-15
+**Version:** 1.1.60
+**Release Date:** 2026-08-21
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.57 Highlights:** Plugin updater rework — base-only update flow for wp.org installs (Settings → Advanced "Base Version" panel), copy-in-place install with backup/rollback replaces `Plugin_Upgrader` (ZIP folder-name mismatches no longer break updates), and Pro version read from the plugin header instead of the drifted constant. Hermes WebUI chat reworked to async submit/poll with approval-gate answers and `still_running` budget expiry. Service Status AI-provider detection now uses the canonical `WP_MCP_AI_Credential_Resolver` (settings + WP 7.0 connectors + env + constants). New `addons/fleet-operator/.context/` agent-context tree (18 files, 6 operator roles).
+**🆕 v1.1.60 Highlights:** Restricted-user flagging & unblocking — persistent, reviewable restriction records with one-click lift (Token Manager "Restricted Users" panel + Pro Command Center Restrictions tab), REST/AJAX/WP-CLI operations, IETF rate-limit headers, and filterable chat rate limits. Conversation import to the transcript CCT (Full, JetEngine) — ChatGPT, Gemini Takeout, Claude, ShareGPT, and OpenAI JSONL exports with four new tools. Fixes: tool schemas normalized before provider payloads (prevents provider streaming errors), WP_Error fatals in the memory/REST paths, and `nvoos-content-graph` v1.0.3 (wp.org resubmission).
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -126,10 +126,10 @@
 | `lib/core/` | Framework-agnostic AI orchestration engine (nvoos/core): 32 domain contracts, 21 WordPress adapters, ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry — PHP 8.1+ |
 | `addons/` | 26 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Media Worker, Graphify, Comic Reader, Funiq Bridge, Fleet Operator, Algorave, Cornerstone3D, Crocoblock DS, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router, Page Agent) |
 | `assets/` | Frontend JS/CSS, images, CSV templates, examples |
-| `.agents/skills/` | 51 coding-time agent skills for Zed editor (20 wp-* WordPress plugin development patterns + 30 design-* skills + mcp-ai-wpoos-plugin operational guide) |
+| `.agents/skills/` | 52 coding-time agent skills for Zed editor (20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide) |
 | `.bmad/` | 6 BMAD workflow agent YAML definitions + team composition config |
 | `.context/` | Subsystem context files (10 topics + 5 templates) for agent session loading |
-| `plugins/` | Standalone plugins: NVOOS Graphify, NVOOS Graphify AI, NVOOS Graphify AI Platform |
+| `plugins/` | Standalone plugins: NVOOS Content Graph, NVOOS Content Graph AI, NVOOS Content Graph AI Platform |
 | `packages/` | 23 NPM packages under `@nvdigitalsolutions` scope |
 | `src/` | TMA (Telegram Mini App) builders + workflow builder source |
 | `shared/` | Shared source code across builds |
@@ -149,6 +149,29 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.60)
+
+- 🔒 **Restricted-User Flagging & Unblocking.** Ephemeral rate-limit and token-budget blocks become persistent, reviewable restriction records with auto-expiry and audit logging — one-click lift on the Token Manager "Restricted Users" panel (Base), a full **Restrictions** tab on the Pro Command Center, REST/AJAX/WP-CLI operations (`wp mcp-ai restrictions list|lift|add`), IETF rate-limit response headers, and filterable chat rate limits (`wp_mcp_ai_chat_rate_limit` / `wp_mcp_ai_chat_rate_limit_window`). See [`docs/features/security/user-restrictions.md`](docs/features/security/user-restrictions.md). (PR #5901)
+- 📥 **Conversation Import to Transcript CCT (Full, JetEngine).** New `includes/conversation-import/` subsystem imports ChatGPT, Google Takeout Gemini, Claude, ShareGPT, and OpenAI fine-tuning JSONL exports into the JetEngine `ai_chat_transcripts` CCT — four new tools (`conversation_import_detect|run|status|delete`), an admin upload/preview page, WP-CLI, GDPR export/erase, and optional memory mining. See [`docs/user-guides/conversation-import.md`](docs/user-guides/conversation-import.md). (PR #5898)
+- 🧩 **Tool Schema Normalization.** Tool argument schemas are normalized before provider payloads (DeepSeek client, REST `/tools` output, Tool Service, ChatOrchestrator), preventing provider streaming errors; the registry logs registrations skipped for a missing tool contract. (PR #5903)
+- 🐛 **WP_Error Fatal Fixes** in the memory layer and REST chat-memory paths (`mine_agent_memory`, `retrieve_agent_memory`, `wake_up_context`, request guard). (PR #5905)
+- 📦 **nvoos-content-graph v1.0.3** — wp.org resubmission with WPCS/review fixes and `.wordpress-org` screenshot assets. (PRs #5897, #5899, #5904)
+
+### ✨ What's New at a Glance (v1.1.59)
+
+- 🕷️ **Media Worker Crawling & Crawl4AI Facade (v3.2.0).** New `/api/crawl/*` endpoints — single-URL Markdown, batched crawling (sync or queued async), and link scans — with a two-tier extraction pipeline (static Readability → Turndown first, hardened Chromium fallback) behind the shared SSRF guard. A Crawl4AI-compatible facade lets the plugin's `run_crawl4ai_job` remote mode target the worker directly, with LLM-based structured extraction. Toolkit memory estimate now accounts for the worker sidecar. See [`docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md`](docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md). (PR #5892)
+- 🔍 **Research Tools Multi-Provider Hardening.** `semantic_content_search` resolves embeddings through the shared provider abstraction (OpenAI, Gemini, Ollama, DigitalOcean) independent of the chat provider, falls back to keyword search, and skips mismatched-model vectors; new Gemini embedding provider. `deep_research` retries empty/truncated completions across the provider chain and never caches empty reports. Two new read-only base tools: `list_terms` and `list_taxonomies`. (PR #5893)
+- 📚 **Docs Hub Rebuild & Broken-Link Fixes.** The plugin updater now fires `wp_mcp_ai_plugin_updated` after in-place updates; Docs Hub 0.4.1 auto-clears the cache and enqueues an async rebuild (plus an `admin_init` version-mismatch guard). Broken-link detection resolves links against the slug map, and suggestions are case-insensitive with clamped confidence. (PR #5894)
+- 🔧 **Tool Registration Fixes.** Legacy-format tool classes are auto-wrapped, ~32 previously-orphaned base tools are now registered, and the new `wp_mcp_ai_tools_init` action gives side-loaders a late registration point. QA container memory limits raised. (PR #5895)
+
+### ✨ What's New at a Glance (v1.1.58)
+
+- 🔌 **Composio Connect (Pro).** New `addons/pro/includes/composio/` subsystem bridges WordPress to the Composio MCP gateway: OAuth connection flow with state nonce, API client, trigger bridge, and signed webhook controller. Six new beta tools — `composio_list_tools`, `composio_get_tool_schema`, `composio_list_connected_accounts`, `composio_create_connect_link`, `composio_execute_tool`, `composio_manage_triggers` — plus remote-sites admin and metabox panels. See [`docs/composio-connect.md`](docs/composio-connect.md). (PR #5889)
+- ⚙️ **OOS Runtime Consolidation (Phases 0–5.8).** The OOS engine now reaches parity with the legacy path — tool-surface and security-gate parity, an event-sourced session log, opt-in shadow mode (parallel parity runs serving the legacy result, zero user exposure) with `wp mcp-ai oos parity` CLI, canary routing per assistant, scoped tools with a compaction seam, Pro composition & child binding (`wp mcp-ai composition`), and single-path telemetry. See [`docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md`](docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md). (PR #5881)
+- 🏷️ **Standalone Plugins Renamed to Content Graph.** `plugins/nvoos-graphify` → `nvoos-content-graph`, `nvoos-graphify-ai` → `nvoos-content-graph-ai`, `nvoos-graphify-ai-platform` → `nvoos-content-graph-ai-platform` (v1.0.2) with matching workflow and build-script renames. The `addons/graphify/` knowledge-graph addon is unchanged. (PR #5890)
+- 🐛 **Security Center Refresh Fix.** `wp-api` script now enqueued on the security tab — posture refresh, IP tests, snapshot restore, compliance export, and self-test no longer throw `apiFetch is not defined`. (PR #5887)
+- 🔒 **deepmerge-ts CVE-2026-40345** overridden in the media-worker and Pro packages. (PR #5888)
 
 ### ✨ What's New at a Glance (v1.1.57)
 
@@ -460,11 +483,11 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/reference/EXTERNAL_SERVICES.md) for all 20 services.  
 
-The plugin works standalone with **~265 base tools** and optionally extends through the **Pro addon**, which adds **~1,237 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,502 built-in tools** (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+The plugin works standalone with **~300 base tools** and optionally extends through the **Pro addon**, which adds **~1,247 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging, Composio Connect) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,547 built-in tools** (~300 base + ~1,247 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~265 tools) works standalone. The full version requires the Pro addon and provides ~1,502 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~300 tools) works standalone. The full version requires the Pro addon and provides ~1,547 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, Composio Connect, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
-**Addon Ecosystem:** NV oOS ships a growing family of 26 installable addons: **Pro** (`addons/pro/` — ~1,237 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Media Worker** (`addons/media-worker/` — Docker-based Node.js media sidecar, v3.0.0: multi-tenant shared worker mode, per-site provider keys, worker routing with local fallbacks), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **Fleet Operator** (`addons/fleet-operator/` — scoped `op_` operator credentials for MCP/A2A supervisor agents like Hermes), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Page Agent** (`addons/page-agent/` — AI-powered browser page control copilot), **Algorave**, **Cornerstone3D**, **Crocoblock DS**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Graphify** (`plugins/nvoos-graphify/` — visual knowledge graph), **NVOOS Graphify AI** (`plugins/nvoos-graphify-ai/` — AI providers + chat + RAG), **NVOOS Graphify AI Platform** (`plugins/nvoos-graphify-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
+**Addon Ecosystem:** NV oOS ships a growing family of 26 installable addons: **Pro** (`addons/pro/` — ~1,247 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Media Worker** (`addons/media-worker/` — Docker-based Node.js media sidecar, v3.2.0: multi-tenant shared worker mode, per-site provider keys, worker routing with local fallbacks, native `/api/crawl/*` endpoints + Crawl4AI facade), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **Fleet Operator** (`addons/fleet-operator/` — scoped `op_` operator credentials for MCP/A2A supervisor agents like Hermes), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Page Agent** (`addons/page-agent/` — AI-powered browser page control copilot), **Algorave**, **Cornerstone3D**, **Crocoblock DS**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Content Graph** (`plugins/nvoos-content-graph/` — visual knowledge graph), **NVOOS Content Graph AI** (`plugins/nvoos-content-graph-ai/` — AI providers + chat + RAG), **NVOOS Content Graph AI Platform** (`plugins/nvoos-content-graph-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -529,7 +552,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
 - **15 language-model providers** — OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, Flowhub
-- **~1,502 tool classes** (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
+- **~1,547 tool classes** (~300 base + ~1,247 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **36 REST controllers** (16 base + 20 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
@@ -650,6 +673,38 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.60 — August 2026)
+
+### August 20–21, 2026 — Restricted-User Flagging, Conversation Import, Tool Schema Normalization
+
+- ✅ **Restricted-User Flagging & Unblocking — PR #5901 (26 files, +3,568/-20 lines).** New `WP_MCP_AI_Restriction_Registry` (`includes/class-wp-mcp-ai-restriction-registry.php`) converts ephemeral rate-limit and token-budget blocks into persistent, enumerable restriction records (user meta + `wp_mcp_ai_active_restrictions` index, daily cleanup cron, audit-logged). The OOS rate-limiter adapter fires `wp_mcp_ai_rate_limit_exceeded`; chat rate limits are filterable (`wp_mcp_ai_chat_rate_limit` / `wp_mcp_ai_chat_rate_limit_window`). Admin surfaces: Token Manager "Restricted Users" panel (Base) + Pro Command Center **Restrictions** tab; REST `GET /mcp-ai/v1/restrictions`, `GET|POST /mcp-ai/v1/users/{id}/restrictions`, `DELETE /mcp-ai/v1/users/{id}/restrictions/{type}`; AJAX lift actions; `wp mcp-ai restrictions list|lift|add`; IETF rate-limit headers; new `restriction_registry_on` posture signal. Full reference: [`docs/features/security/user-restrictions.md`](docs/features/security/user-restrictions.md).
+- ✅ **Conversation Import to Transcript CCT — PR #5898 (38 files, +8,791/-4 lines).** New `includes/conversation-import/` subsystem imports ChatGPT `conversations.json` (incl. ZIP), Google Takeout Gemini activity, Claude `conversations.jsonl`, ShareGPT, and OpenAI fine-tuning JSONL into the JetEngine `ai_chat_transcripts` CCT — one row per conversation — with format detection, tree/branch linearization, idempotent dedupe, dry-run, batching, and checkpoint resume. Four new tools (`conversation_import_detect|run|status|delete`), an admin upload/preview page with progress reporting, `wp mcp-ai conversation-import detect|import|status|delete`, GDPR exporter/eraser + retention coverage, media sideloading, and opt-in memory mining via `mine_agent_memory`. Five PHPUnit suites. Guide: [`docs/user-guides/conversation-import.md`](docs/user-guides/conversation-import.md).
+- ✅ **Tool Schema Normalization — PR #5903 (5 files, +162/-14 lines).** Tool argument schemas are normalized before being embedded in provider payloads — `WP_MCP_AI_DeepSeek_Client`, REST `/tools` schema output, `WP_MCP_AI_Tool_Service`, and the OOS `ChatOrchestrator` — preventing provider streaming failures from non-compliant schemas; the registry now logs tool registrations skipped for a missing tool contract.
+- ✅ **WP_Error Fatal Fixes — PR #5905 (8 files, +216/-50 lines).** Memory tools (`mine_agent_memory`, `retrieve_agent_memory`, `wake_up_context`), the request guard, and the REST chat-memory controller now handle `WP_Error` returns before array/object access.
+- ✅ **nvoos-content-graph v1.0.3 wp.org Resubmission — PRs #5897, #5899, #5904.** WPCS fixes for the renamed plugins, wp.org review fixes, readme/README polish, `.wordpress-org` screenshot assets, and the standalone build ZIP.
+- 📦 **Versioning** — bumped to **1.1.60** across all version-bearing files. Pro addon: 1.1.60. Media Worker: **v3.2.0** (unchanged). Tool count: ~300 base + ~1,247 Pro (~1,547 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
+
+## 🆕 Latest Updates (v1.1.59 — August 2026)
+
+### August 19, 2026 — Media Worker Crawling & Crawl4AI Facade, Research Tools Hardening, Docs Hub + Tool Registration Fixes
+
+- ✅ **Media Worker Crawling & Crawl4AI Facade — PR #5892 (25 files, +3,556/-16 lines).** New `/api/crawl/*` endpoints in the worker — single-URL Markdown, batched crawling (sync or queued async), and link scans — using a two-tier extraction pipeline: static HTTP fetch → Readability → Turndown first (zero browser cost), with the hardened Chromium launcher as an automatic fallback for JS-heavy pages. Every URL passes the shared SSRF guard before fetch or navigation. A Crawl4AI-compatible facade (`/api/crawl4ai/*`) lets the plugin's `run_crawl4ai_job` remote mode target the worker as a drop-in Crawl4AI replacement, plus an LLM-based extraction utility (`src/utils/llm-extract.js`) for structured page data. Worker bumped to **v3.2.0**. Toolkit memory estimate now accounts for the worker sidecar (`docs/features/TOOLKIT_MEMORY_TRACKING.md`). Plan: [`031-media-worker-crawl4ai-integration-plan.md`](docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md).
+- ✅ **Research Tools Multi-Provider Hardening — PR #5893 (22 files, +2,728/-155 lines).** `semantic_content_search` now resolves embeddings through the shared embedding-provider abstraction (OpenAI, Gemini, Ollama, DigitalOcean) independent of the assistant's chat provider, falls back to keyword search when unconfigured (`fallback_mode: "keyword"`), and skips stored vectors from mismatched models. New Gemini embedding provider (`includes/services/embedding/class-wp-mcp-ai-embedding-provider-gemini.php`). `deep_research` validates non-empty completions, falls back to `reasoning_content` for reasoning-only models, retries `finish_reason: length` with a doubled budget, walks the provider chain, and never caches empty reports. Two new read-only base tools: `list_terms` + `list_taxonomies`. New test suites: `test-tool-deep-research.php`, `test-tool-semantic-content-search.php`, `test-tool-list-terms.php`, `test-tool-list-taxonomies.php`, `test-mempalace-phase3-embedding-providers.php`.
+- ✅ **Docs Hub Rebuild & Broken-Link Suggestions — PR #5894 (9 files, +708/-54 lines).** The copy-in-place updater bypasses `Plugin_Upgrader`, so `upgrader_process_complete` never fired and Docs Hub caches went stale after updates. The updater now fires **`wp_mcp_ai_plugin_updated`** after every successful in-place update; Docs Hub **0.4.1** reacts with a cache clear + async rebuild (cached remote content preserved) plus an `admin_init` version-mismatch guard for manual replacements/restores. Broken-link detection now resolves relative links against the slug map (fixing the "626 broken links" false positive on remote-only indexes); suggestions are case-insensitive with confidence clamped to [0.3, 1.0]. New tests: `test-rebuild-job.php`, `test-indexer.php`.
+- ✅ **Tool Registration & QA Infrastructure — PR #5895 (44 files, +1,151/-207 lines).** Legacy-format tool classes (pre-interface) are transparently wrapped (`WP_MCP_AI_Legacy_Tool_Wrapper` + `WP_MCP_AI_Tool_Legacy_Definition` trait); ~32 previously-orphaned base tool files are now registered; a new `wp_mcp_ai_tools_init` action gives side-loaders (e.g. `includes/orchestration-init.php`) a late registration point; the registry tracks skipped tools in `unavailable_tool_slugs`. QA container memory limits raised (`tests/qa/docker/docker-compose.qa.yml`) and `bin/install-test-plugins.sh` hardened.
+- 📦 **Versioning** — bumped to **1.1.59** across all version-bearing files. Pro addon: 1.1.59. Media Worker: **v3.2.0**. Tool count: ~300 base + ~1,243 Pro (~1,543 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
+
+## 🆕 Latest Updates (v1.1.58 — August 2026)
+
+### August 18, 2026 — Composio Connect, OOS Runtime Consolidation, Content Graph Rename
+
+- ✅ **Composio Connect Integration — PR #5889 (29 files, +5,318/-2 lines).** New `addons/pro/includes/composio/` subsystem bridges WordPress to the Composio MCP gateway: OAuth connection flow with state nonce (`WP_MCP_AI_Composio_Auth_Handler`), API client (`WP_MCP_AI_Composio_Client`), trigger bridge (`WP_MCP_AI_Composio_Trigger_Bridge`), and signed webhook controller (`WP_MCP_AI_Composio_Webhook_Controller`). Six new beta tools — `composio_list_tools`, `composio_get_tool_schema`, `composio_list_connected_accounts`, `composio_create_connect_link`, `composio_execute_tool`, `composio_manage_triggers` — plus remote-sites admin and metabox panels (connected-apps badge). 4 test classes (+887 lines). Full details: [`docs/composio-connect.md`](docs/composio-connect.md), [`docs/toolkits/composio-connect.md`](docs/toolkits/composio-connect.md).
+- ✅ **OOS Runtime Consolidation Phases 0–5.8 — PR #5881 (8 commits).** The OOS engine reaches parity with the legacy path: Phase 0–2 parity foundations (`includes/bootstrap/oos-bridge.php`, tool-surface + security-gate contracts), Phase 3 event-sourced session log (`SessionLog`/`SessionEvent`/`SessionTelemetry` + observer), Phase 4 shadow mode (`includes/oos/` parallel parity runs serving the legacy result; `wp mcp-ai oos parity` CLI) + canary routing (per-assistant `_wp_mcp_ai_engine` opt-in), Phase 5 scoped tools (`ToolScope`) + compaction seam (`CompactionProvider`) + Pro composition & child binding (`addons/pro/includes/composition/`), and Phase 5.8 telemetry single-path. Full details: [`docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md`](docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md).
+- ✅ **Graphify Standalone Plugins → Content Graph — PR #5890.** `plugins/nvoos-graphify` → `nvoos-content-graph` (v1.0.2), `nvoos-graphify-ai` → `nvoos-content-graph-ai` (v1.0.2), `nvoos-graphify-ai-platform` → `nvoos-content-graph-ai-platform` (v1.0.2), with matching build/sync workflow renames and `bin/build-*-content-graph*.sh` scripts. The `addons/graphify/` knowledge-graph addon is unchanged.
+- ✅ **Security Center wp.apiRequest Fix — PR #5887 (1 file, +8 lines).** The security tab's inline scripts (posture refresh, IP tests, snapshot restore, compliance export, self-test) call `wp.apiRequest()` but `wp-api` was never enqueued there. Now enqueued when `?tab=security` is active. See [`docs/history/2026/fixes/security-center-wp-api-request-fix.md`](docs/history/2026/fixes/security-center-wp-api-request-fix.md).
+- ✅ **deepmerge-ts CVE-2026-40345 — PR #5888 (4 files, +30/-6 lines).** Override pinned in `addons/media-worker/package.json` and `addons/pro/package.json`.
+- 📦 **Versioning** — bumped to **1.1.58** across all version-bearing files. Pro addon: 1.1.58. Media Worker: **v3.0.0** (unchanged). Tool count: ~265 base + ~1,243 Pro (~1,508 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **51**.
 
 ## 🆕 Latest Updates (v1.1.57 — August 2026)
 
@@ -1628,11 +1683,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all ~1,502 tools (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+2. You now have the **complete version** with all ~1,547 tools (~300 base + ~1,247 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
 
-- ✅ The full codebase — all ~1,502 built-in tools ready to use (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- ✅ The full codebase — all ~1,543 built-in tools ready to use (~300 base + ~1,243 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -1662,7 +1717,7 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 **What works WITHOUT JetEngine:**
 - ✅ All core AI assistant features
 - ✅ Chat interface and conversations
-- ✅ ~265 base tools (more with optional third-party plugins)
+- ✅ ~300 base tools (more with optional third-party plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
 - ✅ OpenAI/Gemini/Anthropic/Ollama/Hugging Face/Cloudflare integrations
@@ -1694,7 +1749,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
 - `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
 
-**✅ Still Works:** All core features, MCP server, ~265 base tools, AI conversations
+**✅ Still Works:** All core features, MCP server, ~300 base tools, AI conversations
 
 [Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
@@ -1794,15 +1849,15 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 | **WPCode** | Freemium | 1 | Code snippet management |
 | **Simple JWT Login** | Free | 1 | JWT token generation |
 
-**Total Impact:** Without these plugins, you lose **13 tools** but retain **~265 base tools** and all essential AI assistant functionality.
+**Total Impact:** Without these plugins, you lose **13 tools** but retain **~300 base tools** and all essential AI assistant functionality.
 
 ---
 
 ### Base Version (Default)
 
-**NV oOS runs in Base Version mode by default**, providing ~265 essential tools that work with vanilla WordPress without requiring any third-party plugins:
+**NV oOS runs in Base Version mode by default**, providing ~300 essential tools that work with vanilla WordPress without requiring any third-party plugins:
 
-**Base Version includes ~265 essential tools that work with vanilla WordPress:**
+**Base Version includes ~300 essential tools that work with vanilla WordPress:**
 - Content management (search, save posts, attachments)
 - AI media generation (images via OpenAI/Gemini, speech, transcription, video)
 - Research tools (web search, weather, disaster alerts)
@@ -1861,12 +1916,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,502 tool classes, 36 REST controllers)
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,543 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,502 tools documented (~265 base + ~1,237 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,543 tools documented (~300 base + ~1,243 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 

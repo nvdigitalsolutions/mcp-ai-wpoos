@@ -101,6 +101,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $admin_dlq_manager;
 
 		/**
+		 * Admin conversation import instance.
+		 *
+		 * @var WP_MCP_AI_Conversation_Import_Admin
+		 */
+		public $admin_conversation_import;
+
+		/**
 		 * Resource manager instance.
 		 *
 		 * @var WP_MCP_AI_Resource_Manager
@@ -182,6 +189,10 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				$this->admin_dlq_manager      = $container->get( 'admin.dlq_manager' );
 				$this->admin_token_manager    = $container->get( 'admin.token_manager' );
 				$this->admin_crawl4ai_monitor = $container->get( 'admin.crawl4ai_monitor' );
+
+				if ( class_exists( 'WP_MCP_AI_Conversation_Import_Admin' ) ) {
+					$this->admin_conversation_import = $container->get( 'admin.conversation_import' );
+				}
 			}
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.
@@ -207,6 +218,12 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			WP_MCP_AI_Usage_Tracker::init();
 			WP_MCP_AI_Tool_Token_Limits::init();
+
+			// Restriction registry: flags users blocked by rate limits or token
+			// overages and exposes admin lift/unblock operations.
+			if ( class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+				WP_MCP_AI_Restriction_Registry::register();
+			}
 
 			// Initialize database optimizations for token management.
 			if ( class_exists( 'WP_MCP_AI_Token_DB_Optimizer' ) ) {

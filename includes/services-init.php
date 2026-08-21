@@ -106,6 +106,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-conte
 require_once plugin_dir_path( __FILE__ ) . 'interfaces/interface-wp-mcp-ai-embedding-provider.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/embedding/class-wp-mcp-ai-embedding-provider-openai.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/embedding/class-wp-mcp-ai-embedding-provider-ollama.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/embedding/class-wp-mcp-ai-embedding-provider-gemini.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-vector-context-service.php';
 
 // Load context compression service (RAG enhancements).

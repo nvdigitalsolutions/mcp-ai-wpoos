@@ -18,7 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Analyze Loop Health Tool
  */
-class WP_MCP_AI_Tool_Analyze_Loop_Health {
+class WP_MCP_AI_Tool_Analyze_Loop_Health implements WP_MCP_AI_Tool_Interface {
+	use WP_MCP_AI_Tool_Legacy_Definition;
 
 	/**
 	 * {@inheritdoc}

@@ -5,11 +5,11 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.57
+Stable tag: 1.1.60
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with 13 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama. 250+ built-in tools.
+AI Assistant framework with 15 AI providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio & Ollama. 300+ built-in tools.
 
 == Submission Scope ==
 
@@ -122,6 +122,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * Capability-based access control
 * API key management (never stored in plain text)
 * Rate limiting per user/model
+* Restricted-user flagging — persistent, reviewable restriction records with one-click lift (Token Manager panel), REST/AJAX/WP-CLI operations, and IETF rate-limit response headers
 * Comprehensive audit logging
 * GDPR-ready with data export options
 
@@ -133,6 +134,7 @@ NV oOS works perfectly standalone. Optional integrations add enhanced functional
   - AI metaboxes for all JetEngine CPTs and taxonomies
   - Research & Add pages with automatic field mapping
   - Server-side chat transcript storage via CCT
+  - Conversation import — bring ChatGPT, Gemini Takeout, Claude, ShareGPT, and OpenAI JSONL history into the transcript CCT (v1.1.60)
 * **WooCommerce** (free) - E-commerce automation tools
 * **Elementor** (freemium) - Template management, pre-built widgets
 * **Rank Math SEO** (freemium) - SEO analysis and optimization
@@ -296,6 +298,22 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.60 - August 21, 2026 =
+
+Restricted-user flagging & unblocking: new restriction registry (includes/class-wp-mcp-ai-restriction-registry.php) converts ephemeral rate-limit and token-budget blocks into persistent, reviewable restriction records with auto-expiry and audit logging; admin surfaces (Token Manager "Restricted Users" panel, Pro Command Center Restrictions tab) plus REST (GET /mcp-ai/v1/restrictions, GET|POST /mcp-ai/v1/users/{id}/restrictions, DELETE /mcp-ai/v1/users/{id}/restrictions/{type}), AJAX, and WP-CLI (wp mcp-ai restrictions list|lift|add) operations; IETF rate-limit response headers; configurable chat rate limits (wp_mcp_ai_chat_rate_limit / wp_mcp_ai_chat_rate_limit_window filters); new restriction_registry_on security-posture signal. Full reference: docs/features/security/user-restrictions.md.
+
+Conversation import to transcript CCT (Full version, JetEngine): new includes/conversation-import/ subsystem imports ChatGPT, Gemini Takeout, Claude, ShareGPT, and OpenAI fine-tuning JSONL exports into the JetEngine ai_chat_transcripts CCT with format detection, dedupe, batching, and resume tokens; four new tools (conversation_import_detect/run/status/delete), an admin page, and WP-CLI (wp mcp-ai conversation-import detect|import|status|delete); GDPR export/erase and optional memory mining. Guide: docs/user-guides/conversation-import.md.
+
+Tool schemas are now normalized before provider payloads (DeepSeek client, REST /tools output, Tool Service, ChatOrchestrator), preventing provider streaming errors; the registry logs registrations skipped for missing tool contracts. Fixed WP_Error fatals in the memory layer and REST chat-memory paths. nvoos-content-graph standalone plugin bumped to v1.0.3 for wp.org resubmission. Tool count: ~300 base + ~1,247 Pro (~1,547 total; live registry authoritative).
+
+= 1.1.59 - August 19, 2026 =
+
+Bumped to 1.1.59 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Media Worker v3.2.0: native /api/crawl/* endpoints (single-URL markdown, batched crawling, link scans) with a static-first two-tier extraction pipeline and SSRF-guarded URLs, plus a Crawl4AI-compatible facade for the run_crawl4ai_job remote mode and LLM-based page extraction. Research tools hardened: semantic_content_search resolves embeddings through the shared provider abstraction (OpenAI, Gemini, Ollama, DigitalOcean) with keyword-search fallback and mismatched-model vector skipping; deep_research retries empty or truncated completions across the provider chain and never caches empty reports; new read-only base tools list_terms and list_taxonomies. Fixed: Docs Hub cache/rebuild staleness after in-place plugin updates (new wp_mcp_ai_plugin_updated action plus a version-mismatch rebuild guard and broken-link suggestion fixes) and tool registration gaps (~32 previously-orphaned base tools now registered, legacy-format tool classes auto-wrapped). Tool count: ~300 base + ~1,243 Pro (~1,543 total; live registry authoritative).
+
+= 1.1.58 - August 18, 2026 =
+
+Bumped to 1.1.58 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Composio Connect integration (Pro): six new beta tools (composio_list_tools, composio_get_tool_schema, composio_list_connected_accounts, composio_create_connect_link, composio_execute_tool, composio_manage_triggers) with OAuth account linking, signed webhook ingestion, trigger bridge, and a remote-sites admin UI. OOS engine runtime consolidation Phases 0-5.8: parity foundations, tool-surface and security-gate parity, event-sourced session log, opt-in shadow mode with a parity CLI, canary routing, scoped tools with a compaction seam, Pro composition and child binding, and single-path telemetry. Standalone Graphify plugins renamed to Content Graph (nvoos-content-graph, nvoos-content-graph-ai, nvoos-content-graph-ai-platform v1.0.2); the Graphify knowledge-graph addon is unchanged. Fixed: Security Center wp.apiRequest error on refresh (wp-api script now enqueued on the security tab) and deepmerge-ts CVE-2026-40345 overridden in the media-worker and Pro packages. Tool count: ~265 base + ~1,243 Pro (~1,508 total; live registry authoritative).
 
 = 1.1.57 - August 15, 2026 =
 

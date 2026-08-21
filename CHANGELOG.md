@@ -1,5 +1,122 @@
 # oOS – Changelog
 
+## [1.1.60] - 2026-08-21
+
+### Added — Restricted-User Flagging & Unblocking (PR #5901)
+
+- New `WP_MCP_AI_Restriction_Registry` (`includes/class-wp-mcp-ai-restriction-registry.php`) converts ephemeral enforcement events into persistent, enumerable restriction records. Subscribes to the existing `wp_mcp_ai_tool_token_limit_exceeded` and `wp_mcp_ai_per_session_limit_exceeded` hooks plus the new `wp_mcp_ai_rate_limit_exceeded` action; records live in user meta with a fast lookup index (`wp_mcp_ai_active_restrictions`), auto-expire on the daily cleanup cron, and are audit-logged via the security audit logger.
+- The OOS rate-limiter adapter (`lib/wordpress-adapter/src/Adapter/RateLimiter.php`) now fires `wp_mcp_ai_rate_limit_exceeded` when a window is exhausted and maintains an enumerable key index (`wp_mcp_ai_rl_index`) so windows can be reset when an admin lifts a restriction.
+- The hardcoded chat rate limit (60 requests/minute) is now configurable via the **`wp_mcp_ai_chat_rate_limit`** and **`wp_mcp_ai_chat_rate_limit_window`** filters (applied in the WordPress bridge; the `ChatOrchestrator` gains `setChatRateLimit()` with clamped defaults).
+- **Admin surfaces:** a "Restricted Users" panel with one-click lift buttons on the Token Manager (Base), and a new **Restrictions** tab (KPI cards, live table, lift actions, nav badge, overview banner) on the Pro Command Center, plus dismissible admin notices.
+- **API surface:** REST `GET /mcp-ai/v1/restrictions`, `GET|POST /mcp-ai/v1/users/{id}/restrictions`, `DELETE /mcp-ai/v1/users/{id}/restrictions/{type}`; AJAX `wp_mcp_ai_lift_user_restriction`, `wp_mcp_ai_get_restrictions`, `wp_mcp_ai_dismiss_restriction_notice`; WP-CLI `wp mcp-ai restrictions list|lift|add`.
+- Security posture gains an informational `restriction_registry_on` signal.
+- **Standards polish:** IETF-style response headers (`RateLimit-Policy`, `RateLimit`, `Retry-After`) on rate-limited REST responses via `WP_MCP_AI_Rate_Limit_Headers`; blocked users are told to contact the site administrator; the admin notice is toggleable from Settings → Orchestration → Restriction Notifications (`enable_restriction_admin_notices`); full feature reference at `docs/features/security/user-restrictions.md`.
+
+### Added — Conversation Import to Transcript CCT (PR #5898)
+
+- New `includes/conversation-import/` subsystem imports external AI conversation exports — ChatGPT `conversations.json` (including ZIP archives), Google Takeout Gemini activity, Claude `conversations.jsonl`, ShareGPT datasets, and OpenAI fine-tuning JSONL — into the JetEngine `ai_chat_transcripts` CCT, one row per conversation, with format detection, tree/branch linearization, idempotent dedupe (`skip`/`refresh` policies), batching, and checkpoint resume tokens.
+- Four new tools (JetEngine-gated, Full version): `conversation_import_detect`, `conversation_import_run` (dry-run previews, image sideloading, limits), `conversation_import_status`, `conversation_import_delete` (dry-run counting, 500-row safety cap).
+- Admin page (upload, preview, policy controls, progress bar, report), WP-CLI `wp mcp-ai conversation-import detect|import|status|delete`, async job-queue integration with progress reporting, GDPR exporter/eraser + retention coverage, and opt-in memory mining through the existing `mine_agent_memory` flow.
+- Docs: `docs/user-guides/conversation-import.md`, `docs/project/plans/CONVERSATION-IMPORT-CCT-IMPLEMENTATION-PLAN.md`; five PHPUnit suites (`test-conversation-import*.php`).
+
+### Changed — Tool Schema Normalization for Provider Payloads (PR #5903)
+
+- Tool argument schemas are now normalized before being embedded in provider payloads — `WP_MCP_AI_DeepSeek_Client`, the REST `/tools` schema output, `WP_MCP_AI_Tool_Service`, and the OOS `ChatOrchestrator` — preventing provider streaming errors from non-compliant tool schemas.
+- The tool registry now logs tool registrations skipped for a missing tool contract, alongside the `unavailable_tool_slugs` tracking.
+
+### Fixed — WP_Error Fatals in Memory & REST Paths (PR #5905)
+
+- Fixed WP_Error fatals in the memory layer and REST chat-memory paths — `mine_agent_memory`, `retrieve_agent_memory`, `wake_up_context`, the request guard, and the REST chat-memory controller now handle `WP_Error` returns before array/object access.
+
+### Changed — nvoos-content-graph wp.org Resubmission v1.0.3 (PRs #5897, #5899, #5904)
+
+- `plugins/nvoos-content-graph` prepared for wp.org resubmission and bumped to **v1.0.3**: WPCS fixes for the renamed plugins, wp.org review fixes, readme/README polish, `.wordpress-org` screenshot assets, and the standalone build ZIP.
+
+### Versioning
+
+- Bumped to **1.1.60** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.60. Media Worker: **v3.2.0** (unchanged).
+- Tool count: ~300 base + ~1,247 Pro (~1,547 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
+
+---
+
+## [1.1.59] - 2026-08-19
+
+### Changed — Media Worker Crawling & Crawl4AI Facade (PR #5892)
+
+- **Native crawling in the worker** — new `/api/crawl/*` endpoints: single-URL Markdown (`/api/crawl/markdown`), batched crawling (`/api/crawl/markdown-batch`, sync or queued async), and link scans (`/api/crawl/links`). Two-tier extraction: static HTTP fetch → Readability → Turndown first (zero browser cost), with the hardened Chromium launcher as an automatic fallback for JS-heavy pages. Every URL passes the shared SSRF guard before any fetch or navigation.
+- **Crawl4AI-compatible facade** (`/api/crawl4ai/*`) lets the plugin's `run_crawl4ai_job` remote mode target the worker as a drop-in Crawl4AI replacement; new LLM extraction utility (`src/utils/llm-extract.js`) for structured page data. Worker bumped to **v3.2.0**.
+- Toolkit memory estimate now accounts for the worker sidecar (`docs/features/TOOLKIT_MEMORY_TRACKING.md`, section-tools UI). See plan [`031-media-worker-crawl4ai-integration-plan.md`](docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md).
+
+### Changed — Research Tools Multi-Provider Hardening (PR #5893)
+
+- `semantic_content_search` now resolves embeddings through the shared embedding-provider abstraction (OpenAI, Gemini, Ollama, or DigitalOcean) **independent of the assistant's chat provider**; degrades to keyword search (`fallback_mode: "keyword"`) when no provider is configured; skips stored vectors from mismatched embedding models (`skipped_dimension_mismatch`). New Gemini embedding provider: `includes/services/embedding/class-wp-mcp-ai-embedding-provider-gemini.php`.
+- `deep_research` validates non-empty completions, falls back to `reasoning_content` for reasoning-only models, retries `finish_reason: length` truncation with a doubled token budget, walks the provider chain on failure (max 2 attempts by default, filterable via `wp_mcp_ai_deep_research_max_attempts`), and never caches empty reports.
+- **Two new read-only base tools** — `list_terms` and `list_taxonomies` (taxonomy discovery companions to `create_term`/`update_term`). See `docs/developer/implementation-plan-research-tools-multi-provider.md`.
+
+### Fixed — Docs Hub Rebuild & Broken-Link Suggestions (PR #5894)
+
+- The plugin updater now fires a new **`wp_mcp_ai_plugin_updated` action** after every in-place update (core, Pro, and base→complete flows) — the copy-in-place updater bypasses `Plugin_Upgrader`, so `upgrader_process_complete` never fired and Docs Hub caches went stale after updates.
+- Docs Hub **0.4.1** reacts to that action (and to NV-oOS activation/deactivation) with a cache clear + async rebuild — cached remote content is preserved so updates don't re-fetch every Markdown file — plus an `admin_init` guard that rebuilds when the manifest's stored versions differ, covering manual file replacement and restores.
+- Broken-link detection now resolves relative links against the indexed slug map (fixing the "626 broken links" false positive on remote-only indexes); suggestions are case-insensitive with confidence clamped to [0.3, 1.0].
+
+### Fixed — Tool Registration & QA Infrastructure (PR #5895)
+
+- **Legacy-format tool classes are auto-wrapped** (`WP_MCP_AI_Legacy_Tool_Wrapper` + `WP_MCP_AI_Tool_Legacy_Definition` trait), **~32 previously-orphaned base tool files are now registered** (2FA setup, content freshness, batch tools, omni-video, SEO/image optimizers, Site Kit integrations, and more), and a new **`wp_mcp_ai_tools_init`** action lets side-loaders (e.g. `includes/orchestration-init.php`) register tools after defaults. The registry now tracks skipped tools in `unavailable_tool_slugs`.
+- QA container memory limits raised (`tests/qa/docker/docker-compose.qa.yml`) and `bin/install-test-plugins.sh` hardened.
+
+### Versioning
+
+- Bumped to **1.1.59** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.59. Media Worker: **v3.2.0**.
+- Tool count: ~300 base + ~1,243 Pro (~1,543 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
+
+---
+
+## [1.1.58] - 2026-08-18
+
+### Added — Composio Connect Integration (PR #5889)
+
+- **Composio Connect subsystem (Pro)** — new `addons/pro/includes/composio/` subsystem bridges WordPress to the Composio MCP gateway: OAuth connection flow with state nonce (`WP_MCP_AI_Composio_Auth_Handler`), API client (`WP_MCP_AI_Composio_Client`), trigger bridge (`WP_MCP_AI_Composio_Trigger_Bridge`), and a signed webhook controller (`WP_MCP_AI_Composio_Webhook_Controller`). Registered in the Pro module registry; the remote-sites admin page and connection metabox gained Composio panels (connected-apps badge + "Connect apps" deep link).
+- **Six new beta tools** — `composio_list_tools`, `composio_get_tool_schema`, `composio_list_connected_accounts`, `composio_create_connect_link`, `composio_execute_tool`, `composio_manage_triggers` (all beta; see `docs/toolkits/composio-connect.md`).
+- +5,318 lines including 4 test classes (+887 lines). See [`docs/composio-connect.md`](docs/composio-connect.md) and proposal 030.
+
+### Changed — OOS Runtime Consolidation, Phases 0–5.8 (PR #5881)
+
+- **Phase 0–2 parity foundations** — OOS bridge (`includes/bootstrap/oos-bridge.php`, PHP 8.1 runtime gate), tool-surface parity via the new `ToolResolverInterface` / `ToolWriteClassInterface` contracts, and security-gate parity (`ToolGuardInterface`) so the OOS path enforces the same capability and destructive-op checks as the legacy path.
+- **Phase 3 event-sourced session log** — `SessionLog` / `SessionEvent` / `SessionTelemetry` domain objects plus `SessionLogStoreInterface`; `WP_MCP_AI_Session_Log_Observer` records agentic-loop decisions, tool pre/post events, and errors for parity analysis.
+- **Phase 4 shadow mode + canary routing** — opt-in `includes/oos/` shadow runner executes the OOS engine in parallel on sampled legacy chat requests and serves the legacy result (zero user exposure; default off, gated by `wp_mcp_ai_oos_shadow_enabled()`). Canary routing runs assistants opted in via `_wp_mcp_ai_engine` post meta on OOS (`wp_mcp_ai_oos_canary` filter, default off). New `wp mcp-ai oos parity` CLI reads the shadow-run store (`wp_mcp_ai_oos_shadow_runs`, capped at 100, non-autoloaded).
+- **Phase 5 scoped tools + compaction seam** — `ToolScope` restrictions (`ToolRestriction` value object), `CompactionProvider` seam, `CancellationToken` deadlines, and waterfall decision/event objects across `ChatOrchestrator`.
+- **Phase 5 Pro composition & child binding** — new `addons/pro/includes/composition/` subsystem (`WP_MCP_AI_Pro_Composition_Service`, `WP_MCP_AI_Pro_Legacy_Tool_Resolver`, `wp mcp-ai composition` CLI) for child-assistant binding; tests in `addons/pro/tests/test-oos-composition-service.php`.
+- **Phase 5.8 telemetry single-path** — session telemetry flows through one path in both engines.
+- See [`docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md`](docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md).
+
+### Changed — Graphify Standalone Plugins Renamed to Content Graph (PR #5890)
+
+- `plugins/nvoos-graphify` → **`plugins/nvoos-content-graph`** (v1.0.2), `plugins/nvoos-graphify-ai` → **`plugins/nvoos-content-graph-ai`** (v1.0.2), `plugins/nvoos-graphify-ai-platform` → **`plugins/nvoos-content-graph-ai-platform`** (v1.0.2), with matching build/sync workflow renames and `bin/build-*-content-graph*.sh` script renames. The `addons/graphify/` knowledge-graph addon is unchanged.
+
+### Fixed — Security Center wp.apiRequest Error (PR #5887)
+
+- The Security Center tab's inline scripts (posture refresh, IP tests, snapshot restore, compliance export, self-test) call `wp.apiRequest()` but the `wp-api` script was never enqueued on that tab, producing an "apiFetch is not defined" error on every refresh. The settings dashboard now enqueues `wp-api` when `?tab=security` is active. See [`docs/history/2026/fixes/security-center-wp-api-request-fix.md`](docs/history/2026/fixes/security-center-wp-api-request-fix.md).
+
+### Fixed — deepmerge-ts CVE-2026-40345 (PR #5888)
+
+- `deepmerge-ts` overridden to a patched version in `addons/media-worker/package.json` and `addons/pro/package.json` (CVE-2026-40345).
+
+### Versioning
+
+- Bumped to **1.1.58** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.58. Media Worker: v3.0.0 (unchanged).
+- Tool count: ~265 base + ~1,243 Pro (~1,508 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+- Provider count: **15** first-class language-model providers.
+- Addon count: **26**.
+
+---
+
 ## [1.1.57] - 2026-08-15
 
 ### Changed — Plugin Updater: Base-Only Updates & In-Place Install (PR #5871)

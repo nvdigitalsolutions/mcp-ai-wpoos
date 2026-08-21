@@ -154,6 +154,11 @@ if ( ! class_exists( 'WP_MCP_AI_Request_Guard' ) ) {
 
 			// Fallback: check actual body length (slower but accurate).
 			$body = $request->get_body();
+			// WP_REST_Request::get_body() returns null when no body was sent.
+			// Passing null to strlen() is deprecated as of PHP 8.1 — normalise
+			// before measuring so bodyless requests (GET, HEAD, empty POSTs)
+			// never trip the deprecation.
+			$body = is_string( $body ) ? $body : '';
 			if ( strlen( $body ) > $max_bytes ) {
 				return new WP_Error(
 					'request_body_too_large',

@@ -273,6 +273,72 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->handle_teams_oauth_callback();
 		}
 
+		// Handle Composio Connect Link creation (redirects to Composio's hosted page).
+		if ( 'composio_connect_link' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['toolkit'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+			$toolkit       = isset( $_GET['toolkit'] ) ? sanitize_key( wp_unslash( $_GET['toolkit'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'composio_connect_link_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) {
+				$composio_init = WP_MCP_AI_PRO_PATH . 'includes/composio/composio-init.php';
+				if ( file_exists( $composio_init ) ) {
+					require_once $composio_init;
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) {
+				$link = WP_MCP_AI_Composio_Auth_Handler::create_link( $connection_id, $toolkit, get_current_user_id() );
+
+				if ( is_wp_error( $link ) ) {
+					wp_safe_redirect(
+						add_query_arg(
+							array(
+								'edit'            => $connection_id,
+								'composio_linked' => '0',
+								'composio_error'  => rawurlencode( $link->get_error_message() ),
+							),
+							admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+						)
+					);
+				} else {
+					wp_redirect( $link['url'] ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- URL originates from Composio's link endpoint.
+				}
+			} else {
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'edit'            => $connection_id,
+							'composio_linked' => '0',
+							'composio_error'  => rawurlencode( __( 'Composio integration is not loaded.', 'mcp-ai-wpoos-pro' ) ),
+						),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					)
+				);
+			}
+			exit;
+		}
+
+		// Handle the return from a Composio Connect Link.
+		if ( 'composio_oauth_callback' === $oauth_handler ) {
+			if ( ! class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) {
+				$composio_init = WP_MCP_AI_PRO_PATH . 'includes/composio/composio-init.php';
+				if ( file_exists( $composio_init ) ) {
+					require_once $composio_init;
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) {
+				WP_MCP_AI_Composio_Auth_Handler::handle_callback();
+			}
+
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&composio_linked=0' ) );
+			exit;
+		}
+
 		// Handle save action.
 		if ( isset( $_POST['wp_mcp_ai_pro_save_connection'] ) && isset( $_POST['_wpnonce'] ) ) {
 			$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -438,6 +504,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_key    = isset( $_POST['shipstation_api_key'] ) ? wp_unslash( $_POST['shipstation_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized.
 					$api_secret = isset( $_POST['shipstation_api_secret'] ) ? wp_unslash( $_POST['shipstation_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API secret must not be sanitized.
 					break;
+				case 'composio':
+					$api_key = isset( $_POST['composio_api_key'] ) ? wp_unslash( $_POST['composio_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized.
+					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth.
@@ -594,6 +663,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			// For mesh peer connections, use custom_header auth with mesh API key.
 			if ( 'mesh_peer' === $connection_type ) {
 				$auth_type = 'custom_header';
+			}
+
+			// For Composio connections, use the fixed backend API URL. The
+			// optional base_url override is stored in the base_url meta key and
+			// validated against the HTTPS allowlist in the manager.
+			if ( 'composio' === $connection_type ) {
+				$url       = 'https://backend.composio.dev';
+				$auth_type = 'none'; // Composio uses x-api-key header handled by the client.
 			}
 
 			// Resolve the shared verify_token field (used by WhatsApp, Messenger, and Google Chat).
@@ -805,6 +882,28 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					: 'api',
 				'linkedin_search_query'          => isset( $_POST['linkedin_search_query'] ) ? sanitize_text_field( wp_unslash( $_POST['linkedin_search_query'] ) ) : '',
 				'linkedin_search_location'       => isset( $_POST['linkedin_search_location'] ) ? sanitize_text_field( wp_unslash( $_POST['linkedin_search_location'] ) ) : '',
+				// Composio Connect fields.
+				'base_url'                       => 'composio' === $connection_type && isset( $_POST['composio_base_url'] )
+					? esc_url_raw( wp_unslash( $_POST['composio_base_url'] ) )
+					: '',
+				'default_user_mode'              => 'composio' === $connection_type && isset( $_POST['composio_user_mode'] ) && in_array( $_POST['composio_user_mode'], array( 'admin_shared', 'per_wp_user' ), true )
+					? sanitize_key( wp_unslash( $_POST['composio_user_mode'] ) )
+					: 'admin_shared',
+				'toolkit_allowlist'              => 'composio' === $connection_type && isset( $_POST['composio_toolkit_allowlist'] )
+					? array_values(
+						array_filter(
+							array_map(
+								static function ( $slug ) {
+									return sanitize_key( trim( $slug ) );
+								},
+								explode( ',', wp_unslash( $_POST['composio_toolkit_allowlist'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map above.
+							),
+							static function ( $slug ) {
+								return '' !== $slug;
+							}
+						)
+					)
+					: array(),
 				// WordPress/WooCommerce granular access controls.
 				'post_type_access'               => $this->resolve_post_type_access(),
 				'wc_resource_access'             => $this->resolve_wc_resource_access(),
@@ -977,6 +1076,35 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<div class="notice notice-success is-dismissible">
 					<p><?php echo esc_html( urldecode( $oauth_success ) ); ?></p>
 				</div>
+			<?php endif; ?>
+
+			<?php if ( isset( $_GET['composio_linked'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
+				<?php
+				// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Display-only redirect flags.
+				$composio_linked = isset( $_GET['composio_linked'] ) ? sanitize_key( wp_unslash( $_GET['composio_linked'] ) ) : '';
+				$composio_error  = isset( $_GET['composio_error'] ) ? sanitize_text_field( wp_unslash( $_GET['composio_error'] ) ) : '';
+				// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+				if ( '1' === $composio_linked ) :
+					?>
+					<div class="notice notice-success is-dismissible">
+						<p><?php esc_html_e( 'App connected successfully. The new connected account is listed below after a refresh.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+					<?php
+				elseif ( 'state' === $composio_linked ) :
+					?>
+					<div class="notice notice-error is-dismissible">
+						<p><?php esc_html_e( 'Connect Link state could not be validated. Please create a new link and try again.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+					<?php
+				else :
+					?>
+					<div class="notice notice-error is-dismissible">
+						<p><?php echo '' !== $composio_error ? esc_html( urldecode( $composio_error ) ) : esc_html__( 'App connection failed. Please try again.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+					<?php
+				endif;
+				?>
 			<?php endif; ?>
 
 			<?php if ( $editing || isset( $_GET['add'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only query flag. ?>
@@ -1470,6 +1598,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="shipstation" <?php selected( $connection_type, 'shipstation' ); ?>>
 								<?php esc_html_e( 'ShipStation V1 API (Legacy)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
+							<option value="composio" <?php selected( $connection_type, 'composio' ); ?>>
+								<?php esc_html_e( 'Composio Connect (AI Tool Aggregator)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
 						</select>
 						<p class="description">
 							<?php esc_html_e( 'Select the type of connection. Each type has specific authentication requirements and field configurations.', 'mcp-ai-wpoos-pro' ); ?>
@@ -1547,6 +1678,99 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<input type="password" name="consumer_secret" id="consumer_secret" class="regular-text" value="" autocomplete="new-password" placeholder="cs_...">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Composio Connect -->
+				<tr class="composio-only-field" style="display: none;">
+					<th scope="row">
+						<label for="composio_api_key"><?php esc_html_e( 'Composio API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="composio_api_key" id="composio_api_key" class="regular-text" value="" autocomplete="new-password" placeholder="ak_...">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key. The key is stored encrypted and never shown again.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="composio-only-field" style="display: none;">
+					<th scope="row">
+						<label for="composio_base_url"><?php esc_html_e( 'API Base URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="url" name="composio_base_url" id="composio_base_url" class="regular-text" value="<?php echo $is_edit && ! empty( $connection['base_url'] ) ? esc_attr( $connection['base_url'] ) : 'https://backend.composio.dev'; ?>">
+						<p class="description"><?php esc_html_e( 'Leave as https://backend.composio.dev unless you use a regional or self-hosted Composio endpoint.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="composio-only-field" style="display: none;">
+					<th scope="row">
+						<label for="composio_user_mode"><?php esc_html_e( 'Identity Mode', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<select name="composio_user_mode" id="composio_user_mode">
+							<option value="admin_shared" <?php selected( $is_edit && isset( $connection['default_user_mode'] ) ? $connection['default_user_mode'] : 'admin_shared', 'admin_shared' ); ?>><?php esc_html_e( 'Shared (site-wide) — one identity for all assistants', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="per_wp_user" <?php selected( $is_edit && isset( $connection['default_user_mode'] ) ? $connection['default_user_mode'] : '', 'per_wp_user' ); ?>><?php esc_html_e( 'Per user — each WordPress user connects their own accounts', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+					</td>
+				</tr>
+
+				<tr class="composio-only-field" style="display: none;">
+					<th scope="row">
+						<label for="composio_toolkit_allowlist"><?php esc_html_e( 'Toolkit Allowlist', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="composio_toolkit_allowlist" id="composio_toolkit_allowlist" class="regular-text" value="<?php echo $is_edit && ! empty( $connection['toolkit_allowlist'] ) ? esc_attr( implode( ', ', (array) $connection['toolkit_allowlist'] ) ) : ''; ?>">
+						<p class="description"><?php esc_html_e( 'Optional comma-separated toolkit slugs (e.g. gmail, slack, github). Empty = all toolkits available.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="composio-only-field" style="display: none;">
+					<th scope="row">
+						<?php esc_html_e( 'Connect an App', 'mcp-ai-wpoos-pro' ); ?>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<p class="description"><?php esc_html_e( 'Enter a toolkit slug (e.g. gmail) and open the hosted Composio Connect page. Credentials stay with Composio — only the connected account is linked back here.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+								<input type="text" id="composio_connect_toolkit" class="regular-text" placeholder="gmail" style="flex: 1;">
+								<button type="button" class="button button-secondary" onclick="wpMCPAIComposioOpenLink()"><?php esc_html_e( 'Open Connect Link', 'mcp-ai-wpoos-pro' ); ?></button>
+							</div>
+							<?php
+							// Precompute the connect-link endpoint once (with a nonce and a
+							// toolkit placeholder the inline JS swaps before opening).
+							$composio_connect_url   = esc_url_raw(
+								add_query_arg(
+									array(
+										'page'          => 'wp-mcp-ai-remote-sites',
+										'oauth_handler' => 'composio_connect_link',
+										'connection_id' => $connection['id'],
+										'toolkit'       => 'TOOLKIT_PLACEHOLDER',
+										'_wpnonce'      => wp_create_nonce( 'composio_connect_link_' . $connection['id'] ),
+									),
+									admin_url( 'admin.php' )
+								)
+							);
+							$composio_connect_alert = wp_json_encode( __( 'Enter a toolkit slug first (e.g. gmail).', 'mcp-ai-wpoos-pro' ) );
+							?>
+							<script>
+								function wpMCPAIComposioOpenLink() {
+									var toolkit = document.getElementById('composio_connect_toolkit').value.trim();
+									if (!toolkit) { alert(<?php echo $composio_connect_alert; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON-encoded string. ?>); return; }
+									var baseUrl = <?php echo wp_json_encode( $composio_connect_url ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON-encoded URL. ?>;
+									window.open( baseUrl.replace( 'TOOLKIT_PLACEHOLDER', encodeURIComponent( toolkit ) ), '_blank' );
+								}
+							</script>
+							<?php if ( ! empty( $connection['webhook_subscription_id'] ) ) : ?>
+								<p class="description" style="margin-top: 6px;">
+									<?php esc_html_e( 'Webhook receiver:', 'mcp-ai-wpoos-pro' ); ?>
+									<code style="background: #f0f0f0; padding: 2px 6px;"><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/composio/' . $connection['id'] ) ); ?></code>
+								</p>
+							<?php endif; ?>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Save the connection first to connect apps.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -5900,7 +6124,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									);
 
 									// Auto-discover public custom post types registered on this site.
-									$discovered_pts = get_post_types( array( 'public' => true, '_builtin' => false ), 'objects' );
+									$discovered_pts = get_post_types(
+										array(
+											'public'   => true,
+											'_builtin' => false,
+										),
+										'objects'
+									);
 									foreach ( $discovered_pts as $slug => $obj ) {
 										if ( ! isset( $built_in_pt[ $slug ] ) ) {
 											/* translators: %1$s: post type singular label, %2$s: post type slug */
@@ -6154,6 +6384,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var printfulFields = document.querySelectorAll('.printful-only-field');
 			var shipengineFields = document.querySelectorAll('.shipengine-only-field');
 			var shipstationFields = document.querySelectorAll('.shipstation-only-field');
+			var composioFields = document.querySelectorAll('.composio-only-field');
 			var upworkFields = document.querySelectorAll('.upwork-only-field');
 			var linkedinFields = document.querySelectorAll('.linkedin-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
@@ -6242,6 +6473,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			shipstationFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			composioFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 			upworkFields.forEach(function(field) {
@@ -6566,6 +6800,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'basic_auth';
+			} else if (connectionType === 'composio') {
+				composioFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Composio uses the fixed backend URL; auth is handled by the client.
+				urlField.value = 'https://backend.composio.dev';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
 			}
 		}
 
@@ -14633,7 +14877,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$built_in_types = array( 'post', 'page', 'attachment' );
 
 		// Auto-discover public custom post types registered on this site.
-		$discovered_types = array_keys( get_post_types( array( 'public' => true, '_builtin' => false ), 'names' ) );
+		$discovered_types = array_keys(
+			get_post_types(
+				array(
+					'public'   => true,
+					'_builtin' => false,
+				),
+				'names'
+			)
+		);
 
 		// Merge custom post types from the text field (for non-public or remote-only types).
 		$custom_raw   = isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '';

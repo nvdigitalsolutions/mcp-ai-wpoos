@@ -119,6 +119,23 @@ export function configuredSites() {
 }
 
 /**
+ * Reconstruct the configured token for a site slug. Used by queue
+ * processors to make authenticated self-calls outside a request context
+ * (the worker already knows every token via SITE_TOKENS / WORKER_API_TOKEN,
+ * so secrets never need to be stored inside queued job data).
+ *
+ * @param {string} site Site slug ('default' in single-tenant mode).
+ * @return {string} Token, or '' when none is configured (lenient mode).
+ */
+export function tokenForSite( site ) {
+	if ( isMultiTenantMode() ) {
+		const map = siteTokenMap();
+		return 'string' === typeof map[ site ] ? map[ site ] : '';
+	}
+	return process.env.WORKER_API_TOKEN || '';
+}
+
+/**
  * Resolve the site slug for a provided token. Timing-safe across all
  * configured tokens; also accepts SITE_TOKENS_PREVIOUS during rotation.
  *

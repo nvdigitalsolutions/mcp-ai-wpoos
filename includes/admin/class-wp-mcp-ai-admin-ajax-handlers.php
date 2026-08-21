@@ -77,6 +77,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_isams_connection'  => 'handle_test_isams_connection',
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
 				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
+				'wp_ajax_wp_mcp_ai_lift_user_restriction'  => 'handle_lift_user_restriction',
+				'wp_ajax_wp_mcp_ai_get_restrictions'       => 'handle_get_restrictions',
+				'wp_ajax_wp_mcp_ai_dismiss_restriction_notice' => 'handle_dismiss_restriction_notice',
 				'wp_ajax_wp_mcp_ai_save_tool_limits'       => 'handle_save_tool_limits',
 				'wp_ajax_wp_mcp_ai_save_tool_settings'     => 'handle_save_tool_settings',
 				'wp_ajax_wp_mcp_ai_apply_orchestration_preset' => 'handle_apply_orchestration_preset',
@@ -2210,6 +2213,116 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					),
 				)
 			);
+		}
+
+		/**
+		 * Handle AJAX request to lift a user restriction.
+		 *
+		 * Expects $_POST['user_id'] and optionally $_POST['type']
+		 * ('all' lifts every active restriction).
+		 */
+		public function handle_lift_user_restriction() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Get user ID from request.
+			$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
+			$type    = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : 'all';
+
+			if ( ! $user_id || ! get_userdata( $user_id ) ) {
+				wp_send_json_error( array( 'message' => __( 'User not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Restriction registry unavailable.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$result = WP_MCP_AI_Restriction_Registry::lift( $user_id, $type, get_current_user_id() );
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => __( 'Restriction lifted. The user can access AI features again.', 'mcp-ai-wpoos' ),
+					'rows'    => WP_MCP_AI_Restriction_Registry::get_active(
+						array(
+							'per_page' => 100,
+							'page'     => 1,
+						)
+					),
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to list active restrictions.
+		 */
+		public function handle_get_restrictions() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Restriction registry unavailable.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$type = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : '';
+
+			wp_send_json_success(
+				WP_MCP_AI_Restriction_Registry::get_active(
+					array(
+						'type'     => $type,
+						'per_page' => 100,
+						'page'     => 1,
+					)
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to dismiss restriction notices.
+		 */
+		public function handle_dismiss_restriction_notice() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
+				WP_MCP_AI_Restriction_Registry::clear_notices();
+			}
+
+			wp_send_json_success( array( 'message' => __( 'Notice dismissed.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		/**

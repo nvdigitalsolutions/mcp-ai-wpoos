@@ -60,14 +60,19 @@ class Test_MemPalace_Phase3_Embedding_Providers extends WP_UnitTestCase {
 		$this->assertTrue( interface_exists( 'WP_MCP_AI_Embedding_Provider_Interface' ) );
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Embedding_Provider_OpenAI' ) );
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Embedding_Provider_Ollama' ) );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Embedding_Provider_Gemini' ) );
 
 		$openai = new WP_MCP_AI_Embedding_Provider_OpenAI();
 		$ollama = new WP_MCP_AI_Embedding_Provider_Ollama();
+		$gemini = new WP_MCP_AI_Embedding_Provider_Gemini();
 
 		$this->assertInstanceOf( 'WP_MCP_AI_Embedding_Provider_Interface', $openai );
 		$this->assertInstanceOf( 'WP_MCP_AI_Embedding_Provider_Interface', $ollama );
+		$this->assertInstanceOf( 'WP_MCP_AI_Embedding_Provider_Interface', $gemini );
 		$this->assertSame( 'openai', $openai->get_id() );
 		$this->assertSame( 'ollama', $ollama->get_id() );
+		$this->assertSame( 'gemini', $gemini->get_id() );
+		$this->assertSame( 'gemini-embedding-001', $gemini->get_model() );
 	}
 
 	// --- Default resolver ---
@@ -137,6 +142,76 @@ class Test_MemPalace_Phase3_Embedding_Providers extends WP_UnitTestCase {
 
 		$provider = $service->get_embedding_provider();
 		$this->assertInstanceOf( 'WP_MCP_AI_Embedding_Provider_Ollama', $provider );
+	}
+
+	/**
+	 * Gemini is auto-selected when only a Gemini key is configured.
+	 */
+	public function test_default_resolver_picks_gemini_when_only_gemini_configured() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'gemini_api_key' => 'gemini-test-key' )
+		);
+		$service = WP_MCP_AI_Vector_Context_Service::get_instance();
+		$service->reset_embedding_provider();
+
+		$provider = $service->get_embedding_provider();
+		$this->assertInstanceOf( 'WP_MCP_AI_Embedding_Provider_Gemini', $provider );
+	}
+
+	/**
+	 * Auto-detect prefers Ollama over Gemini (local-first fallback ordering).
+	 */
+	public function test_default_resolver_prefers_ollama_over_gemini() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'ollama_endpoint_url' => 'http://localhost:11434',
+				'gemini_api_key'      => 'gemini-test-key',
+			)
+		);
+		$service = WP_MCP_AI_Vector_Context_Service::get_instance();
+		$service->reset_embedding_provider();
+
+		$provider = $service->get_embedding_provider();
+		$this->assertInstanceOf( 'WP_MCP_AI_Embedding_Provider_Ollama', $provider );
+	}
+
+	/**
+	 * Auto-detect prefers Gemini over DigitalOcean.
+	 */
+	public function test_default_resolver_prefers_gemini_over_digitalocean() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'digitalocean_api_key' => 'do-test-key',
+				'gemini_api_key'       => 'gemini-test-key',
+			)
+		);
+		$service = WP_MCP_AI_Vector_Context_Service::get_instance();
+		$service->reset_embedding_provider();
+
+		$provider = $service->get_embedding_provider();
+		$this->assertInstanceOf( 'WP_MCP_AI_Embedding_Provider_Gemini', $provider );
+	}
+
+	/**
+	 * Explicit `embedding_provider: gemini` is honoured when configured.
+	 */
+	public function test_default_resolver_honours_gemini_preference() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'openai_api_key'     => 'sk-test',
+				'gemini_api_key'     => 'gemini-test-key',
+				'embedding_provider' => 'gemini',
+			)
+		);
+		$service = WP_MCP_AI_Vector_Context_Service::get_instance();
+		$service->reset_embedding_provider();
+
+		$provider = $service->get_embedding_provider();
+		$this->assertInstanceOf( 'WP_MCP_AI_Embedding_Provider_Gemini', $provider );
 	}
 
 	// --- Filter override ---

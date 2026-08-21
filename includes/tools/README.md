@@ -27,7 +27,7 @@ The folder's external contract is the **tool slug** registered with `WP_MCP_AI_T
 
 Tool categories (illustrative — see [`docs/reference/tools/tool-reference.md`](../../docs/reference/tools/tool-reference.md) for the full catalogue):
 
-- **Content** — `create_post`, `save_post`, `delete_post`, `search_content`, `get_recent_posts`, `update_term`, `create_term`
+- **Content** — `create_post`, `save_post`, `delete_post`, `search_content`, `get_recent_posts`, `update_term`, `create_term`, `list_terms`, `list_taxonomies`
 - **Media / vision** — `generate_openai_image`, `generate_gemini_image`, `analyze_image`, `crop_image`, `resize_image`, `vectorize_image`, `extract_image_text`
 - **Audio / video** — `transcribe_openai_audio`, `generate_openai_speech`, `generate_music`, `generate_veo_video`, `generate_sora_video`
 - **WordPress ops** — `get_site_health`, `get_system_logs`, `purge_cache`, `list_cron_jobs`, `create_cron_job`

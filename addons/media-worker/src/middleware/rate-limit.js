@@ -3,7 +3,7 @@
  * with stricter limits on expensive routes).
  *
  * Limits are env-tunable: RATE_LIMIT_GLOBAL, RATE_LIMIT_IMAGE,
- * RATE_LIMIT_VIDEO, RATE_LIMIT_BROWSER, RATE_LIMIT_WORKFLOW.
+ * RATE_LIMIT_VIDEO, RATE_LIMIT_BROWSER, RATE_LIMIT_CRAWL, RATE_LIMIT_WORKFLOW.
  *
  * Multi-tenant mode (SITE_TOKENS set): each site gets its own limiter
  * instances keyed `site:<slug>:<ip>` so one noisy site cannot exhaust
@@ -34,6 +34,7 @@ const GROUPS = {
 	image: { windowMs: 10 * 60 * 1000, limit: 30, envKey: 'IMAGE' },
 	video: { windowMs: 10 * 60 * 1000, limit: 20, envKey: 'VIDEO' },
 	browser: { windowMs: 10 * 60 * 1000, limit: 30, envKey: 'BROWSER' },
+	crawl: { windowMs: 10 * 60 * 1000, limit: 20, envKey: 'CRAWL' },
 	workflow: { windowMs: 10 * 60 * 1000, limit: 30, envKey: 'WORKFLOW' },
 };
 
@@ -164,6 +165,9 @@ export const videoLimiter = ( req, res, next ) => limiterFor( req, 'video' )( re
 
 /** Browser rendering — expensive (memory). */
 export const browserLimiter = ( req, res, next ) => limiterFor( req, 'browser' )( req, res, next );
+
+/** Crawling — network + optional Chromium; both tiers are costly. */
+export const crawlLimiter = ( req, res, next ) => limiterFor( req, 'crawl' )( req, res, next );
 
 /** Workflow orchestration — multi-step pipelines. */
 export const workflowLimiter = ( req, res, next ) => limiterFor( req, 'workflow' )( req, res, next );

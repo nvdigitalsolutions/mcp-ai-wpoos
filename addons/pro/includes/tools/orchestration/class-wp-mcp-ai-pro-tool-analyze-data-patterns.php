@@ -41,6 +41,9 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 					'dataset'       => array(
 						'type'        => 'array',
 						'description' => 'Array of data points to analyze',
+						'items'       => array(
+							'type' => array( 'number', 'string' ),
+						),
 					),
 					'analysis_type' => array(
 						'type'        => 'string',
@@ -62,17 +65,19 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array
+	 * @return array|WP_Error Tool result or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$dataset = $arguments['dataset'];
+		unset( $context );
+
+		$dataset = isset( $arguments['dataset'] ) && is_array( $arguments['dataset'] ) ? $arguments['dataset'] : array();
 		$type    = isset( $arguments['analysis_type'] ) ? $arguments['analysis_type'] : 'trend';
 
 		$numeric_data = array_filter( $dataset, 'is_numeric' );
 		if ( empty( $numeric_data ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'Dataset must contain numeric values',
+			return new WP_Error(
+				'wp_mcp_ai_analyze_data_patterns_no_numeric_data',
+				'Dataset must contain numeric values'
 			);
 		}
 

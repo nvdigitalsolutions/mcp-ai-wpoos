@@ -16,7 +16,7 @@ Context file for AI agents working on or near the framework-agnostic extraction 
 | `includes/class-wp-mcp-ai-rest.php` | Chat REST controller — checks `wp_mcp_ai_oos_engine_enabled()` and delegates to `handle_chat_request_oos()` |
 | `.github/workflows/sync-nvoos-*.yml` | Monorepo sync workflows — `git subtree split` each `lib/*` package to its standalone GitHub repo on push |
 | `docs/project/proposals/laravel-scale-deployment-architecture.md` | Laravel Octane orchestrator deployment plan — Redis Queue, Horizon, Reverb, pgvector, federation (2026-07-01) |
-| `docs/project/proposals/nvoos-base-restructuring-roadmap.md` | Graphify ecosystem architecture — `nvoos-graphify` core + `nvoos-graphify-ai` + `nvoos-graphify-ai-platform` |
+| `docs/project/proposals/nvoos-base-restructuring-roadmap.md` | Content Graph ecosystem architecture (formerly Graphify) — `nvoos-content-graph` core + `nvoos-content-graph-ai` + `nvoos-content-graph-ai-platform` |
 
 ## Architecture (Hexagonal)
 
