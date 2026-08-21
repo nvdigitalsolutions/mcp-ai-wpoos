@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **August 21, 2026** (v1.1.60)
+> Last reviewed: **August 21, 2026** (v1.1.61)
 
 ### Related Files
 
@@ -118,7 +118,8 @@ mcp-ai-wpoos/
 │   │   ├─ class-wp-mcp-ai-speculative-tool-executor.php ← DSpark speculative execution
 │   │   ├─ class-wp-mcp-ai-orchestration-depth-scheduler.php ← DSpark depth scheduling
 │   │   ├─ class-wp-mcp-ai-hybrid-plan-generator.php ← DSpark hybrid planning
-│   │   └─ class-wp-mcp-ai-orchestration-preset-service.php ← Orchestration presets
+│   │   ├─ class-wp-mcp-ai-orchestration-preset-service.php ← Orchestration presets
+│   │   └─ class-wp-mcp-ai-agent-identity-resolver.php ← Canonicalises virtual agent keys → assistant post IDs (v1.1.61)
 │   ├─ rest/                   ← REST controllers
 │   │   ├─ class-wp-mcp-ai-rest-chat-memory-controller.php  ← Chat-client memory bridge proxy
 │   │   ├─ class-wp-mcp-ai-rest-transcript-mining-controller.php  ← Transcript mining REST API
@@ -144,6 +145,7 @@ mcp-ai-wpoos/
 │   ├─ professions/            ← Professional profiles
 │   ├─ teams/                  ← Team management
 │   ├─ agents/                 ← Agent definitions
+│   ├─ okf/                    ← OKF engine + skill-knowledge bundle generator (v1.1.61)
 │   ├─ blocks/                 ← WordPress blocks (chat, assistant-builder, tools-grid…)
 │   ├─ bundled-skills/         ← Pre-packaged SKILL.md files (MCP, PDF, Excel, video…)
 │   ├─ slash-commands/         ← Slash command toolkit manager

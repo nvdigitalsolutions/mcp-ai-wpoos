@@ -71,6 +71,52 @@ language instruction.
 > the CCT is consulted only as a backstop. The candidate cap defaults to 500
 > and is tunable via `apply_filters( 'wp_mcp_ai_agent_memory_cct_reader_limit', 500, $agent_id )`.
 
+## v1.1.61 — Agent Identity Bridging
+
+The memory store and the drawer used to bucket records by `md5(agent_id)`.
+When the storing side passed a virtual / non-numeric key (e.g.
+`nvoos-pro-spa-memory-drawer`, `virtual_planner_1`) while the UI recalled by
+the canonical assistant post ID, records landed in a different bucket and
+the drawer looked empty. v1.1.61 bridges the two sides:
+
+### Store side (`store_agent_context`)
+
+- `WP_MCP_AI_Agent_Identity_Resolver::resolve()` canonicalises a non-numeric
+  agent key using the `assistant_id` carried in the tool execution context
+  (or a previously recorded alias).
+- The alias mapping persists in the `wp_mcp_ai_agent_id_aliases` site
+  option — bounded to 200 entries, never autoloaded, every value sanitised.
+- The tool envelope and the `wp_mcp_ai_memory_stored` action payload echo
+  `original_agent_id` and `agent_id_resolved` so callers can detect
+  "saved under X, drawer watches Y" immediately.
+
+### Recall side (`GET /chat-memory/recall`)
+
+- Unscoped recall merges buckets for every alias mapped to the requested
+  agent (up to 3 aliases + the canonical ID). Each merged record carries a
+  `stored_under` stamp; the envelope carries `merged_sources` and an updated
+  `count`. Wing/room-scoped (`recall_memory`) recall keeps single-bucket
+  semantics.
+- Default limit is 25 when none is supplied (capped at 50).
+
+### Drawer UI
+
+- Wing/room scope chips on every item, with an explicit **Unscoped** chip
+  when a memory has no scope, and a `stored under: <bucket>` chip for
+  merged records.
+- The panel header shows the exact agent ID the drawer recalls under
+  (`data-testid="wp-mcp-ai-memory-agent-id"`).
+- A show-all-scopes toggle flips between scoped and unscoped views.
+- Open drawers refresh in place when a `memory_event` store SSE frame
+  arrives.
+
+### Graceful degradation
+
+- `wake_up_context` catches any graph-bridge failure (`WP_Error`, throwable,
+  malformed rows) and falls back to the transient retrieval path.
+- A scoped wake-up or recall that errors retries once without the
+  wing/room scope before the error surfaces.
+
 ## REST surface
 
 All routes live under `/wp-json/mcp-ai/v1/chat-memory/`. Authentication uses

@@ -4,8 +4,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.60"
-  plugin-version-tested: "1.1.60"
+  plugin-version: "1.1.61"
+  plugin-version-tested: "1.1.61"
   last-updated: "2026-08-21"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -313,6 +313,25 @@ ShareGPT, and OpenAI JSONL exports into the `ai_chat_transcripts` CCT:
   (`--dry-run`, `--policy=skip|refresh`, `--resume-token=`).
 - Admin upload/preview page, GDPR export/erase, optional memory mining via
   `mine_agent_memory`. Guide: `docs/user-guides/conversation-import.md`.
+
+---
+
+## Agent Identity Bridging & OKF Bundle (v1.1.61+)
+
+**Agent identity bridging.** `store_agent_context` resolves virtual agent
+keys (e.g. `nvoos-pro-spa-memory-drawer`, `virtual_planner_*`) to the
+canonical assistant post ID via `WP_MCP_AI_Agent_Identity_Resolver` (alias
+map in the `wp_mcp_ai_agent_id_aliases` option; bounded, never autoloaded);
+the envelope echoes `original_agent_id` / `agent_id_resolved`. Chat-memory
+recall merges alias buckets with a `stored_under` stamp per record, and the
+memory drawers (base, chat-spa, pro-spa) show scope/stored-under chips, the
+agent ID they recall under, and a show-all-scopes toggle; open drawers
+refresh on `memory_event` store frames.
+
+**OKF bundle.** The `skill-knowledge` bundle is auto-generated from
+`includes/bundled-skills/` on bootstrap (priority 32) and refreshed after
+bundled-skill reinstall — `okf_search` works out of the box (no more "OKF
+bundle not found: skill-knowledge").
 
 ---
 

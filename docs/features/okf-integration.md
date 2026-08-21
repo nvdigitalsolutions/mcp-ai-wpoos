@@ -62,7 +62,7 @@ includes/
 │   ├── class-wp-mcp-ai-okf-reader.php      # Bundle reader/traverser
 │   ├── class-wp-mcp-ai-okf-writer.php      # Bundle writer/validator
 │   ├── class-wp-mcp-ai-okf-bundle-manager.php # Bundle lifecycle manager (1.1.62)
-│   └── class-wp-mcp-ai-okf-skill-knowledge-generator.php # skill-knowledge generator
+│   └── class-wp-mcp-ai-okf-skill-knowledge-generator.php # skill-knowledge bundle generator (v1.1.61)
 │
 └── tools/
     └── okf/                                # OKF MCP tools (Base tier)
@@ -139,7 +139,23 @@ bundles through it (no more per-tool path logic):
 Loaded via `includes/bootstrap/loader.php` at priority 32 (after Paper Store at 30).
 Single-line hook: `add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_okf_init', 32 );`
 
-### 4.6 Events
+### 4.6 Skill-Knowledge Bundle Generator (v1.1.61)
+
+`WP_MCP_AI_OKF_Skill_Knowledge_Generator` (initialised in `okf-init.php` on
+the same priority-32 hook) auto-generates the `skill-knowledge` bundle from
+`includes/bundled-skills/` so `okf_search` and the other OKF tools work out
+of the box — previously the documented bundle was never created and every
+`okf_*` tool call failed with "OKF bundle not found: skill-knowledge".
+
+- Runs on every bootstrap when the bundle is missing or the plugin version
+  changed (a cached version stamp prevents redundant regeneration).
+- Regenerates after the admin **Install / Force Reinstall Bundled Skills**
+  action (`includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php`), keeping
+  the bundle in sync with the installed skill set.
+- Writes atomically via `WP_MCP_AI_Filesystem_Service` into
+  `wp-content/uploads/mcp-ai-wpoos/knowledge/skill-knowledge/`.
+
+### 4.7 Events
 
 | Hook | Fires When |
 |------|-----------|
@@ -147,7 +163,7 @@ Single-line hook: `add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_okf_init', 3
 | `wp_mcp_ai_okf_concept_saved` | A concept is created or updated |
 | `wp_mcp_ai_okf_concept_deleted` | A concept is archived/deleted |
 
-### 4.7 Admin UI (1.1.62)
+### 4.8 Admin UI (1.1.62)
 
 `WP_MCP_AI_OKF_Bundle_Manager_Admin_Page` registers a **OKF Bundles** screen under
 *Assistants* (`edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-okf-bundle-manager`,
