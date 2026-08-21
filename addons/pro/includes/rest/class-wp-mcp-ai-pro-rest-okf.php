@@ -89,9 +89,14 @@ class WP_MCP_AI_Pro_REST_Okf {
 			)
 		);
 
+		// The `%` alternative accepts percent-encoded concept IDs: the SPA
+		// encodes IDs containing `/` (e.g. `wp-plugin-cron/SKILL` →
+		// `wp-plugin-cron%2FSKILL`), and WordPress core can hand the route
+		// matcher the still-encoded path depending on the server stack.
+		// `handle_concept()` decodes the captured value before lookup.
 		register_rest_route(
 			self::NAMESPACE,
-			self::ROUTE . '/bundles/(?P<bundle>[a-z0-9][a-z0-9_-]{0,99})/concepts/(?P<concept>[a-zA-Z0-9_\-\/\.]+)',
+			self::ROUTE . '/bundles/(?P<bundle>[a-z0-9][a-z0-9_-]{0,99})/concepts/(?P<concept>[a-zA-Z0-9_\-\/\.%]+)',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( __CLASS__, 'handle_concept' ),
@@ -325,8 +330,12 @@ class WP_MCP_AI_Pro_REST_Okf {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public static function handle_concept( $request ) {
-		$bundle     = $request->get_param( 'bundle' );
-		$concept_id = $request->get_param( 'concept' );
+		$bundle = $request->get_param( 'bundle' );
+
+		// Concept IDs arrive URL-encoded from the SPA (slashes become %2F).
+		// rawurldecode() restores the bundle-relative path without turning
+		// literal `+` characters into spaces.
+		$concept_id = rawurldecode( (string) $request->get_param( 'concept' ) );
 
 		$reader = self::get_reader( $bundle );
 		if ( is_wp_error( $reader ) ) {

@@ -318,6 +318,46 @@ class Test_Pro_Okf_Rest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test concept detail accepts URL-encoded concept IDs (SPA encodes `/`).
+	 */
+	public function test_handle_concept_accepts_url_encoded_id() {
+		$this->seed_bundle();
+
+		$request  = $this->request(
+			'/bundles/site-knowledge/concepts/encoded',
+			array(
+				'bundle'  => 'site-knowledge',
+				'concept' => 'policies%2Frefunds',
+			)
+		);
+		$response = WP_MCP_AI_Pro_REST_Okf::handle_concept( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 'policies/refunds', $data['concept_id'] );
+		$this->assertStringContainsString( 'Refunds within 30 days', $data['body'] );
+	}
+
+	/**
+	 * Test the concept route matches a percent-encoded concept ID end-to-end.
+	 */
+	public function test_concept_route_matches_encoded_id() {
+		$this->seed_bundle();
+
+		// Routes must be registered on (or after) rest_api_init.
+		do_action( 'rest_api_init' );
+		WP_MCP_AI_Pro_REST_Okf::register_routes();
+
+		$request  = new WP_REST_Request(
+			'GET',
+			'/mcp-ai-pro/v1/okf/bundles/site-knowledge/concepts/policies%2Frefunds'
+		);
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( 'policies/refunds', $response->get_data()['concept_id'] );
+	}
+
+	/**
 	 * Test concept detail rejects unknown concepts.
 	 */
 	public function test_handle_concept_missing() {
