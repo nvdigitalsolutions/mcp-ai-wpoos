@@ -27,6 +27,8 @@ if ( ! function_exists( 'get_option' ) ) {
 	}
 }
 if ( ! function_exists( 'do_action' ) ) { function do_action() {} }
+if ( ! function_exists( 'apply_filters' ) ) { function apply_filters( $h, $v ) { return $v; } }
+if ( ! function_exists( 'add_filter' ) ) { function add_filter() {} }
 if ( ! function_exists( 'current_user_can' ) ) { function current_user_can( $c ) { return true; } }
 if ( ! function_exists( 'wp_upload_dir' ) ) {
 	function wp_upload_dir() {
@@ -40,6 +42,8 @@ if ( ! interface_exists( 'WP_MCP_AI_Tool_Interface' ) ) {
 
 require_once __DIR__ . '/../../includes/okf/class-wp-mcp-ai-okf-parser.php';
 require_once __DIR__ . '/../../includes/okf/class-wp-mcp-ai-okf-reader.php';
+require_once __DIR__ . '/../../includes/okf/class-wp-mcp-ai-okf-writer.php';
+require_once __DIR__ . '/../../includes/okf/class-wp-mcp-ai-okf-bundle-manager.php';
 require_once __DIR__ . '/../../includes/okf/class-wp-mcp-ai-okf-skill-knowledge-generator.php';
 require_once __DIR__ . '/../../includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once __DIR__ . '/../../includes/tools/okf/class-wp-mcp-ai-tool-okf-search.php';

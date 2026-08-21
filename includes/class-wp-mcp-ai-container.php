@@ -499,6 +499,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'admin.okf_bundle_manager',
+			function () {
+				return new WP_MCP_AI_OKF_Bundle_Manager_Admin_Page();
+			}
+		);
+
+		$this->singleton(
 			'admin.token_manager',
 			function () {
 				return new WP_MCP_AI_Admin_Token_Manager();

@@ -1060,6 +1060,9 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-conversation-import-admin.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-conversation-import-admin.php';
 	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-okf-bundle-manager-admin-page.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-okf-bundle-manager-admin-page.php';
+	}
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	}
@@ -1171,6 +1174,9 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	}
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-conversation-import-admin.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-conversation-import-admin.php';
+	}
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-okf-bundle-manager-admin-page.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-okf-bundle-manager-admin-page.php';
 	}
 }
 

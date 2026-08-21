@@ -193,6 +193,10 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				if ( class_exists( 'WP_MCP_AI_Conversation_Import_Admin' ) ) {
 					$this->admin_conversation_import = $container->get( 'admin.conversation_import' );
 				}
+
+				if ( class_exists( 'WP_MCP_AI_OKF_Bundle_Manager_Admin_Page' ) ) {
+					$this->admin_okf_bundle_manager = $container->get( 'admin.okf_bundle_manager' );
+				}
 			}
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.

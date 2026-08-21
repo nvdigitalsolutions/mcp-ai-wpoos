@@ -118,7 +118,8 @@ class WP_MCP_AI_Tool_OKF_Validate_Attestation implements WP_MCP_AI_Tool_Interfac
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos' ) );
 		}
 
-		$bundle_root = $this->resolve_bundle_root( $bundle );
+		$manager     = new WP_MCP_AI_OKF_Bundle_Manager();
+		$bundle_root = $manager->resolve_bundle_root( $bundle );
 		if ( is_wp_error( $bundle_root ) ) {
 			return $bundle_root;
 		}
@@ -465,43 +466,5 @@ class WP_MCP_AI_Tool_OKF_Validate_Attestation implements WP_MCP_AI_Tool_Interfac
 		}
 
 		return $summary;
-	}
-
-	// -------------------------------------------------------------------------
-	// Bundle resolution (shared pattern across all OKF tools)
-	// -------------------------------------------------------------------------
-
-	/**
-	 * Resolve a bundle name to an absolute directory path.
-	 *
-	 * @since 2.5.0
-	 *
-	 * @param string $bundle Bundle name or relative path.
-	 * @return string|WP_Error
-	 */
-	private function resolve_bundle_root( $bundle ) {
-		if ( false !== strpos( $bundle, '..' ) ) {
-			return new WP_Error(
-				'okf_invalid_bundle',
-				__( 'Invalid bundle name.', 'mcp-ai-wpoos' )
-			);
-		}
-
-		$upload_dir = wp_upload_dir();
-		$base       = $upload_dir['basedir'] . '/mcp-ai-wpoos/knowledge';
-		$path       = wp_normalize_path( $base . '/' . $bundle );
-
-		if ( is_dir( $path ) ) {
-			return $path;
-		}
-
-		return new WP_Error(
-			'okf_bundle_not_found',
-			sprintf(
-				/* translators: %s: bundle name */
-				__( 'OKF bundle not found: %s', 'mcp-ai-wpoos' ),
-				$bundle
-			)
-		);
 	}
 }

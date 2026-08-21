@@ -451,9 +451,11 @@ class WP_MCP_AI_OKF_Reader {
 		// Normalize path separators and prevent directory traversal.
 		$file_path = wp_normalize_path( $file_path );
 
-		// Security: ensure the resolved path is still within the bundle root.
+		// Fast lexical check: must be inside the bundle root with a '/'
+		// boundary (a sibling directory like `bundle-root-other` must not
+		// pass). Both sides are normalized to forward slashes.
 		$normalized_root = wp_normalize_path( $this->bundle_root );
-		if ( 0 !== strpos( $file_path, $normalized_root ) ) {
+		if ( 0 !== strpos( $file_path, $normalized_root . '/' ) ) {
 			return new WP_Error(
 				'okf_path_traversal',
 				__( 'Concept path escapes the bundle root.', 'mcp-ai-wpoos' )
@@ -468,6 +470,22 @@ class WP_MCP_AI_OKF_Reader {
 					__( 'Concept not found: %s', 'mcp-ai-wpoos' ),
 					$concept_id
 				)
+			);
+		}
+
+		// Symlink-aware containment: realpath() resolves `..` segments and
+		// symlinks, so a file that resolves outside the bundle (even one that
+		// passes the lexical check) is rejected.
+		$real_root = realpath( $normalized_root );
+		$real_file = realpath( $file_path );
+		if (
+			false === $real_root
+			|| false === $real_file
+			|| ( $real_file !== $real_root && 0 !== strpos( $real_file, $real_root . DIRECTORY_SEPARATOR ) )
+		) {
+			return new WP_Error(
+				'okf_path_traversal',
+				__( 'Concept path escapes the bundle root.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -513,12 +531,16 @@ class WP_MCP_AI_OKF_Reader {
 	/**
 	 * Convert an absolute file path to a concept ID.
 	 *
+	 * Public since 1.1.62: WP_MCP_AI_OKF_Writer::validate_bundle() calls it,
+	 * and it is a pure path utility with no state side effects.
+	 *
 	 * @since 2.1.0
+	 * @since 1.1.62 — Visibility raised to public (writer validation depends on it).
 	 *
 	 * @param string $file_path Absolute file path.
 	 * @return string
 	 */
-	private function file_to_concept_id( $file_path ) {
+	public function file_to_concept_id( $file_path ) {
 		$relative = str_replace( wp_normalize_path( $this->bundle_root ) . '/', '', wp_normalize_path( $file_path ) );
 		if ( '.md' === substr( $relative, -3 ) ) {
 			$relative = substr( $relative, 0, -3 );
@@ -554,6 +576,98 @@ class WP_MCP_AI_OKF_Reader {
 			}
 		}
 		return array_unique( $links );
+	}
+
+	/**
+	 * Find broken bundle-internal cross-links in a concept's body.
+	 *
+	 * OKF v0.2 §6.1: consumers MUST tolerate broken links — this is an
+	 * advisory report for validators and UIs, not a read gate.
+	 *
+	 * @since 1.1.62
+	 *
+	 * @param string $concept_id Concept ID to inspect.
+	 * @return array<int, array{concept_id: string, target: string, resolved: string}>
+	 *               Broken-link descriptors (empty when all links resolve).
+	 */
+	public function find_broken_links( $concept_id ) {
+		$concept = $this->get_concept( $concept_id );
+		if ( is_wp_error( $concept ) ) {
+			return array();
+		}
+
+		$targets = array();
+		if ( preg_match_all( '/\[([^\]]*)\]\(([^)]+\.md)(#[^)]*)?\)/', $concept['body'], $matches ) ) {
+			$targets = $matches[2];
+		}
+
+		$broken = array();
+		$root   = wp_normalize_path( $this->bundle_root );
+
+		foreach ( $targets as $target ) {
+			$resolved = $this->resolve_link_target( $concept_id, $target );
+			if ( '' === $resolved ) {
+				continue; // External URI or unparseable target — not bundle-internal.
+			}
+
+			$file_path = wp_normalize_path( $root . '/' . $resolved . '.md' );
+
+			// Containment guard: resolved IDs must stay inside the bundle root.
+			// $root is normalized to forward slashes, so the boundary is '/'.
+			if ( 0 !== strpos( $file_path, $root . '/' ) ) {
+				continue;
+			}
+
+			if ( ! file_exists( $file_path ) ) {
+				$broken[] = array(
+					'concept_id' => $concept_id,
+					'target'     => $target,
+					'resolved'   => $resolved,
+				);
+			}
+		}
+
+		return $broken;
+	}
+
+	/**
+	 * Resolve a markdown link target against a concept's location.
+	 *
+	 * Handles bundle-relative absolute links (`/tables/orders.md`), relative
+	 * links (`./other.md`, `../up.md`), and external URI schemes (returned
+	 * as an empty string so callers can skip them).
+	 *
+	 * @since 1.1.62
+	 *
+	 * @param string $concept_id The concept containing the link.
+	 * @param string $target     Raw link target.
+	 * @return string Resolved concept ID ('' for external targets).
+	 */
+	private function resolve_link_target( $concept_id, $target ) {
+		$target = trim( $target );
+
+		if ( 0 === strpos( $target, '/' ) ) {
+			// Bundle-relative absolute link (OKF v0.2 §6.1 recommended form).
+			return $this->normalize_concept_id( $target );
+		}
+
+		// External URI schemes are out of scope for broken-link checks.
+		if ( preg_match( '#^[a-z][a-z0-9+.-]*://#i', $target ) || preg_match( '#^[a-z][a-z0-9+.-]*:#i', $target ) ) {
+			return '';
+		}
+
+		// Relative link: resolve against the concept's own directory.
+		$base = dirname( $concept_id );
+		if ( '.' === $base ) {
+			$base = '';
+		}
+
+		$resolved = $this->normalize_concept_id( $base . '/' . $target );
+
+		// Clamp above-root references to the bundle root.
+		$resolved = preg_replace( '#^(?:\.\./)+#', '', $resolved );
+
+		return ltrim( $resolved, '/' );
 	}
 
 	/**
