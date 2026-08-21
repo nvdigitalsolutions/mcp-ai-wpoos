@@ -82,6 +82,29 @@ function _sprintf(format) {
 	let pendingSseToasts = 0;
 
 	/**
+	 * Drawers attached to live chat containers, tracked so a server-side
+	 * `memory_event` store frame can refresh open drawers in place (fix #4).
+	 *
+	 * @type {Array<{container: HTMLElement, controller: Object}>}
+	 */
+	const activeDrawers = [];
+
+	/**
+	 * Refresh every open drawer after a memory store event.
+	 */
+	function refreshOpenDrawers() {
+		activeDrawers.forEach(function(entry) {
+			try {
+				if (entry.controller && entry.controller.isOpen && entry.controller.isOpen()) {
+					entry.controller.refresh();
+				}
+			} catch (e) {
+				// Never let a refresh failure break the SSE handler.
+			}
+		});
+	}
+
+	/**
 	 * Build the toast copy for a memory op.
 	 *
 	 * @param {boolean} retrieved
@@ -118,6 +141,12 @@ function _sprintf(format) {
 		}
 		pendingSseToasts++;
 		announceToast(memoryToastCopy(retrieved, stored), 'info');
+
+		// Fix #4 — a memory was stored server-side: refresh any open drawer
+		// so the new record appears without a manual reload.
+		if (stored) {
+			refreshOpenDrawers();
+		}
 	}
 
 	var _memoryClient = null;
@@ -336,6 +365,46 @@ function memoryService() { return _memoryClient; }
 		}
 
 		item.appendChild(header);
+
+		// Wing/room scope — surfaced on every item so memories stored without
+		// a scope remain identifiable in the list (explicit "Unscoped" chip)
+		// instead of silently blending in with scoped records.
+		const wing = memory.wing || (memory.context_data && memory.context_data.wing) || '';
+		const room = memory.room || (memory.context_data && memory.context_data.room) || '';
+		const scopeList = document.createElement('div');
+		scopeList.className = CSS_PREFIX + '-memory-item__scope';
+		if (wing || room) {
+			if (wing) {
+				const wingChip = document.createElement('span');
+				wingChip.className = CSS_PREFIX + '-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--wing';
+				wingChip.setAttribute('data-testid', CSS_PREFIX + '-memory-wing-chip');
+				wingChip.textContent = wing;
+				scopeList.appendChild(wingChip);
+			}
+			if (room) {
+				const roomChip = document.createElement('span');
+				roomChip.className = CSS_PREFIX + '-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--room';
+				roomChip.setAttribute('data-testid', CSS_PREFIX + '-memory-room-chip');
+				roomChip.textContent = room;
+				scopeList.appendChild(roomChip);
+			}
+		} else {
+			const unscopedChip = document.createElement('span');
+			unscopedChip.className = CSS_PREFIX + '-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--unscoped';
+			unscopedChip.setAttribute('data-testid', CSS_PREFIX + '-memory-unscoped-chip');
+			unscopedChip.textContent = __( 'Unscoped' );
+			scopeList.appendChild(unscopedChip);
+		}
+		// Fix #3 — records merged from a virtual agent bucket are tagged so
+		// the user can see they were stored under a different agent key.
+		if (memory.stored_under) {
+			const storedUnderChip = document.createElement('span');
+			storedUnderChip.className = CSS_PREFIX + '-memory-item__scope-chip wp-mcp-ai-memory-item__scope-chip--stored-under';
+			storedUnderChip.setAttribute('data-testid', CSS_PREFIX + '-memory-stored-under');
+			storedUnderChip.textContent = __( 'stored under' ) + ': ' + memory.stored_under;
+			scopeList.appendChild(storedUnderChip);
+		}
+		item.appendChild(scopeList);
 
 		const body = document.createElement('p');
 		body.className = CSS_PREFIX + '-memory-item__content';
@@ -559,6 +628,19 @@ function memoryService() { return _memoryClient; }
 		memoriesPanel.className = CSS_PREFIX + '-memory-drawer__panel';
 		memoriesPanel.setAttribute('role', 'tabpanel');
 
+		// Diagnostic: the exact agent_id this drawer recalls under. Memories
+		// are indexed per-agent server-side, so an ID mismatch between store
+		// and recall makes records invisible — surfacing the ID makes that
+		// diagnosable without opening DevTools.
+		const agentMeta = document.createElement('p');
+		agentMeta.className = CSS_PREFIX + '-memory-drawer__agent';
+		agentMeta.setAttribute('data-testid', CSS_PREFIX + '-memory-agent-id');
+		agentMeta.textContent = _sprintf(
+			__( 'Memory for agent %s' ),
+			agentId && agentId !== '0' ? '#' + agentId : __( '(user scope)' )
+		);
+		memoriesPanel.appendChild(agentMeta);
+
 		const filterRow = document.createElement('div');
 		filterRow.className = CSS_PREFIX + '-memory-drawer__filter';
 
@@ -641,6 +723,20 @@ function memoryService() { return _memoryClient; }
 		scopeForm.appendChild(wingLabel);
 		scopeForm.appendChild(roomLabel);
 		scopeForm.appendChild(scopeSaveBtn);
+
+		// Fix #6 — one-click way to view every memory regardless of the
+		// active wing/room scope: recall runs unscoped while checked.
+		const allScopesLabel = document.createElement('label');
+		allScopesLabel.className = CSS_PREFIX + '-memory-drawer__all-scopes';
+		const allScopesInput = document.createElement('input');
+		allScopesInput.type = 'checkbox';
+		allScopesInput.setAttribute('data-testid', CSS_PREFIX + '-memory-all-scopes');
+		allScopesLabel.appendChild(allScopesInput);
+		allScopesLabel.appendChild(document.createTextNode(' ' + __( 'Show all scopes (ignore wing/room)' )));
+		scopeForm.appendChild(allScopesLabel);
+		allScopesInput.addEventListener('change', function() {
+			loadMemories();
+		});
 
 		scopeForm.addEventListener('submit', function(e) {
 			e.preventDefault();
@@ -824,10 +920,11 @@ function memoryService() { return _memoryClient; }
 			loading.textContent = __( 'Loading memories…' );
 			list.appendChild(loading);
 
+			const ignoreScope = allScopesInput.checked;
 			const filters = {
 				agentId: agentId,
-				wing: config.memoryWing || '',
-				room: config.memoryRoom || '',
+				wing: ignoreScope ? '' : (config.memoryWing || ''),
+				room: ignoreScope ? '' : (config.memoryRoom || ''),
 				limit: 25
 			};
 
@@ -1297,10 +1394,11 @@ function memoryService() { return _memoryClient; }
 			exportInFlight = true;
 			exportBtn.disabled = true;
 
+			const ignoreScope = allScopesInput.checked;
 			const filters = {
 				agentId: agentId,
-				wing: config.memoryWing || '',
-				room: config.memoryRoom || '',
+				wing: ignoreScope ? '' : (config.memoryWing || ''),
+				room: ignoreScope ? '' : (config.memoryRoom || ''),
 				limit: 200
 			};
 
@@ -1466,6 +1564,10 @@ function memoryService() { return _memoryClient; }
 		container.__wpMcpAiMemoryDrawer = controller;
 		injectToggle(container, controller);
 		registerAutoSummary(container, state);
+
+		if (!activeDrawers.some(function(entry) { return entry.container === container; })) {
+			activeDrawers.push({ container: container, controller: controller });
+		}
 	}
 
 	/**

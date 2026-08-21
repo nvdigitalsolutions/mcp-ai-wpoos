@@ -4349,6 +4349,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'errors'    => $all_errors,
 			);
 
+			// Keep the OKF skill-knowledge bundle in sync with the bundled
+			// skills that were just (re)installed.
+			if ( class_exists( 'WP_MCP_AI_OKF_Skill_Knowledge_Generator' ) ) {
+				WP_MCP_AI_OKF_Skill_Knowledge_Generator::generate( true );
+			}
+
 			$message = sprintf(
 				/* translators: 1: Number installed, 2: Number skipped */
 				__( 'Bundled skills processed. Installed: %1$d, Skipped: %2$d', 'mcp-ai-wpoos' ),

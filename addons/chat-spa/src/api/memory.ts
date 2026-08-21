@@ -34,6 +34,11 @@ export interface MemoryContext {
 	tags?: string[];
 	wing?: string;
 	room?: string;
+	/**
+	 * Virtual agent key this record was stored under, set by the REST
+	 * recall route when it merges alias buckets (identity fix #3).
+	 */
+	stored_under?: string;
 	context_type?: string;
 	context_data?: {
 		title?: string;

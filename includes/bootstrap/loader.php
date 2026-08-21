@@ -1183,6 +1183,13 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/
 	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-tier-manager.php';
 }
 
+// Agent identity resolver — canonicalises virtual agent keys (e.g. team or
+// SPA drawer aliases) to the assistant post ID so store and recall never
+// split memories across two buckets. Static utility; always available.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-agent-identity-resolver.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-agent-identity-resolver.php';
+}
+
 // Memory Layer 2026 Enhancements Phase 1 — privacy filter must load before
 // any memory write happens so the `wp_mcp_ai_memory_pre_store_transform`
 // hook is registered at priority 5 (before user transforms at priority 10).
