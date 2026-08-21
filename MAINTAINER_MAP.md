@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **August 21, 2026** (v1.1.61)
+> Last reviewed: **August 22, 2026** (v1.1.62)
 
 ### Related Files
 
@@ -99,7 +99,7 @@ mcp-ai-wpoos/
 │   ├─ class-wp-mcp-ai-cli-conversation-import-command.php  ← `wp mcp-ai conversation-import` (v1.1.60)
 │   ├─ conversation-import/      ← External AI conversation import pipeline → JetEngine CCT (17 classes, v1.1.60)
 │   │
-│   ├─ tools/                  ← Tool classes (~1,547 total implementations registered through the singleton registry; live count authoritative)
+│   ├─ tools/                  ← Tool classes (~1,552 total implementations registered through the singleton registry; live count authoritative)
 │   │   └─ class-wp-mcp-ai-tool-{name}.php   (one file per tool)
 │   │   └─ orchestration/      ← Tool routing / multi-tool orchestration
 │   │
@@ -145,7 +145,7 @@ mcp-ai-wpoos/
 │   ├─ professions/            ← Professional profiles
 │   ├─ teams/                  ← Team management
 │   ├─ agents/                 ← Agent definitions
-│   ├─ okf/                    ← OKF engine + skill-knowledge bundle generator (v1.1.61)
+│   ├─ okf/                    ← OKF engine, bundle manager, skill-knowledge generator (v1.1.62)
 │   ├─ blocks/                 ← WordPress blocks (chat, assistant-builder, tools-grid…)
 │   ├─ bundled-skills/         ← Pre-packaged SKILL.md files (MCP, PDF, Excel, video…)
 │   ├─ slash-commands/         ← Slash command toolkit manager
@@ -161,8 +161,10 @@ mcp-ai-wpoos/
 │       ├─ harness/            ← Layer H fine-tune curriculum exporter (Pro)
 │       │   └─ class-wp-mcp-ai-tool-export-fine-tune-curriculum.php
 │       ├─ admin/              ← Pro admin pages (Pro Dashboard, imaging admin…)
-│       ├─ rest/               ← Pro REST controllers (channels, TMA, social…)
+│       ├─ rest/               ← Pro REST controllers (channels, TMA, social, okf skills drawer…)
+│       │   └─ class-wp-mcp-ai-pro-rest-okf.php  ← Read-only mcp-ai-pro/v1/okf surface for the SPA skills drawer (v1.1.62)
 │       ├─ integrations/       ← WooCommerce, Shopify, social media, Google, GitHub
+│       ├─ okf/                ← Pro OKF: skill bridge, enrichment agent, hybrid knowledge router (v1.1.62)
 │       ├─ cloudways/          ← Cloudways API v2 OAuth client + helpers
 │       ├─ services/           ← Pro-specific service classes
 │       └─ bundled-skills/     ← Pro-exclusive SKILL.md files

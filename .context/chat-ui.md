@@ -260,6 +260,21 @@ See `docs/features/memory/chat-client-integration.md` for the full reference.
 
 ---
 
+## OKF Skills Drawer (Pro SPA v2, v1.1.62)
+
+The Pro SPA v2 chat surface gained an **OKF Skills Drawer** (`OkfDrawer`
+component, `addons/pro/assets/spa-v2/src/components/shared/OkfDrawer.tsx`)
+backed by the read-only `mcp-ai-pro/v1/okf` REST surface
+(`addons/pro/includes/rest/class-wp-mcp-ai-pro-rest-okf.php`): browse bundles
+with health stats, browse/search concepts, inspect concept markdown, and
+reference OKF concepts from the conversation. Per-assistant skill grants
+(`_wp_mcp_ai_okf_concepts`) drive which concepts the assistant may load via
+the Pro `load_skill` bridge. Concept IDs containing `/` are percent-encoded
+(`%2F`) and decoded in the REST handler (v1.1.62 fix). SPA config is served
+through `addons/pro/includes/class-wp-mcp-ai-pro-spa-loader.php`.
+
+---
+
 ## Jobs / Tasks Drawer (cron-status + async-tool jobs)
 
 Long-running tools queue an async job; the chat surface shows progress inline
