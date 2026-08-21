@@ -1,11 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.60
+**Version:** 1.1.61
 **Last Updated:** August 21, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (August 2026)
+
+- **v1.1.61** (August 21): Agent identity bridging in memory store & recall — new `WP_MCP_AI_Agent_Identity_Resolver` resolves virtual agent keys (SPA drawer aliases, virtual planners) to the canonical assistant post ID; `store_agent_context` saves into the drawer's bucket and echoes `original_agent_id`/`agent_id_resolved`; chat-memory recall merges alias buckets with per-record `stored_under` stamps + `merged_sources` (default limit 25); memory drawers (base, chat-spa, pro-spa) show wing/room/stored-under chips, an agent-ID diagnostic, a show-all-scopes toggle, and store-triggered refresh; graph-bridge + scoped-recall failures degrade gracefully. OKF skill-knowledge bundle auto-generated from bundled skills on bootstrap + reinstall (fixes "OKF bundle not found" on okf_* tools). Fixed: undici pinned to ^7.29.0 (jsdom compat, CVE fixes retained) + content-graph CI checksum drift. nvoos-content-graph wp.org review reply + report (excluded from ZIPs). Tool count unchanged: ~300 base + ~1,247 Pro (~1,547 total). See `docs/features/memory/chat-client-integration.md`, `docs/features/okf-integration.md`.
 
 - **v1.1.60** (August 21): Restricted-user flagging & unblocking — restriction registry (`WP_MCP_AI_Restriction_Registry`) converts ephemeral rate-limit/token-budget blocks into persistent, reviewable records with auto-expiry and audit logging; admin surfaces (Token Manager "Restricted Users" panel + Pro Command Center Restrictions tab), REST routes (`GET /restrictions`, `GET|POST /users/{id}/restrictions`, `DELETE /users/{id}/restrictions/{type}`), AJAX lift actions, and `wp mcp-ai restrictions list|lift|add` CLI; IETF rate-limit response headers; chat rate limits filterable via `wp_mcp_ai_chat_rate_limit` / `wp_mcp_ai_chat_rate_limit_window`; new `restriction_registry_on` posture signal. Conversation import to transcript CCT (Full, JetEngine) — new `includes/conversation-import/` subsystem imports ChatGPT / Gemini Takeout / Claude / ShareGPT / OpenAI JSONL into the `ai_chat_transcripts` CCT with 4 new tools (`conversation_import_detect|run|status|delete`), admin page, and `wp mcp-ai conversation-import` CLI. Tool schemas normalized before provider payloads (DeepSeek/REST/Tool Service/ChatOrchestrator). Fixed WP_Error fatals in memory/REST paths. `nvoos-content-graph` v1.0.3 (wp.org resubmission). Tool count: ~300 base + ~1,247 Pro (~1,547 total). See `docs/features/security/user-restrictions.md`, `docs/user-guides/conversation-import.md`.
 

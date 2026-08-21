@@ -1,6 +1,6 @@
 # NV Digital Open Operator System Core (oOS)
 
-> **⚠️ Important:** This is a **separate, standalone plugin** — not a dependency of the main [NV oOS plugin](../README.md). It provides a lightweight MCP server framework for WordPress with baseline tools (posts, media, users, taxonomies). The main NV oOS plugin at the repo root is a different product with 250+ tools, 13 AI providers, and a full AI assistant framework. The two share NO code.
+> **⚠️ Important:** This is a **separate, standalone plugin** — not a dependency of the main [NV oOS plugin](../README.md). It provides a lightweight MCP server framework for WordPress with baseline tools (posts, media, users, taxonomies). The main NV oOS plugin at the repo root is a different product with 300+ tools, 15 AI providers, and a full AI assistant framework. The two share NO code.
 
 Core MCP (Model Context Protocol) server framework for WordPress. Provides a stable API for AI tool integration.
 
@@ -9,7 +9,7 @@ Core MCP (Model Context Protocol) server framework for WordPress. Provides a sta
 NV Digital Open Operator System Core (oOS) is an open-source MCP server implementation for WordPress. It allows WordPress sites to act as MCP servers, exposing tools that AI assistants can use to interact with your site's content and functionality.
 
 **Use this if:** You want a minimal, stable MCP server with basic CRUD tools and a public extension API.
-**Use the main plugin if:** You want the full AI assistant with 13 providers, 250+ tools, chat UI, SSE streaming, and orchestration.
+**Use the main plugin if:** You want the full AI assistant with 15 providers, 300+ tools, chat UI, SSE streaming, and orchestration.
 
 ## Features
 

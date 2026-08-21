@@ -60,7 +60,8 @@ includes/
 │   ├── okf-init.php                        # Bootstrap (priority 32)
 │   ├── class-wp-mcp-ai-okf-parser.php      # YAML frontmatter parser
 │   ├── class-wp-mcp-ai-okf-reader.php      # Bundle reader/traverser
-│   └── class-wp-mcp-ai-okf-writer.php      # Bundle writer/validator
+│   ├── class-wp-mcp-ai-okf-writer.php      # Bundle writer/validator
+│   └── class-wp-mcp-ai-okf-skill-knowledge-generator.php  # skill-knowledge bundle generator (v1.1.61)
 │
 └── tools/
     └── okf/                                # OKF MCP tools (Base tier)
@@ -107,6 +108,22 @@ Creates and updates OKF concepts:
 
 Loaded via `includes/bootstrap/loader.php` at priority 32 (after Paper Store at 30).
 Single-line hook: `add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_okf_init', 32 );`
+
+### 4.5 Skill-Knowledge Bundle Generator (v1.1.61)
+
+`WP_MCP_AI_OKF_Skill_Knowledge_Generator` (initialised in `okf-init.php` on
+the same priority-32 hook) auto-generates the `skill-knowledge` bundle from
+`includes/bundled-skills/` so `okf_search` and the other OKF tools work out
+of the box — previously the documented bundle was never created and every
+`okf_*` tool call failed with "OKF bundle not found: skill-knowledge".
+
+- Runs on every bootstrap when the bundle is missing or the plugin version
+  changed (a cached version stamp prevents redundant regeneration).
+- Regenerates after the admin **Install / Force Reinstall Bundled Skills**
+  action (`includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php`), keeping
+  the bundle in sync with the installed skill set.
+- Writes atomically via `WP_MCP_AI_Filesystem_Service` into
+  `wp-content/uploads/mcp-ai-wpoos/knowledge/skill-knowledge/`.
 
 ### 4.5 Events
 

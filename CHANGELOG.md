@@ -1,5 +1,40 @@
 # oOS – Changelog
 
+## [1.1.61] - 2026-08-21
+
+### Changed — Agent Identity Bridging in Memory Store & Recall (commit `ee3c41f0c0`)
+
+- New `WP_MCP_AI_Agent_Identity_Resolver` (`includes/services/class-wp-mcp-ai-agent-identity-resolver.php`) canonicalises virtual / non-numeric agent keys (e.g. `nvoos-pro-spa-memory-drawer`, `virtual_planner_1`) to the canonical assistant post ID. The alias map lives in the `wp_mcp_ai_agent_id_aliases` site option — bounded to 200 entries, never autoloaded, every value sanitised.
+- `store_agent_context` resolves virtual keys on store so records land in the same bucket the memory drawer recalls from; the result envelope and the `wp_mcp_ai_memory_stored` payload now echo `original_agent_id` and `agent_id_resolved`.
+- REST chat-memory recall merges alias buckets: records pulled from associated virtual identifiers are tagged `stored_under`, the response carries `merged_sources`, and the merged list is capped at the requested limit (default 25). Wing/room-scoped recall keeps single-bucket semantics.
+- Memory drawers (base chat, chat-spa, pro-spa) show wing/room/`stored_under` chips, an agent-ID diagnostic ("Memory for agent #…"), a show-all-scopes toggle, and refresh automatically when a `memory_event` store frame arrives.
+- Graceful degradation: graph-bridge failures in `wake_up_context` fall back to the transient retrieval path, and a scoped wake-up/recall that errors retries unscoped before surfacing an error.
+
+### Added — OKF Skill-Knowledge Bundle Generator (PR #5911)
+
+- New `WP_MCP_AI_OKF_Skill_Knowledge_Generator` (`includes/okf/`, 456 lines) auto-generates the `skill-knowledge` OKF bundle from `includes/bundled-skills/` on bootstrap (priority 32) whenever the bundle is missing or the plugin version changed, and refreshes it after the admin "Install / Force Reinstall Bundled Skills" action. Fixes every `okf_*` tool previously failing with "OKF bundle not found: skill-knowledge". New PHPUnit + manual test suites.
+
+### Fixed — undici Pinned to ^7.29.0 for jsdom Compatibility (PR #5910)
+
+- jsdom 29.1.1 deep-requires `lib/handler/wrap-handler.js`, removed in undici 8, which broke the vitest suites in seven addons. The `undici` override is pinned to ^7.29.0 — the newest 7.x, keeping all CVE fixes — across `addons/chat-spa`, `comic-reader`, `docs-hub`, `document-editor`, `media-studio`, `pro/assets/spa-v2`, and `toolkit-shell`.
+
+### Changed — nvoos-content-graph wp.org Review Reply & Report (PR #5912)
+
+- New `WPORG-REVIEW-REPLY.md` and `WPORG-REVIEW-DETAILED-REPORT.md` under `plugins/nvoos-content-graph/`; both files (and any future `WPORG-REVIEW-*.md`) are excluded from the distribution ZIP via `.distignore` and both build exclude lists.
+
+### Fixed — Content Graph CI ZIP Checksum Sync (PR #5906, merged before the 1.1.60 changelog — covered retroactively)
+
+- The build jobs wrote `${ARTIFACT}.zip.sha256` but uploaded `${ARTIFACT}.sha256`, and the publish job committed only the ZIP — checksums drifted from every CI-rebuilt ZIP. Both content-graph workflows now upload and commit the matching `.sha256` file.
+
+### Versioning
+
+- Bumped to **1.1.61** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.61. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.3** (unchanged).
+- Tool count: ~300 base + ~1,247 Pro (~1,547 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) — unchanged this release.
+- Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
+
+---
+
 ## [1.1.60] - 2026-08-21
 
 ### Added — Restricted-User Flagging & Unblocking (PR #5901)
