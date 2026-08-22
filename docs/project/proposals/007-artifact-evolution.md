@@ -249,6 +249,7 @@ Implemented in Base (deviation from the Pro tag below — every dependency alrea
 - **G.1** Unified evolution budget and rate limits across all mutation paths (`WP_MCP_AI_Evolution_Governor`: shared hourly budget with Phase A continuity, per-path rate limits, site-wide cap; wired into the Continual Harness evolver and the search engine, gating the pluggable proposer path in Base).
 - **G.2** Admin lineage graph per artifact (`WP_MCP_AI_Artifact_Lineage`) + human approval queue (`WP_MCP_AI_Artifact_Approval_Queue`: promote/rollback items, approve → Phase F deploy, reject, TTL, caps) + admin governance metabox on the assistant screen (governor report, pending queue with nonce'd approve/reject, lineage tree).
 - **G.3** EU AI Act / NIST AI RMF / CoSAI alignment documented in `docs/operations/compliance/EU_AI_ACT_2026.md` (new "Self-Evolution Governance" section).
+- **G.4** ✅ implemented (follow-up) — Settings surface: the self-evolution opt-in switches are exposed on Settings → Orchestration Layer (`WP_MCP_AI_Section_Orchestration`, new "Self-Evolution (Artifact Evolution)" field group) and applied to the runtime filters by `WP_MCP_AI_Evolution_Settings_Bridge` (priority 5, loaded from `harness-init.php` so the overrides are active on REST/frontend requests, not only wp-admin). Unsaved settings never override the code-level defaults — the "opt-in everywhere, default off" invariant holds with the UI too.
 
 ---
 

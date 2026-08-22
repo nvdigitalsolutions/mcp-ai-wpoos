@@ -59,6 +59,13 @@ require_once __DIR__ . '/class-wp-mcp-ai-evolution-governor.php';
 require_once __DIR__ . '/class-wp-mcp-ai-artifact-approval-queue.php';
 require_once __DIR__ . '/class-wp-mcp-ai-artifact-lineage.php';
 
+// Artifact Evolution — settings bridge: applies the self-evolution opt-in
+// switches saved on Settings → Orchestration Layer to the runtime filters.
+// Loaded here (all requests) because the filters are consulted during
+// chat/tool execution, not just in wp-admin.
+require_once __DIR__ . '/class-wp-mcp-ai-evolution-settings-bridge.php';
+WP_MCP_AI_Evolution_Settings_Bridge::register();
+
 // Register the chat-client cue injector. Off by default at the profile
 // level — this is just the subscriber wiring.
 WP_MCP_AI_Harness_Prompt_Injector::register();
