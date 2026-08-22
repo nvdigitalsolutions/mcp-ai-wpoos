@@ -35,6 +35,30 @@ require_once __DIR__ . '/class-wp-mcp-ai-harness-auto-deploy.php';
 require_once __DIR__ . '/class-wp-mcp-ai-output-guardrail.php';
 require_once __DIR__ . '/class-wp-mcp-ai-citation-verifier.php';
 
+// Artifact Evolution — Phase B: failure replay + post-mutation verification.
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-failure-replay.php';
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-verification-gate.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-artifact-replay-verifier.php';
+
+// Artifact Evolution — Phase C: population + parent selection.
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-population.php';
+
+// Artifact Evolution — Phase D: mutators + learning log.
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-mutator.php';
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-learning-log.php';
+
+// Artifact Evolution — Phase E: pre-commit admission gate (VaG).
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-admission-gate.php';
+
+// Artifact Evolution — Phase F: gated deployment, shadow A/B & drift.
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-deploy.php';
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-shadow.php';
+
+// Artifact Evolution — Phase G: governance & observability.
+require_once __DIR__ . '/class-wp-mcp-ai-evolution-governor.php';
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-approval-queue.php';
+require_once __DIR__ . '/class-wp-mcp-ai-artifact-lineage.php';
+
 // Register the chat-client cue injector. Off by default at the profile
 // level — this is just the subscriber wiring.
 WP_MCP_AI_Harness_Prompt_Injector::register();
@@ -54,6 +78,20 @@ WP_MCP_AI_Output_Guardrail::register();
 // Register the citation verifier subscriber. Off by default at the
 // profile level — this is just the subscriber wiring.
 WP_MCP_AI_Citation_Verifier::register();
+
+// Register the artifact replay verifier (deterministic, no LLM calls) so
+// failure-replay eval cases can resolve their default verifier slug. Priority
+// 10 lets third parties pre-empt the slug before the reference verifiers
+// register at priority 20.
+add_action(
+	'wp_mcp_ai_register_verifiers',
+	static function ( $registry ) {
+		if ( $registry instanceof WP_MCP_AI_Verifier_Registry ) {
+			$registry->register( new WP_MCP_AI_Artifact_Replay_Verifier() );
+		}
+	},
+	10
+);
 
 // Register the Layer G cron. The handler is a no-op until at least one
 // assistant has `evals_enabled` populated and a generator is wired up

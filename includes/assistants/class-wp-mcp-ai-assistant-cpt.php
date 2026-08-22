@@ -86,6 +86,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$this->metaboxes['skills']          = new WP_MCP_AI_Metabox_Skills( $this );
 			$this->metaboxes['mcp-apps']        = new WP_MCP_AI_Metabox_MCP_Apps( $this );
 			$this->metaboxes['harness-profile'] = new WP_MCP_AI_Metabox_Harness_Profile( $this );
+			if ( class_exists( 'WP_MCP_AI_Metabox_Artifact_Governance' ) ) {
+				$this->metaboxes['artifact-governance'] = new WP_MCP_AI_Metabox_Artifact_Governance( $this );
+			}
 
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
@@ -2100,6 +2103,20 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			// Register the LLM Harness profile metabox (Layer A authoring UI).
 			if ( isset( $this->metaboxes['harness-profile'] ) && class_exists( 'WP_MCP_AI_Harness_Profile' ) ) {
 				$metabox = $this->metaboxes['harness-profile'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
+
+			// Register the Artifact Governance metabox (Phase G: governor report,
+			// human approval queue, lineage tree).
+			if ( isset( $this->metaboxes['artifact-governance'] ) && class_exists( 'WP_MCP_AI_Evolution_Governor' ) ) {
+				$metabox = $this->metaboxes['artifact-governance'];
 				add_meta_box(
 					$metabox->get_id(),
 					$metabox->get_title(),

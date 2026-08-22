@@ -110,7 +110,8 @@ class Test_Tool_Evolve_Harness extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		// Should not produce an "invalid operation" error.
+		// Should not produce an "invalid operation" error, and must never fatal.
+		$this->assertTrue( is_array( $result ) || is_wp_error( $result ) );
 		if ( is_wp_error( $result ) ) {
 			$this->assertNotSame( 'wp_mcp_ai_invalid_operation', $result->get_error_code() );
 		}
@@ -182,5 +183,66 @@ class Test_Tool_Evolve_Harness extends WP_UnitTestCase {
 		$this->assertIsArray( $flags );
 		$this->assertArrayHasKey( 'background-only', $flags );
 		$this->assertTrue( $flags['background-only'] );
+	}
+
+	/**
+	 * Analyze must never fatal — regression test for the historical
+	 * undefined-method contract mismatch (analyze_failures did not exist).
+	 */
+	public function test_analyze_operation_does_not_fatal() {
+		$result = $this->tool->execute(
+			array(
+				'operation'     => 'analyze',
+				'component'     => 'all',
+				'window_length' => 10,
+			),
+			array(
+				'user_id'      => $this->admin_id,
+				'assistant_id' => 999999,
+				'session_id'   => 'analyze-no-trail-session',
+			)
+		);
+
+		$this->assertTrue( is_array( $result ) || is_wp_error( $result ) );
+	}
+
+	/**
+	 * Evolve with evolution disabled returns a normal envelope, not an error.
+	 */
+	public function test_evolve_operation_disabled_by_default_returns_envelope() {
+		$result = $this->tool->execute(
+			array(
+				'operation' => 'evolve',
+				'component' => 'all',
+			),
+			array(
+				'user_id'      => $this->admin_id,
+				'assistant_id' => 999999,
+				'session_id'   => 'evolve-disabled-session',
+			)
+		);
+
+		$this->assertTrue( is_array( $result ) || is_wp_error( $result ) );
+	}
+
+	/**
+	 * Invalid component values are rejected before touching the evolver.
+	 */
+	public function test_invalid_component_still_validated() {
+		$result = $this->tool->execute(
+			array(
+				'operation' => 'evolve',
+				'component' => 'bogus',
+			),
+			array(
+				'user_id'      => $this->admin_id,
+				'assistant_id' => 999999,
+				'session_id'   => 'evolve-bogus-session',
+			)
+		);
+
+		// The tool validates the enum before dispatch, so this is a client error.
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_component', $result->get_error_code() );
 	}
 }

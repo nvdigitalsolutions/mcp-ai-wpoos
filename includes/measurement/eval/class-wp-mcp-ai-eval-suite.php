@@ -68,6 +68,30 @@ class WP_MCP_AI_Eval_Suite {
 	private $tags;
 
 	/**
+	 * Artifact type this suite scores ('' = general-purpose suite).
+	 *
+	 * One of '', 'prompt', 'role', 'skill', 'memory', 'profile'.
+	 *
+	 * @var string
+	 */
+	private $artifact_type;
+
+	/**
+	 * Artifact identifier this suite scores ('' = any artifact of the type).
+	 *
+	 * @var string
+	 */
+	private $artifact_id;
+
+	/**
+	 * Valid artifact types.
+	 *
+	 * @since 1.9.0
+	 * @var   array<int,string>
+	 */
+	const VALID_ARTIFACT_TYPES = array( '', 'prompt', 'role', 'skill', 'memory', 'profile' );
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array $args Suite args.
@@ -93,6 +117,11 @@ class WP_MCP_AI_Eval_Suite {
 				}
 			}
 		}
+		$this->artifact_type = isset( $args['artifact_type'] ) ? sanitize_key( (string) $args['artifact_type'] ) : '';
+		if ( ! in_array( $this->artifact_type, self::VALID_ARTIFACT_TYPES, true ) ) {
+			$this->artifact_type = '';
+		}
+		$this->artifact_id = isset( $args['artifact_id'] ) ? sanitize_key( (string) $args['artifact_id'] ) : '';
 		if ( ! empty( $args['cases'] ) && is_array( $args['cases'] ) ) {
 			foreach ( $args['cases'] as $case ) {
 				if ( $case instanceof WP_MCP_AI_Eval_Case ) {
@@ -190,6 +219,39 @@ class WP_MCP_AI_Eval_Suite {
 	}
 
 	/**
+	 * Get the artifact type this suite scores ('' = general).
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return string
+	 */
+	public function get_artifact_type() {
+		return $this->artifact_type;
+	}
+
+	/**
+	 * Get the artifact identifier this suite scores ('' = any of the type).
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return string
+	 */
+	public function get_artifact_id() {
+		return $this->artifact_id;
+	}
+
+	/**
+	 * Whether the suite is scoped to a specific artifact.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return bool True when an artifact type is declared.
+	 */
+	public function is_artifact_scoped() {
+		return '' !== $this->artifact_type;
+	}
+
+	/**
 	 * Serialize to array for the dashboard.
 	 *
 	 * @return array
@@ -202,6 +264,8 @@ class WP_MCP_AI_Eval_Suite {
 			'tags'              => $this->tags,
 			'case_count'        => $this->count_cases(),
 			'generator_context' => $this->generator_context,
+			'artifact_type'     => $this->artifact_type,
+			'artifact_id'       => $this->artifact_id,
 		);
 	}
 }
