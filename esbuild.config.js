@@ -593,6 +593,7 @@ async function buildAll() {
 		'assets/js/job-event-bus.js',
 		'assets/js/cron-status-service.js',
 		'assets/js/chat-http-client-service.js',
+		'assets/js/storage-util.js',
 		'assets/js/chat-storage-service.js',
 		'assets/js/chat-clipboard-service.js',
 		'assets/js/chat-markdown-service.js',
