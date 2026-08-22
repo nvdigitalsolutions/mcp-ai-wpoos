@@ -24,10 +24,11 @@
  *   php bin/sweep-tests.php --only trap                   # re-check previous DIED/TIMEOUT files
  *   php bin/sweep-tests.php --runner 'bash bin/run-tests-docker.sh'   # prefix each command
  *   php bin/sweep-tests.php --timeout 120 --limit 20 --offset 40
+ *   php bin/sweep-tests.php --report tests/sweep-results.w1.json      # parallel workers
  *
- * Reports are written to tests/sweep-results.json (overwritten per run) and a
- * human-readable table is printed to stdout. Exit code is 1 when any file
- * DIED or TIMED OUT, 0 otherwise.
+ * Reports are written to tests/sweep-results.json (overwritten per run,
+ * or overridden with --report) and a human-readable table is printed to
+ * stdout. Exit code is 1 when any file DIED or TIMED OUT, 0 otherwise.
  *
  * @package WP_MCP_AI
  */
@@ -35,6 +36,9 @@
 $options = parse_options( $argv );
 
 $plugin_root = dirname( __DIR__ );
+if ( empty( $options['report'] ) ) {
+	$options['report'] = $plugin_root . '/tests/sweep-results.json';
+}
 $test_dirs   = array(
 	$plugin_root . '/tests',
 	$plugin_root . '/addons/pro/tests',
@@ -50,7 +54,7 @@ $files = discover_test_files( $test_dirs, $excluded_substrings );
 // Resume mode: only re-check files that previously died / timed out.
 if ( isset( $options['only'] ) && 'trap' === $options['only'] ) {
 	$previous = array();
-	$report   = $plugin_root . '/tests/sweep-results.json';
+	$report   = $options['report'];
 	if ( file_exists( $report ) ) {
 		$data = json_decode( file_get_contents( $report ), true );
 		if ( is_array( $data ) ) {
@@ -221,7 +225,7 @@ foreach ( $files as $index => $file ) {
 }
 
 file_put_contents(
-	$plugin_root . '/tests/sweep-results.json',
+	$options['report'],
 	wp_json_encode_indent( $results, 0 ) . "\n"
 );
 
@@ -292,6 +296,7 @@ function parse_options( array $argv ) {
 		'command' => PHP_BINARY . ' vendor/bin/phpunit --configuration phpunit.xml.dist --no-coverage {file}',
 		'runner'  => '',
 		'timeout' => 600,
+		'report'  => '',
 	);
 
 	for ( $i = 1; $i < count( $argv ); $i++ ) {
@@ -313,6 +318,9 @@ function parse_options( array $argv ) {
 				break;
 			case '--only':
 				$options['only'] = $argv[ ++$i ];
+				break;
+			case '--report':
+				$options['report'] = $argv[ ++$i ];
 				break;
 			default:
 				fwrite( STDERR, "Unknown option: {$argv[ $i ]}\n" );
