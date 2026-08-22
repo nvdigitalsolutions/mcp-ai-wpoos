@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-drive
 version: 1.0.0
 description: Google Drive skill for managing files, folders, and shared drives via the gws CLI. Covers listing, searching, uploading, downloading, sharing, and organising Drive content.

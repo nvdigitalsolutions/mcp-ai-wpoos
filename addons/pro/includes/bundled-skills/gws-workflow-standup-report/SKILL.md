@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-workflow-standup-report
 version: 1.0.0
 description: Google Workspace workflow that generates a standup summary combining today's calendar events and open Google Tasks. Read-only — never modifies data.

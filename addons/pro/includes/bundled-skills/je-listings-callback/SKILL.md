@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: je-listings-callback
 description: Register a custom Listings callback for JetEngine — the per-field transform fired when a Dynamic Field widget renders meta values (Format date, Format number, Get post title, Convert units, …). Two registration paths are supported. Legacy 3-filter via jet-engine/listings/allowed-callbacks (label), jet-engine/listings/allowed-callbacks-args (control schema), and jet-engine/listing/dynamic-field/callback-args (positional args at runtime). Modern single-call $manager->register_callback($name, $label, $args) hooked on jet-engine/callbacks/register fires the three filters internally for you. Critical contract — the callback identifier you register MUST be a real PHP callable string (a global function name OR `Fully\\Qualified\\Class::method`). Bare static method names like `'unit_converter'` fail JE's is_callable() gate at apply_callback() and the rendered field silently becomes empty. Use when scaffolding a JetEngine companion plugin's listing-field transform, when seeing "callback appl...
 author: Soczó Kristóf

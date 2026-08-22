@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wcs-subscription-hooks
 description: Curated WooCommerce Subscriptions hook and extension-point map for choosing the right action/filter around WC_Subscription creation, status transitions, date changes, renewal orders, scheduled payments, payment retries, gateway events, switching, gifting, related orders, REST/API responses, and account/admin UI. Use when the user asks for a Woo Subscriptions hook list, "where should I hook", "after renewal", "subscription status changed", or when code contains WC_Subscription, wcs_create_subscription, wcs_create_renewal_order, woocommerce_scheduled_subscription_payment, wcs_renewal_order_created, payment_retry, wcs_get_subscriptions, wcsg_, subscription_switch, _subscription_switch_data, _recipient_user, wcsg_recipient, or subscription switching.
 author: Soczó Kristóf

@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-calendar
 version: 1.0.0
 description: Google Calendar skill for managing calendars, events, and free/busy queries via the gws CLI. Covers creating, updating, listing, and deleting events across multiple calendars.

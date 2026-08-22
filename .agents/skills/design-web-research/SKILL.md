@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-web-research
 description: Perform quick web searches, local business lookups, and URL content extraction. Covers web_search for general queries, brave_local_search for location-based discovery, and run_crawl4ai_job for deep page crawling. Use when fact-checking, trend spotting, doing competitor analysis, looking up local businesses, extracting page content, or performing content research that doesn't need multi-step deep research.
 license: Proprietary. See LICENSE.txt

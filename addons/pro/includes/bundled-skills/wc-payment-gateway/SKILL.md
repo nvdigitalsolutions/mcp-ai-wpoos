@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-payment-gateway
 description: Register a custom WooCommerce payment gateway — extend WC_Payment_Gateway, declare $id / $title / $supports, implement process_payment returning array(result, redirect), optionally process_refund when refunds is in supports, register via the woocommerce_payment_gateways filter. The single most-confused thing AI gets wrong is payment_complete vs update_status — payment_complete runs the canonical paid-order state machine (status, transaction id, session flag, woocommerce_payment_complete action), update_status only changes the status string. Includes the always-forgotten WC cart empty_cart call after success. Use when integrating a payment provider, reviewing gateway code, or debugging "payment succeeded but cart didn't clear" / "order stuck in pending". Triggers on WC_Payment_Gateway, woocommerce_payment_gateways, process_payment, process_refund, payment_complete, get_return_url, woocommerce_payment_complete_order_status.
 author: Soczó Kristóf

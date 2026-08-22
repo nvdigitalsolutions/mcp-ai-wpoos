@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wcm-membership-hooks
 description: Curated WooCommerce Memberships hook and extension-point map for plugins that build on user memberships, membership plans, status transitions, purchase/free-signup grants, profile fields, REST API, webhooks, members-area templates, CSV import/export, and Woo Subscriptions-linked memberships. Use when the user asks for a Memberships hook list, "where should I hook", membership created/saved, status changed, grant access from order, user membership API, profile fields, member directory, or code contains wc_memberships_, WC_Memberships_User_Membership, WC_Memberships_Membership_Plan, wc_user_membership, wc_membership_plan, wcm-, _subscription_id, wc_memberships_rules, or woocommerce-memberships.
 author: Soczó Kristóf

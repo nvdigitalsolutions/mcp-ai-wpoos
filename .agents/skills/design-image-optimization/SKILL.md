@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-image-optimization
 description: Optimize images for web performance — format conversion (WebP, AVIF), responsive sizing, compression, background removal, lazy loading, and WordPress media library integration. Uses MCP bridge tools (resize_image, remove_background) as primary; the Design Stack media worker (Sharp) as fallback for advanced/batch processing. Use when you need to resize images for social media, convert formats for faster page loads, remove backgrounds from product photos, generate alt text, or batch-process an entire media library.
 license: Proprietary. See LICENSE.txt

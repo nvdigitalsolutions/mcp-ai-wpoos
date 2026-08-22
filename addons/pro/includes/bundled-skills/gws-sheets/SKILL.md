@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-sheets
 version: 1.0.0
 description: Google Sheets skill for reading and writing spreadsheets via the gws CLI. Covers cell reads, row appends, batch updates, sheet management, and formula evaluation.

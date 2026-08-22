@@ -37,12 +37,15 @@ if ( ! file_exists( $target_dir ) && ! mkdir( $target_dir, 0755, true ) ) {
 // in this repo). Add new project-specific skills here as they are created.
 $project_skills = array(
 	'mcp-ai-wpoos-plugin',
+	'design-ai-assistant-admin',
 	'design-analytics-reporting',
 	'design-brand-kit',
 	'design-campaign-orchestration',
 	'design-color-systems',
+	'design-communications',
 	'design-content-calendar',
 	'design-content-research',
+	'design-crm',
 	'design-deep-research',
 	'design-document-generation',
 	'design-email-marketing',
@@ -53,10 +56,15 @@ $project_skills = array(
 	'design-product-research',
 	'design-pro-schedule-manager',
 	'design-pro-workflow-builder',
+	'design-project-management',
+	'design-security-ops',
 	'design-seo-content',
+	'design-services',
 	'design-social-content',
 	'design-social-publishing',
+	'design-team-management',
 	'design-typography',
+	'design-vault',
 	'design-video-creation',
 	'design-web-research',
 );
@@ -84,19 +92,33 @@ foreach ( glob( $bundled_dir . '/*', GLOB_ONLYDIR ) as $src_dir ) {
 		continue;
 	}
 
-	// Copy each file from the bundled skill directory.
-	$files = glob( $src_dir . '/*' );
-	if ( ! is_array( $files ) ) {
-		continue;
-	}
-
+	// Copy every file from the bundled skill directory, including nested
+	// companion directories (e.g. references/, reference/) so relative
+	// markdown links inside SKILL.md keep resolving in the mirror.
 	$skill_ok = true;
-	foreach ( $files as $src_file ) {
-		$filename = basename( $src_file );
-		$dst_file = $dst_dir . '/' . $filename;
+	$iterator = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $src_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
+		RecursiveIteratorIterator::SELF_FIRST
+	);
 
-		if ( ! copy( $src_file, $dst_file ) ) {
-			fwrite( STDERR, "Error: could not copy {$src_file} to {$dst_file}\n" );
+	$prefix = strlen( rtrim( $src_dir, '/\\' ) ) + 1;
+
+	foreach ( $iterator as $src_file ) {
+		$relative = str_replace( '\\', '/', substr( $src_file->getPathname(), $prefix ) );
+		$dst_file = $dst_dir . '/' . $relative;
+
+		if ( $src_file->isDir() ) {
+			if ( ! is_dir( $dst_file ) && ! mkdir( $dst_file, 0755, true ) ) {
+				fwrite( STDERR, "Error: could not create directory {$dst_file}\n" );
+				++$failed;
+				$skill_ok = false;
+				break;
+			}
+			continue;
+		}
+
+		if ( ! copy( $src_file->getPathname(), $dst_file ) ) {
+			fwrite( STDERR, "Error: could not copy {$src_file->getPathname()} to {$dst_file}\n" );
 			++$failed;
 			$skill_ok = false;
 			break;
@@ -104,7 +126,7 @@ foreach ( glob( $bundled_dir . '/*', GLOB_ONLYDIR ) as $src_dir ) {
 
 		// Ensure SKILL.md has `type: Skill` in its frontmatter (OKF v0.1
 		// conformance — the single required field).
-		if ( 'SKILL.md' === $filename ) {
+		if ( 'SKILL.md' === $src_file->getFilename() ) {
 			$content   = file_get_contents( $dst_file );
 			$has_type  = ( false !== strpos( $content, "\ntype: Skill\n" ) );
 			$has_delim = ( 0 === strpos( $content, "---\n" ) );

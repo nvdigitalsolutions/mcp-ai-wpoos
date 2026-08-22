@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-variations-data
 description: Read, query, and write WooCommerce product variations correctly — the WC_Product_Variable (parent) vs WC_Product_Variation (child) class split, the parent's get_variation_prices( $for_display ) cached aggregation and how to bust the wc_var_prices_<id> transient, programmatic variation creation via WC_Product_Variation + set_parent_id + set_attributes + save followed by WC_Product_Variable::sync, the inherited-vs-own variation stock model (parent flag, variation flag, derived stock_status), get_available_variations for frontend variation data, and the $for_display tax-handling parameter that breaks display logic when forgotten. Use when scaffolding plugin code that creates / queries / modifies variations or when debugging stale variation data after programmatic writes. Triggers on WC_Product_Variation, WC_Product_Variable, get_variation_prices, get_available_variations, product_variation post type, wc_var_prices, sync_variation, or programmatic variation creation context.
 author: Soczó Kristóf

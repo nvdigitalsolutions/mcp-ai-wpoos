@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wcm-data-model-subscriptions-link
 description: WooCommerce Memberships storage and relationship map for membership plan CPTs, user membership CPTs, post statuses, plan/user membership meta keys, rule storage, profile-field storage, order grant meta, and WooCommerce Subscriptions-linked memberships. Use when code reads or writes wc_membership_plan, wc_user_membership, wcm-* statuses, wc_memberships_rules, _subscription_id, _has_installment_plan, _free_trial_end_date, membership plan access meta, user membership dates, product/order grant meta, or when an agent needs exact Memberships CPT/meta names and the Memberships-Subscriptions relation.
 author: Soczo Kristof

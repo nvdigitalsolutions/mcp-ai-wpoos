@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-meet
 version: 1.0.0
 description: Google Meet skill for creating meeting spaces, reviewing conference records, and managing participants and recordings via the gws CLI.

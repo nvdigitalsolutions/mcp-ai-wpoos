@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-vault
 description: Manage encrypted vault storage for sensitive information — passwords, secure notes, payment cards, digital identities, and folder organization. Use when storing, retrieving, or organizing credentials, managing secrets, or working with encrypted data.
 license: Proprietary. See LICENSE.txt

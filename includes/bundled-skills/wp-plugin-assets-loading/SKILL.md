@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-plugin-assets-loading
 description: Register and enqueue WordPress plugin scripts/styles with modern loading behavior, especially WP 6.9 fetchpriority support, script module args, footer placement, inline style limits, and removal of legacy IE conditional asset support. Covers wp_enqueue_script args strategy/in_footer/fetchpriority, wp_register_script_module / wp_enqueue_script_module args, wp_script_add_data, wp_style_add_data, dependency handles, conditional enqueueing on the right hook, and avoiding global frontend/admin asset bloat. Use when adding or reviewing plugin JS/CSS enqueue code.
 license: MIT

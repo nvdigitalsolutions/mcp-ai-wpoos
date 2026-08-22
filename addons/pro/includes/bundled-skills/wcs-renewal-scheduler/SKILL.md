@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wcs-renewal-scheduler
 description: Safely integrate with WooCommerce Subscriptions renewal, next-payment scheduling, Action Scheduler events, and retry flow. Shows when to use WC_Subscription::update_dates, update_status, wcs_create_renewal_order, wcs_renewal_order_created, woocommerce_scheduled_subscription_payment, woocommerce_scheduled_subscription_payment_{gateway_id}, woocommerce_subscription_renewal_payment_complete, and payment retry hooks. Use when changing next payment dates, forcing/rescheduling renewals, reacting to failed renewals, building gateway recurring charge logic, or debugging missing/duplicate renewal orders.
 author: Soczó Kristóf

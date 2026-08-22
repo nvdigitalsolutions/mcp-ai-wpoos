@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: jfb-form-sidebar-panel
 description: Adds a per-form settings panel to the JetFormBuilder Gutenberg form editor sidebar — registers REST-exposed post meta on the form CPT, enqueues a block-editor JS bundle, and registers a panel via the JFB-specific 'jet.fb.register.plugins' filter using @wordpress/components (TextControl, SelectControl, ToggleControl) and JFB's useMetaState hook for two-way binding to post meta. Use when a companion plugin needs settings that vary per form (e.g. upload folder, file size limit, integration target) instead of (or in addition to) site-wide defaults from the global Settings page. Triggers on mentions of "JFB form sidebar", "JFB form settings panel", "form-level settings", "useMetaState", "jet.fb.register.plugins", "jet-form-builder/editor-assets/before", or scaffolding a JFB companion plugin that needs per-form config.
 author: Soczó Kristóf

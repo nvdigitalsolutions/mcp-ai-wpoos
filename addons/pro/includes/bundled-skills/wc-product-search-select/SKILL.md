@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-product-search-select
 description: Builds a WooCommerce-style AJAX product search select (the selectWoo / wooselect dropdown) — class="wc-product-search" + the data-action attribute pointing to woocommerce_json_search_products (products only) or woocommerce_json_search_products_and_variations (products AND variations, often the right choice). Pre-selected items rendered server-side as <option selected> via wc_get_product() + get_formatted_name(); WC's wc-enhanced-select script auto-enqueued on WC admin screens, explicit enqueue required on non-WC pages. Solves the "load 20k products into a select" antipattern AI assistants commonly emit. Use when adding a product picker meta box, a custom WC admin page selector, or any UI where the user must search and pick from many products. Triggers on wc-product-search, woocommerce_json_search_products, woocommerce_json_search_products_and_variations, selectWoo, wc-enhanced-select, "select2 products in WooCommerce", or product-picker meta box scaffolding.
 author: Soczó Kristóf

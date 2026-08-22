@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-rocket-cache-rejection-and-filters
 description: Customize WP Rocket behavior from a third-party plugin / theme via filter hooks — exclude URIs / cookies / user agents / REST API namespaces from caching, configure CDN URL rewrites, extend lazy load handling, override capability requirements, hook into Action Scheduler integration. Critical guidance — rocket_cache_reject_uri takes URI patterns (regex-like), NOT full URLs; rocket_cache_reject_* filters all expect arrays. The rocket_buffer filter is the FULL HTML output filter — extremely powerful but dangerous; one fatal error in the callback breaks every cached page until WP Rocket is disabled. Use when extending WP Rocket's default rules, NOT for cache invalidation (see wp-rocket-cache-invalidation). Triggers on rocket_cache_reject_, rocket_cdn_, do_rocket_lazyload, rocket_buffer, rocket_capacity, "exclude from WP Rocket cache".
 author: Soczó Kristóf

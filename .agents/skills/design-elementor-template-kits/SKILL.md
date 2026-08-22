@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-elementor-template-kits
 description: Designs, generates, and packages Elementor template kits that import correctly — Envato Template Kit Import format, Elementor's native Kit format, and raw _elementor_data formats. Use when building/exporting template kits, fixing kit import errors ("newer Elementor Kit" warning, "nothing imports", broken images after import), migrating a site design into Elementor Pro, or packaging zips for any Elementor import pipeline. Covers verified manifest schemas, doc_type/template_type values, image URL sideloading rules, zip packaging constraints, and kit site-settings.
 license: Proprietary. See LICENSE.txt

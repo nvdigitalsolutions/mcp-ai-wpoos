@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-customer-and-sessions
 description: Use WooCommerce's customer and session APIs correctly — WC ships its own session handler (WC_Session_Handler, single wp_woocommerce_sessions table for both guests and logged-in users) and its own customer object (WC_Customer via WC()->customer), separate from $_SESSION / native PHP sessions / wp_get_current_user. AI consistently reaches for $_SESSION (breaks with page caching, setcookie (no signing, no namespacing), or user_meta for guests (impossible). The correct path is WC()->session->set/get for ephemeral per-visitor data, WC()->customer->get_billing_* for the active customer context including guests, and new WC_Customer($user_id) for one-off loads. Important — WC()->session is auto-initialized only on frontend requests (incl. admin-ajax); REST, cron, and WP-CLI must call wc_load_cart() explicitly. Use when storing per-visitor state, reading the current visitor's billing data, or debugging session loss across page caches / REST / cron. Triggers on WC_Session, WC_Session_Handler,...
 author: Soczó Kristóf

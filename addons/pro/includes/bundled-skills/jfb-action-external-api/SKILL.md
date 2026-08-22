@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: jfb-action-external-api
 description: How to read submitted JetFormBuilder form data from a custom action, transform it (including %macro% replacement of admin-typed templates), call an external HTTP API, write the response back into the form context for downstream actions to use, and dispatch JFB events based on the API outcome. Use when building a custom action that integrates with a third-party service (LLM call, webhook, CRM, payment processor, geolocation lookup) and needs the action to behave as a node in a data-flow graph rather than a one-shot leaf. Triggers on mentions of "jet_fb_context", "update_request", "has_field", "get_value", "wp_remote_post" with form data, "macro replacement", or "API call from action".
 author: Soczó Kristóf
