@@ -244,6 +244,43 @@
 	}
 
 	/**
+	 * Cheap size estimate for the offload threshold decision — avoids the
+	 * expensive JSON.stringify() on the main thread (proposal 032, D1).
+	 * 
+	 * @param {*} value - Any JSON-serialisable value.
+	 * @return {number} Approximate character count.
+	 */
+	function estimateDataSize(value) {
+		let size = 0;
+		let nodeCount = 0;
+		const stack = [value];
+
+		while (stack.length > 0) {
+			const current = stack.pop();
+
+			if (typeof current === 'string') {
+				size += current.length;
+				continue;
+			}
+
+			if (current && typeof current === 'object') {
+				nodeCount++;
+				if (nodeCount > 10000) {
+					// Pathological structure — assume it is large.
+					size += 1000000;
+					break;
+				}
+				Object.keys(current).forEach(function(key) {
+					size += key.length + 2;
+					stack.push(current[key]);
+				});
+			}
+		}
+
+		return size;
+	}
+
+	/**
 	 * Save conversation to localStorage with quota management.
 	 * 
 	 * @param {Object} state - Chat state object
@@ -269,18 +306,27 @@
 
 		const opts = options || {};
 		const forceImmediate = opts.immediate === true;
-		
-		function performSave() {
+
+		// Storage-worker offload config (proposal 032, D4/D5).
+		// A non-positive threshold disables offload entirely (kill switch);
+		// the unload flush (immediate) always writes synchronously.
+		const storageUtil = window.wpMcpAiStorageUtil || null;
+		const chatConfig = window.wpMcpAiChat || {};
+		const workerThreshold = typeof chatConfig.storageWorkerThreshold === 'number' ? chatConfig.storageWorkerThreshold : 10000;
+		const offloadEnabled = !!(storageUtil && typeof storageUtil.stringifyJSON === 'function' && workerThreshold > 0);
+
+		function buildData() {
+			return {
+				conversation: state.conversation || [],
+				sessionKey: sanitizeSessionKey(state.config.sessionKey || ''),
+				timestamp: Date.now(),
+				assistantId: assistantId
+			};
+		}
+
+		function writeSerialised(storageKey, serialised) {
 			try {
-				const storageKey = getStorageKey(assistantId);
-				const data = {
-					conversation: state.conversation || [],
-					sessionKey: sanitizeSessionKey(state.config.sessionKey || ''),
-					timestamp: Date.now(),
-					assistantId: assistantId
-				};
-				
-				window.localStorage.setItem(storageKey, JSON.stringify(data));
+				window.localStorage.setItem(storageKey, serialised);
 				return { success: true };
 			} catch (error) {
 				const isQuotaError = error.name === 'QuotaExceededError' || 
@@ -292,15 +338,7 @@
 					
 					if (cleaned > 0) {
 						try {
-							const storageKey = getStorageKey(assistantId);
-							const data = {
-								conversation: state.conversation || [],
-								sessionKey: sanitizeSessionKey(state.config.sessionKey || ''),
-								timestamp: Date.now(),
-								assistantId: assistantId
-							};
-							
-							window.localStorage.setItem(storageKey, JSON.stringify(data));
+							window.localStorage.setItem(storageKey, serialised);
 							return { success: true, cleaned: cleaned };
 						} catch (retryError) {
 							if (window.console && console.warn) {
@@ -319,6 +357,32 @@
 				
 				return { success: false, error: error.message || 'localStorage error' };
 			}
+		}
+
+		function performSave() {
+			const storageKey = getStorageKey(assistantId);
+			const data = buildData();
+
+			// Unload flushes must persist synchronously (D5); everything else
+			// can offload the expensive stringify to the storage worker.
+			if (forceImmediate || !offloadEnabled) {
+				return writeSerialised(storageKey, JSON.stringify(data));
+			}
+
+			// Cheap size gate: only delegate genuinely large payloads so the
+			// main-thread stringify is skipped; the util then posts directly.
+			if (estimateDataSize(data) < workerThreshold) {
+				return writeSerialised(storageKey, JSON.stringify(data));
+			}
+
+			storageUtil.stringifyJSON(data, workerThreshold).then(function(serialised) {
+				writeSerialised(storageKey, serialised);
+			}).catch(function() {
+				// The util already falls back internally; this is a last resort.
+				writeSerialised(storageKey, JSON.stringify(data));
+			});
+
+			return { success: true, offloaded: true };
 		}
 		
 		if (!OPTIMIZATIONS_ENABLED || forceImmediate) {
