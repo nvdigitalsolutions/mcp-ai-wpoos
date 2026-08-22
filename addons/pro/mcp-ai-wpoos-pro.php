@@ -162,6 +162,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $pro_packages_page;
 		}
 
+		// Load Addons admin page (one-click install for standalone addons).
+		$addons_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-addons-page.php';
+		if ( file_exists( $addons_page ) ) {
+			require_once $addons_page;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
+
 		// Load LangChain.js enqueue manager (pro-only feature for embedded LLM orchestration).
 		$langchain_enqueue_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
 		if ( file_exists( $langchain_enqueue_file ) ) {

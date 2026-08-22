@@ -5,6 +5,16 @@
 
 ---
 
+> **In-product installer:** Standalone addons whose ZIPs ship in the plugin's `build/`
+> directory can be installed and activated in one click from the Pro admin page
+> **NV oOS Pro Dashboard → Addons** (`/wp-admin/admin.php?page=wp-mcp-ai-addons`),
+> implemented by `WP_MCP_AI_Addons_Page` in
+> [`addons/pro/includes/admin/class-wp-mcp-ai-addons-page.php`](../../addons/pro/includes/admin/class-wp-mcp-ai-addons-page.php).
+> Non-WordPress components (Media Worker, Cloud Worker, Tenant Router, Schedule Anything SPA)
+> are listed read-only on that page.
+
+---
+
 ## Status Legend
 
 | Icon | Meaning |

@@ -162,6 +162,7 @@ Run `php bin/audit-ajax-handlers.php` to regenerate.
 | `wp_mcp_ai_import_settings` | `includes/admin/class-wp-mcp-ai-settings-dashboard.php:75` | _n/a_ | _n/a_ | ✅ |
 | `wp_mcp_ai_import_task` | `addons/pro/includes/admin/class-wp-mcp-ai-task-research-page.php:47` | _n/a_ | _n/a_ | ⏭ allow-list |
 | `wp_mcp_ai_import_vitals_to_cct` | `addons/pro/includes/admin/class-wp-mcp-ai-health-records-consolidate-page.php:129` | _n/a_ | _n/a_ | ✅ |
+| `wp_mcp_ai_install_addon` | `addons/pro/includes/admin/class-wp-mcp-ai-addons-page.php:67` | `install_plugins` | `wp_mcp_ai_install_addon` | ✅ |
 | `wp_mcp_ai_install_canvas_addon` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php:44` | _n/a_ | _n/a_ | ⏭ allow-list |
 | `wp_mcp_ai_install_workflow_preset` | `addons/pro/includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php:74` | _n/a_ | _n/a_ | ⏭ allow-list |
 | `wp_mcp_ai_list_approvals` | `includes/admin/class-wp-mcp-ai-admin-approvals.php:33` | `manage_options` | _n/a_ | ✅ |
