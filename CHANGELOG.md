@@ -1,20 +1,5 @@
 # oOS – Changelog
 
-## [Unreleased]
-
-### Changed — Chat storage worker wired (proposal 032)
-
-- Conversation saves at or above `wp_mcp_ai_storage_worker_threshold` (default 10,000 chars) now offload the expensive `JSON.stringify` to the browser storage worker (`storage-worker.js`) via `wpMcpAiStorageUtil`; small saves, unload flushes (`immediate`), and worker failures fall back to the synchronous main-thread write with the existing quota-retry logic.
-- `storage-util.js` `parseJSON()`/`stringifyJSON()` accept a per-call threshold override; non-positive thresholds disable offload.
-- `window.wpMcpAiChat` gains `storageWorkerUrl` + `storageWorkerThreshold` on every chat surface via `WP_MCP_AI_Shortcode::get_storage_worker_inline_script()`; the `wp_mcp_ai_storage_worker_threshold` filter (0 = off) is the kill switch.
-- `storage-util.js` is bundled into `chat-bundle.js`; `esbuild.config.js` size reporting accounts for it.
-- The Docker media worker (port 3100) remains server-side only; browser chat never calls it.
-
-### Fixed — LLM worker manager URL resolution
-
-- `WP_MCP_AI_LLM_Worker_Manager::getWorkerUrl()` now prefers the localised `wpMcpAiWebWorker.workerUrl`, falls back to `wpMcpAiChat.pluginUrl`, and logs an explicit error when neither is configured.
-- Tests: `tests/js/storage-util.test.js` (worker routing + fallbacks), `tests/js/storage-worker-wiring.test.js` (service offload decisions), `tests/test-storage-worker-localization.php`.
-
 ## [1.1.62] - 2026-08-22
 
 ### Changed — Vector store tools migrate off the Assistants API (Responses API, PR #5917)

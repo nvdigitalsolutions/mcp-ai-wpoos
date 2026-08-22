@@ -85,19 +85,10 @@ throw error;
  *
  * @return {string} Worker URL
  */
-	getWorkerUrl() {
-// Prefer the URL localised by WP_MCP_AI_WebWorker_Enqueue
-// (wpMcpAiWebWorker.workerUrl); fall back to the plugin URL.
-const webWorkerConfig = window.wpMcpAiWebWorker || {};
-if ( webWorkerConfig.workerUrl ) {
-return webWorkerConfig.workerUrl;
-}
-const pluginUrl = ( window.wpMcpAiChat && window.wpMcpAiChat.pluginUrl ) || webWorkerConfig.pluginUrl || '';
-if ( pluginUrl ) {
+getWorkerUrl() {
+// Use the worker file from plugin assets
+const pluginUrl = window.wpMcpAiChat?.pluginUrl || '';
 return pluginUrl + 'assets/js/workers/llm-worker.js';
-}
-console.error( '[NV oOS Worker Manager] No worker URL configured; cannot create LLM worker' );
-return '';
 }
 
 /**

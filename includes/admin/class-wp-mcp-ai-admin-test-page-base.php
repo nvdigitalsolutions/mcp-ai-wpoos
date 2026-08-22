@@ -265,14 +265,6 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 				wp_add_inline_script( 'wp-mcp-ai-chat', $memory_endpoints, 'after' );
 			}
 		}
-
-		// Inject the storage-worker config (no user gate; benefits guests too).
-		if ( class_exists( 'WP_MCP_AI_Shortcode' ) && method_exists( 'WP_MCP_AI_Shortcode', 'get_storage_worker_inline_script' ) ) {
-			$storage_worker = WP_MCP_AI_Shortcode::get_storage_worker_inline_script();
-			if ( '' !== $storage_worker ) {
-				wp_add_inline_script( 'wp-mcp-ai-chat', $storage_worker, 'after' );
-			}
-		}
 	}
 
 	/**

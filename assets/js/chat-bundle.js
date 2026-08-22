@@ -17,7 +17,6 @@
  * - Chat Audio Service (TTS/transcription)
  * - Chat Attachments Service (file upload/attachment handling)
  * - Chat Transcription Service (audio recording and transcription)
- * - Storage Worker Util (JSON offload helper)
  * - Main Chat functionality
  *
  * @package WP_MCP_AI
@@ -40,11 +39,6 @@ import './job-event-bus.js';
 // 3. Status monitoring (depends on SSE and Event Bus)
 // eslint-disable-next-line no-unused-vars
 import './cron-status-service.js';
-
-// 4a. Storage worker util (JSON offload helper) — must load before
-//     chat-storage-service, which consumes window.wpMcpAiStorageUtil.
-// eslint-disable-next-line no-unused-vars
-import './storage-util.js';
 
 // 4. Chat service modules (no cross-dependencies)
 // eslint-disable-next-line no-unused-vars

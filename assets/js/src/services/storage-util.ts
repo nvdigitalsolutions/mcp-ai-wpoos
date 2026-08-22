@@ -6,7 +6,6 @@
  *
  * @package NV_MCP_AI
  * @since   1.2.0
- * @since   1.1.62 Wired to the chat storage service with a per-call threshold override (proposal 032).
  */
 
 interface PendingOperation {
@@ -24,8 +23,8 @@ interface StorageUtilType {
 	handleWorkerMessage( e: MessageEvent< { id: number; success: boolean; result?: unknown; error?: string } > ): void;
 	handleWorkerError( error: ErrorEvent ): void;
 	postToWorker( action: string, data: unknown ): Promise< unknown >;
-	parseJSON( jsonString: string, threshold?: number ): Promise< unknown >;
-	stringifyJSON( obj: unknown, threshold?: number ): Promise< string >;
+	parseJSON( jsonString: string ): Promise< unknown >;
+	stringifyJSON( obj: unknown ): Promise< string >;
 	cleanup(): void;
 }
 
@@ -92,12 +91,11 @@ const StorageUtil: StorageUtilType = {
 		} );
 	},
 
-	parseJSON( jsonString, threshold ) {
+	parseJSON( jsonString ) {
 		if ( ! jsonString ) { return Promise.resolve( null ); }
 
 		const size = jsonString.length;
-		const effectiveThreshold = typeof threshold === 'number' ? threshold : this.WORKER_THRESHOLD;
-		if ( effectiveThreshold <= 0 || size < effectiveThreshold || ! this.workerSupported ) {
+		if ( size < this.WORKER_THRESHOLD || ! this.workerSupported ) {
 			try {
 				return Promise.resolve( JSON.parse( jsonString ) );
 			} catch ( error ) {
@@ -111,33 +109,11 @@ const StorageUtil: StorageUtilType = {
 		} );
 	},
 
-	stringifyJSON( obj, threshold ) {
+	stringifyJSON( obj ) {
 		if ( obj === null || obj === undefined ) { return Promise.resolve( '' ); }
 
-		const effectiveThreshold = typeof threshold === 'number' ? threshold : this.WORKER_THRESHOLD;
-
-		// Non-positive thresholds (or unsupported workers) stay synchronous.
-		if ( effectiveThreshold <= 0 || ! this.workerSupported ) {
-			try {
-				return Promise.resolve( JSON.stringify( obj ) );
-			} catch ( error ) {
-				return Promise.reject( error );
-			}
-		}
-
-		// An explicit threshold means the caller already measured the payload —
-		// skip the expensive estimate and go straight to the worker (avoids a
-		// second main-thread stringify).
-		if ( typeof threshold === 'number' ) {
-			return this.postToWorker( 'stringify', obj ).catch( ( error ) => {
-				console.warn( 'NV oOS: Worker stringify failed, using fallback:', error );
-				return JSON.stringify( obj );
-			} ) as Promise< string >;
-		}
-
-		// Estimate size (rough approximation) for direct callers.
 		const estimatedSize = JSON.stringify( obj ).length;
-		if ( estimatedSize < effectiveThreshold ) {
+		if ( estimatedSize < this.WORKER_THRESHOLD || ! this.workerSupported ) {
 			try {
 				return Promise.resolve( JSON.stringify( obj ) );
 			} catch ( error ) {

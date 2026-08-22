@@ -219,29 +219,15 @@ console.log('Optimizations enabled:', !window.wpMcpAiChatDebugMode);
 
 ## Future Improvements
 
-### Web Worker Integration (Wired as of 1.1.62)
-
-Conversation writes are now offloaded to the browser storage worker:
-
-- `storage-util.js` provides async JSON parse/stringify with per-call
-  threshold override; `storage-worker.js` handles `parse`/`stringify` actions.
-- `saveConversationToStorage()` routes large writes (≥
-  `wpMcpAiChat.storageWorkerThreshold`, default 10 KB) through
-  `wpMcpAiStorageUtil.stringifyJSON()`; small writes, unload flushes
-  (`immediate`), and worker failures fall back to the synchronous main-thread
-  write with the existing quota-retry logic.
-- `window.wpMcpAiChat` gains `storageWorkerUrl` + `storageWorkerThreshold` on
-  every chat surface (shortcode, block, Elementor, embedded client, admin
-  pages) via `WP_MCP_AI_Shortcode::get_storage_worker_inline_script()`.
-- Kill switch: `add_filter( 'wp_mcp_ai_storage_worker_threshold', '__return_zero' );`
-  disables offload without a deploy.
-- The Docker media worker (port 3100) is server-side only; browser chat never
-  calls it directly.
+### Web Worker Integration (Already Implemented)
+- `storage-util.js` provides async JSON parsing API
+- `storage-worker.js` ready for heavy operations
+- Threshold: 10KB (configurable)
 - Graceful fallback if Web Workers unavailable
 
 ### Usage Example
 ```javascript
-// Parse large conversation data off the main thread
+// Future: Parse large conversation data
 wpMcpAiStorageUtil.parseJSON(largeJsonString)
     .then(data => {
         // Use parsed data

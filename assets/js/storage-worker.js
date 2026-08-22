@@ -8,7 +8,6 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
- * @since     1.1.62 Wired via wpMcpAiChat.storageWorkerUrl (proposal 032).
  */
 
 /* global self */
