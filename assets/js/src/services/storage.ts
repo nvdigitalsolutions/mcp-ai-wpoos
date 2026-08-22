@@ -44,6 +44,7 @@ export interface SaveResult {
 	skipped?: boolean;
 	cleaned?: number;
 	debounced?: boolean;
+	offloaded?: boolean;
 	error?: string;
 }
 
@@ -228,6 +229,35 @@ export function cleanupOldStorageEntries(): number {
 
 // ── Save / Load / Clear ──────────────────────────────────────────────
 
+/**
+ * Cheap size estimate for the offload threshold decision — avoids the
+ * expensive JSON.stringify() on the main thread (proposal 032, D1).
+ */
+function estimateDataSize( value: unknown ): number {
+	let size = 0;
+	let nodeCount = 0;
+	const stack: unknown[] = [ value ];
+
+	while ( stack.length > 0 ) {
+		const current = stack.pop();
+		if ( typeof current === 'string' ) { size += current.length; continue; }
+		if ( current && typeof current === 'object' ) {
+			nodeCount++;
+			if ( nodeCount > 10000 ) {
+				// Pathological structure — assume it is large.
+				size += 1000000;
+				break;
+			}
+			for ( const key of Object.keys( current ) ) {
+				size += key.length + 2;
+				stack.push( ( current as Record< string, unknown > )[ key ] );
+			}
+		}
+	}
+
+	return size;
+}
+
 export function saveConversationToStorage(
 	state: StorageState,
 	options: { immediate?: boolean } = {},
@@ -240,16 +270,28 @@ export function saveConversationToStorage(
 
 	const forceImmediate = options.immediate === true;
 
-	function performSave(): SaveResult {
+	// Storage-worker offload config (proposal 032, D4/D5). A non-positive
+	// threshold disables offload (kill switch); the unload flush (immediate)
+	// always writes synchronously.
+	const storageUtil = ( window as unknown as {
+		wpMcpAiStorageUtil?: { stringifyJSON( obj: unknown, threshold?: number ): Promise< string > };
+	} ).wpMcpAiStorageUtil || null;
+	const chatConfig = window.wpMcpAiChat as Record< string, unknown > | undefined;
+	const workerThreshold = typeof chatConfig?.storageWorkerThreshold === 'number' ? ( chatConfig.storageWorkerThreshold as number ) : 10000;
+	const offloadEnabled = !!( storageUtil && typeof storageUtil.stringifyJSON === 'function' && workerThreshold > 0 );
+
+	function buildData(): Record< string, unknown > {
+		return {
+			conversation: state.conversation || [],
+			sessionKey: sanitizeSessionKey( state.config.sessionKey || '' ),
+			timestamp: Date.now(),
+			assistantId,
+		};
+	}
+
+	function writeSerialised( storageKey: string, serialised: string ): SaveResult {
 		try {
-			const storageKey = getStorageKey( assistantId );
-			const data = {
-				conversation: state.conversation || [],
-				sessionKey: sanitizeSessionKey( state.config.sessionKey || '' ),
-				timestamp: Date.now(),
-				assistantId,
-			};
-			window.localStorage.setItem( storageKey, JSON.stringify( data ) );
+			window.localStorage.setItem( storageKey, serialised );
 			return { success: true };
 		} catch ( error ) {
 			const err = error as DOMException;
@@ -261,14 +303,7 @@ export function saveConversationToStorage(
 				const cleaned = cleanupOldStorageEntries();
 				if ( cleaned > 0 ) {
 					try {
-						const storageKey = getStorageKey( assistantId );
-						const data = {
-							conversation: state.conversation || [],
-							sessionKey: sanitizeSessionKey( state.config.sessionKey || '' ),
-							timestamp: Date.now(),
-							assistantId,
-						};
-						window.localStorage.setItem( storageKey, JSON.stringify( data ) );
+						window.localStorage.setItem( storageKey, serialised );
 						return { success: true, cleaned };
 					} catch ( _retryError ) {
 						return { success: false, error: 'localStorage quota exceeded', cleaned };
@@ -279,6 +314,32 @@ export function saveConversationToStorage(
 
 			return { success: false, error: err.message || 'localStorage error' };
 		}
+	}
+
+	function performSave(): SaveResult {
+		const storageKey = getStorageKey( assistantId );
+		const data = buildData();
+
+		// Unload flushes must persist synchronously (D5); everything else can
+		// offload the expensive stringify to the storage worker.
+		if ( forceImmediate || ! offloadEnabled ) {
+			return writeSerialised( storageKey, JSON.stringify( data ) );
+		}
+
+		// Cheap size gate: only delegate genuinely large payloads so the
+		// main-thread stringify is skipped; the util then posts directly.
+		if ( estimateDataSize( data ) < workerThreshold ) {
+			return writeSerialised( storageKey, JSON.stringify( data ) );
+		}
+
+		storageUtil!.stringifyJSON( data, workerThreshold ).then( ( serialised ) => {
+			writeSerialised( storageKey, serialised );
+		} ).catch( () => {
+			// The util already falls back internally; this is a last resort.
+			writeSerialised( storageKey, JSON.stringify( data ) );
+		} );
+
+		return { success: true, offloaded: true };
 	}
 
 	if ( ! OPTIMIZATIONS_ENABLED || forceImmediate ) {
