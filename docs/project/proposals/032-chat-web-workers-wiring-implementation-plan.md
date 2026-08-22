@@ -2,7 +2,8 @@
 
 - **Status:** Ready for implementation
 - **Date:** 2026-08-21
-- **Scope:** Core plugin chat frontend (no addon changes required)
+- **Last updated:** 2026-08-22 (added addon impact assessment, §5)
+- **Scope:** Core plugin chat frontend (no addon code changes required; addon impact assessed in §5)
 - **Related:** `chat-client-typescript-migration-implementation-plan.md`, `WEB-LLM-IMPLEMENTATION-PHASE-1.md`, `docs/features/performance/performance-improvements.md`
 
 ---
@@ -85,7 +86,48 @@ flowchart TD
 
 ---
 
-## 5. Implementation Steps
+## 5. Addon Impact Assessment
+
+### 5.1 addons/embedded — no code changes required
+
+Verified against `addons/embedded/` (`class-nvoos-embedded.php`, `assets/js/*`,
+`tests/php/*`):
+
+- **Reuses the core chat bundle.** The addon registers
+  `wp-mcp-ai-embedded-llm-client` and adds it as a dependency of the core
+  `wp-mcp-ai-chat` script (asserted by
+  `test-embedded-provider-elementor-editor-block.php`,
+  `test-multiple-widgets-embedded-provider.php`, and
+  `test-embedded-provider-profession-fix.php`). Conversation persistence on
+  embedded-provider chat surfaces therefore flows through the core
+  `chat-storage-service.js` — Phase 1 covers embedded assistants automatically.
+- **No storage-worker references.** Zero matches in `addons/embedded/assets/js/`
+  for `storageWorkerUrl`, `wpMcpAiStorageUtil`, or `wpMcpAiChatStorage`.
+- **Its own worker is unaffected.** `stt-whisper-cpp-worker.js` (STT) is spawned
+  with a config URL + local fallback; the transformers/WebLLM clients spawn no
+  workers of their own.
+- **Embedded tests are unaffected by the augmentation** (they read
+  `wp_scripts->get_data( SCRIPT_HANDLE, 'data' )`, not `'after'` inline scripts),
+  but one new assertion is added in Phase 1 (Step 1.6) to pin the behaviour:
+  an embedded-provider assistant must receive the same `storageWorkerUrl` /
+  `storageWorkerThreshold` config.
+- **WebLLM settings page untouched.** `wp_mcp_ai_enable_web_workers` continues to
+  gate the core LLM worker manager; Phase 2's fix consumes the existing
+  `wpMcpAiWebWorker.workerUrl` config.
+- **Elementor-editor behaviour preserved.** The embedded client is already
+  blocked in the Elementor editor; the core editor-path early return in
+  `register_assets()` is unchanged.
+
+### 5.2 addons/pro — verification only
+
+The only Pro surface that localizes `wpMcpAiChat` is
+`addons/pro/includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php`
+(`ensure_chat_localization()`). No edits needed: the core `'after'` augmentation
+survives the later localization, and a QA row covers it (§7 matrix).
+
+---
+
+## 6. Implementation Steps
 
 ### Phase 1 — Wire the Storage Worker
 
@@ -313,7 +355,7 @@ available for WebLLM Phase 4 (D2).
 
 ---
 
-## 6. Validation Matrix
+## 7. Validation Matrix
 
 | Layer | Command / check |
 |-------|-----------------|
@@ -324,11 +366,12 @@ available for WebLLM Phase 4 (D2).
 | PHP lint | `composer run lint` |
 | PHP compat | `composer run lint:compat` |
 | PHPUnit | `composer run test` (targeted: shortcode/localization tests first) |
-| Manual | Section 5, Step 1.7 checklist |
+| Embedded addon | PHPUnit `addons/embedded/tests/php/test-embedded-*`; manual embedded-provider assistant page (Section 6, Step 1.7 checklist) |
+| Manual | Section 6, Step 1.7 checklist |
 
 ---
 
-## 7. Acceptance Criteria
+## 8. Acceptance Criteria
 
 - [ ] `window.wpMcpAiChat.storageWorkerUrl` + `storageWorkerThreshold` present on
       shortcode, block, Elementor, embedded client, admin test/build/dashboard
@@ -341,12 +384,15 @@ available for WebLLM Phase 4 (D2).
 - [ ] `wp_mcp_ai_storage_worker_threshold` filter set to `0` disables offload.
 - [ ] `llm-worker-manager.js` `getWorkerUrl()` prefers `wpMcpAiWebWorker.workerUrl`
       and fails loudly when neither source exists.
+- [ ] Embedded-provider assistant chat page receives the same
+      `storageWorkerUrl` config and offloads writes identically (no addon code
+      changes; verified per §5.1).
 - [ ] All validation-matrix commands pass.
 - [ ] Docs + CHANGELOG updated.
 
 ---
 
-## 8. Risks & Mitigations
+## 9. Risks & Mitigations
 
 | # | Risk | Probability | Impact | Mitigation |
 |---|------|-------------|--------|------------|
@@ -359,7 +405,7 @@ available for WebLLM Phase 4 (D2).
 
 ---
 
-## 9. Rollout & Rollback
+## 10. Rollout & Rollback
 
 - **Default on, degrade to today's behaviour** when the worker is absent — no
   feature flag required.
@@ -371,14 +417,16 @@ available for WebLLM Phase 4 (D2).
 
 ---
 
-## 10. PR Breakdown & Sequencing
+## 11. PR Breakdown & Sequencing
 
 1. **PR A — Storage worker wiring (Phase 1).** Files:
    `includes/class-wp-mcp-ai-shortcode.php`,
    `includes/admin/class-wp-mcp-ai-admin-test-page-base.php`,
    `assets/js/chat-bundle.js`, `esbuild.config.js`,
    `assets/js/chat-storage-service.js`, `assets/js/src/services/storage.ts`,
-   tests (Jest + PHPUnit). Independent of PR B.
+   tests (Jest + PHPUnit, incl. the embedded-provider assertion from Step 1.6).
+   Regression-run `addons/embedded/tests/php/test-embedded-*` and the
+   `addons/pro` chat-metabox tests. Independent of PR B.
 2. **PR B — LLM worker URL fix (Phase 2).** Files:
    `assets/js/llm-worker-manager.js`. Independent of PR A.
 3. **PR C — Docs + changelog (Phase 3).** Depends on A and B.
@@ -390,9 +438,9 @@ introduced here).
 
 ---
 
-## 11. Definition of Done
+## 12. Definition of Done
 
-All acceptance criteria in §7 pass, the validation matrix in §6 is green, PRs
+All acceptance criteria in §8 pass, the validation matrix in §7 is green, PRs
 A–C are merged, and the documented "Web Worker Integration (Already Implemented)"
 claim in `docs/features/performance/performance-improvements.md` finally matches
 reality.
