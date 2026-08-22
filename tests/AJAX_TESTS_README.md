@@ -214,3 +214,60 @@ handlers from the allow-list:
 17. ✅ **Assistant misc** — build_assistant, upload_attachment, create_team, deploy_team, cpt_chat, orchestration stats/seeder, model_config, clear_files, canvas_addon, yfinance, health/product records (22 handlers).
 
 **All 271 handlers are now covered. The allow-list is empty.**
+
+---
+
+## Process-Safety Contracts (wp_die & exit traps)
+
+WordPress 6.9 routes several request terminations through bare `die()`/
+`exit()` statements that a PHPUnit process cannot survive:
+
+- `wp_send_json()` ends with `die;` when `wp_doing_ajax()` is false.
+- `check_ajax_referer()` calls `die( '-1' )` on a missing/invalid nonce when
+  not doing AJAX.
+- `_ajax_wp_die_handler()` / `_json_wp_die_handler()` end in `die()` and
+  bypass the `wp_die_handler` filter entirely.
+
+A test that triggers any of these **kills the entire phpunit run with exit
+code 0 and no summary** — the failure is invisible. `tests/bootstrap.php`
+neutralises the trap with three contracts:
+
+1. **Every `wp_die()` branch throws `WPDieException`.** The bootstrap replaces
+   the stock ajax/json/jsonp/non-ajax die handlers with a throwing handler
+   (`wp_mcp_ai_tests_throwing_die_handler`). Tests assert on it with
+   `$this->expectException( 'WPDieException' )` or wrap handler calls in
+   `try { … } catch ( WPDieException $e ) {}`. Inside
+   `WP_Ajax_UnitTestCase::_handleAjax()` the framework's own
+   `WPAjaxDieContinueException` / `WPAjaxDieStopException` (subclasses of
+   `WPDieException`) still take precedence.
+2. **Simulated AJAX requests report `wp_doing_ajax() === true`.** Whenever a
+   test posts an `action` parameter (`$_POST['action']`), the bootstrap
+   `wp_doing_ajax` filter returns true. This routes `wp_send_json()`'s and
+   `check_ajax_referer()`'s terminations through `wp_die()` (contract 1)
+   instead of the bare `die`/`exit` calls.
+3. **`WP_MCP_AI_TESTS_RUNNING` gates the last bare exits.** Production code
+   that must terminate a stream or redirect uses the constant to return
+   control under PHPUnit (`WP_MCP_AI_SSE_Handler::finish()`) or the
+   `redirect_and_exit()` helper (Pro `WP_MCP_AI_Pro_Remote_Sites_Admin`),
+   which throws `WPDieException` under tests when the redirect is blocked
+   instead of exiting the process.
+
+When writing handler tests, prefer the `dispatch()` harness — it provides
+contracts 1 and 2 for free. When calling a handler directly, remember that
+`check_ajax_referer()` reads `$_REQUEST`, so mirror any `$_POST['nonce']`
+into `$_REQUEST['nonce']`.
+
+### Detecting suite-killing files
+
+`bin/sweep-tests.php` runs every test file in its own phpunit process and
+classifies each as `PASS` / `FAIL` / `DIED` / `TIMEOUT`. A `DIED` result means
+the file terminated phpunit without printing a summary — an exit trap.
+
+```bash
+php bin/sweep-tests.php                       # full sweep (slow)
+php bin/sweep-tests.php --only trap            # re-check previous DIED/TIMEOUT files
+php bin/sweep-tests.php --files tests/test-x.php,tests/test-y.php --timeout 120
+```
+
+Results are written to `tests/sweep-results.json` (gitignored). The tool exits
+1 whenever any file `DIED` or `TIMEOUT`, so it can gate CI.

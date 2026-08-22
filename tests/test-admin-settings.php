@@ -717,13 +717,12 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		$admin_settings = new WP_MCP_AI_Admin_Settings();
 
-		// Suppress die() call.
-		add_filter( 'wp_doing_ajax', '__return_true' );
-
 		try {
 			$admin_settings->handle_reset_user_token_usage();
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+			$this->fail( 'Expected WPDieException from the capability gate.' );
+		} catch ( WPDieException $e ) {
+			// Expected — wp_die() throws WPDieException under PHPUnit.
+			unset( $e );
 		}
 
 		// Data should still be there.
@@ -744,13 +743,12 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		$admin_settings = new WP_MCP_AI_Admin_Settings();
 
-		// Suppress die() call.
-		add_filter( 'wp_doing_ajax', '__return_true' );
-
 		try {
 			$admin_settings->handle_reset_all_token_usage();
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+			$this->fail( 'Expected WPDieException from the capability gate.' );
+		} catch ( WPDieException $e ) {
+			// Expected — wp_die() throws WPDieException under PHPUnit.
+			unset( $e );
 		}
 
 		// Data should still be there.
@@ -784,13 +782,15 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		// Set up nonce.
 		$_REQUEST['nonce'] = wp_create_nonce( 'wp-mcp-ai-settings' );
-		add_filter( 'wp_doing_ajax', '__return_true' );
 
-		// Reset all usage.
+		// Reset all usage. The handler ends with wp_die( '1' ), which the test
+		// bootstrap converts into a catchable WPDieException.
 		try {
 			$admin_settings->handle_reset_all_token_usage();
-		} catch ( WPAjaxDieContinueException $e ) {
+			$this->fail( 'Expected WPDieException after the reset.' );
+		} catch ( WPDieException $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		// Verify cache is cleared - get_user_meta should return false/empty.

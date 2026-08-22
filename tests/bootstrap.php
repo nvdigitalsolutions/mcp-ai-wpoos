@@ -162,6 +162,14 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 	define( 'WP_MCP_AI_BASE_VERSION', false );
 }
 
+// Marker consumed by production code at sites that must terminate a request
+// (SSE stream ends, admin redirects). Under PHPUnit those sites return or
+// throw instead of calling exit()/die(), which would silently kill the whole
+// phpunit process with exit code 0.
+if ( ! defined( 'WP_MCP_AI_TESTS_RUNNING' ) ) {
+	define( 'WP_MCP_AI_TESTS_RUNNING', true );
+}
+
 // ============================================================
 // PHPUnit 11 Compatibility: parseTestMethodAnnotations() was
 // removed in PHPUnit 10+. The wp-phpunit abstract-testcase.php
@@ -216,6 +224,105 @@ if ( file_exists( $abstract_testcase ) ) {
 // ============================================================
 
 require_once $_tests_dir . '/includes/functions.php';
+
+/**
+ * Throwing die handler used across every wp_die() branch under tests.
+ *
+ * WordPress 6.9 routes wp_die() through request-specific handlers
+ * (`_ajax_wp_die_handler`, `_json_wp_die_handler`, …) that end in bare
+ * `die()`/`exit()` calls. A test that triggers `wp_die()` — directly or via
+ * `wp_send_json_*()` — outside of `WP_Ajax_UnitTestCase::_handleAjax()`
+ * therefore killed the entire phpunit process with exit code 0 and no
+ * summary. Replacing those handlers with a throwing one turns every such
+ * termination into a catchable `WPDieException`.
+ *
+ * @param string|WP_Error $message Optional error message.
+ * @param string          $title   Optional error title.
+ * @param array           $args    Optional die arguments.
+ * @throws WPDieException Always.
+ */
+function wp_mcp_ai_tests_throwing_die_handler( $message = '', $title = '', $args = array() ) {
+	unset( $title, $args );
+
+	$text = '';
+	if ( is_object( $message ) && is_callable( array( $message, 'get_error_message' ) ) ) {
+		$text = (string) $message->get_error_message();
+	} elseif ( is_scalar( $message ) ) {
+		$text = (string) $message;
+	}
+
+	// wp-phpunit declares WPDieException in exceptions.php, which is only
+	// required after wp-settings.php loads. Define it lazily so the throwing
+	// handler also works during the early bootstrap window.
+	if ( ! class_exists( 'WPDieException' ) ) {
+
+		/**
+		 * Exception thrown when wp_die() terminates a request under PHPUnit.
+		 */
+		class WPDieException extends Exception { // phpcs:ignore Generic.Classes.DuplicateClassName
+		}
+	}
+
+	throw new WPDieException( $text );
+}
+
+/**
+ * Swap stock WordPress die handlers for the throwing test handler.
+ *
+ * Passes through any handler that a test (or the Ajax test case) deliberately
+ * installed — e.g. `WP_Ajax_UnitTestCase` replaces the ajax die handler with
+ * one that throws `WPAjaxDieContinueException` / `WPAjaxDieStopException`, and
+ * that behaviour must be preserved.
+ *
+ * @param callable $handler Current die handler.
+ * @return callable
+ */
+function wp_mcp_ai_tests_die_handler_filter( $handler ) {
+	$stock_handlers = array(
+		'_wp_die_handler',
+		'_default_wp_die_handler',
+		'_ajax_wp_die_handler',
+		'_json_wp_die_handler',
+		'_jsonp_wp_die_handler',
+	);
+
+	if ( ! is_string( $handler ) || ! in_array( $handler, $stock_handlers, true ) ) {
+		return $handler;
+	}
+
+	return 'wp_mcp_ai_tests_throwing_die_handler';
+}
+
+// Priority 11 on wp_die_handler so this runs after wp-phpunit's own
+// `_wp_die_handler_filter` (priority 10) and wins. Priority 10 on the ajax
+// handler so `WP_Ajax_UnitTestCase`'s priority-1 handler still wins inside
+// `_handleAjax()`.
+tests_add_filter( 'wp_die_handler', 'wp_mcp_ai_tests_die_handler_filter', 11 );
+tests_add_filter( 'wp_die_ajax_handler', 'wp_mcp_ai_tests_die_handler_filter', 10 );
+tests_add_filter( 'wp_die_json_handler', 'wp_mcp_ai_tests_die_handler_filter', 10 );
+tests_add_filter( 'wp_die_jsonp_handler', 'wp_mcp_ai_tests_die_handler_filter', 10 );
+
+/**
+ * Report "doing AJAX" whenever a test simulates an AJAX request by posting an
+ * `action` parameter.
+ *
+ * WP 6.9 routes request termination through bare die()/exit() calls when
+ * `wp_doing_ajax()` is false: `wp_send_json()` ends with `die;` and
+ * `check_ajax_referer()` calls `die( '-1' )` on a missing nonce. Neither can
+ * be intercepted through a filter. Flagging the AJAX context routes both
+ * paths through `wp_die()`, which the throwing handlers above convert into a
+ * catchable `WPDieException`. Tests that do not post an `action` are
+ * unaffected.
+ *
+ * @param bool $wp_doing_ajax Current value.
+ * @return bool
+ */
+function wp_mcp_ai_tests_wp_doing_ajax_filter( $wp_doing_ajax ) {
+	return (bool) $wp_doing_ajax || ( isset( $_POST['action'] ) && '' !== $_POST['action'] );
+}
+
+tests_add_filter( 'wp_doing_ajax', 'wp_mcp_ai_tests_wp_doing_ajax_filter', 10 );
+
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-http-test-helper.php';

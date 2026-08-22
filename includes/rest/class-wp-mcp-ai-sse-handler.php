@@ -170,6 +170,15 @@ class WP_MCP_AI_SSE_Handler {
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
 			fastcgi_finish_request();
 		}
+
+		// Under PHPUnit the stream cannot terminate the process — a bare exit()
+		// here would kill the whole phpunit run with exit code 0 and no
+		// summary. Return control so the REST callback can complete; the
+		// streaming side effects (headers + frames) are what tests assert on.
+		if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING ) {
+			return;
+		}
+
 		exit;
 	}
 

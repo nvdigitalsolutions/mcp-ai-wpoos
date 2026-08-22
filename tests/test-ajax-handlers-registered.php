@@ -20,9 +20,12 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 	/**
 	 * List of all AJAX actions that should be registered.
 	 *
+	 * Static so it can be consumed by the static data provider
+	 * (PHPUnit 11 rejects non-static data providers).
+	 *
 	 * @var array
 	 */
-	private $expected_ajax_actions = array(
+	private static $expected_ajax_actions = array(
 		'wp_ajax_wp_mcp_ai_test_ollama_connection',
 		'wp_ajax_wp_mcp_ai_fetch_ollama_models',
 		'wp_ajax_wp_mcp_ai_test_lm_studio_connection',
@@ -96,7 +99,7 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 	public function test_all_ajax_actions_are_registered() {
 		$missing_actions = array();
 
-		foreach ( $this->expected_ajax_actions as $action ) {
+		foreach ( self::$expected_ajax_actions as $action ) {
 			if ( ! has_action( $action ) ) {
 				$missing_actions[] = $action;
 			}
@@ -126,11 +129,13 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 	/**
 	 * Data provider for AJAX actions.
 	 *
+	 * Must be static: PHPUnit 11 rejects non-static data providers.
+	 *
 	 * @return array
 	 */
-	public function ajax_actions_provider() {
+	public static function ajax_actions_provider() {
 		$actions = array();
-		foreach ( $this->expected_ajax_actions as $action ) {
+		foreach ( self::$expected_ajax_actions as $action ) {
 			$actions[ $action ] = array( $action );
 		}
 		return $actions;

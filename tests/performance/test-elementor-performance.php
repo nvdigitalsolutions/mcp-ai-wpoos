@@ -186,20 +186,37 @@ class WP_MCP_AI_Elementor_Performance_Test extends WP_UnitTestCase {
 
 		$successful_requests = 0;
 
+		// Simulate the AJAX request context. WP 6.9's wp_send_json() ends with
+		// a bare die() when wp_doing_ajax() is false, which would kill the
+		// phpunit process. With the wp_doing_ajax filter active, the handler's
+		// wp_send_json_success() routes through wp_die(), which the test
+		// bootstrap converts into a catchable WPDieException.
+		add_filter( 'wp_doing_ajax', '__return_true' );
+
 		for ( $i = 0; $i < $request_count; $i++ ) {
 			// Simulate AJAX request for performance data.
-			$_POST['action'] = 'wp_mcp_ai_get_performance_metrics';
-			$_POST['nonce']  = wp_create_nonce( 'wp_mcp_ai_performance' );
+			$_POST['action']    = 'wp_mcp_ai_get_performance_metrics';
+			$_POST['nonce']     = wp_create_nonce( 'wp_mcp_ai_performance' );
+			$_REQUEST['nonce']  = $_POST['nonce'];
 
 			// Mock AJAX action.
 			if ( has_action( 'wp_ajax_wp_mcp_ai_get_performance_metrics' ) ) {
-				do_action( 'wp_ajax_wp_mcp_ai_get_performance_metrics' );
+				ob_start();
+				try {
+					do_action( 'wp_ajax_wp_mcp_ai_get_performance_metrics' );
+				} catch ( WPDieException $e ) {
+					// The handler ends via wp_send_json_success() -> wp_die().
+					unset( $e );
+				}
+				ob_end_clean();
 				++$successful_requests;
 			} else {
 				// Simulate successful AJAX response.
 				++$successful_requests;
 			}
 		}
+
+		remove_filter( 'wp_doing_ajax', '__return_true' );
 
 		$end_time   = microtime( true );
 		$end_memory = memory_get_usage();

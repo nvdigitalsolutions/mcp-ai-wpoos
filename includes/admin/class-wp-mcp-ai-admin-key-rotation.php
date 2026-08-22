@@ -84,8 +84,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 				);
 			}
 
-			wp_safe_redirect( $redirect_url );
-			exit;
+			// Only terminate when the redirect was actually issued. If a filter
+			// short-circuits wp_redirect() (headers already sent, or the
+			// wp_redirect filter returning false under PHPUnit), keep running
+			// instead of killing the process.
+			if ( wp_safe_redirect( $redirect_url ) ) {
+				exit;
+			}
 		}
 
 		/**
