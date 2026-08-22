@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: jfb-settings-tab
 description: Registers a custom settings tab in the JetFormBuilder admin Settings page using the official JFB API — PHP-side Base_Handler subclass for persistence, JS-side wp.hooks filter for the Vue tab component, native cx-vui field components for the UI. Use when a plugin needs its own configuration tab inside JFB Settings (API credentials, defaults, debug flags, third-party integrations) and the developer must NOT roll their own admin page. Triggers on mentions of "JetFormBuilder settings tab", "JFB settings page", "Base_Handler", "register-tabs-handlers", "jet.fb.register.settings-page.tabs", "cx-vui-input", or when a JFB-companion plugin is being scaffolded.
 author: Soczó Kristóf

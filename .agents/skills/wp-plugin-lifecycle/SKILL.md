@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-plugin-lifecycle
 description: Designs and reviews the three lifecycle events of a WordPress plugin — activation (one-shot setup, dbDelta, add_option seeding, cron schedule, cap seeding), deactivation (reversible cleanup, cron clear via wp_unschedule_hook, never delete user data), and uninstall.php (standalone file, WP_UNINSTALL_PLUGIN guard, no autoloader, full data removal). Multisite-aware patterns using the $network_wide / $network_deactivating callback args, plus the recommendation against register_uninstall_hook in favor of uninstall.php. Use when scaffolding a plugin or debugging ghost cron events / orphan options. Triggers on register_activation_hook, register_deactivation_hook, uninstall.php, WP_UNINSTALL_PLUGIN, dbDelta, wp_unschedule_hook, switch_to_blog.
 license: MIT

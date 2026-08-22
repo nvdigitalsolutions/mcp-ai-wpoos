@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-communications
 description: Manage multi-channel communications — SMS, email, WhatsApp messages and contacts. Covers message tracking, contact management, delivery status, and media attachments. Use when working with channel messages, managing contacts, tracking communication threads, or troubleshooting message delivery.
 license: Proprietary. See LICENSE.txt

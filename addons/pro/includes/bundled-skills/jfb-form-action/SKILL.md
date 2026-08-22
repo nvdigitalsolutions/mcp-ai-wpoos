@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: jfb-form-action
 description: Registers a custom JetFormBuilder Form Action — a server-side handler that runs after submit (send to API, subscribe to CRM, write to a sheet, etc.). Covers extending Base action class, declaring settings via action_attributes(), implementing do_action() with Action_Exception error reporting, building the action-editor React panel via window.JetFBActions.addAction(), the two field-mapping patterns (dynamic "Add row" like Google Sheets vs fixed-key pattern like Fluent CRM with predefined target fields), looking up the form's current fields via the useFields() hook, multi-select with FormLabeledTokenField, plus the category/docHref convention. Use when scaffolding a JFB integration plugin (Mailchimp, Slack, custom API, payment processor, CRM subscribe). Triggers on mentions of "JFB action", "jet-form-builder/actions/register", "Base_Action", "JetFBActions.addAction", "Action_Exception", "field map", or "fields_map".
 author: Soczó Kristóf

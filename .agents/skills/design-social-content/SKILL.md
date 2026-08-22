@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-social-content
 description: Create platform-optimized social media content — captions, hashtags, headlines, calls-to-action. Covers tone-of-voice, character limits, hook writing, A/B testing variants, and content repurposing across platforms. Use when writing captions, generating hashtags, crafting hooks, creating A/B test variants, adapting content per platform, or setting up an editorial voice.
 license: Proprietary. See LICENSE.txt

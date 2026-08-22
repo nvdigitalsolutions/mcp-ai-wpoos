@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: jfb-action-messages
 description: Surfaces user-facing custom messages from a JetFormBuilder custom Form Action — both the idiomatic path (register message types via 'jet-form-builder/form-messages/register' so they appear in the form's Messages panel and can be overridden globally per form) and the action-local path (custom message fields inside the action editor, dispatched via Action_Exception for errors or via context + 'jet-form-builder/form-handler/after-send' + Messages_Manager::dynamic_success() for success messages). Use when a custom JFB action needs configurable messages for cases like "already subscribed", "duplicate row skipped", "API rate limited", or per-action success copy. Triggers on mentions of "JFB messages", "Action_Exception", "Base_Action_Messages", "jet-form-builder/form-messages/register", "_jf_messages", "dynamic_success", "add_context_once" with a message, "after-send" hook, or "custom action message".
 author: Soczó Kristóf

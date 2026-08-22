@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: je-dynamic-visibility-condition
 description: Register a custom Dynamic Visibility condition for JetEngine — extend \Jet_Engine\Modules\Dynamic_Visibility\Conditions\ Base, hook jet-engine/modules/dynamic-visibility/conditions/register, call $manager->register_condition( new MyCondition() ). The 3 abstract methods are get_id() / get_name() / check( $args = [] ); override get_group() to assign a UI group, is_for_fields() / need_value_detect() / need_type_detect() to control where the condition appears, get_custom_controls() to add per-condition UI controls. The check() $args includes type ('show' or 'hide'), field / field_raw, value, data_type ('chars' / 'numeric' / 'datetime' / 'date' / 'list'), and context ('default' or 'current_listing'). Important — $args['type'] is the user's show/hide intent; condition must invert its boolean accordingly. Use get_current_value() helper for context-aware meta resolution (handles WP_Post, WP_User, WP_Term, WP_Comment, listing macros). Use when scaffolding a JetEngine companion plugin's visib...
 author: Soczó Kristóf

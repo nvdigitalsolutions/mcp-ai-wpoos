@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-analytics-reporting
 description: Produces marketing performance reports and data-driven recommendations from WooCommerce sales data, social media metrics, and campaign analytics. Use when the task asks for "campaign performance", "ROI analysis", "monthly report", "sales trends", "product velocity", "audience insights", or "KPI tracking". Covers metric definition, reporting templates, slow-mover detection, and insight-to-action frameworks.
 license: Proprietary. See LICENSE.txt

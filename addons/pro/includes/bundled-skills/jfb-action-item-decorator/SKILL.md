@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: jfb-action-item-decorator
 description: Wraps every action item in the JetFormBuilder action editor with custom UI via the 'jet.fb.action.item' wp.hooks filter — the wrapper renders on top of (or alongside) the original action editor for each action and can read/write that action's settings and events array. Use to add quick toggles or panels to every action without modifying each action's own editor — e.g. a TRUE/FALSE/Always button group that drives which custom event the action responds to, a "run once per session" toggle, an inline label override, any visual shortcut over the action's persisted state. Triggers on mentions of "jet.fb.action.item", "useLoopedAction", "useActionsEdit", "useActions", "ActionItemWrapper", "ActionItemBody", "decorate every action", "per-action toggle", or "visual control over action events".
 author: Soczó Kristóf

@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-workflow
 version: 1.0.0
 description: Google Workspace cross-service productivity workflows via the gws CLI. Combines Drive, Gmail, Calendar, Sheets, Tasks, Docs, and Chat into multi-step automations.

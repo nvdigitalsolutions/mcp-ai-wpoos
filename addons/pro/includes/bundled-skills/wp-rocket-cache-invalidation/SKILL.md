@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-rocket-cache-invalidation
 description: Programmatically clear WP Rocket cache from a third-party plugin / theme when data changes — the public rocket_clean_* function family (rocket_clean_post, rocket_clean_files, rocket_clean_term, rocket_clean_user, rocket_clean_home, rocket_clean_minify, rocket_clean_cache_busting, rocket_clean_domain, rocket_clean_cache_dir). Critical detection rule — WP Rocket is a PAID plugin not on Packagist; always feature-detect via function_exists('rocket_clean_post') OR defined('WP_ROCKET_VERSION') before calling, since not every site has it. Never raw-unlink the cache directory or call wp_cache_flush() expecting it to clear WP Rocket — wp_cache_flush is WP object cache, WP Rocket is FILE cache. The before_*_clean_* / after_*_clean_* action lifecycle hooks fire around every clean — useful for audit logging, monitoring, custom invalidation chains. Use when integrating cache invalidation in a companion plugin, WC integration, custom data plugin. Triggers on rocket_clean_, before_rocket_clean, af...
 author: Soczó Kristóf

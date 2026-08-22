@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-stripe-add-payment-method
 description: WooCommerce Stripe Gateway skill for the fragile My Account payment-methods and add-payment-method flows. Use when editing or replacing Woo account templates, payment-methods.php, form-add-payment-method.php, Stripe card/token UI, saved cards, SetupIntent, Payment Element/UPE, billing details, WC payment tokens, customer account payment-method endpoints, Subscriptions change-payment-method compatibility, or code contains add_payment_method, add-payment-method, form#add_payment_method, payment_method_stripe, wc-stripe-upe-element, wc-stripe-setup-intent, stripe_source, wc_stripe_create_setup_intent, wc_stripe_upe_params, wc-stripe-payment-method, or woocommerce-gateway-stripe.
 author: Soczo Kristof

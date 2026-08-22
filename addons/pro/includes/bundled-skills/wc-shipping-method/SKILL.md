@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-shipping-method
 description: Registers a custom WooCommerce shipping method with explicit control over which fields appear in the per-zone settings modal — extend WC_Shipping_Method, declare your fields in init_form_fields (and ONLY those fields, no unset / DOM hacks / CSS hides), set the $supports array to control whether the modal opens (omit 'instance-settings' to suppress it entirely), register via the woocommerce_shipping_methods filter, load the class on woocommerce_shipping_init. Corrects the "this is React, removing fields is hard" misconception — the zone-method modal is Backbone with a PHP-rendered settings_html string; the field list is wholly PHP-controlled. Use when scaffolding a shipping method or when you want a feature-flag-only modal without WC defaults. Triggers on WC_Shipping_Method, woocommerce_shipping_methods, woocommerce_shipping_init, init_form_fields with shipping context, $supports shipping-zones, calculate_shipping, add_rate, or "remove default fields from shipping method".
 author: Soczó Kristóf

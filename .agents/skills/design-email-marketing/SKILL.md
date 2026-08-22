@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-email-marketing
 description: Design and write email marketing campaigns — newsletters, promotional sequences, abandoned cart recovery, welcome flows, and SMS reminders. Covers copywriting, segmentation, timing, and monthly campaign calendar integration. Use when you need to write newsletter copy, plan email sequences, design abandoned cart recovery, segment subscriber lists, or schedule promotional sends aligned with your marketing calendar.
 license: Proprietary. See LICENSE.txt

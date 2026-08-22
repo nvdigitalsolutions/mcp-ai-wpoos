@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-docs
 version: 1.0.0
 description: Google Docs skill for creating, reading, and updating documents via the gws CLI. Covers document creation, content retrieval, batch updates, and sharing.

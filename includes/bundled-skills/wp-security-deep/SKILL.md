@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wp-security-deep
 description: Deep security audit for WordPress plugin/theme PHP code, covering issues beyond the basic sanitize/escape/nonce checklist — PHP object injection (unserialize), SSRF in remote requests, CSRF on state-changing GET handlers, mass assignment via $_POST loops, insecure file include / template injection, mail header injection, ZipSlip in archive extraction, type-juggling in auth comparisons, and TOCTOU race patterns in option/meta locks. Use after or alongside wp-security-audit when reviewing complex plugins, REST APIs, integrations that fetch remote URLs, file processors, or any code that handles uploads, archives, or self-rolled auth tokens.
 license: MIT

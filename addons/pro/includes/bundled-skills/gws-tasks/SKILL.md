@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-tasks
 version: 1.0.0
 description: Google Tasks skill for managing task lists and tasks via the gws CLI. Covers creating, listing, updating, completing, moving, and deleting tasks and task lists.

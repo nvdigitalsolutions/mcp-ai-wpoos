@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: jfb-action-events
 description: Configures the JetFormBuilder action events system — the named events (DEFAULT.PROCESS, DEFAULT.REQUIRED, GATEWAY.SUCCESS, GATEWAY.FAILED, BAD.REQUEST, ON.DYNAMIC_STATE, never) that decide WHEN a Form Action runs. Covers declaring supported / unsupported / required events on a custom action, the validation precedence inside Base_Event::is_valid_action(), the multi-event subscription model the action editor exposes, and how to register a brand-new event type via the 'jet-form-builder/event-types' filter using Base_Event, Base_Action_Event, or Base_Gateway_Event. Use when an action needs to run only on payment callbacks, only on validation failure, only on a specific conditional state, after another action's hidden flow, or when the plugin needs to define its own event class (e.g. for inbound webhooks). Triggers on mentions of "JFB events", "action events", "GATEWAY.SUCCESS", "DEFAULT.PROCESS", "supported_events", "unsupported_events", "get_required_events", "Base_Event", "Base_Gatewa...
 author: Soczó Kristóf

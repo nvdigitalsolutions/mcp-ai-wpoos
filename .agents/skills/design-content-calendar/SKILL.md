@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-content-calendar
 description: Produces structured content calendars with platform-specific posting schedules, content pillars, and batch publishing plans. Use when the task asks to "plan content", "schedule posts", "create a content calendar", "editorial calendar", "posting schedule", or "content strategy". Covers content pillars, posting cadence, multi-site calendars, seasonal hooks, and content repurposing matrices.
 license: Proprietary. See LICENSE.txt
