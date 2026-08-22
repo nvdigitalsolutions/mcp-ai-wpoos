@@ -31,6 +31,16 @@ class Test_Service_Tool extends WP_UnitTestCase {
 	private $registry;
 
 	/**
+	 * Slugs of fake tools registered by this test class.
+	 *
+	 * Removed in tearDown() so the shared registry singleton does not leak
+	 * anonymous test tools into other test files.
+	 *
+	 * @var string[]
+	 */
+	private $fake_tool_slugs = array();
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -49,6 +59,16 @@ class Test_Service_Tool extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+
+		// Remove fake tools registered by this test class so the shared
+		// registry singleton stays clean for other test files.
+		foreach ( $this->fake_tool_slugs as $slug ) {
+			if ( $this->registry && method_exists( $this->registry, 'unregister_tool' ) ) {
+				$this->registry->unregister_tool( $slug );
+			}
+		}
+		$this->fake_tool_slugs = array();
+
 		$this->service  = null;
 		$this->registry = null;
 		parent::tearDown();
@@ -128,6 +148,183 @@ class Test_Service_Tool extends WP_UnitTestCase {
 	public function test_is_tool_enabled_for_assistant_returns_false_for_zero_id() {
 		$result = $this->service->is_tool_enabled_for_assistant( 'any_tool', 0 );
 		$this->assertFalse( $result );
+	}
+
+	/**
+	 * Register a minimal fake tool that returns the given parameters schema.
+	 *
+	 * @param string $slug   Tool slug.
+	 * @param array  $schema Parameters schema returned by get_parameters_schema().
+	 * @return void
+	 */
+	private function register_schema_tool( $slug, array $schema ) {
+		$tool = new class( $slug, $schema ) implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Tool slug.
+			 *
+			 * @var string
+			 */
+			private $slug;
+
+			/**
+			 * Parameters schema returned by the fake tool.
+			 *
+			 * @var array
+			 */
+			private $schema;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param string $slug   Tool slug.
+			 * @param array  $schema Parameters schema.
+			 */
+			public function __construct( $slug, array $schema ) {
+				$this->slug   = $slug;
+				$this->schema = $schema;
+			}
+
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
+			public function get_slug() {
+				return $this->slug;
+			}
+
+			/**
+			 * Get the tool display name.
+			 *
+			 * @return string Tool display name.
+			 */
+			public function get_name() {
+				return $this->slug;
+			}
+
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
+			public function get_description() {
+				return 'Fake tool for schema normalisation tests.';
+			}
+
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
+			public function get_parameters_schema() {
+				return $this->schema;
+			}
+
+			/**
+			 * Get the required capability.
+			 *
+			 * @return string Required capability.
+			 */
+			public function get_required_capability() {
+				return 'edit_posts';
+			}
+
+			/**
+			 * Execute the fake tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context   Execution context.
+			 * @return array Empty result.
+			 */
+			public function execute( array $arguments = array(), array $context = array() ) {
+				return array();
+			}
+		};
+
+		$this->registry->register_tool( $tool );
+		$this->fake_tool_slugs[] = $slug;
+	}
+
+	/**
+	 * JSON-encode the parameters schema emitted for a single tool slug.
+	 *
+	 * @param string $slug Tool slug.
+	 * @return string JSON-encoded parameters schema.
+	 */
+	private function json_for_tool_parameters( $slug ) {
+		$payload = $this->service->build_tools_payload( array( 'tools' => array( $slug ) ) );
+
+		$this->assertNotEmpty( $payload, 'Tool payload should not be empty.' );
+
+		$entry = reset( $payload );
+
+		return wp_json_encode( $entry['function']['parameters'] );
+	}
+
+	/**
+	 * Empty property maps must encode as `{}`, never as `[]`.
+	 *
+	 * Strict providers (DeepSeek) reject schemas whose `properties` key is a
+	 * JSON array: "Invalid schema for function 'x': [] is not of type 'object'".
+	 */
+	public function test_build_tools_payload_encodes_empty_properties_as_object() {
+		// get_site_summary-style schema: object-valued empty property map.
+		$this->register_schema_tool(
+			'fake_stdclass_props',
+			array(
+				'type'                 => 'object',
+				'properties'           => new stdClass(),
+				'additionalProperties' => false,
+			)
+		);
+
+		// Legacy/empty-array style schema.
+		$this->register_schema_tool(
+			'fake_array_props',
+			array(
+				'type'       => 'object',
+				'properties' => array(),
+			)
+		);
+
+		foreach ( array( 'fake_stdclass_props', 'fake_array_props' ) as $slug ) {
+			$json = $this->json_for_tool_parameters( $slug );
+
+			$this->assertNotFalse( $json );
+			$this->assertStringContainsString( '"properties":{}', $json, $slug . ' must encode properties as {}' );
+			$this->assertStringNotContainsString( '"properties":[]', $json, $slug . ' must never encode properties as []' );
+		}
+	}
+
+	/**
+	 * A completely empty schema must still emit a valid open-object schema.
+	 */
+	public function test_build_tools_payload_normalizes_empty_schema_to_open_object() {
+		$this->register_schema_tool( 'fake_empty_schema', array() );
+
+		$json = $this->json_for_tool_parameters( 'fake_empty_schema' );
+
+		$this->assertNotFalse( $json );
+		$this->assertStringContainsString( '"type":"object"', $json );
+		$this->assertStringContainsString( '"properties":{}', $json );
+	}
+
+	/**
+	 * A bare property map (no object root) is wrapped with an object root.
+	 */
+	public function test_build_tools_payload_wraps_rootless_schema() {
+		$this->register_schema_tool(
+			'fake_rootless_schema',
+			array(
+				'action' => array( 'type' => 'string' ),
+			)
+		);
+
+		$json = $this->json_for_tool_parameters( 'fake_rootless_schema' );
+
+		$this->assertNotFalse( $json );
+		$this->assertStringContainsString( '"type":"object"', $json );
+		$this->assertStringContainsString( '"properties":{"action":{"type":"string"}}', $json );
 	}
 
 	/**

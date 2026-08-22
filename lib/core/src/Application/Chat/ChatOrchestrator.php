@@ -1327,7 +1327,7 @@ class ChatOrchestrator {
 		if ( array() === $schema ) {
 			return array(
 				'type'       => 'object',
-				'properties' => array(),
+				'properties' => new \stdClass(),
 			);
 		}
 
@@ -1339,8 +1339,16 @@ class ChatOrchestrator {
 			);
 		}
 
-		if ( ! isset( $schema['properties'] ) || ! \is_array( $schema['properties'] ) ) {
-			$schema['properties'] = array();
+		// `properties` must encode as a JSON object (`{}`), never as an empty
+		// JSON array (`[]`) — strict providers (DeepSeek) reject
+		// "[] is not of type 'object'". Preserve object-valued property maps
+		// and convert empty arrays to an empty \stdClass (encodes as `{}`).
+		if ( ! isset( $schema['properties'] ) ) {
+			$schema['properties'] = new \stdClass();
+		} elseif ( ! \is_array( $schema['properties'] ) && ! \is_object( $schema['properties'] ) ) {
+			$schema['properties'] = new \stdClass();
+		} elseif ( \is_array( $schema['properties'] ) && array() === $schema['properties'] ) {
+			$schema['properties'] = new \stdClass();
 		}
 
 		return $schema;

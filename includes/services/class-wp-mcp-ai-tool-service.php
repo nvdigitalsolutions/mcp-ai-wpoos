@@ -188,11 +188,14 @@ class WP_MCP_AI_Tool_Service {
 					'description' => $description,
 					// An empty array must not bypass the fallback: providers
 					// reject `parameters: []` ("[] is not of type 'object'").
+					// `properties` must encode as a JSON object (`{}`), never as
+					// an empty JSON array (`[]`) — an empty stdClass encodes as
+					// `{}` while an empty PHP array encodes as `[]`.
 					'parameters'  => ( ! empty( $tool_definition['parameters'] ) && is_array( $tool_definition['parameters'] ) )
 						? $this->normalize_parameters_schema( $tool_definition['parameters'] )
 						: array(
 							'type'       => 'object',
-							'properties' => array(),
+							'properties' => new stdClass(),
 						),
 				),
 			);
@@ -220,8 +223,16 @@ class WP_MCP_AI_Tool_Service {
 			);
 		}
 
-		if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-			$schema['properties'] = array();
+		// `properties` must encode as a JSON object (`{}`), never as an empty
+		// JSON array (`[]`) — strict providers (DeepSeek) reject
+		// "[] is not of type 'object'". Preserve object-valued property maps
+		// and convert empty arrays to an empty stdClass (encodes as `{}`).
+		if ( ! isset( $schema['properties'] ) ) {
+			$schema['properties'] = new stdClass();
+		} elseif ( ! is_array( $schema['properties'] ) && ! is_object( $schema['properties'] ) ) {
+			$schema['properties'] = new stdClass();
+		} elseif ( is_array( $schema['properties'] ) && empty( $schema['properties'] ) ) {
+			$schema['properties'] = new stdClass();
 		}
 
 		return $schema;
