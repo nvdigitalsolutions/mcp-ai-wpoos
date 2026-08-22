@@ -147,4 +147,57 @@ class WP_MCP_AI_Eval_Suite_Registry {
 	public function all() {
 		return $this->suites;
 	}
+
+	/**
+	 * Get suites scoped to a specific artifact type (and optionally ID).
+	 *
+	 * A suite matches when its artifact type equals `$artifact_type` and
+	 * either side of the ID comparison is empty (empty ID = wildcard).
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $artifact_type Artifact type (e.g. 'prompt').
+	 * @param string $artifact_id   Optional artifact identifier.
+	 * @return array<string,WP_MCP_AI_Eval_Suite>
+	 */
+	public function get_suites_for_artifact( $artifact_type, $artifact_id = '' ) {
+		$artifact_type = sanitize_key( (string) $artifact_type );
+		$artifact_id   = sanitize_key( (string) $artifact_id );
+
+		if ( '' === $artifact_type ) {
+			return array();
+		}
+
+		$matches = array();
+		foreach ( $this->suites as $slug => $suite ) {
+			if ( $suite->get_artifact_type() !== $artifact_type ) {
+				continue;
+			}
+			$suite_id = $suite->get_artifact_id();
+			if ( '' !== $artifact_id && '' !== $suite_id && $artifact_id !== $suite_id ) {
+				continue;
+			}
+			$matches[ $slug ] = $suite;
+		}
+
+		return $matches;
+	}
+
+	/**
+	 * Get the general-purpose suites (not scoped to any artifact).
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return array<string,WP_MCP_AI_Eval_Suite>
+	 */
+	public function get_general_suites() {
+		$matches = array();
+		foreach ( $this->suites as $slug => $suite ) {
+			if ( '' === $suite->get_artifact_type() ) {
+				$matches[ $slug ] = $suite;
+			}
+		}
+
+		return $matches;
+	}
 }

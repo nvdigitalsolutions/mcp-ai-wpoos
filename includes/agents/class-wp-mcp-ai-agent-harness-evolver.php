@@ -106,6 +106,39 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 	const EVOLUTION_LOG_OPTION = 'wp_mcp_ai_harness_evolution_log';
 
 	/**
+	 * Valid harness components that can be evolved or analysed.
+	 *
+	 * @since 1.9.0
+	 * @var   array<int,string>
+	 */
+	const VALID_COMPONENTS = array( 'all', 'prompt', 'roles', 'skills', 'memory' );
+
+	/**
+	 * Transient prefix for the per-assistant evolution budget tracker.
+	 *
+	 * @since 1.9.0
+	 * @var   string
+	 */
+	const BUDGET_TRANSIENT_PREFIX = 'wp_mcp_ai_evolution_budget_';
+
+	/**
+	 * Default hourly evolution budget in USD.
+	 *
+	 * @since 1.9.0
+	 * @var   float
+	 */
+	const DEFAULT_BUDGET_USD = 5.0;
+
+	/**
+	 * Flat cost estimate (USD) for a Refiner call when the provider response
+	 * carries no usage or cost data.
+	 *
+	 * @since 1.9.0
+	 * @var   float
+	 */
+	const DEFAULT_REFINER_CALL_COST_USD = 0.01;
+
+	/**
 	 * Session ID this evolver is bound to.
 	 *
 	 * @since 1.2.0
@@ -146,6 +179,14 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 	private $frequency_config = null;
 
 	/**
+	 * Whether the current evolution run is a dry run (no writes).
+	 *
+	 * @since 1.9.0
+	 * @var   bool
+	 */
+	private $dry_run = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.2.0
@@ -154,6 +195,15 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 	 * @param int    $assistant_id Assistant post ID.
 	 */
 	public function __construct( $session_id, $assistant_id ) {
+		// Defensive normalization: some historical callers passed the arguments
+		// in reverse order (assistant ID first, session second). Detect that
+		// signature and swap so both orders behave identically.
+		if ( is_numeric( $session_id ) && ! is_numeric( $assistant_id ) ) {
+			$swap         = $session_id;
+			$session_id   = $assistant_id;
+			$assistant_id = $swap;
+		}
+
 		$this->session_id   = sanitize_key( (string) $session_id );
 		$this->assistant_id = absint( $assistant_id );
 
@@ -226,16 +276,168 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 	}
 
 	/**
-	 * Run all four evolution passes.
+	 * Analyse recent trajectory events for failure patterns without modifying
+	 * any assistant state.
+	 *
+	 * Read-only counterpart to {@see evolve()}. When no audit trail data is
+	 * available for the session, a graceful empty analysis is returned rather
+	 * than an error, so callers can always render a meaningful response.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $component     Component to analyse: 'all', 'prompt', 'roles', 'skills', or 'memory'. Default 'all'.
+	 * @param int    $window_length Number of recent trajectory events to analyse (10-500). Default 50.
+	 * @return array|WP_Error Analysis array or WP_Error for an invalid component.
+	 */
+	public function analyze_failures( $component = 'all', $window_length = 50 ) {
+		$component = sanitize_key( (string) $component );
+		if ( ! in_array( $component, self::VALID_COMPONENTS, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_evolution_invalid_component',
+				sprintf(
+					/* translators: %s: invalid component slug */
+					__( 'Invalid component "%s". Valid components: all, prompt, roles, skills, memory.', 'mcp-ai-wpoos' ),
+					$component
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		$window_length = absint( $window_length );
+		$window_length = max( 10, min( $window_length, 500 ) );
+
+		$trajectory = $this->read_trajectory_window( $window_length );
+		if ( is_wp_error( $trajectory ) ) {
+			return array(
+				'failures_detected' => 0,
+				'signatures'        => array(),
+				'trajectory_count'  => 0,
+				'window_length'     => $window_length,
+				'component'         => $component,
+				'trail_available'   => false,
+				'note'              => __( 'No audit trail data is available for this session yet. Run some agent interactions before analysing performance.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$signatures = $this->detect_failure_signatures( $trajectory );
+
+		$failures_detected  = 0;
+		$failures_detected += count( isset( $signatures['tool_failures'] ) ? $signatures['tool_failures'] : array() );
+		$failures_detected += count( isset( $signatures['stuck_loops'] ) ? $signatures['stuck_loops'] : array() );
+		$failures_detected += ! empty( $signatures['budget_exhausted'] ) ? 1 : 0;
+		$failures_detected += ! empty( $signatures['low_success_rate'] ) ? 1 : 0;
+
+		return array(
+			'failures_detected' => $failures_detected,
+			'signatures'        => $signatures,
+			'trajectory_count'  => count( $trajectory ),
+			'window_length'     => $window_length,
+			'component'         => $component,
+			'trail_available'   => true,
+		);
+	}
+
+	/**
+	 * Normalize the evolved skills option into the Skill Registry shape.
+	 *
+	 * Evolved skills are stored as raw Refiner output (name/description/code).
+	 * This normalizes them to the registry contract (name/description/
+	 * instructions) so they can be merged into {@see WP_MCP_AI_Skill_Registry}
+	 * when the site opts in. Skill code remains inert instructional text — it
+	 * is PII-scrubbed but never executed.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return array<int,array> Evolved skills keyed by sanitized name.
+	 */
+	public static function get_evolved_skills() {
+		$skills  = array();
+		$evolved = get_option( 'wp_mcp_ai_evolved_skills', array() );
+
+		if ( ! is_array( $evolved ) ) {
+			return $skills;
+		}
+
+		foreach ( $evolved as $skill ) {
+			if ( ! is_array( $skill ) || empty( $skill['name'] ) ) {
+				continue;
+			}
+
+			$name = sanitize_key( $skill['name'] );
+			if ( '' === $name ) {
+				continue;
+			}
+
+			$skills[ $name ] = array(
+				'name'         => $name,
+				'description'  => sanitize_textarea_field( self::scrub_evolved_text( isset( $skill['description'] ) ? $skill['description'] : '' ) ),
+				'instructions' => wp_kses_post( self::scrub_evolved_text( isset( $skill['code'] ) ? $skill['code'] : '' ) ),
+				'evolved'      => true,
+			);
+		}
+
+		return $skills;
+	}
+
+	/**
+	 * Scrub PII and secrets from Refiner-generated text before persisting.
+	 *
+	 * Degrades gracefully to the input string when the PII filter is not
+	 * loaded (it is an optional harness dependency).
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param mixed $text Raw text from the Refiner.
+	 * @return string Scrubbed text.
+	 */
+	private static function scrub_evolved_text( $text ) {
+		$text = (string) $text;
+
+		if ( '' === $text || ! class_exists( 'WP_MCP_AI_Pii_Filter' ) ) {
+			return $text;
+		}
+
+		$scrubbed = WP_MCP_AI_Pii_Filter::scrub( $text );
+		if ( is_array( $scrubbed ) && isset( $scrubbed['text'] ) && is_string( $scrubbed['text'] ) ) {
+			return $scrubbed['text'];
+		}
+
+		return $text;
+	}
+
+	/**
+	 * Run harness evolution passes.
 	 *
 	 * Each pass is independent — a failure in one does not block the others.
-	 * Returns a summary with created/updated/retired counts for each component.
+	 * Returns a summary with per-pass results, a total change count, and a
+	 * human-readable summary line. Optional parameters allow callers to scope
+	 * the run to a single component, bound the trajectory window, and preview
+	 * suggestions without persisting anything.
 	 *
 	 * @since 1.2.0
 	 *
-	 * @return array Summary array with per-pass results.
+	 * @param string $component     Component to evolve: 'all', 'prompt', 'roles', 'skills', or 'memory'. Default 'all'.
+	 * @param int    $window_length Trajectory window override (10-500). 0 uses the configured default.
+	 * @param bool   $dry_run       When true, returns suggestions without persisting anything.
+	 * @return array|WP_Error Summary array with per-pass results, or WP_Error for invalid input or budget exhaustion.
 	 */
-	public function evolve() {
+	public function evolve( $component = 'all', $window_length = 0, $dry_run = false ) {
+		$component = sanitize_key( (string) $component );
+		if ( ! in_array( $component, self::VALID_COMPONENTS, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_evolution_invalid_component',
+				sprintf(
+					/* translators: %s: invalid component slug */
+					__( 'Invalid component "%s". Valid components: all, prompt, roles, skills, memory.', 'mcp-ai-wpoos' ),
+					$component
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		$this->dry_run    = (bool) $dry_run;
+		$requested_window = absint( $window_length );
+
 		/**
 		 * Filters whether harness evolution is enabled.
 		 *
@@ -246,24 +448,56 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 		$enabled = apply_filters( 'wp_mcp_ai_harness_evolution_enabled', false );
 		if ( ! $enabled ) {
 			return array(
-				'evolved' => false,
-				'reason'  => __( 'Harness evolution is disabled.', 'mcp-ai-wpoos' ),
+				'evolved'   => false,
+				'reason'    => __( 'Harness evolution is disabled.', 'mcp-ai-wpoos' ),
+				'component' => $component,
+				'dry_run'   => $this->dry_run,
 			);
 		}
 
 		if ( empty( $this->session_id ) || empty( $this->assistant_id ) ) {
 			return array(
-				'evolved' => false,
-				'reason'  => __( 'Invalid session or assistant.', 'mcp-ai-wpoos' ),
+				'evolved'   => false,
+				'reason'    => __( 'Invalid session or assistant.', 'mcp-ai-wpoos' ),
+				'component' => $component,
+				'dry_run'   => $this->dry_run,
 			);
 		}
 
+		// Budget gate — checked before any trajectory read or provider call.
+		// Phase G: delegated to the unified evolution governor (same budget
+		// transient and limit filter as Phase A, plus per-path rate limits).
+		if ( class_exists( 'WP_MCP_AI_Evolution_Governor' ) ) {
+			$gate = WP_MCP_AI_Evolution_Governor::can_mutate( $this->assistant_id, 'evolver' );
+			if ( ! $gate['allowed'] ) {
+				if ( 'budget_exhausted' === $gate['reason'] ) {
+					return new WP_Error(
+						'wp_mcp_ai_evolution_budget_exceeded',
+						__( 'The hourly harness evolution budget has been exhausted. Retry later or raise the wp_mcp_ai_harness_evolution_budget_usd filter.', 'mcp-ai-wpoos' ),
+						array( 'status' => 429 )
+					);
+				}
+
+				return new WP_Error(
+					'wp_mcp_ai_evolution_rate_limited',
+					__( 'The harness evolution rate limit has been reached. Retry later or raise the wp_mcp_ai_evolution_governor_rate_limit filter.', 'mcp-ai-wpoos' ),
+					array( 'status' => 429 )
+				);
+			}
+
+			if ( ! $this->dry_run ) {
+				WP_MCP_AI_Evolution_Governor::record_mutation( $this->assistant_id, 'evolver' );
+			}
+		}
+
 		// Read the recent trajectory window.
-		$trajectory = $this->read_trajectory_window();
+		$trajectory = $this->read_trajectory_window( $requested_window );
 		if ( is_wp_error( $trajectory ) ) {
 			return array(
-				'evolved' => false,
-				'reason'  => $trajectory->get_error_message(),
+				'evolved'   => false,
+				'reason'    => $trajectory->get_error_message(),
+				'component' => $component,
+				'dry_run'   => $this->dry_run,
 			);
 		}
 
@@ -274,46 +508,71 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 				'evolved'          => false,
 				'reason'           => __( 'No failure signatures detected in the trajectory window.', 'mcp-ai-wpoos' ),
 				'trajectory_count' => count( $trajectory ),
+				'component'        => $component,
+				'dry_run'          => $this->dry_run,
 			);
 		}
 
 		// Build the trajectory summary for the Refiner LLM.
 		$summary = $this->build_trajectory_summary( $trajectory, $signatures );
 
-		// Run all four passes independently.
-		$prompt_result = $this->safe_evolve_pass( 'evolve_prompt', array( $summary ) );
-		$roles_result  = $this->safe_evolve_pass( 'evolve_roles', array( $summary ) );
-		$skills_result = $this->safe_evolve_pass( 'evolve_skills', array( $summary ) );
-		$memory_result = $this->safe_evolve_pass( 'evolve_memory', array( $summary ) );
+		// Run the requested passes independently.
+		$pass_map = array(
+			'prompt' => 'evolve_prompt',
+			'roles'  => 'evolve_roles',
+			'skills' => 'evolve_skills',
+			'memory' => 'evolve_memory',
+		);
 
 		$results = array(
 			'evolved'          => true,
 			'timestamp'        => time(),
 			'session_id'       => $this->session_id,
 			'assistant_id'     => $this->assistant_id,
+			'component'        => $component,
+			'dry_run'          => $this->dry_run,
 			'trajectory_count' => count( $trajectory ),
 			'signatures'       => $signatures,
-			'prompt'           => $prompt_result,
-			'roles'            => $roles_result,
-			'skills'           => $skills_result,
-			'memory'           => $memory_result,
 		);
 
-		// Determine if all passes failed.
+		foreach ( $pass_map as $pass_key => $pass_method ) {
+			if ( 'all' !== $component && $pass_key !== $component ) {
+				$results[ $pass_key ] = array(
+					'pass'   => $pass_key,
+					'status' => 'skipped',
+					'reason' => __( 'Component not requested.', 'mcp-ai-wpoos' ),
+					'error'  => false,
+				);
+				continue;
+			}
+
+			$results[ $pass_key ] = $this->safe_evolve_pass( $pass_method, array( $summary ) );
+		}
+
+		// Aggregate change counts and build the summary line.
+		$changes_applied            = $this->count_changes( $results );
+		$results['changes_applied'] = $changes_applied;
+		$results['summary']         = $this->build_evolution_summary( $changes_applied, $component, $this->dry_run );
+
+		// Determine if all requested passes failed.
 		$all_failed = true;
-		foreach ( array( 'prompt', 'roles', 'skills', 'memory' ) as $pass ) {
-			if ( ! isset( $results[ $pass ]['error'] ) || ! $results[ $pass ]['error'] ) {
+		foreach ( array_keys( $pass_map ) as $pass_key ) {
+			$pass = $results[ $pass_key ];
+			if ( ! is_array( $pass ) || empty( $pass['error'] ) ) {
 				$all_failed = false;
 				break;
 			}
 		}
 
-		// Log the evolution event to the audit trail and local log.
-		$this->record_evolution_event( $results );
+		// Dry runs preview only — no audit-trail events, no persisted log.
+		if ( ! $this->dry_run ) {
+			// Log the evolution event to the audit trail and local log.
+			$this->record_evolution_event( $results );
 
-		// Store in session log.
-		$this->evolution_log[] = $results;
-		$this->persist_evolution_log();
+			// Store in session log.
+			$this->evolution_log[] = $results;
+			$this->persist_evolution_log();
+		}
 
 		/**
 		 * Fires after all four harness evolution passes have been attempted.
@@ -579,17 +838,87 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 
 		$evolved_prompt = $this->extract_content_from_response( $response );
 
-		// Store in post meta (not auto-applied).
-		$stored = update_post_meta( $this->assistant_id, self::EVOLVED_PROMPT_META_KEY, wp_kses_post( $evolved_prompt ) );
+		// Scrub PII/secrets before persisting.
+		$evolved_prompt = self::scrub_evolved_text( $evolved_prompt );
 
-		return array(
-			'pass'   => 'prompt',
-			'status' => 'completed',
-			'error'  => false,
-			'before' => $current_prompt,
-			'after'  => $evolved_prompt,
-			'stored' => (bool) $stored,
+		// Post-mutation verification (opt-in, Phase B): the candidate must
+		// improve on the failure cases replayed from harness traces before
+		// it may be stored. Dry runs and disabled verification skip this.
+		$verification = $this->maybe_verify_prompt( $current_prompt, $evolved_prompt );
+		if ( $this->is_verification_rejection( $verification ) ) {
+			return array(
+				'pass'         => 'prompt',
+				'status'       => 'verification_failed',
+				'error'        => false,
+				'before'       => $current_prompt,
+				'after'        => $evolved_prompt,
+				'stored'       => false,
+				'dry_run'      => $this->dry_run,
+				'verification' => $verification,
+			);
+		}
+
+		// Store in post meta (not auto-applied); dry runs skip the write.
+		// Phase G: sites may route verified candidates through the human
+		// approval queue instead of storing them directly.
+		$stored   = false;
+		$queued   = false;
+		$queue_id = '';
+
+		/**
+		 * Filters whether verified prompt candidates are queued for human
+		 * approval instead of being stored directly.
+		 *
+		 * Default false — evolved prompts are stored, never auto-applied, and
+		 * never auto-deployed.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param bool        $queue_for_approval Whether to queue for approval.
+		 * @param int         $assistant_id       Assistant post ID.
+		 * @param array|null  $verification       Verification payload (may be null).
+		 */
+		$queue_for_approval = (bool) apply_filters( 'wp_mcp_ai_artifact_queue_for_approval', false, $this->assistant_id, $verification );
+
+		if ( ! $this->dry_run ) {
+			if ( $queue_for_approval && class_exists( 'WP_MCP_AI_Artifact_Approval_Queue' ) ) {
+				$queue_id = WP_MCP_AI_Artifact_Approval_Queue::enqueue(
+					$this->assistant_id,
+					'promote',
+					'prompt',
+					$evolved_prompt,
+					array(
+						'verification' => is_array( $verification ) ? $verification : array(),
+						'reason'       => __( 'Evolved prompt candidate awaiting human approval.', 'mcp-ai-wpoos' ),
+						'requester_id' => get_current_user_id(),
+					)
+				);
+				$queued   = ! is_wp_error( $queue_id );
+			} else {
+				$stored = update_post_meta( $this->assistant_id, self::EVOLVED_PROMPT_META_KEY, wp_kses_post( $evolved_prompt ) );
+			}
+		}
+
+		$result = array(
+			'pass'    => 'prompt',
+			'status'  => 'completed',
+			'error'   => false,
+			'before'  => $current_prompt,
+			'after'   => $evolved_prompt,
+			'stored'  => (bool) $stored,
+			'dry_run' => $this->dry_run,
 		);
+
+		if ( $queued ) {
+			$result['queued']   = true;
+			$result['queue_id'] = (string) $queue_id;
+		}
+
+		if ( null !== $verification ) {
+			$result['verification'] = $verification;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -657,7 +986,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 					continue;
 				}
 				$type         = sanitize_key( $role_def['type'] );
-				$instructions = isset( $role_def['system_instructions'] ) ? sanitize_textarea_field( $role_def['system_instructions'] ) : '';
+				$instructions = isset( $role_def['system_instructions'] ) ? sanitize_textarea_field( self::scrub_evolved_text( $role_def['system_instructions'] ) ) : '';
 
 				$role_data = array(
 					'type'                => $type,
@@ -666,7 +995,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 					'evolved'             => true,
 				);
 
-				$stored = update_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, $role_data, false );
+				$stored = $this->dry_run ? true : update_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, $role_data, false );
 				if ( $stored ) {
 					++$created;
 				}
@@ -688,12 +1017,12 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 
 				if ( isset( $update_def['field_changes'] ) && is_array( $update_def['field_changes'] ) ) {
 					foreach ( $update_def['field_changes'] as $field => $value ) {
-						$existing[ sanitize_key( $field ) ] = sanitize_textarea_field( (string) $value );
+						$existing[ sanitize_key( $field ) ] = sanitize_textarea_field( self::scrub_evolved_text( (string) $value ) );
 					}
 				}
 
 				$existing['updated_at'] = time();
-				$stored                 = update_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, $existing, false );
+				$stored                 = $this->dry_run ? true : update_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, $existing, false );
 				if ( $stored ) {
 					++$updated;
 				}
@@ -711,6 +1040,10 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 				if ( null !== $existing ) {
 					$existing['retired']    = true;
 					$existing['retired_at'] = time();
+					if ( $this->dry_run ) {
+						++$retired;
+						continue;
+					}
 					update_option( self::EVOLVED_ROLE_OPTION_PREFIX . $type, $existing, false );
 					++$retired;
 				}
@@ -718,7 +1051,9 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 		}
 
 		// Register evolved roles via the wp_mcp_ai_agent_roles filter.
-		$this->register_evolved_roles();
+		if ( ! $this->dry_run ) {
+			$this->register_evolved_roles();
+		}
 
 		return array(
 			'pass'    => 'roles',
@@ -727,6 +1062,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 			'created' => $created,
 			'updated' => $updated,
 			'retired' => $retired,
+			'dry_run' => $this->dry_run,
 		);
 	}
 
@@ -797,13 +1133,16 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 					continue;
 				}
 
-				$skill_id                    = sanitize_key( $skill_def['name'] );
+				$skill_id = sanitize_key( $skill_def['name'] );
+				// The Refiner's `code` is inert instructional text: PII-scrubbed
+				// but deliberately not HTML-stripped so code examples survive.
+				// It is never executed.
 				$evolved_skills[ $skill_id ] = array(
 					'id'          => $skill_id,
 					'name'        => sanitize_text_field( $skill_def['name'] ),
 					'path'        => isset( $skill_def['path'] ) ? sanitize_text_field( $skill_def['path'] ) : '',
-					'description' => isset( $skill_def['description'] ) ? sanitize_textarea_field( $skill_def['description'] ) : '',
-					'code'        => isset( $skill_def['code'] ) ? $skill_def['code'] : '',
+					'description' => isset( $skill_def['description'] ) ? sanitize_textarea_field( self::scrub_evolved_text( $skill_def['description'] ) ) : '',
+					'code'        => isset( $skill_def['code'] ) ? self::scrub_evolved_text( $skill_def['code'] ) : '',
 					'evolved'     => true,
 					'created_at'  => time(),
 				);
@@ -826,14 +1165,16 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 					$evolved_skills[ $skill_id ]['effectiveness'] = (float) $update_def['effectiveness'];
 				}
 				if ( isset( $update_def['code'] ) ) {
-					$evolved_skills[ $skill_id ]['code'] = $update_def['code'];
+					$evolved_skills[ $skill_id ]['code'] = self::scrub_evolved_text( $update_def['code'] );
 				}
 				$evolved_skills[ $skill_id ]['updated_at'] = time();
 				++$updated;
 			}
 		}
 
-		update_option( 'wp_mcp_ai_evolved_skills', $evolved_skills, false );
+		if ( ! $this->dry_run ) {
+			update_option( 'wp_mcp_ai_evolved_skills', $evolved_skills, false );
+		}
 
 		return array(
 			'pass'    => 'skills',
@@ -841,6 +1182,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 			'error'   => false,
 			'created' => $created,
 			'updated' => $updated,
+			'dry_run' => $this->dry_run,
 		);
 	}
 
@@ -916,11 +1258,16 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 				}
 
 				$title       = isset( $mem_def['title'] ) ? sanitize_text_field( $mem_def['title'] ) : __( 'Evolved Memory', 'mcp-ai-wpoos' );
-				$content_mem = isset( $mem_def['content'] ) ? sanitize_textarea_field( $mem_def['content'] ) : '';
+				$content_mem = isset( $mem_def['content'] ) ? sanitize_textarea_field( self::scrub_evolved_text( $mem_def['content'] ) ) : '';
 				$importance  = isset( $mem_def['importance'] ) ? (float) $mem_def['importance'] : 0.5;
 				$path        = isset( $mem_def['path'] ) ? sanitize_text_field( $mem_def['path'] ) : '';
 
 				if ( '' === trim( $content_mem ) ) {
+					continue;
+				}
+
+				if ( $this->dry_run ) {
+					++$added;
 					continue;
 				}
 
@@ -957,14 +1304,16 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 				}
 
 				if ( isset( $update_def['content'] ) ) {
-					$evolved_memories[ $memory_id ]['content'] = sanitize_textarea_field( $update_def['content'] );
+					$evolved_memories[ $memory_id ]['content'] = sanitize_textarea_field( self::scrub_evolved_text( $update_def['content'] ) );
 				}
 				if ( isset( $update_def['importance'] ) ) {
 					$evolved_memories[ $memory_id ]['importance'] = (float) $update_def['importance'];
 				}
 				$evolved_memories[ $memory_id ]['updated_at'] = time();
 
-				update_option( 'wp_mcp_ai_evolved_memories', $evolved_memories, false );
+				if ( ! $this->dry_run ) {
+					update_option( 'wp_mcp_ai_evolved_memories', $evolved_memories, false );
+				}
 				++$updated;
 			}
 		}
@@ -975,6 +1324,7 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 			'error'   => false,
 			'added'   => $added,
 			'updated' => $updated,
+			'dry_run' => $this->dry_run,
 		);
 	}
 
@@ -987,9 +1337,11 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 	 *
 	 * @since 1.2.0
 	 *
+	 * @param int $window_length Optional override for the maximum number of
+	 *                           events (10-500). 0 uses the configured default.
 	 * @return array|WP_Error Array of audit trail events or WP_Error.
 	 */
-	private function read_trajectory_window() {
+	private function read_trajectory_window( $window_length = 0 ) {
 		if ( empty( $this->trail_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_evolver_no_trail',
@@ -1011,6 +1363,12 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 		 */
 		$max_window = (int) apply_filters( 'wp_mcp_ai_harness_evolution_max_window', self::MAX_TRAJECTORY_WINDOW );
 		$max_window = max( 10, min( $max_window, 500 ) );
+
+		// Per-call override (e.g. from the evolve_harness tool).
+		$window_length = absint( $window_length );
+		if ( $window_length > 0 ) {
+			$max_window = max( 10, min( $window_length, 500 ) );
+		}
 
 		// Take the most recent events.
 		$trail = array_slice( $trail, -$max_window );
@@ -1143,13 +1501,500 @@ class WP_MCP_AI_Agent_Harness_Evolver {
 			return $client;
 		}
 
+		// Per-call budget enforcement.
+		if ( $this->budget_remaining() <= 0.0 ) {
+			return new WP_Error(
+				'wp_mcp_ai_evolution_budget_exceeded',
+				__( 'The hourly harness evolution budget has been exhausted.', 'mcp-ai-wpoos' ),
+				array( 'status' => 429 )
+			);
+		}
+
 		$options = array(
 			'model'       => $model,
 			'temperature' => 0.3, // Low temperature for deterministic refinement.
 			'tools'       => array(), // No tools — text-only refinement.
 		);
 
-		return $client->chat( $messages, $options );
+		$response = $client->chat( $messages, $options );
+
+		if ( ! is_wp_error( $response ) ) {
+			$this->record_budget_spend( $this->estimate_refiner_cost( $response ) );
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Resolve the per-assistant hourly evolution budget in USD.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return float Budget limit.
+	 */
+	private function get_budget_limit() {
+		if ( class_exists( 'WP_MCP_AI_Evolution_Governor' ) ) {
+			return WP_MCP_AI_Evolution_Governor::budget_limit_usd( $this->assistant_id );
+		}
+
+		/**
+		 * Filters the hourly harness evolution budget per assistant.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param float $budget_usd Budget in USD. Default DEFAULT_BUDGET_USD (5.0).
+		 */
+		$limit = apply_filters( 'wp_mcp_ai_harness_evolution_budget_usd', self::DEFAULT_BUDGET_USD );
+
+		return max( 0.0, (float) $limit );
+	}
+
+	/**
+	 * Get the budget already spent this hour for this assistant.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return float Spent amount in USD.
+	 */
+	private function get_budget_spent() {
+		if ( class_exists( 'WP_MCP_AI_Evolution_Governor' ) ) {
+			return WP_MCP_AI_Evolution_Governor::budget_spent( $this->assistant_id );
+		}
+
+		$spent = get_transient( self::BUDGET_TRANSIENT_PREFIX . $this->assistant_id );
+
+		return max( 0.0, (float) $spent );
+	}
+
+	/**
+	 * Get the remaining evolution budget in USD.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @return float Remaining budget.
+	 */
+	private function budget_remaining() {
+		return $this->get_budget_limit() - $this->get_budget_spent();
+	}
+
+	/**
+	 * Record a spend against the assistant's evolution budget.
+	 *
+	 * Uses a transient with an hourly TTL so the budget window resets
+	 * automatically without cron cleanup.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param float $usd Amount in USD to record.
+	 * @return void
+	 */
+	private function record_budget_spend( $usd ) {
+		$usd = max( 0.0, (float) $usd );
+
+		if ( class_exists( 'WP_MCP_AI_Evolution_Governor' ) ) {
+			WP_MCP_AI_Evolution_Governor::record_spend( $this->assistant_id, $usd, 'evolver' );
+			return;
+		}
+
+		$spent = $this->get_budget_spent() + $usd;
+
+		set_transient( self::BUDGET_TRANSIENT_PREFIX . $this->assistant_id, $spent, HOUR_IN_SECONDS );
+	}
+
+	/**
+	 * Estimate the USD cost of a Refiner call.
+	 *
+	 * Prefers explicit cost data from the provider response, falls back to a
+	 * token-usage estimate (~$2.50 per 1M tokens), and finally to a flat
+	 * per-call estimate when neither is present.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param mixed $response Provider response payload.
+	 * @return float Estimated cost in USD.
+	 */
+	private function estimate_refiner_cost( $response ) {
+		if ( is_array( $response ) && isset( $response['cost_usd'] ) ) {
+			return max( 0.0, (float) $response['cost_usd'] );
+		}
+
+		$total_tokens = 0;
+		if ( is_array( $response ) && isset( $response['usage']['total_tokens'] ) ) {
+			$total_tokens = (int) $response['usage']['total_tokens'];
+		} elseif ( is_array( $response ) && isset( $response['usage']['totalTokens'] ) ) {
+			$total_tokens = (int) $response['usage']['totalTokens'];
+		}
+
+		if ( $total_tokens > 0 ) {
+			return max( 0.0001, ( $total_tokens / 1000000.0 ) * 2.50 );
+		}
+
+		return self::DEFAULT_REFINER_CALL_COST_USD;
+	}
+
+	/**
+	 * Count the number of applied (or, in a dry run, suggested) changes
+	 * across pass results.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param array $results Evolution results keyed by component.
+	 * @return int Total change count.
+	 */
+	private function count_changes( $results ) {
+		$total = 0;
+
+		$counters = array(
+			'prompt' => array( 'stored' ),
+			'roles'  => array( 'created', 'updated', 'retired' ),
+			'skills' => array( 'created', 'updated' ),
+			'memory' => array( 'added', 'updated' ),
+		);
+
+		foreach ( $counters as $component => $keys ) {
+			if ( ! isset( $results[ $component ] ) || ! is_array( $results[ $component ] ) || ! empty( $results[ $component ]['error'] ) ) {
+				continue;
+			}
+
+			foreach ( $keys as $key ) {
+				if ( isset( $results[ $component ][ $key ] ) ) {
+					$total += absint( $results[ $component ][ $key ] );
+				}
+			}
+		}
+
+		return $total;
+	}
+
+	/**
+	 * Build a human-readable evolution summary line.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param int    $changes   Change count.
+	 * @param string $component Evolved component slug.
+	 * @param bool   $dry_run   Whether this was a dry run.
+	 * @return string Summary line.
+	 */
+	private function build_evolution_summary( $changes, $component, $dry_run ) {
+		if ( $dry_run ) {
+			return sprintf(
+				/* translators: 1: number of suggested changes, 2: component name */
+				_n( '%1$d improvement suggested for %2$s.', '%1$d improvements suggested for %2$s.', $changes, 'mcp-ai-wpoos' ),
+				$changes,
+				$component
+			);
+		}
+
+		return sprintf(
+			/* translators: 1: number of applied changes, 2: component name */
+			_n( '%1$d improvement applied to %2$s.', '%1$d improvements applied to %2$s.', $changes, 'mcp-ai-wpoos' ),
+			$changes,
+			$component
+		);
+	}
+
+	/**
+	 * Run post-mutation verification on a prompt candidate (opt-in).
+	 *
+	 * Returns null when verification is disabled or this is a dry run;
+	 * otherwise returns the verification decision payload from
+	 * {@see WP_MCP_AI_Artifact_Verification_Gate} (or a skip payload).
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $incumbent_prompt Current system prompt.
+	 * @param string $candidate_prompt Refiner-suggested prompt.
+	 * @return array|null Verification payload, or null when not applicable.
+	 */
+	private function maybe_verify_prompt( $incumbent_prompt, $candidate_prompt ) {
+		if ( $this->dry_run ) {
+			return null;
+		}
+
+		/**
+		 * Filters whether post-mutation verification is enabled.
+		 *
+		 * Default false — candidates are stored unverified unless the site
+		 * opts in. When enabled, a candidate that does not improve on the
+		 * replayed failure cases is rejected.
+		 *
+		 * @since 1.9.0
+		 *
+		 * @param bool   $enabled      Whether verification is enabled. Default false.
+		 * @param int    $assistant_id Assistant post ID.
+		 * @param string $component    Component being evolved.
+		 */
+		$enabled = apply_filters( 'wp_mcp_ai_harness_verification_enabled', false, $this->assistant_id, 'prompt' );
+		if ( ! $enabled ) {
+			return null;
+		}
+
+		return $this->verify_prompt_candidate( $incumbent_prompt, $candidate_prompt );
+	}
+
+	/**
+	 * Whether a verification payload constitutes a rejection.
+	 *
+	 * Considers both the Phase B verification verdict and the Phase E
+	 * admission verdict. Skip payloads and null are not rejections.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param array|null $verification Verification payload.
+	 * @return bool True when the candidate must be rejected.
+	 */
+	private function is_verification_rejection( $verification ) {
+		if ( ! is_array( $verification ) ) {
+			return false;
+		}
+
+		if ( 'reject' === ( isset( $verification['decision'] ) ? $verification['decision'] : '' ) ) {
+			return true;
+		}
+
+		return isset( $verification['admission']['decision'] ) && 'reject' === $verification['admission']['decision'];
+	}
+
+	/**
+	 * Verify a prompt candidate against the failure-replay suite.
+	 *
+	 * Public so callers (and tests) can exercise the skip paths without a
+	 * live provider. Skip payloads (`decision => 'skip'`) mean the candidate
+	 * is allowed to proceed — there was no signal to judge it against.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $incumbent_prompt Current system prompt.
+	 * @param string $candidate_prompt Refiner-suggested prompt.
+	 * @return array Verification decision payload.
+	 */
+	public function verify_prompt_candidate( $incumbent_prompt, $candidate_prompt ) {
+		if ( ! class_exists( 'WP_MCP_AI_Artifact_Failure_Replay' ) || ! class_exists( 'WP_MCP_AI_Artifact_Verification_Gate' ) ) {
+			return array(
+				'decision' => 'skip',
+				'reason'   => __( 'Verification modules are not available.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$suite = WP_MCP_AI_Artifact_Failure_Replay::build_suite( $this->assistant_id, array( 'artifact_type' => 'prompt' ) );
+		if ( is_wp_error( $suite ) ) {
+			/**
+			 * Filters the behavior when verification is enabled but no
+			 * replay cases exist. 'skip' (default) allows the candidate;
+			 * 'reject' fails closed.
+			 *
+			 * @since 1.9.0
+			 *
+			 * @param string $behavior     Either 'skip' or 'reject'.
+			 * @param int    $assistant_id Assistant post ID.
+			 */
+			$on_no_cases = (string) apply_filters( 'wp_mcp_ai_harness_verification_on_no_cases', 'skip', $this->assistant_id );
+			if ( 'reject' === $on_no_cases ) {
+				return array(
+					'decision' => 'reject',
+					'reason'   => $suite->get_error_message(),
+				);
+			}
+			return array(
+				'decision' => 'skip',
+				'reason'   => $suite->get_error_message(),
+			);
+		}
+
+		// Verification runs are provider calls — respect the same budget.
+		if ( $this->budget_remaining() <= 0.0 ) {
+			return array(
+				'decision' => 'skip',
+				'reason'   => __( 'Evolution budget exhausted before verification.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$incumbent_generator = $this->build_prompt_generator( $incumbent_prompt );
+		$candidate_generator = $this->build_prompt_generator( $candidate_prompt );
+		if ( is_wp_error( $incumbent_generator ) || is_wp_error( $candidate_generator ) ) {
+			return array(
+				'decision' => 'skip',
+				'reason'   => __( 'Provider client unavailable for verification.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$result = WP_MCP_AI_Artifact_Verification_Gate::evaluate( $incumbent_generator, $candidate_generator, $suite );
+		if ( is_wp_error( $result ) ) {
+			return array(
+				'decision' => 'skip',
+				'reason'   => $result->get_error_message(),
+			);
+		}
+
+		// Phase E: run the pre-commit admission gate (VaG) on the candidate.
+		if ( class_exists( 'WP_MCP_AI_Artifact_Admission_Gate' ) ) {
+			$result['admission'] = WP_MCP_AI_Artifact_Admission_Gate::evaluate(
+				'prompt',
+				array( 'prompt' => $candidate_prompt ),
+				array( 'prompt' => $incumbent_prompt ),
+				$result,
+				$this->assistant_id
+			);
+		}
+
+		// Archive incumbent + candidate into the artifact population (Phase C).
+		// Rejected candidates are archived too — the learning log needs the
+		// failures to avoid re-proposing them.
+		$incumbent_hash = null;
+		$candidate_hash = null;
+		if ( class_exists( 'WP_MCP_AI_Artifact_Population' ) ) {
+			$incumbent_hash = WP_MCP_AI_Artifact_Population::archive(
+				'prompt',
+				(string) $this->assistant_id,
+				array( 'prompt' => $incumbent_prompt ),
+				isset( $result['incumbent_pass_rate'] ) ? (float) $result['incumbent_pass_rate'] : 0.0,
+				isset( $result['incumbent_summary'] ) && is_array( $result['incumbent_summary'] ) ? $result['incumbent_summary'] : array(),
+				null,
+				$this->assistant_id
+			);
+			if ( ! is_wp_error( $incumbent_hash ) ) {
+				$result['incumbent_hash'] = $incumbent_hash;
+			}
+
+			$candidate_hash = WP_MCP_AI_Artifact_Population::archive(
+				'prompt',
+				(string) $this->assistant_id,
+				array( 'prompt' => $candidate_prompt ),
+				isset( $result['candidate_pass_rate'] ) ? (float) $result['candidate_pass_rate'] : 0.0,
+				isset( $result['candidate_summary'] ) && is_array( $result['candidate_summary'] ) ? $result['candidate_summary'] : array(),
+				is_wp_error( $incumbent_hash ) ? null : $incumbent_hash,
+				$this->assistant_id
+			);
+			if ( ! is_wp_error( $candidate_hash ) ) {
+				$result['candidate_hash'] = $candidate_hash;
+			}
+		}
+
+		// Record the mutation in the learning log (Phase D): the diff between
+		// incumbent and candidate plus the observed score delta is the
+		// differential signal future mutators learn from.
+		if ( class_exists( 'WP_MCP_AI_Artifact_Learning_Log' ) && class_exists( 'WP_MCP_AI_Artifact_Mutator' ) && is_string( $candidate_hash ) && '' !== $candidate_hash ) {
+			$incumbent_rate = isset( $result['incumbent_pass_rate'] ) ? (float) $result['incumbent_pass_rate'] : 0.0;
+			$candidate_rate = isset( $result['candidate_pass_rate'] ) ? (float) $result['candidate_pass_rate'] : 0.0;
+
+			$log_id = WP_MCP_AI_Artifact_Learning_Log::record(
+				array(
+					'artifact_type'  => 'prompt',
+					'artifact_id'    => (string) $this->assistant_id,
+					'parent_hash'    => is_string( $incumbent_hash ) ? $incumbent_hash : '',
+					'child_hash'     => $candidate_hash,
+					'kind'           => 'continual_harness',
+					'diff'           => WP_MCP_AI_Artifact_Mutator::diff_artifacts(
+						array( 'prompt' => $incumbent_prompt ),
+						array( 'prompt' => $candidate_prompt )
+					),
+					'change_summary' => '',
+					'score_delta'    => $candidate_rate - $incumbent_rate,
+					'assistant_id'   => $this->assistant_id,
+				)
+			);
+			if ( ! is_wp_error( $log_id ) ) {
+				$result['learning_log_id'] = $log_id;
+			}
+		}
+
+		// Phase E: enforce the per-assistant population cap (score-ordered
+		// eviction keeps the pool bounded; VaG pool-size discipline).
+		if ( class_exists( 'WP_MCP_AI_Artifact_Population' ) && method_exists( 'WP_MCP_AI_Artifact_Population', 'enforce_per_assistant_cap' ) ) {
+			$result['cap_evicted'] = WP_MCP_AI_Artifact_Population::enforce_per_assistant_cap( $this->assistant_id );
+		}
+
+		// Record the verification run per artifact for regression tracking.
+		if ( class_exists( 'WP_MCP_AI_Eval_Run_Store' ) && ! empty( $result['candidate_summary'] ) && is_array( $result['candidate_summary'] ) ) {
+			$record_summary                 = $result['candidate_summary'];
+			$record_summary['verification'] = array(
+				'decision'        => $result['decision'],
+				'mode'            => $result['mode'],
+				'improved_cases'  => $result['improved_cases'],
+				'regressed_cases' => $result['regressed_cases'],
+			);
+			WP_MCP_AI_Eval_Run_Store::get_instance()->record(
+				$suite->get_slug(),
+				$record_summary,
+				null,
+				array(
+					'artifact_type' => 'prompt',
+					'artifact_id'   => (string) $this->assistant_id,
+				)
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Build a generator callable that answers eval cases with a fixed
+	 * system prompt via the assistant's provider.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $prompt System prompt to evaluate.
+	 * @return callable|WP_Error Generator callable, or WP_Error when the
+	 *                            provider client cannot be resolved.
+	 */
+	private function build_prompt_generator( $prompt ) {
+		$provider_slug = get_post_meta( $this->assistant_id, '_wp_mcp_ai_provider', true );
+		if ( empty( $provider_slug ) ) {
+			$provider_slug = 'openai';
+		}
+
+		$model = get_post_meta( $this->assistant_id, '_wp_mcp_ai_model', true );
+		if ( empty( $model ) ) {
+			$model = 'gpt-4o-mini';
+		}
+
+		$client = $this->resolve_provider_client( $provider_slug );
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		// Non-static closure: bound to $this so private budget helpers stay
+		// accessible inside the runner loop.
+		return function ( $eval_case, $suite_context ) use ( $client, $model, $prompt ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $suite_context is part of the eval-runner generator contract.
+			if ( $this->budget_remaining() <= 0.0 ) {
+				return new WP_Error(
+					'wp_mcp_ai_evolution_budget_exceeded',
+					__( 'Evolution budget exhausted during verification.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$input        = $eval_case->get_input();
+			$user_message = is_array( $input ) && isset( $input['prompt'] ) ? (string) $input['prompt'] : wp_json_encode( $input );
+
+			$response = $client->chat(
+				array(
+					array(
+						'role'    => 'system',
+						'content' => $prompt,
+					),
+					array(
+						'role'    => 'user',
+						'content' => $user_message,
+					),
+				),
+				array(
+					'model'       => $model,
+					'temperature' => 0.0, // Deterministic verification.
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$this->record_budget_spend( $this->estimate_refiner_cost( $response ) );
+
+			return array(
+				'output'   => $this->extract_content_from_response( $response ),
+				'cost_usd' => $this->estimate_refiner_cost( $response ),
+			);
+		};
 	}
 
 	/**

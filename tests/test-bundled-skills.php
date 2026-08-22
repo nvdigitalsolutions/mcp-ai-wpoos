@@ -48,13 +48,19 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Filter upload dir to use a temp directory for tests.
+	 * Filter upload dir to use a unique per-test temp directory.
+	 *
+	 * The registry resolves its skills dir as `basedir . '/mcp-ai-skills'`,
+	 * so pointing `basedir` at the per-test directory keeps every test's
+	 * installed skills isolated and lets tearDown remove them wholesale.
+	 * (Previously the filter used `dirname()`, which shared the system temp
+	 * dir across tests and leaked state between runs.)
 	 *
 	 * @param array $upload_dir Upload directory data.
 	 * @return array Modified upload directory data.
 	 */
 	public function filter_upload_dir( $upload_dir ) {
-		$upload_dir['basedir'] = dirname( $this->test_skills_dir );
+		$upload_dir['basedir'] = $this->test_skills_dir;
 		return $upload_dir;
 	}
 

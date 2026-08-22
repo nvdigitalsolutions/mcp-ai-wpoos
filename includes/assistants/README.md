@@ -20,7 +20,7 @@ Registers the `mcp_ai_assistant` custom post type and its admin metaboxes — th
 | `WP_MCP_AI_Assistant_CPT` | `class-wp-mcp-ai-assistant-cpt.php` | `includes/services/`, `includes/rest/`, `includes/a2a/`, `includes/teams/`, Pro addons |
 | `WP_MCP_AI_Assistant_CPT::POST_TYPE` + `META_*` constants | `class-wp-mcp-ai-assistant-cpt.php` | every caller that reads/writes assistant meta (use the constants, not bare strings) |
 | `WP_MCP_AI_Metabox_Base` (abstract) | `metaboxes/class-wp-mcp-ai-metabox-base.php` | every metabox in this folder + Pro metaboxes |
-| `WP_MCP_AI_Metabox_Credentials`, `..._Defaults`, `..._Primary_Roles`, `..._Base_Knowledge`, `..._Mesh_Routing`, `..._Datasets`, `..._Skills`, `..._MCP_Apps`, `..._Harness_Profile` | `metaboxes/class-wp-mcp-ai-metabox-*.php` | wired by the CPT constructor; not called externally |
+| `WP_MCP_AI_Metabox_Credentials`, `..._Defaults`, `..._Primary_Roles`, `..._Base_Knowledge`, `..._Mesh_Routing`, `..._Datasets`, `..._Skills`, `..._MCP_Apps`, `..._Harness_Profile`, `..._Artifact_Governance` | `metaboxes/class-wp-mcp-ai-metabox-*.php` | wired by the CPT constructor; not called externally. `..._Artifact_Governance` renders the Phase G governor report, approval queue (with nonce'd admin-post decisions), and prompt lineage tree |
 | `metaboxes-loader.php` | `metaboxes-loader.php` | included by `includes/class-assistant-cpt.php` ahead of the CPT class |
 
 ## Inputs / Outputs / Neighbors
@@ -37,7 +37,7 @@ Registers the `mcp_ai_assistant` custom post type and its admin metaboxes — th
 - **Always reference meta keys via the `WP_MCP_AI_Assistant_CPT::META_*` constants** — bare string literals like `'_wp_mcp_ai_tools'` are a code-review smell because the constant is the rename-safe contract.
 - Each metabox class lives in `metaboxes/` and extends `WP_MCP_AI_Metabox_Base`. Do **not** add a metabox by hooking `add_meta_boxes` from elsewhere — instantiate it in the CPT constructor so save/nonce/capability handling stays uniform.
 - The CPT is loaded twice in the path: once via `metaboxes-loader.php` (eager class loads for save handlers) and once via the CPT class itself. Preserve that order; lazy-loading metaboxes breaks `save_post` paths in REST contexts.
-- Optional-dependency metaboxes (`Mesh_Routing`, `MCP_Apps`, `Harness_Profile`) must gracefully no-op when the relevant subsystem is absent — never assume JetEngine / Pro / harness flags are present.
+- Optional-dependency metaboxes (`Mesh_Routing`, `MCP_Apps`, `Harness_Profile`, `Artifact_Governance`) must gracefully no-op when the relevant subsystem is absent — never assume JetEngine / Pro / harness flags are present.
 
 ## Tests
 

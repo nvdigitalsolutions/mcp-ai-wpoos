@@ -265,6 +265,23 @@ class WP_MCP_AI_Harness_Search_Engine {
 		$search     = &self::$active_searches[ $assistant_id ];
 		$population = self::load_population( $assistant_id );
 
+		// Phase G: unified governor gate for the search mutation path.
+		if ( class_exists( 'WP_MCP_AI_Evolution_Governor' ) ) {
+			$gate = WP_MCP_AI_Evolution_Governor::can_mutate( $assistant_id, 'search' );
+			if ( ! $gate['allowed'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_search_governor_blocked',
+					sprintf(
+						/* translators: %s: governor block reason */
+						__( 'The evolution governor blocked this search step: %s.', 'mcp-ai-wpoos' ),
+						$gate['reason']
+					),
+					array( 'status' => 429 )
+				);
+			}
+			WP_MCP_AI_Evolution_Governor::record_mutation( $assistant_id, 'search' );
+		}
+
 		// Step 1: Evaluate any unevaluated candidates.
 		$evaluated = 0;
 		foreach ( $population as $hash => &$entry ) {
@@ -285,8 +302,9 @@ class WP_MCP_AI_Harness_Search_Engine {
 		unset( $entry );
 
 		// Step 2: If all current candidates are evaluated, propose new ones.
-		$proposed      = 0;
-		$all_evaluated = true;
+		$proposed         = 0;
+		$governor_blocked = '';
+		$all_evaluated    = true;
 		foreach ( $population as $entry ) {
 			if ( null === $entry['eval'] ) {
 				$all_evaluated = false;
@@ -295,7 +313,24 @@ class WP_MCP_AI_Harness_Search_Engine {
 		}
 
 		if ( $all_evaluated && $search['current_iter'] < $search['iterations'] ) {
-			$candidates = self::invoke_proposer( $population, $assistant_id, $search['suites'], $search['k'], $search['proposer_args'] );
+			$candidates = array();
+
+			// Phase G: the pluggable proposer is its own mutation path — the
+			// governor gate here also covers the Pro proposer backend.
+			if ( class_exists( 'WP_MCP_AI_Evolution_Governor' ) ) {
+				$gate = WP_MCP_AI_Evolution_Governor::can_mutate( $assistant_id, 'proposer' );
+				if ( ! $gate['allowed'] ) {
+					$governor_blocked = $gate['reason'];
+				}
+			}
+
+			if ( '' === $governor_blocked ) {
+				$candidates = self::invoke_proposer( $population, $assistant_id, $search['suites'], $search['k'], $search['proposer_args'] );
+
+				if ( class_exists( 'WP_MCP_AI_Evolution_Governor' ) ) {
+					WP_MCP_AI_Evolution_Governor::record_mutation( $assistant_id, 'proposer' );
+				}
+			}
 
 			foreach ( $candidates as $candidate ) {
 				$clean = WP_MCP_AI_Harness_Profile::sanitize( $candidate );
@@ -330,10 +365,10 @@ class WP_MCP_AI_Harness_Search_Engine {
 
 		$evaluated_total = self::count_evaluated_population( $population );
 
-		return array(
+		$result = array(
 			'status'    => $search['status'],
 			'iteration' => $search['current_iter'],
-			'evaluated' => $evaluated,
+			'evaluated' => $evaluated_total,
 			'proposed'  => $proposed,
 			'message'   => sprintf(
 				/* translators: 1: evaluated count, 2: iteration, 3: total iterations */
@@ -343,6 +378,12 @@ class WP_MCP_AI_Harness_Search_Engine {
 				$search['iterations']
 			),
 		);
+
+		if ( '' !== $governor_blocked ) {
+			$result['governor'] = $governor_blocked;
+		}
+
+		return $result;
 	}
 
 	/**

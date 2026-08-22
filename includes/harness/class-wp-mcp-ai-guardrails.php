@@ -361,7 +361,7 @@ class WP_MCP_AI_Guardrails {
 		$matches = array();
 		foreach ( $jailbreak_patterns as $pattern => $description ) {
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			if ( false !== @preg_match( $pattern, $normalized ) ) {
+			if ( 1 === @preg_match( $pattern, $normalized ) ) {
 				$matches[] = $description;
 			}
 		}
@@ -415,7 +415,7 @@ class WP_MCP_AI_Guardrails {
 		$matches = array();
 		foreach ( $injection_patterns as $pattern => $description ) {
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			if ( false !== @preg_match( $pattern, $normalized ) ) {
+			if ( 1 === @preg_match( $pattern, $normalized ) ) {
 				$matches[] = $description;
 			}
 		}
@@ -455,7 +455,7 @@ class WP_MCP_AI_Guardrails {
 
 		foreach ( $topic_shift_patterns as $pattern => $description ) {
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			if ( false !== @preg_match( $pattern, $normalized ) ) {
+			if ( 1 === @preg_match( $pattern, $normalized ) ) {
 				$matches[] = $description;
 				$score    += 0.4;
 			}
@@ -478,7 +478,7 @@ class WP_MCP_AI_Guardrails {
 
 			foreach ( $unrelated_patterns as $pattern => $description ) {
 				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-				if ( false !== @preg_match( $pattern, $normalized ) ) {
+				if ( 1 === @preg_match( $pattern, $normalized ) ) {
 					$matches[] = $description;
 					$score    += 0.25;
 				}
@@ -501,7 +501,7 @@ class WP_MCP_AI_Guardrails {
 
 		foreach ( $social_eng_patterns as $pattern => $description ) {
 			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			if ( false !== @preg_match( $pattern, $normalized ) ) {
+			if ( 1 === @preg_match( $pattern, $normalized ) ) {
 				$matches[] = $description;
 				$score    += 0.2;
 			}
