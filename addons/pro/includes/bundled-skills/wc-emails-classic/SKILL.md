@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-emails-classic
 description: Customize WooCommerce transactional emails the classic PHP-template way (NOT the block email editor) — extend WC_Email, declare $id / $title / $template_html / $template_plain / $placeholders, hook trigger() to a woocommerce_order_status_*_notification action, register via the woocommerce_email_classes filter. Plus the canonical template-override pattern (copy templates/emails/*.php to your theme's /woocommerce/emails/ folder; wc_get_template resolves them automatically), and the get_default_subject / get_default_heading override pattern for admin-customizable strings. Use when adding a new transactional email (custom shipped notification, vendor split, internal alert), overriding an existing template, or customizing strings that the admin Settings cannot reach. Triggers on WC_Email, woocommerce_email_classes, woocommerce_order_status_*_notification, wc_get_template_html, template_html / template_plain in WC context, "transactional email" / "send WooCommerce email programmatically".
 author: Soczó Kristóf

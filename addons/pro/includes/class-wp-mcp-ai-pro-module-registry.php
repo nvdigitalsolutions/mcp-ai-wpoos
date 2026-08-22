@@ -606,6 +606,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_okf',
+				'OKF Skills & Knowledge REST',
+				array(),
+				array(),
+				function () use ( $p ) {
+					$f = $p . 'rest/class-wp-mcp-ai-pro-rest-okf.php';
+					if ( file_exists( $f ) ) {
+						require_once $f;
+						add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_REST_Okf', 'register_routes' ) );
+					}
+				}
+			);
+
+			$this->add_module(
 				'spa_loader',
 				'SPA Loader',
 				array(),
@@ -1028,6 +1042,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				array(),
 				function () use ( $p ) {
 					require_once $p . 'paper-store/paper-store-pro-init.php';
+				}
+			);
+
+			$this->add_module(
+				'pro_okf_skill_bridge',
+				'OKF Pro Features',
+				array(),
+				array(),
+				function () use ( $p ) {
+					require_once $p . 'okf/okf-pro-init.php';
 				}
 			);
 

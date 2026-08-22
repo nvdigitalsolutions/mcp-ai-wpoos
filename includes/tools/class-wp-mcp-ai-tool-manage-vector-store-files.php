@@ -52,34 +52,41 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'vector_store_id' => array(
+				'vector_store_id'  => array(
 					'type'        => 'string',
 					'description' => __( 'The ID of the vector store to manage. When omitted, the assistant\'s configured vector store is used.', 'mcp-ai-wpoos' ),
 				),
-				'action'          => array(
+				'action'           => array(
 					'type'        => 'string',
 					'description' => __( 'The action to perform: add, remove, or list.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'add', 'remove', 'list' ),
 				),
-				'file_ids'        => array(
+				'file_ids'         => array(
 					'type'        => 'array',
 					'description' => __( 'Array of OpenAI file IDs (required for add/remove actions).', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'limit'           => array(
+				'limit'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of files to return when listing (1-100, default 20).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
-				'order'           => array(
+				'order'            => array(
 					'type'        => 'string',
 					'description' => __( 'Sort order when listing (asc or desc).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'asc', 'desc' ),
 					'default'     => 'desc',
+				),
+				'poll_max_seconds' => array(
+					'type'        => 'integer',
+					'description' => __( 'Max seconds to wait for the file batch to finish when adding (1-60, default 10).', 'mcp-ai-wpoos' ),
+					'minimum'     => 1,
+					'maximum'     => 60,
+					'default'     => 10,
 				),
 			),
 			'required'   => array( 'action' ),
@@ -142,10 +149,14 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * Add files to vector store.
 	 *
+	 * Sends a single file_batches call (Responses API) for all file IDs; the
+	 * client polls the batch to a terminal state and falls back to headerless
+	 * single-file adds where batches are unavailable.
+	 *
 	 * @param WP_MCP_AI_OpenAI_Client $client OpenAI client.
 	 * @param string                  $vector_store_id Vector store ID.
 	 * @param array                   $arguments Arguments.
-	 * @return array Result.
+	 * @return array|WP_Error Result.
 	 */
 	private function add_files( $client, $vector_store_id, $arguments ) {
 		if ( empty( $arguments['file_ids'] ) || ! is_array( $arguments['file_ids'] ) ) {
@@ -156,41 +167,77 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 		}
 
 		$file_ids = array_map( 'sanitize_text_field', $arguments['file_ids'] );
-		$results  = array();
-		$errors   = array();
+		$file_ids = array_values( array_filter( $file_ids ) );
 
-		// Add files one at a time (OpenAI API limitation).
-		foreach ( $file_ids as $file_id ) {
-			$result = $client->add_vector_store_files( $vector_store_id, array( $file_id ) );
-
-			if ( is_wp_error( $result ) ) {
-				$error_message = $result->get_error_message();
-
-				// Enhance error with helpful guidance.
-				if ( stripos( $error_message, 'invalid file' ) !== false || stripos( $error_message, 'unsupported' ) !== false ) {
-					$error_message .= ' ' . __( 'Tip: Use PDF, TXT, DOCX, MD, JSON, or HTML formats. Avoid CSV/XLSX (convert to PDF first).', 'mcp-ai-wpoos' );
-				} elseif ( stripos( $error_message, 'not found' ) !== false ) {
-					$error_message .= ' ' . __( 'File may have been deleted or expired. Re-upload the file to OpenAI first.', 'mcp-ai-wpoos' );
-				}
-
-				$errors[] = array(
-					'file_id' => $file_id,
-					'error'   => $error_message,
-				);
-			} else {
-				$results[] = array(
-					'file_id' => $file_id,
-					'status'  => isset( $result['status'] ) ? $result['status'] : 'added',
-				);
-			}
+		if ( empty( $file_ids ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_error',
+				__( 'The file_ids parameter is required for add action.', 'mcp-ai-wpoos' )
+			);
 		}
 
-		$success      = empty( $errors );
+		$options = array( 'poll' => true );
+
+		if ( ! empty( $arguments['poll_max_seconds'] ) ) {
+			$options['poll_max_seconds'] = max( 1, min( 60, absint( $arguments['poll_max_seconds'] ) ) );
+		}
+
+		// Single batch call — the client polls to a terminal state and falls
+		// back to per-file adds when the batch endpoint is unavailable.
+		$result = $client->add_vector_store_files( $vector_store_id, $file_ids, $options );
+
+		if ( is_wp_error( $result ) ) {
+			$error_message = $result->get_error_message();
+
+			// Enhance error with helpful guidance.
+			if ( stripos( $error_message, 'invalid file' ) !== false || stripos( $error_message, 'unsupported' ) !== false ) {
+				$error_message .= ' ' . __( 'Tip: Use PDF, TXT, DOCX, MD, JSON, or HTML formats. Avoid CSV/XLSX (convert to PDF first).', 'mcp-ai-wpoos' );
+			} elseif ( stripos( $error_message, 'not found' ) !== false ) {
+				$error_message .= ' ' . __( 'File may have been deleted or expired. Re-upload the file to OpenAI first.', 'mcp-ai-wpoos' );
+			}
+
+			return new WP_Error( 'wp_mcp_ai_error', $error_message );
+		}
+
+		$results      = isset( $result['results'] ) && is_array( $result['results'] ) ? $result['results'] : array();
+		$batch_status = isset( $result['status'] ) ? sanitize_key( $result['status'] ) : 'in_progress';
+		$batch_id     = isset( $result['batch_id'] ) ? sanitize_text_field( $result['batch_id'] ) : '';
+
+		// Map terminal failures into per-file errors for the response contract.
+		$errors      = array();
+		$added_by_id = array();
+		foreach ( $results as $entry ) {
+			if ( ! is_array( $entry ) || empty( $entry['file_id'] ) ) {
+				continue;
+			}
+
+			if ( isset( $entry['status'] ) && in_array( $entry['status'], array( 'failed', 'cancelled' ), true ) ) {
+				$errors[] = array(
+					'file_id' => $entry['file_id'],
+					'error'   => sprintf(
+						/* translators: %s: file ID */
+						__( 'File %s failed to process.', 'mcp-ai-wpoos' ),
+						$entry['file_id']
+					),
+				);
+			} else {
+				$added_by_id[ $entry['file_id'] ] = $entry;
+			}
+		}
+		$results = array_values( $added_by_id );
+
 		$total        = count( $file_ids );
 		$added_count  = count( $results );
 		$errors_count = count( $errors );
 
-		if ( $success ) {
+		if ( 'in_progress' === $batch_status ) {
+			$message = sprintf(
+				/* translators: 1: number of files, 2: batch ID */
+				__( 'Queued %1$d file(s) in batch %2$s; processing is still in progress.', 'mcp-ai-wpoos' ),
+				$total,
+				$batch_id
+			);
+		} elseif ( empty( $errors ) ) {
 			$message = sprintf(
 				/* translators: %d: number of files */
 				_n(
@@ -210,7 +257,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			);
 		}
 
-		if ( ! $success ) {
+		if ( ! empty( $errors ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_error',
 				$message,
@@ -227,9 +274,11 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			'message' => $message,
 			'text'    => $message,
 			'data'    => array(
-				'added'  => $results,
-				'errors' => $errors,
-				'total'  => $total,
+				'added'    => $results,
+				'errors'   => $errors,
+				'total'    => $total,
+				'batch_id' => $batch_id,
+				'status'   => $batch_status,
 			),
 		);
 	}

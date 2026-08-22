@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.60
+Stable tag: 1.1.62
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -32,7 +32,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 = Versions =
 
-**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 250+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
+**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 300+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
 
 **Pro Addon (PHP 8.1+ required):** A completely separate plugin that **adds brand-new tools** not present in the base plugin. It is a genuine extension — not an upgrade that unlocks hidden base-plugin capabilities. Pro-only tools are built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers) and include entirely new toolsets: advanced multi-agent orchestration, autonomous research pipelines, project management, vault/secret management, real-time collaboration, Shopify catalog, medical imaging, CRM integrations, and more. Installing the Pro addon does not change how any existing base plugin tool works.
 
@@ -293,11 +293,19 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 250+ tools for content, media, research, and operations
+4. **Tool Registry** - 300+ tools for content, media, research, and operations
 5. **Profession Templates** - 296 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.62 - August 22, 2026 =
+
+OKF bundle management (Base): new WP_MCP_AI_OKF_Bundle_Manager gives OKF knowledge bundles a full lifecycle (create, list, rename, archive, delete, ZipSlip-safe ZIP import/export, health stats) with the auto-generated skill-knowledge bundle protected from writes; three new tools (okf_list_bundles, okf_validate_bundle, okf_import_bundle) and the extended okf_write_concept provenance schema (resource/sources/usage_window/verified) bring the OKF tool surface to 10; a new OKF Bundle Manager admin screen (Bundles/Browser/Editor/Import-Export/Validate) mirrors the Skill Manager UX. Pro: OKF-to-Skill Bridge resolves load_skill bundle:concept_id names with per-assistant grants and trust gating; the auto-enrichment agent generates OKF concepts from published site content (deterministic/idempotent, okf_enrich_site_content tool); the hybrid knowledge router (route_knowledge_query) classifies queries across OKF/vector/Paper stores; the Pro SPA v2 gains an OKF Skills Drawer backed by a new read-only mcp-ai-pro/v1/okf REST surface (bundles, concept browse/search, assistant skill grants). Vector store tools migrated off the deprecated Assistants API to the Responses API (headerless calls, file_batches ingestion with bounded polling + fallback) ahead of OpenAI's 2026-08-26 Assistants API removal. Fixed: 404 on percent-encoded OKF concept routes (%2F now decoded in the handler). Tool count: ~303 base + ~1,249 Pro (~1,552 total; live registry authoritative).
+
+= 1.1.61 - August 21, 2026 =
+
+Agent identity bridging in memory store & recall: new WP_MCP_AI_Agent_Identity_Resolver canonicalises virtual agent keys (SPA drawer aliases, virtual planners) to the canonical assistant post ID, so store_agent_context saves into the same bucket the memory drawer recalls from; chat-memory recall merges alias buckets with a stored_under stamp per record, and the memory drawers (base, chat-spa, pro-spa) show scope/stored-under chips, an agent-ID diagnostic, a show-all-scopes toggle, and store-triggered refresh; graph-bridge and scoped-recall failures degrade gracefully. OKF skill-knowledge bundle now auto-generated from bundled skills on bootstrap and after bundled-skill reinstall (fixes "OKF bundle not found" on every okf_* tool). Fixed: undici override pinned to ^7.29.0 (jsdom compatibility across seven addons, all CVE fixes retained) and content-graph CI ZIP checksum drift. nvoos-content-graph ships a wp.org review reply + detailed report (excluded from distribution ZIPs). Tool count unchanged: ~300 base + ~1,247 Pro (~1,547 total; live registry authoritative).
 
 = 1.1.60 - August 21, 2026 =
 

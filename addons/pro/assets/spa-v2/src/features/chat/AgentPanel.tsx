@@ -78,6 +78,14 @@ export interface AgentPanelProps {
 	onSubmitWithAttachments?: ( attachments: Array< { name?: string; contentType?: string; url: string } > ) => void;
 	/** Slash commands endpoint for inline autocomplete (v2.2.0). */
 	slashCommandsEndpoint?: string;
+	/**
+	 * Executes a slash command server-side when the composer input starts
+	 * with "/" (v2.2.x). Mirrors the legacy chat-client slash-commands.js
+	 * intercept. Errors are surfaced as chat messages by the caller.
+	 */
+	onSubmitSlashCommand?: ( rawInput: string ) => Promise< void >;
+	/** True while a slash command is executing server-side (v2.2.x). */
+	isBusy?: boolean;
 }
 
 export function AgentPanel( props: AgentPanelProps ): JSX.Element {
@@ -114,6 +122,8 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 		assistantId,
 		onSubmitWithAttachments,
 		slashCommandsEndpoint,
+		onSubmitSlashCommand,
+		isBusy = false,
 	} = props;
 
 	const messagesContainerRef = useRef< HTMLDivElement | null >( null );
@@ -193,6 +203,29 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 	// ── Cursor position tracking (v2.2.0 — for autocomplete) ──────────
 	const [ cursorPos, setCursorPos ] = useState< number | null >( null );
 
+	// Composer disabled while streaming OR a slash command is executing.
+	const composerDisabled = isStreaming || isBusy;
+
+	// ── Submit routing (v2.2.x) ───────────────────────────────────────
+	// Inputs starting with "/" are executed server-side as slash commands
+	// instead of being sent to the LLM — mirrors legacy slash-commands.js.
+	const submitComposer = useCallback( () => {
+		const trimmed = input.trim();
+		if ( ! trimmed ) {
+			return;
+		}
+
+		if ( trimmed.startsWith( '/' ) && onSubmitSlashCommand ) {
+			handleInputChange( '' );
+			void onSubmitSlashCommand( trimmed ).catch( () => {
+				// Errors are already rendered as chat messages by the caller.
+			} );
+			return;
+		}
+
+		handleSubmit();
+	}, [ input, onSubmitSlashCommand, handleInputChange, handleSubmit ] );
+
 	// ── Inline command autocomplete (v2.2.0) ──────────────────────────
 	const autocomplete = useCommandAutocomplete(
 		slashCommandsEndpoint ?? '',
@@ -211,10 +244,10 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 
 			if ( e.key === 'Enter' && ! e.shiftKey ) {
 				e.preventDefault();
-				handleSubmit();
+				submitComposer();
 			}
 		},
-		[ handleSubmit, autocomplete ]
+		[ submitComposer, autocomplete ]
 	);
 
 	return (
@@ -299,6 +332,11 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 						onSubmit={ ( e ) => {
 							e.preventDefault();
 							if ( ! input.trim() && attachments.files.length === 0 ) return;
+							// Slash commands bypass the LLM and execute server-side.
+							if ( input.trim().startsWith( '/' ) && onSubmitSlashCommand ) {
+								submitComposer();
+								return;
+							}
 							if ( attachments.files.length > 0 && onSubmitWithAttachments ) {
 								void attachments.toPendingAttachments().then( ( atts ) => {
 									onSubmitWithAttachments( atts );
@@ -329,7 +367,7 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 								onChange={ ( e ) => { if ( e.target.files ) { attachments.attach( e.target.files ); e.target.value = ''; } } } />
 							<button type="button" className="nvoos-pro-spa-attach-btn"
 								aria-label={ __( 'Attach file', 'nvoos-pro-spa' ) } title={ __( 'Attach file', 'nvoos-pro-spa' ) }
-								disabled={ isStreaming } onClick={ () => fileInputRef.current?.click() }>📎</button>
+								disabled={ composerDisabled } onClick={ () => fileInputRef.current?.click() }>📎</button>
 							{/* Save conversation button (v2.1.0) */}
 							{ onSaveConversation && (
 								<button type="button" className="nvoos-pro-spa-save-btn"
@@ -352,7 +390,7 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 							onSelect={ ( e ) => setCursorPos( ( e.target as HTMLTextAreaElement ).selectionStart ) }
 							placeholder={ __( 'Type your message…', 'nvoos-pro-spa' ) }
 							rows={ 1 }
-							disabled={ isStreaming }
+							disabled={ composerDisabled }
 							aria-label={ __( 'Message input', 'nvoos-pro-spa' ) }
 						/>
 						{/* Inline command autocomplete (v2.2.0) */}
@@ -385,14 +423,14 @@ export function AgentPanel( props: AgentPanelProps ): JSX.Element {
 					{ attachments.attachError && (
 						<p className="nvoos-pro-spa-attachment-error" role="alert">{ attachments.attachError }</p>
 					) }
-					<div className="nvoos-pro-spa-agent-panel__composer-actions">
+				<div className="nvoos-pro-spa-agent-panel__composer-actions">
 						{ isStreaming ? (
 							<button type="button" className="nvoos-pro-spa-agent-panel__stop-btn nvoos-pro-spa-btn nvoos-pro-spa-btn--danger"
 								onClick={ stop } aria-label={ __( 'Stop generating', 'nvoos-pro-spa' ) }>{ __( 'Stop', 'nvoos-pro-spa' ) }</button>
 						) : (
 							<button type="submit" className="nvoos-pro-spa-agent-panel__send-btn nvoos-pro-spa-btn nvoos-pro-spa-btn--primary"
-								disabled={ ! input.trim() && attachments.files.length === 0 }
-								aria-label={ __( 'Send message', 'nvoos-pro-spa' ) }>{ __( 'Send', 'nvoos-pro-spa' ) }</button>
+								disabled={ composerDisabled || ( ! input.trim() && attachments.files.length === 0 ) }
+								aria-label={ __( 'Send message', 'nvoos-pro-spa' ) }>{ isBusy ? __( 'Executing…', 'nvoos-pro-spa' ) : __( 'Send', 'nvoos-pro-spa' ) }</button>
 						) }
 					</div>
 				</form>

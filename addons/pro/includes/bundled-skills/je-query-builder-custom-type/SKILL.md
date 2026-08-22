@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: je-query-builder-custom-type
 description: Register a custom Query type for JetEngine's Query Builder — extend \Jet_Engine\Query_Builder\Queries\Base_Query for the runtime query class, extend \Jet_Engine\Query_Builder\Query_Editor\Base_Query for the editor component, then hook BOTH register actions — jet-engine/query-builder/queries/register (factory) for the runtime, jet-engine/query-builder/query-editor/register for the editor UI. Five abstract methods on Base_Query — _get_items(), get_items_total_count(), get_items_page_count(), get_items_pages_count(), get_current_items_page(). Built-in cache via get_cached_data() / update_query_cache(). Custom queries participate in JE 3.8+ MCP tool exposure and the frontend query inspector automatically. Use when scaffolding a custom query type (HPOS WC orders, third-party API source, custom DB table) for JetEngine listings, dynamic widgets, or REST API endpoints.
 author: Soczó Kristóf

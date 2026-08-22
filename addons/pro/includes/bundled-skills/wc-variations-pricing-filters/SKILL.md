@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-variations-pricing-filters
 description: Mutate WooCommerce variation prices via filters — pick the right layer (woocommerce_product_get_price for simple/non-variation products, woocommerce_product_variation_get_price for variations, the woocommerce_variation_prices_* family for the parent min/max aggregation that feeds the catalog "From X to Y" range), and the critical step of filtering woocommerce_get_variation_prices_hash whenever your price logic depends on context outside the default cache key (user role, custom toggle, time of day) — otherwise one user's filtered price gets cached and served to everyone. Use for role-based pricing, time-based discounts, or "filter variation prices but the min/max range doesn't update" debugging. Triggers on woocommerce_product_get_price, woocommerce_product_variation_get_price, woocommerce_variation_prices_*, woocommerce_get_variation_prices_hash, wc_var_prices.
 author: Soczó Kristóf

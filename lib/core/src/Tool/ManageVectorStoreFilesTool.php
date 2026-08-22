@@ -70,6 +70,13 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 					'enum'        => array( 'asc', 'desc' ),
 					'default'     => 'desc',
 				),
+				'poll_max_seconds' => array(
+					'type'        => 'integer',
+					'description' => 'Max seconds to wait for a file batch to finish when adding. Default: 10.',
+					'minimum'     => 1,
+					'maximum'     => 60,
+					'default'     => 10,
+				),
 			),
 			'required'   => array( 'action' ),
 		);
@@ -125,6 +132,174 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 			);
 		}
 
+		$fileIds = \array_values( \array_map( 'strval', $fileIds ) );
+		$fileIds = \array_filter( $fileIds, static fn( string $id ): bool => '' !== $id );
+
+		if ( array() === $fileIds ) {
+			return $this->errors->validationFailed(
+				'The file_ids parameter is required for add action.',
+				array( 'file_ids' => array( 'At least one file ID is required.' ) ),
+			);
+		}
+
+		$pollMaxSeconds = \max( 1, \min( 60, $this->intParam( $arguments, 'poll_max_seconds', 10 ) ) );
+
+		// Preferred path: one file_batches call (Responses API) — no beta header,
+		// handles all file IDs at once.
+		try {
+			$response = $this->http->send(
+				'POST',
+				"https://api.openai.com/v1/vector_stores/{$storeId}/file_batches",
+				array(
+					'Authorization' => "Bearer {$apiKey}",
+					'Content-Type'  => 'application/json',
+				),
+				\json_encode( array( 'file_ids' => $fileIds ) ),
+			);
+		} catch ( \Throwable $e ) {
+			return $this->errors->create( 'request_failed', "OpenAI API request failed: {$e->getMessage()}" );
+		}
+
+		$data = \json_decode( $response->body, true );
+		$data = \is_array( $data ) ? $data : array();
+
+		// Fall back to headerless single-file adds when the batch endpoint is
+		// unavailable (404) or returns no usable batch ID.
+		if ( 404 === $response->statusCode || '' === ( $data['id'] ?? '' ) ) {
+			if ( $response->statusCode >= 400 && 404 !== $response->statusCode ) {
+				$errMsg = $data['error']['message'] ?? 'OpenAI API error.';
+				return $this->errors->create( 'openai_error', $errMsg );
+			}
+
+			return $this->addFilesIndividually( $apiKey, $storeId, $fileIds );
+		}
+
+		if ( $response->statusCode >= 400 ) {
+			$errMsg = $data['error']['message'] ?? 'OpenAI API error.';
+			return $this->errors->create( 'openai_error', $errMsg );
+		}
+
+		$batchId = (string) $data['id'];
+		$batch   = $this->pollFileBatch( $apiKey, $storeId, $batchId, $data, $pollMaxSeconds );
+		$status  = (string) ( $batch['status'] ?? 'in_progress' );
+
+		if ( ! \in_array( $status, array( 'completed', 'failed', 'cancelled' ), true ) ) {
+			// Still processing at the poll cap — report the queued state rather
+			// than an error so the agent can re-check with the list action.
+			$queued = array();
+			foreach ( $fileIds as $fileId ) {
+				$queued[] = array( 'file_id' => $fileId, 'status' => 'in_progress' );
+			}
+
+			return $this->success(
+				"Batch {$batchId} is still processing; check status with the list action.",
+				array(
+					'added'        => $queued,
+					'errors'       => array(),
+					'total'        => \count( $fileIds ),
+					'batch_id'     => $batchId,
+					'batch_status' => $status,
+				),
+			);
+		}
+
+		$fileStatuses = $this->fetchBatchFileStatuses( $apiKey, $storeId, $batchId );
+		$results      = array();
+		$errors       = array();
+
+		foreach ( $fileIds as $fileId ) {
+			$fileStatus = $fileStatuses[ $fileId ] ?? ( 'completed' === $status ? 'completed' : 'failed' );
+
+			if ( 'failed' === $fileStatus || 'cancelled' === $fileStatus ) {
+				$errors[] = array(
+					'file_id' => $fileId,
+					'error'   => "File failed to process in batch {$batchId}.",
+				);
+			} else {
+				$results[] = array( 'file_id' => $fileId, 'status' => $fileStatus );
+			}
+		}
+
+		return $this->buildFileActionResult(
+			'added',
+			$results,
+			$errors,
+			\count( $fileIds ),
+			array(
+				'batch_id'     => $batchId,
+				'batch_status' => $status,
+			),
+		);
+	}
+
+	/**
+	 * Poll a vector store file batch until it reaches a terminal state or the
+	 * time cap expires.
+	 *
+	 * @param array $initialData Decoded response of the batch creation call.
+	 */
+	private function pollFileBatch( string $apiKey, string $storeId, string $batchId, array $initialData, int $pollMaxSeconds ): array {
+		$data   = $initialData;
+		$status = (string) ( $data['status'] ?? 'in_progress' );
+		$start  = \microtime( true );
+
+		while ( 'in_progress' === $status && ( \microtime( true ) - $start ) < $pollMaxSeconds ) {
+			\usleep( 500000 );
+
+			try {
+				$response = $this->http->send(
+					'GET',
+					"https://api.openai.com/v1/vector_stores/{$storeId}/file_batches/{$batchId}",
+					array( 'Authorization' => "Bearer {$apiKey}" ),
+				);
+
+				$fetched = \json_decode( $response->body, true );
+				if ( \is_array( $fetched ) ) {
+					$data   = $fetched;
+					$status = (string) ( $fetched['status'] ?? $status );
+				}
+			} catch ( \Throwable $e ) {
+				// Transient poll failure — keep waiting until the time cap.
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Fetch per-file statuses for a file batch, keyed by file ID.
+	 *
+	 * @return array<string,string>
+	 */
+	private function fetchBatchFileStatuses( string $apiKey, string $storeId, string $batchId ): array {
+		$statuses = array();
+
+		try {
+			$response = $this->http->send(
+				'GET',
+				"https://api.openai.com/v1/vector_stores/{$storeId}/file_batches/{$batchId}/files",
+				array( 'Authorization' => "Bearer {$apiKey}" ),
+			);
+
+			$data  = \json_decode( $response->body, true );
+			$items = ( \is_array( $data ) && \is_array( $data['data'] ?? null ) ) ? $data['data'] : array();
+
+			foreach ( $items as $item ) {
+				if ( \is_array( $item ) && isset( $item['id'] ) ) {
+					$statuses[ (string) $item['id'] ] = (string) ( $item['status'] ?? 'unknown' );
+				}
+			}
+		} catch ( \Throwable $e ) {
+			// Non-fatal — the caller falls back to batch-level status mapping.
+		}
+
+		return $statuses;
+	}
+
+	/**
+	 * Headerless single-file adds — fallback for gateways without file_batches.
+	 */
+	private function addFilesIndividually( string $apiKey, string $storeId, array $fileIds ): mixed {
 		$results = array();
 		$errors  = array();
 
@@ -136,7 +311,6 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 					array(
 						'Authorization' => "Bearer {$apiKey}",
 						'Content-Type'  => 'application/json',
-						'OpenAI-Beta'   => 'assistants=v2',
 					),
 					\json_encode( array( 'file_id' => (string) $fileId ) ),
 				);
@@ -144,10 +318,13 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 				$data = \json_decode( $response->body, true );
 
 				if ( $response->statusCode >= 400 ) {
-					$errMsg = $data['error']['message'] ?? 'OpenAI API error.';
+					$errMsg = ( \is_array( $data ) ? ( $data['error']['message'] ?? '' ) : '' ) ?: 'OpenAI API error.';
 					$errors[] = array( 'file_id' => $fileId, 'error' => $errMsg );
 				} else {
-					$results[] = array( 'file_id' => $fileId, 'status' => $data['status'] ?? 'added' );
+					$results[] = array(
+						'file_id' => $fileId,
+						'status'  => ( \is_array( $data ) ? ( $data['status'] ?? 'added' ) : 'added' ),
+					);
 				}
 			} catch ( \Throwable $e ) {
 				$errors[] = array( 'file_id' => $fileId, 'error' => $e->getMessage() );
@@ -177,7 +354,6 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 					"https://api.openai.com/v1/vector_stores/{$storeId}/files/{$fileId}",
 					array(
 						'Authorization' => "Bearer {$apiKey}",
-						'OpenAI-Beta'   => 'assistants=v2',
 					),
 				);
 
@@ -211,7 +387,6 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 				$url,
 				array(
 					'Authorization' => "Bearer {$apiKey}",
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 			);
 
@@ -236,20 +411,25 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 		}
 	}
 
-	private function buildFileActionResult( string $verb, array $results, array $errors, int $total ): mixed {
+	private function buildFileActionResult( string $verb, array $results, array $errors, int $total, array $extra = array() ): mixed {
 		$ok  = \count( $results );
 		$err = \count( $errors );
+
+		$data = \array_merge(
+			array( 'added' => $results, 'errors' => $errors, 'total' => $total ),
+			$extra,
+		);
 
 		if ( 0 === $err ) {
 			return $this->success(
 				"Successfully {$verb} {$ok} file(s) to vector store.",
-				array( 'added' => $results, 'errors' => $errors, 'total' => $total ),
+				$data,
 			);
 		}
 
 		return $this->success(
 			"{$verb} {$ok} file(s), {$err} failed.",
-			array( 'added' => $results, 'errors' => $errors, 'total' => $total ),
+			$data,
 		);
 	}
 }

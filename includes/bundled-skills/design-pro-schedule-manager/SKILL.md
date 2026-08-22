@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-pro-schedule-manager
 description: Manage NV oOS Pro Schedules — create, update, delete, list, dry-run, view run history, and plan schedules from workflows. Covers all 7 Pro Schedule Manager MCP tools with usage patterns, cross-references, and operational troubleshooting. Use when creating recurring tasks, debugging schedule failures, pausing vs deleting schedules, converting Action Scheduler jobs to managed schedules, or bridging workflow outputs to timed execution.
 license: Proprietary. See LICENSE.txt

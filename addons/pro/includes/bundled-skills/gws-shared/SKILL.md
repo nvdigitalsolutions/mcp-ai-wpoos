@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-shared
 version: 1.0.0
 description: gws CLI shared patterns for authentication, global flags, and output formatting. Read this before using any other gws-* skill.

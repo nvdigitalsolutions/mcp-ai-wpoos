@@ -247,6 +247,7 @@ flush();
 | GET | `/mcp-ai/v1/restrictions` | List active user-restriction records (v1.1.60) |
 | GET/POST | `/mcp-ai/v1/users/{id}/restrictions` | List / add restrictions for a user (v1.1.60, `manage_options` on writes) |
 | DELETE | `/mcp-ai/v1/users/{id}/restrictions/{type}` | Lift a restriction by type (v1.1.60, `manage_options`) |
+| `*` | `/mcp-ai-pro/v1/okf/*` | Pro read-only OKF surface (v1.1.62): bundle list/health stats, concept browse + search, per-assistant skill grants — implemented by `WP_MCP_AI_Pro_REST_OKF` (`addons/pro/includes/rest/`), registered through the Pro module registry |
 
 The cron-status routes are implemented by `WP_MCP_AI_REST_Tools_Controller` and
 delegate to `WP_MCP_AI_Tool_Async_Executor::cancel_job()` / `retry_job()` /
@@ -259,6 +260,23 @@ delegate to `WP_MCP_AI_Tool_Async_Executor::cancel_job()` / `retry_job()` /
 The chat-memory bridge is implemented by
 `WP_MCP_AI_REST_Chat_Memory_Controller`; full reference:
 [`docs/features/memory/chat-client-integration.md`](../docs/features/memory/chat-client-integration.md).
+
+**v1.1.62 — Pro OKF REST surface:** `WP_MCP_AI_Pro_REST_OKF` exposes a
+**read-only** `mcp-ai-pro/v1/okf` namespace for the Pro SPA v2 skills drawer:
+bundle list/stats, concept browse + search, and per-assistant skill grants
+(`_wp_mcp_ai_okf_concepts`). No write routes — any future write endpoints must
+gate on `manage_options` (never `__return_true`). Concept-ID route segments
+allow `%` and are `rawurldecode()`d in the handler (IDs containing `/` arrive
+as `%2F` from the SPA client).
+
+**v1.1.61 — agent identity bridging:** unscoped recall through the bridge
+now merges buckets stored under virtual agent keys
+(`WP_MCP_AI_Agent_Identity_Resolver`): each merged record carries a
+`stored_under` stamp, the envelope carries `merged_sources`, and the merged
+list is capped at the requested `limit` (default 25). Scoped wake-up /
+recall failures retry once without the wing/room scope before the error
+surfaces, and the `wake_up_context` graph bridge degrades to the transient
+path on any failure.
 
 The restriction routes are implemented by `WP_MCP_AI_REST_Restrictions_Controller`
 (backed by `WP_MCP_AI_Restriction_Registry`); `WP_MCP_AI_Rate_Limit_Headers` adds

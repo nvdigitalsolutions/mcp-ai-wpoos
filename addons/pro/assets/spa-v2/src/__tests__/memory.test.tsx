@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import React from 'react';
 
 import {
@@ -352,6 +352,55 @@ describe( 'MemoryDrawer', () => {
 		expect(
 			screen.getByRole( 'dialog', { name: 'Memory' } )
 		).toBeInTheDocument();
+	} );
+
+	it( 'tags memories merged from a virtual agent bucket with stored-under', async () => {
+		// The recall response (server-side alias merge) tags records that
+		// were stored under a different agent key.
+		mockFetch.mockImplementation( async ( input: RequestInfo | URL ) => {
+			const url = String( input );
+			if ( url.includes( '/recall' ) ) {
+				return new Response(
+					JSON.stringify( {
+						contexts: [
+							{
+								context_id: 'm-1',
+								title: 'Alias memory',
+								content: 'From the virtual bucket',
+								importance: 'medium',
+								stored_under: 'nvoos-pro-spa-memory-drawer',
+							},
+							{
+								context_id: 'm-2',
+								title: 'Canonical memory',
+								content: 'Stored directly',
+								importance: 'medium',
+							},
+						],
+					} ),
+					{ status: 200 }
+				);
+			}
+			return new Response(
+				JSON.stringify( { enabled: true, autosummarize: false } ),
+				{ status: 200 }
+			);
+		} );
+
+		render( <MemoryDrawer { ...defaultDrawerProps() } /> );
+
+		const items = await screen.findAllByTestId( 'nvoos-pro-spa-memory-item' );
+		expect( items ).toHaveLength( 2 );
+
+		const chip = within( items[ 0 ] ).getByTestId(
+			'nvoos-pro-spa-memory-stored-under'
+		);
+		expect( chip ).toHaveTextContent( 'stored under' );
+		expect( chip ).toHaveTextContent( 'nvoos-pro-spa-memory-drawer' );
+
+		expect(
+			within( items[ 1 ] ).queryByTestId( 'nvoos-pro-spa-memory-stored-under' )
+		).toBeNull();
 	} );
 
 	it( 'renders three tabs', () => {

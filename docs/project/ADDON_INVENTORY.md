@@ -23,7 +23,7 @@
 
 | # | Addon | Directory | Version | Status | License | Requires | Description |
 |---|---|---|---|---|---|---|---|
-| 1 | **Pro** | `addons/pro/` | (live) | ✅ Production | Proprietary | Base plugin, PHP 8.1+ | 30 toolkits, ~584 tools, commercial license. E-commerce, CRM, document generation, media production, healthcare, legal, scheduling, analytics. |
+| 1 | **Pro** | `addons/pro/` | (live) | ✅ Production | Proprietary | Base plugin, PHP 8.1+ | 30 toolkits, ~584 tools, commercial license. E-commerce, CRM, document generation, media production, healthcare, legal, scheduling, analytics, OKF knowledge routing (skill bridge, auto-enrichment, hybrid router, SPA skills drawer). |
 | 2 | **Core Plugin** | `core/` | 1.0.0 | ✅ Production | GPL-3.0 | None (standalone) | Separate lightweight MCP server framework. Not a dependency of the main plugin. Provides baseline tools (posts, media, users, taxonomies) via a stable public API. |
 
 ### Active Addons

@@ -695,6 +695,17 @@ background: rgba( 176, 0, 32, 0.1 );
 color: #b00020;
 }
 
+.nvoos-chat-spa-memory-item-stored-under {
+display: inline-block;
+margin-top: 0.2rem;
+margin-right: 0.3rem;
+padding: 0.05rem 0.4rem;
+border-radius: 999px;
+font-size: 0.7rem;
+background: #fcf0e4;
+color: #7d5a2e;
+}
+
 .nvoos-chat-spa-memory-item-delete {
 position: absolute;
 top: 0.3rem;

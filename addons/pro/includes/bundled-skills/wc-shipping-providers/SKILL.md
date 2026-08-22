@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-shipping-providers
 description: Register a custom WooCommerce shipping provider — extend AbstractShippingProvider and add it via the woocommerce_fulfillment_shipping_providers filter (WC 10.1+). Distinct from shipping methods (rate at checkout) — a provider is a carrier identity (UPS, FedEx, DHL, your custom carrier) used by the Fulfillments system for tracking URLs, tracking-number pattern detection, country-pair support, and the orders-list filter. Required methods get_key / get_name / get_icon / get_tracking_url, with optional shipping-from / shipping-to / try_parse_tracking_number. Registration accepts class names (resolved via the DI container) or pre-built instances, keyed by get_key. Use when integrating a private carrier, fulfillment service, or any tracking-aware shipping identity. Triggers on AbstractShippingProvider, woocommerce_fulfillment_shipping_providers, FulfillmentUtils::get_shipping_providers, "shipping provider" in WooCommerce context, or carrier tracking integration.
 author: Soczó Kristóf

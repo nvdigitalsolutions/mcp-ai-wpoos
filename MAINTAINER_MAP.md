@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **August 21, 2026** (v1.1.60)
+> Last reviewed: **August 22, 2026** (v1.1.62)
 
 ### Related Files
 
@@ -66,7 +66,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
   ├─ Load npm-integration-filters.php   (Node.js microservice bridges)
   ├─ Load Pro CDN loader, CPT meta schema, product type helper,
   │   remote connection manager, ERP connector
-  ├─ Register Pro tool classes (~1,247 Pro tools via pro.php class-loader)
+  ├─ Register Pro tool classes (~1,249 Pro tools via pro.php class-loader)
   └─ do_action('wp_mcp_ai_pro_init')
 ```
 
@@ -74,7 +74,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
 
 | Constant | Default | Effect |
 |---|---|---|
-| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~300 tool classes); `false` = full mode (~1,547 tools: ~300 base + ~1,247 Pro) |
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~303 tool classes); `false` = full mode (~1,552 tools: ~303 base + ~1,249 Pro) |
 | `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks |
 | `WP_MCP_AI_PRO_VERSION` | set by Pro | Prevents double-loading of Pro addon |
 | `WP_DEBUG` | WordPress default | Enables extra error logging throughout |
@@ -99,7 +99,7 @@ mcp-ai-wpoos/
 │   ├─ class-wp-mcp-ai-cli-conversation-import-command.php  ← `wp mcp-ai conversation-import` (v1.1.60)
 │   ├─ conversation-import/      ← External AI conversation import pipeline → JetEngine CCT (17 classes, v1.1.60)
 │   │
-│   ├─ tools/                  ← Tool classes (~1,547 total implementations registered through the singleton registry; live count authoritative)
+│   ├─ tools/                  ← Tool classes (~1,552 total implementations registered through the singleton registry; live count authoritative)
 │   │   └─ class-wp-mcp-ai-tool-{name}.php   (one file per tool)
 │   │   └─ orchestration/      ← Tool routing / multi-tool orchestration
 │   │
@@ -118,7 +118,8 @@ mcp-ai-wpoos/
 │   │   ├─ class-wp-mcp-ai-speculative-tool-executor.php ← DSpark speculative execution
 │   │   ├─ class-wp-mcp-ai-orchestration-depth-scheduler.php ← DSpark depth scheduling
 │   │   ├─ class-wp-mcp-ai-hybrid-plan-generator.php ← DSpark hybrid planning
-│   │   └─ class-wp-mcp-ai-orchestration-preset-service.php ← Orchestration presets
+│   │   ├─ class-wp-mcp-ai-orchestration-preset-service.php ← Orchestration presets
+│   │   └─ class-wp-mcp-ai-agent-identity-resolver.php ← Canonicalises virtual agent keys → assistant post IDs (v1.1.61)
 │   ├─ rest/                   ← REST controllers
 │   │   ├─ class-wp-mcp-ai-rest-chat-memory-controller.php  ← Chat-client memory bridge proxy
 │   │   ├─ class-wp-mcp-ai-rest-transcript-mining-controller.php  ← Transcript mining REST API
@@ -144,6 +145,7 @@ mcp-ai-wpoos/
 │   ├─ professions/            ← Professional profiles
 │   ├─ teams/                  ← Team management
 │   ├─ agents/                 ← Agent definitions
+│   ├─ okf/                    ← OKF engine, bundle manager, skill-knowledge generator (v1.1.62)
 │   ├─ blocks/                 ← WordPress blocks (chat, assistant-builder, tools-grid…)
 │   ├─ bundled-skills/         ← Pre-packaged SKILL.md files (MCP, PDF, Excel, video…)
 │   ├─ slash-commands/         ← Slash command toolkit manager
@@ -159,8 +161,10 @@ mcp-ai-wpoos/
 │       ├─ harness/            ← Layer H fine-tune curriculum exporter (Pro)
 │       │   └─ class-wp-mcp-ai-tool-export-fine-tune-curriculum.php
 │       ├─ admin/              ← Pro admin pages (Pro Dashboard, imaging admin…)
-│       ├─ rest/               ← Pro REST controllers (channels, TMA, social…)
+│       ├─ rest/               ← Pro REST controllers (channels, TMA, social, okf skills drawer…)
+│       │   └─ class-wp-mcp-ai-pro-rest-okf.php  ← Read-only mcp-ai-pro/v1/okf surface for the SPA skills drawer (v1.1.62)
 │       ├─ integrations/       ← WooCommerce, Shopify, social media, Google, GitHub
+│       ├─ okf/                ← Pro OKF: skill bridge, enrichment agent, hybrid knowledge router (v1.1.62)
 │       ├─ cloudways/          ← Cloudways API v2 OAuth client + helpers
 │       ├─ services/           ← Pro-specific service classes
 │       └─ bundled-skills/     ← Pro-exclusive SKILL.md files

@@ -107,6 +107,8 @@ class WP_MCP_AI_Tool_Load_Skill implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * Execute the tool.
 	 *
 	 * @since 1.11.0
+	 * @since 1.1.62 — External skill sources may resolve names via the
+	 *                `wp_mcp_ai_load_skill_external` filter (Pro OKF bridge).
 	 * @param array $arguments Tool arguments. Must contain 'name'.
 	 * @param array $context   Execution context. Recognised keys:
 	 *                         - 'assistant_id' (int): owning assistant; used to scope which skills may be loaded.
@@ -157,24 +159,51 @@ class WP_MCP_AI_Tool_Load_Skill implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			}
 		}
 
-		if ( $assistant_id && ! in_array( $name, $allowed, true ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_load_skill_not_assigned',
-				/* translators: %s: skill name */
-				sprintf( __( 'The skill "%s" is not assigned to this assistant.', 'mcp-ai-wpoos' ), $name ),
-				array( 'status' => 403 )
-			);
+		$registry = WP_MCP_AI_Skill_Registry::instance();
+
+		/**
+		 * Resolve a skill from an external source before the installed-skill
+		 * registry is consulted.
+		 *
+		 * External sources (e.g. the Pro OKF → Skill bridge, which resolves
+		 * names shaped `bundle:concept_id`) enforce their own allow-lists and
+		 * trust gating. Return one of:
+		 *  - a skill-shaped array with at least `name` and `instructions`,
+		 *  - a WP_Error to reject the load with a precise reason,
+		 *  - null to defer to the installed-skill registry.
+		 *
+		 * @since 1.1.62
+		 *
+		 * @param array|WP_Error|null $skill        External resolution (null = defer).
+		 * @param string              $name         Requested skill name.
+		 * @param int                 $assistant_id Owning assistant post id (0 when none).
+		 */
+		$skill = apply_filters( 'wp_mcp_ai_load_skill_external', null, $name, $assistant_id );
+		if ( is_wp_error( $skill ) ) {
+			return $skill;
 		}
 
-		$registry = WP_MCP_AI_Skill_Registry::instance();
-		$skill    = $registry->get_skill( $name );
+		if ( ! is_array( $skill ) || empty( $skill['instructions'] ) ) {
+			// Not resolved externally: fall back to the installed-skill registry,
+			// still scoped by the assistant's allow-list.
+			if ( $assistant_id && ! in_array( $name, $allowed, true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_load_skill_not_assigned',
+					/* translators: %s: skill name */
+					sprintf( __( 'The skill "%s" is not assigned to this assistant.', 'mcp-ai-wpoos' ), $name ),
+					array( 'status' => 403 )
+				);
+			}
 
-		if ( ! $skill || empty( $skill['instructions'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_load_skill_not_found',
-				/* translators: %s: skill name */
-				sprintf( __( 'Skill "%s" is not installed on this site.', 'mcp-ai-wpoos' ), $name )
-			);
+			$skill = $registry->get_skill( $name );
+
+			if ( ! $skill || empty( $skill['instructions'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_load_skill_not_found',
+					/* translators: %s: skill name */
+					sprintf( __( 'Skill "%s" is not installed on this site.', 'mcp-ai-wpoos' ), $name )
+				);
+			}
 		}
 
 		/**

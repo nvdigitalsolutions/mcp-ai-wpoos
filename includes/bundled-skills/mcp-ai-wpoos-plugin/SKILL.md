@@ -1,12 +1,13 @@
 ---
+type: Skill
 name: mcp-ai-wpoos-plugin
 description: Complete operational guide for the NV oOS (Open Operator System) WordPress plugin in Docker/WSL2 — setup, assistant creation, credential tokens, MCP tool calling, API key auto-detection, env var bridging, common fixes, and IGCSE study configuration. Use when setting up the plugin for the first time, creating assistants programmatically, generating MCP bridge tokens, troubleshooting Docker path issues, bridging API keys, or calling tools via JSON-RPC over HTTP.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.60"
-  plugin-version-tested: "1.1.60"
-  last-updated: "2026-08-21"
+  plugin-version: "1.1.62"
+  plugin-version-tested: "1.1.62"
+  last-updated: "2026-08-22"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -42,7 +43,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~300 base / ~1,547 full tools
+     │  Tool Registry     │  ~303 base / ~1,552 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -313,6 +314,53 @@ ShareGPT, and OpenAI JSONL exports into the `ai_chat_transcripts` CCT:
   (`--dry-run`, `--policy=skip|refresh`, `--resume-token=`).
 - Admin upload/preview page, GDPR export/erase, optional memory mining via
   `mine_agent_memory`. Guide: `docs/user-guides/conversation-import.md`.
+
+---
+
+## Agent Identity Bridging & OKF Bundle (v1.1.61+)
+
+**Agent identity bridging.** `store_agent_context` resolves virtual agent
+keys (e.g. `nvoos-pro-spa-memory-drawer`, `virtual_planner_*`) to the
+canonical assistant post ID via `WP_MCP_AI_Agent_Identity_Resolver` (alias
+map in the `wp_mcp_ai_agent_id_aliases` option; bounded, never autoloaded);
+the envelope echoes `original_agent_id` / `agent_id_resolved`. Chat-memory
+recall merges alias buckets with a `stored_under` stamp per record, and the
+memory drawers (base, chat-spa, pro-spa) show scope/stored-under chips, the
+agent ID they recall under, and a show-all-scopes toggle; open drawers
+refresh on `memory_event` store frames.
+
+**OKF bundle.** The `skill-knowledge` bundle is auto-generated from
+`includes/bundled-skills/` on bootstrap (priority 32) and refreshed after
+bundled-skill reinstall — `okf_search` works out of the box (no more "OKF
+bundle not found: skill-knowledge").
+
+## OKF Bundle Management & Pro Knowledge Routing (v1.1.62+)
+
+- **Bundle Manager (Base)** — `WP_MCP_AI_OKF_Bundle_Manager` owns the OKF
+  bundle lifecycle: create/list/rename/archive/delete, ZipSlip-safe ZIP
+  import/export, health stats, log maintenance; `skill-knowledge` is
+  protected from tool writes (`okf_protected_bundle` — curated knowledge
+  belongs in `site-knowledge`). Admin screen under Assistants:
+  `edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-okf-bundle-manager`
+  (Bundles/Browser/Editor/Import-Export/Validate; `manage_options`).
+- **Tools** — three new base tools (`okf_list_bundles`, `okf_validate_bundle`,
+  `okf_import_bundle`) plus the `okf_write_concept` provenance schema
+  (`resource`/`sources`/`usage_window`/`verified`) — OKF tool surface: 10.
+  Two new Pro tools: `okf_enrich_site_content` (`manage_options`) and
+  `route_knowledge_query` (`read`).
+- **Pro knowledge routing** — `load_skill` resolves `bundle:concept_id`
+  names (OKF-to-Skill Bridge, per-assistant grants + trust gating); the
+  enrichment agent crawls site content into OKF concepts; the hybrid
+  knowledge router classifies queries across OKF / vector / Paper stores.
+- **Pro SPA v2 drawer** — in-chat OKF Skills Drawer backed by the read-only
+  `mcp-ai-pro/v1/okf` REST surface (bundles, concept browse/search,
+  assistant skill grants); `%2F`-encoded concept IDs decode correctly.
+- **Vector stores** — all vector-store tools now run on the Responses API
+  (no `OpenAI-Beta: assistants=v2` header; `file_batches` ingestion with
+  bounded polling + fallback) ahead of the 2026-08-26 Assistants API
+  removal.
+- Guide: `docs/features/okf-integration.md`; roadmap:
+  `docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md`.
 
 ---
 

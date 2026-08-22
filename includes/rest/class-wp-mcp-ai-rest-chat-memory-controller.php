@@ -530,14 +530,38 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 			return $agent_id;
 		}
 
+		$wing = (string) $request->get_param( 'wing' );
+		$room = (string) $request->get_param( 'room' );
+
 		$args = array(
 			'agent_id'        => $agent_id,
-			'wing'            => (string) $request->get_param( 'wing' ),
-			'room'            => (string) $request->get_param( 'room' ),
+			'wing'            => $wing,
+			'room'            => $room,
 			'include_content' => true,
 		);
 
-		return $this->dispatch_tool( 'wake_up_context', $args );
+		// Fix #5 — a scoped wake-up must never surface as a hard failure.
+		// If the scoped call errors (e.g. a wing-scoped graph path blew up),
+		// retry once without the wing/room scope before reporting anything.
+		try {
+			$result = $this->execute_tool( 'wake_up_context', $args );
+		} catch ( \Throwable $e ) {
+			$result = new WP_Error( 'wake_up_failed', $e->getMessage() );
+		}
+
+		if ( is_wp_error( $result ) && ( '' !== $wing || '' !== $room ) ) {
+			$unscoped         = $args;
+			$unscoped['wing'] = '';
+			$unscoped['room'] = '';
+			try {
+				$result = $this->execute_tool( 'wake_up_context', $unscoped );
+			} catch ( \Throwable $e ) {
+				// Keep the original scoped error — more informative than the fallback.
+				$result = is_wp_error( $result ) ? $result : new WP_Error( 'wake_up_failed', $e->getMessage() );
+			}
+		}
+
+		return is_wp_error( $result ) ? $result : $this->success( $result );
 	}
 
 	/**
@@ -568,9 +592,8 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 			$args['room'] = $room;
 		}
 		$limit = absint( $request->get_param( 'limit' ) );
-		if ( $limit > 0 ) {
-			$args['limit'] = min( 50, $limit );
-		}
+		$limit = $limit > 0 ? min( 50, $limit ) : 25;
+		$args['limit'] = $limit;
 
 		// Prefer recall_memory when available **and** a wing was supplied —
 		// recall_memory hard-requires a wing (MemPalace "this client's
@@ -586,7 +609,143 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 			? 'recall_memory'
 			: 'retrieve_agent_memory';
 
-		return $this->dispatch_tool( $tool_slug, $args );
+		try {
+			$result = $this->execute_tool( $tool_slug, $args );
+		} catch ( \Throwable $e ) {
+			$result = new WP_Error( 'recall_failed', $e->getMessage() );
+		}
+
+		// Fix #5 — graceful fallback when the preferred tool errors. A scoped
+		// recall that fails retries unscoped before the error ever surfaces.
+		if ( is_wp_error( $result ) && 'recall_memory' === $tool_slug && $registry->get_tool( 'retrieve_agent_memory' ) ) {
+			$result = $this->execute_tool_with_unscoped_fallback( 'retrieve_agent_memory', $args );
+		}
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Fix #3 — merge buckets stored under virtual agent keys. When the
+		// drawer recalls by a canonical ID (or a key with a recorded alias),
+		// include memories stored under the associated virtual identifiers
+		// and tag each record with the bucket it came from. Scoped
+		// (wing-based) hierarchical recall keeps its single-bucket semantics.
+		if ( ! $has_wing && class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' ) && 'retrieve_agent_memory' === $tool_slug ) {
+			$result = $this->merge_alias_buckets( $result, $agent_id, $args, $limit );
+		}
+
+		return $this->success( $result );
+	}
+
+	/**
+	 * Retry a tool with wing/room stripped, then fully unscoped, when the
+	 * original invocation errored (fix #5 helper).
+	 *
+	 * @param string $slug Tool slug.
+	 * @param array  $args Original tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function execute_tool_with_unscoped_fallback( $slug, array $args ) {
+		$attempts = array( $args );
+		$stripped = $args;
+		unset( $stripped['wing'], $stripped['room'] );
+		$attempts[] = $stripped;
+
+		$last_error = null;
+		foreach ( array_unique( $attempts, SORT_REGULAR ) as $attempt ) {
+			try {
+				$result = $this->execute_tool( $slug, $attempt );
+			} catch ( \Throwable $e ) {
+				$result = new WP_Error( 'tool_execution_failed', $e->getMessage() );
+			}
+			if ( ! is_wp_error( $result ) ) {
+				return $result;
+			}
+			$last_error = $result;
+		}
+
+		return $last_error instanceof WP_Error ? $last_error : new WP_Error( 'tool_execution_failed', __( 'Memory tool execution failed.', 'mcp-ai-wpoos' ) );
+	}
+
+	/**
+	 * Merge recall results from every virtual agent alias mapped to the
+	 * requested agent (fix #3).
+	 *
+	 * The primary bucket keeps its ordering; alias buckets are appended and
+	 * each record is tagged with `stored_under` so the UI can explain why a
+	 * memory appears under a canonical agent. The merged list is capped at
+	 * the requested limit.
+	 *
+	 * @param array      $primary_result Result envelope from the primary bucket.
+	 * @param int|string $agent_id       Agent id requested by the caller.
+	 * @param array      $args           Original recall args.
+	 * @param int        $limit          Record cap.
+	 * @return array
+	 */
+	protected function merge_alias_buckets( array $primary_result, $agent_id, array $args, $limit ) {
+		$contexts = isset( $primary_result['contexts'] ) && is_array( $primary_result['contexts'] ) ? $primary_result['contexts'] : array();
+
+		// Collect the extra buckets to query: aliases mapped to this agent,
+		// plus the canonical id when the caller asked by a virtual key.
+		$buckets = array();
+		if ( class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' ) ) {
+			foreach ( WP_MCP_AI_Agent_Identity_Resolver::get_aliases( $agent_id, 3 ) as $alias ) {
+				if ( (string) $alias !== (string) $agent_id ) {
+					$buckets[] = $alias;
+				}
+			}
+			$canonical = WP_MCP_AI_Agent_Identity_Resolver::get_canonical( $agent_id );
+			if ( $canonical && (string) $canonical !== (string) $agent_id ) {
+				$buckets[] = $canonical;
+			}
+		}
+		$buckets = array_values( array_unique( array_map( 'strval', $buckets ) ) );
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$sources  = array( (string) $agent_id );
+		foreach ( $buckets as $bucket ) {
+			if ( count( $contexts ) >= $limit || ! $registry->get_tool( 'retrieve_agent_memory' ) ) {
+				break;
+			}
+
+			$bucket_args            = $args;
+			$bucket_args['agent_id'] = $bucket;
+			$bucket_args['limit']   = $limit;
+
+			try {
+				$bucket_result = $this->execute_tool( 'retrieve_agent_memory', $bucket_args );
+			} catch ( \Throwable $e ) {
+				$bucket_result = new WP_Error( 'tool_execution_failed', $e->getMessage() );
+			}
+			if ( is_wp_error( $bucket_result ) || empty( $bucket_result['success'] ) || empty( $bucket_result['contexts'] ) ) {
+				continue;
+			}
+
+			foreach ( $bucket_result['contexts'] as $record ) {
+				if ( ! is_array( $record ) ) {
+					continue;
+				}
+				$record['stored_under'] = $bucket;
+				$contexts[]            = $record;
+				if ( count( $contexts ) >= $limit ) {
+					break;
+				}
+			}
+			$sources[] = $bucket;
+		}
+
+		$primary_result['contexts']       = array_slice( $contexts, 0, $limit );
+		$primary_result['count']          = count( $primary_result['contexts'] );
+		$primary_result['merged_sources'] = $sources;
+		if ( count( $sources ) > 1 ) {
+			$primary_result['message'] = sprintf(
+				/* translators: %d: number of memory buckets merged */
+				_n( 'Merged %d agent memory bucket.', 'Merged %d agent memory buckets.', count( $sources ), 'mcp-ai-wpoos' ),
+				count( $sources )
+			);
+		}
+
+		return $primary_result;
 	}
 
 	/**
@@ -911,6 +1070,31 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 	 * @return WP_REST_Response|WP_Error
 	 */
 	protected function dispatch_tool( $slug, array $args ) {
+		$result = $this->execute_tool( $slug, $args );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		if ( is_array( $result ) && isset( $result['success'] ) && false === $result['success'] ) {
+			$message = isset( $result['message'] ) ? (string) $result['message'] : __( 'Memory tool reported failure.', 'mcp-ai-wpoos' );
+			return $this->error( 'tool_failed', $message, 400, isset( $result['actions'] ) ? (array) $result['actions'] : array() );
+		}
+
+		return $this->success( is_array( $result ) ? $result : array( 'result' => $result ) );
+	}
+
+	/**
+	 * Run a registered tool and return its raw result (array|WP_Error).
+	 *
+	 * Extracted from dispatch_tool() so callers that need to merge or retry
+	 * tool results (alias-bucket recall, unscoped wake-up fallback) can work
+	 * with the raw envelope instead of a wrapped REST response.
+	 *
+	 * @param string $slug Tool slug.
+	 * @param array  $args Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function execute_tool( $slug, array $args ) {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$tool     = $registry->get_tool( $slug );
 		if ( ! $tool ) {
@@ -929,15 +1113,7 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 			return $this->error( 'tool_execution_failed', $e->getMessage(), 500 );
 		}
 
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-		if ( is_array( $result ) && isset( $result['success'] ) && false === $result['success'] ) {
-			$message = isset( $result['message'] ) ? (string) $result['message'] : __( 'Memory tool reported failure.', 'mcp-ai-wpoos' );
-			return $this->error( 'tool_failed', $message, 400, isset( $result['actions'] ) ? (array) $result['actions'] : array() );
-		}
-
-		return $this->success( is_array( $result ) ? $result : array( 'result' => $result ) );
+		return $result;
 	}
 
 	/**

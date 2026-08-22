@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wcs-data-model-switching-gifting
 description: WooCommerce Subscriptions data model, switcher, and gifting reference for exact order type names, product type slugs, subscription meta keys, schedule/date keys, related-order relation meta, switch cart data, switch order data, switched item types/meta, proration hooks, and WCS Gifting recipient storage. Use when code reads or writes shop_subscription, subscription, variable-subscription, subscription_variation, _billing_period, _schedule_next_payment, _subscription_switch_data, _subscription_switch, subscription_switch, _switched_subscription_item_id, wcsg_gift_recipients_email, _recipient_user, _recipient_user_email_address, wcsg_recipient, or when an agent needs the full WooCommerce Subscriptions switcher/gifting flow.
 author: Soczo Kristof

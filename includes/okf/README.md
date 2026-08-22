@@ -28,14 +28,17 @@ with deterministic link-based navigation.
 | `WP_MCP_AI_OKF_Parser` | `class-wp-mcp-ai-okf-parser.php` | Frontmatter extraction |
 | `WP_MCP_AI_OKF_Reader` | `class-wp-mcp-ai-okf-reader.php` | Bundle navigation, concept reading, traversal |
 | `WP_MCP_AI_OKF_Writer` | `class-wp-mcp-ai-okf-writer.php` | Concept creation, bundle validation |
+| `WP_MCP_AI_OKF_Bundle_Manager` | `class-wp-mcp-ai-okf-bundle-manager.php` | Single source of truth for bundle paths + bundle lifecycle (list/create/rename/archive/delete, ZIP export/import, stats, log maintenance) |
+| `WP_MCP_AI_OKF_Skill_Knowledge_Generator` | `class-wp-mcp-ai-okf-skill-knowledge-generator.php` | Auto-generates the `skill-knowledge` bundle from `includes/bundled-skills/` |
 
 ## Inputs / Outputs / Neighbors
 
 - **Reads from:** File system at `wp-content/uploads/mcp-ai-wpoos/knowledge/` (OKF bundles), bundled skills at `includes/bundled-skills/`.
-- **Writes to:** Same file system (atomic writes via `WP_MCP_AI_Filesystem_Service`).
-- **Upstream callers:** MCP tools (primary), any plugin code via `WP_MCP_AI_OKF_Reader`.
+- **Writes to:** Same file system (atomic writes via `WP_MCP_AI_Filesystem_Service`). On bootstrap (priority 32) the skill-knowledge bundle is (re)generated from bundled skills whenever it is missing or the plugin version changed; the admin "Install/Force Reinstall Bundled Skills" action refreshes it too.
+- **Upstream callers:** MCP tools (primary), any plugin code via `WP_MCP_AI_OKF_Reader`. Since 1.1.62 every tool resolves bundles through `WP_MCP_AI_OKF_Bundle_Manager` (single audited resolver; `wp_mcp_ai_okf_knowledge_root` filter; `realpath` containment).
 - **Downstream collaborators:** `WP_MCP_AI_Filesystem_Service` (atomic I/O), `WP_MCP_AI_Logger` (error logging), `WP_MCP_AI_Tool_Registry` (tool registration).
 - **Events fired:** `wp_mcp_ai_okf_bundle_initialized`, `wp_mcp_ai_okf_concept_saved`, `wp_mcp_ai_okf_concept_deleted`.
+- **Bundle protection (1.1.62+):** `skill-knowledge` is auto-generated and protected — `okf_write_concept` / `okf_delete_concept` refuse it with `okf_protected_bundle`. Curated content belongs in `site-knowledge` (or a new bundle, which `okf_write_concept` now creates on first write). Bundle roots carry `okf_version: "0.2"` in their index.md and `.htaccess`/`index.php` guards deny HTTP access.
 
 ## Conventions
 

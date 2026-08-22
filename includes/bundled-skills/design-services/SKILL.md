@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-services
 description: Manage service components and approval workflows in the NV oOS Pro Toolkit. Covers service component registration, dependency tracking, approval request lifecycle, and workflow approval gates. Use when registering service components, tracking service dependencies, managing approval requests, or configuring workflow approval nodes.
 license: Proprietary. See LICENSE.txt

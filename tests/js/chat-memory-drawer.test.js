@@ -160,6 +160,99 @@ describe( 'chat-memory-drawer', () => {
 		expect( items[ 0 ].getAttribute( 'data-context-id' ) ).toBe( 'm-1' );
 	} );
 
+	test( 'memory items surface wing/room scope and mark unscoped memories', async () => {
+		installMemoryStub( {
+			recall: jest.fn().mockResolvedValue( {
+				contexts: [
+					{ context_id: 's-1', title: 'Scoped', content: 'In a wing', wing: 'wing-a', room: 'room-1' },
+					{ context_id: 'u-1', title: 'Unscoped', content: 'No wing or room' }
+				]
+			} )
+		} );
+		const container = makeContainer();
+		window.wpMcpAiChatMemoryDrawer.attach( container );
+		container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+		await Promise.resolve();
+		await Promise.resolve();
+
+		const scoped = container.querySelector( '[data-context-id="s-1"]' );
+		const unscoped = container.querySelector( '[data-context-id="u-1"]' );
+
+		expect( scoped.querySelector( '[data-testid="wp-mcp-ai-memory-wing-chip"]' ).textContent ).toBe( 'wing-a' );
+		expect( scoped.querySelector( '[data-testid="wp-mcp-ai-memory-room-chip"]' ).textContent ).toBe( 'room-1' );
+		expect( scoped.querySelector( '[data-testid="wp-mcp-ai-memory-unscoped-chip"]' ) ).toBeNull();
+
+		expect( unscoped.querySelector( '[data-testid="wp-mcp-ai-memory-unscoped-chip"]' ) ).not.toBeNull();
+		expect( unscoped.querySelector( '[data-testid="wp-mcp-ai-memory-wing-chip"]' ) ).toBeNull();
+		expect( unscoped.querySelector( '[data-testid="wp-mcp-ai-memory-room-chip"]' ) ).toBeNull();
+	} );
+
+	test( 'memories panel shows the agent ID the drawer recalls under', async () => {
+		installMemoryStub();
+		const container = makeContainer();
+		window.wpMcpAiChatMemoryDrawer.attach( container );
+		container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+
+		const agentMeta = container.querySelector( '[data-testid="wp-mcp-ai-memory-agent-id"]' );
+		expect( agentMeta ).not.toBeNull();
+		expect( agentMeta.textContent ).toContain( '#7' );
+	} );
+
+	test( 'all-scopes toggle recalls without wing/room filters', async () => {
+		const { stub } = installMemoryStub();
+		const container = makeContainer();
+		window.wpMcpAiChatMemoryDrawer.attach( container );
+		container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+		await Promise.resolve();
+		await Promise.resolve();
+
+		const toggle = container.querySelector( '[data-testid="wp-mcp-ai-memory-all-scopes"]' );
+		expect( toggle ).not.toBeNull();
+		toggle.checked = true;
+		toggle.dispatchEvent( new window.Event( 'change', { bubbles: true } ) );
+		await Promise.resolve();
+		await Promise.resolve();
+
+		const lastCall = stub.recall.mock.calls[ stub.recall.mock.calls.length - 1 ];
+		expect( lastCall[ 1 ].wing ).toBe( '' );
+		expect( lastCall[ 1 ].room ).toBe( '' );
+	} );
+
+	test( 'merged alias-bucket records render a stored-under chip', async () => {
+		installMemoryStub( {
+			recall: jest.fn().mockResolvedValue( {
+				contexts: [
+					{ context_id: 'a-1', title: 'From alias bucket', content: 'x', stored_under: 'nvoos-pro-spa-memory-drawer' }
+				]
+			} )
+		} );
+		const container = makeContainer();
+		window.wpMcpAiChatMemoryDrawer.attach( container );
+		container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+		await Promise.resolve();
+		await Promise.resolve();
+
+		const chip = container.querySelector( '[data-testid="wp-mcp-ai-memory-stored-under"]' );
+		expect( chip ).not.toBeNull();
+		expect( chip.textContent ).toContain( 'nvoos-pro-spa-memory-drawer' );
+	} );
+
+	test( 'a memory_event stored frame refreshes an open drawer', async () => {
+		const { stub } = installMemoryStub();
+		const container = makeContainer();
+		window.wpMcpAiChatMemoryDrawer.attach( container );
+		container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+		await Promise.resolve();
+		await Promise.resolve();
+		expect( stub.recall ).toHaveBeenCalledTimes( 1 );
+
+		window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent( { action: 'stored' } );
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect( stub.recall.mock.calls.length ).toBeGreaterThanOrEqual( 2 );
+	} );
+
 	test( 'memories panel renders retrieval waterfall rows from rrf_breakdown metadata', async () => {
 		const recallMock = jest.fn().mockResolvedValue( {
 			contexts: [

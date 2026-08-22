@@ -1,5 +1,111 @@
 # oOS – Changelog
 
+## [1.1.62] - 2026-08-22
+
+### Changed — Vector store tools migrate off the Assistants API (Responses API, PR #5917)
+
+- All vector store operations (`create_vector_store`, `list_vector_stores`, `get_vector_store`, `manage_vector_store_files` in both `WP_MCP_AI_OpenAI_Client` and the `lib/core` engine tools) no longer send the deprecated `OpenAI-Beta: assistants=v2` header; OpenAI removes the Assistants API on 2026-08-26.
+- `add_vector_store_files()` and `ManageVectorStoreFilesTool` now ingest files via the Responses API `file_batches` endpoint (one call, up to 2000 files) with bounded status polling (`wp_mcp_ai_vector_store_batch_poll_max_seconds` filter, default 10 s) and a headerless single-file fallback when batches are unavailable (404).
+- New client methods: `create_vector_store_file_batch()`, `retrieve_vector_store_file_batch()`, `list_vector_store_file_batch_files()`. `list_vector_store_files()` gains a `filter` status param; `search_vector_store()` gains `ranking_options` (filters are now attribute-based under the Responses API).
+- Fixed `WP_MCP_AI_HTTP_Test_Helper` unsetting `$args` before callable stubs could receive them.
+- Tests: `tests/test-openai-vector-store-client-migration.php` (12 tests) plus expanded `lib/core` `BatchTwoCToolsTest`.
+
+### Added — OKF Phases G-H: Enrichment Agent & Hybrid Router (Pro, roadmap Phases 7-8)
+
+- New Pro `WP_MCP_AI_OKF_Enrichment_Agent` crawls published WordPress content (any public post type, optionally public taxonomy terms) and generates OKF concepts into a bundle (default `site-content`, created on first run) — post-type-namespaced concept IDs (`post/<slug>`, `page/<slug>`, `terms/<taxonomy>/<slug>`), the Phase C provenance schema, cross-links extracted from internal `<a>` links, regenerated indexes. Deterministic and idempotent (re-runs overwrite the same files; no bundled LLM); `wp_mcp_ai_okf_enrichment_description` filter upgrades the excerpt to an AI summary. Protected bundles are always refused.
+- New Pro `WP_MCP_AI_Hybrid_Knowledge_Router` classifies knowledge queries into an ordered routing plan across OKF / vector store / Paper Store via keyword signals (policies → OKF; incidents/logs → Paper; similarity → Vector; fallback OKF → Vector → Paper) and ranks OKF concepts by deterministic token overlap (`search_okf()`). Fully overridable via `wp_mcp_ai_hybrid_router_signals` + `wp_mcp_ai_hybrid_router_decision`.
+- Two new Pro MCP tools: `okf_enrich_site_content` (`manage_options`) and `route_knowledge_query` (`read`) — registered on `wp_mcp_ai_bootstrapped` priority 36.
+- Base Bundle Manager admin page gains a Pro-gated enrichment form (Import/Export tab; AJAX `wp_mcp_ai_okf_bundle_enrich`, rendered only when the Pro agent exists).
+- Tests: `tests/test-okf-enrichment.php` (10 tests), `tests/test-hybrid-knowledge-router.php` (12 tests), `tests/test-okf-phase-7-8-tools.php` (9 tests).
+
+### Added — OKF Phase F: OKF → Skill Bridge (Pro, roadmap Phase 6)
+
+- Base `load_skill` tool gains an external-source seam: `wp_mcp_ai_load_skill_external` (skill-shaped array, WP_Error, or null to defer) — registry behavior is unchanged for installed skills.
+- New Pro module `pro_okf_skill_bridge`: `WP_MCP_AI_OKF_Skill_Bridge` resolves `bundle:concept_id` names into OKF concepts as skill-shaped instructions (with a provenance/trust banner), gated by per-assistant grants (`_wp_mcp_ai_okf_concepts`, fail-closed), lifecycle status (drafts rejected), and an optional `wp_mcp_ai_okf_skill_bridge_min_trust` trust-tier filter.
+- New Pro metabox `WP_MCP_AI_OKF_Concepts_Metabox` on the assistant editor grants specific OKF concepts (checkboxes per bundle, sanitized against the live bundle layout).
+- Tests: `tests/test-okf-skill-bridge.php` (9 tests — deferral, allow-list, draft/trust gating, traversal safety, tool integration, metabox sanitization).
+
+### Changed — OKF Phase E: Trust UX & Reader Hardening (PR #5914)
+
+- **Broken-link reporting (advisory):** `WP_MCP_AI_OKF_Reader::find_broken_links()` resolves bundle-internal cross-links (absolute, relative, external-scheme aware); `validate_bundle()` surfaces them in a new `broken_links` list that never affects conformance (OKF v0.2 §6.1). `okf_validate_bundle`, the admin Validate tab, and `list_bundles()`/`bundle_stats()` now report broken-link counts plus a trust-tier histogram.
+- **Import spec compliance (OKF v0.2 §12):** `import_bundle_zip()` now stamps `okf_version: "0.2"` onto an existing root index.md lacking frontmatter (entries preserved) and generates a stamped index when the archive ships none.
+- **Reader path hardening:** `resolve_file_path()` now uses a `/`-boundary lexical check plus a symlink-aware `realpath` containment check (previously `..`-segments could pass the boundary test); fixes a Windows separator bug (`DIRECTORY_SEPARATOR` vs normalized `/` paths) that also broke the new broken-link checks.
+- Tests: manager suite gains broken-link, import-stamping, and missing-index cases; validate-tool suite asserts the new response keys.
+
+### Added — OKF Phase D: Bundle Manager Admin UI (PR #5914)
+
+- New Base-tier admin screen `WP_MCP_AI_OKF_Bundle_Manager_Admin_Page` under the assistant CPT (`edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-okf-bundle-manager`, `manage_options`): Bundles (create/list/rename/archive/delete/export with health stats), Browser (concept tree with trust badges + new-concept form), Editor (CodeMirror over concept markdown; save/soft-delete), Import/Export (ZipSlip-safe ZIP upload, authenticated streamed ZIP download), and Validate (advisory conformance report).
+- Seven AJAX handlers (`wp_mcp_ai_okf_bundle_create|rename|archive|delete|import|save_concept|delete_concept`) plus an `admin_post` export streamer — all nonce + `manage_options` gated. `index.md`/`log.md` are read-only in the editor; `skill-knowledge` is read-only everywhere.
+- New manager method `save_concept_raw()` (traversal + reserved-filename + frontmatter validation, atomic write, log + event) backs the editor; `create_bundle()` now refuses the protected `skill-knowledge` name.
+- Tests: `tests/test-okf-bundle-manager-admin.php` (registration/hooks/rendering) and `tests/test-okf-bundle-manager-admin-ajax.php` (nonce/capability/validation/happy-path matrix).
+
+### Added — OKF Phase C: Bundle Tooling & Provenance Schema (PR #5914)
+
+- Three new Base-tier MCP tools: `okf_list_bundles` (`read` — bundle health stats, no filesystem paths exposed), `okf_validate_bundle` (`read` — advisory OKF v0.2 conformance report), and `okf_import_bundle` (`manage_options` — imports a server-side ZIP through the Bundle Manager's ZipSlip-safe import).
+- `okf_write_concept` now accepts the OKF v0.2 provenance/trust families: `resource`, `sources` (with `author`/`usage_count`/`last_modified` credibility signals), `usage_window`, and `verified` (`{by, at}` list) — sanitized per-field at entry and round-tripped through the YAML parser.
+- Tool presets updated: `essentials_internal` gains `okf_list_bundles` + `okf_validate_bundle`; `files_documents` gains all three new tools. OKF tool surface is now 10 tools.
+
+### Added — OKF Bundle Manager (Phase B)
+
+- New `WP_MCP_AI_OKF_Bundle_Manager` (`includes/okf/`) — single source of truth for OKF bundle paths and the bundle lifecycle: list, create (stamps `okf_version: "0.2"` + initializes `log.md`), rename, archive (→ `.trash/`), delete, ZIP export/import (ZipSlip-safe, symlink rejection, entry/size caps, minimum-concept check), statistics (concepts, stale/deprecated counts, trust-tier histogram), and log maintenance.
+- All seven `okf_*` tools now resolve bundles through the manager (strict slug validation for new bundles, `realpath` containment, `wp_mcp_ai_okf_knowledge_root` filter); per-tool `resolve_bundle_root()` copies removed.
+- **Behavior change:** `skill-knowledge` is auto-generated and protected — `okf_write_concept` / `okf_delete_concept` return `okf_protected_bundle` for it (curated content belongs in `site-knowledge`); `okf_write_concept` now creates a missing bundle on first write and regenerates its root `index.md`; concept writes/deletions append `log.md` entries (OKF v0.2 §9); bundle-root `index.md` files declare `okf_version`.
+- The knowledge root gains `.htaccess` (`Deny from all`) + `index.php` guards; the skill-knowledge generator routes through the manager so the knowledge-root filter and guards apply to it too. Fixed a latent visibility bug: `WP_MCP_AI_OKF_Reader::file_to_concept_id()` is now public (writer validation depends on it).
+- Tests: new `tests/test-okf-bundle-manager.php` (25 tests) + `tests/test-okf-write-concept-create-bundle.php`; existing OKF suites stay green.
+
+### Added — OKF Skills Drawer in Pro SPA v2 (Pro, PR #5915)
+
+- New read-only REST surface `WP_MCP_AI_Pro_REST_OKF` at `/wp-json/mcp-ai-pro/v1/okf/*` — bundle list/health stats, concept browse + search, and per-assistant skill grants — registered through the Pro module registry and served to the SPA via the loader config.
+- New **OKF Skills Drawer** in the Pro SPA v2 (`OkfDrawer` component): browse bundles and concepts, inspect concept markdown, and reference OKF concepts from chat (bundles, concept browse/search, assistant skill grants) without leaving the chat surface.
+- Declares `WP_MCP_AI::$admin_okf_bundle_manager` to fix the PHP 8.2 dynamic-property deprecation introduced by PR #5914.
+- Tests: `addons/pro/tests/test-pro-okf-rest.php` (REST contract + capability gates) and SPA `okf.test.tsx`.
+
+### Fixed — 404 on percent-encoded OKF concept routes (PR #5916)
+
+- Concept IDs containing a slash arrive as `%2F` from the SPA client, and WordPress can match routes against the still-encoded path — the concept route pattern now allows `%` and the handler `rawurldecode()`s the value before the reader lookup, so `post/cool%2Fthing`-style IDs resolve instead of 404ing.
+
+### Versioning
+
+- Bumped to **1.1.62** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.62. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.3** (unchanged).
+- Tool count: **~303 base + ~1,249 Pro (~1,552 total)**; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative — +3 base OKF tools (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`) and +2 Pro tools (`okf_enrich_site_content`, `route_knowledge_query`); OKF tool surface is now 10 tools.
+- Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
+
+## [1.1.61] - 2026-08-21
+
+### Changed — Agent Identity Bridging in Memory Store & Recall (commit `ee3c41f0c0`)
+
+- New `WP_MCP_AI_Agent_Identity_Resolver` (`includes/services/class-wp-mcp-ai-agent-identity-resolver.php`) canonicalises virtual / non-numeric agent keys (e.g. `nvoos-pro-spa-memory-drawer`, `virtual_planner_1`) to the canonical assistant post ID. The alias map lives in the `wp_mcp_ai_agent_id_aliases` site option — bounded to 200 entries, never autoloaded, every value sanitised.
+- `store_agent_context` resolves virtual keys on store so records land in the same bucket the memory drawer recalls from; the result envelope and the `wp_mcp_ai_memory_stored` payload now echo `original_agent_id` and `agent_id_resolved`.
+- REST chat-memory recall merges alias buckets: records pulled from associated virtual identifiers are tagged `stored_under`, the response carries `merged_sources`, and the merged list is capped at the requested limit (default 25). Wing/room-scoped recall keeps single-bucket semantics.
+- Memory drawers (base chat, chat-spa, pro-spa) show wing/room/`stored_under` chips, an agent-ID diagnostic ("Memory for agent #…"), a show-all-scopes toggle, and refresh automatically when a `memory_event` store frame arrives.
+- Graceful degradation: graph-bridge failures in `wake_up_context` fall back to the transient retrieval path, and a scoped wake-up/recall that errors retries unscoped before surfacing an error.
+
+### Added — OKF Skill-Knowledge Bundle Generator (PR #5911)
+
+- New `WP_MCP_AI_OKF_Skill_Knowledge_Generator` (`includes/okf/`, 456 lines) auto-generates the `skill-knowledge` OKF bundle from `includes/bundled-skills/` on bootstrap (priority 32) whenever the bundle is missing or the plugin version changed, and refreshes it after the admin "Install / Force Reinstall Bundled Skills" action. Fixes every `okf_*` tool previously failing with "OKF bundle not found: skill-knowledge". New PHPUnit + manual test suites.
+
+### Fixed — undici Pinned to ^7.29.0 for jsdom Compatibility (PR #5910)
+
+- jsdom 29.1.1 deep-requires `lib/handler/wrap-handler.js`, removed in undici 8, which broke the vitest suites in seven addons. The `undici` override is pinned to ^7.29.0 — the newest 7.x, keeping all CVE fixes — across `addons/chat-spa`, `comic-reader`, `docs-hub`, `document-editor`, `media-studio`, `pro/assets/spa-v2`, and `toolkit-shell`.
+
+### Changed — nvoos-content-graph wp.org Review Reply & Report (PR #5912)
+
+- New `WPORG-REVIEW-REPLY.md` and `WPORG-REVIEW-DETAILED-REPORT.md` under `plugins/nvoos-content-graph/`; both files (and any future `WPORG-REVIEW-*.md`) are excluded from the distribution ZIP via `.distignore` and both build exclude lists.
+
+### Fixed — Content Graph CI ZIP Checksum Sync (PR #5906, merged before the 1.1.60 changelog — covered retroactively)
+
+- The build jobs wrote `${ARTIFACT}.zip.sha256` but uploaded `${ARTIFACT}.sha256`, and the publish job committed only the ZIP — checksums drifted from every CI-rebuilt ZIP. Both content-graph workflows now upload and commit the matching `.sha256` file.
+
+### Versioning
+
+- Bumped to **1.1.61** across all version-bearing files (plugin headers, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, `readme.txt` Stable tag, docs).
+- Pro addon: 1.1.61. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.3** (unchanged).
+- Tool count: ~300 base + ~1,247 Pro (~1,547 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) — unchanged this release.
+- Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
+
+---
+
 ## [1.1.60] - 2026-08-21
 
 ### Added — Restricted-User Flagging & Unblocking (PR #5901)

@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-gmail
 version: 1.0.0
 description: Gmail skill for sending, reading, searching, labelling, and managing email via the gws CLI. Covers messages, threads, labels, drafts, filters, and inbox management.

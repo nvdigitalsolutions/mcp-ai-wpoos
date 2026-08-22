@@ -245,7 +245,33 @@ uses a singleton `#wp-mcp-ai-memory-toasts` ARIA-live region. The chat
 container needs `position: relative`; the CSS rule for that lives at the
 bottom of `assets/css/chat.css`.
 
+**v1.1.61 — agent identity bridging:** the drawer now surfaces where each
+memory came from and which agent it belongs to. Every item renders a
+wing/room scope row (with an explicit "Unscoped" chip when a memory has no
+scope) plus a `stored under: <bucket>` chip when recall merged a virtual
+alias bucket. The panel header shows the exact agent ID it recalls under
+("Memory for agent #…", `data-testid="wp-mcp-ai-memory-agent-id"`), and a
+show-all-scopes toggle flips between scoped and unscoped views. Open
+drawers refresh in place when a `memory_event` store SSE frame arrives
+(`refreshOpenDrawers()`), so a just-saved memory appears without a manual
+refresh.
+
 See `docs/features/memory/chat-client-integration.md` for the full reference.
+
+---
+
+## OKF Skills Drawer (Pro SPA v2, v1.1.62)
+
+The Pro SPA v2 chat surface gained an **OKF Skills Drawer** (`OkfDrawer`
+component, `addons/pro/assets/spa-v2/src/components/shared/OkfDrawer.tsx`)
+backed by the read-only `mcp-ai-pro/v1/okf` REST surface
+(`addons/pro/includes/rest/class-wp-mcp-ai-pro-rest-okf.php`): browse bundles
+with health stats, browse/search concepts, inspect concept markdown, and
+reference OKF concepts from the conversation. Per-assistant skill grants
+(`_wp_mcp_ai_okf_concepts`) drive which concepts the assistant may load via
+the Pro `load_skill` bridge. Concept IDs containing `/` are percent-encoded
+(`%2F`) and decoded in the REST handler (v1.1.62 fix). SPA config is served
+through `addons/pro/includes/class-wp-mcp-ai-pro-spa-loader.php`.
 
 ---
 

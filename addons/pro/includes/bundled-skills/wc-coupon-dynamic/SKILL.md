@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-coupon-dynamic
 description: Synthesize WooCommerce coupons at runtime without creating shop_coupon posts in the DB — via the woocommerce_get_shop_coupon_data filter, the hidden-but-powerful virtual-coupon mechanism. Filter fires inside WC_Coupon::__construct, and a non-false return becomes a fully functional coupon read through read_manual_coupon. Plus custom discount types via woocommerce_coupon_discount_types and woocommerce_coupon_get_discount_amount, and the validation triple woocommerce_coupon_is_valid / _is_valid_for_cart / _is_valid_for_product. Use when implementing rule-driven coupons (auto-apply X% to logged-in users, code-pattern detection like LOYALTY-42, external CRM integration that hands out codes), without populating wp_posts. The AI-deficient pattern; most LLMs don't know dynamic coupons exist. Triggers on woocommerce_get_shop_coupon_data, woocommerce_coupon_discount_types, woocommerce_coupon_get_discount_amount, read_manual_coupon, virtual coupon, dynamic coupon in WC context.
 author: Soczó Kristóf

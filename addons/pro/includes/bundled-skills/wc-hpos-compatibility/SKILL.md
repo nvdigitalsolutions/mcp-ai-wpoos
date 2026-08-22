@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wc-hpos-compatibility
 description: Make a WooCommerce plugin HPOS-compatible (High-Performance Order Storage, default-on in WC 10.x) — declare via FeaturesUtil::declare_compatibility on before_woocommerce_init, replace $wpdb->postmeta / WP_Query order code with wc_get_orders + WC_Order::get_meta / update_meta_data, gate runtime branches on OrderUtil::custom_orders_table_usage_is_enabled, build admin hook names dynamically with OrderUtil::get_order_admin_screen (HPOS = woocommerce_page_wc-orders, legacy = shop_order). Use when scaffolding an order-touching plugin, auditing existing code for HPOS readiness, or fixing post-WC-10 silent breakage. Triggers on shop_order, get_post_meta with order context, FeaturesUtil, OrderUtil, custom_order_tables, before_woocommerce_init.
 author: Soczó Kristóf

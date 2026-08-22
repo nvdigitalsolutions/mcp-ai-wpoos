@@ -9,6 +9,8 @@ export interface ProSpaPerInstanceConfig {
 	assistantId?: number;
 	theme?: 'auto' | 'light' | 'dark' | string;
 	allowSensitiveTools?: boolean;
+	/** Vector store ID (mirrors legacy chat.js preloading). */
+	vectorStoreId?: number | string;
 }
 
 export interface ProSpaEndpoints {
@@ -27,6 +29,8 @@ export interface ProSpaEndpoints {
 	approvals: string;
 	shortcuts: string;
 	slashCommands: string;
+	/** OKF Skills & Knowledge browse endpoint (v2.1.1). */
+	okf: string;
 }
 
 export interface RuntimeAssistantSummary {
@@ -111,6 +115,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			approvals: typeof e.approvals === 'string' ? e.approvals : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',
 			slashCommands: typeof e.slashCommands === 'string' ? e.slashCommands : '',
+			okf: typeof e.okf === 'string' ? e.okf : '',
 		},
 		user: ( g.user ?? { id: 0, login: '', displayName: '', capabilities: [] } ) as ProSpaUser,
 		mentionTypes: Array.isArray( g.mentionTypes ) ? g.mentionTypes : [],

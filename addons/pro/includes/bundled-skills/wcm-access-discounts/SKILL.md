@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: wcm-access-discounts
 description: WooCommerce Memberships access, restriction, drip-content, product-grant, and member-discount playbook. Use when code checks whether a user can view/purchase content or products, changes scheduled access dates, customizes protected/public content, maps parent or variation products that grant membership access, applies member prices, reads original prices around discounts, or contains wc_memberships_user_can, wc_memberships_access_from_time, wc_memberships_user_has_member_discount, wc_memberships_get_member_product_discount, wc_memberships_get_discounted_price, or member discount badge hooks.
 author: Soczó Kristóf

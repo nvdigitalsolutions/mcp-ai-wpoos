@@ -43,6 +43,16 @@ export interface SlashCommandsDrawerProps {
 	toggleRef: React.RefObject< HTMLButtonElement | null >;
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+/**
+ * Whether the command's usage contains <placeholder> tokens that the user
+ * must fill in before the command can succeed (e.g. "/workflow <name>").
+ */
+function commandNeedsArgs( cmd: SlashCommand ): boolean {
+	return /<[^>]+>/.test( cmd.usage );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function SlashCommandsDrawer( {
@@ -127,9 +137,12 @@ export function SlashCommandsDrawer( {
 		async ( cmd: SlashCommand, shiftKey: boolean ) => {
 			const rawInput = `${ cmd.usage } `;
 
-			// If Shift is held, just insert into composer (same as before).
-			if ( shiftKey ) {
+			// If Shift is held, or the command's usage contains
+			// <placeholder> arguments that must be filled in before it can
+			// succeed, insert into the composer so the user can complete it.
+			if ( shiftKey || commandNeedsArgs( cmd ) ) {
 				onInsertPayload( rawInput, false );
+				onClose();
 				return;
 			}
 
@@ -289,36 +302,41 @@ export function SlashCommandsDrawer( {
 								<h3 className="nvoos-pro-spa-slash-commands-drawer-section-title">
 									{ category }
 								</h3>
-								{ items.map( ( cmd ) => (
-									<button
-										key={ cmd.command }
-										type="button"
-										className="nvoos-pro-spa-slash-commands-drawer-item"
-										disabled={ executing !== null }
-										title={ sprintf(
-											/* translators: 1: command usage, 2: description */
-											__( '%1$s — %2$s (Shift+Click to insert without executing)', 'nvoos-pro-spa' ),
-											cmd.usage,
-											cmd.description || ''
-										) }
-										onClick={ ( e ) =>
-											handleCommandClick( cmd, e.shiftKey )
-										}
-									>
-										<code className="nvoos-pro-spa-slash-commands-drawer-item-code">
-											{ cmd.usage }
-										</code>
-										{ executing === cmd.command ? (
-											<span className="nvoos-pro-spa-slash-commands-drawer-item-desc">
-												{ __( 'Executing…', 'nvoos-pro-spa' ) }
-											</span>
-										) : cmd.description && (
-											<span className="nvoos-pro-spa-slash-commands-drawer-item-desc">
-												{ cmd.description }
-											</span>
-										) }
-									</button>
-								) ) }
+								{ items.map( ( cmd ) => {
+									const needsArgs = commandNeedsArgs( cmd );
+									return (
+										<button
+											key={ cmd.command }
+											type="button"
+											className="nvoos-pro-spa-slash-commands-drawer-item"
+											disabled={ executing !== null }
+											title={ sprintf(
+												/* translators: 1: command usage, 2: description */
+												needsArgs
+													? __( '%1$s — %2$s (arguments required — click to insert)', 'nvoos-pro-spa' )
+													: __( '%1$s — %2$s (Shift+Click to insert without executing)', 'nvoos-pro-spa' ),
+												cmd.usage,
+												cmd.description || ''
+											) }
+											onClick={ ( e ) =>
+												handleCommandClick( cmd, e.shiftKey )
+											}
+										>
+											<code className="nvoos-pro-spa-slash-commands-drawer-item-code">
+												{ cmd.usage }
+											</code>
+											{ executing === cmd.command ? (
+												<span className="nvoos-pro-spa-slash-commands-drawer-item-desc">
+													{ __( 'Executing…', 'nvoos-pro-spa' ) }
+												</span>
+											) : cmd.description && (
+												<span className="nvoos-pro-spa-slash-commands-drawer-item-desc">
+													{ cmd.description }
+												</span>
+											) }
+										</button>
+									);
+								} ) }
 							</section>
 						) ) }
 					</>

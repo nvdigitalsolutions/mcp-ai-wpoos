@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 19, 2026
-**Plugin Version:** 1.1.59
+**Last Updated:** August 22, 2026
+**Plugin Version:** 1.1.62
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,10 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **AUGUST 22, 2026 UPDATE (v1.1.62):** OKF BUNDLE MANAGEMENT (BASE) — NEW `WP_MCP_AI_OKF_Bundle_Manager` BUNDLE LIFECYCLE (CREATE/LIST/RENAME/ARCHIVE/DELETE, ZIPSLIP-SAFE ZIP IMPORT/EXPORT, HEALTH STATS) WITH `skill-knowledge` PROTECTED; THREE NEW TOOLS (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`) + `okf_write_concept` PROVENANCE SCHEMA (OKF TOOL SURFACE NOW 10); NEW BUNDLE MANAGER ADMIN SCREEN. PRO: OKF→SKILL BRIDGE, AUTO-ENRICHMENT AGENT (`okf_enrich_site_content`), HYBRID KNOWLEDGE ROUTER (`route_knowledge_query`), AND AN OKF SKILLS DRAWER IN THE PRO SPA v2 (READ-ONLY `mcp-ai-pro/v1/okf` REST SURFACE). VECTOR STORE TOOLS MIGRATED TO THE RESPONSES API (`file_batches` + BOUNDED POLLING) AHEAD OF OPENAI'S 2026-08-26 ASSISTANTS API REMOVAL. FIXED: 404 ON PERCENT-ENCODED OKF CONCEPT ROUTES (`%2F`). UPDATED DOCS: `docs/features/okf-integration.md`, `docs/reference/tools/tool-reference.md`, `docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md`.
+>
+> **AUGUST 21, 2026 UPDATE (v1.1.61):** AGENT IDENTITY BRIDGING IN MEMORY STORE & RECALL — NEW `WP_MCP_AI_Agent_Identity_Resolver` CANONICALISES VIRTUAL AGENT KEYS TO THE ASSISTANT POST ID; CHAT-MEMORY RECALL MERGES ALIAS BUCKETS (`stored_under` STAMPS, `merged_sources`); MEMORY DRAWERS GAIN SCOPE CHIPS, AGENT-ID DIAGNOSTIC, SHOW-ALL-SCOPES TOGGLE, AND STORE-TRIGGERED REFRESH. OKF SKILL-KNOWLEDGE BUNDLE NOW AUTO-GENERATED FROM BUNDLED SKILLS (BOOTSTRAP + REINSTALL) — OKF TOOLS WORK OUT OF THE BOX. FIXES: `undici` PINNED TO ^7.29.0 (JSDOM COMPAT, CVE FIXES RETAINED) + CONTENT-GRAPH CI CHECKSUM DRIFT. NVOOS-CONTENT-GRAPH SHIPS A WP.ORG REVIEW REPLY + DETAILED REPORT. UPDATED DOCS: `docs/features/memory/chat-client-integration.md`, `docs/features/okf-integration.md`.
+>
 > **AUGUST 19, 2026 UPDATE (v1.1.59):** MEDIA WORKER v3.2.0 — NATIVE `/api/crawl/*` ENDPOINTS (SINGLE-URL MARKDOWN, BATCHED CRAWLING, LINK SCANS) WITH STATIC-FIRST TWO-TIER EXTRACTION + SSRF GUARD, CRAWL4AI-COMPATIBLE FACADE FOR `run_crawl4ai_job` REMOTE MODE, LLM EXTRACTION UTIL. RESEARCH TOOLS HARDENED — SHARED EMBEDDING-PROVIDER ABSTRACTION (NEW GEMINI EMBEDDING PROVIDER), `deep_research` PROVIDER-CHAIN RETRIES, NEW BASE TOOLS `list_terms` + `list_taxonomies`. FIXES: DOCS HUB 0.4.1 REBUILD/BROKEN-LINK STALENESS (NEW `wp_mcp_ai_plugin_updated` ACTION + VERSION-MISMATCH GUARD) AND TOOL REGISTRATION GAPS (~32 ORPHANED TOOLS REGISTERED, LEGACY AUTO-WRAP, `wp_mcp_ai_tools_init` HOOK).
 >
 > **AUGUST 18, 2026 UPDATE (v1.1.58):** COMPOSIO CONNECT INTEGRATION (PRO) — NEW `addons/pro/includes/composio/` SUBSYSTEM (OAUTH AUTH HANDLER, API CLIENT, TRIGGER BRIDGE, SIGNED WEBHOOK CONTROLLER) + 6 NEW BETA TOOLS (`composio_list_tools`, `composio_get_tool_schema`, `composio_list_connected_accounts`, `composio_create_connect_link`, `composio_execute_tool`, `composio_manage_triggers`) + REMOTE-SITES ADMIN/METABOX PANELS. OOS RUNTIME CONSOLIDATION PHASES 0–5.8 (TOOL-SURFACE + SECURITY-GATE PARITY, EVENT-SOURCED SESSION LOG, OPT-IN SHADOW MODE + `wp mcp-ai oos parity` CLI, CANARY ROUTING, SCOPED TOOLS + COMPACTION SEAM, PRO COMPOSITION & CHILD BINDING, TELEMETRY SINGLE-PATH). STANDALONE GRAPHIFY PLUGINS RENAMED TO CONTENT GRAPH (`nvoos-content-graph`, `-ai`, `-ai-platform` V1.0.2). FIXES: SECURITY CENTER `wp.apiRequest` (WP-API ENQUEUED ON SECURITY TAB) + `deepmerge-ts` CVE-2026-40345. NEW DOCS: `docs/composio-connect.md`, `docs/toolkits/composio-connect.md`, PROPOSALS 029/030, `.context/oos-engine.md`.
@@ -619,7 +623,28 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.60: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import
+## 🆕 August 2026 — v1.1.55–v1.1.62: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API
+
+### New and updated documents (August 22, 2026, v1.1.62)
+
+- **[docs/features/okf-integration.md](features/okf-integration.md)** ⭐ **UPDATED** — OKF bundle management (Phases A–H): bundle lifecycle manager, admin screen, 10-tool surface, Pro skill bridge / enrichment agent / hybrid router, SPA v2 skills drawer + read-only REST surface. (August 22, 2026)
+- **[docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md](project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md)** ⭐ **NEW** — OKF Bundle Management implementation plan, Phases A–H with per-phase status, security notes, and migration notes. (August 22, 2026)
+- **[docs/reference/tools/tool-reference.md](reference/tools/tool-reference.md)** ⭐ **UPDATED** — 10 OKF tools + 2 Pro knowledge-routing tools (`okf_enrich_site_content`, `route_knowledge_query`); vector store tools on the Responses API. (August 22, 2026)
+- **[docs/project/plans/v1.1.62-docs-catch-up.md](project/plans/v1.1.62-docs-catch-up.md)** ⭐ **NEW** — v1.1.62 docs & release catch-up plan. (August 22, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.62 highlights + latest updates (OKF bundle management, SPA v2 drawer, vector store Responses API migration). (August 22, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.62] section with PR-level detail. (August 22, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.62 + changelog entry. (August 22, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.62 entry. (August 22, 2026)
+
+### New and updated documents (August 21, 2026, v1.1.61)
+
+- **[docs/features/memory/chat-client-integration.md](features/memory/chat-client-integration.md)** ⭐ **UPDATED** — agent identity bridging: store-side virtual-key resolution, recall-side alias-bucket merging (`stored_under` / `merged_sources`), drawer chips/toggle/refresh, graceful fallbacks. (August 21, 2026)
+- **[docs/features/okf-integration.md](features/okf-integration.md)** ⭐ **UPDATED** — skill-knowledge bundle auto-generation (`WP_MCP_AI_OKF_Skill_Knowledge_Generator`, bootstrap + reinstall triggers). (August 21, 2026)
+- **[docs/project/plans/v1.1.61-docs-catch-up.md](project/plans/v1.1.61-docs-catch-up.md)** ⭐ **NEW** — v1.1.61 docs & release catch-up plan. (August 21, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.61 highlights + latest updates (agent identity bridging, OKF bundle generator, undici pin, content-graph review reply + CI checksum fix). (August 21, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.61] section with PR-level detail. (August 21, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.61 + changelog entry; stale "250+ tools" mentions reconciled to 300+. (August 21, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.61 entry. (August 21, 2026)
 
 ### New and updated documents (August 21, 2026, v1.1.60)
 

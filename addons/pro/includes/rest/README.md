@@ -40,6 +40,9 @@ Routes split across **two namespaces** — Pro chose namespace per controller ba
 | `WP_MCP_AI_WhatsApp_Webhook_Controller` | `class-wp-mcp-ai-whatsapp-webhook-controller.php` | `mcp-ai/v1` | WhatsApp Cloud API webhook |
 | `WP_MCP_AI_ECA_REST_Controller` | `class-wp-mcp-ai-eca-rest-controller.php` | `mcp-ai/v1` | ECA + student CRUD |
 | `WP_MCP_AI_Ext_Cog_REST` | `class-wp-mcp-ai-ext-cog-rest.php` | `mcp-ai/v1` | Extended Cognition sensor queue + data + permissions |
+| `WP_MCP_AI_Pro_REST_Tool_Shortcuts` | `class-wp-mcp-ai-pro-rest-tool-shortcuts.php` | `mcp-ai-pro/v1` | Pro SPA v2 Tool Shortcuts drawer feed |
+| `WP_MCP_AI_Pro_REST_Slash_Commands` | `class-wp-mcp-ai-pro-rest-slash-commands.php` | `mcp-ai-pro/v1` | Pro SPA v2 Slash Commands drawer feed + execute |
+| `WP_MCP_AI_Pro_REST_Okf` | `class-wp-mcp-ai-pro-rest-okf.php` | `mcp-ai-pro/v1` | Pro SPA v2 Skills & OKF Knowledge drawer: bundles, concepts, detail, cross-bundle search, assistant skill grants |
 
 ## Inputs / Outputs / Neighbors
 
@@ -71,6 +74,7 @@ vendor/bin/phpunit addons/pro/tests/test-nv-cloud.php
 vendor/bin/phpunit addons/pro/tests/test-remote-site-manager.php
 vendor/bin/phpunit addons/pro/tests/test-remote-sites-admin.php
 vendor/bin/phpunit addons/pro/tests/test-toolkit-server-contract.php
+vendor/bin/phpunit addons/pro/tests/test-pro-okf-rest.php
 ```
 
 Cross-cutting REST infrastructure tests (Base authenticator, controller base, validator) live in the root suite under [`tests/rest/`](../../../../tests/rest/) and [`tests/rest-api/`](../../../../tests/rest-api/).

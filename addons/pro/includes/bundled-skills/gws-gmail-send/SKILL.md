@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: gws-gmail-send
 version: 1.0.0
 description: Gmail helper for sending email via the gws CLI. Handles RFC 2822 formatting and base64 encoding automatically. Supports plain text, HTML, CC, and BCC.

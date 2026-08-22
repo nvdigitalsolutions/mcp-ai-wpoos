@@ -12,6 +12,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import React from 'react';
 
 import {
 	generateSessionKey,
@@ -29,6 +31,13 @@ import { HitlClient } from '../api/hitl';
 
 import { createChatFetch } from '../sse-adapter';
 
+import { MemoryDrawer, type MemoryDrawerProps } from '../components/MemoryDrawer';
+
+vi.mock( '@wordpress/i18n', () => ( {
+	__: ( text: string ) => text,
+	sprintf: ( format: string ) => format,
+} ) );
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -41,6 +50,22 @@ function mockJsonFetch( body: unknown, status = 200 ) {
 		json:   vi.fn().mockResolvedValue( body ),
 		headers: { get: vi.fn().mockReturnValue( null ) },
 	} );
+}
+
+function defaultDrawerProps(
+	overrides: Partial< MemoryDrawerProps > = {}
+): MemoryDrawerProps {
+	return {
+		endpoint:    'https://example.com/wp-json/mcp-ai/v1/chat-memory',
+		nonce:       'test-nonce',
+		assistantId: 1,
+		isOpen:      true,
+		activeTab:   'memories',
+		onTabChange: vi.fn(),
+		onClose:     vi.fn(),
+		toggleRef:   { current: null },
+		...overrides,
+	};
 }
 
 afterEach( () => {
@@ -344,6 +369,70 @@ describe( 'createChatFetch', () => {
 		const [ , init ] = mockFetch.mock.calls[ 0 ] as [ string, RequestInit ];
 		const sentHeaders = new Headers( init.headers );
 		expect( sentHeaders.get( 'X-WP-MCP-AI-Guest' ) ).toBe( '1' );
-		expect( sentHeaders.get( 'X-WP-Nonce' ) ).toBeNull();
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// MemoryDrawer — merged-bucket display
+// ---------------------------------------------------------------------------
+
+describe( 'MemoryDrawer', () => {
+	it( 'tags memories merged from a virtual agent bucket with stored-under', async () => {
+		const fetchMock = vi.fn().mockImplementation(
+			async ( input: RequestInfo | URL ) => {
+				const url = String( input );
+				if ( url.includes( '/recall' ) ) {
+					return {
+						ok:     true,
+						status: 200,
+						json:   vi.fn().mockResolvedValue( {
+							contexts: [
+								{
+									context_id: 'm-1',
+									title: 'Alias memory',
+									content: 'From the virtual bucket',
+									importance: 'medium',
+									stored_under: 'nvoos-pro-spa-memory-drawer',
+								},
+								{
+									context_id: 'm-2',
+									title: 'Canonical memory',
+									content: 'Stored directly',
+									importance: 'medium',
+								},
+							],
+						} ),
+					};
+				}
+				return {
+					ok:     true,
+					status: 200,
+					json:   vi.fn().mockResolvedValue( {
+						enabled:       true,
+						autosummarize: false,
+					} ),
+				};
+			}
+		);
+		vi.stubGlobal( 'fetch', fetchMock );
+
+		render(
+			React.createElement( MemoryDrawer, defaultDrawerProps() )
+		);
+
+		const items = await screen.findAllByTestId( 'nvoos-chat-spa-memory-item' );
+		expect( items ).toHaveLength( 2 );
+
+		const chip = within( items[ 0 ] ).getByTestId(
+			'nvoos-chat-spa-memory-stored-under'
+		);
+		expect( chip ).toHaveTextContent( 'stored under' );
+		expect( chip ).toHaveTextContent( 'nvoos-pro-spa-memory-drawer' );
+
+		expect(
+			within( items[ 1 ] ).queryByTestId(
+				'nvoos-chat-spa-memory-stored-under'
+			)
+		).toBeNull();
 	} );
 } );

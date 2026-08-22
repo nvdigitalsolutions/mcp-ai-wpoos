@@ -29,6 +29,7 @@ import { AgentPanel } from './AgentPanel';
 import { MemoryDrawer, type MemoryTab } from '../../components/shared/MemoryDrawer';
 import { HitlApprovalBar } from '../../components/shared/HitlApprovalBar';
 import { ToolShortcutsDrawer } from './ToolShortcutsDrawer';
+import { OkfDrawer } from '../../components/shared/OkfDrawer';
 import { SlashCommandsDrawer } from './SlashCommandsDrawer';
 import { KeyboardShortcutsHelp } from '../../components/shared/KeyboardShortcutsHelp';
 import { SuggestedPrompts } from '../../components/shared/SuggestedPrompts';
@@ -38,6 +39,51 @@ import { useWorkflowState, useDelegationNotices } from '../../hooks/useAgentTeam
 export interface ChatPageProps {
 	/** Transcript hook result lifted from Layout. */
 	transcripts: ReturnType< typeof useTranscripts >;
+}
+
+/**
+ * Normalize a slash-command REST result (string, array, or object) to a
+ * displayable string so MessageView can render it safely.
+ *
+ * Exported for unit tests.
+ */
+export function normalizeSlashResult( value: unknown ): string {
+	if ( typeof value === 'string' ) {
+		return value;
+	}
+	if ( Array.isArray( value ) ) {
+		return value
+			.map( ( item ) => {
+				if ( typeof item === 'string' ) return item;
+				try {
+					return JSON.stringify( item, null, 2 );
+				} catch {
+					return String( item );
+				}
+			} )
+			.join( '\n' );
+	}
+	if ( value === null || value === undefined ) {
+		return '';
+	}
+	if ( typeof value === 'object' ) {
+		try {
+			return JSON.stringify( value, null, 2 );
+		} catch {
+			return String( value );
+		}
+	}
+	return String( value );
+}
+
+/**
+ * Focus the composer textarea (used after drawer insertions).
+ */
+function focusComposer(): void {
+	const el = document.getElementById(
+		'nvoos-pro-spa-composer-input'
+	) as HTMLTextAreaElement | null;
+	el?.focus();
 }
 
 export function ChatPage( props: ChatPageProps ): JSX.Element {
@@ -125,9 +171,12 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		setMessages,
 	} = chatSpoke;
 
-	// ── Slash command execution (v2.1.0) ───────────────────────────────
+	// ── Slash command execution (v2.1.0, composer intercept v2.2.x) ─────
+	// Appends the user echo + server result/error to the transcript.
+	// Uses functional setMessages updates so concurrent appends can't
+	// drop messages (fixes the v2.1.0 stale-closure bug).
 	const handleExecuteSlashCommand = useCallback(
-		async ( cmd: string, rawInput: string ) => {
+		async ( _cmd: string, rawInput: string ) => {
 			if ( ! endpoints?.slashCommands ) return;
 
 			const executeUrl = `${ endpoints.slashCommands.replace( /\/+$/, '' ) }/execute`;
@@ -137,7 +186,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				role: 'user' as const,
 				content: rawInput,
 			};
-			setMessages( [ ...messages, userMessage as Message ] );
+			setMessages( ( prev ) => [ ...prev, userMessage as Message ] );
 
 			try {
 				const resp = await fetch( executeUrl, {
@@ -160,13 +209,12 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 
 				const data = ( await resp.json() ) as {
 					success?: boolean;
-					result?: string;
+					result?: unknown;
 					message?: string;
 				};
 
 				const resultText =
-					data.result ??
-					data.message ??
+					normalizeSlashResult( data.result ?? data.message ) ||
 					__( 'Command executed successfully.', 'nvoos-pro-spa' );
 
 				const assistantMessage = {
@@ -174,8 +222,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					role: 'assistant' as const,
 					content: resultText,
 				};
-				setMessages( [
-					...messages,
+				setMessages( ( prev ) => [
+					...prev,
 					assistantMessage as Message,
 				] );
 			} catch ( err: unknown ) {
@@ -187,14 +235,34 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					role: 'assistant' as const,
 					content: `\u274C ${ errorText }`,
 				};
-				setMessages( [
-					...messages,
+				setMessages( ( prev ) => [
+					...prev,
 					errorMessage as Message,
 				] );
 				throw err;
 			}
 		},
 		[ endpoints?.slashCommands, nonce, setMessages ],
+	);
+
+	// ── Composer slash-command submit (v2.2.x) ─────────────────────────
+	// AgentPanel routes "/"-prefixed inputs here. The error is already
+	// rendered as a chat message, so we swallow the rejection to avoid
+	// unhandled promise rejections.
+	const [ slashBusy, setSlashBusy ] = useState( false );
+	const handleComposerSubmit = useCallback(
+		( rawInput: string ): Promise< void > => {
+			if ( ! endpoints?.slashCommands ) {
+				return Promise.resolve();
+			}
+			setSlashBusy( true );
+			return handleExecuteSlashCommand( rawInput, rawInput )
+				.catch( () => {
+					// Error message already appended to the chat transcript.
+				} )
+				.finally( () => setSlashBusy( false ) );
+		},
+		[ endpoints?.slashCommands, handleExecuteSlashCommand ],
 	);
 
 	// Enhance usageMap with cost/model data extracted from "data"
@@ -323,13 +391,18 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const [ tasksOpen, setTasksOpen ] = useState< boolean >( false );
 	const tasksToggleRef = useRef< HTMLButtonElement | null >( null );
 
+	// ---- Skills & OKF knowledge drawer (v2.1.1) ----
+	const [ okfOpen, setOkfOpen ] = useState< boolean >( false );
+	const okfToggleRef = useRef< HTMLButtonElement | null >( null );
+
 	// Shared callback: close one drawer when another opens.
 	const openDrawer = useCallback(
-		( which: 'memory' | 'tools' | 'commands' | 'tasks' ) => {
+		( which: 'memory' | 'tools' | 'commands' | 'tasks' | 'okf' ) => {
 			setMemoryOpen( which === 'memory' );
 			setToolsOpen( which === 'tools' );
 			setCommandsOpen( which === 'commands' );
 			setTasksOpen( which === 'tasks' );
+			setOkfOpen( which === 'okf' );
 		},
 		[]
 	);
@@ -387,6 +460,7 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 	const hasApprovals = typeof endpoints?.approvals === 'string' && endpoints.approvals.length > 0;
 	const hasShortcuts = typeof endpoints?.shortcuts === 'string' && endpoints.shortcuts.length > 0;
 	const hasSlashCommands = typeof endpoints?.slashCommands === 'string' && endpoints.slashCommands.length > 0;
+	const hasOkf = typeof endpoints?.okf === 'string' && endpoints.okf.length > 0;
 
 	// ── Console: Slash Commands (v2.1.1 — mirrors legacy slash-commands.js) ───
 	useEffect( () => {
@@ -615,6 +689,19 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 												<span className="nvoos-pro-spa-tasks-badge nvoos-pro-spa-tasks-badge--error">!</span>
 											) }
 										</button>
+										{/* Skills & OKF knowledge drawer toggle (v2.1.1) */}
+										{ hasOkf && (
+											<button
+												type="button"
+												ref={ okfToggleRef }
+												className="nvoos-pro-spa-chat-page__okf-btn nvoos-pro-spa-btn"
+												onClick={ () => openDrawer( 'okf' ) }
+												aria-label={ __( 'Toggle skills & knowledge drawer', 'nvoos-pro-spa' ) }
+												aria-expanded={ okfOpen }
+											>
+												{ __( 'Skills', 'nvoos-pro-spa' ) }
+											</button>
+										) }
 										{/* Theme toggle (v0.9.0) */}
 										<button type="button" className="nvoos-pro-spa-btn"
 											onClick={ () => setTheme( theme === 'dark' ? 'light' : 'dark' ) }
@@ -687,6 +774,8 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				onSubmitWithAttachments={ ( atts ) => handleSubmitWithAttachments( atts ) }
 				onSaveConversation={ saveConversation }
 				slashCommandsEndpoint={ endpoints?.slashCommands }
+				onSubmitSlashCommand={ endpoints?.slashCommands ? handleComposerSubmit : undefined }
+				isBusy={ slashBusy }
 			/>
 
 			{/* Memory drawer */}
@@ -723,7 +812,12 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 					nonce={ nonce }
 					isOpen={ commandsOpen }
 					onClose={ () => setCommandsOpen( false ) }
-					onInsertPayload={ sendMessage }
+					onInsertPayload={ ( payload: string ) => {
+						// Insert into the composer (not send) so the user can
+						// fill required arguments before executing.
+						handleInputChange( payload );
+						focusComposer();
+					} }
 					onExecuteCommand={ ( cmd, raw ) => handleExecuteSlashCommand( cmd, raw ) }
 					toggleRef={ commandsToggleRef }
 				/>
@@ -741,6 +835,25 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 				onDismissJob={ jobBus.dismissJob }
 				onDismissAll={ jobBus.dismissAllTerminal }
 			/>
+
+			{/* Skills & OKF knowledge drawer (v2.1.1) */}
+			{ hasOkf && (
+				<OkfDrawer
+					endpoint={ endpoints!.okf }
+					nonce={ nonce }
+					assistantId={ assistantId }
+					isOpen={ okfOpen }
+					onClose={ () => setOkfOpen( false ) }
+					onInsertPrompt={ ( prompt, autoSubmit ) => {
+						if ( autoSubmit ) {
+							sendMessage( prompt );
+						} else {
+							handleInputChange( prompt );
+						}
+					} }
+					toggleRef={ okfToggleRef }
+				/>
+			) }
 
 		{/* Keyboard shortcuts help modal (v0.9.0) */}
 		<KeyboardShortcutsHelp isOpen={ ks.isHelpOpen } onClose={ ks.closeHelp } />

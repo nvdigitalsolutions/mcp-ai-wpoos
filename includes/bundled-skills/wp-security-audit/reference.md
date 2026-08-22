@@ -1,3 +1,6 @@
+---
+type: Reference
+---
 # Security audit — extended reference
 
 Read this file when the SKILL.md checklist is not enough — typically when

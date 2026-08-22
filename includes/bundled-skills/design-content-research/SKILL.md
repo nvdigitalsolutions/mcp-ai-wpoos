@@ -1,4 +1,5 @@
 ---
+type: Skill
 name: design-content-research
 description: Produces WordPress draft posts from research findings — converts Paper Store research records or raw research data into publishable blog posts, buying guides, brand spotlights, and how-to articles. Use when the task asks to "turn research into a post", "create a blog post from findings", "publish my research", "research to content", or "write up the findings". Covers the full research-to-post pipeline with Paper Store integration.
 license: Proprietary. See LICENSE.txt
