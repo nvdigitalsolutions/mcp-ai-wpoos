@@ -13,6 +13,7 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ * @since     1.1.62 Wired to the chat storage service via wpMcpAiChat.storageWorkerUrl / storageWorkerThreshold (proposal 032).
  */
 
 (function(window) {
@@ -111,17 +112,19 @@
 		 * Parse JSON asynchronously using Web Worker for large data.
 		 * 
 		 * @param {string} jsonString - JSON string to parse
+		 * @param {number} [threshold] - Optional size threshold for worker offload; non-positive values disable offload.
 		 * @return {Promise} Promise that resolves with parsed object
 		 */
-		parseJSON: function(jsonString) {
+		parseJSON: function(jsonString, threshold) {
 			if (!jsonString) {
 				return Promise.resolve(null);
 			}
 
 			const size = jsonString.length;
+			const effectiveThreshold = typeof threshold === 'number' ? threshold : this.WORKER_THRESHOLD;
 
 			// Use synchronous parsing for small data
-			if (size < this.WORKER_THRESHOLD || !this.workerSupported) {
+			if (effectiveThreshold <= 0 || size < effectiveThreshold || !this.workerSupported) {
 				try {
 					return Promise.resolve(JSON.parse(jsonString));
 				} catch (error) {
@@ -141,18 +144,38 @@
 		 * Stringify object to JSON asynchronously using Web Worker for large data.
 		 * 
 		 * @param {*} obj - Object to stringify
+		 * @param {number} [threshold] - Optional size threshold; non-positive disables offload. When provided, the caller asserts the payload is large and the expensive estimate is skipped.
 		 * @return {Promise} Promise that resolves with JSON string
 		 */
-		stringifyJSON: function(obj) {
+		stringifyJSON: function(obj, threshold) {
 			if (obj === null || obj === undefined) {
 				return Promise.resolve('');
 			}
 
-			// Estimate size (rough approximation)
-			const estimatedSize = JSON.stringify(obj).length;
+			const effectiveThreshold = typeof threshold === 'number' ? threshold : this.WORKER_THRESHOLD;
 
-			// Use synchronous stringifying for small data
-			if (estimatedSize < this.WORKER_THRESHOLD || !this.workerSupported) {
+			// Non-positive thresholds (or unsupported workers) stay synchronous.
+			if (effectiveThreshold <= 0 || !this.workerSupported) {
+				try {
+					return Promise.resolve(JSON.stringify(obj));
+				} catch (error) {
+					return Promise.reject(error);
+				}
+			}
+
+			// An explicit threshold means the caller already measured the
+			// payload — skip the expensive estimate and go straight to the
+			// worker (avoids a second main-thread stringify).
+			if (typeof threshold === 'number') {
+				return this.postToWorker('stringify', obj).catch(function(error) {
+					console.warn('NV oOS: Worker stringify failed, using fallback:', error);
+					return JSON.stringify(obj);
+				});
+			}
+
+			// Estimate size (rough approximation) for direct callers.
+			const estimatedSize = JSON.stringify(obj).length;
+			if (estimatedSize < effectiveThreshold) {
 				try {
 					return Promise.resolve(JSON.stringify(obj));
 				} catch (error) {
