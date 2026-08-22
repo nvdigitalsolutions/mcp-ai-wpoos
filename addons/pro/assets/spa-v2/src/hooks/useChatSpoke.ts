@@ -42,7 +42,7 @@ export interface UseChatSpokeReturn {
 	error: Error | undefined;
 	stop: () => void;
 	reload: () => void;
-	setMessages: ( messages: Message[] ) => void;
+	setMessages: ( messages: Message[] | ( ( messages: Message[] ) => Message[] ) ) => void;
 	isStreaming: boolean;
 	fileInputRef: RefObject< HTMLInputElement | null >;
 	sendMessage: ( content: string ) => void;

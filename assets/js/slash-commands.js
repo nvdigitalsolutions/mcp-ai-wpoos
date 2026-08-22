@@ -188,6 +188,13 @@
 			e.preventDefault();
 			e.stopPropagation();
 
+			// Ignore bare "/" submissions (no command to run) — just clear
+			// the input instead of firing a doomed unknown-command request.
+			if (value.length < 2) {
+				this.chatInput.value = '';
+				return;
+			}
+
 			// Execute slash command
 			this.executeCommand(value);
 		}
@@ -238,6 +245,7 @@
 					this.notifyChatInterface('command-executed', { command, result: response.result, correlationId });
 				} else {
 					console.error('[SlashCommands] ❌ Command failed:', response.message, '| ID:', correlationId);
+					this.displayUserCommand(command);
 					this.displayError(response.message || 'Command execution failed');
 					this.announceToScreenReader('Command failed: ' + (response.message || 'Unknown error'));
 				}
@@ -258,6 +266,9 @@
 					'Command timed out. Please try again or contact support.' : 
 					(error.message || 'Failed to execute command');
 				
+				// Echo the user's command so the transcript keeps context,
+				// matching the success path (user bubble + response).
+				this.displayUserCommand(command);
 				this.displayError(errorMsg);
 				this.announceToScreenReader('Command error: ' + errorMsg);
 			} finally {
@@ -413,6 +424,21 @@
 			chatMessages.scrollTop = chatMessages.scrollHeight;
 
 			this.debug('Result displayed successfully');
+		}
+
+		/**
+		 * Display the user's command bubble in chat (used on error paths so
+		 * the transcript keeps context, matching the success path).
+		 */
+		displayUserCommand(command) {
+			const chatMessages = document.querySelector('.wp-mcp-ai-chat__messages, .mcp-chat-messages, #mcp-chat-messages');
+			if (!chatMessages) {
+				return;
+			}
+
+			const userMessage = this.createMessage('user', command);
+			chatMessages.appendChild(userMessage);
+			chatMessages.scrollTop = chatMessages.scrollHeight;
 		}
 
 		/**
