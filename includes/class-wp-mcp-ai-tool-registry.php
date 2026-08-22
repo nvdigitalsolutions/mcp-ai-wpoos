@@ -2011,14 +2011,19 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 					}
 
 					if ( $should_register ) {
-						$registered = $this->register_tool( new $class() );
+						$tool = new $class();
 
 						// Legacy-format classes (pre-interface) are transparently
 						// wrapped so they still register with the canonical tool
-						// interface.
-						if ( ! $registered && class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {
-							$registered = $this->register_tool( new WP_MCP_AI_Legacy_Tool_Wrapper( new $class() ) );
+						// interface. Wrap BEFORE the first register attempt so the
+						// registry's fail-loud "missing interface" log is not
+						// emitted for a class that is about to register
+						// successfully via the wrapper.
+						if ( ! $tool instanceof WP_MCP_AI_Tool_Interface && class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {
+							$tool = new WP_MCP_AI_Legacy_Tool_Wrapper( $tool );
 						}
+
+						$registered = $this->register_tool( $tool );
 
 						if ( ! $registered ) {
 							$skipped = new $class();

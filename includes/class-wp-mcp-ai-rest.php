@@ -9237,12 +9237,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					if ( array() === $schema || ! isset( $schema['type'] ) ) {
 						$schema = array(
 							'type'       => 'object',
-							'properties' => array() === $schema ? array() : $schema,
+							'properties' => array() === $schema ? new stdClass() : $schema,
 						);
 					}
 
-					if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-						$schema['properties'] = array();
+					// `properties` must encode as a JSON object (`{}`), never as an
+					// empty JSON array (`[]`). PHP empty arrays encode as `[]` and
+					// strict providers (DeepSeek) reject that with
+					// "[] is not of type 'object'". An empty stdClass encodes as
+					// `{}`, so preserve object-valued property maps and convert
+					// empty arrays to stdClass.
+					if ( ! isset( $schema['properties'] ) ) {
+						$schema['properties'] = new stdClass();
+					} elseif ( ! is_array( $schema['properties'] ) && ! is_object( $schema['properties'] ) ) {
+						$schema['properties'] = new stdClass();
+					} elseif ( is_array( $schema['properties'] ) && empty( $schema['properties'] ) ) {
+						$schema['properties'] = new stdClass();
 					}
 
 					$description = $tool->get_description();
