@@ -82,13 +82,17 @@ abstract class WP_MCP_AI_Export_Provider_Base implements WP_MCP_AI_Export_Provid
 	/**
 	 * Log an import action for audit purposes.
 	 *
+	 * Public because WP_MCP_AI_Export_Manager::import() records
+	 * validation/import outcomes on behalf of providers, which requires
+	 * calling this method from outside the provider hierarchy.
+	 *
 	 * @since 1.2.0
 	 *
 	 * @param string $action  'imported' or 'validated'.
 	 * @param mixed  $result  Result data or error.
 	 * @return void
 	 */
-	protected function log_action( string $action, $result ): void {
+	public function log_action( string $action, $result ): void {
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			return;
 		}
