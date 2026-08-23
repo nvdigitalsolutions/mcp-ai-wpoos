@@ -93,17 +93,22 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test AJAX request without nonce fails.
+	 * Test AJAX request with an invalid nonce fails.
 	 */
 	public function test_ajax_without_nonce_fails() {
 		$_POST['tool'] = 'test_tool';
+		// An invalid nonce keeps the request in AJAX context (routing
+		// check_ajax_referer() through wp_die() instead of a process-killing
+		// bare die( '-1' )) while still failing verification.
+		$_POST['nonce'] = 'invalid-nonce';
 
 		try {
 			$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
 			$handler->handle_execute_action();
 			$this->fail( 'Expected wp_die to be called' );
 		} catch ( WPDieException $e ) {
-			$this->assertStringContainsString( 'nonce', $e->getMessage() );
+			// check_ajax_referer() terminates the request with -1 for a failed nonce.
+			$this->assertSame( '-1', $e->getMessage() );
 		}
 	}
 
