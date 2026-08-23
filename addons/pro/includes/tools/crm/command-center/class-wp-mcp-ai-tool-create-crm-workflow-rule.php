@@ -11,8 +11,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Create Workflow Rule tool — if-this-then-that automation rule.
+ *
+ * Distinct from the regulatory-registration `WP_MCP_AI_Tool_Create_Workflow_Rule`
+ * (registration lifecycle automation): both files originally declared the same
+ * class name, which fataled whenever both were loaded in one process.
  */
-class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Crm_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Check whether the tool is available.
 	 *
@@ -34,7 +38,7 @@ class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 	 * @return string
 	 */
 	public function get_slug() {
-		return 'create_workflow_rule'; }
+		return 'create_crm_workflow_rule'; }
 	/**
 	 * Get the tool name.
 	 *
