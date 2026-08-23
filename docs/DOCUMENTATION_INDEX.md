@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 22, 2026
-**Plugin Version:** 1.1.62
+**Last Updated:** August 23, 2026
+**Plugin Version:** 1.1.63
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,7 +9,7 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
-> **AUGUST 22, 2026 UPDATE (v1.1.62):** OKF BUNDLE MANAGEMENT (BASE) — NEW `WP_MCP_AI_OKF_Bundle_Manager` BUNDLE LIFECYCLE (CREATE/LIST/RENAME/ARCHIVE/DELETE, ZIPSLIP-SAFE ZIP IMPORT/EXPORT, HEALTH STATS) WITH `skill-knowledge` PROTECTED; THREE NEW TOOLS (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`) + `okf_write_concept` PROVENANCE SCHEMA (OKF TOOL SURFACE NOW 10); NEW BUNDLE MANAGER ADMIN SCREEN. PRO: OKF→SKILL BRIDGE, AUTO-ENRICHMENT AGENT (`okf_enrich_site_content`), HYBRID KNOWLEDGE ROUTER (`route_knowledge_query`), AND AN OKF SKILLS DRAWER IN THE PRO SPA v2 (READ-ONLY `mcp-ai-pro/v1/okf` REST SURFACE). VECTOR STORE TOOLS MIGRATED TO THE RESPONSES API (`file_batches` + BOUNDED POLLING) AHEAD OF OPENAI'S 2026-08-26 ASSISTANTS API REMOVAL. FIXED: 404 ON PERCENT-ENCODED OKF CONCEPT ROUTES (`%2F`). UPDATED DOCS: `docs/features/okf-integration.md`, `docs/reference/tools/tool-reference.md`, `docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md`.
+> **AUGUST 23, 2026 UPDATE (v1.1.63):** ARTIFACT EVOLUTION PHASES A–G — THE CONTINUAL HARNESS EVOLVER + META-HARNESS BECOME A GATED DARWINIAN SELF-IMPROVEMENT LOOP FOR SKILLS, PROMPTS, AND ROLES (POPULATIONS, FITNESS-WEIGHTED SELECTION, FAILURE REPLAY + POST-MUTATION VERIFICATION, PRE-COMMIT ADMISSION GATE, HOLDOUT-GATED DEPLOYMENT WITH SHADOW A/B + DRIFT ROLLBACK, GOVERNOR WITH HUMAN APPROVAL QUEUE + LINEAGE GRAPHS) — ALL OPT-IN, SWITCHES IN SETTINGS → ORCHESTRATION LAYER. PRO: NEW ADDONS ADMIN PAGE WITH ONE-CLICK INSTALL FOR STANDALONE ADDONS. CHAT SAVES OFFLOAD JSON STRINGIFY TO A BROWSER STORAGE WORKER ABOVE A 10,000-CHAR THRESHOLD. FIXED: DEEPSEEK 400S ON EMPTY TOOL SCHEMAS, OKF SKILL-KNOWLEDGE CONFORMANCE (TYPE: SKILL FRONTMATTER), PRO SPA v2 SLASH-COMMAND COMPOSER, TEST-SUITE EXIT TRAPS (BIN/SWEEP-TESTS.PHP). TOOL COUNT UNCHANGED: ~303 BASE + ~1,249 PRO (~1,552 TOTAL). UPDATED DOCS: PROPOSAL 007 + IMPLEMENTATION PLAN, PROPOSAL 032 IMPLEMENTATION PLAN, EU AI ACT SELF-EVOLUTION GOVERNANCE, TEST-SUITE REMAINING FIXES PLAN, TOOL REFERENCE.
 >
 > **AUGUST 21, 2026 UPDATE (v1.1.61):** AGENT IDENTITY BRIDGING IN MEMORY STORE & RECALL — NEW `WP_MCP_AI_Agent_Identity_Resolver` CANONICALISES VIRTUAL AGENT KEYS TO THE ASSISTANT POST ID; CHAT-MEMORY RECALL MERGES ALIAS BUCKETS (`stored_under` STAMPS, `merged_sources`); MEMORY DRAWERS GAIN SCOPE CHIPS, AGENT-ID DIAGNOSTIC, SHOW-ALL-SCOPES TOGGLE, AND STORE-TRIGGERED REFRESH. OKF SKILL-KNOWLEDGE BUNDLE NOW AUTO-GENERATED FROM BUNDLED SKILLS (BOOTSTRAP + REINSTALL) — OKF TOOLS WORK OUT OF THE BOX. FIXES: `undici` PINNED TO ^7.29.0 (JSDOM COMPAT, CVE FIXES RETAINED) + CONTENT-GRAPH CI CHECKSUM DRIFT. NVOOS-CONTENT-GRAPH SHIPS A WP.ORG REVIEW REPLY + DETAILED REPORT. UPDATED DOCS: `docs/features/memory/chat-client-integration.md`, `docs/features/okf-integration.md`.
 >
@@ -623,7 +623,21 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.62: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API
+## 🆕 August 2026 — v1.1.55–v1.1.63: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API, Artifact Evolution, Chat Web Workers, Addons Installer
+
+### New and updated documents (August 23, 2026, v1.1.63)
+
+- **[docs/project/proposals/007-artifact-evolution.md](project/proposals/007-artifact-evolution.md)** ⭐ **NEW** — Darwinian artifact evolution proposal (Phases A–G) for skills, prompts & roles: populations, admission gating, shadow A/B deployment, governance. (August 23, 2026)
+- **[docs/project/proposals/007-artifact-evolution-implementation-plan.md](project/proposals/007-artifact-evolution-implementation-plan.md)** ⭐ **NEW** — task-level implementation plan for the artifact evolution phases. (August 23, 2026)
+- **[docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md](project/proposals/032-chat-web-workers-wiring-implementation-plan.md)** ⭐ **NEW** — chat storage worker offload plan (with addons/embedded impact assessment). (August 23, 2026)
+- **[docs/operations/compliance/EU_AI_ACT_2026.md](operations/compliance/EU_AI_ACT_2026.md)** ⭐ **UPDATED** — new self-evolution governance section mapping the artifact evolution loop to Articles 14/15/72. (August 23, 2026)
+- **[docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md](developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md)** ⭐ **NEW** — post-sweep remediation plan for the single-process PHPUnit suite. (August 23, 2026)
+- **[docs/reference/tools/tool-reference.md](reference/tools/tool-reference.md)** ⭐ **UPDATED** — reference header reconciled for v1.1.63. (August 23, 2026)
+- **[docs/project/plans/v1.1.63-docs-catch-up.md](project/plans/v1.1.63-docs-catch-up.md)** ⭐ **NEW** — v1.1.63 docs & release catch-up plan. (August 23, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.63 highlights + latest updates (artifact evolution, Pro addons page, storage worker, DeepSeek fix, test-suite exit traps). (August 23, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.63] section with PR-level detail. (August 23, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.63 + changelog entry. (August 23, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.63 entry. (August 23, 2026)
 
 ### New and updated documents (August 22, 2026, v1.1.62)
 
