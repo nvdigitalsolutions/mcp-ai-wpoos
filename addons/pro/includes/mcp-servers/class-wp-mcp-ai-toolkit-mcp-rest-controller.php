@@ -728,6 +728,15 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 			$auth    = $this->get_auth();
 			$granted = $auth->get_oauth_scope();
 
+		// Scope enforcement applies to OAuth-authenticated requests only;
+		// non-OAuth requests (cookies, local tokens, Auth0, mesh keys) are
+		// not subject to it. get_oauth_scope() returns null for those, and
+		// treating null as "insufficient" would reject every non-OAuth
+		// JSON-RPC call with -32001.
+		if ( null === $granted ) {
+			return null;
+		}
+
 		// Scope check.
 		if ( ! class_exists( 'WP_MCP_AI_OAuth_Server' ) ) {
 			return null;
@@ -954,7 +963,9 @@ class WP_MCP_AI_Toolkit_MCP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	protected function handle_resources_read( $server, $id, $params ) {
-		$uri = isset( $params['uri'] ) ? esc_url_raw( (string) $params['uri'] ) : '';
+		// MCP resource URIs use custom schemes (e.g. nvoos://); esc_url_raw()
+		// would strip those to an empty string and reject every native URI.
+		$uri = isset( $params['uri'] ) ? sanitize_text_field( (string) $params['uri'] ) : '';
 		if ( '' === $uri ) {
 			return rest_ensure_response(
 				array(
