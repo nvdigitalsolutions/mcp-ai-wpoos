@@ -40,6 +40,27 @@
  */
 class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
+	/**
+	 * Ensure the orchestration dashboard's AJAX actions are registered.
+	 *
+	 * The plugin's admin loader only includes the dashboard class when
+	 * is_admin() is true, which never happens in the CLI test environment.
+	 * The file self-instantiates at the bottom, registering its wp_ajax_*
+	 * actions. Doing this in setUpBeforeClass() means the registrations are
+	 * captured by every test's hook-backup snapshot and survive the per-test
+	 * rollback.
+	 */
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
+
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Orchestration_Dashboard' ) ) {
+			$path = WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
+			if ( file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
+	}
+
 	// ---
 	// wp_mcp_ai_build_assistant_from_conversation
 	// ---

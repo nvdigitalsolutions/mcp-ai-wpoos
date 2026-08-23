@@ -26,30 +26,21 @@ require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-telemetry.
 class Test_Markup_Telemetry extends WP_UnitTestCase {
 
 	/**
-	 * Telemetry recorder under test.
+	 * Set up: reset persisted counters.
 	 *
-	 * @var WP_MCP_AI_Markup_Telemetry
-	 */
-	private $telemetry;
-
-	/**
-	 * Set up: register a fresh recorder and reset persisted counters.
+	 * The recorder itself is the globally registered instance from
+	 * includes/markup-init.php (registered at plugins_loaded). Registering a
+	 * second instance here would double-count every event.
 	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Markup_Telemetry::reset();
-		$this->telemetry = new WP_MCP_AI_Markup_Telemetry();
-		$this->telemetry->register();
 	}
 
 	/**
-	 * Tear down: remove hooks and clear option to keep tests isolated.
+	 * Tear down: clear option to keep tests isolated.
 	 */
 	public function tearDown(): void {
-		remove_action( 'wp_mcp_ai_markup_request_created', array( $this->telemetry, 'on_request_created' ), 10 );
-		remove_action( 'wp_mcp_ai_markup_submitted', array( $this->telemetry, 'on_submitted' ), 10 );
-		remove_action( 'wp_mcp_ai_markup_validated', array( $this->telemetry, 'on_validated' ), 10 );
-		remove_action( 'wp_mcp_ai_markup_resolved', array( $this->telemetry, 'on_resolved' ), 10 );
 		WP_MCP_AI_Markup_Telemetry::reset();
 		parent::tearDown();
 	}

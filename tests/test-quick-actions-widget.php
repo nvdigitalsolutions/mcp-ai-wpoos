@@ -79,10 +79,14 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 
 	/**
 	 * Test that AJAX action is registered.
+	 *
+	 * nopriv is intentionally NOT registered: handle_execute_action()
+	 * requires current_user_can( 'read' ) and always rejects unauthenticated
+	 * requests (see the handler constructor).
 	 */
 	public function test_ajax_action_registered() {
 		$this->assertTrue( has_action( 'wp_ajax_wp_mcp_ai_execute_quick_action' ) );
-		$this->assertTrue( has_action( 'wp_ajax_nopriv_wp_mcp_ai_execute_quick_action' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_wp_mcp_ai_execute_quick_action' ) );
 	}
 
 	/**
@@ -210,8 +214,8 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	 * Test that documentation files exist.
 	 */
 	public function test_documentation_exists() {
-		$proposal_file = WP_MCP_AI_PATH . 'docs/ai-quick-actions-widget-proposal.md';
-		$usage_file    = WP_MCP_AI_PATH . 'docs/ai-quick-actions-widget-usage.md';
+		$proposal_file = WP_MCP_AI_PATH . 'docs/features/chat-ui/ai-quick-actions-widget-proposal.md';
+		$usage_file    = WP_MCP_AI_PATH . 'docs/features/chat-ui/ai-quick-actions-widget-usage.md';
 
 		$this->assertFileExists( $proposal_file );
 		$this->assertFileExists( $usage_file );

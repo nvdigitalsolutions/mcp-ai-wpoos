@@ -81,16 +81,69 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 	);
 
 	/**
-	 * Set up the test.
+	 * Load the admin layer once for the whole class.
+	 *
+	 * The per-test hook rollback (`_backup_hooks` / `_restore_hooks`) resets
+	 * `$wp_actions`, so a `did_action( 'admin_init' )` guard inside `setUp()`
+	 * would re-fire the entire admin_init chain for every one of the ~60
+	 * data-provider tests. Hooks registered in `setUpBeforeClass()` are
+	 * captured by each test's hook-backup snapshot and survive the rollback,
+	 * so firing admin_init once here gives every test the same view at a
+	 * fraction of the cost.
 	 */
-	public function setUp(): void {
-		parent::setUp();
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
 
 		// Ensure all necessary classes are loaded by triggering WordPress admin init.
 		// This simulates the plugin being fully loaded in an admin context.
 		if ( ! did_action( 'admin_init' ) ) {
 			do_action( 'admin_init' );
 		}
+
+		// The plugin's admin loader (`includes/bootstrap/loader.php`) only
+		// instantiates the classes below when is_admin() is true, which never
+		// happens in the CLI test environment. Mirror that here so the
+		// wp_ajax_* actions they register are available for assertion.
+		$admin_init_files = array(
+			'includes/admin/class-wp-mcp-ai-admin-settings.php',
+			'includes/admin/class-wp-mcp-ai-auth0-setup.php',
+			'includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php',
+			'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php',
+			'includes/admin/class-wp-mcp-ai-provider-diagnostics.php',
+			'includes/admin/class-wp-mcp-ai-model-manager-ajax.php',
+		);
+		foreach ( $admin_init_files as $file ) {
+			$path = WP_MCP_AI_PATH . $file;
+			if ( file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			new WP_MCP_AI_Admin_Settings();
+		}
+		if ( class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
+			new WP_MCP_AI_Auth0_Setup();
+		}
+		if ( class_exists( 'WP_MCP_AI_Admin_Create_Assistant_Button' ) ) {
+			WP_MCP_AI_Admin_Create_Assistant_Button::init();
+		}
+		if ( class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
+			WP_MCP_AI_MCP_Server_Diagnostic::init();
+		}
+		if ( class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
+			WP_MCP_AI_Provider_Diagnostics::init();
+		}
+		if ( class_exists( 'WP_MCP_AI_Model_Manager_Ajax' ) ) {
+			WP_MCP_AI_Model_Manager_Ajax::init();
+		}
+	}
+
+	/**
+	 * Set up the test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
 	}
 
 	/**
