@@ -256,6 +256,23 @@ builds). The real file exits on undefined `ABSPATH`, hence the deferral.
 **Validate.** Fresh MySQL run completes the install phase with no fatal; the
 stub path is exercised by Base builds without WooCommerce.
 
+### 1.10 Toolkit MCP server rejects non-OAuth clients + native resource URIs
+
+**Evidence.** `addons/pro/tests/test-toolkit-server-execution.php` failed 9/10
+on alpha-working: `check_scope_for_method()` treated a null OAuth scope
+(non-OAuth auth) as insufficient, returning -32001 for every JSON-RPC call;
+and `handle_resources_read()` ran URIs through `esc_url_raw()`, which strips
+the `nvoos://` scheme and rejected every native URI with "missing uri".
+
+**Fix.** Scope enforcement is OAuth-only — return early when the granted
+scope is null (matching `WP_MCP_AI_REST_Authenticator::oauth_scope_sufficient()`
+and the controller's own docblock). Sanitize resource URIs with
+`sanitize_text_field()` instead of `esc_url_raw()` (the same sanitizer the
+mounted-URI parser already used).
+
+**Validate.** `addons/pro/tests/test-toolkit-server-execution.php`: 10/10 PASS
+(was 1/10).
+
 ---
 
 ## Phase 2 — TIMEOUT triage (after Phase 0 re-runs)
