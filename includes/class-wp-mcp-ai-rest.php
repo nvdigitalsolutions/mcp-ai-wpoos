@@ -1305,8 +1305,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// subsequent polls only emit frames for real transitions.
 			$prev_jobs = $this->index_jobs_by_id( isset( $initial['jobs'] ) ? $initial['jobs'] : array() );
 
-			$max_polls     = self::SSE_JOB_MAX_POLLS;
-			$poll_interval = self::SSE_JOB_POLL_INTERVAL;
+			/**
+			 * Filter the maximum number of polls for the status-summary SSE stream.
+			 *
+			 * @since 1.3.1
+			 *
+			 * @param int $max_polls Maximum number of polls. Default 120.
+			 */
+			$max_polls = (int) apply_filters( 'wp_mcp_ai_sse_job_max_polls', self::SSE_JOB_MAX_POLLS );
+			/**
+			 * Filter the polling interval (seconds) for the status-summary SSE stream.
+			 *
+			 * @since 1.3.1
+			 *
+			 * @param int $poll_interval Seconds between polls. Default 3.
+			 */
+			$poll_interval = (int) apply_filters( 'wp_mcp_ai_sse_job_poll_interval', self::SSE_JOB_POLL_INTERVAL );
 			$poll_count    = 0;
 
 			if ( ! $headers_sent ) {
@@ -1440,8 +1454,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Poll for updates until job completes or times out.
-			$max_polls     = self::SSE_JOB_MAX_POLLS;
-			$poll_interval = self::SSE_JOB_POLL_INTERVAL;
+			/**
+			 * Filter the maximum number of polls for the job-status SSE stream.
+			 *
+			 * @since 1.3.1
+			 *
+			 * @param int $max_polls Maximum number of polls. Default 120.
+			 */
+			$max_polls = (int) apply_filters( 'wp_mcp_ai_sse_job_max_polls', self::SSE_JOB_MAX_POLLS );
+			/**
+			 * Filter the polling interval (seconds) for the job-status SSE stream.
+			 *
+			 * @since 1.3.1
+			 *
+			 * @param int $poll_interval Seconds between polls. Default 3.
+			 */
+			$poll_interval = (int) apply_filters( 'wp_mcp_ai_sse_job_poll_interval', self::SSE_JOB_POLL_INTERVAL );
 			$poll_count    = 0;
 			$last_status   = $status;
 
