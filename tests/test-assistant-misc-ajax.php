@@ -53,11 +53,32 @@ class Test_Assistant_Misc_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
+		// Load the dashboard class once; its hooks are (re-)registered in
+		// setUp() below because wp-phpunit snapshots hooks once per process
+		// and restores that snapshot after every test, wiping any hooks
+		// registered here when this class runs after another test file.
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Orchestration_Dashboard' ) ) {
 			$path = WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
 			if ( file_exists( $path ) ) {
 				require_once $path;
 			}
+		}
+	}
+
+	/**
+	 * Re-register the dashboard's wp_ajax_* actions per test.
+	 *
+	 * wp-phpunit's _restore_hooks() reverts $wp_filter to the once-per-process
+	 * snapshot after every test, which removes hooks registered after the
+	 * first test of the run. Re-instantiate (cheap: constructor only adds
+	 * actions) so dispatches in this file work regardless of run order.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Orchestration_Dashboard' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_get_orchestration_stats' ) ) {
+			new WP_MCP_AI_Admin_Orchestration_Dashboard();
 		}
 	}
 

@@ -86,10 +86,14 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 	 * The per-test hook rollback (`_backup_hooks` / `_restore_hooks`) resets
 	 * `$wp_actions`, so a `did_action( 'admin_init' )` guard inside `setUp()`
 	 * would re-fire the entire admin_init chain for every one of the ~60
-	 * data-provider tests. Hooks registered in `setUpBeforeClass()` are
-	 * captured by each test's hook-backup snapshot and survive the rollback,
-	 * so firing admin_init once here gives every test the same view at a
-	 * fraction of the cost.
+	 * data-provider tests. Firing admin_init once here loads every admin
+	 * class at a fraction of the cost.
+	 *
+	 * Note: wp-phpunit snapshots `$wp_filter` once per process (at the first
+	 * test of the run) and restores that snapshot after every test, so the
+	 * hook registrations made here are wiped after the first tearDown of this
+	 * class whenever another test file ran first. setUp() below therefore
+	 * re-registers the classes whose hooks the rollback removed.
 	 */
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
@@ -104,6 +108,28 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 		// instantiates the classes below when is_admin() is true, which never
 		// happens in the CLI test environment. Mirror that here so the
 		// wp_ajax_* actions they register are available for assertion.
+		self::require_admin_classes();
+		self::register_admin_ajax_handlers();
+	}
+
+	/**
+	 * Set up the test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Re-register any admin handlers the once-per-process hook snapshot
+		// does not contain; the rollback removes them after every test.
+		self::register_admin_ajax_handlers();
+	}
+
+	/**
+	 * Load the admin class files once (class loading is process-wide and
+	 * survives the per-test hook rollback).
+	 *
+	 * @return void
+	 */
+	private static function require_admin_classes() {
 		$admin_init_files = array(
 			'includes/admin/class-wp-mcp-ai-admin-settings.php',
 			'includes/admin/class-wp-mcp-ai-auth0-setup.php',
@@ -118,32 +144,40 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 				require_once $path;
 			}
 		}
-
-		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-			new WP_MCP_AI_Admin_Settings();
-		}
-		if ( class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
-			new WP_MCP_AI_Auth0_Setup();
-		}
-		if ( class_exists( 'WP_MCP_AI_Admin_Create_Assistant_Button' ) ) {
-			WP_MCP_AI_Admin_Create_Assistant_Button::init();
-		}
-		if ( class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
-			WP_MCP_AI_MCP_Server_Diagnostic::init();
-		}
-		if ( class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
-			WP_MCP_AI_Provider_Diagnostics::init();
-		}
-		if ( class_exists( 'WP_MCP_AI_Model_Manager_Ajax' ) ) {
-			WP_MCP_AI_Model_Manager_Ajax::init();
-		}
 	}
 
 	/**
-	 * Set up the test.
+	 * Instantiate the admin classes whose wp_ajax_* actions are not currently
+	 * registered. Each entry checks a representative hook so a class whose
+	 * hooks are present (in the process snapshot) is not double-registered.
+	 *
+	 * @return void
 	 */
-	public function setUp(): void {
-		parent::setUp();
+	private static function register_admin_ajax_handlers() {
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_test_cloudways_connection' ) ) {
+			new WP_MCP_AI_Admin_Settings();
+		}
+		if ( class_exists( 'WP_MCP_AI_Auth0_Setup' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_toggle_auth0_bridge' ) ) {
+			new WP_MCP_AI_Auth0_Setup();
+		}
+		if ( class_exists( 'WP_MCP_AI_Admin_Create_Assistant_Button' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_build_assistant_from_conversation' ) ) {
+			WP_MCP_AI_Admin_Create_Assistant_Button::init();
+		}
+		if ( class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_test_mcp_endpoint' ) ) {
+			WP_MCP_AI_MCP_Server_Diagnostic::init();
+		}
+		if ( class_exists( 'WP_MCP_AI_Provider_Diagnostics' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_test_provider' ) ) {
+			WP_MCP_AI_Provider_Diagnostics::init();
+		}
+		if ( class_exists( 'WP_MCP_AI_Model_Manager_Ajax' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_discover_models' ) ) {
+			WP_MCP_AI_Model_Manager_Ajax::init();
+		}
 	}
 
 	/**
