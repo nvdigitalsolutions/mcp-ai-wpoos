@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.62
+Stable tag: 1.1.63
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.63 - August 23, 2026 =
+
+Artifact Evolution Phases A–G (Base + Pro): the Continual Harness Evolver and Meta-Harness become a complete gated Darwinian self-improvement loop for skills, prompts, and roles — competing artifact populations with fitness-weighted parent selection, failure-case replay and post-mutation verification, learning-log-aware mutators, a pre-commit admission gate (structural/harmlessness/marginal-gain critics), holdout-gated deployment with shadow A/B and drift rollback, a unified evolution governor (budget, rate limits, site-wide cap), a human approval queue with per-artifact lineage graphs, an artifact-governance metabox on the assistant screen, and the evolution switches surfaced in Settings → Orchestration Layer. Every layer is opt-in and defaults off. Pro gains a new Addons admin page (NV oOS Pro Dashboard → Addons) with one-click install/activate for standalone addons whose ZIPs ship in the build directory (nonce + install_plugins + allowlist gated; non-WordPress components listed read-only). Chat conversation saves at or above a 10,000-char threshold now offload JSON stringify to a browser storage worker with synchronous fallback and a filter-based kill switch. Fixed: DeepSeek 400 errors on empty tool schema properties (empty maps now encode as {} never []); OKF skill-knowledge conformance (type: Skill frontmatter on all 91 bundled SKILL.md files plus restored reference files); Pro SPA v2 slash-command composer insertion; and test-suite exit traps with a new parallel sweep harness (bin/sweep-tests.php) plus minimal production fixes (bare-exit test seams, duplicate CRM workflow-rule class rename, toolkit MCP scope check and nvoos:// resource URIs, SSE/Veo polling-limit filters). Tool count unchanged: ~303 base + ~1,249 Pro (~1,552 total; live registry authoritative).
 
 = 1.1.62 - August 22, 2026 =
 

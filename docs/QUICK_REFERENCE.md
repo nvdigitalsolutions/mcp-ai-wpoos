@@ -1,11 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.62
-**Last Updated:** August 22, 2026
+**Version:** 1.1.63
+**Last Updated:** August 23, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (August 2026)
+
+- **v1.1.63** (August 23): Artifact Evolution Phases A–G — the Continual Harness Evolver + Meta-Harness become a gated Darwinian self-improvement loop for skills, prompts, and roles: artifact populations with fitness-weighted parent selection, failure-case replay + post-mutation verification, pre-commit admission gate (three critics), holdout-gated deployment with shadow A/B + drift rollback, evolution governor with human approval queue + lineage graphs + assistant-screen metabox; `evolve_harness` ↔ Evolver contract repaired; all opt-in, switches in Settings → Orchestration Layer. Pro: new Addons admin page (NV oOS Pro Dashboard → Addons) with one-click install/activate for standalone addons (nonce + `install_plugins` + allowlist). Chat saves offload JSON stringify to a browser storage worker above a 10,000-char threshold (kill-switch filter, sync fallback). Fixed: DeepSeek 400s on empty tool schema properties (`{}` never `[]`), OKF skill-knowledge conformance (`type: Skill` frontmatter on all 91 bundled SKILL.md files + restored reference files), Pro SPA v2 slash-command composer, and test-suite exit traps (`bin/sweep-tests.php`, AJAX test contracts, bare-exit test seams, toolkit MCP scope/URI fixes, SSE/Veo polling filters). Tool count unchanged: ~303 base + ~1,249 Pro (~1,552 total). See `docs/project/proposals/007-artifact-evolution.md`, `docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md`.
 
 - **v1.1.62** (August 22): OKF bundle management (Base) — new `WP_MCP_AI_OKF_Bundle_Manager` bundle lifecycle (create/list/rename/archive/delete, ZipSlip-safe ZIP import/export, health stats) with `skill-knowledge` protected; three new tools (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`) + `okf_write_concept` provenance schema (`resource`/`sources`/`usage_window`/`verified`) bring the OKF tool surface to 10; new Bundle Manager admin screen (Bundles/Browser/Editor/Import-Export/Validate). Pro: OKF-to-Skill Bridge (`load_skill` `bundle:concept_id`, per-assistant grants + trust gating), auto-enrichment agent (`okf_enrich_site_content`), hybrid knowledge router (`route_knowledge_query`), and an OKF Skills Drawer in the Pro SPA v2 backed by the read-only `mcp-ai-pro/v1/okf` REST surface. Vector store tools migrated to the Responses API (headerless, `file_batches` ingestion + fallback) ahead of OpenAI's 2026-08-26 Assistants API removal. Fixed: 404 on percent-encoded OKF concept routes (`%2F`). Tool count: ~303 base + ~1,249 Pro (~1,552 total). See `docs/features/okf-integration.md`, `docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md`.
 

@@ -1,19 +1,54 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.63] - 2026-08-23
 
-### Changed — Chat storage worker wired (proposal 032)
+### Added — Artifact Evolution Phases A–G: Darwinian Self-Improvement for Skills, Prompts & Roles (PRs #5923, #5925)
+
+- The Continual Harness Evolver + Meta-Harness become a complete, gated, Darwinian evolution loop (proposal 007, 52 files, +11,666/-75): competing artifact populations with fitness-weighted parent selection, failure-case replay + post-mutation verification, learning-log-aware mutators, a pre-commit admission gate (structural / harmlessness / marginal-gain critics — the VaG contamination control), holdout-gated deployment with shadow A/B serving and drift-triggered rollback, and a cross-cutting governor with a human approval queue and per-artifact lineage graphs.
+- **Phase A wiring repair:** `evolve_harness` ↔ `WP_MCP_AI_Agent_Harness_Evolver` contract fixed (constructor argument normalization, new `analyze_failures()`, component-scoped `evolve()` with `dry_run` actually enforced); opt-in evolved-prompt consumption (`WP_MCP_AI_Evolved_Prompt_Resolver`) and evolved-skill merge into the Skill Registry; Refiner output sanitization + PII scrubbing; default $5/hr evolution budget.
+- **Settings UI (PR #5925):** the evolution opt-in switches are now manageable from **Settings → Orchestration Layer** — `WP_MCP_AI_Evolution_Settings_Bridge` (priority 5) maps saved values onto the underlying filters, with a governor summary and reset.
+- **Admin surface:** artifact-governance metabox on the assistant screen (governor report, pending approval queue with nonce'd approve/reject, lineage tree). Every layer is opt-in and defaults off; Base ships the engine, population, gating, and governance — Pro upgrades the proposer, shadow A/B, and lineage UI.
+- Docs: [`docs/project/proposals/007-artifact-evolution.md`](docs/project/proposals/007-artifact-evolution.md) + implementation plan; new self-evolution governance section in [`docs/operations/compliance/EU_AI_ACT_2026.md`](docs/operations/compliance/EU_AI_ACT_2026.md).
+- Tests: 16 new/expanded suites (admission gate, approval queue, deploy, failure replay, learning log, lineage, mutator, population, shadow, verification gate, governor, eval scoping, metabox, evolver, `evolve_harness` tool).
+
+### Added — Pro Addons Admin Page with One-Click Install (PR #5924)
+
+- New registry-driven **NV oOS Pro Dashboard → Addons** page (`/wp-admin/admin.php?page=wp-mcp-ai-addons`, `WP_MCP_AI_Addons_Page`, 813 lines) installs and activates standalone addons whose ZIPs ship in the plugin's `build/` directory; gated by nonce + `install_plugins` + an explicit allowlist. Non-WordPress components (Media Worker, Cloud Worker, Tenant Router, Schedule Anything SPA) are listed read-only.
+- Tests: `addons/pro/tests/test-addons-page-ajax.php` (nonce/capability/allowlist matrix).
+
+### Changed — Chat Storage Worker Offload (proposal 032, PR #5928)
 
 - Conversation saves at or above `wp_mcp_ai_storage_worker_threshold` (default 10,000 chars) now offload the expensive `JSON.stringify` to the browser storage worker (`storage-worker.js`) via `wpMcpAiStorageUtil`; small saves, unload flushes (`immediate`), and worker failures fall back to the synchronous main-thread write with the existing quota-retry logic.
 - `storage-util.js` `parseJSON()`/`stringifyJSON()` accept a per-call threshold override; non-positive thresholds disable offload.
 - `window.wpMcpAiChat` gains `storageWorkerUrl` + `storageWorkerThreshold` on every chat surface via `WP_MCP_AI_Shortcode::get_storage_worker_inline_script()`; the `wp_mcp_ai_storage_worker_threshold` filter (0 = off) is the kill switch.
 - `storage-util.js` is bundled into `chat-bundle.js`; `esbuild.config.js` size reporting accounts for it.
 - The Docker media worker (port 3100) remains server-side only; browser chat never calls it.
-
-### Fixed — LLM worker manager URL resolution
-
-- `WP_MCP_AI_LLM_Worker_Manager::getWorkerUrl()` now prefers the localised `wpMcpAiWebWorker.workerUrl`, falls back to `wpMcpAiChat.pluginUrl`, and logs an explicit error when neither is configured.
+- Fixed LLM worker manager URL resolution: `WP_MCP_AI_LLM_Worker_Manager::getWorkerUrl()` now prefers the localised `wpMcpAiWebWorker.workerUrl`, falls back to `wpMcpAiChat.pluginUrl`, and logs an explicit error when neither is configured.
 - Tests: `tests/js/storage-util.test.js` (worker routing + fallbacks), `tests/js/storage-worker-wiring.test.js` (service offload decisions), `tests/test-storage-worker-localization.php`.
+- Docs: [`docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md`](docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md) (with the addons/embedded impact assessment).
+
+### Fixed — DeepSeek 400 on Empty Tool Schema Properties (PR #5926)
+
+- Schema normalization turned object-valued property maps into an empty PHP array, which JSON-encodes as `"properties": []` and DeepSeek rejects with "[] is not of type 'object'". Empty maps now encode as `{}` at all three payload boundaries (REST `/tools` output, `WP_MCP_AI_Tool_Service`, `ChatOrchestrator`).
+- Legacy-format tools are now wrapped **before** the first register attempt, so the fail-loud registry log no longer fires for classes that register successfully via the wrapper.
+
+### Fixed — OKF Skill-Knowledge Conformance (PR #5919)
+
+- Added the OKF v0.2-required `type: Skill` frontmatter to 91 bundled SKILL.md files (base + Pro) and restored the four missing companion reference files that wp-plugin-dto, wp-plugin-presenter, wp-action-scheduler, and mcp-builder cross-link to — the OKF Validate tab no longer reports missing concepts or advisory issues. The `.agents/skills` mirror sync now copies skill directories recursively and covers all project-owned design skills.
+
+### Fixed — Pro SPA v2 Slash-Command Composer (PR #5920)
+
+- `/chat`, `/new`, `/clear`, `/copy`, and `/export` now insert reliably from the SlashCommandsDrawer (also openable from the AgentPanel button); base `assets/js/slash-commands.js` fixes. Fix history: `docs/history/2026/fixes/pro-spa-v2-slash-command-composer-fix.md`.
+
+### Fixed — Test-Suite Exit Traps & Toolkit MCP Scope (PR #5929)
+
+- New `bin/sweep-tests.php` sweeps every test file in parallel (6 workers, 180s/file cap, report + custom report path) to find exit-trap and drift failures; AJAX test contracts added to `tests/bootstrap.php`, and 24+ test files aligned with the catchable-die/admin-handler contracts.
+- Production fixes kept minimal: bare-exit guards in four admin handlers (`WP_MCP_AI_TESTS_RUNNING` test seams — no auth relaxation), the duplicate CRM workflow-rule class renamed, the toolkit MCP scope check now treats null (non-OAuth) scope as unenforced and resource URIs skip `esc_url_raw()` (which stripped the `nvoos://` scheme), `wp_mcp_ai_sse_job_max_polls` / `wp_mcp_ai_sse_job_poll_interval` / `wp_mcp_ai_veo_poll_max_attempts` / `wp_mcp_ai_veo_poll_interval` filters added, and export-provider `log_action()` made public.
+- Docs: `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md` (sweep baseline + remediation principles).
+
+### Versioning
+
+- Bumped to 1.1.63 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.63. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: 1.0.3 (unchanged). Tool count: ~303 base + ~1,249 Pro (~1,552 total; live registry authoritative). Providers: 15. Addons: 26. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: 52.
 
 ## [1.1.62] - 2026-08-22
 

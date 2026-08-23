@@ -1,7 +1,9 @@
 # NV oOS Testing Patterns
 
 > **GSD Context File** — Load this when writing or reviewing PHPUnit tests.
-> Last reviewed: March 2026.
+> Last reviewed: August 23, 2026 (v1.1.63).
+>
+> **New in v1.1.63 (PR #5929):** `bin/sweep-tests.php` sweeps every test file in parallel (6 workers, 180s/file cap, `--report` output) to surface exit-trap and drift failures. AJAX test contracts live in `tests/bootstrap.php` (see `tests/AJAX_TESTS_README.md`): admin AJAX hooks are re-registered per test, and handlers that `die()`/`exit()` directly are guarded with `WP_MCP_AI_TESTS_RUNNING` seams that throw a catchable exception instead. SSE and Veo polling loops honor `wp_mcp_ai_sse_job_max_polls` / `wp_mcp_ai_sse_job_poll_interval` / `wp_mcp_ai_veo_poll_max_attempts` / `wp_mcp_ai_veo_poll_interval` filters so tests can bound them. Remaining suite work is tracked in [`docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`](../docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md) — prefer `markTestSkipped()` with an explicit reason over deleting assertions, and never weaken security assertions to make a test pass.
 
 ---
 

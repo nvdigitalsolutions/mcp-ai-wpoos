@@ -113,6 +113,16 @@ if ( stored ) {
 }
 ```
 
+### Storage worker offload (v1.1.63)
+
+Large conversation saves offload the expensive `JSON.stringify` to a browser Web Worker:
+
+- Saves at or above `wp_mcp_ai_storage_worker_threshold` (default 10,000 chars) route through `wpMcpAiStorageUtil.stringifyJSON()` → `storage-worker.js`; small saves, unload flushes (`immediate`), and worker failures fall back to the synchronous main-thread write with the existing quota-retry logic.
+- `storage-util.js` `parseJSON()`/`stringifyJSON()` accept a per-call threshold override; non-positive thresholds disable offload.
+- `window.wpMcpAiChat` gains `storageWorkerUrl` + `storageWorkerThreshold` on every chat surface via `WP_MCP_AI_Shortcode::get_storage_worker_inline_script()`.
+- Kill switch: `add_filter( 'wp_mcp_ai_storage_worker_threshold', '__return_zero' );` — 0 = off, no deploy needed.
+- The Docker media worker (port 3100) is server-side only; browser chat never calls it.
+
 ---
 
 ## Guest Token Handling

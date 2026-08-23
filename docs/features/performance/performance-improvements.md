@@ -219,7 +219,7 @@ console.log('Optimizations enabled:', !window.wpMcpAiChatDebugMode);
 
 ## Future Improvements
 
-### Web Worker Integration (Wired as of 1.1.62)
+### Web Worker Integration (Wired as of 1.1.63)
 
 Conversation writes are now offloaded to the browser storage worker:
 

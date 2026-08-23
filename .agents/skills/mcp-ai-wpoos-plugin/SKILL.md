@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.62"
-  plugin-version-tested: "1.1.62"
-  last-updated: "2026-08-22"
+  plugin-version: "1.1.63"
+  plugin-version-tested: "1.1.63"
+  last-updated: "2026-08-23"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -555,6 +555,34 @@ Import external AI conversation exports into the JetEngine
   removal.
 - Guide: `docs/features/okf-integration.md`; roadmap:
   `docs/project/plans/OKF-BUNDLE-MANAGEMENT-IMPLEMENTATION-PLAN.md`.
+
+---
+
+## Artifact Evolution, Addons Page & Storage Worker (v1.1.63+)
+
+- **Artifact evolution Phases A–G (Base + Pro)** — the Continual Harness
+  Evolver + Meta-Harness are now a gated Darwinian self-improvement loop for
+  skills, prompts, and roles (`includes/harness/class-wp-mcp-ai-artifact-*.php`):
+  populations + parent sampling, failure replay + post-mutation verification,
+  pre-commit admission gate, holdout-gated deployment with shadow A/B + drift
+  rollback, governor + human approval queue + lineage. **Every layer defaults
+  off**; the opt-in switches live in Settings → Orchestration Layer
+  (`WP_MCP_AI_Evolution_Settings_Bridge`). The `evolve_harness` tool now calls
+  the repaired Evolver contract (`analyze_failures()`, component-scoped
+  `evolve()`, enforced `dry_run`). Proposal:
+  `docs/project/proposals/007-artifact-evolution.md`.
+- **Pro Addons page (v1.1.63+)** — NV oOS Pro Dashboard → Addons
+  (`/wp-admin/admin.php?page=wp-mcp-ai-addons`) installs/activates standalone
+  addons whose ZIPs ship in `build/`; nonce + `install_plugins` + allowlist;
+  non-WordPress components listed read-only.
+- **Chat storage worker offload** — saves ≥ `wp_mcp_ai_storage_worker_threshold`
+  (default 10,000 chars) offload `JSON.stringify` to the browser
+  `storage-worker.js`; sync fallback for small saves/unload/worker failure;
+  kill switch: `add_filter( 'wp_mcp_ai_storage_worker_threshold',
+  '__return_zero' );`. Plan:
+  `docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md`.
+- **DeepSeek empty-schema fix** — tool schema `properties` must encode as `{}`
+  never `[]`; legacy tools are wrapped before the first register attempt.
 
 ---
 
