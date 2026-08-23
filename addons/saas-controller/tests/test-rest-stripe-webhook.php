@@ -41,8 +41,12 @@ class Test_NVOOS_SaaS_Controller_REST_Stripe_Webhook extends WP_Test_REST_TestCa
 	public function set_up() {
 		parent::set_up();
 		// Re-register the routes for each test (rest server is rebuilt by
-		// WP_Test_REST_TestCase between cases).
-		NVOOS_SaaS_Controller_REST::register_routes();
+		// WP_Test_REST_TestCase between cases). Registration must go through
+		// the rest_api_init action: WP 6.x raises a _doing_it_wrong notice
+		// (which wp-phpunit turns into a test failure) when
+		// register_rest_route() is called outside it, and in the CLI test
+		// environment rest_api_init never fires at bootstrap.
+		do_action( 'rest_api_init' );
 
 		delete_option( NVOOS_SaaS_Controller_Webhook_Event_Store::OPTION );
 		NVOOS_SaaS_Controller_Webhook_Event_Store::reset_for_tests();
