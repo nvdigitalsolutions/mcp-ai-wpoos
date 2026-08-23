@@ -24,13 +24,6 @@ require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-
 class Test_Markup_Stats_Slash_Command extends WP_UnitTestCase {
 
 	/**
-	 * Recorder used to populate fixtures.
-	 *
-	 * @var WP_MCP_AI_Markup_Telemetry
-	 */
-	private $telemetry;
-
-	/**
 	 * Command under test.
 	 *
 	 * @var WP_MCP_AI_Slash_Command_Markup_Stats
@@ -38,24 +31,21 @@ class Test_Markup_Stats_Slash_Command extends WP_UnitTestCase {
 	private $command;
 
 	/**
-	 * Set up: reset counters, register the recorder, instantiate command.
+	 * Set up: reset counters, instantiate command.
+	 *
+	 * Recording is handled by the globally registered recorder from
+	 * includes/markup-init.php; a second instance would double-count.
 	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Markup_Telemetry::reset();
-		$this->telemetry = new WP_MCP_AI_Markup_Telemetry();
-		$this->telemetry->register();
 		$this->command = new WP_MCP_AI_Slash_Command_Markup_Stats();
 	}
 
 	/**
-	 * Tear down: detach hooks and clear option.
+	 * Tear down: clear option.
 	 */
 	public function tearDown(): void {
-		remove_action( 'wp_mcp_ai_markup_request_created', array( $this->telemetry, 'on_request_created' ), 10 );
-		remove_action( 'wp_mcp_ai_markup_submitted', array( $this->telemetry, 'on_submitted' ), 10 );
-		remove_action( 'wp_mcp_ai_markup_validated', array( $this->telemetry, 'on_validated' ), 10 );
-		remove_action( 'wp_mcp_ai_markup_resolved', array( $this->telemetry, 'on_resolved' ), 10 );
 		WP_MCP_AI_Markup_Telemetry::reset();
 		parent::tearDown();
 	}
@@ -137,8 +127,10 @@ class Test_Markup_Stats_Slash_Command extends WP_UnitTestCase {
 		do_action( 'wp_mcp_ai_markup_request_created', $this->build_request( 'crop_image', 'crop' ), null );
 
 		$result = $this->command->execute( array(), array( 'reset' => true ), array() );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'manage_options', $result['message'] );
+		// The command reports capability failures as WP_Error (the canonical
+		// tool envelope), not as a success:false array.
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertStringContainsString( 'manage_options', $result->get_error_message() );
 
 		// Counter should still be present.
 		$summary = WP_MCP_AI_Markup_Telemetry::get_summary();

@@ -17,6 +17,42 @@
 class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 
 	/**
+	 * Set up: stub outbound HTTP and bound the polling loop.
+	 *
+	 * The default loop is 60 polls × 5s with real outbound requests to the
+	 * Gemini API — far too slow for a unit test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		add_filter( 'wp_mcp_ai_veo_poll_max_attempts', function () { return 2; } );
+		add_filter( 'wp_mcp_ai_veo_poll_interval', function () { return 1; } );
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				unset( $args );
+				if ( false !== strpos( $url, 'generativelanguage.googleapis.com' ) ) {
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode(
+							array(
+								'name' => 'operations/test-operation-123',
+								'done' => false,
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+	}
+
+	/**
 	 * Test that polling detects timeout and falls back to async.
 	 */
 	public function test_polling_falls_back_to_async_on_timeout() {
@@ -176,7 +212,8 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 		$this->assertIsArray( $metadata, 'Transient data should be array' );
 		$this->assertEquals( $job_id, $metadata['job_id'], 'Job ID should match' );
 		$this->assertEquals( 'operations/test-operation-456', $metadata['operation_name'] );
-		$this->assertEquals( 'pending', $metadata['status'] );
+		// queue_async_polling() marks the job as actively polling.
+		$this->assertEquals( 'polling', $metadata['status'] );
 
 		// Cleanup.
 		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
@@ -214,11 +251,13 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 		$result  = $method->invoke( $tool, $args, $context );
 		$this->assertFalse( $result, 'Should respect explicit async=false' );
 
-		// Test 4: Explicit async=true in arguments overrides in_async_executor.
+		// Test 4: in_async_executor takes precedence over async=true — the
+		// executor-context check runs first to prevent double-async
+		// execution (see should_use_async()).
 		$args    = array( 'async' => true );
 		$context = array( 'in_async_executor' => true );
 		$result  = $method->invoke( $tool, $args, $context );
-		$this->assertTrue( $result, 'Explicit async=true should override in_async_executor check' );
+		$this->assertFalse( $result, 'in_async_executor must win over explicit async=true' );
 	}
 
 	/**
@@ -231,23 +270,12 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 
 		$source = file_get_contents( $service_file );
 
-		// Verify timeout detection code exists.
+		// The service delegates timing to the dedicated timeout-detection
+		// service, which owns the execution-time tracking.
 		$this->assertStringContainsString(
-			'microtime( true )',
+			'WP_MCP_AI_Timeout_Detection_Service',
 			$source,
-			'Should track execution time'
-		);
-
-		$this->assertStringContainsString(
-			'max_execution_time',
-			$source,
-			'Should check max_execution_time'
-		);
-
-		$this->assertStringContainsString(
-			'timeout_threshold',
-			$source,
-			'Should have timeout threshold'
+			'Should delegate to the timeout detection service'
 		);
 
 		$this->assertStringContainsString(
@@ -260,6 +288,29 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 			'queue_async_polling',
 			$source,
 			'Should call queue_async_polling on timeout'
+		);
+
+		// Execution-time tracking lives in the timeout detection service.
+		$detector_file = WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
+		$this->assertFileExists( $detector_file );
+		$detector_source = file_get_contents( $detector_file );
+
+		$this->assertStringContainsString(
+			'microtime( true )',
+			$detector_source,
+			'Should track execution time'
+		);
+
+		$this->assertStringContainsString(
+			'max_execution_time',
+			$detector_source,
+			'Should check max_execution_time'
+		);
+
+		$this->assertStringContainsString(
+			'timeout_threshold',
+			$detector_source,
+			'Should have timeout threshold'
 		);
 	}
 

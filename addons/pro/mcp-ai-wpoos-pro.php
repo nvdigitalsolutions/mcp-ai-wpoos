@@ -788,7 +788,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Sequence_Performance'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/sequences/class-wp-mcp-ai-tool-get-sequence-performance.php',
 
 				// ── Phase D: Command Center (5) ──
-				'WP_MCP_AI_Tool_Create_Workflow_Rule'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-create-workflow-rule.php',
+				'WP_MCP_AI_Tool_Create_Crm_Workflow_Rule'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-create-crm-workflow-rule.php',
 				'WP_MCP_AI_Tool_Manage_Workflow_Rules'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-manage-workflow-rules.php',
 				'WP_MCP_AI_Tool_Simulate_Workflow_Rule'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-simulate-workflow-rule.php',
 				'WP_MCP_AI_Tool_Get_Workflow_Inbox'        => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/command-center/class-wp-mcp-ai-tool-get-workflow-inbox.php',

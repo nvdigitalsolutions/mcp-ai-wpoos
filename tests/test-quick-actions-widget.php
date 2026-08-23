@@ -79,10 +79,14 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 
 	/**
 	 * Test that AJAX action is registered.
+	 *
+	 * nopriv is intentionally NOT registered: handle_execute_action()
+	 * requires current_user_can( 'read' ) and always rejects unauthenticated
+	 * requests (see the handler constructor).
 	 */
 	public function test_ajax_action_registered() {
 		$this->assertTrue( has_action( 'wp_ajax_wp_mcp_ai_execute_quick_action' ) );
-		$this->assertTrue( has_action( 'wp_ajax_nopriv_wp_mcp_ai_execute_quick_action' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_wp_mcp_ai_execute_quick_action' ) );
 	}
 
 	/**
@@ -93,17 +97,22 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test AJAX request without nonce fails.
+	 * Test AJAX request with an invalid nonce fails.
 	 */
 	public function test_ajax_without_nonce_fails() {
 		$_POST['tool'] = 'test_tool';
+		// An invalid nonce keeps the request in AJAX context (routing
+		// check_ajax_referer() through wp_die() instead of a process-killing
+		// bare die( '-1' )) while still failing verification.
+		$_POST['nonce'] = 'invalid-nonce';
 
 		try {
 			$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
 			$handler->handle_execute_action();
 			$this->fail( 'Expected wp_die to be called' );
 		} catch ( WPDieException $e ) {
-			$this->assertStringContainsString( 'nonce', $e->getMessage() );
+			// check_ajax_referer() terminates the request with -1 for a failed nonce.
+			$this->assertSame( '-1', $e->getMessage() );
 		}
 	}
 
@@ -205,8 +214,8 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	 * Test that documentation files exist.
 	 */
 	public function test_documentation_exists() {
-		$proposal_file = WP_MCP_AI_PATH . 'docs/ai-quick-actions-widget-proposal.md';
-		$usage_file    = WP_MCP_AI_PATH . 'docs/ai-quick-actions-widget-usage.md';
+		$proposal_file = WP_MCP_AI_PATH . 'docs/features/chat-ui/ai-quick-actions-widget-proposal.md';
+		$usage_file    = WP_MCP_AI_PATH . 'docs/features/chat-ui/ai-quick-actions-widget-usage.md';
 
 		$this->assertFileExists( $proposal_file );
 		$this->assertFileExists( $usage_file );

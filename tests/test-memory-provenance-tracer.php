@@ -412,21 +412,36 @@ class Test_Memory_Provenance_Tracer extends WP_UnitTestCase {
 	 * and passing max_depth=10 results in depth=3 surfacing in the
 	 * graph section.
 	 *
-	 * The fixture stubs out the Graphify bridge with an empty walker so
-	 * the section is `available=true` with `depth` reflecting the clamp,
-	 * even on Base builds where Graphify is absent.
+	 * Loads the real Graphify bridge + DB classes bundled with the addon.
+	 * A fresh test database has no graph rows, so the BFS walk returns an
+	 * empty neighbourhood and the section is `available=true` with `depth`
+	 * reflecting the clamp, even on Base builds where the addon is not
+	 * active.
+	 *
+	 * The real files are used instead of eval-declared stub classes: stubs
+	 * pollute the global namespace for the rest of the single-process run
+	 * and make later tests that require the real files die with
+	 * "Cannot declare class NV_oOS_Graphify_Memory_Bridge".
 	 */
 	public function test_max_depth_filter_clamps_caller_value() {
 		$this->seed_full_fixture();
 
-		// Define minimal Graphify stubs once per test run. The classes
-		// live in the global namespace so a subsequent test run that
-		// *does* load real Graphify will not duplicate the symbol.
 		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' ) ) {
-			eval( 'class NV_oOS_Graphify_Memory_Bridge { const NODE_PREFIX_MEMORY = "memory:"; }' ); // phpcs:ignore Squiz.PHP.Eval.Discouraged -- intentional test stub.
+			$bridge_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-memory-bridge.php';
+			if ( file_exists( $bridge_path ) ) {
+				require_once $bridge_path;
+			}
 		}
 		if ( ! class_exists( 'NV_oOS_Graphify_DB' ) ) {
-			eval( 'class NV_oOS_Graphify_DB { public static function get_neighbor_ids( $node_id, $edge ) { return array(); } }' ); // phpcs:ignore Squiz.PHP.Eval.Discouraged -- intentional test stub.
+			$db_path = dirname( __DIR__ ) . '/addons/graphify/includes/class-nvoos-graphify-db.php';
+			if ( file_exists( $db_path ) ) {
+				require_once $db_path;
+			}
+		}
+
+		if ( ! class_exists( 'NV_oOS_Graphify_Memory_Bridge' )
+			|| ! method_exists( 'NV_oOS_Graphify_DB', 'get_neighbor_ids' ) ) {
+			$this->markTestSkipped( 'Graphify addon classes are not loadable.' );
 		}
 
 		add_filter(

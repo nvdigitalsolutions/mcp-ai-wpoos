@@ -73,13 +73,20 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 		// Attempt to call AJAX endpoint without authentication.
 		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_cron_manager' );
 
+		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
 			$this->fail( 'Should have failed without authentication' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected behavior - AJAX died due to missing capabilities.
-			$this->assertStringContainsString( 'Insufficient permissions', $e->getMessage() );
 		}
+		$response = ob_get_clean();
+
+		// The rejection message travels in the JSON body; wp_send_json_error()
+		// dies with an empty message.
+		$data = json_decode( $response, true );
+		$this->assertFalse( $data['success'] );
+		$this->assertStringContainsString( 'Insufficient permissions', $data['data']['message'] );
 	}
 
 	/**
@@ -180,11 +187,11 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 	 */
 	public function test_ajax_job_fields() {
 		// Create a test cron job.
-		WP_MCP_AI_Cron_Manager::add_job(
+		WP_MCP_AI_Cron_Manager::record_job(
 			'wp_mcp_ai_test_cron_hook',
-			time() + 3600,
 			array( 'test' => 'data' ),
 			'',
+			time() + 3600,
 			$this->admin_id
 		);
 
@@ -252,15 +259,15 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 	 */
 	public function test_stats_calculations() {
 		// Create test jobs - one active, one recurring.
-		WP_MCP_AI_Cron_Manager::add_job(
+		WP_MCP_AI_Cron_Manager::record_job(
 			'wp_mcp_ai_test_one_off',
-			time() + 3600,
 			array(),
 			'',
+			time() + 3600,
 			$this->admin_id
 		);
 
-		WP_MCP_AI_Cron_Manager::add_job(
+		WP_MCP_AI_Cron_Manager::record_job(
 			'wp_mcp_ai_test_recurring',
 			time() + 3600,
 			array(),
@@ -376,13 +383,20 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 
 		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_cron_manager' );
 
+		ob_start();
 		try {
 			$this->manager->ajax_get_stats();
 			$this->fail( 'Non-admin should not be able to access endpoint' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - permissions error.
-			$this->assertStringContainsString( 'Insufficient permissions', $e->getMessage() );
 		}
+		$response = ob_get_clean();
+
+		// The rejection message travels in the JSON body; wp_send_json_error()
+		// dies with an empty message.
+		$data = json_decode( $response, true );
+		$this->assertFalse( $data['success'] );
+		$this->assertStringContainsString( 'Insufficient permissions', $data['data']['message'] );
 	}
 
 	/**
@@ -391,11 +405,11 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 	public function test_pruning_called_during_ajax() {
 		// This test verifies that maybe_prune_jobs is called.
 		// Create an old executed job that should be pruned.
-		WP_MCP_AI_Cron_Manager::add_job(
+		WP_MCP_AI_Cron_Manager::record_job(
 			'wp_mcp_ai_old_job',
-			time() - 86400 * 2, // 2 days ago.
 			array(),
 			'',
+			time() - 86400 * 2, // 2 days ago.
 			$this->admin_id
 		);
 
@@ -419,11 +433,11 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 	 */
 	public function test_delete_nonces_are_valid() {
 		// Create a test job.
-		WP_MCP_AI_Cron_Manager::add_job(
+		WP_MCP_AI_Cron_Manager::record_job(
 			'wp_mcp_ai_test_nonce',
-			time() + 3600,
 			array(),
 			'',
+			time() + 3600,
 			$this->admin_id
 		);
 

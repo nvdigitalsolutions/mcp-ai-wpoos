@@ -55,19 +55,16 @@ class Test_Create_Team_Modal extends WP_UnitTestCase {
 		$_POST['temperature'] = '0.7';
 
 		// Capture the output.
+		ob_start();
 		try {
-			ob_start();
 			WP_MCP_AI_Admin_Create_Team_Button::handle_ajax_create();
-			$output = ob_get_clean();
-		} catch ( Exception $e ) {
-			$output = ob_get_clean();
-			// wp_send_json_success exits, which throws WPAjaxDieStopException in tests.
-			if ( 'WPAjaxDieStopException' === get_class( $e ) ) {
-				$output = $e->getMessage();
-			} else {
-				throw $e;
-			}
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the request; the JSON body
+			// is already in the output buffer.
+		} catch ( WPAjaxDieStopException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected.
 		}
+		$output = ob_get_clean();
 
 		// Decode the JSON response.
 		$response = json_decode( $output, true );
@@ -115,19 +112,16 @@ class Test_Create_Team_Modal extends WP_UnitTestCase {
 		$_POST['professions'] = array( 1, 2 );
 
 		// Capture the output.
+		ob_start();
 		try {
-			ob_start();
 			WP_MCP_AI_Admin_Create_Team_Button::handle_ajax_create();
-			$output = ob_get_clean();
-		} catch ( Exception $e ) {
-			$output = ob_get_clean();
-			// wp_send_json_error exits.
-			if ( 'WPAjaxDieStopException' === get_class( $e ) ) {
-				$output = $e->getMessage();
-			} else {
-				throw $e;
-			}
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the request; the JSON body
+			// is already in the output buffer.
+		} catch ( WPAjaxDieStopException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected.
 		}
+		$output = ob_get_clean();
 
 		// Decode the JSON response.
 		$response = json_decode( $output, true );
@@ -160,18 +154,16 @@ class Test_Create_Team_Modal extends WP_UnitTestCase {
 		$_POST['professions'] = array( $profession1 );
 
 		// Capture the output.
+		ob_start();
 		try {
-			ob_start();
 			WP_MCP_AI_Admin_Create_Team_Button::handle_ajax_create();
-			$output = ob_get_clean();
-		} catch ( Exception $e ) {
-			$output = ob_get_clean();
-			if ( 'WPAjaxDieStopException' === get_class( $e ) ) {
-				$output = $e->getMessage();
-			} else {
-				throw $e;
-			}
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the request; the JSON body
+			// is already in the output buffer.
+		} catch ( WPAjaxDieStopException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected.
 		}
+		$output = ob_get_clean();
 
 		// Decode the JSON response.
 		$response = json_decode( $output, true );
@@ -195,18 +187,16 @@ class Test_Create_Team_Modal extends WP_UnitTestCase {
 		$_POST['professions'] = array( 1, 2 );
 
 		// Capture the output.
+		ob_start();
 		try {
-			ob_start();
 			WP_MCP_AI_Admin_Create_Team_Button::handle_ajax_create();
-			$output = ob_get_clean();
-		} catch ( Exception $e ) {
-			$output = ob_get_clean();
-			if ( 'WPAjaxDieStopException' === get_class( $e ) ) {
-				$output = $e->getMessage();
-			} else {
-				throw $e;
-			}
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the request; the JSON body
+			// is already in the output buffer.
+		} catch ( WPAjaxDieStopException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected.
 		}
+		$output = ob_get_clean();
 
 		// Decode the JSON response.
 		$response = json_decode( $output, true );

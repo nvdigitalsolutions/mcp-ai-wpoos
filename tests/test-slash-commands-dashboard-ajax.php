@@ -114,7 +114,10 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 	public function test_execute_workflow_requires_nonce() {
 		wp_set_current_user( $this->admin_id );
 
-		// Setup request without nonce.
+		// Simulate an AJAX request with an invalid nonce. Posting a nonce
+		// keeps the request in AJAX context so check_ajax_referer() dies via
+		// wp_die() (catchable) instead of a bare die( '-1' ).
+		$_POST['nonce']    = 'invalid_nonce';
 		$_POST['workflow'] = 'daily-review';
 
 		// Expect to die with nonce verification error.
@@ -134,7 +137,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_execute_workflow();
+		try {
+			$this->dashboard->ajax_execute_workflow();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -155,7 +162,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_execute_workflow();
+		try {
+			$this->dashboard->ajax_execute_workflow();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -176,7 +187,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_execute_workflow();
+		try {
+			$this->dashboard->ajax_execute_workflow();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -197,7 +212,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_execute_workflow();
+		try {
+			$this->dashboard->ajax_execute_workflow();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -220,7 +239,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_execute_workflow();
+		try {
+			$this->dashboard->ajax_execute_workflow();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -236,7 +259,10 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 	public function test_execute_command_requires_nonce() {
 		wp_set_current_user( $this->admin_id );
 
-		// Setup request without nonce.
+		// Simulate an AJAX request with an invalid nonce. Posting a nonce
+		// keeps the request in AJAX context so check_ajax_referer() dies via
+		// wp_die() (catchable) instead of a bare die( '-1' ).
+		$_POST['nonce']   = 'invalid_nonce';
 		$_POST['command'] = '/help';
 
 		// Expect to die with nonce verification error.
@@ -256,7 +282,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_execute_command();
+		try {
+			$this->dashboard->ajax_execute_command();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -277,7 +307,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_execute_command();
+		try {
+			$this->dashboard->ajax_execute_command();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -298,7 +332,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_execute_command();
+		try {
+			$this->dashboard->ajax_execute_command();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -312,6 +350,9 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 	 */
 	public function test_get_history_requires_nonce() {
 		wp_set_current_user( $this->admin_id );
+
+		// Simulate an AJAX request with an invalid nonce (see above).
+		$_POST['nonce'] = 'invalid_nonce';
 
 		// Expect to die with nonce verification error.
 		$this->expectException( WPDieException::class );
@@ -329,7 +370,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_get_history();
+		try {
+			$this->dashboard->ajax_get_history();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -349,7 +394,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_get_history();
+		try {
+			$this->dashboard->ajax_get_history();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -364,6 +413,9 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 	 */
 	public function test_clear_history_requires_nonce() {
 		wp_set_current_user( $this->admin_id );
+
+		// Simulate an AJAX request with an invalid nonce (see above).
+		$_POST['nonce'] = 'invalid_nonce';
 
 		// Expect to die with nonce verification error.
 		$this->expectException( WPDieException::class );
@@ -381,7 +433,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_clear_history();
+		try {
+			$this->dashboard->ajax_clear_history();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
@@ -394,7 +450,8 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 	 * Test ajax_clear_command_history clears history
 	 */
 	public function test_clear_history_clears_data() {
-		wp_set_current_user( $this->editor_id );
+		// ajax_clear_history() requires manage_options.
+		wp_set_current_user( $this->admin_id );
 
 		// Add some history first.
 		update_option(
@@ -412,7 +469,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$this->dashboard->ajax_clear_history();
+		try {
+			$this->dashboard->ajax_clear_history();
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected — wp_send_json_* terminates the AJAX request.
+		}
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );

@@ -64,13 +64,20 @@ class Test_Crawl4AI_Monitor_Ajax extends WP_UnitTestCase {
 		// Attempt to call AJAX endpoint without authentication.
 		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_crawl4ai_monitor' );
 
+		ob_start();
 		try {
 			$this->monitor->ajax_get_stats();
 			$this->fail( 'Should have failed without authentication' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected behavior - AJAX died due to missing capabilities.
-			$this->assertStringContainsString( 'Insufficient permissions', $e->getMessage() );
 		}
+		$response = ob_get_clean();
+
+		// The rejection message travels in the JSON body; wp_send_json_error()
+		// dies with an empty message.
+		$data = json_decode( $response, true );
+		$this->assertFalse( $data['success'] );
+		$this->assertStringContainsString( 'Insufficient permissions', $data['data']['message'] );
 	}
 
 	/**
@@ -293,12 +300,19 @@ class Test_Crawl4AI_Monitor_Ajax extends WP_UnitTestCase {
 
 		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_crawl4ai_monitor' );
 
+		ob_start();
 		try {
 			$this->monitor->ajax_get_stats();
 			$this->fail( 'Non-admin should not be able to access endpoint' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - permissions error.
-			$this->assertStringContainsString( 'Insufficient permissions', $e->getMessage() );
 		}
+		$response = ob_get_clean();
+
+		// The rejection message travels in the JSON body; wp_send_json_error()
+		// dies with an empty message.
+		$data = json_decode( $response, true );
+		$this->assertFalse( $data['success'] );
+		$this->assertStringContainsString( 'Insufficient permissions', $data['data']['message'] );
 	}
 }

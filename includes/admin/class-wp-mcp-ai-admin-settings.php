@@ -6465,6 +6465,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			global $wpdb;
 			if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
 				$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
+				// Clear the per-user object-cache entries BEFORE deleting the rows:
+				// get_user_meta() caches values under the `{user_id}` key (group
+				// `user_meta`), so clearing `$meta_key` alone leaves stale values
+				// behind until the cache is flushed.
+				$user_ids = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+						$meta_key
+					)
+				);
+				foreach ( $user_ids as $uid ) {
+					wp_cache_delete( (int) $uid, 'user_meta' );
+				}
 				// Delete from database.
 				$wpdb->delete( $wpdb->usermeta, array( 'meta_key' => $meta_key ) );
 				// Clear the WP object cache for the meta key.
