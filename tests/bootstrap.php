@@ -428,30 +428,65 @@ function wp_mcp_ai_tests_neutralise_elementor_init_replay() {
 
 tests_add_filter( 'init', 'wp_mcp_ai_tests_neutralise_elementor_init_replay', PHP_INT_MAX );
 
-if ( ! function_exists( 'wc_get_page_screen_id' ) ) {
-	/**
-	 * Stub for WooCommerce's admin-only helper.
-	 *
-	 * wc_get_page_screen_id() lives in WooCommerce's admin includes, which
-	 * are not loaded when WooCommerce is bootstrapped in the CLI test
-	 * environment. OrderAttributionController calls it from a
-	 * `current_screen` hook that fires when tests call set_current_screen(),
-	 * so mirror the production result (WC orders screen under HPOS) instead
-	 * of a fatal error.
-	 *
-	 * @param string $for Page slug, e.g. "shop-order".
-	 * @return string Admin screen id.
-	 */
-	function wc_get_page_screen_id( $for ) {
-		$for = str_replace( '-', '_', (string) $for );
-
-		if ( 'shop_order' === $for ) {
-			return 'woocommerce_page_wc-orders';
+/**
+ * Provide wc_get_page_screen_id() for tests that fire the `current_screen`
+ * hook — WooCommerce's OrderAttributionController calls it from there.
+ *
+ * WooCommerce declares the function without a function_exists guard and only
+ * includes wc-admin-functions.php from WC_Install::create_pages() during a
+ * fresh install. Declaring a stub unconditionally at bootstrap parse time
+ * fatals with "Cannot redeclare wc_get_page_screen_id()" the first time
+ * WooCommerce installs its pages (every fresh MySQL / CI run). Therefore:
+ *
+ *   1. Prefer WooCommerce's real file when it is installed, loading it here
+ *      before WooCommerce itself boots (priority 1; WooCommerce is loaded at
+ *      priority 5 by wp_mcp_ai_load_optional_test_plugins()).
+ *   2. Fall back to a stub only when WooCommerce is absent (Base builds), so
+ *      set_current_screen() does not fatal inside WooCommerce's own hook.
+ *
+ * Deferred to muplugins_loaded because the WooCommerce file exits when
+ * ABSPATH is undefined, and ABSPATH only exists once the WP test bootstrap
+ * runs.
+ */
+tests_add_filter(
+	'muplugins_loaded',
+	static function () {
+		if ( function_exists( 'wc_get_page_screen_id' ) ) {
+			return;
 		}
 
-		return 'admin_page_wc-orders--' . $for;
-	}
-}
+		$wp_core_dir    = getenv( 'WP_CORE_DIR' );
+		$wordpress_path = $wp_core_dir ? $wp_core_dir : dirname( __DIR__ ) . '/.codex-wordpress/wordpress';
+		$wc_admin_functions = $wordpress_path . '/wp-content/plugins/woocommerce/includes/admin/wc-admin-functions.php';
+
+		if ( file_exists( $wc_admin_functions ) ) {
+			require_once $wc_admin_functions;
+		}
+
+		if ( ! function_exists( 'wc_get_page_screen_id' ) ) {
+			/**
+			 * Stub for WooCommerce's admin-only helper.
+			 *
+			 * Mirrors the production result (WC orders screen under HPOS)
+			 * so tests that call set_current_screen() keep working on Base
+			 * builds where WooCommerce is not installed.
+			 *
+			 * @param string $for Page slug, e.g. "shop-order".
+			 * @return string Admin screen id.
+			 */
+			function wc_get_page_screen_id( $for ) {
+				$for = str_replace( '-', '_', (string) $for );
+
+				if ( 'shop_order' === $for ) {
+					return 'woocommerce_page_wc-orders';
+				}
+
+				return 'admin_page_wc-orders--' . $for;
+			}
+		}
+	},
+	1
+);
 
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
