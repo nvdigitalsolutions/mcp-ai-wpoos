@@ -95,7 +95,7 @@ if ( class_exists( 'RankMath' ) ) {
 mcp-ai-wpoos.php                    # Main plugin file
 mcp-ai-wpoos-base.php               # Base-only entry point
 includes/
-├── tools/class-wp-mcp-ai-tool-*.php    # ~201 core tools
+├── tools/class-wp-mcp-ai-tool-*.php    # ~303 core tools
 ├── class-wp-mcp-ai-transcript-retention.php  # Transcript retention (base)
 ├── class-wp-mcp-ai-rest.php            # Core REST API
 ├── class-wp-mcp-ai-admin.php           # Core admin

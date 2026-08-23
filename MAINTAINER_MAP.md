@@ -282,7 +282,7 @@ npm run rebuild:all               # Rebuild all three ZIPs
 | | Base | Pro |
 |---|---|---|
 | **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
-| **Tools** | ~201 core tools | +~830+ Pro tools = **~1,031+ total** |
+| **Tools** | ~303 core tools | +~1,249 Pro tools = **~1,552 total** |
 | **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
 | **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (PHP 8.1+ deps: phpspreadsheet, etc.) |
 | **JS build** | `esbuild.config.js` | `esbuild.config.pro.js` |
