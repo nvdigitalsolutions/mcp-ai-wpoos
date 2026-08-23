@@ -263,6 +263,15 @@ function wp_mcp_ai_tests_throwing_die_handler( $message = '', $title = '', $args
 		}
 	}
 
+	// Direct AJAX handler calls (tests that invoke wp_ajax_* handlers without
+	// the WP_Ajax_UnitTestCase::_handleAjax() harness) are written against the
+	// wp-phpunit WPAjaxDieContinueException contract. It extends
+	// WPDieException, so every assertion against the base class keeps
+	// working while legacy catches keep matching.
+	if ( wp_doing_ajax() && class_exists( 'WPAjaxDieContinueException' ) ) {
+		throw new WPAjaxDieContinueException( $text );
+	}
+
 	throw new WPDieException( $text );
 }
 
@@ -303,25 +312,146 @@ tests_add_filter( 'wp_die_json_handler', 'wp_mcp_ai_tests_die_handler_filter', 1
 tests_add_filter( 'wp_die_jsonp_handler', 'wp_mcp_ai_tests_die_handler_filter', 10 );
 
 /**
- * Report "doing AJAX" whenever a test simulates an AJAX request by posting an
- * `action` parameter.
+ * Report "doing AJAX" whenever a test simulates an AJAX request.
  *
  * WP 6.9 routes request termination through bare die()/exit() calls when
  * `wp_doing_ajax()` is false: `wp_send_json()` ends with `die;` and
  * `check_ajax_referer()` calls `die( '-1' )` on a missing nonce. Neither can
  * be intercepted through a filter. Flagging the AJAX context routes both
  * paths through `wp_die()`, which the throwing handlers above convert into a
- * catchable `WPDieException`. Tests that do not post an `action` are
- * unaffected.
+ * catchable `WPDieException`. Tests that do not post an AJAX-shaped payload
+ * are unaffected.
+ *
+ * Two signals count as a simulated AJAX request: an `action` parameter
+ * (used by the dispatch harness) or a `nonce` parameter (the plugin's AJAX
+ * handlers read their nonce from `$_POST['nonce']` / `$_REQUEST['nonce']`).
  *
  * @param bool $wp_doing_ajax Current value.
  * @return bool
  */
-function wp_mcp_ai_tests_wp_doing_ajax_filter( $wp_doing_ajax ) {
-	return (bool) $wp_doing_ajax || ( isset( $_POST['action'] ) && '' !== $_POST['action'] );
-}
+	function wp_mcp_ai_tests_wp_doing_ajax_filter( $wp_doing_ajax ) {
+		return (bool) $wp_doing_ajax
+			|| ( isset( $_POST['action'] ) && '' !== $_POST['action'] )
+			|| isset( $_POST['nonce'] )
+			|| isset( $_REQUEST['nonce'] );
+	}
 
 tests_add_filter( 'wp_doing_ajax', 'wp_mcp_ai_tests_wp_doing_ajax_filter', 10 );
+
+/**
+ * Test-safe override of the pluggable check_ajax_referer().
+ *
+ * Bridges two test-environment gaps:
+ *
+ * 1. CLI superglobals: in the CLI SAPI, writes to $_POST / $_GET never
+ *    appear in $_REQUEST (the web SAPI builds $_REQUEST once at request
+ *    start). wp-phpunit's own WP_Ajax_UnitTestCase::_handleAjax() therefore
+ *    sets $_REQUEST['action'] by hand. Handler tests that post a valid
+ *    nonce to $_POST would otherwise fail verification for the wrong
+ *    reason, so the request superglobals are synced first.
+ *
+ * 2. The failure branch: core dies with a bare die( '-1' ) when
+ *    wp_doing_ajax() is false, which kills the phpunit process. Under tests
+ *    the failure always routes through wp_die(), which the throwing die
+ *    handlers convert into a catchable exception.
+ *
+ * Mirrors WP 6.9 core logic; review on core upgrades.
+ *
+ * @param int|string   $action    The nonce action.
+ * @param false|string $query_arg Optional key under which the nonce is stored in $_REQUEST.
+ * @param bool         $stop      Whether to stop the request on failure.
+ * @return false|int
+ */
+if ( ! function_exists( 'check_ajax_referer' ) ) {
+	function check_ajax_referer( $action = -1, $query_arg = false, $stop = true ) {
+		if ( -1 === $action ) {
+			_doing_it_wrong( __FUNCTION__, __( 'You should specify an action to be verified by using the first parameter.' ), '4.7.0' );
+		}
+
+		// Emulate the web SAPI: $_REQUEST merges $_GET, $_POST and $_COOKIE.
+		foreach ( array( '_GET', '_POST', '_COOKIE' ) as $src ) {
+			foreach ( (array) $GLOBALS[ $src ] as $key => $value ) {
+				if ( ! isset( $_REQUEST[ $key ] ) ) {
+					$_REQUEST[ $key ] = $value;
+				}
+			}
+		}
+
+		$nonce = '';
+
+		if ( $query_arg && isset( $_REQUEST[ $query_arg ] ) ) {
+			$nonce = $_REQUEST[ $query_arg ];
+		} elseif ( isset( $_REQUEST['_ajax_nonce'] ) ) {
+			$nonce = $_REQUEST['_ajax_nonce'];
+		} elseif ( isset( $_REQUEST['_wpnonce'] ) ) {
+			$nonce = $_REQUEST['_wpnonce'];
+		}
+
+		$result = wp_verify_nonce( $nonce, $action );
+
+		/**
+		 * Fires once the Ajax request has been validated or not.
+		 *
+		 * @param string    $action The Ajax nonce action.
+		 * @param false|int $result False if the nonce is invalid, 1 if the nonce is valid and generated between
+		 *                          0-12 hours ago, 2 if the nonce is valid and generated between 12-24 hours ago.
+		 */
+		do_action( 'check_ajax_referer', $action, $result );
+
+		if ( $stop && false === $result ) {
+			// Core dies with a bare die( '-1' ) outside AJAX context; route
+			// through wp_die() instead so the throwing test handlers convert
+			// the termination into a catchable exception.
+			wp_die( -1, 403 );
+		}
+
+		return $result;
+	}
+}
+
+/**
+ * Neutralise Elementor's init replay when tests re-fire `init`.
+ *
+ * Several tests call do_action( 'init' ) in setUp to bootstrap plugin
+ * subsystems or register REST routes. Elementor hooks Plugin::init() to
+ * `init` at priority 0, and every run calls init_components(), which
+ * constructs a fresh Elements_Manager whose constructor plain-requires
+ * includes/elements/column.php (already declared) — a fatal error that
+ * kills the process. After the first real `init`, detach the callback so
+ * later `init` firings skip Elementor's re-initialisation.
+ */
+function wp_mcp_ai_tests_neutralise_elementor_init_replay() {
+	if ( class_exists( 'Elementor\\Plugin' ) ) {
+		remove_action( 'init', array( \Elementor\Plugin::instance(), 'init' ), 0 );
+	}
+}
+
+tests_add_filter( 'init', 'wp_mcp_ai_tests_neutralise_elementor_init_replay', PHP_INT_MAX );
+
+if ( ! function_exists( 'wc_get_page_screen_id' ) ) {
+	/**
+	 * Stub for WooCommerce's admin-only helper.
+	 *
+	 * wc_get_page_screen_id() lives in WooCommerce's admin includes, which
+	 * are not loaded when WooCommerce is bootstrapped in the CLI test
+	 * environment. OrderAttributionController calls it from a
+	 * `current_screen` hook that fires when tests call set_current_screen(),
+	 * so mirror the production result (WC orders screen under HPOS) instead
+	 * of a fatal error.
+	 *
+	 * @param string $for Page slug, e.g. "shop-order".
+	 * @return string Admin screen id.
+	 */
+	function wc_get_page_screen_id( $for ) {
+		$for = str_replace( '-', '_', (string) $for );
+
+		if ( 'shop_order' === $for ) {
+			return 'woocommerce_page_wc-orders';
+		}
+
+		return 'admin_page_wc-orders--' . $for;
+	}
+}
 
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';

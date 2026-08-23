@@ -230,32 +230,50 @@ WordPress 6.9 routes several request terminations through bare `die()`/
 
 A test that triggers any of these **kills the entire phpunit run with exit
 code 0 and no summary** — the failure is invisible. `tests/bootstrap.php`
-neutralises the trap with three contracts:
+neutralises the trap with these contracts:
 
 1. **Every `wp_die()` branch throws `WPDieException`.** The bootstrap replaces
    the stock ajax/json/jsonp/non-ajax die handlers with a throwing handler
-   (`wp_mcp_ai_tests_throwing_die_handler`). Tests assert on it with
+   (`wp_mcp_ai_tests_throwing_die_handler`). In AJAX context it throws
+   `WPAjaxDieContinueException` (a `WPDieException` subclass) so legacy
+   direct-handler tests that `catch ( WPAjaxDieContinueException )` keep
+   matching. Tests assert on the base class with
    `$this->expectException( 'WPDieException' )` or wrap handler calls in
    `try { … } catch ( WPDieException $e ) {}`. Inside
    `WP_Ajax_UnitTestCase::_handleAjax()` the framework's own
-   `WPAjaxDieContinueException` / `WPAjaxDieStopException` (subclasses of
-   `WPDieException`) still take precedence.
+   `WPAjaxDieContinueException` / `WPAjaxDieStopException` handlers still take
+   precedence.
 2. **Simulated AJAX requests report `wp_doing_ajax() === true`.** Whenever a
-   test posts an `action` parameter (`$_POST['action']`), the bootstrap
-   `wp_doing_ajax` filter returns true. This routes `wp_send_json()`'s and
-   `check_ajax_referer()`'s terminations through `wp_die()` (contract 1)
-   instead of the bare `die`/`exit` calls.
-3. **`WP_MCP_AI_TESTS_RUNNING` gates the last bare exits.** Production code
+   test posts an `action`, `nonce` or `_wpnonce` parameter
+   (`$_POST` / `$_REQUEST`), the bootstrap `wp_doing_ajax` filter returns
+   true. This routes `wp_send_json()`'s and `check_ajax_referer()`'s
+   terminations through `wp_die()` (contract 1) instead of the bare
+   `die`/`exit` calls.
+3. **`check_ajax_referer()` is overridden at the bootstrap.** The function is
+   pluggable, so the bootstrap defines a test version that (a) syncs
+   `$_POST`/`$_GET`/`$_COOKIE` into `$_REQUEST` the way the web SAPI does
+   (CLI writes to `$_POST` never appear in `$_REQUEST`), and (b) always
+   terminates a failed verification via `wp_die( -1, 403 )` — never the bare
+   `die( '-1' )`. Tests no longer need to mirror nonces into `$_REQUEST` by
+   hand. Mirrors WP 6.9 core logic; re-check on core upgrades.
+4. **`WP_MCP_AI_TESTS_RUNNING` gates the last bare exits.** Production code
    that must terminate a stream or redirect uses the constant to return
-   control under PHPUnit (`WP_MCP_AI_SSE_Handler::finish()`) or the
-   `redirect_and_exit()` helper (Pro `WP_MCP_AI_Pro_Remote_Sites_Admin`),
-   which throws `WPDieException` under tests when the redirect is blocked
-   instead of exiting the process.
+   control under PHPUnit (`WP_MCP_AI_SSE_Handler::finish()`) or a
+   redirect-then-exit helper that throws `WPDieException` under tests when
+   the redirect is blocked (`WP_MCP_AI_Pro_Remote_Sites_Admin::redirect_and_exit()`,
+   `WP_MCP_AI_Meta_OAuth_Handler::redirect_and_exit()`, key rotation,
+   markup telemetry). `WP_MCP_AI_Admin_AJAX_Handlers::safe_ajax_handler()`
+   uses the same seam: under tests it skips `clean_all_buffers()` (which
+   would close the harness's capture buffer) and re-throws the die
+   exception instead of converting it into an error envelope.
+5. **Environmental shims for bundled plugins.** The bootstrap detaches
+   Elementor's `init` callback after the first real `init` (re-firing `init`
+   in `setUp` re-requires `includes/elements/column.php` → fatal), and stubs
+   WooCommerce's admin-only `wc_get_page_screen_id()` (undefined when WC is
+   bootstrapped in CLI, fatal via `set_current_screen()`).
 
-When writing handler tests, prefer the `dispatch()` harness — it provides
-contracts 1 and 2 for free. When calling a handler directly, remember that
-`check_ajax_referer()` reads `$_REQUEST`, so mirror any `$_POST['nonce']`
-into `$_REQUEST['nonce']`.
+When writing handler tests, prefer the `dispatch()` harness (from
+`WP_MCP_AI_Ajax_TestCase`) — it provides contracts 1–3 for free.
 
 ### Detecting suite-killing files
 
@@ -267,7 +285,11 @@ the file terminated phpunit without printing a summary — an exit trap.
 php bin/sweep-tests.php                       # full sweep (slow)
 php bin/sweep-tests.php --only trap            # re-check previous DIED/TIMEOUT files
 php bin/sweep-tests.php --files tests/test-x.php,tests/test-y.php --timeout 120
+php bin/sweep-tests.php --list                 # discovered files, one per line
 ```
 
 Results are written to `tests/sweep-results.json` (gitignored). The tool exits
-1 whenever any file `DIED` or `TIMEOUT`, so it can gate CI.
+1 whenever any file `DIED` or `TIMEOUT`, so it can gate CI. `--offset N
+--limit M --report <file>` shards the sweep across parallel workers (one test
+DB per worker; mirror plugin tables and preseed
+`wp_mcp_ai_professions_seeded` before starting fresh worker DBs).

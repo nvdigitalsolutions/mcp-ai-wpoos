@@ -96,6 +96,15 @@ if ( isset( $options['files'] ) ) {
 	}
 }
 
+// List mode: print the discovered files (one per line) and exit. Used by
+// parallel worker scripts to slice the file list deterministically.
+if ( isset( $options['list'] ) ) {
+	foreach ( $files as $file ) {
+		fwrite( STDOUT, ltrim( str_replace( $plugin_root, '', $file ), '/\\' ) . "\n" );
+	}
+	exit( 0 );
+}
+
 $offset = (int) ( $options['offset'] ?? 0 );
 $limit  = isset( $options['limit'] ) ? (int) $options['limit'] : 0;
 if ( $limit > 0 ) {
@@ -282,7 +291,15 @@ function wp_json_encode_indent( $value, $depth = 0 ) {
 		}
 		return '{' . implode( ',', $items ) . "\n" . $indent . '}';
 	}
-	return json_encode( $value, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT );
+
+	// Captured output can contain invalid UTF-8 (byte-truncated tails, binary
+	// output from tests). json_encode() returns false for such values, which
+	// would silently drop the value from the report — substitute instead.
+	$encoded = json_encode( $value, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE );
+	if ( false === $encoded ) {
+		$encoded = '""';
+	}
+	return $encoded;
 }
 
 /**
@@ -321,6 +338,9 @@ function parse_options( array $argv ) {
 				break;
 			case '--report':
 				$options['report'] = $argv[ ++$i ];
+				break;
+			case '--list':
+				$options['list'] = true;
 				break;
 			default:
 				fwrite( STDERR, "Unknown option: {$argv[ $i ]}\n" );
@@ -377,8 +397,11 @@ function scan_dir_recursive( $dir, array $excluded_substrings ) {
 
 		if ( is_dir( $path ) ) {
 			$skip = false;
+			// Append a slash so `'/manual/'`-style needles also match the
+			// directory itself (e.g. `.../tests/manual`).
+			$relative_dir = $relative . '/';
 			foreach ( $excluded_substrings as $needle ) {
-				if ( false !== strpos( $relative, $needle ) ) {
+				if ( false !== strpos( $relative_dir, $needle ) ) {
 					$skip = true;
 					break;
 				}
@@ -394,6 +417,11 @@ function scan_dir_recursive( $dir, array $excluded_substrings ) {
 		}
 		if ( 'php' !== strtolower( pathinfo( $name, PATHINFO_EXTENSION ) ) ) {
 			continue;
+		}
+		foreach ( $excluded_substrings as $needle ) {
+			if ( false !== strpos( $relative . '/', $needle ) ) {
+				continue 2;
+			}
 		}
 		$found[] = $path;
 	}
