@@ -207,19 +207,28 @@ if ( ! class_exists( 'WP_MCP_AI_PHPUnit11_Compat' ) ) {
 
 $abstract_testcase = $plugin_root . '/vendor/wp-phpunit/wp-phpunit/includes/abstract-testcase.php';
 if ( file_exists( $abstract_testcase ) ) {
-	$atc = file_get_contents( $abstract_testcase );
-	$atc = str_replace(
+	$original = file_get_contents( $abstract_testcase );
+	$patched  = str_replace(
 		'\PHPUnit\Util\Test::parseTestMethodAnnotations',
 		'\WP_MCP_AI_PHPUnit11_Compat::parseTestMethodAnnotations',
-		$atc
+		$original
 	);
 	// PHPUnit 11 removed TestCase::getName(); use name() instead.
-	$atc = str_replace(
+	$patched = str_replace(
 		'$this->getName( false )',
 		'$this->name()',
-		$atc
+		$patched
 	);
-	file_put_contents( $abstract_testcase, $atc );
+
+	// Write only when the patch actually changes the file, and atomically
+	// (temp file + rename). Parallel sweep workers each run this bootstrap;
+	// an unconditional rewrite makes concurrent readers observe truncated
+	// content mid-write ("Class WP_UnitTestCase_Base not found").
+	if ( $patched !== $original ) {
+		$tmp = $abstract_testcase . '.tmp-' . getmypid();
+		file_put_contents( $tmp, $patched );
+		rename( $tmp, $abstract_testcase );
+	}
 }
 // ============================================================
 
