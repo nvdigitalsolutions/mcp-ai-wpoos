@@ -203,9 +203,27 @@ class WP_MCP_AI_AI_Peer_CCT_Sync_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that sync doesn't happen on autosave.
+	 * Test that the sync handler guards against autosave.
+	 *
+	 * The handler only detects autosave via the DOING_AUTOSAVE constant.
+	 * That constant cannot be undefined once set, and defining it here would
+	 * leak into the shared process and make every later save handler that
+	 * checks it (vault metaboxes, project/task metaboxes, comic CPTs, …)
+	 * silently skip all its work. Assert the guard at source level instead,
+	 * and exercise the plain update path — the runtime skip shares the guard
+	 * shape with the revision test below.
 	 */
 	public function test_sync_skips_on_autosave() {
+		$class_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ai-peer-cpt.php';
+		$this->assertFileExists( $class_file, 'AI Peer CPT class file should exist' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local source file in a test.
+		$source = file_get_contents( $class_file );
+		$this->assertStringContainsString(
+			'DOING_AUTOSAVE',
+			$source,
+			'sync_to_cct_on_save should guard on DOING_AUTOSAVE'
+		);
+
 		// Create a peer.
 		$peer_id = wp_insert_post(
 			array(
@@ -217,21 +235,14 @@ class WP_MCP_AI_AI_Peer_CCT_Sync_Test extends WP_UnitTestCase {
 
 		$this->assertGreaterThan( 0, $peer_id, 'Peer should be created' );
 
-		// Simulate autosave by defining the constant.
-		if ( ! defined( 'DOING_AUTOSAVE' ) ) {
-			define( 'DOING_AUTOSAVE', true );
-		}
-
-		// Update the peer.
+		// Update the peer without autosave context; the update must not fatal
+		// even when the CCT (JetEngine) is unavailable.
 		wp_update_post(
 			array(
 				'ID'         => $peer_id,
 				'post_title' => 'Updated Autosave Test Peer',
 			)
 		);
-
-		// Verify that sync was skipped (no CCT link would be created during autosave).
-		// This is a basic test since we can't fully test sync without JetEngine.
 
 		// Clean up.
 		wp_delete_post( $peer_id, true );
