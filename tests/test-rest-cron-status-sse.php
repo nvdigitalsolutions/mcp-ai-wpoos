@@ -33,6 +33,11 @@ class Test_REST_Cron_Status_SSE extends WP_UnitTestCase {
 
 		// Clear any existing cron jobs.
 		delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
+
+		// Bound the SSE polling loop: 120 polls × 3s is a 6-minute stream,
+		// far too long for a unit test.
+		add_filter( 'wp_mcp_ai_sse_job_max_polls', function () { return 2; } );
+		add_filter( 'wp_mcp_ai_sse_job_poll_interval', function () { return 1; } );
 	}
 
 	/**
