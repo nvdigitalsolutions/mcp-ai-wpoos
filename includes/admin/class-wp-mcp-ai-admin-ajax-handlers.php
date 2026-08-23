@@ -46,10 +46,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 * but does not use them. WordPress's do_action() may pass parameters to callbacks.
 		 *
 		 * @param mixed ...$args Variable arguments passed by WordPress hooks (not used).
+		 * @throws \Throwable When running under PHPUnit and the inner handler terminated via wp_die().
 		 */
 		public function safe_ajax_handler( ...$args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter accepts variable WordPress hook arguments.
-			// Clean any previous output.
-			$this->clean_all_buffers();
+			// Clean any previous output. Under PHPUnit this would also close
+			// the buffer the AJAX test harness uses to capture the JSON
+			// response, so skip it when the test seam is active.
+			if ( ! ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING ) ) {
+				$this->clean_all_buffers();
+			}
 
 			// Map action to handler method.
 			$action_map = array(
@@ -127,6 +132,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			try {
 				call_user_func( array( $this, $handler_method ) );
 			} catch ( \Throwable $e ) {
+				// Under PHPUnit, wp_die() throws after wp_send_json_*() has
+				// already sent the response body. Propagate the exception so
+				// the test harness receives the original response instead of
+				// a converted error envelope.
+				if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) && $e instanceof WPDieException ) {
+					throw $e;
+				}
+
 				// Clean any output from the exception/error.
 				$this->clean_all_buffers();
 				wp_send_json_error(

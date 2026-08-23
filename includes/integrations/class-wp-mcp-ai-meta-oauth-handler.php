@@ -85,8 +85,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 			$authorize_endpoint = apply_filters( 'wp_mcp_ai_meta_oauth_authorize_endpoint', self::META_OAUTH_AUTHORIZE_ENDPOINT );
 			$authorize_url      = add_query_arg( $params, $authorize_endpoint );
 
-			wp_safe_redirect( $authorize_url );
-			exit;
+			$this->redirect_and_exit( $authorize_url );
 		}
 
 		/**
@@ -350,8 +349,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 		 * Redirect the current request back to the settings page and exit.
 		 */
 		private function redirect_to_settings_page() {
-			wp_safe_redirect( $this->get_settings_page_url() );
-			exit;
+			$this->redirect_and_exit( $this->get_settings_page_url() );
 		}
 
 		/**
@@ -402,19 +400,43 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 
 			update_option( 'wp_mcp_ai_settings', $settings );
 
-			wp_safe_redirect(
+			$this->redirect_and_exit(
 				add_query_arg(
 					array(
-						'page'       => 'wp-mcp-ai-dashboard',
-						'tab'        => 'tools',
-						'subtab'     => 'connections',
-						'connection' => 'meta',
+						'page'              => 'wp-mcp-ai-dashboard',
+						'tab'               => 'tools',
+						'subtab'            => 'connections',
+						'connection'        => 'meta',
 						'meta_disconnected' => '1',
 					),
 					admin_url( 'admin.php' )
 				)
 			);
-			exit;
+		}
+
+		/**
+		 * Redirect to a safe location and terminate the request.
+		 *
+		 * `exit` is only reached when the redirect actually took place. When a
+		 * `wp_redirect` filter blocks the redirect (as the PHPUnit harness does
+		 * to avoid header output), production keeps running and the test
+		 * contract aborts the flow via `WPDieException` so callers do not
+		 * cascade past a blocked redirect or kill the process with a bare
+		 * `exit`.
+		 *
+		 * @param string $location Redirect target URL.
+		 * @param int    $status   Optional HTTP status code. Default 302.
+		 * @throws WPDieException When running under PHPUnit and the redirect is blocked.
+		 */
+		private function redirect_and_exit( $location, $status = 302 ) {
+			if ( wp_safe_redirect( $location, $status ) ) {
+				exit;
+			}
+
+			if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
+				throw new WPDieException( is_string( $location ) ? $location : '' );
+			}
 		}
 	}
 }

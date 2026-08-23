@@ -1117,13 +1117,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$redirect_url = admin_url( 'options-general.php' );
 			}
 
-			wp_safe_redirect(
+			if ( wp_safe_redirect(
 				add_query_arg(
 					$redirect_args,
 					$redirect_url
 				)
-			);
-			exit;
+			) ) {
+				exit;
+			}
 		}
 
 		/**
@@ -1685,6 +1686,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Output JSON for file download. JSON is already safely encoded via wp_json_encode().
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON output for file download, already encoded with wp_json_encode().
 			echo $json;
+
+			// Under PHPUnit the AJAX harness captures the buffered output when
+			// the handler returns; a bare exit would kill the process.
+			if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING ) {
+				return;
+			}
+
 			exit;
 		}
 
