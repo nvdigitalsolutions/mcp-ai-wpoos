@@ -297,6 +297,31 @@ Files observed in the 24: `test-isams-query-tool`, `test-jetengine-cpt-taxonomy-
 
 ## Phase 3 — Validation & re-sweep
 
+### 3.0 Trap audit (single-process ordering)
+
+Audit performed while the full suite ran; all checks except the WPDieException
+note below came back clean:
+
+| Check | Result |
+|---|---|
+| `eval(` in tests | 2 remaining, both safe: Elementor `Widget_Base` namespace stub (guarded; Elementor loads first in CI) and an intentional undefined-function call in test-site-health-tool |
+| Plain `require` (non-once) of plugin class files | None — all `require_once` |
+| Top-level function shadows in tests | Only `__()` / `is_wp_error()` in `tests/manual/` (excluded from the suite) |
+| Test-declared classes shadowing production classes | None unguarded |
+| Bare `exit;`/`die;` in tests | Only environment guards (bootstrap), fixtures, and ABSPATH guards that never fire under PHPUnit |
+| Bootstrap stubs vs. plugin declarations | `check_ajax_referer` override is `function_exists`-guarded and wins by loading before core's guarded pluggable declaration — no redeclare path; `wc_get_page_screen_id` fixed in 1.9 |
+
+**WPDieException latent hazard (documented, left as-is).** The throwing die
+handler lazily declares `WPDieException` when no class exists. wp-phpunit
+declares it UNGUARDED in `includes/exceptions.php`, which its bootstrap loads
+with a plain `require` AFTER `wp-settings.php` (line 328) — so any early load
+of that file (e.g. `require_once` in our bootstrap) fatals at their line 328
+with "Cannot declare class WPDieException", and any early `wp_die()` during
+wp-settings load would make the lazy declaration fatal the same way. Neither
+path fires in this suite (no plugin calls wp_die() during early bootstrap),
+so the lazy declaration stays; re-check if the suite ever adds a plugin that
+can die during bootstrap, or if wp-phpunit starts guarding its declarations.
+
 1. Per-file runs for every file touched (PHPUnit summary must print).
 2. `php bin/sweep-tests.php --files <changed files> --timeout 300`.
 3. Re-triage the TIMEOUT list against the Phase 0 notes.
