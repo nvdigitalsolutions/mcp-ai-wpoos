@@ -42,6 +42,30 @@ class Test_Project_Management_Submenu_Registration extends WP_UnitTestCase {
 
 		// Set admin context.
 		set_current_screen( 'dashboard' );
+
+		// The Research & Add and Settings page files only load under
+		// is_admin() in production (see tools/project-management/init.php),
+		// which is false in the CLI test environment. Load them here so the
+		// admin_menu callbacks exist for the do_action( 'admin_menu' ) below.
+		// The files self-initialize when first required; on subsequent tests
+		// the per-test hook rollback has wiped those registrations, so init
+		// again explicitly.
+		if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Project_Research_Page' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-research-page.php';
+			} else {
+				WP_MCP_AI_Project_Research_Page::init();
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Project_Settings_Page' ) ) {
+				if ( ! class_exists( 'WP_MCP_AI_CPT_Settings_Page_Base' ) ) {
+					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php';
+				}
+				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-project-settings-page.php';
+			} else {
+				new WP_MCP_AI_Project_Settings_Page();
+			}
+		}
 	}
 
 	/**
