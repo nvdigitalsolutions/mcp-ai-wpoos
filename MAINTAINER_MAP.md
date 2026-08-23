@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **August 22, 2026** (v1.1.62)
+> Last reviewed: **August 23, 2026** (v1.1.63)
 
 ### Related Files
 
@@ -127,14 +127,16 @@ mcp-ai-wpoos/
 │   │   └─ class-wp-mcp-ai-rate-limit-headers.php  ← IETF rate-limit response headers (v1.1.60)
 │   ├─ cli/                     ← WP-CLI subcommands (`wp mcp-ai …`)
 │   │   └─ class-wp-mcp-ai-cli-restriction-command.php  ← `wp mcp-ai restrictions list|lift|add` (v1.1.60)
-│   ├─ harness/                ← LLM Harnessing subsystem (Layers A–G)
+│   ├─ harness/                ← LLM Harnessing subsystem (Layers A–J + artifact evolution)
 │   │   ├─ class-wp-mcp-ai-prompt-cue-library.php  ← Layer A: cue templates
 │   │   ├─ class-wp-mcp-ai-reasoning-trace.php     ← Layer B: reasoning traces
 │   │   ├─ class-wp-mcp-ai-tool-router-harness.php ← Layer C: tool routing
 │   │   ├─ class-wp-mcp-ai-retrieval-harness.php   ← Layer D: retrieval fan-out
 │   │   ├─ class-wp-mcp-ai-self-refine-loop.php    ← Layer E: self-refine
 │   │   ├─ class-wp-mcp-ai-pii-filter.php          ← Layer F: PII scrubbing
-│   │   └─ class-wp-mcp-ai-harness-eval-scheduler.php  ← Layer G: eval scheduler
+│   │   ├─ class-wp-mcp-ai-harness-eval-scheduler.php  ← Layer G: eval scheduler
+│   │   ├─ class-wp-mcp-ai-artifact-*.php          ← Artifact evolution Phases A–G: populations, admission gate, deploy/shadow, governor, approval queue, lineage (v1.1.63, all opt-in)
+│   │   └─ class-wp-mcp-ai-evolution-settings-bridge.php ← Settings → Orchestration Layer evolution switches (v1.1.63)
 │   ├─ measurement/            ← Metrics, acceptance tracking, OTEL export
 │   │   └─ class-wp-mcp-ai-tool-chain-acceptance-tracker.php ← DSpark chain acceptance
 │   ├─ repositories/           ← Data access layer
@@ -160,7 +162,8 @@ mcp-ai-wpoos/
 │       │   └─ ...
 │       ├─ harness/            ← Layer H fine-tune curriculum exporter (Pro)
 │       │   └─ class-wp-mcp-ai-tool-export-fine-tune-curriculum.php
-│       ├─ admin/              ← Pro admin pages (Pro Dashboard, imaging admin…)
+│       ├─ admin/              ← Pro admin pages (Pro Dashboard, imaging admin, Addons one-click installer…)
+│       │   └─ class-wp-mcp-ai-addons-page.php  ← NV oOS Pro Dashboard → Addons: one-click install/activate for standalone addons (v1.1.63)
 │       ├─ rest/               ← Pro REST controllers (channels, TMA, social, okf skills drawer…)
 │       │   └─ class-wp-mcp-ai-pro-rest-okf.php  ← Read-only mcp-ai-pro/v1/okf surface for the SPA skills drawer (v1.1.62)
 │       ├─ integrations/       ← WooCommerce, Shopify, social media, Google, GitHub

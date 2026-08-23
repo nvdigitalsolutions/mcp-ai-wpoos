@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: August 22, 2026 (v1.1.62).
+> Last reviewed: August 23, 2026 (v1.1.63).
 
 ---
 
@@ -15,6 +15,8 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
 **Total tools:** ~1,552 (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.63:** No new tools — two registry-adjacent fixes. (1) DeepSeek rejects tool schemas whose `properties` encode as a JSON array: schema normalization must keep object-valued property maps as objects and convert empty maps to `stdClass` so every payload boundary (REST `/tools` output in `WP_MCP_AI_REST`, `WP_MCP_AI_Tool_Service`, `ChatOrchestrator`) encodes `"properties": {}` — never `"properties": []`. (2) Legacy-format tool classes are wrapped **before** the first `register_tool()` attempt (both base and Pro registration paths), so the registry's fail-loud "missing interface" log only fires for classes that genuinely fail to register. Tool counts unchanged: ~303 base + ~1,249 Pro (~1,552 total).
 
 **New in v1.1.62:** OKF tool surface grows to 10 tools — three new base tools (`okf_list_bundles`, `okf_validate_bundle`, `okf_import_bundle`, all in `includes/tools/okf/`) back the new `WP_MCP_AI_OKF_Bundle_Manager` lifecycle (list/create/rename/archive/delete, ZipSlip-safe import/export, health stats) plus the provenance schema extension on `okf_write_concept` (`resource`/`sources`/`usage_window`/`verified`). Two new Pro tools — `okf_enrich_site_content` (`manage_options`) and `route_knowledge_query` (`read`), registered on `wp_mcp_ai_bootstrapped` priority 36 via the `pro_okf_skill_bridge` + `pro_okf_enrichment` modules. Presets updated: `essentials_internal` gains `okf_list_bundles` + `okf_validate_bundle`; `files_documents` gains all three new base tools. Vector store tools (`create_vector_store`, `list_vector_stores`, `get_vector_store`, `manage_vector_store_files` in both the WP client and `lib/core`) migrated to the Responses API — no more `OpenAI-Beta: assistants=v2` header; `file_batches` ingestion with bounded polling + single-file fallback.
 
