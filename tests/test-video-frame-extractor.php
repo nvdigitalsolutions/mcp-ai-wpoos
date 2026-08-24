@@ -32,7 +32,12 @@ class Test_Video_Frame_Extractor extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-video-frame-extractor-service.php';
+		// The service ships with the Pro addon.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available.' );
+		}
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-video-frame-extractor-service.php';
 		$this->extractor = new WP_MCP_AI_Video_Frame_Extractor_Service();
 
 		// Create a test video file (minimal MP4).

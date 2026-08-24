@@ -43,8 +43,13 @@ class Test_Manage_Files_Tool extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// The tool ships with the Pro addon.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available.' );
+		}
+
 		// Load the tool class.
-		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-files.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/architect-agent/class-wp-mcp-ai-tool-manage-files.php';
 
 		// Instantiate the tool.
 		$this->tool = new WP_MCP_AI_Tool_Manage_Files();

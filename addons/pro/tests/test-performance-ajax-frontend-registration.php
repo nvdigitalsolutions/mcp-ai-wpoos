@@ -37,7 +37,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
 		}
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -67,7 +67,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
 		}
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -111,7 +111,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
 		}
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -177,7 +177,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
 		}
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance to register AJAX handlers.
 		$section = new WP_MCP_AI_Section_Performance();

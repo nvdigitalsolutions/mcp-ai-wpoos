@@ -39,11 +39,11 @@ class Test_Media_Toolkit_Tools extends WP_UnitTestCase {
 		WP_MCP_AI_Media_Collection_CPT::register_taxonomy();
 
 		// Load tool classes.
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-list-media-templates.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-create-media-template.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-apply-media-template.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-process-collection.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-apply-collection-template.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-list-media-templates.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-create-media-template.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-apply-media-template.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-process-collection.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-apply-collection-template.php';
 
 		// Set up user with required capabilities.
 		$user_id = self::factory()->user->create( array( 'role' => 'editor' ) );
