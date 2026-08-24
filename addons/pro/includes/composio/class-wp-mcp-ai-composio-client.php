@@ -178,8 +178,22 @@ class WP_MCP_AI_Composio_Client {
 	public function list_connected_accounts( array $filters = array() ) {
 		$path = '/api/' . self::API_VERSION . '/connected_accounts';
 
-		if ( ! empty( $filters ) ) {
-			$path = add_query_arg( $filters, $path );
+		// Map legacy flat filters onto the v3.1 array query parameters
+		// (toolkit_slugs / statuses / user_ids). FastAPI-style backends accept
+		// comma-separated values for array parameters.
+		$query = array();
+		if ( ! empty( $filters['toolkit'] ) ) {
+			$query['toolkit_slugs'] = implode( ',', array_map( 'sanitize_key', (array) $filters['toolkit'] ) );
+		}
+		if ( ! empty( $filters['status'] ) ) {
+			$query['statuses'] = implode( ',', array_map( 'sanitize_key', (array) $filters['status'] ) );
+		}
+		if ( ! empty( $filters['user_id'] ) ) {
+			$query['user_ids'] = implode( ',', array_map( 'sanitize_text_field', (array) $filters['user_id'] ) );
+		}
+
+		if ( ! empty( $query ) ) {
+			$path = add_query_arg( $query, $path );
 		}
 
 		$result = $this->request( 'GET', $path, array(), array(), self::ACCOUNTS_CACHE_TTL );
@@ -188,11 +202,23 @@ class WP_MCP_AI_Composio_Client {
 			return $result;
 		}
 
-		$accounts = isset( $result['response'] ) && is_array( $result['response'] ) ? $result['response'] : array();
+		$response = isset( $result['response'] ) && is_array( $result['response'] ) ? $result['response'] : array();
+
+		// The v3.1 endpoint wraps the listing as { items: [...], total_items: N,
+		// ... }. Accept the wrapper plus a legacy flat array so mocked or older
+		// payloads keep working.
+		if ( isset( $response['items'] ) && is_array( $response['items'] ) ) {
+			$accounts = $response['items'];
+		} elseif ( array_keys( $response ) === range( 0, count( $response ) - 1 ) ) {
+			$accounts = $response;
+		} else {
+			$accounts = array();
+		}
 
 		// Mirror the count into a cheap per-connection transient so admin
 		// surfaces (assistant metabox badges) render without an API round-trip.
-		if ( '' !== $this->connection_id ) {
+		// Only the unfiltered listing represents the true total.
+		if ( '' !== $this->connection_id && empty( $filters ) ) {
 			set_transient(
 				self::get_account_count_key( $this->connection_id ),
 				count( $accounts ),
@@ -224,6 +250,46 @@ class WP_MCP_AI_Composio_Client {
 		$count = get_transient( self::get_account_count_key( $connection_id ) );
 
 		return false === $count ? false : absint( $count );
+	}
+
+	/**
+	 * Flush every cached connected-account listing for a connection.
+	 *
+	 * The GET cache key is derived from the connection ID plus the absolute
+	 * request URL, so the default backend URL and any custom base_url variant
+	 * are both cleared, along with the cheap per-connection count transient
+	 * used by admin badges.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @return void
+	 */
+	public static function clear_accounts_cache( $connection_id ) {
+		$connection_id = sanitize_key( (string) $connection_id );
+
+		if ( '' === $connection_id ) {
+			return;
+		}
+
+		$base_urls = array( self::DEFAULT_BASE_URL );
+
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( null !== $connection ) {
+				if ( ! empty( $connection['base_url'] ) ) {
+					$base_urls[] = rtrim( esc_url_raw( $connection['base_url'] ), '/' );
+				} elseif ( ! empty( $connection['url'] ) ) {
+					$base_urls[] = rtrim( esc_url_raw( $connection['url'] ), '/' );
+				}
+			}
+		}
+
+		foreach ( array_unique( $base_urls ) as $base_url ) {
+			delete_transient( self::CACHE_PREFIX . md5( $connection_id . '|' . $base_url . '/api/' . self::API_VERSION . '/connected_accounts' ) );
+		}
+
+		delete_transient( self::get_account_count_key( $connection_id ) );
 	}
 
 	/**
