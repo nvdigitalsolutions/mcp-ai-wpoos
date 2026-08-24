@@ -291,7 +291,7 @@ class NVOOS_SaaS_Controller_Smoke_Tester {
 	protected function check_base_plugin_alive() {
 		$started_us = microtime( true );
 
-		$ok      = class_exists( 'WP_MCP_AI_Plugin' );
+		$ok      = class_exists( 'WP_MCP_AI' );
 		$message = $ok
 			? __( 'NV oOS base plugin detected.', 'nvoos-saas-controller' )
 			: __( 'NV oOS base plugin not found at runtime.', 'nvoos-saas-controller' );

@@ -170,10 +170,12 @@ class Test_NVOOS_SaaS_Controller_OpenRouter_Client extends WP_UnitTestCase {
 		$this->assertSame( 'production', $out['label'] );
 		$this->assertSame( 'h-prod', $out['hash'] );
 
-		// JSON body, not form.
+		// JSON body, not form. JSON numbers have no int/float distinction
+		// and the encoder may drop the zero fraction (250 vs 250.0), so
+		// compare loosely rather than asserting float identity.
 		$body = json_decode( $this->captured[0]['args']['body'], true );
 		$this->assertSame( 'production', $body['name'] );
-		$this->assertSame( 250.0, $body['limit'] );
+		$this->assertEquals( 250.0, $body['limit'] );
 
 		$entries = NVOOS_SaaS_Controller_Audit_Log::instance()->get_recent( 10 );
 		$this->assertCount( 1, $entries );
