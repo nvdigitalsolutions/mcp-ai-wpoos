@@ -136,9 +136,11 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		// Get product category.
+		// Get product category. The taxonomy may be unregistered (e.g. when
+		// the toolkit module is gated), in which case wp_get_object_terms()
+		// returns a WP_Error — treat it as "no category".
 		$categories       = wp_get_object_terms( $product_id, 'mcp_ai_reg_category', array( 'fields' => 'names' ) );
-		$product_category = ! empty( $categories ) ? $categories[0] : '';
+		$product_category = ( ! is_wp_error( $categories ) && ! empty( $categories ) ) ? $categories[0] : '';
 
 		// Get all requirements for this country.
 		$requirements = $this->get_requirements( $country, $product_category );

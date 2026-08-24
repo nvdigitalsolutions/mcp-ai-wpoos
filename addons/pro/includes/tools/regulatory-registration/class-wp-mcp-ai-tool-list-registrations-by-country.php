@@ -137,9 +137,11 @@ class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Int
 				$submission_date = get_post_meta( $post->ID, 'submission_date', true );
 				$approval_date   = get_post_meta( $post->ID, 'approval_date', true );
 
-				// Get status.
+				// Get status. The taxonomy may be unregistered (e.g. when the
+				// toolkit module is gated), in which case wp_get_object_terms()
+				// returns a WP_Error — treat it as "Unknown".
 				$status_terms = wp_get_object_terms( $post->ID, 'mcp_ai_reg_status', array( 'fields' => 'names' ) );
-				$status       = ! empty( $status_terms ) ? $status_terms[0] : 'Unknown';
+				$status       = ( ! is_wp_error( $status_terms ) && ! empty( $status_terms ) ) ? $status_terms[0] : 'Unknown';
 
 				// Calculate expiry status.
 				$expiry_status = 'valid';
