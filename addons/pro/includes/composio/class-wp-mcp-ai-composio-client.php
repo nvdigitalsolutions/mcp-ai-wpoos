@@ -95,7 +95,9 @@ class WP_MCP_AI_Composio_Client {
 	 * @param string $connection_id Optional. Remote-site connection ID for cache scoping.
 	 */
 	public function __construct( $api_key, $base_url = '', $connection_id = '' ) {
-		$this->api_key       = (string) $api_key;
+		// Trim the key so copy/paste whitespace can never turn a valid key
+		// into an upstream 401.
+		$this->api_key       = trim( (string) $api_key );
 		$this->connection_id = sanitize_key( (string) $connection_id );
 
 		if ( ! empty( $base_url ) ) {
@@ -122,10 +124,12 @@ class WP_MCP_AI_Composio_Client {
 
 		// Stored API keys are always encrypted at rest; decrypt unconditionally
 		// and fall back to the raw value when decryption fails (e.g. plaintext
-		// values injected programmatically).
+		// values injected programmatically or a rotated master key). Keeping the
+		// raw value on failure lets the request path surface the real upstream
+		// 401 instead of a misleading "key not configured" error.
 		if ( ! empty( $api_key ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$decrypted = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $api_key );
-			if ( null !== $decrypted ) {
+			if ( '' !== $decrypted ) {
 				$api_key = $decrypted;
 			}
 		}
@@ -259,15 +263,98 @@ class WP_MCP_AI_Composio_Client {
 	}
 
 	/**
+	 * Resolve the auth config ID to use when creating a Connect Link for a toolkit.
+	 *
+	 * Composio's Connect Link endpoint requires an auth config ID (ac_...),
+	 * not a toolkit slug. Preference order: Composio-managed default config,
+	 * then any Composio-managed config, then any enabled config for the toolkit.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $toolkit Toolkit slug (e.g. "gmail").
+	 * @return string|WP_Error Auth config ID or WP_Error.
+	 */
+	public function resolve_auth_config_id( $toolkit ) {
+		$toolkit = sanitize_key( (string) $toolkit );
+
+		if ( '' === $toolkit ) {
+			return new WP_Error( 'wp_mcp_ai_composio_missing_toolkit', __( 'A toolkit slug is required to resolve an auth config.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$path = '/api/' . self::API_VERSION . '/auth_configs';
+		$path = add_query_arg(
+			array(
+				'toolkit_slug' => $toolkit,
+				'limit'        => 50,
+			),
+			$path
+		);
+
+		// Auth configs change rarely — cache for an hour via the GET cache.
+		$result = $this->request( 'GET', $path, array(), array(), HOUR_IN_SECONDS );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$items = isset( $result['response']['items'] ) && is_array( $result['response']['items'] ) ? $result['response']['items'] : array();
+
+		$managed_default = '';
+		$managed_any     = '';
+		$any_enabled     = '';
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || empty( $item['id'] ) || ! is_string( $item['id'] ) ) {
+				continue;
+			}
+
+			// Skip disabled configs (status defaults to enabled when absent).
+			if ( isset( $item['status'] ) && is_string( $item['status'] ) && 'ENABLED' !== strtoupper( $item['status'] ) ) {
+				continue;
+			}
+
+			$is_managed = ! empty( $item['is_composio_managed'] );
+			$is_default = isset( $item['type'] ) && 'default' === $item['type'];
+
+			if ( $is_managed && $is_default && '' === $managed_default ) {
+				$managed_default = $item['id'];
+				break;
+			}
+			if ( $is_managed && '' === $managed_any ) {
+				$managed_any = $item['id'];
+			}
+			if ( '' === $any_enabled ) {
+				$any_enabled = $item['id'];
+			}
+		}
+
+		$auth_config_id = '' !== $managed_default ? $managed_default : ( '' !== $managed_any ? $managed_any : $any_enabled );
+
+		if ( '' === $auth_config_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_composio_no_auth_config',
+				/* translators: %s: toolkit slug */
+				sprintf( __( 'No enabled auth config was found for the %s toolkit. Connect the toolkit once in the Composio dashboard first (or create an auth config for it), then try again.', 'mcp-ai-wpoos-pro' ), $toolkit )
+			);
+		}
+
+		return $auth_config_id;
+	}
+
+	/**
 	 * Create a Composio Connect Link (hosted authentication session).
+	 *
+	 * The toolkit slug is resolved to a project auth config (ac_...) before
+	 * the link is created, because Composio's link endpoint requires an auth
+	 * config ID rather than a toolkit slug.
 	 *
 	 * @since 1.4.0
 	 *
 	 * @param string $toolkit      Toolkit slug (e.g. "gmail", "slack").
 	 * @param string $user_id      Application-defined stable user identifier.
-	 * @param string $redirect_url Where the user returns after authentication.
-	 * @param array  $opts         Optional. Extra link options (auth_config_id, callback_url, verify_callback_url, auth_scheme).
-	 * @return array|WP_Error
+	 * @param string $redirect_url Fallback callback URL used when $opts['callback_url'] is not provided.
+	 * @param array  $opts         Optional. Extra link options (callback_url, alias).
+	 * @return array|WP_Error Response array with link_token/redirect_url/connected_account_id, or WP_Error.
 	 */
 	public function create_connect_link( $toolkit, $user_id, $redirect_url, array $opts = array() ) {
 		$toolkit      = sanitize_key( (string) $toolkit );
@@ -278,14 +365,23 @@ class WP_MCP_AI_Composio_Client {
 			return new WP_Error( 'wp_mcp_ai_composio_missing_link_params', __( 'Toolkit, user ID and redirect URL are required to create a Connect Link.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$body = array_merge(
-			array(
-				'toolkit'      => $toolkit,
-				'user_id'      => $user_id,
-				'redirect_url' => $redirect_url,
-			),
-			$opts
+		$auth_config_id = $this->resolve_auth_config_id( $toolkit );
+
+		if ( is_wp_error( $auth_config_id ) ) {
+			return $auth_config_id;
+		}
+
+		$callback_url = isset( $opts['callback_url'] ) && '' !== (string) $opts['callback_url'] ? esc_url_raw( $opts['callback_url'] ) : $redirect_url;
+
+		$body = array(
+			'auth_config_id' => $auth_config_id,
+			'user_id'        => $user_id,
+			'callback_url'   => $callback_url,
 		);
+
+		if ( isset( $opts['alias'] ) && '' !== (string) $opts['alias'] ) {
+			$body['alias'] = sanitize_text_field( $opts['alias'] );
+		}
 
 		$result = $this->request( 'POST', '/api/' . self::API_VERSION . '/connected_accounts/link', array(), $body );
 
@@ -897,10 +993,24 @@ class WP_MCP_AI_Composio_Client {
 		$response = wp_remote_request( $url, $args );
 
 		if ( is_wp_error( $response ) ) {
+			$transport_message = $response->get_error_message();
+
+			// Connection failures and timeouts on this path are almost always a
+			// hosting egress problem, not a credential problem — surface an
+			// actionable hint alongside the raw transport error.
+			if ( 'http_request_failed' === $response->get_error_code() ) {
+				$host               = wp_parse_url( $this->base_url, PHP_URL_HOST );
+				$transport_message .= ' ' . sprintf(
+					/* translators: %s: API host */
+					__( 'Your server could not reach %s. Check DNS resolution and outbound HTTPS (firewall, proxy, or hosting egress rules) on this host.', 'mcp-ai-wpoos-pro' ),
+					is_string( $host ) && '' !== $host ? $host : $this->base_url
+				);
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_composio_request_failed',
 				/* translators: %s: raw transport error */
-				sprintf( __( 'Composio API request failed: %s', 'mcp-ai-wpoos-pro' ), $response->get_error_message() )
+				sprintf( __( 'Composio API request failed: %s', 'mcp-ai-wpoos-pro' ), $transport_message )
 			);
 		}
 
@@ -922,9 +1032,39 @@ class WP_MCP_AI_Composio_Client {
 
 		if ( $status_code >= 400 ) {
 			$message = __( 'Composio API returned an error.', 'mcp-ai-wpoos-pro' );
+			$hint    = '';
 
-			if ( is_array( $decoded ) && isset( $decoded['message'] ) && is_string( $decoded['message'] ) ) {
-				$message = $decoded['message'];
+			// Composio's documented error shape nests the message under
+			// "error": { "error": { "message": ..., "suggested_fix": ... } }.
+			// Accept that shape plus the older flat variants so the admin UI
+			// always shows the real upstream reason.
+			if ( is_array( $decoded ) ) {
+				if ( isset( $decoded['error'] ) ) {
+					if ( is_array( $decoded['error'] ) ) {
+						if ( isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] ) && '' !== $decoded['error']['message'] ) {
+							$message = $decoded['error']['message'];
+						}
+						if ( isset( $decoded['error']['suggested_fix'] ) && is_string( $decoded['error']['suggested_fix'] ) && '' !== $decoded['error']['suggested_fix'] ) {
+							$hint = $decoded['error']['suggested_fix'];
+						}
+					} elseif ( is_string( $decoded['error'] ) && '' !== $decoded['error'] ) {
+						$message = $decoded['error'];
+					}
+				} elseif ( isset( $decoded['message'] ) && is_string( $decoded['message'] ) && '' !== $decoded['message'] ) {
+					$message = $decoded['message'];
+				} elseif ( isset( $decoded['detail'] ) && is_string( $decoded['detail'] ) && '' !== $decoded['detail'] ) {
+					$message = $decoded['detail'];
+				}
+			}
+
+			// 401/403 mean the key is invalid, revoked, or under-scoped — give
+			// the admin a concrete next step when upstream did not supply one.
+			if ( ( 401 === $status_code || 403 === $status_code ) && '' === $hint ) {
+				$hint = __( 'Verify the project API key in the Composio dashboard (Settings → API Keys) — it may be revoked, expired, or belong to a different project.', 'mcp-ai-wpoos-pro' );
+			}
+
+			if ( '' !== $hint ) {
+				$message .= ' ' . $hint;
 			}
 
 			return new WP_Error(
