@@ -232,6 +232,22 @@ if ( file_exists( $abstract_testcase ) ) {
 }
 // ============================================================
 
+/*
+ * Provide a REQUEST_URI, which the CLI SAPI never populates.
+ *
+ * WordPress core reads `$_SERVER['REQUEST_URI']` unguarded in a few places —
+ * most visibly `wp_cron()`, which does
+ * `str_contains( $_SERVER['REQUEST_URI'], '/wp-cron.php' )` — so any test that
+ * reaches a cron spawn emits a PHP warning that has nothing to do with the
+ * code under test. The web SAPI always sets this key; mirror that.
+ *
+ * Tests that need a specific URI should save and restore the previous value
+ * rather than `unset()`-ing it, so later tests keep this default.
+ */
+if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+	$_SERVER['REQUEST_URI'] = '/';
+}
+
 require_once $_tests_dir . '/includes/functions.php';
 
 /**
@@ -500,6 +516,7 @@ tests_add_filter(
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-http-test-helper.php';
+require_once __DIR__ . '/helpers/trait-wp-mcp-ai-request-context-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
 
 // NOTE: paper-store trait loaded after WP bootstrap below
@@ -576,11 +593,16 @@ function wp_mcp_ai_load_optional_test_plugins() {
 		define( 'WP_MCP_AI_TEST_RANKMATH_ACTIVE', true );
 	}
 
-	// Load WPCode if available.
-	if ( file_exists( $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php' ) ) {
-		require_once $plugins_dir . '/insert-headers-and-footers/insert-headers-and-footers.php';
-		$loaded_plugins[] = 'wpcode';
-		define( 'WP_MCP_AI_TEST_WPCODE_ACTIVE', true );
+	// Load WPCode if available. The wp.org slug is `insert-headers-and-footers`
+	// but the bootstrap file is `ihaf.php`; accept the slug-shaped name too in
+	// case a future release renames it.
+	foreach ( array( 'ihaf.php', 'wpcode.php', 'insert-headers-and-footers.php' ) as $wpcode_file ) {
+		if ( file_exists( $plugins_dir . '/insert-headers-and-footers/' . $wpcode_file ) ) {
+			require_once $plugins_dir . '/insert-headers-and-footers/' . $wpcode_file;
+			$loaded_plugins[] = 'wpcode';
+			define( 'WP_MCP_AI_TEST_WPCODE_ACTIVE', true );
+			break;
+		}
 	}
 
 	// Load Simple JWT Login if available.

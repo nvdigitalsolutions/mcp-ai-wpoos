@@ -99,6 +99,9 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 
 	/**
 	 * Test execute without parameters.
+	 *
+	 * Tools signal failure with a WP_Error (the canonical return envelope);
+	 * they never return `array( 'success' => false, ... )`.
 	 */
 	public function test_execute_without_parameters() {
 		// Create a user with read capability.
@@ -107,12 +110,10 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 
 		$result = $this->tool->execute( array(), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertArrayHasKey( 'report', $result );
-		$this->assertStringContainsString( 'attachment_id or url', $result['report'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'missing_input', $result->get_error_code() );
+		$this->assertStringContainsString( 'attachment_id', $result->get_error_message() );
+		$this->assertStringContainsString( 'url', $result->get_error_message() );
 	}
 
 	/**
@@ -127,12 +128,9 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertArrayHasKey( 'report', $result );
-		$this->assertStringContainsString( 'permission', $result['report'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'permission_denied', $result->get_error_code() );
+		$this->assertStringContainsString( 'permission', $result->get_error_message() );
 	}
 
 	/**
@@ -148,12 +146,9 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertArrayHasKey( 'report', $result );
-		$this->assertStringContainsString( 'not found', $result['report'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'file_not_found', $result->get_error_code() );
+		$this->assertStringContainsString( 'not be found', $result->get_error_message() );
 	}
 
 	/**

@@ -15,6 +15,8 @@
  * Test class for Elementor AJAX output buffering behavior.
  */
 class WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
+	use WP_MCP_AI_Request_Context_Test_Helper;
+
 	/**
 	 * Original REQUEST values to restore after tests.
 	 *
@@ -29,6 +31,7 @@ class WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
 		parent::set_up();
 		// Save original REQUEST state.
 		$this->original_request = $_REQUEST;
+		$this->record_output_buffer_baseline();
 	}
 
 	/**
@@ -38,10 +41,11 @@ class WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
 		// Restore original REQUEST state.
 		$_REQUEST = $this->original_request;
 
-		// Clean up any output buffers that might be left open.
-		while ( ob_get_level() > 0 ) {
-			ob_end_clean();
-		}
+		$this->end_ajax_context();
+
+		// Close only the buffers this test opened — unwinding to level 0 would
+		// destroy the buffer PHPUnit wraps around the test.
+		$this->unwind_output_buffers();
 
 		parent::tear_down();
 	}
@@ -59,8 +63,10 @@ class WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
 		// Record the buffer level before the check.
 		$level_before = ob_get_level();
 
-		// Simulate the plugin's early buffering check (simplified version).
-		$is_elementor_ajax = defined( 'DOING_AJAX' ) && DOING_AJAX;
+		// Simulate the plugin's early buffering check (matching the actual code).
+		$is_elementor_ajax = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
+			|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
+
 		if ( $is_elementor_ajax && isset( $_REQUEST['action'] ) ) {
 			$action            = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
 			$is_elementor_ajax = ( strpos( $action, 'elementor' ) === 0 );
@@ -97,10 +103,8 @@ class WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
 		// Simulate an Elementor AJAX request (e.g., cache clearing).
 		$_REQUEST['action'] = 'elementor_clear_cache';
 
-		// Simulate DOING_AJAX being true.
-		if ( ! defined( 'DOING_AJAX' ) ) {
-			define( 'DOING_AJAX', true );
-		}
+		// Simulate an AJAX request context.
+		$this->simulate_ajax_context();
 
 		// Record the buffer level before the check.
 		$level_before = ob_get_level();
@@ -148,10 +152,8 @@ class WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
 		foreach ( $elementor_actions as $action ) {
 			$_REQUEST['action'] = $action;
 
-			// Simulate DOING_AJAX being true.
-			if ( ! defined( 'DOING_AJAX' ) ) {
-				define( 'DOING_AJAX', true );
-			}
+			// Simulate an AJAX request context.
+			$this->simulate_ajax_context();
 
 			// Run the detection logic.
 			$is_elementor_ajax = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
@@ -184,10 +186,8 @@ class WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
 		foreach ( $non_elementor_actions as $action ) {
 			$_REQUEST['action'] = $action;
 
-			// Simulate DOING_AJAX being true.
-			if ( ! defined( 'DOING_AJAX' ) ) {
-				define( 'DOING_AJAX', true );
-			}
+			// Simulate an AJAX request context.
+			$this->simulate_ajax_context();
 
 			// Run the detection logic.
 			$is_elementor_ajax = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
@@ -243,7 +243,13 @@ class WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
 				unset( $_REQUEST['action'] );
 			}
 
-			// Simulate DOING_AJAX constant if needed.
+			// Match the request's AJAX context to the scenario.
+			if ( $test_case['is_ajax'] ) {
+				$this->simulate_ajax_context();
+			} else {
+				$this->end_ajax_context();
+			}
+
 			$level_before = ob_get_level();
 
 			// Run the detection logic.

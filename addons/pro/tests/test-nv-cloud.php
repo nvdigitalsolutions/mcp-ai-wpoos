@@ -57,6 +57,16 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_NV_Cloud_Service::OPTION_PREFS );
 		WP_MCP_AI_NV_Cloud_Service::reset_instance();
 		WP_MCP_AI_NV_Cloud_Billing_Observer::reset_instance();
+
+		// `reset_instance()` can only unhook the observer it still holds a
+		// reference to. `WP_UnitTestCase_Base::_restore_hooks()` re-installs the
+		// hook table captured at set-up, which resurrects the registration of an
+		// observer instance that has since been discarded — so the next test
+		// starts with a stale callback the singleton no longer knows about and
+		// `init()` adds a second one, double-recording every cost event.
+		// Clearing the action outright makes each test see exactly the one
+		// observer it registers itself.
+		remove_all_actions( 'wp_mcp_ai_cost_calculated' );
 	}
 
 	/** Tear down test.
@@ -85,7 +95,19 @@ class Test_WP_MCP_AI_NV_Cloud extends WP_UnitTestCase {
 		$svc = WP_MCP_AI_NV_Cloud_Service::get_instance();
 		$this->assertFalse( $svc->is_connected() );
 		$this->assertSame( '', $svc->get_connect_token() );
-		$this->assertSame( array(), $svc->get_connection_meta() );
+
+		// `get_connection_meta()` always normalises to a fixed key set so the
+		// REST status payload keeps a stable object shape (an empty array would
+		// encode as a JSON list, not an object). Disconnected therefore means
+		// "present but empty", not "absent".
+		$this->assertSame(
+			array(
+				'account_id'   => '',
+				'connected_at' => 0,
+				'site_url'     => '',
+			),
+			$svc->get_connection_meta()
+		);
 	}
 
 	/** Test save connection round trips token and meta.

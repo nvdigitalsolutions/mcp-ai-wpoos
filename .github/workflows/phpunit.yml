@@ -92,9 +92,14 @@ jobs:
           bin/install-wp-tests.sh "$WP_DB_NAME" "$WP_DB_USER" "$WP_DB_PASSWORD" "$WP_DB_HOST" latest
 
       - name: Install optional test plugins
+        # Downloads the wp.org plugins the integration tests exercise into
+        # $WP_CORE_DIR/wp-content/plugins. The PHPUnit bootstrap require_once's
+        # each plugin's main file from disk, so no wp-config.php or activation is
+        # needed — the script detects that and unpacks the zips directly.
+        # `--all` matches the plugin set the local Docker environment loads.
         run: |
           chmod +x bin/install-test-plugins.sh
-          bash bin/install-test-plugins.sh || echo "Some test plugins could not be installed"
+          bash bin/install-test-plugins.sh --all || echo "Some test plugins could not be installed"
         continue-on-error: true
 
       - name: Run PHPUnit with coverage

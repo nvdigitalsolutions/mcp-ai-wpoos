@@ -14,6 +14,7 @@
  * Test class for Remote Site Manager Google Chat field persistence.
  */
 class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
+	use WP_MCP_AI_Request_Context_Test_Helper;
 
 	/**
 	 * Clean up connections before each test.
@@ -885,13 +886,15 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		}
 
 		// Simulate a JWT auth plugin setting an error on the webhook path.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Reading back the value this test just wrote so tear-down can restore it verbatim.
+		$original_uri           = $_SERVER['REQUEST_URI'] ?? null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/google-chat';
 
 		$error      = new WP_Error( 'jwt_auth_bad_auth_header', 'Authorization header malformed.' );
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 		$result     = $controller->allow_google_oidc_auth( $error );
 
-		unset( $_SERVER['REQUEST_URI'] );
+		$this->restore_request_uri( $original_uri );
 
 		$this->assertNull( $result, 'allow_google_oidc_auth must clear auth errors for the google-chat webhook path' );
 	}
@@ -905,13 +908,15 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Reading back the value this test just wrote so tear-down can restore it verbatim.
+		$original_uri           = $_SERVER['REQUEST_URI'] ?? null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/chat';
 
 		$error      = new WP_Error( 'jwt_auth_bad_auth_header', 'Authorization header malformed.' );
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 		$result     = $controller->allow_google_oidc_auth( $error );
 
-		unset( $_SERVER['REQUEST_URI'] );
+		$this->restore_request_uri( $original_uri );
 
 		$this->assertInstanceOf( WP_Error::class, $result, 'allow_google_oidc_auth must not clear errors for unrelated REST paths' );
 	}
@@ -925,13 +930,15 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Reading back the value this test just wrote so tear-down can restore it verbatim.
+		$original_uri           = $_SERVER['REQUEST_URI'] ?? null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/google-chat/conn_abc123';
 
 		$error      = new WP_Error( 'rest_not_logged_in', 'REST API requires authentication.' );
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 		$result     = $controller->allow_google_oidc_auth( $error );
 
-		unset( $_SERVER['REQUEST_URI'] );
+		$this->restore_request_uri( $original_uri );
 
 		$this->assertNull( $result, 'allow_google_oidc_auth must clear auth errors for connection-specific webhook paths' );
 	}

@@ -4459,9 +4459,19 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
 
 		// Simulate the REQUEST_URI for our webhook route.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Reading back the value this test just wrote so tear-down can restore it verbatim.
+		$original_uri           = $_SERVER['REQUEST_URI'] ?? null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/google-chat';
 
-		$result = $controller->allow_google_oidc_auth( $jwt_error );
+		try {
+			$result = $controller->allow_google_oidc_auth( $jwt_error );
+		} finally {
+			if ( null === $original_uri ) {
+				unset( $_SERVER['REQUEST_URI'] );
+			} else {
+				$_SERVER['REQUEST_URI'] = $original_uri;
+			}
+		}
 
 		$this->assertNull( $result, 'allow_google_oidc_auth must clear WP_Error set by plugins at higher priorities' );
 	}

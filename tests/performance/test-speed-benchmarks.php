@@ -248,11 +248,10 @@ class WP_MCP_AI_Speed_Benchmarks_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Performance Monitor CCT class not available.' );
 		}
 
-		// Enable query tracking.
-		if ( ! defined( 'SAVEQUERIES' ) ) {
-			define( 'SAVEQUERIES', true );
-		}
-
+		// NOTE: `SAVEQUERIES` is deliberately not defined here. `$wpdb->num_queries`
+		// is incremented regardless, and the constant cannot be undefined — leaving
+		// it on would make `$wpdb->queries` accumulate every query for the rest of
+		// the shared PHPUnit process.
 		$start_time   = microtime( true );
 		$start_memory = memory_get_usage();
 
