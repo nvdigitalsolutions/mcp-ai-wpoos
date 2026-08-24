@@ -2841,7 +2841,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="upwork_user_email"><?php esc_html_e( 'Upwork Username (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" name="upwork_user_email" id="upwork_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="your-upwork-username">
+						<input type="text" name="upwork_user_email" id="upwork_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['upwork_username'] ) ? esc_attr( $connection['upwork_username'] ) : ''; ?>" autocomplete="off" placeholder="your-upwork-username">
 						<p class="description"><?php esc_html_e( 'Your Upwork username (auto-populated after OAuth connect).', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
@@ -15212,7 +15212,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 		}
 
-		// Save the updated connection data.
+		// Save the updated connection data. The Upwork username is stored in
+		// the dedicated upwork_username field; user_email is reserved for
+		// email connections and is sanitized as an email address.
 		$update_data = array(
 			'id'              => $connection_id,
 			'name'            => $connection['name'],
@@ -15222,7 +15224,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'client_id'       => $connection['client_id'],
 			'client_secret'   => '',
 			'refresh_token'   => $refresh_token,
-			'user_email'      => $upwork_username ? $upwork_username : ( isset( $connection['user_email'] ) ? $connection['user_email'] : '' ),
+			'upwork_username' => $upwork_username,
 			'enabled'         => $connection['enabled'],
 		);
 		// Flag already-encrypted client_secret to prevent double-encryption.
@@ -15433,7 +15435,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.Security.EscapeOutput.ExceptionNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
 			throw new WPDieException( is_string( $location ) ? $location : '' );
 		}
 	}
