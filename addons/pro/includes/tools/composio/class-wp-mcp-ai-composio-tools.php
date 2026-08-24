@@ -95,6 +95,27 @@ class WP_MCP_AI_Composio_Tools {
 	}
 
 	/**
+	 * Resolve the Composio user identity for a connection.
+	 *
+	 * Shared (site-wide) connections resolve to one identity for the whole
+	 * site; per-user connections resolve to the WordPress user's own identity.
+	 * Every tool call that targets a connected account must carry this value.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $connection Composio connection record.
+	 * @param int   $wp_user_id Optional. WordPress user ID (0 = current user).
+	 * @return string
+	 */
+	public static function resolve_user_id( array $connection, $wp_user_id = 0 ) {
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) {
+			return isset( $connection['default_user_id'] ) ? sanitize_text_field( (string) $connection['default_user_id'] ) : '';
+		}
+
+		return WP_MCP_AI_Composio_Auth_Handler::resolve_user_id( $connection, $wp_user_id );
+	}
+
+	/**
 	 * Check whether a toolkit is allowed for a connection.
 	 *
 	 * An empty allowlist permits every toolkit.

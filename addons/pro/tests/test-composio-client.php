@@ -6,6 +6,7 @@
  */
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-client.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-auth-handler.php';
 
 /**
  * Test the Composio API client.
@@ -619,6 +620,131 @@ class Test_Composio_Client extends WP_UnitTestCase {
 
 		WP_MCP_AI_Composio_Client::clear_accounts_cache( '' );
 
+		$this->assertSame( 0, $this->request_count );
+	}
+
+	/**
+	 * Test that tool execution sends the bound user identity alongside the
+	 * connected account. Composio rejects the account without it.
+	 */
+	public function test_execute_tool_sends_bound_user_id() {
+		$this->mock_response( 200, array( 'successful' => true ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_exec', 'nvoos-shared' );
+		$result = $client->execute_tool( 'GMAIL_SEND_EMAIL', 'ca_1', array( 'to' => 'a@b.c' ) );
+
+		$this->assertNotWPError( $result );
+
+		$body = json_decode( $this->last_args['body'], true );
+
+		$this->assertSame( 'ca_1', $body['connected_account_id'] );
+		$this->assertSame( 'nvoos-shared', $body['user_id'] );
+	}
+
+	/**
+	 * Test that an explicit user identity overrides the bound one.
+	 */
+	public function test_execute_tool_user_id_argument_overrides_bound_identity() {
+		$this->mock_response( 200, array( 'successful' => true ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_exec', 'nvoos-shared' );
+		$client->execute_tool( 'GMAIL_SEND_EMAIL', 'ca_1', array(), 'wp-7' );
+
+		$body = json_decode( $this->last_args['body'], true );
+
+		$this->assertSame( 'wp-7', $body['user_id'] );
+	}
+
+	/**
+	 * Test that no user_id key is sent when no identity is known, so the
+	 * upstream contract is unchanged for identity-less clients.
+	 */
+	public function test_execute_tool_omits_user_id_when_unbound() {
+		$this->mock_response( 200, array( 'successful' => true ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+		$client->execute_tool( 'GMAIL_SEND_EMAIL', 'ca_1', array() );
+
+		$body = json_decode( $this->last_args['body'], true );
+
+		$this->assertArrayNotHasKey( 'user_id', $body );
+	}
+
+	/**
+	 * Test that from_connection() binds the identity resolved from the
+	 * connection's identity mode.
+	 */
+	public function test_from_connection_binds_shared_identity() {
+		$client = WP_MCP_AI_Composio_Client::from_connection(
+			array(
+				'id'                => 'conn_shared',
+				'api_key'           => 'ak_test',
+				'connection_type'   => 'composio',
+				'default_user_mode' => 'admin_shared',
+			)
+		);
+
+		$this->assertSame( WP_MCP_AI_Composio_Auth_Handler::SHARED_USER_PREFIX, $client->get_user_id() );
+	}
+
+	/**
+	 * Test that a trigger upsert without a pinned account carries the bound
+	 * identity so Composio can resolve the connection itself.
+	 */
+	public function test_upsert_trigger_adds_bound_user_id() {
+		$this->mock_response( 200, array( 'trigger_id' => 'ti_1' ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_trigger', 'nvoos-shared' );
+		$client->upsert_trigger( 'GMAIL_NEW_MESSAGE', array() );
+
+		$body = json_decode( $this->last_args['body'], true );
+
+		$this->assertSame( 'nvoos-shared', $body['user_id'] );
+	}
+
+	/**
+	 * Test that a pinned connected account is not overridden by the bound
+	 * identity on trigger upsert.
+	 */
+	public function test_upsert_trigger_keeps_pinned_account() {
+		$this->mock_response( 200, array( 'trigger_id' => 'ti_1' ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_trigger', 'nvoos-shared' );
+		$client->upsert_trigger( 'GMAIL_NEW_MESSAGE', array( 'connected_account_id' => 'ca_1' ) );
+
+		$body = json_decode( $this->last_args['body'], true );
+
+		$this->assertSame( 'ca_1', $body['connected_account_id'] );
+		$this->assertArrayNotHasKey( 'user_id', $body );
+	}
+
+	/**
+	 * Test that removing a connected account asks Composio to revoke the
+	 * upstream provider credentials too.
+	 */
+	public function test_delete_connected_account_can_revoke_upstream() {
+		$this->mock_response( 200, array( 'success' => true ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_delete' );
+		$result = $client->delete_connected_account( 'ca_1', true );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'DELETE', $this->last_args['method'] );
+		$this->assertStringContainsString( '/connected_accounts/ca_1', $this->last_url );
+		$this->assertStringContainsString( 'revoke_on_delete=true', $this->last_url );
+	}
+
+	/**
+	 * Test that a missing account ID is rejected before any HTTP request.
+	 */
+	public function test_delete_connected_account_requires_account_id() {
+		$this->mock_response( 200, array() );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+		$result = $client->delete_connected_account( '' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_missing_account', $result->get_error_code() );
 		$this->assertSame( 0, $this->request_count );
 	}
 }

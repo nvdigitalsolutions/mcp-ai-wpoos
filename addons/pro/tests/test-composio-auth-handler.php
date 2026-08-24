@@ -58,9 +58,24 @@ class Test_Composio_Auth_Handler extends WP_UnitTestCase {
 
 	/**
 	 * Test the WordPress user → Composio user_id mapping.
+	 *
+	 * The suite bootstrap logs an administrator in for the whole run, so the
+	 * "0 = current user" branches are asserted against an explicitly set
+	 * current user rather than whatever happens to be signed in when this test
+	 * executes.
 	 */
 	public function test_wp_user_to_composio_user_id() {
+		// An explicit user ID always maps to that user's own identity.
 		$this->assertSame( 'wp-42', WP_MCP_AI_Composio_Auth_Handler::wp_user_to_composio_user_id( 42 ) );
+
+		// 0 means "the current user".
+		$user_id = self::factory()->user->create();
+		wp_set_current_user( $user_id );
+		$this->assertSame( 'wp-' . $user_id, WP_MCP_AI_Composio_Auth_Handler::wp_user_to_composio_user_id( 0 ) );
+
+		// With nobody signed in there is no per-user identity to derive, so the
+		// shared one is used (background jobs, cron, webhook deliveries).
+		wp_set_current_user( 0 );
 		$this->assertSame( WP_MCP_AI_Composio_Auth_Handler::SHARED_USER_PREFIX, WP_MCP_AI_Composio_Auth_Handler::wp_user_to_composio_user_id( 0 ) );
 	}
 

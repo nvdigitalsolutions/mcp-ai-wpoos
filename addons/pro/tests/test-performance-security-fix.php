@@ -44,11 +44,12 @@ class WP_MCP_AI_Performance_Security_Fix_Test extends WP_UnitTestCase {
 	/**
 	 * Data provider for performance test classes.
 	 *
-	 * Separates test data from test logic for better maintainability.
+	 * Separates test data from test logic for better maintainability. Static as
+	 * required by PHPUnit 10+.
 	 *
 	 * @return array Test data with file paths and class names.
 	 */
-	public function performance_test_classes_provider() {
+	public static function performance_test_classes_provider() {
 		return array(
 			'Elementor Performance Test'   => array(
 				'tests/performance/test-elementor-performance.php',

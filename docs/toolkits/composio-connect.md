@@ -27,14 +27,18 @@ Composio Connect is a tool aggregator: a single REST API (v3.1 at `https://backe
 2. Choose **Composio Connect (AI Tool Aggregator)**
 3. Paste your project API key (stored encrypted)
 4. Pick an **Identity Mode**:
-   - **Shared (site-wide)** — one identity for all assistants (default)
-   - **Per user** — each WordPress user connects their own accounts
+   - **Shared (site-wide)** — one identity for all assistants (default); everything runs as `nvoos-shared`
+   - **Per user** — each WordPress user connects their own accounts (`wp-{user_id}`)
 5. Optionally restrict the **Toolkit Allowlist** (e.g. `gmail, slack, github`)
 6. Save, then click **Test Connection**
+
+After saving, the **Identity Mode** row prints the resolved Composio identity so you can confirm the mode took effect.
 
 ### Step 2: Connect apps
 
 On the connection edit screen under **Connect an App**, enter a toolkit slug (e.g. `gmail`) and click **Open Connect Link**. The user completes the hosted flow and the connected account is linked back automatically. If the Composio project has callback identity verification enabled, NV oOS redeems the single-use `session_uri` (anti session-fixation).
+
+The **Connected Apps** table below lists each account with its **Identity** (owning Composio `user_id`), status and account ID, plus a **Remove** action that deletes the account at Composio and revokes its upstream provider credentials. Use **Refresh list** to bypass the 5-minute listing cache.
 
 ### Step 3: Assign the connection to assistants
 
@@ -52,9 +56,9 @@ On the assistant edit screen, the **Remote Site Connections** metabox shows ever
 |---|---|---|
 | `composio_list_tools` | `edit_posts` | Search the 1,000+ tool catalog by intent or toolkit (24h cached) |
 | `composio_get_tool_schema` | `edit_posts` | Input/output schema for a `TOOLKIT_ACTION` slug |
-| `composio_list_connected_accounts` | `manage_options` | Status of connected accounts (5min cached) |
+| `composio_list_connected_accounts` | `manage_options` | Status of connected accounts, including the owning identity (5min cached) |
 | `composio_create_connect_link` | `manage_options` | One-time hosted auth URL for a user |
-| `composio_execute_tool` | `manage_options` | Execute a tool on a connected account; write-class verbs flagged `destructive` |
+| `composio_execute_tool` | `manage_options` | Execute a tool on a connected account; sends the owning identity with the account; write-class verbs flagged `destructive` |
 | `composio_manage_triggers` | `manage_options` | List / upsert / enable / disable / delete trigger instances |
 
 ### Example Natural Language Prompts
@@ -99,7 +103,9 @@ Write-class tool executions are classified `destructive` in responses and requir
 ## Troubleshooting
 
 - **Test Connection fails with 401** — regenerate the API key in the Composio dashboard and re-save (masked field preserves the old value; clear it first).
-- **"No active connected account found"** — create a Connect Link for that toolkit (`composio_create_connect_link`), then retry.
+- **"No active connected account found for toolkit X (identity Y)"** — no `ACTIVE` account exists for that toolkit. Connect the app from the connection edit screen (or `composio_create_connect_link`), then retry. The identity in the message tells you which Composio user was searched.
+- **`HTTP 400: User ID is required with connected account`** — the execute request reached Composio without the identity that owns the account. NV oOS sends it automatically (connection identity, overridden by the account's own `user_id`); seeing this means the build predates that fix.
+- **Stuck `INITIALIZING` / `EXPIRED` accounts** — use **Remove** in the **Connected Apps** table to delete and revoke them, then reconnect.
 - **Webhooks rejected (403)** — confirm the `webhook_secret` on the connection matches the subscription's signing secret; rotate if needed.
 - **429 rate limits** — the client backs off automatically and returns a clear "retry in N seconds" error.
 

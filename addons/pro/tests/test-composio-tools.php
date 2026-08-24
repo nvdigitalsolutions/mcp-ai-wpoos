@@ -333,4 +333,227 @@ class Test_Composio_Tools extends WP_UnitTestCase {
 		$this->assertTrue( $result['success'] );
 		$this->assertSame( 'ca_gmail_1', $result['account_id'] );
 	}
+
+	/**
+	 * Capture the JSON body of the tool-execution POST while serving canned
+	 * responses for the GET lookups that precede it.
+	 *
+	 * @param array $listing Connected-account listing items returned for GETs.
+	 * @param array $captured Output. Receives the decoded POST body.
+	 * @return void
+	 */
+	private function mock_execute_transport( array $listing, &$captured ) {
+		$captured = array();
+
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( $listing, &$captured ) {
+				if ( 'GET' === $args['method'] ) {
+					// Single-account lookups return the account object itself;
+					// listings return the v3.1 { items: [...] } wrapper.
+					$is_single = (bool) preg_match( '#/connected_accounts/[^/?]+#', $url );
+					$body      = $is_single
+						? ( isset( $listing[0] ) ? $listing[0] : array() )
+						: array(
+							'items'       => $listing,
+							'total_items' => count( $listing ),
+						);
+
+					return array(
+						'headers'  => array( 'content-type' => 'application/json' ),
+						'body'     => wp_json_encode( $body ),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'cookies'  => array(),
+						'filename' => null,
+					);
+				}
+
+				$captured = json_decode( $args['body'], true );
+
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode( array( 'successful' => true ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			3
+		);
+	}
+
+	/**
+	 * Test that execute_tool sends the connection's shared identity with the
+	 * connected account. Without it Composio answers "User ID is required with
+	 * connected account".
+	 */
+	public function test_execute_tool_sends_shared_identity() {
+		$captured = array();
+		$this->mock_execute_transport( array(), $captured );
+
+		$tool   = new WP_MCP_AI_Tool_Composio_Execute_Tool();
+		$result = $tool->execute(
+			array(
+				'tool_slug'            => 'GMAIL_FETCH_EMAILS',
+				'connected_account_id' => 'ca_shared_1',
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'ca_shared_1', $captured['connected_account_id'] );
+		$this->assertSame( WP_MCP_AI_Composio_Auth_Handler::SHARED_USER_PREFIX, $captured['user_id'] );
+		$this->assertSame( WP_MCP_AI_Composio_Auth_Handler::SHARED_USER_PREFIX, $result['composio_user_id'] );
+	}
+
+	/**
+	 * Test that the identity stored on the account wins over the connection
+	 * default, so accounts linked under another identity keep working.
+	 */
+	public function test_execute_tool_prefers_account_owner_identity() {
+		$captured = array();
+		$this->mock_execute_transport(
+			array(
+				array(
+					'id'      => 'ca_owned_1',
+					'status'  => 'ACTIVE',
+					'user_id' => 'wp-9',
+				),
+			),
+			$captured
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Composio_Execute_Tool();
+		$result = $tool->execute(
+			array(
+				'tool_slug'            => 'GMAIL_FETCH_EMAILS',
+				'connected_account_id' => 'ca_owned_1',
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'wp-9', $captured['user_id'] );
+	}
+
+	/**
+	 * Test that auto-resolution prefers the active account belonging to the
+	 * connection's identity over other active accounts.
+	 */
+	public function test_execute_tool_auto_resolve_prefers_matching_identity() {
+		$captured = array();
+		$this->mock_execute_transport(
+			array(
+				array(
+					'id'      => 'ca_other',
+					'status'  => 'ACTIVE',
+					'user_id' => 'wp-4',
+				),
+				array(
+					'id'      => 'ca_shared',
+					'status'  => 'ACTIVE',
+					'user_id' => WP_MCP_AI_Composio_Auth_Handler::SHARED_USER_PREFIX,
+				),
+			),
+			$captured
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Composio_Execute_Tool();
+		$result = $tool->execute( array( 'tool_slug' => 'GMAIL_FETCH_EMAILS' ) );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'ca_shared', $result['account_id'] );
+		$this->assertSame( WP_MCP_AI_Composio_Auth_Handler::SHARED_USER_PREFIX, $captured['user_id'] );
+	}
+
+	/**
+	 * Test that auto-resolution skips accounts that are not active.
+	 */
+	public function test_execute_tool_auto_resolve_skips_inactive_accounts() {
+		$captured = array();
+		$this->mock_execute_transport(
+			array(
+				array(
+					'id'      => 'ca_initializing',
+					'status'  => 'INITIALIZING',
+					'user_id' => WP_MCP_AI_Composio_Auth_Handler::SHARED_USER_PREFIX,
+				),
+				array(
+					'id'      => 'ca_expired',
+					'status'  => 'EXPIRED',
+					'user_id' => WP_MCP_AI_Composio_Auth_Handler::SHARED_USER_PREFIX,
+				),
+				array(
+					'id'      => 'ca_live',
+					'status'  => 'ACTIVE',
+					'user_id' => 'wp-2',
+				),
+			),
+			$captured
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Composio_Execute_Tool();
+		$result = $tool->execute( array( 'tool_slug' => 'GMAIL_FETCH_EMAILS' ) );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'ca_live', $result['account_id'] );
+		$this->assertSame( 'wp-2', $captured['user_id'] );
+	}
+
+	/**
+	 * Test that the connected-account listing exposes the owning identity so
+	 * assistants can diagnose identity-mode mismatches.
+	 */
+	public function test_list_connected_accounts_exposes_identity() {
+		add_filter(
+			'pre_http_request',
+			function () {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'items'       => array(
+								array(
+									'id'      => 'ca_1',
+									'toolkit' => array( 'slug' => 'gmail' ),
+									'status'  => 'ACTIVE',
+									'user_id' => 'nvoos-shared',
+								),
+							),
+							'total_items' => 1,
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			3
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Composio_List_Connected_Accounts();
+		$result = $tool->execute( array() );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'nvoos-shared', $result['accounts'][0]['user_id'] );
+	}
 }
