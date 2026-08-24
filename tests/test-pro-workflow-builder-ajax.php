@@ -30,6 +30,17 @@
 /**
  * Pro Workflow Builder AJAX cluster.
  */
+// Load the Pro admin class under test; the pro addon loads it only in admin
+// context, so require it here to keep the suite runnable standalone (mirrors
+// CI, where earlier admin-context tests load it).
+if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+	$wp_mcp_ai_workflow_builder_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php';
+	if ( file_exists( $wp_mcp_ai_workflow_builder_page ) ) {
+		require_once $wp_mcp_ai_workflow_builder_page;
+	}
+	unset( $wp_mcp_ai_workflow_builder_page );
+}
+
 class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 
 	/** Nonce action used by WP_MCP_AI_Pro_Workflow_Builder_Page handlers. */

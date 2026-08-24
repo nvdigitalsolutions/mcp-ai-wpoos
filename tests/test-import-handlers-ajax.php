@@ -35,6 +35,15 @@
 /**
  * Import-handlers AJAX cluster (Pro addon).
  */
+// Load the addon admin class the config cases gate on; the fantasy-football
+// addon is not booted by the base test bootstrap, so require it here to keep
+// the suite runnable standalone (mirrors CI, where earlier tests load it).
+$wp_mcp_ai_ff_research_page = WP_MCP_AI_PATH . '../addons/fantasy-football/includes/admin/class-wp-mcp-ai-fantasy-football-research-page.php';
+if ( file_exists( $wp_mcp_ai_ff_research_page ) ) {
+	require_once $wp_mcp_ai_ff_research_page;
+}
+unset( $wp_mcp_ai_ff_research_page );
+
 class Test_Import_Handlers_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/**

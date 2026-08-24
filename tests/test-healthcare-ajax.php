@@ -24,6 +24,17 @@
 /**
  * AJAX cluster: Healthcare / Medical Vitals (Pro).
  */
+// Load the Pro admin class under test; the pro addon loads it only in admin
+// context, so require it here to keep the suite runnable standalone (mirrors
+// CI, where earlier admin-context tests load it).
+if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+	$wp_mcp_ai_health_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-health-wellness-dashboard-page.php';
+	if ( file_exists( $wp_mcp_ai_health_page ) ) {
+		require_once $wp_mcp_ai_health_page;
+	}
+	unset( $wp_mcp_ai_health_page );
+}
+
 class Test_Healthcare_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/** Nonce for hw_dashboard handler. */
