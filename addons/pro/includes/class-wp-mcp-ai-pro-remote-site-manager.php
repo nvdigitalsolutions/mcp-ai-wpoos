@@ -567,7 +567,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'name'                           => sanitize_text_field( $connection_data['name'] ),
 			'url'                            => esc_url_raw( trailingslashit( $connection_data['url'] ) ),
 			'connection_type'                => isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : 'wordpress',
-			'auth_type'                      => sanitize_key( $connection_data['auth_type'] ),
+			'auth_type'                      => isset( $connection_data['auth_type'] ) ? sanitize_key( $connection_data['auth_type'] ) : 'none',
 			'username'                       => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
 			'password'                       => isset( $connection_data['password'] ) ? $connection_data['password'] : '',
 			'token'                          => isset( $connection_data['token'] ) ? $connection_data['token'] : '',
