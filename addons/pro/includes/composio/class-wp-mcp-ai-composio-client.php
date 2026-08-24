@@ -263,15 +263,98 @@ class WP_MCP_AI_Composio_Client {
 	}
 
 	/**
+	 * Resolve the auth config ID to use when creating a Connect Link for a toolkit.
+	 *
+	 * Composio's Connect Link endpoint requires an auth config ID (ac_...),
+	 * not a toolkit slug. Preference order: Composio-managed default config,
+	 * then any Composio-managed config, then any enabled config for the toolkit.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $toolkit Toolkit slug (e.g. "gmail").
+	 * @return string|WP_Error Auth config ID or WP_Error.
+	 */
+	public function resolve_auth_config_id( $toolkit ) {
+		$toolkit = sanitize_key( (string) $toolkit );
+
+		if ( '' === $toolkit ) {
+			return new WP_Error( 'wp_mcp_ai_composio_missing_toolkit', __( 'A toolkit slug is required to resolve an auth config.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$path = '/api/' . self::API_VERSION . '/auth_configs';
+		$path = add_query_arg(
+			array(
+				'toolkit_slug' => $toolkit,
+				'limit'        => 50,
+			),
+			$path
+		);
+
+		// Auth configs change rarely — cache for an hour via the GET cache.
+		$result = $this->request( 'GET', $path, array(), array(), HOUR_IN_SECONDS );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$items = isset( $result['response']['items'] ) && is_array( $result['response']['items'] ) ? $result['response']['items'] : array();
+
+		$managed_default = '';
+		$managed_any     = '';
+		$any_enabled     = '';
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || empty( $item['id'] ) || ! is_string( $item['id'] ) ) {
+				continue;
+			}
+
+			// Skip disabled configs (status defaults to enabled when absent).
+			if ( isset( $item['status'] ) && is_string( $item['status'] ) && 'ENABLED' !== strtoupper( $item['status'] ) ) {
+				continue;
+			}
+
+			$is_managed = ! empty( $item['is_composio_managed'] );
+			$is_default = isset( $item['type'] ) && 'default' === $item['type'];
+
+			if ( $is_managed && $is_default && '' === $managed_default ) {
+				$managed_default = $item['id'];
+				break;
+			}
+			if ( $is_managed && '' === $managed_any ) {
+				$managed_any = $item['id'];
+			}
+			if ( '' === $any_enabled ) {
+				$any_enabled = $item['id'];
+			}
+		}
+
+		$auth_config_id = '' !== $managed_default ? $managed_default : ( '' !== $managed_any ? $managed_any : $any_enabled );
+
+		if ( '' === $auth_config_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_composio_no_auth_config',
+				/* translators: %s: toolkit slug */
+				sprintf( __( 'No enabled auth config was found for the %s toolkit. Connect the toolkit once in the Composio dashboard first (or create an auth config for it), then try again.', 'mcp-ai-wpoos-pro' ), $toolkit )
+			);
+		}
+
+		return $auth_config_id;
+	}
+
+	/**
 	 * Create a Composio Connect Link (hosted authentication session).
+	 *
+	 * The toolkit slug is resolved to a project auth config (ac_...) before
+	 * the link is created, because Composio's link endpoint requires an auth
+	 * config ID rather than a toolkit slug.
 	 *
 	 * @since 1.4.0
 	 *
 	 * @param string $toolkit      Toolkit slug (e.g. "gmail", "slack").
 	 * @param string $user_id      Application-defined stable user identifier.
-	 * @param string $redirect_url Where the user returns after authentication.
-	 * @param array  $opts         Optional. Extra link options (auth_config_id, callback_url, verify_callback_url, auth_scheme).
-	 * @return array|WP_Error
+	 * @param string $redirect_url Fallback callback URL used when $opts['callback_url'] is not provided.
+	 * @param array  $opts         Optional. Extra link options (callback_url, alias).
+	 * @return array|WP_Error Response array with link_token/redirect_url/connected_account_id, or WP_Error.
 	 */
 	public function create_connect_link( $toolkit, $user_id, $redirect_url, array $opts = array() ) {
 		$toolkit      = sanitize_key( (string) $toolkit );
@@ -282,14 +365,23 @@ class WP_MCP_AI_Composio_Client {
 			return new WP_Error( 'wp_mcp_ai_composio_missing_link_params', __( 'Toolkit, user ID and redirect URL are required to create a Connect Link.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$body = array_merge(
-			array(
-				'toolkit'      => $toolkit,
-				'user_id'      => $user_id,
-				'redirect_url' => $redirect_url,
-			),
-			$opts
+		$auth_config_id = $this->resolve_auth_config_id( $toolkit );
+
+		if ( is_wp_error( $auth_config_id ) ) {
+			return $auth_config_id;
+		}
+
+		$callback_url = isset( $opts['callback_url'] ) && '' !== (string) $opts['callback_url'] ? esc_url_raw( $opts['callback_url'] ) : $redirect_url;
+
+		$body = array(
+			'auth_config_id' => $auth_config_id,
+			'user_id'        => $user_id,
+			'callback_url'   => $callback_url,
 		);
+
+		if ( isset( $opts['alias'] ) && '' !== (string) $opts['alias'] ) {
+			$body['alias'] = sanitize_text_field( $opts['alias'] );
+		}
 
 		$result = $this->request( 'POST', '/api/' . self::API_VERSION . '/connected_accounts/link', array(), $body );
 

@@ -104,6 +104,84 @@ class Test_Composio_Client extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Register a mock whose response is decided per request.
+	 *
+	 * @param callable $resolver Receives ( $args, $url ) and returns a raw
+	 *                           wp_remote_request response array or WP_Error.
+	 * @return void
+	 */
+	private function mock_dynamic_response( $resolver ) {
+		$this->request_count = 0;
+
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $_url ) use ( $resolver ) {
+				$this->last_url  = $_url;
+				$this->last_args = $args;
+				++$this->request_count;
+
+				$response = call_user_func( $resolver, $args );
+
+				if ( is_wp_error( $response ) ) {
+					return $response;
+				}
+
+				return array_merge(
+					array(
+						'headers'  => array( 'content-type' => 'application/json' ),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'cookies'  => array(),
+						'filename' => null,
+					),
+					$response
+				);
+			},
+			10,
+			3
+		);
+	}
+
+	/**
+	 * Build a canned HTTP response array for the dynamic mock.
+	 *
+	 * @param int   $status HTTP status code.
+	 * @param array $body   JSON body array.
+	 * @return array
+	 */
+	private function http_response( $status, $body ) {
+		return array(
+			'body'     => wp_json_encode( $body ),
+			'response' => array(
+				'code'    => $status,
+				'message' => 'OK',
+			),
+		);
+	}
+
+	/**
+	 * Build a canned auth-config listing item.
+	 *
+	 * @param string $id       Auth config ID.
+	 * @param string $type     Auth config type (default|custom).
+	 * @param bool   $managed  Whether the config is Composio-managed.
+	 * @param string $status   Config status.
+	 * @return array
+	 */
+	private function auth_config_item( $id, $type = 'default', $managed = true, $status = 'ENABLED' ) {
+		return array(
+			'id'                  => $id,
+			'type'                => $type,
+			'is_composio_managed' => $managed,
+			'status'              => $status,
+			'auth_scheme'         => 'OAUTH2',
+			'toolkit'             => array( 'slug' => 'gmail' ),
+		);
+	}
+
+	/**
 	 * Test that a missing API key fails fast without an HTTP request.
 	 */
 	public function test_missing_api_key_returns_error() {
@@ -314,20 +392,98 @@ class Test_Composio_Client extends WP_UnitTestCase {
 	 * Test that POST requests encode the JSON body.
 	 */
 	public function test_post_request_encodes_body() {
-		$this->mock_response( 200, array( 'redirect_url' => 'https://auth.composio.dev/xyz' ) );
+		$this->mock_dynamic_response(
+			function ( $args ) {
+				if ( 'GET' === $args['method'] ) {
+					return $this->http_response(
+						200,
+						array(
+							'items' => array( $this->auth_config_item( 'ac_gmail_1' ) ),
+						)
+					);
+				}
 
-		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+				return $this->http_response(
+					200,
+					array(
+						'link_token'           => 'lt_1',
+						'redirect_url'         => 'https://auth.composio.dev/xyz',
+						'connected_account_id' => 'ca_1',
+					)
+				);
+			}
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_link_body' );
 		$result = $client->create_connect_link( 'gmail', 'wp-1', 'https://example.test/callback' );
 
 		$this->assertNotWPError( $result );
 		$this->assertSame( 'https://auth.composio.dev/xyz', $result['redirect_url'] );
+		$this->assertSame( 'lt_1', $result['link_token'] );
 
 		$this->assertSame( 'POST', $this->last_args['method'] );
 		$this->assertSame( 'application/json', $this->last_args['headers']['Content-Type'] );
 
 		$sent = json_decode( $this->last_args['body'], true );
-		$this->assertSame( 'gmail', $sent['toolkit'] );
+		$this->assertSame( 'ac_gmail_1', $sent['auth_config_id'] );
 		$this->assertSame( 'wp-1', $sent['user_id'] );
+		$this->assertSame( 'https://example.test/callback', $sent['callback_url'] );
+		$this->assertArrayNotHasKey( 'toolkit', $sent );
+		$this->assertArrayNotHasKey( 'redirect_url', $sent );
+	}
+
+	/**
+	 * Test that a Composio-managed default auth config is preferred.
+	 */
+	public function test_create_connect_link_prefers_managed_default_config() {
+		$this->mock_dynamic_response(
+			function ( $args ) {
+				if ( 'GET' === $args['method'] ) {
+					return $this->http_response(
+						200,
+						array(
+							'items' => array(
+								$this->auth_config_item( 'ac_custom', 'custom', false ),
+								$this->auth_config_item( 'ac_managed', 'default', true ),
+								$this->auth_config_item( 'ac_other_managed', 'custom', true ),
+							),
+						)
+					);
+				}
+
+				return $this->http_response( 200, array( 'redirect_url' => 'https://auth.composio.dev/flow' ) );
+			}
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_link_pref' );
+		$result = $client->create_connect_link( 'gmail', 'wp-1', 'https://example.test/callback' );
+
+		$this->assertNotWPError( $result );
+
+		$sent = json_decode( $this->last_args['body'], true );
+		$this->assertSame( 'ac_managed', $sent['auth_config_id'] );
+	}
+
+	/**
+	 * Test that a missing auth config produces a clear error.
+	 */
+	public function test_create_connect_link_fails_without_auth_config() {
+		$this->mock_dynamic_response(
+			function ( $args ) {
+				if ( 'GET' === $args['method'] ) {
+					return $this->http_response( 200, array( 'items' => array() ) );
+				}
+
+				return $this->http_response( 200, array( 'redirect_url' => 'https://auth.composio.dev/flow' ) );
+			}
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_link_none' );
+		$result = $client->create_connect_link( 'gmail', 'wp-1', 'https://example.test/callback' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_no_auth_config', $result->get_error_code() );
+		$this->assertSame( 1, $this->request_count );
 	}
 
 	/**
