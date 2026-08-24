@@ -36,10 +36,13 @@ flowchart LR
 ## 3. Connect your first app
 
 1. On the connection edit screen, under **Connect an App**, enter a toolkit slug (e.g. `gmail`) and click **Open Connect Link**.
-2. Complete the flow on Composio's hosted page.
-3. You are redirected back and the new connected account is available to assistants.
+2. NV oOS resolves the toolkit to your project's auth config automatically (preferring the Composio-managed default config) and opens Composio's hosted page.
+3. Complete the flow on Composio's hosted page.
+4. You are redirected back and the new connected account is available to assistants.
 
 If your Composio project has **callback identity verification** enabled (dashboard → Settings → General), NV oOS redeems the single-use verification session automatically — this defends against OAuth session fixation.
+
+> **Tip:** If Connect Link creation fails with *"No enabled auth config was found…"*, the toolkit has not been set up in your Composio project yet. Connect the toolkit once from the Composio dashboard (or create an auth config for it), then try again. NV oOS uses your project's default/Composio-managed auth config — custom OAuth apps are not selectable from the plugin UI.
 
 ## 4. Tools for assistants
 
@@ -81,7 +84,22 @@ Trigger events are exposed to automation through the `wp_mcp_ai_composio_trigger
 
 **What happens if a user's account expires?** Composio sends `composio.connected_account.expired`; NV oOS marks the account and the admin panel offers a "reconnect" Connect Link.
 
-## 8. References
+## 8. Troubleshooting
+
+**`HTTP 401` when testing or opening a Connect Link.** Composio returns 401 only when the `x-api-key` header is invalid. Check, in order:
+
+1. The key was copied from **Settings → API Keys** in the Composio dashboard and starts with `ak_` (integration keys, JWT tokens, and `ck_`/`uak_` keys are not project API keys).
+2. The key still exists — keys are revoked when a project API key is regenerated or deleted, and **regenerating a project API key invalidates all existing keys for that project**.
+3. You are pasting the key for the *same project* you intend to use.
+4. No leading/trailing whitespace was copied with the key (NV oOS trims this automatically since 1.4.x).
+
+**`cURL error 28: Operation timed out` (or DNS failures).** The request never reached Composio — this is a hosting-level egress problem, not a credential problem. Verify that your server can resolve and reach `backend.composio.dev` over HTTPS (firewall, proxy, WAF, or hosting provider egress rules). A quick check: `curl -sS -o /dev/null -w "%{http_code}" https://backend.composio.dev/api/v3.1/tools/enum -H "x-api-key: <YOUR_KEY>"` — a 200 confirms connectivity and the key together.
+
+**`HTTP 403` with a scoped project API key.** Scoped keys only reach the resources granted to them. Grant the key Connected Accounts / Toolkits / Tools permissions in the dashboard, or use a full project API key.
+
+**Connect Link creation fails (`400`/`422` or "auth_config_id is required").** Composio's link endpoint requires a project auth config ID, not a toolkit slug. Update to a build that resolves the auth config automatically, and make sure the toolkit has an auth config in the Composio dashboard (see the tip in step 3 above).
+
+## 9. References
 
 - [Composio docs](https://docs.composio.dev/docs)
 - [Connected Accounts API](https://docs.composio.dev/reference/api-reference/connected-accounts)

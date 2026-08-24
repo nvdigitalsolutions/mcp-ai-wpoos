@@ -3142,6 +3142,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				);
 			}
 
+			// Plaintext keys must look like a Composio project API key (ak_...).
+			// Values already encrypted at rest (V2 prefix or legacy base64) are
+			// exempt — they are validated after decryption at request time.
+			if ( ! self::is_value_encrypted( $connection['api_key'] ) && ! str_starts_with( $connection['api_key'], 'ak_' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_invalid_composio_api_key',
+					__( 'The Composio API key must be a project API key starting with "ak_". Create one in the Composio dashboard under Settings → API Keys. Integration keys and OAuth tokens are not supported here.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
 			// Validate the optional base_url override: must be a public HTTPS URL.
 			if ( ! empty( $connection['base_url'] ) ) {
 				$composio_base = wp_parse_url( $connection['base_url'] );
