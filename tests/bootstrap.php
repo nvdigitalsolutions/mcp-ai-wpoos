@@ -561,6 +561,28 @@ function wp_mcp_ai_manually_load_plugin() {
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
 
 /**
+ * Report whether a prefixed database table exists.
+ *
+ * Used to gate optional plugins whose bootstrap assumes activation already
+ * created their schema. Activation never runs under PHPUnit.
+ *
+ * @param string $suffix Table name without the `$wpdb->prefix`.
+ * @return bool
+ */
+function wp_mcp_ai_tests_table_exists( $suffix ) {
+	global $wpdb;
+
+	if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+		return false;
+	}
+
+	$table = $wpdb->prefix . $suffix;
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Schema probe in the test bootstrap; no cache exists yet.
+	return (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+}
+
+/**
  * Load optional test plugins if available.
  * This allows integration tests to run when plugins are installed.
  */
@@ -627,7 +649,19 @@ function wp_mcp_ai_load_optional_test_plugins() {
 	}
 
 	// Load WP All Import (lite) if available.
-	if ( file_exists( $plugins_dir . '/wp-all-import/plugin.php' ) ) {
+	//
+	// Gated on its tables existing. WP All Import creates them on activation,
+	// which never runs under PHPUnit, and its models *throw* on a missing table
+	// rather than warning. WooCommerce's installer calls wp_insert_attachment()
+	// during `init` on a fresh database, which fires `add_attachment` →
+	// pmxi_add_attachment() → PMXI_Model_Record::insert() → uncaught exception
+	// that kills the whole run before a single test executes.
+	//
+	// Note that the WP All Import tool tests assert the *missing-plugin* guard
+	// (`wp_mcp_ai_all_import_missing`) and skip when PMXI_Plugin is loaded, so
+	// leaving it unloaded is also the higher-coverage default.
+	if ( file_exists( $plugins_dir . '/wp-all-import/plugin.php' )
+		&& wp_mcp_ai_tests_table_exists( 'pmxi_images' ) ) {
 		require_once $plugins_dir . '/wp-all-import/plugin.php';
 		$loaded_plugins[] = 'wp-all-import';
 		define( 'WP_MCP_AI_TEST_WPALLIMPORT_ACTIVE', true );
