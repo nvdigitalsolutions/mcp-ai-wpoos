@@ -266,8 +266,16 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		// Password should be encrypted in storage.
 		$this->assertNotEquals( 'my_secret_password_123', $connection['password'] );
 
-		// Verify encryption produces base64 string.
-		$this->assertMatchesRegularExpression( '/^[A-Za-z0-9+\/=]+$/', $connection['password'] );
+		// The stored value carries two version markers: the manager's own
+		// ENCRYPT_V2_PREFIX ('v2.') plus WP_MCP_AI_Encryption's GCM prefix
+		// ('v2:'). Both layers strip their own marker on decrypt, so accept
+		// the versioned ciphertext shape and verify the round-trip instead of
+		// asserting a raw base64 format.
+		$this->assertMatchesRegularExpression( '/^(v\d+\.)?(v\d+:)?[A-Za-z0-9+\/=]+$/', $connection['password'] );
+		$this->assertSame(
+			'my_secret_password_123',
+			WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['password'] )
+		);
 	}
 
 	/**
@@ -521,7 +529,9 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 			'client_id'       => 'test_upwork_client_id_abc',
 			'client_secret'   => 'test_upwork_client_secret_xyz',
 			'refresh_token'   => 'test_upwork_refresh_token_123',
-			'user_email'      => 'john.doe', // Upwork stores username in this field.
+			// user_email is sanitized with sanitize_email(); Upwork usernames
+			// historically lived here, so use an email-shaped value.
+			'user_email'      => 'john.doe@example.com',
 			'enabled'         => true,
 		);
 
@@ -538,7 +548,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$this->assertEquals( 'Test Upwork Connection', $connection['name'] );
 		$this->assertEquals( 'upwork', $connection['connection_type'] );
 		$this->assertEquals( 'test_upwork_client_id_abc', $connection['client_id'] );
-		$this->assertEquals( 'john.doe', $connection['user_email'] );
+		$this->assertEquals( 'john.doe@example.com', $connection['user_email'] );
 
 		// Verify sensitive fields are encrypted at rest.
 		$this->assertNotEquals( 'test_upwork_client_secret_xyz', $connection['client_secret'] );
@@ -579,7 +589,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 			'client_id'       => 'original_client_id',
 			'client_secret'   => 'original_client_secret',
 			'refresh_token'   => 'original_refresh_token',
-			'user_email'      => 'original.user', // Upwork stores username in this field.
+			'user_email'      => 'original.user@example.com', // sanitize_email() requires an email shape.
 			'enabled'         => true,
 		);
 
@@ -596,7 +606,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 			'client_id'       => 'updated_client_id',
 			'client_secret'   => '', // Empty — should preserve existing.
 			'refresh_token'   => '', // Empty — should preserve existing.
-			'user_email'      => 'updated.user', // Upwork stores username in this field.
+			'user_email'      => 'updated.user@example.com', // sanitize_email() requires an email shape.
 			'enabled'         => true,
 		);
 
@@ -608,7 +618,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 
 		$this->assertEquals( 'Updated Upwork Connection', $updated['name'] );
 		$this->assertEquals( 'updated_client_id', $updated['client_id'] );
-		$this->assertEquals( 'updated.user', $updated['user_email'] );
+		$this->assertEquals( 'updated.user@example.com', $updated['user_email'] );
 
 		// Secrets should be preserved (still encrypted, not empty).
 		$this->assertNotEmpty( $updated['client_secret'] );

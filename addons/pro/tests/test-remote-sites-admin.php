@@ -1812,7 +1812,11 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$this->assertTrue( $data['success'], 'Should succeed with valid page access token' );
 		$this->assertSame( 'Test Business Page', $data['data']['page_name'], 'Should return the page name' );
 		$this->assertSame( '987654321', $data['data']['page_id'], 'Should return the page ID' );
-		$this->assertSame( 'Software', $data['data']['category'], 'Should return the page category' );
+		// The handler queries /me with fields=id,name only (kept within
+		// standard token permissions), so page category is intentionally not
+		// part of the success payload.
+		$this->assertArrayNotHasKey( 'category', $data['data'], 'Handler no longer returns page category' );
+		$this->assertSame( 'Page Access Token', $data['data']['token_type'], 'Should label the token type' );
 	}
 
 	/**
