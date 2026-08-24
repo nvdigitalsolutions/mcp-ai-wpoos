@@ -549,8 +549,40 @@ class Test_Composio_Client extends WP_UnitTestCase {
 		$this->assertNotWPError( $accounts );
 		$this->assertCount( 2, $accounts );
 		$this->assertSame( 'ca_1', $accounts[0]['id'] );
-		$this->assertSame( 'gmail', $accounts[0]['toolkit']['slug'] );
+		// The nested v3.1 toolkit object is flattened to its slug so every
+		// consumer reads the same shape.
+		$this->assertSame( 'gmail', $accounts[0]['toolkit'] );
+		$this->assertSame( 'slack', $accounts[1]['toolkit'] );
 		$this->assertSame( 2, WP_MCP_AI_Composio_Client::get_cached_account_count( 'conn_wrapped' ) );
+	}
+
+	/**
+	 * Test that a connected account's credential expiry and failure reason are
+	 * lifted out of the nested state.val block, where v3.1 buries them.
+	 */
+	public function test_normalize_account_extracts_expiry_and_reason() {
+		$account = WP_MCP_AI_Composio_Client::normalize_account(
+			array(
+				'id'          => 'ca_dead',
+				'status'      => 'expired',
+				'toolkit'     => array( 'slug' => 'GMAIL' ),
+				'is_disabled' => true,
+				'auth_config' => array( 'auth_scheme' => 'OAUTH2' ),
+				'state'       => array(
+					'val' => array(
+						'expired_at'        => '2026-08-01T00:00:00Z',
+						'error_description' => 'Token has been expired or revoked.',
+					),
+				),
+			)
+		);
+
+		$this->assertSame( 'EXPIRED', $account['status'] );
+		$this->assertSame( 'gmail', $account['toolkit'] );
+		$this->assertSame( '2026-08-01T00:00:00Z', $account['expires_at'] );
+		$this->assertSame( 'Token has been expired or revoked.', $account['status_reason'] );
+		$this->assertTrue( $account['disabled'] );
+		$this->assertSame( 'OAUTH2', $account['auth_scheme'] );
 	}
 
 	/**
@@ -575,7 +607,9 @@ class Test_Composio_Client extends WP_UnitTestCase {
 		);
 
 		$this->assertStringContainsString( 'toolkit_slugs=gmail', $this->last_url );
-		$this->assertStringContainsString( 'statuses=active', $this->last_url );
+		// Composio's status enum is SCREAMING_SNAKE — a lowercased filter matches
+		// nothing upstream.
+		$this->assertStringContainsString( 'statuses=ACTIVE', $this->last_url );
 		$this->assertStringContainsString( 'user_ids=wp-1', $this->last_url );
 		// A filtered listing must not clobber the total badge count.
 		$this->assertFalse( WP_MCP_AI_Composio_Client::get_cached_account_count( 'conn_filters' ) );
@@ -685,6 +719,189 @@ class Test_Composio_Client extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( WP_MCP_AI_Composio_Auth_Handler::SHARED_USER_PREFIX, $client->get_user_id() );
+	}
+
+	/**
+	 * Test that the /tools pagination envelope is unwrapped into a list of
+	 * addressable tool records. Returning the envelope raw made callers see the
+	 * `items` key itself as a single, slug-less "tool".
+	 */
+	public function test_list_tools_unwraps_pagination_envelope() {
+		$this->mock_response(
+			200,
+			array(
+				'items'        => array(
+					array(
+						'slug'             => 'GMAIL_FETCH_EMAILS',
+						'name'             => 'Fetch Emails',
+						'description'      => 'Fetches emails from Gmail.',
+						'toolkit'          => array(
+							'slug' => 'gmail',
+							'name' => 'Gmail',
+						),
+						'input_parameters' => array( 'required' => array( 'query' ) ),
+					),
+				),
+				'next_cursor'  => 'eyJwYWdlIjoyfQ==',
+				'total_items'  => 137,
+				'total_pages'  => 3,
+				'current_page' => 1,
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_tools' );
+		$result = $client->list_tools( array( 'toolkit' => 'gmail' ) );
+
+		$this->assertNotWPError( $result );
+		$this->assertCount( 1, $result['items'] );
+		$this->assertSame( 'GMAIL_FETCH_EMAILS', $result['items'][0]['slug'] );
+		$this->assertSame( 'gmail', $result['items'][0]['toolkit'] );
+		$this->assertSame( 'Gmail', $result['items'][0]['toolkit_name'] );
+		$this->assertSame( array( 'query' ), $result['items'][0]['required_inputs'] );
+		$this->assertSame( 137, $result['total_items'] );
+		$this->assertSame( 'eyJwYWdlIjoyfQ==', $result['next_cursor'] );
+	}
+
+	/**
+	 * Test that catalog filters are mapped onto the parameter names the endpoint
+	 * actually accepts: toolkit_slug (singular) and query (not the deprecated
+	 * search, and never the unsupported page).
+	 */
+	public function test_list_tools_maps_documented_query_params() {
+		$this->mock_response( 200, array( 'items' => array() ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_params' );
+		$client->list_tools(
+			array(
+				'toolkit' => 'gmail',
+				'search'  => 'send an email',
+				'limit'   => 10,
+			)
+		);
+
+		$this->assertStringContainsString( 'toolkit_slug=gmail', $this->last_url );
+		$this->assertStringNotContainsString( 'toolkit_slugs=', $this->last_url );
+		$this->assertStringContainsString( 'query=send', $this->last_url );
+		$this->assertStringNotContainsString( 'page=', $this->last_url );
+		$this->assertStringContainsString( 'limit=10', $this->last_url );
+	}
+
+	/**
+	 * Test that a legacy flat catalog array is still accepted.
+	 */
+	public function test_list_tools_accepts_legacy_flat_array() {
+		$this->mock_response(
+			200,
+			array(
+				array(
+					'tool_slug'   => 'GMAIL_SEND_EMAIL',
+					'toolkit'     => 'gmail',
+					'name'        => 'Send Email',
+					'description' => 'Sends an email',
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_legacy' );
+		$result = $client->list_tools();
+
+		$this->assertNotWPError( $result );
+		$this->assertCount( 1, $result['items'] );
+		$this->assertSame( 'GMAIL_SEND_EMAIL', $result['items'][0]['slug'] );
+		$this->assertSame( 'gmail', $result['items'][0]['toolkit'] );
+	}
+
+	/**
+	 * Test that Composio's in-band execution failure (HTTP 200 with
+	 * successful:false) becomes a WP_Error instead of being reported as a
+	 * successful execution.
+	 */
+	public function test_execute_tool_converts_in_band_failure_to_error() {
+		$this->mock_response(
+			200,
+			array(
+				'successful' => false,
+				'error'      => 'Request failed with status 500',
+				'data'       => null,
+				'log_id'     => 'log_abc',
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_fail', 'nvoos-shared' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_1', array() );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_tool_failed', $result->get_error_code() );
+		$this->assertStringContainsString( 'status 500', $result->get_error_message() );
+		$this->assertSame( 'log_abc', $result->get_error_data()['log_id'] );
+	}
+
+	/**
+	 * Test that an in-band auth failure is classified distinctly so callers can
+	 * offer a reconnect rather than a generic retry.
+	 */
+	public function test_execute_tool_classifies_in_band_auth_failure() {
+		$this->mock_response(
+			200,
+			array(
+				'successful' => false,
+				'error'      => 'Auth refresh required: invalid_grant (token has been expired or revoked)',
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_auth', 'nvoos-shared' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_dead', array() );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_account_auth_required', $result->get_error_code() );
+		$this->assertTrue( $result->get_error_data()['auth_failure'] );
+	}
+
+	/**
+	 * Test that a payload without a `successful` key is untouched, so older
+	 * response shapes keep working.
+	 */
+	public function test_execute_tool_ignores_missing_successful_key() {
+		$this->mock_response( 200, array( 'data' => array( 'messages' => array() ) ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_ok', 'nvoos-shared' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_1', array() );
+
+		$this->assertNotWPError( $result );
+	}
+
+	/**
+	 * Test that reconnecting targets the existing account's own refresh route,
+	 * so no duplicate account is minted.
+	 */
+	public function test_reconnect_connected_account_targets_existing_account() {
+		$this->mock_response(
+			200,
+			array(
+				'id'           => 'ca_existing',
+				'status'       => 'INITIATED',
+				'redirect_url' => 'https://backend.composio.dev/link/abc',
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_reconnect' );
+		$result = $client->reconnect_connected_account( 'ca_existing' );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'ca_existing', $result['id'] );
+		$this->assertStringContainsString( '/connected_accounts/ca_existing/refresh', $this->last_url );
+		$this->assertSame( 'POST', $this->last_args['method'] );
+	}
+
+	/**
+	 * Test that reconnect validates its input.
+	 */
+	public function test_reconnect_connected_account_requires_id() {
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+		$result = $client->reconnect_connected_account( '' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_missing_account', $result->get_error_code() );
 	}
 
 	/**

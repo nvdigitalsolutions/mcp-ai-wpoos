@@ -55,14 +55,31 @@ The **Connected Apps** table on the connection edit screen lists every connected
 
 The **Identity** column matters: a connected account is always owned by one Composio identity, and every tool call must send that identity along with the account ID. Accounts linked under an identity that differs from the connection's current mode still work — NV oOS reads the account's own identity at execution time — but a mismatch usually means the identity mode was changed after the app was linked.
 
+## 3b. Checking and fixing a broken connection
+
+A connected account can stop working without Composio noticing. The status shown in **Connected Apps** is Composio's *stored* status: if a user revokes the app in their Google, Slack or GitHub settings, Composio keeps reporting `ACTIVE` until its own background refresh fails or it sends the `composio.connected_account.expired` webhook. Trusting the stored status is how you get a `401` on first real use.
+
+NV oOS therefore **verifies rather than assumes**: `composio_list_connected_accounts` probes each account with a harmless read-only call by default and reports a `health` block with `needs_reconnect` alongside the stored status. Verdicts are reused for 15 minutes, so asking repeatedly is cheap — *"Is my Gmail connection still working?"* is a safe question to put to an assistant.
+
+When something is broken, work through three actions on `composio_manage_accounts`, in order:
+
+1. **Validate.** `action: "validate"` with a `toolkit` (or a single `connected_account_id`) forces a live probe that is never answered from cache. Each account comes back with its `health` verdict, credential expiry, and a `reconnect_url` if it needs re-authorising.
+2. **Reconnect.** `action: "reconnect"` re-authorises the **same** account and returns a URL for the user to finish the flow, so the account keeps its ID, alias and any triggers pinned to it. Prefer this over opening a fresh Connect Link, which creates a *new* account and leaves the broken one behind. If in-place reconnection is unavailable, NV oOS falls back to a Connect Link and tells you plainly that a new account will be created — delete the old one afterwards.
+3. **Prune.** `action: "prune"` requires an explicit `toolkit`, so the blast radius is always stated. Every account for that app is probed immediately before deletion and only the genuinely dead ones are removed; you get back how many were `deleted`, `kept` and `failed`.
+
+Use `disable` / `enable` to park an account without deleting it, and `delete` to remove a single account (its upstream provider credentials are revoked too, unless you pass `revoke: false`).
+
+> **Note:** `verification_method: status_only` means the credential could **not** be probed — no zero-argument read-only tool exists for that toolkit — so its status is *unconfirmed*, not verified.
+
 ## 4. Tools for assistants
 
 | Tool | Purpose |
 |---|---|
-| `composio_list_tools` | Search the 1,000+ tool catalog by intent or toolkit |
-| `composio_get_tool_schema` | Input/output schema for a tool slug |
-| `composio_list_connected_accounts` | Status of connected accounts |
+| `composio_list_tools` | Browse or search the 1,000+ tool catalog by intent or toolkit. `connected_only` shows only what your authenticated accounts can actually run; `list_toolkits` returns the app directory. Every result lists its required arguments |
+| `composio_get_tool_schema` | Full input/output schema for a tool slug |
+| `composio_list_connected_accounts` | Connected accounts with *verified* health, not just Composio's stored status — each account is probed with a harmless read-only call by default |
 | `composio_create_connect_link` | Create a hosted auth link for a user |
+| `composio_manage_accounts` | Validate, reconnect, disable, enable, delete or prune connected accounts |
 | `composio_execute_tool` | Execute a tool on a connected account (write-class actions flagged `destructive`) |
 | `composio_manage_triggers` | Discover / upsert / enable / disable / delete triggers |
 
@@ -93,7 +110,7 @@ Trigger events are exposed to automation through the `wp_mcp_ai_composio_trigger
 
 **What if Composio is rate-limited?** The client backs off on `429` with `Retry-After` and surfaces clear errors.
 
-**What happens if a user's account expires?** Composio sends `composio.connected_account.expired`; NV oOS marks the account and the admin panel offers a "reconnect" Connect Link.
+**What happens if a user's account expires?** Composio sends `composio.connected_account.expired`; NV oOS records a `needs_reconnect` verdict for that account immediately, so tool calls stop choosing it, and offers a one-click reconnect (see step 3b).
 
 ## 8. Troubleshooting
 
@@ -112,7 +129,7 @@ Trigger events are exposed to automation through the `wp_mcp_ai_composio_trigger
 
 **`HTTP 400: User ID is required with connected account.`** Composio's execute endpoint requires the `user_id` that owns the connected account to be sent in the same request body as `connected_account_id`. NV oOS sends it automatically: the identity is resolved from the connection's Identity Mode, and overridden by the account's own `user_id` when the two differ. If you still see this error, the build predates that fix — check the **Identity** column in **Connected Apps** and update the plugin.
 
-**A connected app is stuck in `INITIALIZING`, or a stale account keeps being picked.** Click **Remove** on that row in **Connected Apps**, then connect the app again. Auto-resolution only ever picks `ACTIVE` accounts, and prefers the one matching the connection's identity, so removing dead rows keeps the choice unambiguous.
+**A connected app is stuck in `INITIALIZING`, or a stale account keeps being picked.** Click **Remove** on that row in **Connected Apps**, or run `composio_manage_accounts` with `action: "prune"` for the toolkit, then connect the app again. Auto-resolution only ever picks `ACTIVE` accounts, prefers the one matching the connection's identity, and skips accounts whose last credential check failed — so validating and pruning keeps the choice unambiguous.
 
 ## 9. References
 

@@ -372,6 +372,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->handle_composio_disconnect( $connection_id, $account_id );
 		}
 
+		// Verify one Composio connected account, or every account on the
+		// connection. Verification performs a live provider call, so it is only
+		// ever triggered by an explicit click — never while rendering the page.
+		if ( isset( $_GET['composio_verify'] ) && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+			$account_id    = isset( $_GET['account_id'] ) ? sanitize_text_field( wp_unslash( $_GET['account_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'composio_verify_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_composio_verify( $connection_id, $account_id );
+		}
+
+		// Re-authorise an existing Composio connected account in place.
+		if ( isset( $_GET['composio_reconnect'] ) && isset( $_GET['connection_id'] ) && isset( $_GET['account_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+			$account_id    = isset( $_GET['account_id'] ) ? sanitize_text_field( wp_unslash( $_GET['account_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'composio_reconnect_' . $connection_id . '_' . $account_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_composio_reconnect( $connection_id, $account_id );
+		}
+
 		// Handle save action.
 		if ( isset( $_POST['wp_mcp_ai_pro_save_connection'] ) && isset( $_POST['_wpnonce'] ) ) {
 			$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -1017,6 +1045,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		// listing behind.
 		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
 
+		// Drop the health verdict too, so a future account that reuses the ID
+		// cannot inherit a stale verdict.
+		if ( class_exists( 'WP_MCP_AI_Composio_Account_Health' ) ) {
+			WP_MCP_AI_Composio_Account_Health::forget( $connection_id, $account_id );
+		}
+
 		if ( is_wp_error( $result ) ) {
 			$this->redirect_and_exit(
 				add_query_arg(
@@ -1030,6 +1064,357 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		$this->redirect_and_exit( add_query_arg( 'composio_removed', '1', $redirect ) );
+	}
+
+	/**
+	 * Lazy-load the Composio integration classes needed for account actions.
+	 *
+	 * The Remote Sites page can be reached before the composio module has
+	 * booted, so every Composio surface loads what it needs on demand rather
+	 * than assuming the bootstrap already ran.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @return bool Whether the client and health engine are both available.
+	 */
+	protected function maybe_load_composio_classes() {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			return false;
+		}
+
+		$files = array(
+			'WP_MCP_AI_Composio_Client'         => 'includes/composio/class-wp-mcp-ai-composio-client.php',
+			'WP_MCP_AI_Composio_Account_Health' => 'includes/composio/class-wp-mcp-ai-composio-account-health.php',
+			'WP_MCP_AI_Composio_Auth_Handler'   => 'includes/composio/class-wp-mcp-ai-composio-auth-handler.php',
+		);
+
+		foreach ( $files as $class_name => $relative_path ) {
+			if ( class_exists( $class_name ) ) {
+				continue;
+			}
+
+			$path = WP_MCP_AI_PRO_PATH . $relative_path;
+			if ( file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
+
+		return class_exists( 'WP_MCP_AI_Composio_Client' ) && class_exists( 'WP_MCP_AI_Composio_Account_Health' );
+	}
+
+	/**
+	 * Resolve a Composio connection for an account action.
+	 *
+	 * Redirects with an error notice and exits when the connection is missing,
+	 * the wrong type, or the integration is unavailable.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $flag          Query flag to set on failure (e.g. composio_verified).
+	 * @return array Connection record.
+	 */
+	protected function require_composio_connection( $connection_id, $flag ) {
+		$redirect = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) );
+
+		if ( ! $this->maybe_load_composio_classes() ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						$flag            => '0',
+						'composio_error' => rawurlencode( __( 'The Composio integration is not loaded on this site.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( null === $connection || 'composio' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						$flag            => '0',
+						'composio_error' => rawurlencode( __( 'Composio connection not found.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		return $connection;
+	}
+
+	/**
+	 * Verify one Composio connected account, or every account on a connection.
+	 *
+	 * Each verification is a live provider call, so this runs only from an
+	 * explicit click. Results are written to the health ledger and surfaced by
+	 * the Health column on the next render. Always exits via a redirect.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $account_id    Connected account nanoid, or empty for all accounts.
+	 * @return void
+	 */
+	protected function handle_composio_verify( $connection_id, $account_id ) {
+		$redirect   = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) );
+		$connection = $this->require_composio_connection( $connection_id, 'composio_verified' );
+		$client     = WP_MCP_AI_Composio_Client::from_connection( $connection );
+
+		$targets = array();
+
+		if ( '' !== $account_id ) {
+			// Single account: let the probe perform its own authoritative,
+			// cache-bypassing read.
+			$targets[] = array(
+				'id'      => $account_id,
+				'toolkit' => '',
+				'account' => array(),
+			);
+		} else {
+			// Whole connection: flush the 5-minute listing cache first so the
+			// listing itself is authoritative, then hand each record to the probe.
+			// That keeps a verification pass at one read plus one probe per
+			// account, instead of two reads per account.
+			WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+
+			$accounts = $client->list_connected_accounts();
+
+			if ( is_wp_error( $accounts ) ) {
+				$this->redirect_and_exit(
+					add_query_arg(
+						array(
+							'composio_verified' => '0',
+							'composio_error'    => rawurlencode( $accounts->get_error_message() ),
+						),
+						$redirect
+					)
+				);
+			}
+
+			foreach ( $accounts as $account ) {
+				if ( is_array( $account ) && ! empty( $account['id'] ) ) {
+					$targets[] = array(
+						'id'      => (string) $account['id'],
+						'toolkit' => isset( $account['toolkit'] ) ? (string) $account['toolkit'] : '',
+						'account' => $account,
+					);
+				}
+			}
+		}
+
+		$verified = 0;
+		$broken   = 0;
+		$unknown  = 0;
+
+		foreach ( $targets as $target ) {
+			$record = WP_MCP_AI_Composio_Account_Health::probe(
+				$client,
+				$connection_id,
+				$target['id'],
+				array(
+					'toolkit' => $target['toolkit'],
+					'account' => $target['account'],
+				)
+			);
+
+			if ( is_wp_error( $record ) ) {
+				++$unknown;
+				continue;
+			}
+
+			if ( ! empty( $record['verified'] ) ) {
+				++$verified;
+			} elseif ( ! empty( $record['needs_reconnect'] ) ) {
+				++$broken;
+			} else {
+				++$unknown;
+			}
+		}
+
+		// The Health column reads the ledger, but Status and expiry come from the
+		// cached listing — flush it so both agree after a verification pass.
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+
+		$this->redirect_and_exit(
+			add_query_arg(
+				array(
+					'composio_verified' => '1',
+					'composio_ok'       => (string) $verified,
+					'composio_bad'      => (string) $broken,
+					'composio_unknown'  => (string) $unknown,
+				),
+				$redirect
+			)
+		);
+	}
+
+	/**
+	 * Re-authorise an existing Composio connected account in place.
+	 *
+	 * Prefers Composio's per-account re-authorisation route so the account keeps
+	 * its ID, alias and any pinned triggers. That route is marked Legacy
+	 * upstream, so a fresh Connect Link is the documented fallback. Always exits
+	 * via a redirect.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $account_id    Connected account nanoid.
+	 * @return void
+	 */
+	protected function handle_composio_reconnect( $connection_id, $account_id ) {
+		$redirect   = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) );
+		$connection = $this->require_composio_connection( $connection_id, 'composio_reconnected' );
+
+		if ( '' === $account_id ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						'composio_reconnected' => '0',
+						'composio_error'       => rawurlencode( __( 'A connected account ID is required.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		$client  = WP_MCP_AI_Composio_Client::from_connection( $connection );
+		$account = $client->get_connected_account( $account_id, 0 );
+		$toolkit = ! is_wp_error( $account ) && isset( $account['toolkit'] ) ? (string) $account['toolkit'] : '';
+
+		$result = $client->reconnect_connected_account( $account_id );
+
+		$redirect_url = ! is_wp_error( $result ) && isset( $result['redirect_url'] )
+			? esc_url_raw( (string) $result['redirect_url'] )
+			: '';
+
+		// The stored verdict describes a credential that is about to change.
+		WP_MCP_AI_Composio_Account_Health::forget( $connection_id, $account_id );
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+
+		if ( '' !== $redirect_url ) {
+			// Send the operator straight to Composio's hosted page.
+			$this->external_redirect_and_exit( $redirect_url );
+		}
+
+		// Fallback: a fresh Connect Link, which mints a NEW account.
+		if ( '' !== $toolkit && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) {
+			$link = WP_MCP_AI_Composio_Auth_Handler::create_link( $connection_id, $toolkit, get_current_user_id() );
+
+			if ( ! is_wp_error( $link ) && ! empty( $link['url'] ) ) {
+				$this->external_redirect_and_exit( $link['url'] );
+			}
+
+			if ( is_wp_error( $link ) ) {
+				$this->redirect_and_exit(
+					add_query_arg(
+						array(
+							'composio_reconnected' => '0',
+							'composio_error'       => rawurlencode( $link->get_error_message() ),
+						),
+						$redirect
+					)
+				);
+			}
+		}
+
+		$message = is_wp_error( $result )
+			? $result->get_error_message()
+			: __( 'Composio did not return a re-authorisation URL for this account. Remove it and connect the app again.', 'mcp-ai-wpoos-pro' );
+
+		$this->redirect_and_exit(
+			add_query_arg(
+				array(
+					'composio_reconnected' => '0',
+					'composio_error'       => rawurlencode( $message ),
+				),
+				$redirect
+			)
+		);
+	}
+
+	/**
+	 * Build the Health-column presentation for a connected account.
+	 *
+	 * Reads the stored verdict only — rendering the page must never trigger a
+	 * live provider call. "Not checked" is reported honestly rather than being
+	 * dressed up as healthy.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $account_id    Connected account nanoid.
+	 * @return array Keys: label, color, detail, needs_reconnect.
+	 */
+	protected function get_composio_health_display( $connection_id, $account_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Account_Health' ) || '' === $account_id ) {
+			return array(
+				'label'           => __( 'Unavailable', 'mcp-ai-wpoos-pro' ),
+				'color'           => '#646970',
+				'detail'          => __( 'The Composio account-health engine is not loaded.', 'mcp-ai-wpoos-pro' ),
+				'needs_reconnect' => false,
+			);
+		}
+
+		$record = WP_MCP_AI_Composio_Account_Health::get( $connection_id, $account_id );
+
+		if ( empty( $record ) ) {
+			return array(
+				'label'           => __( 'Not checked', 'mcp-ai-wpoos-pro' ),
+				'color'           => '#646970',
+				'detail'          => __( 'This credential has never been tested. A stored status of ACTIVE cannot tell you whether the token still works — use Verify.', 'mcp-ai-wpoos-pro' ),
+				'needs_reconnect' => false,
+			);
+		}
+
+		$checked_at = isset( $record['checked_at'] ) ? absint( $record['checked_at'] ) : 0;
+		$ago        = $checked_at > 0
+			? sprintf(
+				/* translators: %s: human-readable time difference, e.g. "5 mins" */
+				__( 'Checked %s ago.', 'mcp-ai-wpoos-pro' ),
+				human_time_diff( $checked_at, time() )
+			)
+			: '';
+
+		if ( ! empty( $record['verified'] ) ) {
+			$probe_tool = isset( $record['probe_tool'] ) ? (string) $record['probe_tool'] : '';
+			$how        = '' !== $probe_tool
+				? sprintf(
+					/* translators: %s: Composio tool slug used as the probe */
+					__( 'A live %s call succeeded.', 'mcp-ai-wpoos-pro' ),
+					$probe_tool
+				)
+				: __( 'A live provider call succeeded.', 'mcp-ai-wpoos-pro' );
+
+			return array(
+				'label'           => __( 'Verified', 'mcp-ai-wpoos-pro' ),
+				'color'           => '#00a32a',
+				'detail'          => trim( $ago . ' ' . $how ),
+				'needs_reconnect' => false,
+			);
+		}
+
+		$last_error = isset( $record['last_error'] ) ? (string) $record['last_error'] : '';
+
+		if ( ! empty( $record['needs_reconnect'] ) ) {
+			return array(
+				'label'           => __( 'Needs reconnect', 'mcp-ai-wpoos-pro' ),
+				'color'           => '#d63638',
+				'detail'          => trim( $ago . ' ' . ( '' !== $last_error ? $last_error : __( 'The provider rejected this credential.', 'mcp-ai-wpoos-pro' ) ) ),
+				'needs_reconnect' => true,
+			);
+		}
+
+		return array(
+			'label'           => __( 'Unconfirmed', 'mcp-ai-wpoos-pro' ),
+			'color'           => '#dba617',
+			'detail'          => trim( $ago . ' ' . ( '' !== $last_error ? $last_error : __( 'The credential could not be probed, so its status is unconfirmed.', 'mcp-ai-wpoos-pro' ) ) ),
+			'needs_reconnect' => false,
+		);
 	}
 
 	/**
@@ -1231,6 +1616,55 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<?php
 				endif;
 				?>
+			<?php endif; ?>
+
+			<?php if ( isset( $_GET['composio_verified'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
+				<?php
+				// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Display-only redirect flags.
+				$composio_verified      = isset( $_GET['composio_verified'] ) ? sanitize_key( wp_unslash( $_GET['composio_verified'] ) ) : '';
+				$composio_verify_error  = isset( $_GET['composio_error'] ) ? sanitize_text_field( wp_unslash( $_GET['composio_error'] ) ) : '';
+				$composio_verify_ok     = isset( $_GET['composio_ok'] ) ? absint( wp_unslash( $_GET['composio_ok'] ) ) : 0;
+				$composio_verify_bad    = isset( $_GET['composio_bad'] ) ? absint( wp_unslash( $_GET['composio_bad'] ) ) : 0;
+				$composio_verify_unsure = isset( $_GET['composio_unknown'] ) ? absint( wp_unslash( $_GET['composio_unknown'] ) ) : 0;
+				// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+				if ( '1' === $composio_verified ) :
+					?>
+					<div class="notice <?php echo $composio_verify_bad > 0 ? 'notice-warning' : 'notice-success'; ?> is-dismissible">
+						<p>
+							<?php
+							printf(
+								/* translators: 1: number verified, 2: number needing reconnection, 3: number that could not be probed */
+								esc_html__( 'Verification complete: %1$d working, %2$d need reconnecting, %3$d unconfirmed.', 'mcp-ai-wpoos-pro' ),
+								(int) $composio_verify_ok,
+								(int) $composio_verify_bad,
+								(int) $composio_verify_unsure
+							);
+							?>
+							<?php if ( $composio_verify_unsure > 0 ) : ?>
+								<?php esc_html_e( 'Unconfirmed means the credential could not be probed (no zero-argument read-only tool exists for that app), so its status is not proof that it works.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php endif; ?>
+						</p>
+					</div>
+					<?php
+				else :
+					?>
+					<div class="notice notice-error is-dismissible">
+						<p><?php echo '' !== $composio_verify_error ? esc_html( urldecode( $composio_verify_error ) ) : esc_html__( 'The connected accounts could not be verified. Please try again.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+					<?php
+				endif;
+				?>
+			<?php endif; ?>
+
+			<?php if ( isset( $_GET['composio_reconnected'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
+				<?php
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag.
+				$composio_reconnect_error = isset( $_GET['composio_error'] ) ? sanitize_text_field( wp_unslash( $_GET['composio_error'] ) ) : '';
+				?>
+				<div class="notice notice-error is-dismissible">
+					<p><?php echo '' !== $composio_reconnect_error ? esc_html( urldecode( $composio_reconnect_error ) ) : esc_html__( 'The connected account could not be re-authorised. Please try again.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
 			<?php endif; ?>
 
 			<?php if ( $editing || isset( $_GET['add'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only query flag. ?>
@@ -1935,21 +2369,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<?php if ( $is_edit && ! empty( $connection['id'] ) && 'composio' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
 							<?php
-							// Lazy-load the Composio client + auth handler exactly like the
-							// assistant metabox does, so the edit form still renders when
-							// the composio module has not booted yet.
-							if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-								$composio_client_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-client.php';
-								if ( file_exists( $composio_client_file ) ) {
-									require_once $composio_client_file;
-								}
-							}
-							if ( ! class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-								$composio_auth_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-auth-handler.php';
-								if ( file_exists( $composio_auth_file ) ) {
-									require_once $composio_auth_file;
-								}
-							}
+							// Lazy-load the client, health engine and auth handler exactly
+							// like the assistant metabox does, so the edit form still
+							// renders when the composio module has not booted yet.
+							$this->maybe_load_composio_classes();
 
 							if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) ) {
 								$composio_accounts_raw = new WP_Error( 'wp_mcp_ai_composio_not_loaded', __( 'The Composio integration is not loaded on this site.', 'mcp-ai-wpoos-pro' ) );
@@ -1972,6 +2395,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									}
 								}
 							}
+
+							// Precompute the connection-wide verify URL so the markup below
+							// stays a single clean attribute.
+							$composio_verify_all_url = empty( $connection['id'] ) ? '' : wp_nonce_url(
+								add_query_arg(
+									array(
+										'page'            => 'wp-mcp-ai-remote-sites',
+										'composio_verify' => '1',
+										'connection_id'   => $connection['id'],
+									),
+									admin_url( 'admin.php' )
+								),
+								'composio_verify_' . $connection['id']
+							);
 							?>
 							<?php if ( is_wp_error( $composio_accounts_raw ) ) : ?>
 								<div class="notice notice-error inline">
@@ -1987,6 +2424,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 											<th><?php esc_html_e( 'Account', 'mcp-ai-wpoos-pro' ); ?></th>
 											<th><?php esc_html_e( 'Identity', 'mcp-ai-wpoos-pro' ); ?></th>
 											<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Health', 'mcp-ai-wpoos-pro' ); ?></th>
 											<th><?php esc_html_e( 'Account ID', 'mcp-ai-wpoos-pro' ); ?></th>
 											<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
 										</tr>
@@ -2024,7 +2462,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 											$composio_is_expired = '' !== $composio_account_id && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' )
 												? WP_MCP_AI_Composio_Auth_Handler::is_account_expired( $connection['id'], $composio_account_id )
 												: false;
-											$composio_remove_url = '' === $composio_account_id ? '' : wp_nonce_url(
+											// Stored verdict only — rendering never probes the provider.
+											$composio_health        = $this->get_composio_health_display( $connection['id'], $composio_account_id );
+											$composio_expires_at    = isset( $composio_account['expires_at'] ) ? (string) $composio_account['expires_at'] : '';
+											$composio_verify_url    = '' === $composio_account_id ? '' : wp_nonce_url(
+												add_query_arg(
+													array(
+														'page'            => 'wp-mcp-ai-remote-sites',
+														'composio_verify' => '1',
+														'connection_id'   => $connection['id'],
+														'account_id'      => $composio_account_id,
+													),
+													admin_url( 'admin.php' )
+												),
+												'composio_verify_' . $connection['id']
+											);
+											$composio_reconnect_url = '' === $composio_account_id ? '' : wp_nonce_url(
+												add_query_arg(
+													array(
+														'page'               => 'wp-mcp-ai-remote-sites',
+														'composio_reconnect' => '1',
+														'connection_id'      => $connection['id'],
+														'account_id'         => $composio_account_id,
+													),
+													admin_url( 'admin.php' )
+												),
+												'composio_reconnect_' . $connection['id'] . '_' . $composio_account_id
+											);
+											$composio_remove_url    = '' === $composio_account_id ? '' : wp_nonce_url(
 												add_query_arg(
 													array(
 														'page'                => 'wp-mcp-ai-remote-sites',
@@ -2052,14 +2517,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 													<?php if ( $composio_is_expired ) : ?>
 														<span style="color: #d63638; font-weight: 600;"> &mdash; <?php esc_html_e( 'expired', 'mcp-ai-wpoos-pro' ); ?></span>
 													<?php endif; ?>
+													<?php if ( '' !== $composio_expires_at ) : ?>
+														<br><span style="font-size: 11px; color: #646970;"><?php echo esc_html( sprintf( /* translators: %s: ISO-8601 timestamp */ __( 'token expiry: %s', 'mcp-ai-wpoos-pro' ), $composio_expires_at ) ); ?></span>
+													<?php endif; ?>
+												</td>
+												<td>
+													<span style="color: <?php echo esc_attr( $composio_health['color'] ); ?>; font-weight: 600;" title="<?php echo esc_attr( $composio_health['detail'] ); ?>">
+														<?php echo esc_html( $composio_health['label'] ); ?>
+													</span>
+													<?php if ( '' !== $composio_health['detail'] ) : ?>
+														<br><span style="font-size: 11px; color: #646970;"><?php echo esc_html( $composio_health['detail'] ); ?></span>
+													<?php endif; ?>
 												</td>
 												<td><code><?php echo esc_html( $composio_account_id ); ?></code></td>
 												<td>
+													<?php if ( '' !== $composio_verify_url ) : ?>
+														<a href="<?php echo esc_url( $composio_verify_url ); ?>" title="<?php echo esc_attr__( 'Make one harmless read-only call to the provider to confirm this credential still works.', 'mcp-ai-wpoos-pro' ); ?>"><?php esc_html_e( 'Verify', 'mcp-ai-wpoos-pro' ); ?></a>
+													<?php endif; ?>
+													<?php if ( '' !== $composio_reconnect_url ) : ?>
+														<?php echo '' !== $composio_verify_url ? ' <span style="color: #c3c4c7;">|</span> ' : ''; ?>
+														<a href="<?php echo esc_url( $composio_reconnect_url ); ?>" <?php echo $composio_health['needs_reconnect'] ? 'style="font-weight: 600;"' : ''; ?> title="<?php echo esc_attr__( 'Re-authorise this same account without creating a duplicate. You will be sent to the provider to sign in again.', 'mcp-ai-wpoos-pro' ); ?>"><?php esc_html_e( 'Reconnect', 'mcp-ai-wpoos-pro' ); ?></a>
+													<?php endif; ?>
 													<?php if ( '' !== $composio_remove_url ) : ?>
+														<span style="color: #c3c4c7;">|</span>
 														<a href="<?php echo esc_url( $composio_remove_url ); ?>" style="color: #b32d2e;" onclick="return confirm('<?php echo esc_js( __( 'Remove this connected app? The account is deleted at Composio and its provider access is revoked. Assistants will lose access to it immediately.', 'mcp-ai-wpoos-pro' ) ); ?>');">
 															<?php esc_html_e( 'Remove', 'mcp-ai-wpoos-pro' ); ?>
 														</a>
-													<?php else : ?>
+													<?php endif; ?>
+													<?php if ( '' === $composio_verify_url && '' === $composio_remove_url ) : ?>
 														<span style="color: #646970;">&mdash;</span>
 													<?php endif; ?>
 												</td>
@@ -2076,6 +2561,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									);
 									?>
 									<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&connection_id=' . rawurlencode( $connection['id'] ) . '&composio_refresh=1' ), 'composio_refresh_' . $connection['id'] ) ); ?>"><?php esc_html_e( 'Refresh list', 'mcp-ai-wpoos-pro' ); ?></a>
+									<?php if ( '' !== $composio_verify_all_url ) : ?>
+										<span style="color: #c3c4c7;">|</span>
+										<a href="<?php echo esc_url( $composio_verify_all_url ); ?>"><?php esc_html_e( 'Verify all', 'mcp-ai-wpoos-pro' ); ?></a>
+									<?php endif; ?>
+								</p>
+								<p class="description" style="margin-top: 4px;">
+									<?php esc_html_e( '“Status” is what Composio has stored, and it lags a revoked token — an app can read ACTIVE here and still fail with a 401. “Health” is the result of an actual read-only call to the provider, so use Verify before trusting a connection. Reconnect re-authorises the same account instead of creating a duplicate.', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
 							<?php endif; ?>
 						<?php else : ?>
@@ -15745,6 +16237,32 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 */
 	protected function redirect_and_exit( $location, $status = 302 ) {
 		if ( wp_safe_redirect( $location, $status ) ) {
+			exit;
+		}
+
+		if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.Security.EscapeOutput.ExceptionNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
+			throw new WPDieException( is_string( $location ) ? $location : '' );
+		}
+	}
+
+	/**
+	 * Redirect to a vetted external URL and terminate the request.
+	 *
+	 * Sibling of redirect_and_exit() for URLs that legitimately point off-site
+	 * (a provider's hosted OAuth page returned by an API we just called), where
+	 * wp_safe_redirect() would rewrite the target to wp-admin. The same
+	 * PHPUnit-safe termination contract applies, so a blocked redirect aborts
+	 * the flow instead of killing the test process with a bare `exit`.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $location Absolute external URL.
+	 * @param int    $status   Optional HTTP status code. Default 302.
+	 * @throws WPDieException When running under PHPUnit and the redirect is blocked.
+	 */
+	protected function external_redirect_and_exit( $location, $status = 302 ) {
+		if ( wp_redirect( $location, $status ) ) { // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- Off-site provider URL returned by the Composio API; wp_safe_redirect() would rewrite it.
 			exit;
 		}
 

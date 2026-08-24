@@ -117,10 +117,19 @@ class WP_MCP_AI_Composio_Trigger_Bridge {
 
 		$account_id = isset( $payload['connected_account_id'] ) ? sanitize_text_field( $payload['connected_account_id'] ) : '';
 
+		// The toolkit lets the health ledger build a reconnect link without an
+		// extra API round-trip. v3.1 nests it under { slug: ... }.
+		$toolkit = isset( $payload['toolkit'] ) ? $payload['toolkit'] : '';
+		if ( is_array( $toolkit ) ) {
+			$toolkit = isset( $toolkit['slug'] ) ? $toolkit['slug'] : '';
+		}
+		$toolkit = sanitize_key( (string) $toolkit );
+
 		if ( '' !== $account_id && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) {
 			WP_MCP_AI_Composio_Auth_Handler::mark_account_expired(
 				isset( $connection['id'] ) ? $connection['id'] : '',
-				$account_id
+				$account_id,
+				$toolkit
 			);
 		}
 

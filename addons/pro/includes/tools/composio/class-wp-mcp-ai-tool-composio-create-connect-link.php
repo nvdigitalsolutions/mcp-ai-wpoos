@@ -59,7 +59,7 @@ class WP_MCP_AI_Tool_Composio_Create_Connect_Link implements WP_MCP_AI_Tool_Inte
 				),
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Composio connection ID.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional NV oOS Composio connection ID ("conn_..."), identifying this site\'s Composio project integration. NOT a connected-account ID — do not pass a "ca_..." value here. Omit it to use the first enabled Composio connection.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array( 'toolkit' ),
