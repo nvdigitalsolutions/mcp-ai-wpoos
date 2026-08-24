@@ -335,6 +335,30 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&composio_linked=0' ) );
 		}
 
+		// Refresh the cached Composio connected-account listing so apps connected
+		// outside this page (another tab, the Composio dashboard) appear at once.
+		if ( isset( $_GET['composio_refresh'] ) && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'composio_refresh_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) ) {
+				$composio_client_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-client.php';
+				if ( file_exists( $composio_client_file ) ) {
+					require_once $composio_client_file;
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Composio_Client' ) ) {
+				WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+			}
+
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) ) );
+		}
+
 		// Handle save action.
 		if ( isset( $_POST['wp_mcp_ai_pro_save_connection'] ) && isset( $_POST['_wpnonce'] ) ) {
 			$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -1766,6 +1790,122 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php endif; ?>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Save the connection first to connect apps.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<!-- Connected apps listing for Composio Connect -->
+				<tr class="composio-only-field" style="display: none;">
+					<th scope="row">
+						<?php esc_html_e( 'Connected Apps', 'mcp-ai-wpoos-pro' ); ?>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) && 'composio' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<?php
+							// Lazy-load the Composio client + auth handler exactly like the
+							// assistant metabox does, so the edit form still renders when
+							// the composio module has not booted yet.
+							if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+								$composio_client_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-client.php';
+								if ( file_exists( $composio_client_file ) ) {
+									require_once $composio_client_file;
+								}
+							}
+							if ( ! class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+								$composio_auth_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-auth-handler.php';
+								if ( file_exists( $composio_auth_file ) ) {
+									require_once $composio_auth_file;
+								}
+							}
+
+							if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) ) {
+								$composio_accounts_raw = new WP_Error( 'wp_mcp_ai_composio_not_loaded', __( 'The Composio integration is not loaded on this site.', 'mcp-ai-wpoos-pro' ) );
+							} elseif ( empty( $connection['api_key'] ) ) {
+								$composio_accounts_raw = new WP_Error( 'wp_mcp_ai_composio_missing_api_key', __( 'Add your Composio API key and save the connection to view connected apps.', 'mcp-ai-wpoos-pro' ) );
+							} else {
+								$composio_accounts_raw = WP_MCP_AI_Composio_Client::from_connection( $connection )->list_connected_accounts();
+							}
+
+							// Normalise the upstream response: accept a flat account array
+							// or the { items: [...] } pagination wrapper.
+							$composio_accounts = array();
+							if ( ! is_wp_error( $composio_accounts_raw ) && is_array( $composio_accounts_raw ) ) {
+								if ( isset( $composio_accounts_raw['items'] ) && is_array( $composio_accounts_raw['items'] ) ) {
+									$composio_accounts_raw = $composio_accounts_raw['items'];
+								}
+								foreach ( $composio_accounts_raw as $composio_account ) {
+									if ( is_array( $composio_account ) ) {
+										$composio_accounts[] = $composio_account;
+									}
+								}
+							}
+							?>
+							<?php if ( is_wp_error( $composio_accounts_raw ) ) : ?>
+								<div class="notice notice-error inline">
+									<p><?php echo esc_html( $composio_accounts_raw->get_error_message() ); ?></p>
+								</div>
+							<?php elseif ( empty( $composio_accounts ) ) : ?>
+								<p class="description"><?php esc_html_e( 'No apps connected yet. Use the field above to connect your first app, then return here to see it listed.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<?php else : ?>
+								<table class="widefat striped" style="max-width: 860px;">
+									<thead>
+										<tr>
+											<th><?php esc_html_e( 'App', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Account', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Account ID', 'mcp-ai-wpoos-pro' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php foreach ( $composio_accounts as $composio_account ) : ?>
+											<?php
+											$composio_account_id = isset( $composio_account['id'] ) ? (string) $composio_account['id'] : '';
+											$composio_app_name   = '';
+											foreach ( array( 'appName', 'appUniqueId' ) as $composio_app_field ) {
+												if ( isset( $composio_account[ $composio_app_field ] ) && is_scalar( $composio_account[ $composio_app_field ] ) && '' !== (string) $composio_account[ $composio_app_field ] ) {
+													$composio_app_name = (string) $composio_account[ $composio_app_field ];
+													break;
+												}
+											}
+											// v3.1 nests the toolkit under { slug: "..." }.
+											if ( '' === $composio_app_name && isset( $composio_account['toolkit'] ) ) {
+												$composio_app_name = is_array( $composio_account['toolkit'] )
+													? ( isset( $composio_account['toolkit']['slug'] ) ? (string) $composio_account['toolkit']['slug'] : '' )
+													: (string) $composio_account['toolkit'];
+											}
+											$composio_alias      = isset( $composio_account['alias'] ) ? (string) $composio_account['alias'] : '';
+											$composio_status     = isset( $composio_account['status'] ) ? (string) $composio_account['status'] : '';
+											$composio_is_expired = '' !== $composio_account_id && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' )
+												? WP_MCP_AI_Composio_Auth_Handler::is_account_expired( $connection['id'], $composio_account_id )
+												: false;
+											?>
+											<tr>
+												<td><?php echo esc_html( $composio_app_name ); ?></td>
+												<td><?php echo esc_html( $composio_alias ); ?></td>
+												<td>
+													<?php echo esc_html( $composio_status ); ?>
+													<?php if ( $composio_is_expired ) : ?>
+														<span style="color: #d63638; font-weight: 600;"> &mdash; <?php esc_html_e( 'expired', 'mcp-ai-wpoos-pro' ); ?></span>
+													<?php endif; ?>
+												</td>
+												<td><code><?php echo esc_html( $composio_account_id ); ?></code></td>
+											</tr>
+										<?php endforeach; ?>
+									</tbody>
+								</table>
+								<p class="description" style="margin-top: 8px;">
+									<?php
+									printf(
+										/* translators: %d: number of connected accounts */
+										esc_html( _n( '%d connected account. The list refreshes automatically after connecting a new app and is otherwise cached for 5 minutes.', '%d connected accounts. The list refreshes automatically after connecting a new app and is otherwise cached for 5 minutes.', count( $composio_accounts ), 'mcp-ai-wpoos-pro' ) ),
+										(int) count( $composio_accounts )
+									);
+									?>
+									<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&connection_id=' . rawurlencode( $connection['id'] ) . '&composio_refresh=1' ), 'composio_refresh_' . $connection['id'] ) ); ?>"><?php esc_html_e( 'Refresh list', 'mcp-ai-wpoos-pro' ); ?></a>
+								</p>
+							<?php endif; ?>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Save the connection first to view connected apps.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>

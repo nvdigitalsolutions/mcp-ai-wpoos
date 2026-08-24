@@ -121,10 +121,17 @@ class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_
 
 			$account_id = isset( $account['id'] ) ? (string) $account['id'] : '';
 
+			// v3.1 nests the toolkit under { slug: "..." }; older payloads carry
+			// a flat toolkit string.
+			$toolkit = isset( $account['toolkit'] ) ? $account['toolkit'] : '';
+			if ( is_array( $toolkit ) ) {
+				$toolkit = isset( $toolkit['slug'] ) ? (string) $toolkit['slug'] : '';
+			}
+
 			$items[] = array(
 				'id'      => esc_html( $account_id ),
 				'alias'   => isset( $account['alias'] ) ? esc_html( (string) $account['alias'] ) : '',
-				'toolkit' => isset( $account['toolkit'] ) ? esc_html( (string) $account['toolkit'] ) : '',
+				'toolkit' => esc_html( (string) $toolkit ),
 				'status'  => isset( $account['status'] ) ? esc_html( (string) $account['status'] ) : '',
 				'expired' => '' !== $account_id && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' )
 					? WP_MCP_AI_Composio_Auth_Handler::is_account_expired( $connection_id, $account_id )

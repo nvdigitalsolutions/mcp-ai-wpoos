@@ -228,4 +228,109 @@ class Test_Composio_Tools extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'missing_params', $result->get_error_code() );
 	}
+
+	/**
+	 * Test that list_connected_accounts unwraps the v3.1 { items: [...] }
+	 * response and renders the nested toolkit slug instead of a placeholder.
+	 */
+	public function test_list_connected_accounts_handles_wrapped_response() {
+		add_filter(
+			'pre_http_request',
+			function () {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'items'       => array(
+								array(
+									'id'      => 'ca_1',
+									'alias'   => 'me@example.com',
+									'toolkit' => array( 'slug' => 'gmail' ),
+									'status'  => 'ACTIVE',
+								),
+							),
+							'total_items' => 1,
+							'next_cursor' => '',
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			3
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Composio_List_Connected_Accounts();
+		$result = $tool->execute( array() );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 1, $result['count'] );
+		$this->assertSame( 'ca_1', $result['accounts'][0]['id'] );
+		$this->assertSame( 'gmail', $result['accounts'][0]['toolkit'] );
+		$this->assertSame( 'me@example.com', $result['accounts'][0]['alias'] );
+		$this->assertSame( 'ACTIVE', $result['accounts'][0]['status'] );
+	}
+
+	/**
+	 * Test that execute_tool auto-resolves an account from a wrapped listing.
+	 */
+	public function test_execute_tool_resolves_account_from_wrapped_listing() {
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args ) {
+				if ( 'GET' === $args['method'] ) {
+					return array(
+						'headers'  => array( 'content-type' => 'application/json' ),
+						'body'     => wp_json_encode(
+							array(
+								'items'       => array(
+									array(
+										'id'     => 'ca_gmail_1',
+										'status' => 'ACTIVE',
+									),
+								),
+								'total_items' => 1,
+							)
+						),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'cookies'  => array(),
+						'filename' => null,
+					);
+				}
+
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode( array( 'success' => true ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			3
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Composio_Execute_Tool();
+		$result = $tool->execute( array( 'tool_slug' => 'GMAIL_SEND_EMAIL' ) );
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'ca_gmail_1', $result['account_id'] );
+	}
 }

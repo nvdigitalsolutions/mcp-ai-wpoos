@@ -514,4 +514,111 @@ class Test_Composio_Client extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_Composio_Client::get_cached_account_count( 'conn_other' ) );
 		$this->assertFalse( WP_MCP_AI_Composio_Client::get_cached_account_count( '' ) );
 	}
+
+	/**
+	 * Test that the v3.1 { items: [...] } wrapper is unwrapped and the real
+	 * account count is cached (not the number of wrapper keys).
+	 */
+	public function test_list_connected_accounts_unwraps_items() {
+		$this->mock_response(
+			200,
+			array(
+				'items'       => array(
+					array(
+						'id'      => 'ca_1',
+						'alias'   => 'me@example.com',
+						'toolkit' => array( 'slug' => 'gmail' ),
+						'status'  => 'ACTIVE',
+					),
+					array(
+						'id'      => 'ca_2',
+						'alias'   => 'workspace',
+						'toolkit' => array( 'slug' => 'slack' ),
+						'status'  => 'ACTIVE',
+					),
+				),
+				'total_items' => 2,
+				'next_cursor' => '',
+			),
+		);
+
+		$client   = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_wrapped' );
+		$accounts = $client->list_connected_accounts();
+
+		$this->assertNotWPError( $accounts );
+		$this->assertCount( 2, $accounts );
+		$this->assertSame( 'ca_1', $accounts[0]['id'] );
+		$this->assertSame( 'gmail', $accounts[0]['toolkit']['slug'] );
+		$this->assertSame( 2, WP_MCP_AI_Composio_Client::get_cached_account_count( 'conn_wrapped' ) );
+	}
+
+	/**
+	 * Test that flat legacy filters are mapped onto the v3.1 array query
+	 * parameters (toolkit_slugs / statuses / user_ids).
+	 */
+	public function test_list_connected_accounts_maps_filters() {
+		$this->mock_response(
+			200,
+			array(
+				'items' => array(),
+			),
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_filters' );
+		$client->list_connected_accounts(
+			array(
+				'toolkit' => 'gmail',
+				'status'  => 'active',
+				'user_id' => 'wp-1',
+			)
+		);
+
+		$this->assertStringContainsString( 'toolkit_slugs=gmail', $this->last_url );
+		$this->assertStringContainsString( 'statuses=active', $this->last_url );
+		$this->assertStringContainsString( 'user_ids=wp-1', $this->last_url );
+		// A filtered listing must not clobber the total badge count.
+		$this->assertFalse( WP_MCP_AI_Composio_Client::get_cached_account_count( 'conn_filters' ) );
+	}
+
+	/**
+	 * Test that clearing the accounts cache drops both the listing cache and
+	 * the admin-badge count transient.
+	 */
+	public function test_clear_accounts_cache_flushes_listing_and_count() {
+		$this->mock_response(
+			200,
+			array(
+				array(
+					'id'      => 'ca_1',
+					'toolkit' => 'gmail',
+					'status'  => 'active',
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_clear' );
+		$client->list_connected_accounts();
+
+		$this->assertSame( 1, WP_MCP_AI_Composio_Client::get_cached_account_count( 'conn_clear' ) );
+
+		$listing_key = WP_MCP_AI_Composio_Client::CACHE_PREFIX . md5( 'conn_clear|' . WP_MCP_AI_Composio_Client::DEFAULT_BASE_URL . '/api/' . WP_MCP_AI_Composio_Client::API_VERSION . '/connected_accounts' );
+		$this->assertNotFalse( get_transient( $listing_key ) );
+
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( 'conn_clear' );
+
+		$this->assertFalse( get_transient( $listing_key ) );
+		$this->assertFalse( WP_MCP_AI_Composio_Client::get_cached_account_count( 'conn_clear' ) );
+	}
+
+	/**
+	 * Test that clearing the accounts cache with an empty connection ID is a
+	 * safe no-op.
+	 */
+	public function test_clear_accounts_cache_empty_id_is_noop() {
+		$this->mock_response( 200, array() );
+
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( '' );
+
+		$this->assertSame( 0, $this->request_count );
+	}
 }

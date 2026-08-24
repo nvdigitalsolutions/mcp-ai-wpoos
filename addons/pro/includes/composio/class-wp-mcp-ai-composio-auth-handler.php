@@ -250,8 +250,9 @@ class WP_MCP_AI_Composio_Auth_Handler {
 			}
 		}
 
-		// Flush the cached connected-account listing for this connection.
-		delete_transient( WP_MCP_AI_Composio_Client::CACHE_PREFIX . md5( $connection_id . '|' . WP_MCP_AI_Composio_Client::DEFAULT_BASE_URL . '/api/' . WP_MCP_AI_Composio_Client::API_VERSION . '/connected_accounts' ) );
+		// Flush the cached connected-account listing for this connection so the
+		// edit form shows the freshly connected account on the next render.
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
 
 		wp_safe_redirect( add_query_arg( 'composio_linked', '1', $redirect ) );
 		exit;
@@ -281,7 +282,7 @@ class WP_MCP_AI_Composio_Auth_Handler {
 		);
 
 		// Flush the cached listing so the admin panel reflects the new state.
-		delete_transient( WP_MCP_AI_Composio_Client::CACHE_PREFIX . md5( $connection_id . '|' . WP_MCP_AI_Composio_Client::DEFAULT_BASE_URL . '/api/' . WP_MCP_AI_Composio_Client::API_VERSION . '/connected_accounts' ) );
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
 	}
 
 	/**
