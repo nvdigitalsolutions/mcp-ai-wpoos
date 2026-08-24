@@ -86,6 +86,18 @@ class WP_MCP_AI_Composio_Client {
 	private $connection_id = '';
 
 	/**
+	 * Composio user identity ("user_id") this client acts as.
+	 *
+	 * Composio's v3.1 execute endpoint rejects a connected account that arrives
+	 * without the user identity it belongs to ("User ID is required with
+	 * connected account"), so the identity resolved from the connection travels
+	 * with every tool call.
+	 *
+	 * @var string
+	 */
+	private $user_id = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.4.0
@@ -93,12 +105,14 @@ class WP_MCP_AI_Composio_Client {
 	 * @param string $api_key       Composio project API key (ak_...).
 	 * @param string $base_url      Optional. API base URL. Defaults to https://backend.composio.dev.
 	 * @param string $connection_id Optional. Remote-site connection ID for cache scoping.
+	 * @param string $user_id       Optional. Composio user identity to act as.
 	 */
-	public function __construct( $api_key, $base_url = '', $connection_id = '' ) {
+	public function __construct( $api_key, $base_url = '', $connection_id = '', $user_id = '' ) {
 		// Trim the key so copy/paste whitespace can never turn a valid key
 		// into an upstream 401.
 		$this->api_key       = trim( (string) $api_key );
 		$this->connection_id = sanitize_key( (string) $connection_id );
+		$this->user_id       = sanitize_text_field( (string) $user_id );
 
 		if ( ! empty( $base_url ) ) {
 			$base_url = esc_url_raw( $base_url );
@@ -106,6 +120,29 @@ class WP_MCP_AI_Composio_Client {
 				$this->base_url = rtrim( $base_url, '/' );
 			}
 		}
+	}
+
+	/**
+	 * Get the Composio user identity bound to this client.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @return string
+	 */
+	public function get_user_id() {
+		return $this->user_id;
+	}
+
+	/**
+	 * Bind a Composio user identity to this client.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $user_id Composio user identity.
+	 * @return void
+	 */
+	public function set_user_id( $user_id ) {
+		$this->user_id = sanitize_text_field( (string) $user_id );
 	}
 
 	/**
@@ -139,7 +176,35 @@ class WP_MCP_AI_Composio_Client {
 			: ( isset( $connection['url'] ) ? $connection['url'] : '' );
 		$conn_id  = isset( $connection['id'] ) ? $connection['id'] : '';
 
-		return new self( $api_key, $base_url, $conn_id );
+		return new self( $api_key, $base_url, $conn_id, self::resolve_connection_user_id( $connection ) );
+	}
+
+	/**
+	 * Resolve the Composio user identity for a connection record.
+	 *
+	 * Identity resolution lives in the auth handler because it owns the
+	 * admin_shared / per_wp_user contract. The class is lazy-loaded here so
+	 * client-only call sites (the assistant metabox, the Remote Sites edit
+	 * form) still get a correctly bound identity.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $connection Remote-site connection record.
+	 * @return string
+	 */
+	private static function resolve_connection_user_id( array $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$auth_handler_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-auth-handler.php';
+			if ( file_exists( $auth_handler_file ) ) {
+				require_once $auth_handler_file;
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) {
+			return WP_MCP_AI_Composio_Auth_Handler::resolve_user_id( $connection );
+		}
+
+		return isset( $connection['default_user_id'] ) ? (string) $connection['default_user_id'] : '';
 	}
 
 	/**
@@ -310,16 +375,17 @@ class WP_MCP_AI_Composio_Client {
 	 * @since 1.4.0
 	 *
 	 * @param string $account_id Connected account nanoid.
+	 * @param int    $cache_ttl  Optional. Cache the lookup for this many seconds (0 = no cache).
 	 * @return array|WP_Error
 	 */
-	public function get_connected_account( $account_id ) {
+	public function get_connected_account( $account_id, $cache_ttl = 0 ) {
 		$account_id = sanitize_text_field( (string) $account_id );
 
 		if ( '' === $account_id ) {
 			return new WP_Error( 'wp_mcp_ai_composio_missing_account', __( 'A connected account ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$result = $this->request( 'GET', '/api/' . self::API_VERSION . '/connected_accounts/' . rawurlencode( $account_id ) );
+		$result = $this->request( 'GET', '/api/' . self::API_VERSION . '/connected_accounts/' . rawurlencode( $account_id ), array(), array(), absint( $cache_ttl ) );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -646,11 +712,14 @@ class WP_MCP_AI_Composio_Client {
 	 * @param string $tool_slug  SCREAMING_SNAKE tool slug.
 	 * @param string $account_id Connected account nanoid.
 	 * @param array  $arguments  Tool input arguments.
+	 * @param string $user_id    Optional. Composio user identity that owns the account.
+	 *                           Defaults to the identity bound to this client.
 	 * @return array|WP_Error
 	 */
-	public function execute_tool( $tool_slug, $account_id, array $arguments ) {
+	public function execute_tool( $tool_slug, $account_id, array $arguments, $user_id = '' ) {
 		$tool_slug  = sanitize_text_field( (string) $tool_slug );
 		$account_id = sanitize_text_field( (string) $account_id );
+		$user_id    = '' !== (string) $user_id ? sanitize_text_field( (string) $user_id ) : $this->user_id;
 
 		if ( '' === $tool_slug || ! preg_match( '/^[A-Z][A-Z0-9_]*$/', $tool_slug ) ) {
 			return new WP_Error( 'wp_mcp_ai_composio_invalid_tool_slug', __( 'Tool slug must be SCREAMING_SNAKE_CASE.', 'mcp-ai-wpoos-pro' ) );
@@ -660,15 +729,24 @@ class WP_MCP_AI_Composio_Client {
 			return new WP_Error( 'wp_mcp_ai_composio_missing_account', __( 'A connected account ID is required to execute tools.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		$body = array(
+			'connected_account_id' => $account_id,
+			'toolkit_versions'     => 'latest',
+			'arguments'            => $arguments,
+		);
+
+		// Composio rejects a connected account that arrives without the user
+		// identity it belongs to ("User ID is required with connected account"),
+		// so the resolved identity is always sent alongside the account.
+		if ( '' !== $user_id ) {
+			$body['user_id'] = $user_id;
+		}
+
 		$result = $this->request(
 			'POST',
 			'/api/' . self::API_VERSION . '/tools/execute/' . rawurlencode( $tool_slug ),
 			array(),
-			array(
-				'connected_account_id' => $account_id,
-				'toolkit_versions'     => 'latest',
-				'arguments'            => $arguments,
-			)
+			$body
 		);
 
 		if ( is_wp_error( $result ) ) {
@@ -768,6 +846,12 @@ class WP_MCP_AI_Composio_Client {
 
 		if ( '' === $trigger_slug || ! preg_match( '/^[A-Z][A-Z0-9_]*$/', $trigger_slug ) ) {
 			return new WP_Error( 'wp_mcp_ai_composio_invalid_trigger_slug', __( 'Trigger slug must be SCREAMING_SNAKE_CASE.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// A trigger needs an owner: either a pinned connected account or the user
+		// identity whose active account Composio should resolve.
+		if ( empty( $config['connected_account_id'] ) && empty( $config['user_id'] ) && '' !== $this->user_id ) {
+			$config['user_id'] = $this->user_id;
 		}
 
 		$result = $this->request(

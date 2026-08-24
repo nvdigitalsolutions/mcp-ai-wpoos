@@ -28,10 +28,12 @@ flowchart LR
 3. Paste your project API key.
 4. Leave **API Base URL** at `https://backend.composio.dev` unless you use a regional or self-hosted endpoint (must be public HTTPS).
 5. Choose the **Identity Mode**:
-   - **Shared (site-wide)** — one identity for all assistants (default, simplest).
-   - **Per user** — each WordPress user connects their own accounts.
+   - **Shared (site-wide)** — one identity for all assistants (default, simplest). Every Connect Link and tool call is made as the built-in `nvoos-shared` identity.
+   - **Per user** — each WordPress user connects their own accounts (`wp-{user_id}`).
 6. Optionally restrict the **Toolkit Allowlist** (e.g. `gmail, slack, github`).
 7. Save, then click **Test Connection**.
+
+After saving, the **Identity Mode** row shows the exact Composio identity the connection resolves to. This is the quickest way to confirm shared mode is in effect.
 
 ## 3. Connect your first app
 
@@ -43,6 +45,15 @@ flowchart LR
 If your Composio project has **callback identity verification** enabled (dashboard → Settings → General), NV oOS redeems the single-use verification session automatically — this defends against OAuth session fixation.
 
 > **Tip:** If Connect Link creation fails with *"No enabled auth config was found…"*, the toolkit has not been set up in your Composio project yet. Connect the toolkit once from the Composio dashboard (or create an auth config for it), then try again. NV oOS uses your project's default/Composio-managed auth config — custom OAuth apps are not selectable from the plugin UI.
+
+## 3a. Manage connected apps
+
+The **Connected Apps** table on the connection edit screen lists every connected account with its app, account alias, **Identity** (the Composio `user_id` it is bound to), status and account ID.
+
+- **Remove** deletes the account at Composio *and* asks Composio to revoke the upstream provider credentials (`DELETE /connected_accounts/{id}?revoke_on_delete=true`). Assistants lose access immediately. Use it to clear out stuck `INITIALIZING` or `EXPIRED` rows.
+- **Refresh list** clears the 5-minute listing cache, for apps connected in another tab or from the Composio dashboard.
+
+The **Identity** column matters: a connected account is always owned by one Composio identity, and every tool call must send that identity along with the account ID. Accounts linked under an identity that differs from the connection's current mode still work — NV oOS reads the account's own identity at execution time — but a mismatch usually means the identity mode was changed after the app was linked.
 
 ## 4. Tools for assistants
 
@@ -98,6 +109,10 @@ Trigger events are exposed to automation through the `wp_mcp_ai_composio_trigger
 **`HTTP 403` with a scoped project API key.** Scoped keys only reach the resources granted to them. Grant the key Connected Accounts / Toolkits / Tools permissions in the dashboard, or use a full project API key.
 
 **Connect Link creation fails (`400`/`422` or "auth_config_id is required").** Composio's link endpoint requires a project auth config ID, not a toolkit slug. Update to a build that resolves the auth config automatically, and make sure the toolkit has an auth config in the Composio dashboard (see the tip in step 3 above).
+
+**`HTTP 400: User ID is required with connected account.`** Composio's execute endpoint requires the `user_id` that owns the connected account to be sent in the same request body as `connected_account_id`. NV oOS sends it automatically: the identity is resolved from the connection's Identity Mode, and overridden by the account's own `user_id` when the two differ. If you still see this error, the build predates that fix — check the **Identity** column in **Connected Apps** and update the plugin.
+
+**A connected app is stuck in `INITIALIZING`, or a stale account keeps being picked.** Click **Remove** on that row in **Connected Apps**, then connect the app again. Auto-resolution only ever picks `ACTIVE` accounts, and prefers the one matching the connection's identity, so removing dead rows keeps the choice unambiguous.
 
 ## 9. References
 

@@ -39,7 +39,8 @@ The six `composio_*` MCP tools that expose Composio Connect to NV oOS assistants
 - Canonical envelope (`format_success_response()` via `WP_MCP_AI_Tool_Envelope`) — success arrays only, failures are `WP_Error`.
 - Two-gate sanitisation: sanitize `$arguments[...]` at entry, escape every echoed value at exit.
 - Connection resolution is delegated to `WP_MCP_AI_Composio_Tools::resolve_connection()`; toolkit allowlists are enforced via `is_toolkit_allowed()`.
-- `composio_execute_tool` classifies write-class slugs (`DELETE_`, `SEND_`, `CREATE_`, ...) as `destructive` in its response metadata for downstream guardrails.
+- Identity resolution is delegated to `WP_MCP_AI_Composio_Tools::resolve_user_id()`. Composio rejects a `connected_account_id` that arrives without its owning `user_id`, so `composio_execute_tool` always sends one: the connection's resolved identity, overridden by the account's own owner when they differ.
+- `composio_execute_tool` classifies write-class slugs (`DELETE_`, `SEND_`, `CREATE_`, ...) as `destructive` in its response metadata for downstream guardrails, and reports the identity used as `composio_user_id`.
 
 ## Tests
 

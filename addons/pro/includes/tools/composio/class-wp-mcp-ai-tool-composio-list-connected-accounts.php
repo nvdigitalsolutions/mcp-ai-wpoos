@@ -133,6 +133,9 @@ class WP_MCP_AI_Tool_Composio_List_Connected_Accounts implements WP_MCP_AI_Tool_
 				'alias'   => isset( $account['alias'] ) ? esc_html( (string) $account['alias'] ) : '',
 				'toolkit' => esc_html( (string) $toolkit ),
 				'status'  => isset( $account['status'] ) ? esc_html( (string) $account['status'] ) : '',
+				// The Composio identity the account belongs to. Tool execution
+				// must send this value alongside the account ID.
+				'user_id' => isset( $account['user_id'] ) && is_scalar( $account['user_id'] ) ? esc_html( (string) $account['user_id'] ) : '',
 				'expired' => '' !== $account_id && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' )
 					? WP_MCP_AI_Composio_Auth_Handler::is_account_expired( $connection_id, $account_id )
 					: false,

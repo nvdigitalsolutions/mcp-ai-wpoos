@@ -27,7 +27,7 @@ Pro integration with Composio Connect: one remote-site connection type (`composi
 
 - **Reads from:** `WP_MCP_AI_Pro_Remote_Site_Manager` connections (`connection_type === 'composio'`); WordPress transients for caching/state/dedup.
 - **Writes to:** WordPress transients (GET caches, 429 cooldowns, link state, event dedup); audit log via `WP_MCP_AI_Logger` when available.
-- **Upstream callers:** Remote Sites admin page (save/test/Connect Link actions), the six `composio_*` tools, Composio webhook deliveries.
+- **Upstream callers:** Remote Sites admin page (save/test/Connect Link/refresh/disconnect actions), the six `composio_*` tools, Composio webhook deliveries.
 - **Downstream collaborators:** Composio backend API (`https://backend.composio.dev`, API `v3.1`, `x-api-key` auth); Pro Workflow Builder / Schedule Manager via `wp_mcp_ai_composio_trigger_received`.
 - **Events fired:** `wp_mcp_ai_composio_trigger`, `wp_mcp_ai_composio_account_expired`, `wp_mcp_ai_composio_trigger_disabled`, `wp_mcp_ai_composio_trigger_received`, `wp_mcp_ai_composio_tool_executed`.
 - **Events listened to:** `wp_mcp_ai_bootstrapped` (priority 45).
@@ -36,6 +36,7 @@ Pro integration with Composio Connect: one remote-site connection type (`composi
 
 - All outbound HTTP goes through `WP_MCP_AI_Composio_Client::request()` — never raw `wp_remote_request()` — so URL pinning, `x-api-key` assembly, 429 cooldowns and error normalisation stay in one place.
 - API version is pinned via `WP_MCP_AI_Composio_Client::API_VERSION` (`v3.1`). Watch upstream `Deprecation`/`Sunset` headers before upgrading.
+- A client built with `from_connection()` is bound to the connection's Composio identity (`get_user_id()` / `set_user_id()`). Composio rejects a `connected_account_id` sent without its owning `user_id`, so `execute_tool()` and `upsert_trigger()` always carry one. Identity resolution itself lives in `WP_MCP_AI_Composio_Auth_Handler::resolve_user_id()` — the single owner of the `admin_shared` / `per_wp_user` contract.
 - Secrets (API key, webhook secret) are encrypted at rest via the Remote Site Manager's AES-256-CBC helper and never logged or returned in REST responses.
 - Tools obey the canonical envelope + two-gate sanitisation (Unix Theory P0–P6); PHPCS sniffs `WPMCPAI.Tools.*` must pass.
 

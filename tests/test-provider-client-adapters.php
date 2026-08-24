@@ -892,9 +892,11 @@ class Test_Provider_Client_Adapters extends WP_UnitTestCase {
 	/**
 	 * Data provider for slug tests.
 	 *
+	 * Static as required by PHPUnit 10+.
+	 *
 	 * @return array
 	 */
-	public function provider_slug_data() {
+	public static function provider_slug_data() {
 		return array(
 			'openai'     => array( 'WP_MCP_AI_OpenAI_Provider_Client' ),
 			'gemini'     => array( 'WP_MCP_AI_Gemini_Provider_Client' ),

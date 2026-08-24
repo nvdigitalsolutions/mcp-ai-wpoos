@@ -359,6 +359,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) ) );
 		}
 
+		// Remove (disconnect) a single Composio connected account.
+		if ( isset( $_GET['composio_disconnect'] ) && isset( $_GET['connection_id'] ) && isset( $_GET['account_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+			$account_id    = isset( $_GET['account_id'] ) ? sanitize_text_field( wp_unslash( $_GET['account_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'composio_disconnect_' . $connection_id . '_' . $account_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_composio_disconnect( $connection_id, $account_id );
+		}
+
 		// Handle save action.
 		if ( isset( $_POST['wp_mcp_ai_pro_save_connection'] ) && isset( $_POST['_wpnonce'] ) ) {
 			$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -949,6 +962,77 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	}
 
 	/**
+	 * Remove a Composio connected account from this project.
+	 *
+	 * Soft-deletes the account at Composio and asks Composio to revoke the
+	 * upstream provider credentials, then flushes the cached listing so the
+	 * Connected Apps table reflects reality on the next render. Always exits
+	 * via a redirect.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $connection_id Composio connection ID.
+	 * @param string $account_id    Connected account nanoid.
+	 * @return void
+	 */
+	protected function handle_composio_disconnect( $connection_id, $account_id ) {
+		$redirect = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $connection_id ) );
+
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$composio_client_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-client.php';
+			if ( file_exists( $composio_client_file ) ) {
+				require_once $composio_client_file;
+			}
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Client' ) || null === $connection || 'composio' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						'composio_removed' => '0',
+						'composio_error'   => rawurlencode( __( 'Composio connection not found or the integration is not loaded.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		if ( '' === $account_id ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						'composio_removed' => '0',
+						'composio_error'   => rawurlencode( __( 'A connected account ID is required.', 'mcp-ai-wpoos-pro' ) ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		$result = WP_MCP_AI_Composio_Client::from_connection( $connection )->delete_connected_account( $account_id, true );
+
+		// Flush regardless of outcome: a partial failure must not leave a stale
+		// listing behind.
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( $connection_id );
+
+		if ( is_wp_error( $result ) ) {
+			$this->redirect_and_exit(
+				add_query_arg(
+					array(
+						'composio_removed' => '0',
+						'composio_error'   => rawurlencode( $result->get_error_message() ),
+					),
+					$redirect
+				)
+			);
+		}
+
+		$this->redirect_and_exit( add_query_arg( 'composio_removed', '1', $redirect ) );
+	}
+
+	/**
 	 * Render admin page.
 	 *
 	 * @since 1.0.0
@@ -1120,6 +1204,29 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					?>
 					<div class="notice notice-error is-dismissible">
 						<p><?php echo '' !== $composio_error ? esc_html( urldecode( $composio_error ) ) : esc_html__( 'App connection failed. Please try again.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+					<?php
+				endif;
+				?>
+			<?php endif; ?>
+
+			<?php if ( isset( $_GET['composio_removed'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only redirect flag. ?>
+				<?php
+				// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Display-only redirect flags.
+				$composio_removed      = isset( $_GET['composio_removed'] ) ? sanitize_key( wp_unslash( $_GET['composio_removed'] ) ) : '';
+				$composio_remove_error = isset( $_GET['composio_error'] ) ? sanitize_text_field( wp_unslash( $_GET['composio_error'] ) ) : '';
+				// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+				if ( '1' === $composio_removed ) :
+					?>
+					<div class="notice notice-success is-dismissible">
+						<p><?php esc_html_e( 'App disconnected. The account was removed from Composio and its provider access revoked.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+					<?php
+				else :
+					?>
+					<div class="notice notice-error is-dismissible">
+						<p><?php echo '' !== $composio_remove_error ? esc_html( urldecode( $composio_remove_error ) ) : esc_html__( 'The app could not be disconnected. Please try again.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</div>
 					<?php
 				endif;
@@ -1733,6 +1840,32 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="admin_shared" <?php selected( $is_edit && isset( $connection['default_user_mode'] ) ? $connection['default_user_mode'] : 'admin_shared', 'admin_shared' ); ?>><?php esc_html_e( 'Shared (site-wide) — one identity for all assistants', 'mcp-ai-wpoos-pro' ); ?></option>
 							<option value="per_wp_user" <?php selected( $is_edit && isset( $connection['default_user_mode'] ) ? $connection['default_user_mode'] : '', 'per_wp_user' ); ?>><?php esc_html_e( 'Per user — each WordPress user connects their own accounts', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
+						<?php
+						// Show the Composio identity (user_id) this connection resolves
+						// to. Every Connect Link and tool call carries this value, so
+						// seeing it here is the quickest way to confirm the mode took
+						// effect and that connected accounts are bound to it.
+						if ( $is_edit && 'composio' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) :
+							if ( ! class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+								$composio_auth_file = WP_MCP_AI_PRO_PATH . 'includes/composio/class-wp-mcp-ai-composio-auth-handler.php';
+								if ( file_exists( $composio_auth_file ) ) {
+									require_once $composio_auth_file;
+								}
+							}
+
+							if ( class_exists( 'WP_MCP_AI_Composio_Auth_Handler' ) ) :
+								$composio_identity = WP_MCP_AI_Composio_Auth_Handler::resolve_user_id( $connection, get_current_user_id() );
+								?>
+								<p class="description">
+									<?php esc_html_e( 'Composio identity for this connection:', 'mcp-ai-wpoos-pro' ); ?>
+									<code style="background: #f0f0f0; padding: 2px 6px;"><?php echo esc_html( $composio_identity ); ?></code>
+									<br>
+									<?php esc_html_e( 'Connect Links and tool calls are made as this identity. Accounts listed below under a different identity still work — their own identity is used at execution time.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+								<?php
+							endif;
+						endif;
+						?>
 					</td>
 				</tr>
 
@@ -1847,13 +1980,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php elseif ( empty( $composio_accounts ) ) : ?>
 								<p class="description"><?php esc_html_e( 'No apps connected yet. Use the field above to connect your first app, then return here to see it listed.', 'mcp-ai-wpoos-pro' ); ?></p>
 							<?php else : ?>
-								<table class="widefat striped" style="max-width: 860px;">
+								<table class="widefat striped" style="max-width: 1040px;">
 									<thead>
 										<tr>
 											<th><?php esc_html_e( 'App', 'mcp-ai-wpoos-pro' ); ?></th>
 											<th><?php esc_html_e( 'Account', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Identity', 'mcp-ai-wpoos-pro' ); ?></th>
 											<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
 											<th><?php esc_html_e( 'Account ID', 'mcp-ai-wpoos-pro' ); ?></th>
+											<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
 										</tr>
 									</thead>
 									<tbody>
@@ -1873,15 +2008,45 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 													? ( isset( $composio_account['toolkit']['slug'] ) ? (string) $composio_account['toolkit']['slug'] : '' )
 													: (string) $composio_account['toolkit'];
 											}
-											$composio_alias      = isset( $composio_account['alias'] ) ? (string) $composio_account['alias'] : '';
+											$composio_alias = isset( $composio_account['alias'] ) ? (string) $composio_account['alias'] : '';
+											// The Composio identity (user_id) the account is bound
+											// to. Tool execution must send this value with the
+											// account ID, so surfacing it makes identity-mode
+											// mismatches obvious.
+											$composio_owner = '';
+											foreach ( array( 'user_id', 'entity_id' ) as $composio_owner_field ) {
+												if ( isset( $composio_account[ $composio_owner_field ] ) && is_scalar( $composio_account[ $composio_owner_field ] ) && '' !== (string) $composio_account[ $composio_owner_field ] ) {
+													$composio_owner = (string) $composio_account[ $composio_owner_field ];
+													break;
+												}
+											}
 											$composio_status     = isset( $composio_account['status'] ) ? (string) $composio_account['status'] : '';
 											$composio_is_expired = '' !== $composio_account_id && class_exists( 'WP_MCP_AI_Composio_Auth_Handler' )
 												? WP_MCP_AI_Composio_Auth_Handler::is_account_expired( $connection['id'], $composio_account_id )
 												: false;
+											$composio_remove_url = '' === $composio_account_id ? '' : wp_nonce_url(
+												add_query_arg(
+													array(
+														'page'                => 'wp-mcp-ai-remote-sites',
+														'composio_disconnect' => '1',
+														'connection_id'       => $connection['id'],
+														'account_id'          => $composio_account_id,
+													),
+													admin_url( 'admin.php' )
+												),
+												'composio_disconnect_' . $connection['id'] . '_' . $composio_account_id
+											);
 											?>
 											<tr>
 												<td><?php echo esc_html( $composio_app_name ); ?></td>
 												<td><?php echo esc_html( $composio_alias ); ?></td>
+												<td>
+													<?php if ( '' !== $composio_owner ) : ?>
+														<code style="background: #f0f0f0; padding: 2px 6px;"><?php echo esc_html( $composio_owner ); ?></code>
+													<?php else : ?>
+														<span style="color: #646970;">&mdash;</span>
+													<?php endif; ?>
+												</td>
 												<td>
 													<?php echo esc_html( $composio_status ); ?>
 													<?php if ( $composio_is_expired ) : ?>
@@ -1889,6 +2054,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 													<?php endif; ?>
 												</td>
 												<td><code><?php echo esc_html( $composio_account_id ); ?></code></td>
+												<td>
+													<?php if ( '' !== $composio_remove_url ) : ?>
+														<a href="<?php echo esc_url( $composio_remove_url ); ?>" style="color: #b32d2e;" onclick="return confirm('<?php echo esc_js( __( 'Remove this connected app? The account is deleted at Composio and its provider access is revoked. Assistants will lose access to it immediately.', 'mcp-ai-wpoos-pro' ) ); ?>');">
+															<?php esc_html_e( 'Remove', 'mcp-ai-wpoos-pro' ); ?>
+														</a>
+													<?php else : ?>
+														<span style="color: #646970;">&mdash;</span>
+													<?php endif; ?>
+												</td>
 											</tr>
 										<?php endforeach; ?>
 									</tbody>
