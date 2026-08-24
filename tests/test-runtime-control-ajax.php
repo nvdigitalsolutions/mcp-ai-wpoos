@@ -21,6 +21,17 @@
 /**
  * AJAX cluster: Runtime control (queue, RabbitMQ, run timeline, session).
  */
+// Load the Pro admin class under test; the pro addon loads it only in admin
+// context, so require it here to keep the suite runnable standalone (mirrors
+// CI, where earlier admin-context tests load it).
+if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+	$wp_mcp_ai_orchestration_dashboard = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-dashboard.php';
+	if ( file_exists( $wp_mcp_ai_orchestration_dashboard ) ) {
+		require_once $wp_mcp_ai_orchestration_dashboard;
+	}
+	unset( $wp_mcp_ai_orchestration_dashboard );
+}
+
 class Test_Runtime_Control_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/**

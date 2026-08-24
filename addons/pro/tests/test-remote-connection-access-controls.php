@@ -38,6 +38,12 @@ class Test_Remote_Connection_Access_Controls extends WP_UnitTestCase {
 
 		$this->tool = new WP_MCP_AI_Tool_Remote_WP_Connection();
 
+		// The tool's execute() gates on the edit_posts capability before it
+		// evaluates the granular access controls under test. Run as an editor
+		// so the allowlist denial paths are actually reached.
+		$editor_id = self::factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $editor_id );
+
 		$this->assistant_id = $this->factory->post->create(
 			array(
 				'post_type'   => 'mcp_ai_assistant',

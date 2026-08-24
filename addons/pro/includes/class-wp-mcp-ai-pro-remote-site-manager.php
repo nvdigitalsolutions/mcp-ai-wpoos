@@ -567,7 +567,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'name'                           => sanitize_text_field( $connection_data['name'] ),
 			'url'                            => esc_url_raw( trailingslashit( $connection_data['url'] ) ),
 			'connection_type'                => isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : 'wordpress',
-			'auth_type'                      => sanitize_key( $connection_data['auth_type'] ),
+			'auth_type'                      => isset( $connection_data['auth_type'] ) ? sanitize_key( $connection_data['auth_type'] ) : 'none',
 			'username'                       => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
 			'password'                       => isset( $connection_data['password'] ) ? $connection_data['password'] : '',
 			'token'                          => isset( $connection_data['token'] ) ? $connection_data['token'] : '',
@@ -702,6 +702,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				? sanitize_text_field( $connection_data['shipstation_carrier_code'] )
 				: 'stamps_com',
 			// Upwork/LinkedIn operation mode: 'api' (OAuth) or 'web_search' (AI-powered web search).
+			// The Upwork account username/display name is stored here, not in
+			// user_email (which is sanitized as an email address).
+			'upwork_username'                => isset( $connection_data['upwork_username'] ) ? sanitize_text_field( $connection_data['upwork_username'] ) : '',
 			'upwork_mode'                    => isset( $connection_data['upwork_mode'] ) && in_array( $connection_data['upwork_mode'], array( 'api', 'web_search' ), true )
 				? $connection_data['upwork_mode']
 				: 'api',
@@ -3436,6 +3439,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
 			$encrypted = WP_MCP_AI_Encryption::encrypt( $value );
 			if ( false !== $encrypted ) {
+				// WP_MCP_AI_Encryption prepends its own 'v2:' GCM marker;
+				// ENCRYPT_V2_PREFIX already version-tags the stored value, so
+				// strip the inner marker to avoid the redundant 'v2.v2:' shape.
+				// decrypt_value() re-adds the marker before handing off.
+				if ( 0 === strpos( $encrypted, 'v2:' ) ) {
+					$encrypted = substr( $encrypted, 3 );
+				}
 				return self::ENCRYPT_V2_PREFIX . $encrypted;
 			}
 		}
@@ -3473,7 +3483,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// Modern AES-256-CBC format: prefixed with ENCRYPT_V2_PREFIX.
 		if ( str_starts_with( $encrypted, self::ENCRYPT_V2_PREFIX ) ) {
 			if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
-				$decrypted = WP_MCP_AI_Encryption::decrypt( substr( $encrypted, strlen( self::ENCRYPT_V2_PREFIX ) ) );
+				$payload = substr( $encrypted, strlen( self::ENCRYPT_V2_PREFIX ) );
+				// Values written before the prefix de-duplication already carry
+				// the inner 'v2:' GCM marker; newer writes don't. Re-add it
+				// when missing so WP_MCP_AI_Encryption picks the GCM path.
+				if ( 0 !== strpos( $payload, 'v2:' ) ) {
+					$payload = 'v2:' . $payload;
+				}
+				$decrypted = WP_MCP_AI_Encryption::decrypt( $payload );
 				return ( false !== $decrypted ) ? $decrypted : '';
 			}
 			// WP_MCP_AI_Encryption not available — the encrypted value cannot be

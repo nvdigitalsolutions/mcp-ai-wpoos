@@ -48,6 +48,17 @@
 /**
  * Messaging-channels AJAX cluster (Pro addon).
  */
+// Load the Pro admin class under test; the pro addon loads it only in admin
+// context, so require it here to keep the suite runnable standalone (mirrors
+// CI, where earlier admin-context tests load it).
+if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+	$wp_mcp_ai_remote_sites_admin = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php';
+	if ( file_exists( $wp_mcp_ai_remote_sites_admin ) ) {
+		require_once $wp_mcp_ai_remote_sites_admin;
+	}
+	unset( $wp_mcp_ai_remote_sites_admin );
+}
+
 class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/** Pro class required for this suite. */

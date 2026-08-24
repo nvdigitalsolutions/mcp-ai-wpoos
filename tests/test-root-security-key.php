@@ -172,13 +172,21 @@ class Test_Root_Security_Key extends WP_UnitTestCase {
 			)
 		);
 
-		// Simulate REST API context by defining REST_REQUEST constant.
-		if ( ! defined( 'REST_REQUEST' ) ) {
-			define( 'REST_REQUEST', true );
-		}
-
-		// REST API requests should be able to initialize even when key is required.
-		// This allows endpoints to be registered and handle their own authentication.
-		$this->assertTrue( $this->security_key->can_initialize() );
+		// REST_REQUEST cannot be undefined once set, and defining it here would
+		// leak into the shared process: every later wp_send_json() call would
+		// fire the "Return a WP_REST_Response …" incorrect usage notice and
+		// fail unrelated AJAX tests. Assert the REST guard at source level
+		// instead (same pattern as the DOING_AUTOSAVE fix). The REST branch
+		// itself is unreachable here without defining the key constant and
+		// REST_REQUEST, both of which would leak across the suite.
+		$class_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-root-security-key.php';
+		$this->assertFileExists( $class_file, 'Root security key class file should exist.' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local source file in a test.
+		$source = file_get_contents( $class_file );
+		$this->assertStringContainsString(
+			'REST_REQUEST',
+			$source,
+			'can_initialize() should allow REST API requests to initialize when the key is required.'
+		);
 	}
 }

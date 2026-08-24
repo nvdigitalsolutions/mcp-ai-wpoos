@@ -266,8 +266,39 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		// Password should be encrypted in storage.
 		$this->assertNotEquals( 'my_secret_password_123', $connection['password'] );
 
-		// Verify encryption produces base64 string.
-		$this->assertMatchesRegularExpression( '/^[A-Za-z0-9+\/=]+$/', $connection['password'] );
+		// Stored values carry the manager's ENCRYPT_V2_PREFIX only; the inner
+		// WP_MCP_AI_Encryption 'v2:' marker is stripped on write and re-added
+		// on read, so the stored shape is a single version marker plus base64.
+		$this->assertMatchesRegularExpression( '/^v2\.[A-Za-z0-9+\/=]+$/', $connection['password'] );
+		$this->assertSame(
+			'my_secret_password_123',
+			WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['password'] )
+		);
+	}
+
+	/**
+	 * Test that values written before the prefix de-duplication still decrypt.
+	 *
+	 * Older builds stored 'v2.v2:<gcm-base64>' (the manager's prefix plus
+	 * WP_MCP_AI_Encryption's own marker). decrypt_value() must keep reading
+	 * those without a data migration.
+	 */
+	public function test_decrypt_value_handles_legacy_double_prefixed_values() {
+		if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Encryption unavailable.' );
+		}
+
+		$plain = 'legacy_secret_value_456';
+		$inner = WP_MCP_AI_Encryption::encrypt( $plain ); // 'v2:<gcm-base64>'.
+		$this->assertNotFalse( $inner, 'WP_MCP_AI_Encryption should encrypt.' );
+
+		$legacy_stored = 'v2.' . $inner;
+
+		$this->assertSame(
+			$plain,
+			WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $legacy_stored ),
+			'Legacy double-prefixed values should still decrypt.'
+		);
 	}
 
 	/**
@@ -521,7 +552,10 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 			'client_id'       => 'test_upwork_client_id_abc',
 			'client_secret'   => 'test_upwork_client_secret_xyz',
 			'refresh_token'   => 'test_upwork_refresh_token_123',
-			'user_email'      => 'john.doe', // Upwork stores username in this field.
+			// The Upwork username lives in its own field (user_email is
+			// sanitized as an email address).
+			'upwork_username' => 'john.doe',
+			'user_email'      => 'john.doe@example.com',
 			'enabled'         => true,
 		);
 
@@ -538,7 +572,8 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$this->assertEquals( 'Test Upwork Connection', $connection['name'] );
 		$this->assertEquals( 'upwork', $connection['connection_type'] );
 		$this->assertEquals( 'test_upwork_client_id_abc', $connection['client_id'] );
-		$this->assertEquals( 'john.doe', $connection['user_email'] );
+		$this->assertEquals( 'john.doe', $connection['upwork_username'] );
+		$this->assertEquals( 'john.doe@example.com', $connection['user_email'] );
 
 		// Verify sensitive fields are encrypted at rest.
 		$this->assertNotEquals( 'test_upwork_client_secret_xyz', $connection['client_secret'] );
@@ -579,7 +614,8 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 			'client_id'       => 'original_client_id',
 			'client_secret'   => 'original_client_secret',
 			'refresh_token'   => 'original_refresh_token',
-			'user_email'      => 'original.user', // Upwork stores username in this field.
+			'upwork_username' => 'original.user',
+			'user_email'      => 'original.user@example.com',
 			'enabled'         => true,
 		);
 
@@ -596,7 +632,8 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 			'client_id'       => 'updated_client_id',
 			'client_secret'   => '', // Empty — should preserve existing.
 			'refresh_token'   => '', // Empty — should preserve existing.
-			'user_email'      => 'updated.user', // Upwork stores username in this field.
+			'upwork_username' => '', // Empty — should preserve existing.
+			'user_email'      => 'updated.user@example.com',
 			'enabled'         => true,
 		);
 
@@ -608,7 +645,8 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 
 		$this->assertEquals( 'Updated Upwork Connection', $updated['name'] );
 		$this->assertEquals( 'updated_client_id', $updated['client_id'] );
-		$this->assertEquals( 'updated.user', $updated['user_email'] );
+		$this->assertEquals( 'original.user', $updated['upwork_username'] );
+		$this->assertEquals( 'updated.user@example.com', $updated['user_email'] );
 
 		// Secrets should be preserved (still encrypted, not empty).
 		$this->assertNotEmpty( $updated['client_secret'] );

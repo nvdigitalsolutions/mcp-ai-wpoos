@@ -25,6 +25,15 @@
 /**
  * AJAX cluster: Embedded models + Datasets.
  */
+// Load the embedded-addon class under test; the addon is not booted by the
+// base test bootstrap, so require it here to keep the suite runnable
+// standalone (mirrors CI, where earlier tests load it).
+$wp_mcp_ai_embedded_model_ajax = WP_MCP_AI_PATH . '../addons/embedded/includes/admin/class-wp-mcp-ai-embedded-model-ajax.php';
+if ( file_exists( $wp_mcp_ai_embedded_model_ajax ) ) {
+	require_once $wp_mcp_ai_embedded_model_ajax;
+}
+unset( $wp_mcp_ai_embedded_model_ajax );
+
 class Test_Embedded_Models_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/**

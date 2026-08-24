@@ -37,9 +37,11 @@ class Test_Flowhub_Decrypt_Value_Visibility extends WP_UnitTestCase {
 		$connection_data = array(
 			'name'               => 'Test Flowhub Connection',
 			'connection_type'    => 'flowhub',
+			// validate_connection_data() requires a well-formed public URL.
+			'url'                => 'https://example.com',
 			'client_id'          => 'test_client_id',
 			'api_key'            => $encrypted_key,
-			'_api_key_encrypted' => true, // Prevent re-encryption
+			'_api_key_encrypted' => true, // Prevent re-encryption.
 			'location_id'        => 'test_location',
 			'enabled'            => true,
 		);
@@ -116,9 +118,11 @@ class Test_Flowhub_Decrypt_Value_Visibility extends WP_UnitTestCase {
 		$connection_data = array(
 			'name'                  => 'Test Payhere Connection',
 			'connection_type'       => 'payhere',
+			// validate_connection_data() requires a well-formed public URL.
+			'url'                   => 'https://example.com',
 			'app_id'                => 'test_app_id',
 			'app_secret'            => $encrypted_secret,
-			'_app_secret_encrypted' => true, // Prevent re-encryption
+			'_app_secret_encrypted' => true, // Prevent re-encryption.
 			'enabled'               => true,
 		);
 

@@ -66,6 +66,10 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 	public function test_save_meta_box_stores_slugs() {
 		$post_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
 
+		// Set the user BEFORE creating the nonce: wp_create_nonce() binds to
+		// the current user, and the handler verifies against it.
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
 		// Create valid nonce.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST[ WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::NONCE_FIELD ] = wp_create_nonce(
@@ -73,8 +77,6 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 		);
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['wp_mcp_ai_pro_allowed_mcp_servers'] = array( 'crm', 'health' );
-
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
 		$metabox = new WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers();
 		$post    = get_post( $post_id );
@@ -100,14 +102,15 @@ class Test_Phase5_Toolkit_MCP_Servers extends WP_UnitTestCase {
 		$post_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_assistant' ) );
 		update_post_meta( $post_id, WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::META_KEY, array( 'crm' ) );
 
+		// Set the user BEFORE creating the nonce (see above).
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		$_POST[ WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::NONCE_FIELD ] = wp_create_nonce(
 			WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers::NONCE_ACTION
 		);
 		// No wp_mcp_ai_pro_allowed_mcp_servers posted.
-
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
 		$metabox = new WP_MCP_AI_Pro_Metabox_Toolkit_MCP_Servers();
 		$post    = get_post( $post_id );

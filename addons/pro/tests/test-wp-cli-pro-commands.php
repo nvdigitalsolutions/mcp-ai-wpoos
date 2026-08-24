@@ -228,6 +228,18 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	 * Mcp_ai_project CPT is registered.
 	 */
 	public function test_project_cpt_is_registered() {
+		// Registration is gated on the enable_project_management setting and
+		// runs on 'init', which has already fired — enable the setting and
+		// invoke the CPT class's registration directly.
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_project_management'] = '1';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		if ( ! class_exists( 'WP_MCP_AI_Project_CPT' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-project-cpt.php';
+		}
+		WP_MCP_AI_Project_CPT::register_post_type();
+
 		$this->assertTrue(
 			post_type_exists( 'mcp_ai_project' ),
 			'mcp_ai_project CPT should be registered'
@@ -303,6 +315,18 @@ class Test_WP_CLI_Pro_Commands extends WP_UnitTestCase {
 	 * Mcp_ai_task CPT is registered.
 	 */
 	public function test_task_cpt_is_registered() {
+		// Registration is gated on the enable_project_management setting and
+		// runs on 'init', which has already fired — enable the setting and
+		// invoke the CPT class's registration directly.
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_project_management'] = '1';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		if ( ! class_exists( 'WP_MCP_AI_Task_CPT' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-cpt.php';
+		}
+		WP_MCP_AI_Task_CPT::register_post_type();
+
 		$this->assertTrue(
 			post_type_exists( 'mcp_ai_task' ),
 			'mcp_ai_task CPT should be registered'

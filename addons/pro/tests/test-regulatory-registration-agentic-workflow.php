@@ -52,6 +52,12 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 		$settings['enable_regulatory_registration_toolkit'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
+		// The bootstrap fires wp_mcp_ai_register_tools before this test can
+		// enable the toolkit option, leaving the regulatory tools gated out
+		// of the registry (is_available() checks the option). Re-fire the
+		// action so the tools register before the assertions below.
+		do_action( 'wp_mcp_ai_register_tools', WP_MCP_AI_Tool_Registry::get_instance() );
+
 		// Create test assistant.
 		$this->assistant_id = $this->factory->post->create(
 			array(
@@ -145,7 +151,7 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 
 		$create_result = $create_tool->execute(
 			array(
-				'title'            => 'Face Cream',
+				'product_name'     => 'Face Cream',
 				'brand'            => 'Beauty Co',
 				'manufacturer'     => 'Cosmetics Ltd',
 				'origin_country'   => 'LK',
@@ -188,7 +194,7 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 
 		$search_result = $search_tool->execute(
 			array(
-				'brand' => 'Test Brand',
+				'manufacturer' => 'Test Manufacturer',
 			),
 			array( 'user_id' => $this->user_id )
 		);
@@ -197,7 +203,7 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'products', $search_result );
 		$this->assertGreaterThan( 0, count( $search_result['products'] ) );
 
-		$found_product_id = $search_result['products'][0]['product_id'];
+		$found_product_id = $search_result['products'][0]['id'];
 
 		// Step 2: Get detailed product info.
 		$get_tool = $this->registry->get_tool( 'get_reg_product' );
@@ -226,7 +232,7 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 		);
 
 		$this->assertTrue( $update_result['success'] );
-		$this->assertArrayHasKey( 'updated_fields', $update_result );
+		$this->assertEquals( 'Updated Manufacturer Co.', get_post_meta( $found_product_id, 'manufacturer', true ) );
 	}
 
 	/**
@@ -277,7 +283,7 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 		);
 
 		$this->assertTrue( $submit_result['success'] );
-		$this->assertEquals( 'Submitted', $submit_result['new_status'] );
+		$this->assertEquals( 'Submitted', $submit_result['status'] );
 		$this->assertArrayHasKey( 'submission_date', $submit_result );
 
 		// Step 4: Approve registration.
@@ -295,7 +301,7 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 		);
 
 		$this->assertTrue( $approve_result['success'] );
-		$this->assertEquals( 'Approved', $approve_result['new_status'] );
+		$this->assertEquals( 'Approved', $approve_result['status'] );
 
 		// Cleanup.
 		wp_delete_post( $registration_id, true );

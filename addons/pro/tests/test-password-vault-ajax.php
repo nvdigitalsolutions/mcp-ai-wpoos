@@ -31,6 +31,11 @@ class Test_Password_Vault_AJAX extends WP_UnitTestCase {
 		remove_all_actions( 'wp_ajax_vault_generate_totp_secret' );
 		remove_all_actions( 'admin_enqueue_scripts' );
 
+		// Reset asset queue state so a previous test's enqueue doesn't leak
+		// into the "not enqueued on other pages" assertion.
+		wp_dequeue_style( 'wp-mcp-ai-password-vault' );
+		wp_dequeue_script( 'wp-mcp-ai-password-vault' );
+
 		// Load required dependencies.
 		if ( ! class_exists( 'WP_MCP_AI_Vault_Encryption_Service' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-encryption-service.php';
@@ -150,6 +155,20 @@ class Test_Password_Vault_AJAX extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['symbols'] = 1;
 
+		// check_admin_referer() reads $_REQUEST['_wpnonce']; the CLI SAPI does
+		// not merge $_POST into $_REQUEST, so mirror the web SAPI here.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.Missing -- The nonce is verified inside the handler under test.
+		$_REQUEST = array_merge( $_REQUEST, $_POST );
+
+		// Declare the AJAX action so wp_doing_ajax() is true: wp_send_json_*
+		// ends with a bare die; outside AJAX context that kills the whole
+		// PHPUnit process. With the action set, termination routes through
+		// wp_die() and the throwing test handler (caught below).
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- The nonce is verified inside the handler under test.
+		$_POST['action'] = 'vault_generate_password';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- The nonce is verified inside the handler under test.
+		$_REQUEST['action'] = 'vault_generate_password';
+
 		// Capture JSON output.
 		ob_start();
 		try {
@@ -177,6 +196,8 @@ class Test_Password_Vault_AJAX extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		unset( $_GET['page'] );
+		unset( $_POST['action'] );
+		unset( $_REQUEST['action'] );
 		unset( $_POST['_wpnonce'] );
 		unset( $_POST['length'] );
 		unset( $_POST['uppercase'] );

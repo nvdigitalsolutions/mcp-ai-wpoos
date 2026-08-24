@@ -146,6 +146,23 @@ trait WP_MCP_AI_Inline_Async_Tick_Trait {
 		if ( ! $queue_has_work ) {
 			return false;
 		}
+
+		/**
+		 * Filter whether the inline loop may recurse for another tick.
+		 *
+		 * Default `true`. Returning `false` restores the one-row-per-tick
+		 * contract (each row waits for the next cron loopback), which is
+		 * also what the test suite uses to assert per-tick progress.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param bool   $enabled Default `true`.
+		 * @param string $class   Host class consuming the trait.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_inline_tick_loop_enabled', true, static::class ) ) {
+			return false;
+		}
+
 		if ( ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) ) {
 			return false;
 		}

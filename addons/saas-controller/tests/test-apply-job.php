@@ -65,6 +65,13 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 		$this->engine = new NVOOS_SaaS_Controller_Apply_Engine( $this->stub );
 
 		add_filter( 'nvoos_saas_controller_apply_job_engine', array( $this, 'inject_engine' ) );
+
+		// Under DISABLE_WP_CRON (always true in the test environment) the
+		// inline loop drains the whole queue in one handle_tick() call.
+		// Disable it so the per-tick progress tests can assert one row per
+		// tick — the drain behavior is covered by the production code path
+		// and the inline-kick tests below.
+		add_filter( 'wp_mcp_ai_inline_tick_loop_enabled', '__return_false' );
 	}
 
 	/**
@@ -73,6 +80,7 @@ class Test_NVOOS_SaaS_Controller_Apply_Job extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function tearDown(): void {
+		remove_filter( 'wp_mcp_ai_inline_tick_loop_enabled', '__return_false' );
 		remove_filter( 'nvoos_saas_controller_apply_job_engine', array( $this, 'inject_engine' ) );
 		delete_option( NVOOS_SaaS_Controller_Audit_Log::OPTION );
 		delete_option( NVOOS_SaaS_Controller_Apply_Engine::DEPLOYED_OPTION );
