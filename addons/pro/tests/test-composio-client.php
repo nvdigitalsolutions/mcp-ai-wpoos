@@ -80,6 +80,30 @@ class Test_Composio_Client extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Register a mock that simulates a transport-level failure.
+	 *
+	 * @param string $code    WP_Error code.
+	 * @param string $message WP_Error message.
+	 * @return void
+	 */
+	private function mock_transport_error( $code, $message ) {
+		$this->request_count = 0;
+
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( $code, $message ) {
+				$this->last_url  = $url;
+				$this->last_args = $args;
+				++$this->request_count;
+
+				return new WP_Error( $code, $message );
+			},
+			10,
+			3
+		);
+	}
+
+	/**
 	 * Test that a missing API key fails fast without an HTTP request.
 	 */
 	public function test_missing_api_key_returns_error() {
@@ -128,6 +152,80 @@ class Test_Composio_Client extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_composio_http_401', $result->get_error_code() );
 		$this->assertStringContainsString( 'Invalid API key', $result->get_error_message() );
+	}
+
+	/**
+	 * Test that Composio's documented nested error body is surfaced.
+	 */
+	public function test_http_error_extracts_nested_error_body() {
+		$this->mock_response(
+			400,
+			array(
+				'error' => array(
+					'message'       => 'No connected account found for this user and toolkit',
+					'status'        => 400,
+					'request_id'    => 'req_abc123',
+					'suggested_fix' => 'Connect the user to the toolkit first',
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+		$result = $client->execute_tool( 'GMAIL_SEND_EMAIL', 'ca_1', array() );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_http_400', $result->get_error_code() );
+		$this->assertStringContainsString( 'No connected account found', $result->get_error_message() );
+		$this->assertStringContainsString( 'Connect the user to the toolkit first', $result->get_error_message() );
+	}
+
+	/**
+	 * Test that a bodyless 401 still gets an actionable dashboard hint.
+	 */
+	public function test_http_401_without_body_appends_dashboard_hint() {
+		$this->mock_response( 401, array() );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_bad' );
+		$result = $client->test_connection();
+
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'HTTP 401', $result->get_error_message() );
+		$this->assertStringContainsString( 'Settings → API Keys', $result->get_error_message() );
+	}
+
+	/**
+	 * Test that transport failures carry a hosting-egress hint.
+	 */
+	public function test_transport_failure_appends_egress_hint() {
+		$this->mock_transport_error(
+			'http_request_failed',
+			'cURL error 28: Operation timed out after 30001 milliseconds with 0 bytes received'
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+		$result = $client->test_connection();
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_request_failed', $result->get_error_code() );
+		$this->assertStringContainsString( 'cURL error 28', $result->get_error_message() );
+		$this->assertStringContainsString( 'backend.composio.dev', $result->get_error_message() );
+		$this->assertStringContainsString( 'outbound HTTPS', $result->get_error_message() );
+	}
+
+	/**
+	 * Test that the API key is trimmed before being sent.
+	 */
+	public function test_api_key_is_trimmed() {
+		$this->mock_response(
+			200,
+			array( 'enum' => 'GMAIL_SEND_EMAIL' )
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( "  ak_trimmed_123\n" );
+		$result = $client->test_connection();
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'ak_trimmed_123', $this->last_args['headers']['x-api-key'] );
 	}
 
 	/**

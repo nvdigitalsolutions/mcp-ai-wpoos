@@ -95,7 +95,9 @@ class WP_MCP_AI_Composio_Client {
 	 * @param string $connection_id Optional. Remote-site connection ID for cache scoping.
 	 */
 	public function __construct( $api_key, $base_url = '', $connection_id = '' ) {
-		$this->api_key       = (string) $api_key;
+		// Trim the key so copy/paste whitespace can never turn a valid key
+		// into an upstream 401.
+		$this->api_key       = trim( (string) $api_key );
 		$this->connection_id = sanitize_key( (string) $connection_id );
 
 		if ( ! empty( $base_url ) ) {
@@ -122,10 +124,12 @@ class WP_MCP_AI_Composio_Client {
 
 		// Stored API keys are always encrypted at rest; decrypt unconditionally
 		// and fall back to the raw value when decryption fails (e.g. plaintext
-		// values injected programmatically).
+		// values injected programmatically or a rotated master key). Keeping the
+		// raw value on failure lets the request path surface the real upstream
+		// 401 instead of a misleading "key not configured" error.
 		if ( ! empty( $api_key ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$decrypted = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $api_key );
-			if ( null !== $decrypted ) {
+			if ( '' !== $decrypted ) {
 				$api_key = $decrypted;
 			}
 		}
@@ -897,10 +901,24 @@ class WP_MCP_AI_Composio_Client {
 		$response = wp_remote_request( $url, $args );
 
 		if ( is_wp_error( $response ) ) {
+			$transport_message = $response->get_error_message();
+
+			// Connection failures and timeouts on this path are almost always a
+			// hosting egress problem, not a credential problem — surface an
+			// actionable hint alongside the raw transport error.
+			if ( 'http_request_failed' === $response->get_error_code() ) {
+				$host               = wp_parse_url( $this->base_url, PHP_URL_HOST );
+				$transport_message .= ' ' . sprintf(
+					/* translators: %s: API host */
+					__( 'Your server could not reach %s. Check DNS resolution and outbound HTTPS (firewall, proxy, or hosting egress rules) on this host.', 'mcp-ai-wpoos-pro' ),
+					is_string( $host ) && '' !== $host ? $host : $this->base_url
+				);
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_composio_request_failed',
 				/* translators: %s: raw transport error */
-				sprintf( __( 'Composio API request failed: %s', 'mcp-ai-wpoos-pro' ), $response->get_error_message() )
+				sprintf( __( 'Composio API request failed: %s', 'mcp-ai-wpoos-pro' ), $transport_message )
 			);
 		}
 
@@ -922,9 +940,39 @@ class WP_MCP_AI_Composio_Client {
 
 		if ( $status_code >= 400 ) {
 			$message = __( 'Composio API returned an error.', 'mcp-ai-wpoos-pro' );
+			$hint    = '';
 
-			if ( is_array( $decoded ) && isset( $decoded['message'] ) && is_string( $decoded['message'] ) ) {
-				$message = $decoded['message'];
+			// Composio's documented error shape nests the message under
+			// "error": { "error": { "message": ..., "suggested_fix": ... } }.
+			// Accept that shape plus the older flat variants so the admin UI
+			// always shows the real upstream reason.
+			if ( is_array( $decoded ) ) {
+				if ( isset( $decoded['error'] ) ) {
+					if ( is_array( $decoded['error'] ) ) {
+						if ( isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] ) && '' !== $decoded['error']['message'] ) {
+							$message = $decoded['error']['message'];
+						}
+						if ( isset( $decoded['error']['suggested_fix'] ) && is_string( $decoded['error']['suggested_fix'] ) && '' !== $decoded['error']['suggested_fix'] ) {
+							$hint = $decoded['error']['suggested_fix'];
+						}
+					} elseif ( is_string( $decoded['error'] ) && '' !== $decoded['error'] ) {
+						$message = $decoded['error'];
+					}
+				} elseif ( isset( $decoded['message'] ) && is_string( $decoded['message'] ) && '' !== $decoded['message'] ) {
+					$message = $decoded['message'];
+				} elseif ( isset( $decoded['detail'] ) && is_string( $decoded['detail'] ) && '' !== $decoded['detail'] ) {
+					$message = $decoded['detail'];
+				}
+			}
+
+			// 401/403 mean the key is invalid, revoked, or under-scoped — give
+			// the admin a concrete next step when upstream did not supply one.
+			if ( ( 401 === $status_code || 403 === $status_code ) && '' === $hint ) {
+				$hint = __( 'Verify the project API key in the Composio dashboard (Settings → API Keys) — it may be revoked, expired, or belong to a different project.', 'mcp-ai-wpoos-pro' );
+			}
+
+			if ( '' !== $hint ) {
+				$message .= ' ' . $hint;
 			}
 
 			return new WP_Error(

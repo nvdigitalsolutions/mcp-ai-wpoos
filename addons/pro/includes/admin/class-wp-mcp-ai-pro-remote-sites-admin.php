@@ -501,7 +501,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_secret = isset( $_POST['shipstation_api_secret'] ) ? wp_unslash( $_POST['shipstation_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API secret must not be sanitized.
 					break;
 				case 'composio':
-					$api_key = isset( $_POST['composio_api_key'] ) ? wp_unslash( $_POST['composio_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized.
+					$api_key = isset( $_POST['composio_api_key'] ) ? trim( (string) wp_unslash( $_POST['composio_api_key'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized; trimmed to drop copy/paste whitespace.
 					break;
 			}
 
@@ -15433,7 +15433,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( defined( 'WP_MCP_AI_TESTS_RUNNING' ) && WP_MCP_AI_TESTS_RUNNING && class_exists( 'WPDieException' ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- the exception message is not rendered anywhere; it only aborts the request flow under tests.
 			throw new WPDieException( is_string( $location ) ? $location : '' );
 		}
 	}
