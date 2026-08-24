@@ -59,11 +59,11 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 		WP_MCP_AI_Media_Collection_CPT::register_taxonomy();
 
 		// Load tool classes.
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-list-media-templates.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-create-media-template.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-apply-media-template.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-process-collection.php';
-		require_once dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-apply-collection-template.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-list-media-templates.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-create-media-template.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-apply-media-template.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-process-collection.php';
+		require_once dirname( __DIR__ ) . '/includes/tools/media/class-wp-mcp-ai-tool-apply-collection-template.php';
 
 		// Create test attachments.
 		$this->test_attachments = $this->create_test_attachments( 3 );

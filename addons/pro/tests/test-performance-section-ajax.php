@@ -18,7 +18,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_ajax_run_performance_test_registered() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -35,7 +35,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_ajax_get_metrics_registered() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -52,7 +52,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_ajax_export_results_registered() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance of the section.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -71,7 +71,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 		global $wp_scripts;
 
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance and enqueue assets.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -131,7 +131,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_ajax_run_test_requires_nonce() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -157,7 +157,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_ajax_run_test_requires_capability() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -200,7 +200,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_command_exists_handles_disabled_exec() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -231,7 +231,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 	 */
 	public function test_run_test_programmatically_handles_disabled_exec() {
 		// Load the performance section class.
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Create an instance.
 		$section = new WP_MCP_AI_Section_Performance();
@@ -257,7 +257,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 		// Verify the error structure that would be returned when exec() is disabled.
 		// We can't actually test this without disabling exec(), but we can verify.
 		// the code structure is correct by checking the method has the check.
-		$source = file_get_contents( WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php' );
+		$source = file_get_contents( WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php' );
 		$this->assertStringContainsString(
 			'function_exists( \'exec\' )',
 			$source,

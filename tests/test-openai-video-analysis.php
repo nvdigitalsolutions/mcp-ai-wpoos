@@ -32,8 +32,13 @@ class Test_OpenAI_Video_Analysis extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// The frame extractor ships with the Pro addon.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available.' );
+		}
+
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-video-analysis-service.php';
-		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-video-frame-extractor-service.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-video-frame-extractor-service.php';
 
 		$this->service = new WP_MCP_AI_Video_Analysis_Service();
 

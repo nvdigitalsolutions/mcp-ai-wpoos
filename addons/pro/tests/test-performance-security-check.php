@@ -17,7 +17,7 @@ class Test_Performance_Security_Check extends WP_UnitTestCase {
 	 */
 	public function test_security_check_methods_exist() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		$performance_section = new WP_MCP_AI_Section_Performance();
 
@@ -31,7 +31,7 @@ class Test_Performance_Security_Check extends WP_UnitTestCase {
 	 */
 	public function test_security_check_methods_callable() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		$performance_section = new WP_MCP_AI_Section_Performance();
 		$reflection          = new ReflectionClass( $performance_section );
@@ -47,7 +47,7 @@ class Test_Performance_Security_Check extends WP_UnitTestCase {
 	 */
 	public function test_security_checks_return_structure() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		$performance_section = new WP_MCP_AI_Section_Performance();
 		$reflection          = new ReflectionClass( $performance_section );
@@ -70,7 +70,7 @@ class Test_Performance_Security_Check extends WP_UnitTestCase {
 	 */
 	public function test_run_lightweight_check_security() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		$performance_section = new WP_MCP_AI_Section_Performance();
 		$reflection          = new ReflectionClass( $performance_section );
@@ -99,7 +99,7 @@ class Test_Performance_Security_Check extends WP_UnitTestCase {
 		global $wp_filter;
 
 		require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		// Instantiate to register hooks.
 		new WP_MCP_AI_Section_Performance();
@@ -115,7 +115,7 @@ class Test_Performance_Security_Check extends WP_UnitTestCase {
 	 */
 	public function test_ajax_run_test_error_handling() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
-		require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 
 		$performance_section = new WP_MCP_AI_Section_Performance();
 

@@ -15,16 +15,25 @@
  * Test class for Elementor output buffering during widget registration.
  */
 class WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
+	use WP_MCP_AI_Request_Context_Test_Helper;
+
+	/**
+	 * Set up before each test.
+	 */
+	public function set_up() {
+		parent::set_up();
+		$this->record_output_buffer_baseline();
+	}
+
 	/**
 	 * Clean up after each test.
 	 */
 	public function tear_down() {
-		parent::tear_down();
+		// Close only the buffers this test opened — unwinding to level 0 would
+		// destroy the buffer PHPUnit wraps around the test.
+		$this->unwind_output_buffers();
 
-		// Clean up any output buffers that might be left open.
-		while ( ob_get_level() > 0 ) {
-			ob_end_clean();
-		}
+		parent::tear_down();
 	}
 
 	/**

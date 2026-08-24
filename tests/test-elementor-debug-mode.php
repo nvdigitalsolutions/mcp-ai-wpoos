@@ -1,9 +1,14 @@
 <?php
 /**
- * Tests for Elementor editor functionality with WP_DEBUG enabled.
+ * Tests for the plugin's Elementor request-hardening hooks.
  *
- * Verifies that the Elementor editor loads correctly when WP_DEBUG is enabled
- * by suppressing display_errors to prevent debug output from breaking JSON responses.
+ * Two hooks are covered:
+ *
+ *  - `suppress_debug_in_elementor_ajax()` records the output-buffer level and
+ *    registers a `shutdown` cleanup for Elementor AJAX requests, so stray PHP
+ *    output cannot corrupt Elementor's JSON responses when WP_DEBUG is on.
+ *  - `disable_auth_check_in_elementor()` drops core's `wp-auth-check` assets in
+ *    the Elementor editor, where the modal markup it expects does not exist.
  *
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
@@ -12,15 +17,24 @@
  */
 
 /**
- * Test class for Elementor editor with WP_DEBUG enabled.
+ * Test class for the Elementor request-hardening hooks.
  */
 class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
+	use WP_MCP_AI_Request_Context_Test_Helper;
+
 	/**
-	 * Backup of original display_errors setting.
+	 * Original REQUEST values to restore after tests.
 	 *
-	 * @var string|false
+	 * @var array
 	 */
-	private $original_display_errors;
+	private $original_request = array();
+
+	/**
+	 * Original GET values to restore after tests.
+	 *
+	 * @var array
+	 */
+	private $original_get = array();
 
 	/**
 	 * Set up before each test.
@@ -28,23 +42,27 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
-		// Backup original display_errors setting.
-		$this->original_display_errors = ini_get( 'display_errors' );
+		$this->original_request = $_REQUEST;
+		$this->original_get     = $_GET;
 
-		// Ensure DOING_AJAX is defined for tests that need it.
-		if ( ! defined( 'DOING_AJAX' ) ) {
-			define( 'DOING_AJAX', true );
-		}
+		// Every hook under test only acts on AJAX requests, so the whole class
+		// runs in a simulated AJAX context. Using the `wp_doing_ajax` filter
+		// instead of `define( 'DOING_AJAX', true )` keeps it reversible — a
+		// leaked constant would flip `wp_doing_ajax()` for the rest of the run.
+		$this->simulate_ajax_context();
+
+		$this->record_output_buffer_baseline();
 	}
 
 	/**
 	 * Clean up after each test.
 	 */
 	public function tear_down() {
-		// Restore original display_errors setting.
-		if ( false !== $this->original_display_errors ) {
-			@ini_set( 'display_errors', $this->original_display_errors );
-		}
+		$_REQUEST = $this->original_request;
+		$_GET     = $this->original_get;
+
+		$this->end_ajax_context();
+		$this->unwind_output_buffers();
 
 		parent::tear_down();
 	}
@@ -70,216 +88,6 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that display_errors is suppressed during Elementor AJAX requests when WP_DEBUG is enabled.
-	 */
-	public function test_display_errors_suppressed_for_elementor_ajax() {
-		// Skip if WP_DEBUG is not defined or false.
-		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
-		}
-
-		// Set display_errors to '1' to simulate debug mode.
-		@ini_set( 'display_errors', '1' );
-		$this->assertEquals( '1', ini_get( 'display_errors' ), 'display_errors should start as 1' );
-
-		// Simulate an Elementor AJAX request.
-		$_REQUEST['action'] = 'elementor_ajax';
-
-		// Create plugin instance and call the method.
-		$plugin = wp_mcp_ai();
-
-		// Call the suppress method.
-		$plugin->suppress_debug_in_elementor_ajax();
-
-		// Verify display_errors was suppressed.
-		$this->assertEquals( '0', ini_get( 'display_errors' ), 'display_errors should be suppressed for Elementor AJAX' );
-
-		// Clean up.
-		unset( $_REQUEST['action'] );
-	}
-
-	/**
-	 * Test that display_errors is NOT suppressed for non-Elementor AJAX requests.
-	 */
-	public function test_display_errors_not_suppressed_for_other_ajax() {
-		// Skip if WP_DEBUG is not defined or false.
-		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
-		}
-
-		// Set display_errors to '1' to simulate debug mode.
-		@ini_set( 'display_errors', '1' );
-
-		// Simulate a non-Elementor AJAX request.
-		$_REQUEST['action'] = 'my_custom_action';
-
-		// Create plugin instance and call the method.
-		$plugin = wp_mcp_ai();
-		$plugin->suppress_debug_in_elementor_ajax();
-
-		// Verify display_errors was NOT suppressed.
-		$this->assertEquals( '1', ini_get( 'display_errors' ), 'display_errors should not be suppressed for non-Elementor AJAX' );
-
-		// Clean up.
-		unset( $_REQUEST['action'] );
-	}
-
-	/**
-	 * Test that display_errors is suppressed in Elementor editor page when WP_DEBUG is enabled.
-	 */
-	public function test_display_errors_suppressed_in_elementor_editor() {
-		// Skip if WP_DEBUG is not defined or false.
-		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
-		}
-
-		// Set display_errors to '1' to simulate debug mode.
-		@ini_set( 'display_errors', '1' );
-
-		// Create a user with edit_posts capability.
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Simulate Elementor editor mode.
-		$_GET['action'] = 'elementor';
-
-		// Create plugin instance and call the method.
-		$plugin = wp_mcp_ai();
-		$plugin->disable_auth_check_in_elementor();
-
-		// Verify display_errors was suppressed.
-		$this->assertEquals( '0', ini_get( 'display_errors' ), 'display_errors should be suppressed in Elementor editor' );
-
-		// Clean up.
-		unset( $_GET['action'] );
-	}
-
-	/**
-	 * Test that display_errors is NOT suppressed on regular admin pages.
-	 */
-	public function test_display_errors_not_suppressed_on_regular_pages() {
-		// Skip if WP_DEBUG is not defined or false.
-		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
-		}
-
-		// Set display_errors to '1' to simulate debug mode.
-		@ini_set( 'display_errors', '1' );
-
-		// Create a user with edit_posts capability.
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $user_id );
-
-		// Simulate a regular admin page (no Elementor action).
-		$_GET['page'] = 'some-admin-page';
-
-		// Create plugin instance and call the method.
-		$plugin = wp_mcp_ai();
-		$plugin->disable_auth_check_in_elementor();
-
-		// Verify display_errors was NOT suppressed.
-		$this->assertEquals( '1', ini_get( 'display_errors' ), 'display_errors should not be suppressed on regular pages' );
-
-		// Clean up.
-		unset( $_GET['page'] );
-	}
-
-	/**
-	 * Test that the fix handles various Elementor action patterns.
-	 */
-	public function test_elementor_action_patterns_detected() {
-		// Skip if WP_DEBUG is not defined or false.
-		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
-		}
-
-		$elementor_actions = array(
-			'elementor_ajax',
-			'elementor_render_widget',
-			'elementor_get_templates',
-		);
-
-		foreach ( $elementor_actions as $action ) {
-			// Reset display_errors.
-			@ini_set( 'display_errors', '1' );
-
-			// Simulate the AJAX request.
-			$_REQUEST['action'] = $action;
-
-			// Call the suppress method.
-			$plugin = wp_mcp_ai();
-			$plugin->suppress_debug_in_elementor_ajax();
-
-			// Verify display_errors was suppressed.
-			$this->assertEquals(
-				'0',
-				ini_get( 'display_errors' ),
-				"display_errors should be suppressed for action: {$action}"
-			);
-
-			// Clean up.
-			unset( $_REQUEST['action'] );
-
-			// Clean up any output buffers that were started.
-			while ( ob_get_level() > 0 ) {
-				ob_end_clean();
-			}
-		}
-	}
-
-	/**
-	 * Test that output buffering is started for Elementor AJAX requests.
-	 */
-	public function test_output_buffering_started_for_elementor_ajax() {
-		// Record the initial output buffer level.
-		$initial_level = ob_get_level();
-
-		// Simulate an Elementor AJAX request.
-		$_REQUEST['action'] = 'elementor_ajax';
-
-		// Create plugin instance and call the method.
-		$plugin = wp_mcp_ai();
-		$plugin->suppress_debug_in_elementor_ajax();
-
-		// Verify a new output buffer was started.
-		$new_level = ob_get_level();
-		$this->assertGreaterThan( $initial_level, $new_level, 'Output buffer should be started for Elementor AJAX' );
-
-		// Clean up.
-		unset( $_REQUEST['action'] );
-		while ( ob_get_level() > 0 ) {
-			ob_end_clean();
-		}
-	}
-
-	/**
-	 * Test that output buffering captures stray output during Elementor AJAX save.
-	 */
-	public function test_output_buffering_captures_stray_output() {
-		// Simulate an Elementor AJAX request.
-		$_REQUEST['action'] = 'elementor_save_builder';
-
-		// Create plugin instance and call the method.
-		$plugin = wp_mcp_ai();
-		$plugin->suppress_debug_in_elementor_ajax();
-
-		// Simulate some stray output that would normally break JSON responses.
-		echo 'This output should be captured';
-
-		// Get the buffered content.
-		$buffered = ob_get_contents();
-
-		// Verify the output was captured.
-		$this->assertStringContainsString( 'This output should be captured', $buffered, 'Stray output should be captured in buffer' );
-
-		// Clean up.
-		unset( $_REQUEST['action'] );
-		while ( ob_get_level() > 0 ) {
-			ob_end_clean();
-		}
-	}
-
-	/**
 	 * Test that clean_elementor_output_buffer method exists.
 	 */
 	public function test_clean_output_buffer_method_exists() {
@@ -290,39 +98,188 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that clean_elementor_output_buffer safely cleans the buffer.
+	 * Elementor AJAX requests register the shutdown buffer cleanup.
 	 */
-	public function test_clean_output_buffer_works() {
-		// Record initial buffer level.
-		$initial_level = ob_get_level();
+	public function test_shutdown_cleanup_registered_for_elementor_ajax() {
+		$plugin = WP_MCP_AI::instance();
 
-		// Simulate an Elementor AJAX request.
-		$_REQUEST['action'] = 'elementor_save_builder';
-
-		// Create plugin instance and simulate the full flow.
-		$plugin = wp_mcp_ai();
-
-		// Call suppress_debug_in_elementor_ajax to set up the buffer tracking.
+		$_REQUEST['action'] = 'elementor_ajax';
 		$plugin->suppress_debug_in_elementor_ajax();
 
-		// Now a buffer should be started.
-		$this->assertGreaterThan( $initial_level, ob_get_level(), 'Buffer should be started' );
+		// `has_action()` returns the priority (0 here), so compare against false.
+		$this->assertNotFalse(
+			has_action( 'shutdown', array( $plugin, 'clean_elementor_output_buffer' ) ),
+			'Elementor AJAX should register the shutdown buffer cleanup'
+		);
+	}
 
-		// Add some content to the buffer.
-		echo 'Test content';
+	/**
+	 * Non-Elementor AJAX requests are left alone.
+	 */
+	public function test_shutdown_cleanup_not_registered_for_other_ajax() {
+		$plugin = WP_MCP_AI::instance();
 
-		// Call the cleanup method.
+		$_REQUEST['action'] = 'my_custom_action';
+		$plugin->suppress_debug_in_elementor_ajax();
+
+		$this->assertFalse(
+			has_action( 'shutdown', array( $plugin, 'clean_elementor_output_buffer' ) ),
+			'Non-Elementor AJAX should not register the shutdown buffer cleanup'
+		);
+	}
+
+	/**
+	 * Requests with no action parameter are left alone.
+	 */
+	public function test_shutdown_cleanup_not_registered_without_action() {
+		$plugin = WP_MCP_AI::instance();
+
+		unset( $_REQUEST['action'] );
+		$plugin->suppress_debug_in_elementor_ajax();
+
+		$this->assertFalse(
+			has_action( 'shutdown', array( $plugin, 'clean_elementor_output_buffer' ) ),
+			'A request without an action should not register the shutdown cleanup'
+		);
+	}
+
+	/**
+	 * Every `elementor`-prefixed action is recognised.
+	 */
+	public function test_elementor_action_patterns_detected() {
+		$plugin = WP_MCP_AI::instance();
+
+		$elementor_actions = array(
+			'elementor_ajax',
+			'elementor_render_widget',
+			'elementor_get_templates',
+			'elementor_save_builder',
+			'elementor_pro_forms_send_form',
+		);
+
+		foreach ( $elementor_actions as $action ) {
+			remove_action( 'shutdown', array( $plugin, 'clean_elementor_output_buffer' ), 0 );
+
+			$_REQUEST['action'] = $action;
+			$plugin->suppress_debug_in_elementor_ajax();
+
+			$this->assertNotFalse(
+				has_action( 'shutdown', array( $plugin, 'clean_elementor_output_buffer' ) ),
+				"Action '{$action}' should register the shutdown buffer cleanup"
+			);
+		}
+	}
+
+	/**
+	 * The shutdown cleanup discards buffers opened after the request was tagged.
+	 */
+	public function test_clean_output_buffer_discards_later_buffers() {
+		$plugin = WP_MCP_AI::instance();
+
+		$_REQUEST['action'] = 'elementor_save_builder';
+
+		$level_before = ob_get_level();
+
+		// Records `$level_before` as the level to unwind back to on shutdown.
+		$plugin->suppress_debug_in_elementor_ajax();
+
+		// Simulate a later component buffering stray output — exactly what would
+		// otherwise be prepended to Elementor's JSON response.
+		ob_start();
+		echo 'This output should be discarded';
+
+		$this->assertGreaterThan( $level_before, ob_get_level(), 'Stray buffer should be open before cleanup' );
+
 		$plugin->clean_elementor_output_buffer();
 
-		// Verify the buffer was cleaned and we're back to the initial level.
-		$this->assertEquals( $initial_level, ob_get_level(), 'Output buffer should be cleaned back to initial level' );
+		$this->assertSame(
+			$level_before,
+			ob_get_level(),
+			'Cleanup should unwind back to the level recorded at request start'
+		);
+	}
 
-		// Clean up.
-		unset( $_REQUEST['action'] );
+	/**
+	 * The cleanup is a no-op for non-Elementor actions, even if it is called.
+	 */
+	public function test_clean_output_buffer_ignores_non_elementor_actions() {
+		$plugin = WP_MCP_AI::instance();
 
-		// Make sure we're back to a clean state.
-		while ( ob_get_level() > 0 ) {
-			ob_end_clean();
-		}
+		$_REQUEST['action'] = 'elementor_save_builder';
+		$plugin->suppress_debug_in_elementor_ajax();
+
+		// A different request shape reaches shutdown — the cleanup must not
+		// unwind buffers it does not own.
+		$_REQUEST['action'] = 'some_other_action';
+
+		ob_start();
+		$level_with_buffer = ob_get_level();
+
+		$plugin->clean_elementor_output_buffer();
+
+		$this->assertSame(
+			$level_with_buffer,
+			ob_get_level(),
+			'Cleanup should leave buffers alone for non-Elementor actions'
+		);
+	}
+
+	/**
+	 * The Elementor editor drops core's wp-auth-check assets.
+	 */
+	public function test_auth_check_disabled_in_elementor_editor() {
+		$plugin = WP_MCP_AI::instance();
+
+		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$this->assertNotFalse(
+			has_action( 'admin_enqueue_scripts', 'wp_auth_check_load' ),
+			'Core should register wp_auth_check_load before the hook runs'
+		);
+
+		$_GET['action'] = 'elementor';
+		$plugin->disable_auth_check_in_elementor();
+
+		$this->assertFalse(
+			has_action( 'admin_enqueue_scripts', 'wp_auth_check_load' ),
+			'wp_auth_check_load should be removed in the Elementor editor'
+		);
+	}
+
+	/**
+	 * Regular admin pages keep core's wp-auth-check assets.
+	 */
+	public function test_auth_check_kept_on_regular_pages() {
+		$plugin = WP_MCP_AI::instance();
+
+		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$_GET['page'] = 'some-admin-page';
+		$plugin->disable_auth_check_in_elementor();
+
+		$this->assertNotFalse(
+			has_action( 'admin_enqueue_scripts', 'wp_auth_check_load' ),
+			'wp_auth_check_load should survive on non-Elementor pages'
+		);
+	}
+
+	/**
+	 * Users without `edit_posts` do not trigger the auth-check removal.
+	 */
+	public function test_auth_check_kept_without_edit_posts() {
+		$plugin = WP_MCP_AI::instance();
+
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$_GET['action'] = 'elementor';
+		$plugin->disable_auth_check_in_elementor();
+
+		$this->assertNotFalse(
+			has_action( 'admin_enqueue_scripts', 'wp_auth_check_load' ),
+			'wp_auth_check_load should survive for users who cannot edit posts'
+		);
 	}
 }
