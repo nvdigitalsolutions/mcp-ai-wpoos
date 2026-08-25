@@ -65,6 +65,41 @@ class WP_MCP_AI_Composio_Client {
 	const ACCOUNTS_CACHE_TTL = 5 * MINUTE_IN_SECONDS;
 
 	/**
+	 * Payload paths that can carry an execution error message, in priority order.
+	 *
+	 * Composio reports its own failures at the top level, but when the provider
+	 * refuses a call that Composio successfully *delivered*, the provider's
+	 * message is proxied inside `data` — which is where a revoked-token 401
+	 * actually lands.
+	 *
+	 * @since 1.4.2
+	 */
+	const EXECUTION_ERROR_PATHS = array(
+		array( 'error' ),
+		array( 'error', 'message' ),
+		array( 'data', 'error' ),
+		array( 'data', 'error', 'message' ),
+		array( 'data', 'response_data', 'error' ),
+		array( 'data', 'response_data', 'message' ),
+		array( 'data', 'message' ),
+		array( 'data', 'detail' ),
+		array( 'message' ),
+		array( 'detail' ),
+	);
+
+	/**
+	 * Matches a provider status proxied into an error string, e.g.
+	 * "HTTP 401: Request had invalid authentication credentials.".
+	 *
+	 * Deliberately anchored to the start of the string: an unanchored scan would
+	 * flag a *successful* read whose content merely mentions a status code,
+	 * inventing failures that never happened.
+	 *
+	 * @since 1.4.2
+	 */
+	const PROXIED_STATUS_PATTERN = '/^\s*HTTP[\s:\/]*(?:1\.[01]\s+)?([45]\d{2})\b/i';
+
+	/**
 	 * Composio project API key (ak_...).
 	 *
 	 * @var string
@@ -1109,6 +1144,7 @@ class WP_MCP_AI_Composio_Client {
 	 *
 	 * @since 1.4.0
 	 * @since 1.4.1 In-band `successful: false` responses become WP_Error.
+	 * @since 1.4.2 A provider status proxied into the payload is also a failure.
 	 *
 	 * @param string $tool_slug  SCREAMING_SNAKE tool slug.
 	 * @param string $account_id Connected account nanoid.
@@ -1168,10 +1204,22 @@ class WP_MCP_AI_Composio_Client {
 	/**
 	 * Convert Composio's in-band execution failure envelope into a WP_Error.
 	 *
-	 * Only an *explicitly* falsy `successful` key is treated as a failure, so
-	 * payloads that omit the key (older shapes, test doubles) are unaffected.
+	 * Two shapes have to be caught, and only the first was:
+	 *
+	 * 1. Composio's own verdict — `{ successful: false, error: "..." }`.
+	 * 2. A provider refusal *proxied through* a delivered call — Composio
+	 *    answers `successful: true` because it did reach Google, and Google's
+	 *    rejection arrives as `data.message = "HTTP 401: Request had invalid
+	 *    authentication credentials."`. Reported as a success, that burned
+	 *    agent iterations on a call that never worked, so a leading provider
+	 *    status in any error-carrying field is treated as authoritative.
+	 *
+	 * Apart from those two signals nothing is inferred: a payload with no
+	 * `successful` key and no proxied status is still a success, so older shapes
+	 * and test doubles are unaffected.
 	 *
 	 * @since 1.4.1
+	 * @since 1.4.2 Reads nested error fields and honours a proxied provider status.
 	 *
 	 * @param array  $response   Decoded execute response.
 	 * @param string $tool_slug  Tool slug that was executed.
@@ -1179,36 +1227,63 @@ class WP_MCP_AI_Composio_Client {
 	 * @return true|WP_Error True when the execution succeeded.
 	 */
 	public static function detect_execution_failure( array $response, $tool_slug = '', $account_id = '' ) {
-		if ( ! array_key_exists( 'successful', $response ) ) {
+		$candidates = self::collect_execution_errors( $response );
+		$status     = 0;
+		$message    = '';
+
+		foreach ( $candidates as $candidate ) {
+			$candidate_status = self::detect_proxied_http_status( $candidate );
+
+			if ( $candidate_status > 0 ) {
+				$status  = $candidate_status;
+				$message = $candidate;
+				break;
+			}
+		}
+
+		$flagged = false;
+
+		if ( array_key_exists( 'successful', $response ) ) {
+			$flag = $response['successful'];
+
+			// Only an explicitly falsy flag is a failure. A non-boolean value (an
+			// unexpected shape) is treated as success so this guard can never invent
+			// a failure that Composio did not report.
+			$flagged = ( false === $flag || 0 === $flag || '0' === $flag || 'false' === $flag || null === $flag );
+		}
+
+		if ( ! $flagged && 0 === $status ) {
 			return true;
 		}
 
-		$flag = $response['successful'];
-
-		// Only an explicitly falsy flag is a failure. A non-boolean value (an
-		// unexpected shape) is treated as success so this guard can never invent
-		// a failure that Composio did not report.
-		$is_failure = ( false === $flag || 0 === $flag || '0' === $flag || 'false' === $flag || null === $flag );
-
-		if ( ! $is_failure ) {
-			return true;
-		}
-
-		$message = '';
-		if ( isset( $response['error'] ) && is_string( $response['error'] ) && '' !== $response['error'] ) {
-			$message = $response['error'];
-		} elseif ( isset( $response['error']['message'] ) && is_string( $response['error']['message'] ) ) {
-			$message = $response['error']['message'];
-		} elseif ( isset( $response['message'] ) && is_string( $response['message'] ) ) {
-			$message = $response['message'];
+		if ( '' === $message && isset( $candidates[0] ) ) {
+			$message = $candidates[0];
 		}
 
 		if ( '' === $message ) {
 			$message = __( 'Composio reported the tool execution as unsuccessful without an error message.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$is_auth = class_exists( 'WP_MCP_AI_Composio_Account_Health' )
-			&& WP_MCP_AI_Composio_Account_Health::is_auth_error( '', $message );
+		// A proxied 401/403 is as definitive as the same status on the transport,
+		// so it short-circuits the phrase-matching classifier.
+		$is_auth = 401 === $status || 403 === $status;
+
+		if ( ! $is_auth ) {
+			$is_auth = class_exists( 'WP_MCP_AI_Composio_Account_Health' )
+				&& WP_MCP_AI_Composio_Account_Health::is_auth_error( '', $message );
+		}
+
+		$data = array(
+			'tool_slug'            => $tool_slug,
+			'connected_account_id' => $account_id,
+			'auth_failure'         => $is_auth,
+			'log_id'               => isset( $response['log_id'] ) && is_scalar( $response['log_id'] ) ? (string) $response['log_id'] : '',
+			'upstream_error'       => $message,
+		);
+
+		if ( $status > 0 ) {
+			$data['provider_status'] = $status;
+		}
 
 		return new WP_Error(
 			$is_auth ? 'wp_mcp_ai_composio_account_auth_required' : 'wp_mcp_ai_composio_tool_failed',
@@ -1218,14 +1293,67 @@ class WP_MCP_AI_Composio_Client {
 				'' !== $tool_slug ? $tool_slug : __( '(unknown)', 'mcp-ai-wpoos-pro' ),
 				$message
 			),
-			array(
-				'tool_slug'            => $tool_slug,
-				'connected_account_id' => $account_id,
-				'auth_failure'         => $is_auth,
-				'log_id'               => isset( $response['log_id'] ) && is_scalar( $response['log_id'] ) ? (string) $response['log_id'] : '',
-				'upstream_error'       => $message,
-			)
+			$data
 		);
+	}
+
+	/**
+	 * Collect candidate error strings from an execution payload.
+	 *
+	 * Only the bounded set of error-carrying paths in
+	 * {@see self::EXECUTION_ERROR_PATHS} is inspected — never the payload as a
+	 * whole — because tool *content* routinely mentions HTTP statuses (an email
+	 * body, a fetched document, a log line) and must never be mistaken for a
+	 * failure.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param array $response Decoded execute response.
+	 * @return string[] Trimmed, de-duplicated candidates in priority order.
+	 */
+	private static function collect_execution_errors( array $response ) {
+		$found = array();
+
+		foreach ( self::EXECUTION_ERROR_PATHS as $path ) {
+			$value = $response;
+
+			foreach ( $path as $key ) {
+				if ( ! is_array( $value ) || ! isset( $value[ $key ] ) ) {
+					$value = null;
+					break;
+				}
+
+				$value = $value[ $key ];
+			}
+
+			if ( ! is_string( $value ) ) {
+				continue;
+			}
+
+			$value = trim( $value );
+
+			if ( '' !== $value && ! in_array( $value, $found, true ) ) {
+				$found[] = $value;
+			}
+		}
+
+		return $found;
+	}
+
+	/**
+	 * Read a proxied provider HTTP status out of an error string.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param mixed $message Candidate error message.
+	 * @return int Status code, or 0 when the string does not lead with one.
+	 */
+	public static function detect_proxied_http_status( $message ) {
+		if ( ! is_string( $message ) || '' === $message ) {
+			return 0;
+		}
+
+		return preg_match( self::PROXIED_STATUS_PATTERN, $message, $matches ) ? (int) $matches[1] : 0;
 	}
 
 	/**

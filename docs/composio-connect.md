@@ -131,6 +131,10 @@ Trigger events are exposed to automation through the `wp_mcp_ai_composio_trigger
 
 **A connected app is stuck in `INITIALIZING`, or a stale account keeps being picked.** Click **Remove** on that row in **Connected Apps**, or run `composio_manage_accounts` with `action: "prune"` for the toolkit, then connect the app again. Auto-resolution only ever picks `ACTIVE` accounts, prefers the one matching the connection's identity, and skips accounts whose last credential check failed — so validating and pruning keeps the choice unambiguous.
 
+**An assistant reports "tool executed" but nothing happened, or keeps retrying the same call.** Composio answers `HTTP 200` in two situations that are *not* success: when it rejects the call itself (`successful: false`), and when it successfully delivered the call but the app refused it — in which case the refusal is nested in the response, e.g. `HTTP 401: Request had invalid authentication credentials.` from Google. Both are now reported as failures. A 401/403 becomes a reconnect prompt naming the app and linking straight to the re-authorisation flow, and the account is marked as needing reconnection so later calls stop choosing it. If you saw this on an older build, the assistant could not tell success from failure and would retry until it gave up; update the plugin.
+
+**"Connected account `ca_…` does not exist on this Composio connection."** The account ID was deleted, belongs to another Composio project, or was replaced by a reconnect. The error lists the accounts that do exist — pick one of those, or simply ask again without naming an account so the healthiest one is chosen automatically.
+
 ## 9. References
 
 - [Composio docs](https://docs.composio.dev/docs)

@@ -871,6 +871,125 @@ class Test_Composio_Client extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test the failure mode that made the agentic loop thrash: Composio reports
+	 * `successful: true` because it *delivered* the call, and the provider's 401
+	 * arrives proxied inside `data.message`. Reported as a success, the caller
+	 * could not tell the call had failed.
+	 */
+	public function test_execute_tool_detects_provider_status_proxied_into_data() {
+		$this->mock_response(
+			200,
+			array(
+				'successful' => true,
+				'data'       => array(
+					'message' => 'HTTP 401: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential.',
+				),
+				'log_id'     => 'log_401',
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_proxied', 'nvoos-shared' );
+		$result = $client->execute_tool( 'GOOGLECALENDAR_EVENTS_LIST', 'ca_stale', array() );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_account_auth_required', $result->get_error_code() );
+
+		$data = $result->get_error_data();
+		$this->assertSame( 401, $data['provider_status'] );
+		$this->assertTrue( $data['auth_failure'] );
+		$this->assertSame( 'log_401', $data['log_id'] );
+		$this->assertStringContainsString( 'invalid authentication credentials', $data['upstream_error'] );
+	}
+
+	/**
+	 * Test that a non-auth provider status is a plain tool failure, so a 500 is
+	 * not mistaken for a dead credential.
+	 */
+	public function test_execute_tool_detects_proxied_server_error() {
+		$this->mock_response(
+			200,
+			array(
+				'successful' => true,
+				'data'       => array( 'error' => 'HTTP/1.1 500 Internal Server Error' ),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_5xx', 'nvoos-shared' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_1', array() );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_tool_failed', $result->get_error_code() );
+		$this->assertSame( 500, $result->get_error_data()['provider_status'] );
+		$this->assertFalse( $result->get_error_data()['auth_failure'] );
+	}
+
+	/**
+	 * Test that an in-band failure whose only message sits under `data` is
+	 * reported with that message instead of the generic "no error message"
+	 * fallback, which used to strip the auth classification with it.
+	 */
+	public function test_execute_tool_reads_error_nested_under_data() {
+		$this->mock_response(
+			200,
+			array(
+				'successful' => false,
+				'error'      => null,
+				'data'       => array( 'error' => 'Auth refresh required: token has been expired or revoked' ),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_nested', 'nvoos-shared' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_dead', array() );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_account_auth_required', $result->get_error_code() );
+		$this->assertStringContainsString( 'expired or revoked', $result->get_error_message() );
+		$this->assertArrayNotHasKey( 'provider_status', $result->get_error_data() );
+	}
+
+	/**
+	 * Test the false-positive guard: a *successful* read whose content merely
+	 * mentions an HTTP status must stay a success. Scanning the whole payload
+	 * instead of the error fields would fail an email fetch because of what the
+	 * email said.
+	 */
+	public function test_execute_tool_ignores_http_status_inside_tool_content() {
+		$this->mock_response(
+			200,
+			array(
+				'successful' => true,
+				'data'       => array(
+					'messages' => array(
+						array(
+							'subject' => 'HTTP 401 errors on staging',
+							'body'    => 'HTTP 500: the deploy is throwing again, can you look?',
+						),
+					),
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_content', 'nvoos-shared' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_1', array() );
+
+		$this->assertNotWPError( $result );
+	}
+
+	/**
+	 * Test the status reader in isolation, including the anchoring that keeps
+	 * prose out of the failure path.
+	 */
+	public function test_detect_proxied_http_status_is_anchored() {
+		$this->assertSame( 401, WP_MCP_AI_Composio_Client::detect_proxied_http_status( 'HTTP 401: nope' ) );
+		$this->assertSame( 429, WP_MCP_AI_Composio_Client::detect_proxied_http_status( '  http 429 slow down' ) );
+		$this->assertSame( 503, WP_MCP_AI_Composio_Client::detect_proxied_http_status( 'HTTP/1.0 503 unavailable' ) );
+		$this->assertSame( 0, WP_MCP_AI_Composio_Client::detect_proxied_http_status( 'Retried after an HTTP 404 from the CDN' ) );
+		$this->assertSame( 0, WP_MCP_AI_Composio_Client::detect_proxied_http_status( 'HTTP 200: all good' ) );
+		$this->assertSame( 0, WP_MCP_AI_Composio_Client::detect_proxied_http_status( 'Fetched 3 messages' ) );
+		$this->assertSame( 0, WP_MCP_AI_Composio_Client::detect_proxied_http_status( array( 'not' => 'a string' ) ) );
+	}
+
+	/**
 	 * Test that reconnecting targets the existing account's own refresh route,
 	 * so no duplicate account is minted.
 	 */
