@@ -1,5 +1,58 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Fixed — Composio Connect: Verified Account Health & Real Tool Discovery
+
+Two failure modes made the Composio integration untrustworthy in practice: account health was a false-positive machine, and tool discovery came back blank. Both are fixed at the root, plus the lifecycle hygiene that the false positives were hiding.
+
+- **Blank tool discovery (root cause).** Every Composio v3.1 collection endpoint answers with the pagination envelope `{ items, next_cursor, total_pages, current_page, total_items }`, but `WP_MCP_AI_Composio_Client::list_tools()` returned that envelope raw. Callers iterating it saw the `items` key *itself* as the first record — an array with no slug — which is why `composio_list_tools` reported exactly one empty entry and slugs like `GMAIL_FETCH_EMAILS` had to be guessed. The client now unwraps and normalises via new `unwrap_items()`, `extract_pagination()`, `normalize_tool()` and `normalize_account()` helpers, and drops records with no slug instead of emitting them.
+- **Wrong catalog query parameters.** `list_tools()` sent `toolkits` (the endpoint accepts `toolkit_slug`, singular), the deprecated `search` (now `query`), and `page` (never a supported Composio parameter — pagination is `cursor` + `limit`). Corrected, with `cursor` plumbed through.
+- **Broken status filter.** `list_connected_accounts()` passed statuses through `sanitize_key()`, which lowercases; Composio's enum is SCREAMING_SNAKE (`ACTIVE`, `EXPIRED`, `REVOKED`, `FAILED`, `INACTIVE`, `INITIALIZING`, `INITIATED`), so filtering by status silently matched nothing.
+- **Tool failures reported as successes.** `POST /api/v3.1/tools/execute/{slug}` signals failure *in band*: HTTP 200 with `{ "successful": false, "error": ... }`. The client returned that body as a success payload, so a revoked-credential failure surfaced to the assistant as "Composio tool X executed." `execute_tool()` now converts an explicitly falsy `successful` into `WP_Error` — `wp_mcp_ai_composio_account_auth_required` for auth-class failures, `wp_mcp_ai_composio_tool_failed` otherwise — carrying `log_id` and `upstream_error`. Payloads without a `successful` key are untouched.
+- **Credential expiry was invisible.** v3.1 has no top-level expiry field; `expired_at` / `expires_in` and `status_reason` live inside `state.val`. `normalize_account()` lifts them out, flattens the nested `toolkit: { slug }` to a string, and exposes `disabled` and `auth_scheme`.
+- **`connection_id` and `connected_account_id` were silently interchangeable.** Both are opaque strings and neither schema description warned against swapping them, so passing a Composio account nanoid (`ca_F0HEJBssnCXL`) where the NV oOS project connection (`conn_...`) was expected produced a bare "Composio connection not found" — the lookup failed before it ever reached Composio. `sanitize_key()` also lowercased the value, hiding the mistake further. The shared resolver now detects the swap by prefix and returns `wp_mcp_ai_composio_id_swapped` naming which kind of ID was supplied, which was expected, and that omitting `connection_id` auto-resolves; the reverse swap (a `conn_...` passed as `connected_account_id`) is caught in `composio_execute_tool`, `composio_manage_accounts` and `composio_manage_triggers`. An unknown-but-plausible `conn_...` now lists the site's real Composio connection IDs instead of failing blind, and all seven tool schemas state the distinction explicitly.
+
+### Added — Composio Account Health Engine
+
+- New `WP_MCP_AI_Composio_Account_Health` (`addons/pro/includes/composio/class-wp-mcp-ai-composio-account-health.php`): a per-connection ledger (option `wp_mcp_ai_composio_health_{connection_id}`, autoload off, 200 records, LRU-pruned) plus a live probe. Composio has no `/verify` route and only marks an account `EXPIRED` after its own background refresh has failed repeatedly, so "stored status" cannot detect a token the user revoked minutes ago.
+- Verification is a two-stage, honestly-labelled process: an uncached authoritative account read, then a live execution of a zero-argument read-only tool from the account's own toolkit. Only the second stage sets `verified => true`. `verification_method` distinguishes `probe`, `probe_inconclusive` (probe failed for a non-auth reason — says nothing about the credential), `status_only` (no safe probe exists; never reported as verified), `execution`, `webhook`, `unreachable` and `never_checked`.
+- Probe tools are **discovered from the live catalog**, not hardcoded: the toolkit is scanned for a `{TOOLKIT}_{READ_VERB}_...` slug with no required inputs, so no invented slug is ever called and the engine survives catalog changes. A small curated fast path (Gmail, GitHub, Notion, Linear, Google Docs) is validated against the catalog before use; resolution is cached 24h. New filter `wp_mcp_ai_composio_probe_tool` pins or disables the probe per toolkit and rejects slugs outside the toolkit or with a write verb.
+- Records carry `last_validated_at`, `last_checked_at`, `last_error`, `last_error_code`, real `token_expires_at`, `needs_reconnect` and `stale` (verdicts age out after 15 minutes).
+- The `composio.connected_account.expired` webhook now writes a `needs_reconnect` verdict into the ledger immediately (previously only a transient), so auto-resolution stops choosing the account at once. `is_account_expired()` consults the ledger.
+
+### Added — `composio_manage_accounts` Tool
+
+- New seventh Composio tool (`manage_options`, `risk_level: high`, flagged `destructive`) for connected-account lifecycle: `validate` (live probe, never answered from cache; accepts one account or a whole `toolkit`), `reconnect`, `delete`, `prune`, `disable`, `enable`.
+- **`reconnect` re-authorises the existing account in place** via `POST /api/v3.1/connected_accounts/{id}/refresh`, preserving its ID, alias and pinned triggers instead of minting a duplicate and orphaning the broken one. That route is marked Legacy upstream, so the tool falls back to a fresh Connect Link and states plainly that the fallback creates a new account which should then be deleted.
+- **`prune`** requires an explicit `toolkit` so the blast radius is always stated, and re-probes each candidate immediately before deletion — only a definitive `needs_reconnect` verdict authorises removal, so a healthy or merely unconfirmed account is never pruned on a stale verdict.
+- Fires `wp_mcp_ai_composio_account_managed` for every state-changing action.
+
+### Changed — Composio Tool Surfaces
+
+- `composio_list_tools` — populated results grouped by toolkit, with local relevance re-ranking of natural-language queries (Composio's `query` is a soft filter, so the obvious match could arrive buried), a `connected_only` view for "what can I actually run right now?", a `list_toolkits` app-directory mode, `required_inputs` on every entry (so `composio_get_tool_schema` is often unnecessary), truncated descriptions, cursor pagination and `connected` flags.
+- `composio_list_connected_accounts` — **verifies by default** (`verify: true`, reusing verdicts newer than 15 minutes, capped at 10 probes per call, `force` to override). Each account now returns `status_reason`, `auth_scheme`, `disabled`, `token_expires_at`, a `health` block and a `reconnect_url` when broken, plus a response-level `summary` of verified / needs-reconnect / unverified counts. Skipping verification is stated explicitly in the message rather than implied. The legacy `expired` boolean is retained for compatibility; `health.needs_reconnect` is authoritative.
+- `composio_execute_tool` — auto-resolution is health-aware via the new `WP_MCP_AI_Composio_Tools::resolve_account_for_toolkit()`: accounts with a recent `needs_reconnect` verdict are excluded, the connection's identity is preferred, then probe-verified over unverified, then fresher over staler. When candidates are genuinely indistinguishable and the action is write-class, it returns `wp_mcp_ai_composio_ambiguous_account` with the candidate list rather than silently emailing from the wrong mailbox; read-only actions proceed and report `ambiguous_accounts`. Auth failures become a plain-language, recoverable error naming the app, the provider's reason and a one-click `reconnect_url`. A successful execution records a verification verdict, so health data improves for free with normal use.
+- Removing a connected account from the Remote Sites admin now also drops its health verdict.
+
+### Added — Connected Apps Health Column (Remote Sites Admin)
+
+- The **Connected Apps** table on a Composio connection now has a **Health** column showing the stored verdict — `Verified` / `Needs reconnect` / `Unconfirmed` / `Not checked` — with how and when it was established, alongside Composio's stored **Status** and the real token expiry. Rendering the page reads the ledger only and never probes, because a probe costs one tool execution per account; a regression test asserts zero executions during render.
+- Per-row **Verify** and **Reconnect** actions plus a connection-wide **Verify all** link. Verify runs the live read-only probe on demand and reports a `N working / N need reconnecting / N unconfirmed` tally. Reconnect re-authorises the same account in place, falling back to a fresh Connect Link when Composio's Legacy route is unavailable, and clears the stale verdict either way.
+- The panel states the stored-versus-verified distinction inline, so an operator is not left to infer why an `ACTIVE` app can still fail with a 401.
+- New `external_redirect_and_exit()` mirrors the existing `redirect_and_exit()` PHPUnit-safe termination contract for vetted off-site provider URLs, replacing a bare `wp_redirect(); exit;` that would have killed the test process.
+- Tests: `addons/pro/tests/test-composio-admin-health.php` (11 tests).
+
+### Tests
+
+- New `addons/pro/tests/test-composio-account-health.php` (13 tests): ledger round-trip, staleness window, expired short-circuit (no wasted execution), live-probe verification, **revoked-token-behind-`ACTIVE`-status detection**, non-auth failures marked inconclusive, honest `status_only` degradation, catalog-driven probe discovery, pinned-probe toolkit enforcement, auth-error classification against real Composio phrasing, and webhook-driven verdicts.
+- `addons/pro/tests/test-composio-tools.php` — 11 new tests covering populated grouped discovery, natural-language ranking, the empty `connected_only` path, revoked-token reporting, reconnect guidance on 401, ambiguous-resolution refusal, verified-account preference, dead-account exclusion, execution-derived verification, `composio_manage_accounts` input guards, in-place reconnect and selective prune. A further 5 tests cover ID-swap diagnosis across all seven tools, the reverse swap, available-ID listing and the prefix helpers.
+- `addons/pro/tests/test-composio-client.php` — 7 new tests for envelope unwrapping, documented query parameters, legacy flat arrays, in-band failure conversion and classification, and in-place reconnect routing. Two existing assertions updated to the intended new behaviour (flattened toolkit slug, uppercased status filter).
+
+### Documentation
+
+- Updated [`docs/toolkits/composio-connect.md`](docs/toolkits/composio-connect.md) (tool table, architecture diagram, extension points, substantially expanded troubleshooting) and [`docs/composio-connect.md`](docs/composio-connect.md) (new "Checking and fixing a broken connection" section), plus both folder READMEs.
+
 ## [1.1.63] - 2026-08-23
 
 ### Added — Artifact Evolution Phases A–G: Darwinian Self-Improvement for Skills, Prompts & Roles (PRs #5923, #5925)

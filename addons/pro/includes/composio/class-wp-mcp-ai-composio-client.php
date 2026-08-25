@@ -251,7 +251,18 @@ class WP_MCP_AI_Composio_Client {
 			$query['toolkit_slugs'] = implode( ',', array_map( 'sanitize_key', (array) $filters['toolkit'] ) );
 		}
 		if ( ! empty( $filters['status'] ) ) {
-			$query['statuses'] = implode( ',', array_map( 'sanitize_key', (array) $filters['status'] ) );
+			// Composio's status enum is SCREAMING_SNAKE (ACTIVE, EXPIRED, ...).
+			// sanitize_key() lowercases, which previously produced a filter that
+			// silently matched nothing.
+			$query['statuses'] = implode(
+				',',
+				array_map(
+					static function ( $status ) {
+						return strtoupper( sanitize_key( $status ) );
+					},
+					(array) $filters['status']
+				)
+			);
 		}
 		if ( ! empty( $filters['user_id'] ) ) {
 			$query['user_ids'] = implode( ',', array_map( 'sanitize_text_field', (array) $filters['user_id'] ) );
@@ -267,18 +278,14 @@ class WP_MCP_AI_Composio_Client {
 			return $result;
 		}
 
-		$response = isset( $result['response'] ) && is_array( $result['response'] ) ? $result['response'] : array();
+		$accounts = self::unwrap_items( isset( $result['response'] ) ? $result['response'] : array() );
 
-		// The v3.1 endpoint wraps the listing as { items: [...], total_items: N,
-		// ... }. Accept the wrapper plus a legacy flat array so mocked or older
-		// payloads keep working.
-		if ( isset( $response['items'] ) && is_array( $response['items'] ) ) {
-			$accounts = $response['items'];
-		} elseif ( array_keys( $response ) === range( 0, count( $response ) - 1 ) ) {
-			$accounts = $response;
-		} else {
-			$accounts = array();
-		}
+		$accounts = array_values(
+			array_map(
+				array( __CLASS__, 'normalize_account' ),
+				array_filter( $accounts, 'is_array' )
+			)
+		);
 
 		// Mirror the count into a cheap per-connection transient so admin
 		// surfaces (assistant metabox badges) render without an API round-trip.
@@ -292,6 +299,133 @@ class WP_MCP_AI_Composio_Client {
 		}
 
 		return $accounts;
+	}
+
+	/**
+	 * Unwrap a v3.1 paginated collection into a flat list of items.
+	 *
+	 * Every v3.1 collection endpoint answers with
+	 * `{ items: [...], next_cursor, total_pages, current_page, total_items }`.
+	 * A legacy flat array is accepted too so older payloads and test doubles
+	 * keep working.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param mixed $response Decoded response body.
+	 * @return array List of items.
+	 */
+	public static function unwrap_items( $response ) {
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+
+		if ( isset( $response['items'] ) && is_array( $response['items'] ) ) {
+			return $response['items'];
+		}
+
+		// A flat list — every key is a sequential integer.
+		if ( array() === $response || array_keys( $response ) === range( 0, count( $response ) - 1 ) ) {
+			return $response;
+		}
+
+		return array();
+	}
+
+	/**
+	 * Extract the pagination envelope from a v3.1 collection response.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param mixed $response  Decoded response body.
+	 * @param int   $item_count Number of items unwrapped from the response.
+	 * @return array{next_cursor:string,total_items:int,total_pages:int,current_page:int}
+	 */
+	public static function extract_pagination( $response, $item_count = 0 ) {
+		$response = is_array( $response ) ? $response : array();
+
+		return array(
+			'next_cursor'  => isset( $response['next_cursor'] ) && is_scalar( $response['next_cursor'] ) ? (string) $response['next_cursor'] : '',
+			'total_items'  => isset( $response['total_items'] ) ? absint( $response['total_items'] ) : absint( $item_count ),
+			'total_pages'  => isset( $response['total_pages'] ) ? absint( $response['total_pages'] ) : 1,
+			'current_page' => isset( $response['current_page'] ) ? absint( $response['current_page'] ) : 1,
+		);
+	}
+
+	/**
+	 * Normalise a connected-account payload into a stable, flat shape.
+	 *
+	 * Version 3.1 nests the toolkit under `{ slug: ... }` and buries credential
+	 * expiry inside `state.val`, so every consumer previously had to re-derive
+	 * the same fields (and most did not, which is how `toolkit` rendered blank
+	 * and expiry was reported as "not expired" for a dead token). The original
+	 * payload keys are preserved; normalised keys are layered on top.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param array $account Raw connected-account payload.
+	 * @return array Normalised payload.
+	 */
+	public static function normalize_account( array $account ) {
+		$toolkit = isset( $account['toolkit'] ) ? $account['toolkit'] : '';
+		if ( is_array( $toolkit ) ) {
+			$toolkit = isset( $toolkit['slug'] ) ? (string) $toolkit['slug'] : '';
+		}
+
+		$owner = '';
+		foreach ( array( 'user_id', 'entity_id' ) as $key ) {
+			if ( isset( $account[ $key ] ) && is_scalar( $account[ $key ] ) && '' !== (string) $account[ $key ] ) {
+				$owner = (string) $account[ $key ];
+				break;
+			}
+		}
+		if ( '' === $owner && isset( $account['user']['id'] ) && is_scalar( $account['user']['id'] ) ) {
+			$owner = (string) $account['user']['id'];
+		}
+
+		$state = isset( $account['state']['val'] ) && is_array( $account['state']['val'] ) ? $account['state']['val'] : array();
+
+		// Credential expiry: v3.1 stores `expired_at` (set once the credential
+		// has expired) and `expires_in` (seconds, on freshly minted OAuth2
+		// tokens) inside state.val. There is no top-level expiry field.
+		$expires_at = '';
+		foreach ( array( 'expired_at', 'expires_at' ) as $key ) {
+			if ( isset( $state[ $key ] ) && is_scalar( $state[ $key ] ) && '' !== (string) $state[ $key ] ) {
+				$expires_at = (string) $state[ $key ];
+				break;
+			}
+		}
+		if ( '' === $expires_at && isset( $state['expires_in'] ) && is_numeric( $state['expires_in'] ) ) {
+			$updated    = isset( $account['updated_at'] ) ? strtotime( (string) $account['updated_at'] ) : false;
+			$expires_at = gmdate( 'c', ( false !== $updated ? $updated : time() ) + absint( $state['expires_in'] ) );
+		}
+
+		$status_reason = '';
+		foreach ( array( 'status_reason', 'error_description', 'error' ) as $key ) {
+			if ( isset( $account[ $key ] ) && is_scalar( $account[ $key ] ) && '' !== (string) $account[ $key ] ) {
+				$status_reason = (string) $account[ $key ];
+				break;
+			}
+			if ( isset( $state[ $key ] ) && is_scalar( $state[ $key ] ) && '' !== (string) $state[ $key ] ) {
+				$status_reason = (string) $state[ $key ];
+				break;
+			}
+		}
+
+		return array_merge(
+			$account,
+			array(
+				'id'            => isset( $account['id'] ) ? (string) $account['id'] : '',
+				'toolkit'       => strtolower( (string) $toolkit ),
+				'status'        => isset( $account['status'] ) ? strtoupper( (string) $account['status'] ) : '',
+				'status_reason' => $status_reason,
+				'user_id'       => $owner,
+				'expires_at'    => $expires_at,
+				'disabled'      => ! empty( $account['is_disabled'] ),
+				'auth_scheme'   => isset( $account['auth_config']['auth_scheme'] ) ? (string) $account['auth_config']['auth_scheme'] : ( isset( $account['authScheme'] ) ? (string) $account['authScheme'] : '' ),
+				'created_at'    => isset( $account['created_at'] ) ? (string) $account['created_at'] : '',
+				'updated_at'    => isset( $account['updated_at'] ) ? (string) $account['updated_at'] : '',
+			)
+		);
 	}
 
 	/**
@@ -386,6 +520,53 @@ class WP_MCP_AI_Composio_Client {
 		}
 
 		$result = $this->request( 'GET', '/api/' . self::API_VERSION . '/connected_accounts/' . rawurlencode( $account_id ), array(), array(), absint( $cache_ttl ) );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$account = isset( $result['response'] ) && is_array( $result['response'] ) ? $result['response'] : array();
+
+		return empty( $account ) ? $account : self::normalize_account( $account );
+	}
+
+	/**
+	 * Re-authorise an existing connected account in place.
+	 *
+	 * Composio has no "reconnect" verb: creating a fresh Connect Link mints a
+	 * *new* `ca_...` account and leaves the broken one behind, which is how
+	 * orphaned connections accumulate. `POST /connected_accounts/{id}/refresh`
+	 * re-initiates the provider flow against the *same* account ID and returns
+	 * a `redirect_url`, so the account keeps its ID, alias and any triggers
+	 * pinned to it.
+	 *
+	 * The route is marked Legacy upstream and may be withdrawn; callers must be
+	 * prepared for a WP_Error and fall back to a fresh Connect Link.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param string $account_id   Connected account nanoid.
+	 * @param string $redirect_url Optional. URL to return the user to afterwards.
+	 * @return array|WP_Error Response with id/status/redirect_url, or WP_Error.
+	 */
+	public function reconnect_connected_account( $account_id, $redirect_url = '' ) {
+		$account_id = sanitize_text_field( (string) $account_id );
+
+		if ( '' === $account_id ) {
+			return new WP_Error( 'wp_mcp_ai_composio_missing_account', __( 'A connected account ID is required to reconnect.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$body = array();
+		if ( '' !== (string) $redirect_url ) {
+			$body['redirect_url'] = esc_url_raw( $redirect_url );
+		}
+
+		$result = $this->request(
+			'POST',
+			'/api/' . self::API_VERSION . '/connected_accounts/' . rawurlencode( $account_id ) . '/refresh',
+			array(),
+			$body
+		);
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -657,27 +838,238 @@ class WP_MCP_AI_Composio_Client {
 	}
 
 	/**
-	 * List available tools with optional filters.
+	 * List available tools, unwrapped and normalised.
+	 *
+	 * `GET /tools` answers with the v3.1 pagination envelope
+	 * (`{ items, next_cursor, total_pages, current_page, total_items }`).
+	 * Returning that envelope raw was the cause of blank tool discovery: callers
+	 * iterating the response saw the `items` key itself as the first "tool",
+	 * yielding exactly one entry with no slug. This method always returns the
+	 * envelope in a documented shape with `items` guaranteed to be a list of
+	 * normalised tool records.
+	 *
+	 * Filters are mapped onto the parameter names the endpoint actually accepts:
+	 * `toolkit_slug` (singular), `tool_slugs`, `query` (`search` is deprecated
+	 * upstream), `limit` and `cursor`. `page` is not a supported parameter.
 	 *
 	 * @since 1.4.0
+	 * @since 1.4.1 Unwraps the pagination envelope and normalises tool records.
 	 *
-	 * @param array $filters Optional. Query filters: toolkits, search, page, limit.
-	 * @return array|WP_Error
+	 * @param array $filters Optional. toolkit_slug|toolkit, search|query, tool_slugs, limit, cursor, important, include_deprecated.
+	 * @return array{items:array,next_cursor:string,total_items:int,total_pages:int,current_page:int}|WP_Error
 	 */
 	public function list_tools( array $filters = array() ) {
-		$path = '/api/' . self::API_VERSION . '/tools';
+		$query = array();
 
-		if ( ! empty( $filters ) ) {
-			$path = add_query_arg( $filters, $path );
+		$toolkit = '';
+		foreach ( array( 'toolkit_slug', 'toolkit', 'toolkits' ) as $key ) {
+			if ( ! empty( $filters[ $key ] ) ) {
+				$toolkit = sanitize_key( is_array( $filters[ $key ] ) ? reset( $filters[ $key ] ) : $filters[ $key ] );
+				break;
+			}
+		}
+		if ( '' !== $toolkit ) {
+			$query['toolkit_slug'] = $toolkit;
 		}
 
+		// `search` was deprecated in favour of `query`; accept either from callers.
+		foreach ( array( 'query', 'search' ) as $key ) {
+			if ( ! empty( $filters[ $key ] ) ) {
+				$query['query'] = sanitize_text_field( (string) $filters[ $key ] );
+				break;
+			}
+		}
+
+		if ( ! empty( $filters['tool_slugs'] ) ) {
+			$slugs = is_array( $filters['tool_slugs'] ) ? $filters['tool_slugs'] : explode( ',', (string) $filters['tool_slugs'] );
+			$slugs = array_filter( array_map( 'sanitize_text_field', array_map( 'trim', $slugs ) ) );
+			if ( ! empty( $slugs ) ) {
+				$query['tool_slugs'] = implode( ',', $slugs );
+			}
+		}
+
+		if ( ! empty( $filters['cursor'] ) ) {
+			$query['cursor'] = sanitize_text_field( (string) $filters['cursor'] );
+		}
+
+		if ( isset( $filters['important'] ) ) {
+			$query['important'] = $filters['important'] ? 'true' : 'false';
+		}
+
+		if ( isset( $filters['include_deprecated'] ) ) {
+			$query['include_deprecated'] = $filters['include_deprecated'] ? 'true' : 'false';
+		}
+
+		$query['limit'] = isset( $filters['limit'] ) ? min( 1000, max( 1, absint( $filters['limit'] ) ) ) : 50;
+
+		$path   = add_query_arg( $query, '/api/' . self::API_VERSION . '/tools' );
 		$result = $this->request( 'GET', $path, array(), array(), self::TOOLS_CACHE_TTL );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
-		return isset( $result['response'] ) && is_array( $result['response'] ) ? $result['response'] : array();
+		$response = isset( $result['response'] ) ? $result['response'] : array();
+		$items    = self::unwrap_items( $response );
+
+		$tools = array();
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$normalized = self::normalize_tool( $item );
+
+			// A record with no slug is not addressable and would reproduce the
+			// blank-entry symptom downstream.
+			if ( '' === $normalized['slug'] ) {
+				continue;
+			}
+
+			$tools[] = $normalized;
+		}
+
+		return array_merge(
+			array( 'items' => $tools ),
+			self::extract_pagination( $response, count( $tools ) )
+		);
+	}
+
+	/**
+	 * Normalise a tool catalog record into a stable, flat shape.
+	 *
+	 * Version 3.1 nests the toolkit as `{ slug, name, logo }` and names the
+	 * identifier `slug`; older payloads used a flat `toolkit` string and
+	 * `tool_slug`. Both are accepted. The raw `input_parameters` block is
+	 * preserved so callers can inspect required arguments without a second
+	 * round-trip.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param array $tool Raw tool record.
+	 * @return array Normalised tool record.
+	 */
+	public static function normalize_tool( array $tool ) {
+		$slug = '';
+		foreach ( array( 'slug', 'tool_slug', 'name_slug' ) as $key ) {
+			if ( isset( $tool[ $key ] ) && is_scalar( $tool[ $key ] ) && '' !== (string) $tool[ $key ] ) {
+				$slug = strtoupper( (string) $tool[ $key ] );
+				break;
+			}
+		}
+
+		$toolkit      = isset( $tool['toolkit'] ) ? $tool['toolkit'] : '';
+		$toolkit_name = '';
+		if ( is_array( $toolkit ) ) {
+			$toolkit_name = isset( $toolkit['name'] ) ? (string) $toolkit['name'] : '';
+			$toolkit      = isset( $toolkit['slug'] ) ? (string) $toolkit['slug'] : '';
+		}
+		$toolkit = strtolower( (string) $toolkit );
+
+		// Fall back to the slug prefix, which is the toolkit by construction.
+		if ( '' === $toolkit && '' !== $slug && false !== strpos( $slug, '_' ) ) {
+			$toolkit = strtolower( substr( $slug, 0, strpos( $slug, '_' ) ) );
+		}
+
+		$description = '';
+		foreach ( array( 'description', 'human_description' ) as $key ) {
+			if ( isset( $tool[ $key ] ) && is_string( $tool[ $key ] ) && '' !== $tool[ $key ] ) {
+				$description = $tool[ $key ];
+				break;
+			}
+		}
+
+		$input = isset( $tool['input_parameters'] ) && is_array( $tool['input_parameters'] ) ? $tool['input_parameters'] : array();
+
+		return array(
+			'slug'             => $slug,
+			'name'             => isset( $tool['name'] ) && is_string( $tool['name'] ) ? $tool['name'] : $slug,
+			'description'      => $description,
+			'toolkit'          => $toolkit,
+			'toolkit_name'     => $toolkit_name,
+			'deprecated'       => ! empty( $tool['deprecated'] ) || ! empty( $tool['is_deprecated'] ),
+			'no_auth'          => ! empty( $tool['no_auth'] ),
+			'version'          => isset( $tool['version'] ) && is_scalar( $tool['version'] ) ? (string) $tool['version'] : '',
+			'required_inputs'  => isset( $input['required'] ) && is_array( $input['required'] ) ? array_values( array_map( 'strval', $input['required'] ) ) : array(),
+			'input_parameters' => $input,
+		);
+	}
+
+	/**
+	 * List toolkits (apps) available to the project.
+	 *
+	 * Needed for a browsable "what can I do?" view: the tool catalog alone has
+	 * no cheap way to enumerate the ~1,000 available apps.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param array $filters Optional. search, category, limit, cursor, sort_by, managed_by.
+	 * @return array{items:array,next_cursor:string,total_items:int,total_pages:int,current_page:int}|WP_Error
+	 */
+	public function list_toolkits( array $filters = array() ) {
+		$query = array(
+			'limit' => isset( $filters['limit'] ) ? min( 1000, max( 1, absint( $filters['limit'] ) ) ) : 100,
+		);
+
+		if ( ! empty( $filters['search'] ) ) {
+			$query['search'] = sanitize_text_field( (string) $filters['search'] );
+		}
+		if ( ! empty( $filters['category'] ) ) {
+			$query['category'] = sanitize_key( (string) $filters['category'] );
+		}
+		if ( ! empty( $filters['cursor'] ) ) {
+			$query['cursor'] = sanitize_text_field( (string) $filters['cursor'] );
+		}
+		if ( ! empty( $filters['sort_by'] ) && in_array( $filters['sort_by'], array( 'usage', 'alphabetically' ), true ) ) {
+			$query['sort_by'] = $filters['sort_by'];
+		}
+		if ( ! empty( $filters['managed_by'] ) && in_array( $filters['managed_by'], array( 'composio', 'all', 'project' ), true ) ) {
+			$query['managed_by'] = $filters['managed_by'];
+		}
+
+		$path   = add_query_arg( $query, '/api/' . self::API_VERSION . '/toolkits' );
+		$result = $this->request( 'GET', $path, array(), array(), self::TOOLS_CACHE_TTL );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$response = isset( $result['response'] ) ? $result['response'] : array();
+		$items    = self::unwrap_items( $response );
+
+		$toolkits = array();
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || empty( $item['slug'] ) ) {
+				continue;
+			}
+
+			$meta       = isset( $item['meta'] ) && is_array( $item['meta'] ) ? $item['meta'] : array();
+			$categories = array();
+			if ( isset( $meta['categories'] ) && is_array( $meta['categories'] ) ) {
+				foreach ( $meta['categories'] as $category ) {
+					if ( is_array( $category ) && isset( $category['name'] ) ) {
+						$categories[] = (string) $category['name'];
+					} elseif ( is_string( $category ) ) {
+						$categories[] = $category;
+					}
+				}
+			}
+
+			$toolkits[] = array(
+				'slug'        => strtolower( (string) $item['slug'] ),
+				'name'        => isset( $item['name'] ) ? (string) $item['name'] : (string) $item['slug'],
+				'description' => isset( $meta['description'] ) ? (string) $meta['description'] : '',
+				'categories'  => $categories,
+				'tools_count' => isset( $meta['tools_count'] ) ? absint( $meta['tools_count'] ) : 0,
+				'no_auth'     => ! empty( $item['no_auth'] ),
+				'deprecated'  => ! empty( $item['deprecated'] ),
+			);
+		}
+
+		return array_merge(
+			array( 'items' => $toolkits ),
+			self::extract_pagination( $response, count( $toolkits ) )
+		);
 	}
 
 	/**
@@ -707,7 +1099,16 @@ class WP_MCP_AI_Composio_Client {
 	/**
 	 * Execute a tool on behalf of a connected account.
 	 *
+	 * Composio signals tool failure *in band*: the execute endpoint answers
+	 * HTTP 200 with `{ successful: false, error: "..." }`. Returning that body
+	 * as-is made a revoked-credential failure look like a success to every
+	 * caller, so an in-band failure is converted into a `WP_Error` here — the
+	 * canonical failure shape the rest of the plugin already understands.
+	 * Auth-class failures get their own error code so callers can offer a
+	 * reconnect instead of a raw stack trace.
+	 *
 	 * @since 1.4.0
+	 * @since 1.4.1 In-band `successful: false` responses become WP_Error.
 	 *
 	 * @param string $tool_slug  SCREAMING_SNAKE tool slug.
 	 * @param string $account_id Connected account nanoid.
@@ -753,7 +1154,78 @@ class WP_MCP_AI_Composio_Client {
 			return $result;
 		}
 
+		$response = isset( $result['response'] ) && is_array( $result['response'] ) ? $result['response'] : array();
+
+		$in_band = self::detect_execution_failure( $response, $tool_slug, $account_id );
+
+		if ( is_wp_error( $in_band ) ) {
+			return $in_band;
+		}
+
 		return isset( $result['response'] ) ? $result['response'] : array();
+	}
+
+	/**
+	 * Convert Composio's in-band execution failure envelope into a WP_Error.
+	 *
+	 * Only an *explicitly* falsy `successful` key is treated as a failure, so
+	 * payloads that omit the key (older shapes, test doubles) are unaffected.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param array  $response   Decoded execute response.
+	 * @param string $tool_slug  Tool slug that was executed.
+	 * @param string $account_id Connected account nanoid.
+	 * @return true|WP_Error True when the execution succeeded.
+	 */
+	public static function detect_execution_failure( array $response, $tool_slug = '', $account_id = '' ) {
+		if ( ! array_key_exists( 'successful', $response ) ) {
+			return true;
+		}
+
+		$flag = $response['successful'];
+
+		// Only an explicitly falsy flag is a failure. A non-boolean value (an
+		// unexpected shape) is treated as success so this guard can never invent
+		// a failure that Composio did not report.
+		$is_failure = ( false === $flag || 0 === $flag || '0' === $flag || 'false' === $flag || null === $flag );
+
+		if ( ! $is_failure ) {
+			return true;
+		}
+
+		$message = '';
+		if ( isset( $response['error'] ) && is_string( $response['error'] ) && '' !== $response['error'] ) {
+			$message = $response['error'];
+		} elseif ( isset( $response['error']['message'] ) && is_string( $response['error']['message'] ) ) {
+			$message = $response['error']['message'];
+		} elseif ( isset( $response['message'] ) && is_string( $response['message'] ) ) {
+			$message = $response['message'];
+		}
+
+		if ( '' === $message ) {
+			$message = __( 'Composio reported the tool execution as unsuccessful without an error message.', 'mcp-ai-wpoos-pro' );
+		}
+
+		$is_auth = class_exists( 'WP_MCP_AI_Composio_Account_Health' )
+			&& WP_MCP_AI_Composio_Account_Health::is_auth_error( '', $message );
+
+		return new WP_Error(
+			$is_auth ? 'wp_mcp_ai_composio_account_auth_required' : 'wp_mcp_ai_composio_tool_failed',
+			sprintf(
+				/* translators: 1: tool slug, 2: upstream error message */
+				__( 'Composio tool %1$s failed: %2$s', 'mcp-ai-wpoos-pro' ),
+				'' !== $tool_slug ? $tool_slug : __( '(unknown)', 'mcp-ai-wpoos-pro' ),
+				$message
+			),
+			array(
+				'tool_slug'            => $tool_slug,
+				'connected_account_id' => $account_id,
+				'auth_failure'         => $is_auth,
+				'log_id'               => isset( $response['log_id'] ) && is_scalar( $response['log_id'] ) ? (string) $response['log_id'] : '',
+				'upstream_error'       => $message,
+			)
+		);
 	}
 
 	/**

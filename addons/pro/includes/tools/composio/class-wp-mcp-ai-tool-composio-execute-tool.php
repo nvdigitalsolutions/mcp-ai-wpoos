@@ -66,7 +66,7 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 				),
 				'connected_account_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Connected account nanoid. Omit to auto-resolve the first active account for the tool\'s toolkit.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Composio connected-account nanoid ("ca_...") — the end user\'s authenticated Gmail/Slack/GitHub account, from composio_list_connected_accounts. NOT a "conn_..." connection ID. Omit to auto-resolve the best account for the tool\'s toolkit: the most recently verified account owned by this connection\'s identity. Required explicitly when several equally-plausible accounts exist and the action is write-class.', 'mcp-ai-wpoos-pro' ),
 				),
 				'arguments'            => array(
 					'type'        => 'object',
@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 				),
 				'connection_id'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Composio connection ID.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional NV oOS Composio connection ID ("conn_..."), identifying this site\'s Composio project integration. NOT a connected-account ID — do not pass a "ca_..." value here. Omit it to use the first enabled Composio connection.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array( 'tool_slug' ),
@@ -105,70 +105,6 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 		$verb     = isset( $segments[1] ) ? $segments[1] : '';
 
 		return '' !== $verb && in_array( $verb, self::DESTRUCTIVE_VERBS, true );
-	}
-
-	/**
-	 * Resolve a connected account for a tool when none is supplied.
-	 *
-	 * Prefers the first active account that belongs to the connection's
-	 * resolved identity, and falls back to any active account for the toolkit
-	 * so a connection whose identity mode changed after the app was linked
-	 * still executes (the account's own owner is then used for the call).
-	 *
-	 * @since 1.4.0
-	 *
-	 * @param WP_MCP_AI_Composio_Client $client  Client instance.
-	 * @param string                    $toolkit Toolkit slug of the tool.
-	 * @param string                    $user_id Resolved Composio identity.
-	 * @return array|WP_Error Array with id + user_id keys, or WP_Error.
-	 */
-	private function resolve_account( $client, $toolkit, $user_id ) {
-		$accounts = $client->list_connected_accounts( array( 'toolkit' => $toolkit ) );
-
-		if ( is_wp_error( $accounts ) ) {
-			return $accounts;
-		}
-
-		$fallback = null;
-
-		foreach ( $accounts as $account ) {
-			if ( ! is_array( $account ) || empty( $account['id'] ) ) {
-				continue;
-			}
-
-			$status = isset( $account['status'] ) ? (string) $account['status'] : '';
-			if ( 'active' !== strtolower( $status ) ) {
-				continue;
-			}
-
-			$owner = $this->extract_account_owner( $account );
-			$match = array(
-				'id'      => (string) $account['id'],
-				'user_id' => $owner,
-			);
-
-			if ( '' !== $user_id && $owner === $user_id ) {
-				return $match;
-			}
-
-			if ( null === $fallback ) {
-				$fallback = $match;
-			}
-		}
-
-		if ( null !== $fallback ) {
-			return $fallback;
-		}
-
-		return new WP_Error(
-			'wp_mcp_ai_composio_no_active_account',
-			sprintf(
-				/* translators: 1: toolkit slug, 2: Composio user identity */
-				__( 'No active connected account found for toolkit %1$s (identity %2$s). Connect the app from Remote Sites → your Composio connection, then try again.', 'mcp-ai-wpoos-pro' ),
-				$toolkit,
-				'' !== $user_id ? $user_id : __( 'unset', 'mcp-ai-wpoos-pro' )
-			)
-		);
 	}
 
 	/**
@@ -225,9 +161,7 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 	 * @return string Lowercase toolkit guess.
 	 */
 	private function toolkit_from_slug( $tool_slug ) {
-		$parts   = explode( '_', $tool_slug );
-		$toolkit = isset( $parts[0] ) ? strtolower( $parts[0] ) : '';
-		return $toolkit;
+		return WP_MCP_AI_Composio_Tools::toolkit_from_tool_slug( $tool_slug );
 	}
 
 	/**
@@ -248,6 +182,14 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'missing_params', __( 'tool_slug is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Catch a connection ID passed where an account ID belongs before it
+		// reaches Composio as an opaque "not found".
+		$account_check = WP_MCP_AI_Composio_Tools::validate_account_id( $account_id );
+
+		if ( is_wp_error( $account_check ) ) {
+			return $account_check;
+		}
+
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error( 'forbidden', __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) );
 		}
@@ -265,25 +207,53 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_composio_toolkit_denied', __( 'This toolkit is not in the connection allowlist.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$client = WP_MCP_AI_Composio_Tools::build_client( $connection );
+		$connection_id = isset( $connection['id'] ) ? (string) $connection['id'] : '';
+		$client        = WP_MCP_AI_Composio_Tools::build_client( $connection );
+		$destructive   = $this->is_destructive_slug( $tool_slug );
 
 		// Composio requires the user identity that owns the connected account on
 		// every execution. Start from the connection's identity mode, then prefer
 		// the account's own owner so accounts linked under a different identity
 		// keep working.
-		$user_id = WP_MCP_AI_Composio_Tools::resolve_user_id( $connection, $wp_user_id );
+		$user_id   = WP_MCP_AI_Composio_Tools::resolve_user_id( $connection, $wp_user_id );
+		$ambiguous = array();
 
 		if ( '' === $account_id ) {
-			$account = $this->resolve_account( $client, $toolkit, $user_id );
+			$account = WP_MCP_AI_Composio_Tools::resolve_account_for_toolkit( $client, $connection, $toolkit, $user_id );
 
 			if ( is_wp_error( $account ) ) {
 				return $account;
+			}
+
+			// Refuse to guess when a write-class action has several equally
+			// plausible targets — silently emailing from the wrong mailbox is
+			// worse than an extra round-trip.
+			if ( ! empty( $account['ambiguous'] ) && $destructive ) {
+				return new WP_Error(
+					'wp_mcp_ai_composio_ambiguous_account',
+					sprintf(
+						/* translators: 1: number of accounts, 2: toolkit slug, 3: tool slug */
+						__( '%1$d unverified %2$s accounts could run %3$s and none is a clearly better match. Pass connected_account_id explicitly, or run composio_manage_accounts with action "validate" and toolkit "%2$s" first so the healthy one can be identified.', 'mcp-ai-wpoos-pro' ),
+						count( $account['candidates'] ),
+						$toolkit,
+						$tool_slug
+					),
+					array(
+						'toolkit'    => $toolkit,
+						'tool_slug'  => $tool_slug,
+						'candidates' => WP_MCP_AI_Composio_Tools::present_candidates( $account['candidates'] ),
+					)
+				);
 			}
 
 			$account_id = $account['id'];
 
 			if ( '' !== $account['user_id'] ) {
 				$user_id = $account['user_id'];
+			}
+
+			if ( ! empty( $account['ambiguous'] ) ) {
+				$ambiguous = WP_MCP_AI_Composio_Tools::present_candidates( $account['candidates'] );
 			}
 		} else {
 			$owner = $this->resolve_account_owner( $client, $account_id );
@@ -296,37 +266,123 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 		$result = $client->execute_tool( $tool_slug, $account_id, $tool_args, $user_id );
 
 		if ( is_wp_error( $result ) ) {
-			return $result;
+			return $this->handle_execution_error( $result, $connection_id, $toolkit, $account_id, $tool_slug );
 		}
 
-		$destructive = $this->is_destructive_slug( $tool_slug );
-
-		if ( function_exists( 'do_action' ) ) {
-			do_action(
-				'wp_mcp_ai_composio_tool_executed',
+		// A real, successful execution is the strongest possible credential
+		// verification — record it so account health improves for free with
+		// normal use instead of only when someone runs a probe.
+		if ( class_exists( 'WP_MCP_AI_Composio_Account_Health' ) && '' !== $connection_id ) {
+			WP_MCP_AI_Composio_Account_Health::record(
+				$connection_id,
+				$account_id,
 				array(
-					'connection_id'    => isset( $connection['id'] ) ? $connection['id'] : '',
-					'tool_slug'        => $tool_slug,
-					'account_id'       => $account_id,
-					'composio_user_id' => $user_id,
-					'destructive'      => $destructive,
-					'user_id'          => get_current_user_id(),
+					'account_id'          => $account_id,
+					'toolkit'             => $toolkit,
+					'status'              => 'ACTIVE',
+					'owner'               => $user_id,
+					'verified'            => true,
+					'verification_method' => 'execution',
+					'probe_tool'          => $tool_slug,
+					'needs_reconnect'     => false,
+					'last_error'          => '',
+					'last_error_code'     => '',
+					'validated_at'        => time(),
 				)
 			);
 		}
 
+		do_action(
+			'wp_mcp_ai_composio_tool_executed',
+			array(
+				'connection_id'    => $connection_id,
+				'tool_slug'        => $tool_slug,
+				'account_id'       => $account_id,
+				'composio_user_id' => $user_id,
+				'destructive'      => $destructive,
+				'user_id'          => get_current_user_id(),
+			)
+		);
+
 		// Gate 2 — Escape at exit.
+		$data = array(
+			'tool_slug'        => esc_html( $tool_slug ),
+			'account_id'       => esc_html( $account_id ),
+			'composio_user_id' => esc_html( $user_id ),
+			'destructive'      => $destructive,
+			'result'           => $result,
+		);
+
+		if ( ! empty( $ambiguous ) ) {
+			$data['ambiguous_accounts'] = $ambiguous;
+		}
+
 		return $this->format_success_response(
 			/* translators: %s: tool slug */
 			sprintf( __( 'Composio tool %s executed.', 'mcp-ai-wpoos-pro' ), esc_html( $tool_slug ) ),
-			array(
-				'tool_slug'        => esc_html( $tool_slug ),
-				'account_id'       => esc_html( $account_id ),
-				'composio_user_id' => esc_html( $user_id ),
-				'destructive'      => $destructive,
-				'result'           => $result,
-			)
+			$data
 		);
+	}
+
+	/**
+	 * Turn an execution failure into an actionable error.
+	 *
+	 * An auth-class failure is the one error an operator can always fix, so it
+	 * is rewritten into a message that names the app, explains that the token
+	 * was revoked or expired, and carries a one-click reconnect URL. The health
+	 * ledger is updated at the same time so auto-resolution stops picking this
+	 * account on the next call.
+	 *
+	 * @since 1.4.1
+	 *
+	 * @param WP_Error $error         Failure from the client.
+	 * @param string   $connection_id Connection ID.
+	 * @param string   $toolkit       Toolkit slug.
+	 * @param string   $account_id    Connected account nanoid.
+	 * @param string   $tool_slug     Tool slug that failed.
+	 * @return WP_Error
+	 */
+	private function handle_execution_error( WP_Error $error, $connection_id, $toolkit, $account_id, $tool_slug ) {
+		if ( ! class_exists( 'WP_MCP_AI_Composio_Account_Health' ) ) {
+			return $error;
+		}
+
+		$code    = $error->get_error_code();
+		$message = $error->get_error_message();
+
+		if ( ! WP_MCP_AI_Composio_Account_Health::is_auth_error( $code, $message ) ) {
+			return $error;
+		}
+
+		if ( '' !== $connection_id && '' !== $account_id ) {
+			WP_MCP_AI_Composio_Account_Health::record(
+				$connection_id,
+				$account_id,
+				array(
+					'account_id'          => $account_id,
+					'toolkit'             => $toolkit,
+					'status'              => 'ACTIVE',
+					'verified'            => false,
+					'verification_method' => 'execution',
+					'probe_tool'          => $tool_slug,
+					'needs_reconnect'     => true,
+					'last_error'          => $message,
+					'last_error_code'     => $code,
+				)
+			);
+		}
+
+		$hint = WP_MCP_AI_Composio_Account_Health::build_reconnect_hint( $connection_id, $toolkit, $account_id, $message );
+
+		$data                    = (array) $error->get_error_data();
+		$data['toolkit']         = $toolkit;
+		$data['tool_slug']       = $tool_slug;
+		$data['account_id']      = $account_id;
+		$data['needs_reconnect'] = true;
+		$data['reconnect_url']   = $hint['reconnect_url'];
+		$data['upstream_error']  = $message;
+
+		return new WP_Error( 'wp_mcp_ai_composio_account_auth_required', $hint['message'], $data );
 	}
 
 	/**
