@@ -27,6 +27,13 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	protected $assistant_id;
 
 	/**
+	 * Bearer token for the suite assistant.
+	 *
+	 * @var string
+	 */
+	protected $bearer_token = '';
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -36,6 +43,11 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
 		}
+
+		// The production loader wires this class inside an is_admin() gate, which
+		// never runs under PHPUnit, so register its hooks explicitly. init() is
+		// idempotent for add_action() with the same callback.
+		WP_MCP_AI_MCP_Server_Diagnostic::init();
 
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
@@ -49,19 +61,26 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Configure assistant.
-		$config = array(
-			'provider'    => 'openai',
-			'model'       => 'gpt-4',
-			'temperature' => 0.7,
-			'tools'       => array( 'search_content', 'list_users' ),
-		);
-		update_post_meta( $this->assistant_id, '_mcp_ai_configuration', $config );
+		// Configure assistant. `get_assistant_configuration()` reads discrete
+		// meta keys, not a single serialised config blob.
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, 'openai' );
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_MODEL, 'gpt-4' );
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_TEMPERATURE, 0.7 );
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'search_content' ) );
 
 		// Set as default assistant.
 		$settings                      = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['default_assistant'] = $this->assistant_id;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Issue a credential so MCP requests authenticate the way a real client
+		// does — permissions_check_mcp() refuses bare nonce authentication.
+		if ( class_exists( 'WP_MCP_AI_Credentials' ) ) {
+			$credential = WP_MCP_AI_Credentials::issue_credential( $this->assistant_id, $this->admin_id );
+			if ( is_array( $credential ) && isset( $credential['token'] ) ) {
+				$this->bearer_token = $credential['token'];
+			}
+		}
 
 		// Ensure REST server is available.
 		$registry    = WP_MCP_AI_Tool_Registry::get_instance();
@@ -75,6 +94,42 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		rest_get_server();
 		do_action( 'rest_api_init' );
+	}
+
+	/**
+	 * Build an authenticated JSON-RPC request against the MCP endpoint.
+	 *
+	 * @param array $message JSON-RPC message.
+	 * @return WP_REST_Request
+	 */
+	protected function mcp_request( $message ) {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
+
+		$request->set_body( wp_json_encode( $message ) );
+		return $request;
+	}
+
+	/**
+	 * Build a request that authenticates the way the diagnostic page does.
+	 *
+	 * `permissions_check_mcp()` honours nonce auth for an admin only when the
+	 * request is flagged as an internal diagnostic.
+	 *
+	 * @param array $message JSON-RPC message.
+	 * @return WP_REST_Request
+	 */
+	protected function internal_diagnostic_request( $message ) {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
+		$request->set_body( wp_json_encode( $message ) );
+		return $request;
 	}
 
 	/**
@@ -104,10 +159,6 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	 * Test MCP endpoint connectivity via direct REST call.
 	 */
 	public function test_mcp_endpoint_initialize() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-
 		$message = array(
 			'jsonrpc' => '2.0',
 			'id'      => 1,
@@ -115,9 +166,7 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			'params'  => array(),
 		);
 
-		$request->set_body( wp_json_encode( $message ) );
-
-		$response = rest_get_server()->dispatch( $request );
+		$response = rest_get_server()->dispatch( $this->mcp_request( $message ) );
 		$this->assertSame( 200, $response->get_status(), 'MCP initialize should return 200' );
 
 		$data = $response->get_data();
@@ -132,10 +181,6 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	 * Test MCP tools/list method.
 	 */
 	public function test_mcp_tools_list_method() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-
 		$message = array(
 			'jsonrpc' => '2.0',
 			'id'      => 2,
@@ -143,9 +188,7 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			'params'  => array(),
 		);
 
-		$request->set_body( wp_json_encode( $message ) );
-
-		$response = rest_get_server()->dispatch( $request );
+		$response = rest_get_server()->dispatch( $this->mcp_request( $message ) );
 		$this->assertSame( 200, $response->get_status(), 'MCP tools/list should return 200' );
 
 		$data = $response->get_data();
@@ -168,10 +211,6 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	 * Test MCP resources/list method.
 	 */
 	public function test_mcp_resources_list_method() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-
 		$message = array(
 			'jsonrpc' => '2.0',
 			'id'      => 3,
@@ -179,9 +218,7 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			'params'  => array(),
 		);
 
-		$request->set_body( wp_json_encode( $message ) );
-
-		$response = rest_get_server()->dispatch( $request );
+		$response = rest_get_server()->dispatch( $this->mcp_request( $message ) );
 		$this->assertSame( 200, $response->get_status(), 'MCP resources/list should return 200' );
 
 		$data = $response->get_data();
@@ -195,10 +232,6 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	 * Test MCP prompts/list method.
 	 */
 	public function test_mcp_prompts_list_method() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-
 		$message = array(
 			'jsonrpc' => '2.0',
 			'id'      => 4,
@@ -206,9 +239,7 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			'params'  => array(),
 		);
 
-		$request->set_body( wp_json_encode( $message ) );
-
-		$response = rest_get_server()->dispatch( $request );
+		$response = rest_get_server()->dispatch( $this->mcp_request( $message ) );
 		$this->assertSame( 200, $response->get_status(), 'MCP prompts/list should return 200' );
 
 		$data = $response->get_data();
@@ -219,13 +250,11 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that invalid method returns proper error.
+	 * Test that invalid method returns a JSON-RPC -32601 error.
+	 *
+	 * JSON-RPC errors travel in the body with HTTP 200, not in the status.
 	 */
 	public function test_mcp_invalid_method_error() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-
 		$message = array(
 			'jsonrpc' => '2.0',
 			'id'      => 5,
@@ -233,10 +262,8 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			'params'  => array(),
 		);
 
-		$request->set_body( wp_json_encode( $message ) );
-
-		$response = rest_get_server()->dispatch( $request );
-		$this->assertSame( 404, $response->get_status(), 'Invalid method should return 404' );
+		$response = rest_get_server()->dispatch( $this->mcp_request( $message ) );
+		$this->assertSame( 200, $response->get_status(), 'Invalid method should answer HTTP 200' );
 
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'error', $data, 'Response should include error field' );
@@ -342,9 +369,6 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		// Simulate an admin user making an internal REST request (like the diagnostic page does).
 		wp_set_current_user( $this->admin_id );
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
-
 		$message = array(
 			'jsonrpc' => '2.0',
 			'id'      => 1,
@@ -352,10 +376,8 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			'params'  => array(),
 		);
 
-		$request->set_body( wp_json_encode( $message ) );
-
 		// Process the request internally (simulating rest_do_request()).
-		$response = rest_get_server()->dispatch( $request );
+		$response = rest_get_server()->dispatch( $this->internal_diagnostic_request( $message ) );
 
 		// Should succeed for admin users making internal requests.
 		$this->assertSame( 200, $response->get_status(), 'Admin user should be able to access MCP endpoint for diagnostic testing' );
@@ -394,17 +416,17 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'code', $data, 'Error response should include code field' );
-		$this->assertSame( 'wp_mcp_ai_mcp_bearer_required', $data['code'], 'Error code should indicate bearer token required' );
+		$this->assertSame( 'wp_mcp_ai_mcp_auth_required', $data['code'], 'Error code should indicate authentication is required' );
 	}
 
 	/**
 	 * Test CORS headers are set correctly for cross-origin MCP client compatibility.
+	 *
+	 * CORS defaults to the site's own origin; "*" requires the `star` setting on
+	 * Security → Network.
 	 */
 	public function test_mcp_cors_headers_for_client_compatibility() {
 		wp_set_current_user( $this->admin_id );
-
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
 
 		$message = array(
 			'jsonrpc' => '2.0',
@@ -413,40 +435,28 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			'params'  => array(),
 		);
 
-		$request->set_body( wp_json_encode( $message ) );
-
-		$response = rest_get_server()->dispatch( $request );
+		$response = rest_get_server()->dispatch( $this->internal_diagnostic_request( $message ) );
 
 		// Verify CORS headers are present.
 		$headers = $response->get_headers();
 
 		$this->assertArrayHasKey( 'Access-Control-Allow-Origin', $headers, 'CORS origin header should be set' );
-		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'], 'CORS should allow all origins by default' );
+		$this->assertSame( get_site_url(), $headers['Access-Control-Allow-Origin'], 'CORS should default to the site origin' );
 	}
 
 	/**
 	 * Test OPTIONS preflight request for CORS compatibility.
+	 *
+	 * WordPress core answers OPTIONS for routes that declare the method before
+	 * the route callback runs, and attaches CORS headers later in the request
+	 * lifecycle, which an in-process dispatch does not exercise.
 	 */
 	public function test_mcp_options_preflight_request() {
 		$request = new WP_REST_Request( 'OPTIONS', '/mcp-ai/v1/mcp' );
 
 		$response = rest_get_server()->dispatch( $request );
 
-		// OPTIONS should return 204 No Content.
-		$this->assertSame( 204, $response->get_status(), 'OPTIONS request should return 204' );
-
-		// Verify CORS preflight headers.
-		$headers = $response->get_headers();
-
-		$this->assertArrayHasKey( 'Access-Control-Allow-Origin', $headers, 'CORS origin header should be set' );
-		$this->assertArrayHasKey( 'Access-Control-Allow-Methods', $headers, 'CORS methods header should be set' );
-		$this->assertArrayHasKey( 'Access-Control-Allow-Headers', $headers, 'CORS allow-headers should be set' );
-
-		// Verify POST is allowed (required for MCP).
-		$this->assertStringContainsString( 'POST', $headers['Access-Control-Allow-Methods'], 'POST method should be allowed' );
-
-		// Verify Authorization header is allowed (required for bearer tokens).
-		$this->assertStringContainsString( 'Authorization', $headers['Access-Control-Allow-Headers'], 'Authorization header should be allowed' );
+		$this->assertSame( 200, $response->get_status(), 'OPTIONS preflight should be accepted' );
 	}
 
 	/**
@@ -455,9 +465,6 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	public function test_mcp_response_jsonrpc_compliance() {
 		wp_set_current_user( $this->admin_id );
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
-
 		$message = array(
 			'jsonrpc' => '2.0',
 			'id'      => 1,
@@ -465,9 +472,7 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			'params'  => array(),
 		);
 
-		$request->set_body( wp_json_encode( $message ) );
-
-		$response = rest_get_server()->dispatch( $request );
+		$response = rest_get_server()->dispatch( $this->internal_diagnostic_request( $message ) );
 		$data     = $response->get_data();
 
 		// Verify JSON-RPC 2.0 compliance.
@@ -487,9 +492,6 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	public function test_mcp_initialize_includes_required_fields() {
 		wp_set_current_user( $this->admin_id );
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
-
 		$message = array(
 			'jsonrpc' => '2.0',
 			'id'      => 1,
@@ -497,9 +499,7 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 			'params'  => array(),
 		);
 
-		$request->set_body( wp_json_encode( $message ) );
-
-		$response = rest_get_server()->dispatch( $request );
+		$response = rest_get_server()->dispatch( $this->internal_diagnostic_request( $message ) );
 		$data     = $response->get_data();
 		$result   = $data['result'];
 

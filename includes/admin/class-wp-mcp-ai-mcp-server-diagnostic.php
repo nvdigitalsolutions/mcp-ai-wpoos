@@ -668,6 +668,10 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			// Use internal REST request instead of HTTP call.
 			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 			$request->set_header( 'Content-Type', 'application/json' );
+			// The MCP endpoint's permission callback only honours nonce-based auth
+			// for internal admin diagnostics — the diagnostic page IS that internal
+			// caller, so flag the request accordingly.
+			$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 			$request->set_body( $request_body );
 
 			// Process the request internally.
@@ -750,6 +754,9 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			// Use internal REST request instead of HTTP call.
 			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 			$request->set_header( 'Content-Type', 'application/json' );
+			// Flag as the internal admin diagnostic caller so the endpoint's
+			// permission callback honours nonce-based auth for this path.
+			$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 			$request->set_body( $request_body );
 
 			// Process the request internally.

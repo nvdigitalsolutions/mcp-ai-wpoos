@@ -86,7 +86,13 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'jsonrpc'    => array(
 							'description'       => __( 'JSON-RPC version. Must be "2.0".', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
-							'required'          => true,
+							// Deliberately not `required`: JSON-RPC 2.0 mandates that a
+							// malformed request be answered with a -32600 error inside a
+							// JSON-RPC envelope. Marking this required makes WordPress
+							// answer `rest_missing_callback_param` first, which is not a
+							// valid JSON-RPC response and made the handler's own
+							// validation unreachable. process_single_mcp_message()
+							// enforces presence and the "2.0" value.
 							'enum'              => array( '2.0' ),
 							'sanitize_callback' => 'sanitize_text_field',
 						),
@@ -101,7 +107,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'method'     => array(
 							'description'       => __( 'MCP method name to invoke.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
-							'required'          => true,
+							// Not `required` for the same reason as `jsonrpc` above.
 							'validate_callback' => array( $this, 'validate_mcp_method' ),
 							'sanitize_callback' => 'sanitize_text_field',
 						),

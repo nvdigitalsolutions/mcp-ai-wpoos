@@ -80,6 +80,16 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Bearer token for the suite assistant.
+	 *
+	 * `permissions_check_mcp()` deliberately refuses bare nonce authentication;
+	 * MCP clients present an assistant credential.
+	 *
+	 * @var string
+	 */
+	protected $bearer_token = '';
+
+	/**
 	 * Set up each test.
 	 */
 	public function setUp(): void {
@@ -91,6 +101,15 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 		do_action( 'rest_api_init' );
 
 		wp_set_current_user( self::$admin_id );
+
+		// Issue a credential for the suite assistant so requests authenticate
+		// the way a real MCP client would.
+		if ( class_exists( 'WP_MCP_AI_Credentials' ) ) {
+			$credential = WP_MCP_AI_Credentials::issue_credential( self::$assistant_id, self::$admin_id );
+			if ( is_array( $credential ) && isset( $credential['token'] ) ) {
+				$this->bearer_token = $credential['token'];
+			}
+		}
 	}
 
 	/**
@@ -112,6 +131,9 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 	protected function mcp_dispatch( $body ) {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body( wp_json_encode( $body ) );
 		return $this->server->dispatch( $request );
 	}
@@ -356,6 +378,9 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 	public function test_batch_processes_multiple_messages() {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -389,6 +414,9 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 	public function test_batch_skips_notifications_in_response() {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -423,6 +451,9 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 	public function test_empty_batch_returns_error() {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body( wp_json_encode( array() ) );
 
 		$response = $this->server->dispatch( $request );
@@ -438,6 +469,9 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 	public function test_all_notification_batch_returns_202() {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'Content-Type', 'application/json' );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -464,7 +498,10 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Test that responses include Mcp-Session-Id header.
+	 * Test that responses no longer include a session header.
+	 *
+	 * MCP 2026-07-28 removed protocol-level sessions (SEP-2567), so the
+	 * `Mcp-Session-Id` header is no longer emitted.
 	 */
 	public function test_response_includes_session_header() {
 		$response = $this->mcp_dispatch(
@@ -476,8 +513,7 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 		);
 
 		$headers = $response->get_headers();
-		$this->assertArrayHasKey( 'Mcp-Session-Id', $headers );
-		$this->assertStringStartsWith( 'sess_', $headers['Mcp-Session-Id'] );
+		$this->assertArrayNotHasKey( 'Mcp-Session-Id', $headers );
 	}
 
 	// -------------------------------------------------------------------------
@@ -485,7 +521,11 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Test initialize response advertises completions and logging capabilities.
+	 * Test initialize response capabilities contract.
+	 *
+	 * The 2026-07-28 stateless revision advertises tools/resources/prompts; the
+	 * legacy completions capability and protocol-level logging capability are
+	 * no longer advertised.
 	 */
 	public function test_initialize_advertises_new_capabilities() {
 		$response = $this->mcp_dispatch(
@@ -507,8 +547,9 @@ class WP_MCP_AI_MCP_Protocol_Completion_Test extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status() );
 
 		$caps = $data['result']['capabilities'];
-		$this->assertArrayHasKey( 'completions', $caps );
-		$this->assertArrayHasKey( 'logging', $caps );
+		$this->assertArrayHasKey( 'tools', $caps );
+		$this->assertArrayHasKey( 'resources', $caps );
+		$this->assertArrayHasKey( 'prompts', $caps );
 	}
 
 	// -------------------------------------------------------------------------

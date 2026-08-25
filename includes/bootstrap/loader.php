@@ -1452,6 +1452,15 @@ if ( is_admin() ) {
 	}
 	WP_MCP_AI_Admin_Key_Rotation::init();
 
+	// MCP Server Diagnostics page (Tools → NV oOS MCP Test). Originally wired in
+	// wp-mcp-ai.php when the class was introduced, the call was lost when the
+	// entry file was renamed during the restructure — the page, its assets and
+	// its AJAX handlers were left orphaned. Re-wire next to its siblings.
+	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
+	}
+	WP_MCP_AI_MCP_Server_Diagnostic::init();
+
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php';
 	}
