@@ -259,6 +259,98 @@ class Test_Composio_Client extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that a FastAPI-style validation `detail` array names the rejected
+	 * field instead of degrading to the generic placeholder.
+	 */
+	public function test_http_error_extracts_validation_detail_array() {
+		$this->mock_response(
+			400,
+			array(
+				'detail' => array(
+					array(
+						'loc'  => array( 'body', 'arguments' ),
+						'msg'  => 'value is not a valid dict',
+						'type' => 'type_error.dict',
+					),
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_1', array() );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_http_400', $result->get_error_code() );
+		$this->assertStringContainsString( 'body.arguments', $result->get_error_message() );
+		$this->assertStringContainsString( 'value is not a valid dict', $result->get_error_message() );
+		$this->assertStringNotContainsString( 'Composio API returned an error.', $result->get_error_message() );
+	}
+
+	/**
+	 * Test that a string `detail` is still surfaced verbatim.
+	 */
+	public function test_http_error_extracts_string_detail() {
+		$this->mock_response( 400, array( 'detail' => 'Validation error while processing request' ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_1', array() );
+
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'Validation error while processing request', $result->get_error_message() );
+	}
+
+	/**
+	 * Test that the upstream error body is retained on the WP_Error so an opaque
+	 * rejection can be diagnosed without reproducing the request.
+	 */
+	public function test_http_error_retains_upstream_payload() {
+		$body = array(
+			'detail' => array(
+				array(
+					'loc' => array( 'body', 'arguments' ),
+					'msg' => 'value is not a valid dict',
+				),
+			),
+		);
+
+		$this->mock_response( 400, $body );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_1', array() );
+
+		$this->assertWPError( $result );
+
+		$data = $result->get_error_data();
+
+		$this->assertSame( 400, $data['status'] );
+		$this->assertSame( $body, $data['upstream'] );
+	}
+
+	/**
+	 * Test that an oversized upstream body is truncated rather than retained in
+	 * full, since the error data reaches the rolling log buffers.
+	 */
+	public function test_http_error_truncates_oversized_upstream_payload() {
+		$this->mock_response(
+			500,
+			array( 'blob' => str_repeat( 'x', WP_MCP_AI_Composio_Client::MAX_UPSTREAM_ERROR_BYTES * 2 ) )
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test' );
+		$result = $client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_1', array() );
+
+		$this->assertWPError( $result );
+
+		$upstream = $result->get_error_data()['upstream'];
+
+		$this->assertIsString( $upstream );
+		$this->assertLessThanOrEqual(
+			WP_MCP_AI_Composio_Client::MAX_UPSTREAM_ERROR_BYTES + 3,
+			strlen( $upstream )
+		);
+	}
+
+	/**
 	 * Test that a bodyless 401 still gets an actionable dashboard hint.
 	 */
 	public function test_http_401_without_body_appends_dashboard_hint() {
@@ -646,6 +738,59 @@ class Test_Composio_Client extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that clearing the accounts cache also drops filtered listings.
+	 *
+	 * A filtered listing hashes to a different key than the unfiltered URL, so
+	 * reconstructing the unfiltered key alone left the listing that account
+	 * resolution actually reads stale for the full TTL after a connect.
+	 */
+	public function test_clear_accounts_cache_flushes_filtered_listings() {
+		$this->mock_response(
+			200,
+			array(
+				array(
+					'id'      => 'ca_1',
+					'toolkit' => 'gmail',
+					'status'  => 'active',
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_filtered_clear' );
+
+		$client->list_connected_accounts( array( 'toolkit' => 'gmail' ) );
+		$this->assertSame( 1, $this->request_count );
+
+		// Second read is served from cache.
+		$client->list_connected_accounts( array( 'toolkit' => 'gmail' ) );
+		$this->assertSame( 1, $this->request_count );
+
+		WP_MCP_AI_Composio_Client::clear_accounts_cache( 'conn_filtered_clear' );
+
+		// After invalidation the filtered listing must be re-fetched.
+		$client->list_connected_accounts( array( 'toolkit' => 'gmail' ) );
+		$this->assertSame( 2, $this->request_count );
+	}
+
+	/**
+	 * Test that flush_cache() actually invalidates cached GET responses.
+	 */
+	public function test_flush_cache_invalidates_cached_gets() {
+		$this->mock_response( 200, array( array( 'tool_slug' => 'GMAIL_SEND_EMAIL' ) ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_flush' );
+
+		$client->list_tools();
+		$client->list_tools();
+		$this->assertSame( 1, $this->request_count );
+
+		$client->flush_cache();
+
+		$client->list_tools();
+		$this->assertSame( 2, $this->request_count );
+	}
+
+	/**
 	 * Test that clearing the accounts cache with an empty connection ID is a
 	 * safe no-op.
 	 */
@@ -673,6 +818,40 @@ class Test_Composio_Client extends WP_UnitTestCase {
 
 		$this->assertSame( 'ca_1', $body['connected_account_id'] );
 		$this->assertSame( 'nvoos-shared', $body['user_id'] );
+	}
+
+	/**
+	 * Test that a zero-argument call sends `arguments` as a JSON object.
+	 *
+	 * An empty PHP array encodes as `[]`, which Composio rejects with a
+	 * validation error where its schema requires an object. Every health probe
+	 * is a zero-argument call, so this shape decided whether a credential could
+	 * be verified at all.
+	 */
+	public function test_execute_tool_sends_empty_arguments_as_object() {
+		$this->mock_response( 200, array( 'successful' => true ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_exec', 'nvoos-shared' );
+		$client->execute_tool( 'GMAIL_FETCH_EMAILS', 'ca_1', array() );
+
+		// Asserted against the raw body: json_decode() maps both `{}` and `[]`
+		// onto an empty PHP array, which would hide the bug entirely.
+		$this->assertStringContainsString( '"arguments":{}', $this->last_args['body'] );
+		$this->assertStringNotContainsString( '"arguments":[]', $this->last_args['body'] );
+	}
+
+	/**
+	 * Test that supplied arguments are still sent unchanged.
+	 */
+	public function test_execute_tool_preserves_supplied_arguments() {
+		$this->mock_response( 200, array( 'successful' => true ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_exec', 'nvoos-shared' );
+		$client->execute_tool( 'GMAIL_SEND_EMAIL', 'ca_1', array( 'to' => 'a@b.c' ) );
+
+		$body = json_decode( $this->last_args['body'], true );
+
+		$this->assertSame( array( 'to' => 'a@b.c' ), $body['arguments'] );
 	}
 
 	/**

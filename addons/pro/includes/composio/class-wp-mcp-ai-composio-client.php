@@ -65,6 +65,42 @@ class WP_MCP_AI_Composio_Client {
 	const ACCOUNTS_CACHE_TTL = 5 * MINUTE_IN_SECONDS;
 
 	/**
+	 * Transient key prefix for the per-connection GET cache-key index.
+	 *
+	 * Cache entries are keyed by a hash of the full request URL, so a filtered
+	 * listing (`?toolkit_slugs=gmail`) lands under a different key than the
+	 * unfiltered one and cannot be reached by reconstructing a single key. This
+	 * index records every key written for a connection so invalidation can find
+	 * all of them.
+	 *
+	 * @since 1.4.2
+	 */
+	const CACHE_INDEX_PREFIX = 'wp_mcp_ai_composio_cache_index_';
+
+	/**
+	 * Maximum number of GET cache keys tracked per connection.
+	 *
+	 * @since 1.4.2
+	 */
+	const MAX_CACHE_INDEX_ENTRIES = 100;
+
+	/**
+	 * Maximum serialised size of an upstream error body kept on a WP_Error.
+	 *
+	 * Bounded because this value reaches the rolling log buffers.
+	 *
+	 * @since 1.4.2
+	 */
+	const MAX_UPSTREAM_ERROR_BYTES = 2048;
+
+	/**
+	 * Maximum number of field-level validation entries folded into a message.
+	 *
+	 * @since 1.4.2
+	 */
+	const MAX_ERROR_DETAIL_ENTRIES = 5;
+
+	/**
 	 * Payload paths that can carry an execution error message, in priority order.
 	 *
 	 * Composio reports its own failures at the top level, but when the provider
@@ -522,6 +558,12 @@ class WP_MCP_AI_Composio_Client {
 		foreach ( array_unique( $base_urls ) as $base_url ) {
 			delete_transient( self::CACHE_PREFIX . md5( $connection_id . '|' . $base_url . '/api/' . self::API_VERSION . '/connected_accounts' ) );
 		}
+
+		// A filtered listing (`?toolkit_slugs=gmail`) hashes to a different key
+		// than the unfiltered URL above, so the reconstructed keys alone leave the
+		// listing that resolve_account_for_toolkit() actually reads still stale —
+		// which is what hid a freshly connected account from tool execution.
+		self::purge_indexed_cache( $connection_id, '/connected_accounts' );
 
 		delete_transient( self::get_account_count_key( $connection_id ) );
 	}
@@ -1169,7 +1211,11 @@ class WP_MCP_AI_Composio_Client {
 		$body = array(
 			'connected_account_id' => $account_id,
 			'toolkit_versions'     => 'latest',
-			'arguments'            => $arguments,
+			// An empty PHP array encodes as `[]`, but Composio's schema requires
+			// an object here. Forcing `{}` keeps a zero-argument call valid —
+			// every health probe is one, as is any legitimately parameterless
+			// tool — instead of it being rejected as a validation error.
+			'arguments'            => empty( $arguments ) ? new stdClass() : $arguments,
 		);
 
 		// Composio rejects a connected account that arrives without the user
@@ -1802,8 +1848,17 @@ class WP_MCP_AI_Composio_Client {
 					}
 				} elseif ( isset( $decoded['message'] ) && is_string( $decoded['message'] ) && '' !== $decoded['message'] ) {
 					$message = $decoded['message'];
-				} elseif ( isset( $decoded['detail'] ) && is_string( $decoded['detail'] ) && '' !== $decoded['detail'] ) {
-					$message = $decoded['detail'];
+				} elseif ( isset( $decoded['detail'] ) ) {
+					// FastAPI-style validation errors return `detail` as a list of
+					// { loc, msg, type } objects, not a string. The previous
+					// is_string() guard discarded exactly that shape, reducing a 400
+					// to the generic placeholder and hiding the field that was
+					// actually rejected.
+					$detail = self::stringify_error_detail( $decoded['detail'] );
+
+					if ( '' !== $detail ) {
+						$message = $detail;
+					}
 				}
 			}
 
@@ -1821,7 +1876,12 @@ class WP_MCP_AI_Composio_Client {
 				'wp_mcp_ai_composio_http_' . $status_code,
 				/* translators: 1: HTTP status code, 2: upstream message */
 				sprintf( __( 'HTTP %1$d: %2$s', 'mcp-ai-wpoos-pro' ), $status_code, $message ),
-				array( 'status' => $status_code )
+				array(
+					'status'   => $status_code,
+					// Retained so an opaque upstream rejection can be diagnosed from
+					// the recorded error alone, without reproducing the request.
+					'upstream' => self::bound_error_payload( $decoded, $raw_body ),
+				)
 			);
 		}
 
@@ -1840,22 +1900,211 @@ class WP_MCP_AI_Composio_Client {
 
 		if ( 'GET' === $method && $cache_ttl > 0 && '' !== $cache_key ) {
 			set_transient( $cache_key, $result, $cache_ttl );
+			self::remember_cache_key( $this->connection_id, $cache_key, $url, $cache_ttl );
 		}
 
 		return $result;
 	}
 
 	/**
+	 * Flatten an error `detail` field into a readable string.
+	 *
+	 * Accepts a plain string, a list of strings, or the FastAPI validation shape
+	 * (`[ { loc: [...], msg: "...", type: "..." } ]`).
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param mixed $detail Raw `detail` value from the response body.
+	 * @return string Empty string when nothing usable was found.
+	 */
+	private static function stringify_error_detail( $detail ) {
+		if ( is_string( $detail ) ) {
+			return trim( $detail );
+		}
+
+		if ( ! is_array( $detail ) ) {
+			return '';
+		}
+
+		$parts = array();
+
+		foreach ( $detail as $entry ) {
+			if ( count( $parts ) >= self::MAX_ERROR_DETAIL_ENTRIES ) {
+				break;
+			}
+
+			if ( is_string( $entry ) ) {
+				$entry = trim( $entry );
+
+				if ( '' !== $entry ) {
+					$parts[] = $entry;
+				}
+
+				continue;
+			}
+
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$msg = '';
+			foreach ( array( 'msg', 'message', 'error' ) as $msg_key ) {
+				if ( isset( $entry[ $msg_key ] ) && is_string( $entry[ $msg_key ] ) && '' !== trim( $entry[ $msg_key ] ) ) {
+					$msg = trim( $entry[ $msg_key ] );
+					break;
+				}
+			}
+
+			if ( '' === $msg ) {
+				continue;
+			}
+
+			// `loc` names the rejected field, which is the whole reason a
+			// validation error is worth surfacing at all.
+			$location = '';
+			if ( isset( $entry['loc'] ) && is_array( $entry['loc'] ) ) {
+				$segments = array();
+
+				foreach ( $entry['loc'] as $segment ) {
+					if ( is_scalar( $segment ) ) {
+						$segments[] = (string) $segment;
+					}
+				}
+
+				$location = implode( '.', $segments );
+			}
+
+			$parts[] = '' !== $location ? $location . ': ' . $msg : $msg;
+		}
+
+		return implode( '; ', $parts );
+	}
+
+	/**
+	 * Bound an upstream error body so it is safe to attach to a WP_Error.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param mixed  $decoded  Decoded response body, when it was valid JSON.
+	 * @param string $raw_body Raw response body.
+	 * @return array|string Decoded body when small enough, else a truncated string.
+	 */
+	private static function bound_error_payload( $decoded, $raw_body ) {
+		if ( is_array( $decoded ) ) {
+			$encoded = wp_json_encode( $decoded );
+
+			if ( ! is_string( $encoded ) ) {
+				return '';
+			}
+
+			if ( strlen( $encoded ) <= self::MAX_UPSTREAM_ERROR_BYTES ) {
+				return $decoded;
+			}
+
+			return substr( $encoded, 0, self::MAX_UPSTREAM_ERROR_BYTES ) . '…';
+		}
+
+		$raw_body = trim( (string) $raw_body );
+
+		if ( '' === $raw_body ) {
+			return '';
+		}
+
+		return strlen( $raw_body ) > self::MAX_UPSTREAM_ERROR_BYTES
+			? substr( $raw_body, 0, self::MAX_UPSTREAM_ERROR_BYTES ) . '…'
+			: $raw_body;
+	}
+
+	/**
+	 * Record a GET cache key against its connection so it can be invalidated.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $cache_key     Transient key holding the cached response.
+	 * @param string $url           Full request URL the key was derived from.
+	 * @param int    $cache_ttl     TTL of the entry being recorded.
+	 * @return void
+	 */
+	private static function remember_cache_key( $connection_id, $cache_key, $url, $cache_ttl ) {
+		$connection_id = sanitize_key( (string) $connection_id );
+		$cache_key     = (string) $cache_key;
+
+		if ( '' === $connection_id || '' === $cache_key ) {
+			return;
+		}
+
+		$index_key = self::CACHE_INDEX_PREFIX . $connection_id;
+		$index     = get_transient( $index_key );
+		$index     = is_array( $index ) ? $index : array();
+
+		// Re-inserting moves the entry to the end, so trimming below drops the
+		// least-recently-written key rather than one still in active use.
+		unset( $index[ $cache_key ] );
+		$index[ $cache_key ] = (string) wp_parse_url( $url, PHP_URL_PATH );
+
+		if ( count( $index ) > self::MAX_CACHE_INDEX_ENTRIES ) {
+			$index = array_slice( $index, -self::MAX_CACHE_INDEX_ENTRIES, null, true );
+		}
+
+		// The index must outlive the entries it tracks, or a still-cached
+		// response would become unreachable by invalidation.
+		set_transient( $index_key, $index, max( DAY_IN_SECONDS, absint( $cache_ttl ) + HOUR_IN_SECONDS ) );
+	}
+
+	/**
+	 * Delete indexed GET cache entries for a connection.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $path_needle   Optional. Only drop entries whose request path contains this substring.
+	 * @return void
+	 */
+	private static function purge_indexed_cache( $connection_id, $path_needle = '' ) {
+		$connection_id = sanitize_key( (string) $connection_id );
+
+		if ( '' === $connection_id ) {
+			return;
+		}
+
+		$index_key = self::CACHE_INDEX_PREFIX . $connection_id;
+		$index     = get_transient( $index_key );
+
+		if ( ! is_array( $index ) ) {
+			return;
+		}
+
+		$path_needle = (string) $path_needle;
+		$remaining   = array();
+
+		foreach ( $index as $cache_key => $path ) {
+			if ( '' !== $path_needle && false === strpos( (string) $path, $path_needle ) ) {
+				$remaining[ $cache_key ] = $path;
+				continue;
+			}
+
+			delete_transient( $cache_key );
+		}
+
+		if ( empty( $remaining ) ) {
+			delete_transient( $index_key );
+
+			return;
+		}
+
+		set_transient( $index_key, $remaining, DAY_IN_SECONDS );
+	}
+
+	/**
 	 * Clear all cached GET responses for this connection.
 	 *
 	 * @since 1.4.0
+	 * @since 1.4.2 Actually invalidates, via the per-connection key index.
 	 *
 	 * @return void
 	 */
 	public function flush_cache() {
-		// Transients are keyed by hash — we cannot enumerate them cheaply, so
-		// we bump a per-connection generation counter instead.
-		$generation = absint( get_transient( 'wp_mcp_ai_composio_generation_' . $this->connection_id ) ) + 1;
-		set_transient( 'wp_mcp_ai_composio_generation_' . $this->connection_id, $generation, WEEK_IN_SECONDS );
+		self::purge_indexed_cache( $this->connection_id );
 	}
 }
