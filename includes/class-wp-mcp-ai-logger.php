@@ -131,10 +131,34 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		protected static $log_file_path = null;
 
 		/**
+		 * Compiled query-parameter redaction pattern.
+		 *
+		 * Built once per request because `redact_sensitive_string_patterns()` runs
+		 * on every string leaf of every log context.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @var string|null
+		 */
+		protected static $sensitive_query_pattern = null;
+
+		/**
 		 * Reset the cached log file path. Primarily used in automated tests.
 		 */
 		public static function reset_log_file_cache() {
 			self::$log_file_path = null;
+		}
+
+		/**
+		 * Reset the cached query-parameter redaction pattern.
+		 *
+		 * Required after `wp_mcp_ai_sensitive_query_parameters` callbacks are added
+		 * or removed at runtime. Primarily used in automated tests.
+		 *
+		 * @since 1.1.64
+		 */
+		public static function reset_sensitive_query_pattern_cache() {
+			self::$sensitive_query_pattern = null;
 		}
 
 		/**
@@ -1107,8 +1131,10 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 *   - Bearer <token>   — OAuth 2.0 / Auth0 JWTs / plugin credentials.
 		 *   - sk-<...>         — OpenAI API keys (classic, project, service-account).
 		 *   - AIza<...>        — Google / Gemini API keys.
+		 *   - ?<param>=<...>   — credential-bearing URL query parameters.
 		 *
 		 * @since 1.8.0
+		 * @since 1.1.64 Added URL query-parameter redaction.
 		 *
 		 * @param string $value Raw string value from a log context.
 		 * @return string String with matching secret patterns replaced.
@@ -1136,7 +1162,169 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				$value
 			);
 
+			// Credential-bearing URL query parameters (?state=, &code=, #access_token=).
+			$value = self::redact_sensitive_query_parameters( (string) $value );
+
 			return (string) $value;
+		}
+
+		/**
+		 * Redact credential-bearing query parameters inside a string value.
+		 *
+		 * Key-based redaction cannot help here: the credential is not the value of
+		 * a sensitive *key*, it is embedded in the query string of an otherwise
+		 * diagnostic value such as `url`, `redirect_url`, or `callback_url`. Those
+		 * key names are far too useful to add to the deny-list — they appear across
+		 * crawler results, media items, permalinks, and remote-site payloads — so
+		 * instead only the secret-bearing parameters are masked and the scheme,
+		 * host, and path are preserved:
+		 *
+		 *     https://example.test/link/lk_abc123?state=SECRET
+		 *  →  https://example.test/link/lk_abc123?state=[redacted]
+		 *
+		 * A parameter is only matched when preceded by `?`, `&`, or `#` (so
+		 * `redirect_state=` and `error_code=` are left alone) and followed
+		 * immediately by `=` (so `token_secret=` does not match `token`). Values
+		 * terminate on the query/fragment separators plus quote, backslash, and
+		 * angle-bracket characters, so URLs embedded in JSON or HTML are masked
+		 * without consuming the surrounding delimiters.
+		 *
+		 * No URL scheme is required, so relative URLs and bare query fragments are
+		 * covered too.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @param string $value Raw string value from a log context.
+		 * @return string String with credential-bearing parameters masked.
+		 */
+		protected static function redact_sensitive_query_parameters( $value ) {
+			if ( '' === $value || false === strpos( $value, '=' ) ) {
+				return (string) $value;
+			}
+
+			$pattern = self::get_sensitive_query_pattern();
+
+			if ( '' === $pattern ) {
+				return (string) $value;
+			}
+
+			$redacted = preg_replace( $pattern, '${1}${2}=[redacted]', $value );
+
+			return null === $redacted ? (string) $value : (string) $redacted;
+		}
+
+		/**
+		 * Build (and memoise) the query-parameter redaction pattern.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @return string Compiled pattern, or an empty string when there is nothing to match.
+		 */
+		protected static function get_sensitive_query_pattern() {
+			if ( null !== self::$sensitive_query_pattern ) {
+				return self::$sensitive_query_pattern;
+			}
+
+			$parameters = self::get_sensitive_query_parameters();
+
+			// Parameter names are validated to /^[a-z0-9_-]+$/ so they are safe to
+			// interpolate directly into the alternation group.
+			self::$sensitive_query_pattern = empty( $parameters )
+				? ''
+				: '/([?&#])(' . implode( '|', $parameters ) . ')=[^&#\s"\'\\\\<>]+/i';
+
+			return self::$sensitive_query_pattern;
+		}
+
+		/**
+		 * Query parameter names whose values must never be persisted to a log.
+		 *
+		 * Scoped deliberately to the query-string context. Several of these words
+		 * are too generic to deny-list as context *keys* (`state` also names a
+		 * postal region, `code` also names a coupon), but as query parameters they
+		 * are overwhelmingly credentials or single-use grants.
+		 *
+		 * `code` is included despite the false-positive cost because a leaked OAuth
+		 * authorization code is directly exchangeable for a long-lived refresh
+		 * token — the highest-impact leak in the list.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @return string[] Lower-cased parameter names.
+		 */
+		protected static function get_sensitive_query_parameters() {
+			$defaults = array(
+				// OAuth 2.0 / OIDC grants and tokens.
+				'access_token',
+				'code',
+				'code_challenge',
+				'code_verifier',
+				'id_token',
+				'refresh_token',
+				'state',
+				'token',
+				// OAuth 1.0a.
+				'oauth_token',
+				'oauth_verifier',
+				// API keys and shared secrets.
+				'api_key',
+				'apikey',
+				'auth',
+				'authorization',
+				'client_secret',
+				'key',
+				'secret',
+				// Request signing.
+				'hmac',
+				'sig',
+				'signature',
+				// Single-use sessions and tickets.
+				'session_uri',
+				'ticket',
+				'_wpnonce',
+				// Credentials.
+				'passwd',
+				'password',
+				'pwd',
+			);
+
+			/**
+			 * Filter the query parameters masked in persisted log context.
+			 *
+			 * Additive only: the returned list is unioned with the built-in
+			 * defaults, so this filter can widen redaction but never weaken it.
+			 * Names that are not `/^[a-z0-9_-]+$/` are discarded.
+			 *
+			 * @since 1.1.64
+			 *
+			 * @param string[] $defaults Built-in parameter names.
+			 */
+			$filtered = apply_filters( 'wp_mcp_ai_sensitive_query_parameters', $defaults );
+
+			if ( ! is_array( $filtered ) ) {
+				$filtered = array();
+			}
+
+			$parameters = array();
+
+			foreach ( array_merge( $defaults, $filtered ) as $parameter ) {
+				if ( ! is_string( $parameter ) ) {
+					continue;
+				}
+
+				$parameter = strtolower( trim( $parameter ) );
+
+				if ( '' === $parameter || ! preg_match( '/^[a-z0-9_-]+$/', $parameter ) ) {
+					continue;
+				}
+
+				$parameters[ $parameter ] = true;
+			}
+
+			$parameters = array_keys( $parameters );
+			sort( $parameters );
+
+			return $parameters;
 		}
 
 		/**
