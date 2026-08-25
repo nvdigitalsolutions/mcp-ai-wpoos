@@ -3168,7 +3168,214 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				?>
 			</div>
 			<?php
+			$this->render_log_buffer_maintenance_section();
 			$this->render_transcript_mining_section();
+		}
+
+		/**
+		 * Render the log buffer maintenance subsection.
+		 *
+		 * The rolling `wp_mcp_ai_recent_errors` and `wp_mcp_ai_recent_activity`
+		 * option rows are capped per entry at write time, but entries written before
+		 * that cap existed still carry their full context, which can include a
+		 * complete assistant system prompt. Compacting rewrites those entries in
+		 * place so the space is reclaimed without losing the log history.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return void
+		 */
+		private function render_log_buffer_maintenance_section() {
+			if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+				return;
+			}
+
+			$stats       = WP_MCP_AI_Logger::get_recent_buffer_stats();
+			$total_bytes = isset( $stats['total_bytes'] ) ? (int) $stats['total_bytes'] : 0;
+			$buffers     = isset( $stats['buffers'] ) && is_array( $stats['buffers'] ) ? $stats['buffers'] : array();
+
+			// Flag anything above 512 KB as worth reclaiming. Both rows together sit
+			// well under this once the per-entry budget has been applied.
+			$bloat_threshold = 512 * KB_IN_BYTES;
+			$is_bloated      = $total_bytes > $bloat_threshold;
+			$accent_colour   = $is_bloated ? '#d63638' : '#2271b1';
+			?>
+			<div class='wp-mcp-ai-log-buffer-maintenance-section' style='margin-top: 50px;'>
+				<h3><?php esc_html_e( 'Log Buffer Maintenance', 'mcp-ai-wpoos' ); ?></h3>
+				<p class='description'>
+					<?php esc_html_e( 'NV oOS keeps rolling buffers of recent errors and activity in two database options. Each new entry is size-capped, but entries written by earlier plugin versions kept their full context, including complete assistant system prompts. Compacting rewrites those entries so the space is reclaimed without losing your log history.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<div class='wp-mcp-ai-log-buffer-stats' style='margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid <?php echo esc_attr( $accent_colour ); ?>; border-radius: 3px;'>
+					<h4 style='margin-top: 0;'><?php esc_html_e( 'Current Storage', 'mcp-ai-wpoos' ); ?></h4>
+					<table class='widefat striped' style='max-width: 720px; margin-top: 10px;'>
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Buffer', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Option', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Entries', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Stored Size', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $buffers as $buffer ) : ?>
+								<tr>
+									<td><?php echo esc_html( isset( $buffer['label'] ) ? $buffer['label'] : '' ); ?></td>
+									<td><code><?php echo esc_html( isset( $buffer['option'] ) ? $buffer['option'] : '' ); ?></code></td>
+									<td>
+										<?php
+										echo esc_html(
+											sprintf(
+												/* translators: 1: current entry count, 2: retention limit. */
+												__( '%1$d of %2$d', 'mcp-ai-wpoos' ),
+												isset( $buffer['entries'] ) ? (int) $buffer['entries'] : 0,
+												isset( $buffer['limit'] ) ? (int) $buffer['limit'] : 0
+											)
+										);
+										?>
+									</td>
+									<td><?php echo esc_html( size_format( max( 0, isset( $buffer['bytes'] ) ? (int) $buffer['bytes'] : 0 ), 2 ) ); ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+						<tfoot>
+							<tr>
+								<th colspan='3'><?php esc_html_e( 'Total', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php echo esc_html( size_format( max( 0, $total_bytes ), 2 ) ); ?></th>
+							</tr>
+						</tfoot>
+					</table>
+
+					<?php if ( $is_bloated ) : ?>
+						<p style='margin-bottom: 0; color: #d63638;'>
+							<span class='dashicons dashicons-warning' style='margin-top: 3px;'></span>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %s: human-readable size threshold. */
+									__( 'These buffers are larger than %s. Every log write re-reads and rewrites the whole row, so compacting will measurably reduce database work.', 'mcp-ai-wpoos' ),
+									size_format( $bloat_threshold )
+								)
+							);
+							?>
+						</p>
+					<?php endif; ?>
+				</div>
+
+				<div class='wp-mcp-ai-log-buffer-actions'>
+					<p>
+						<button type='button' class='button button-primary' id='wp-mcp-ai-compact-log-buffers-btn'>
+							<span class='dashicons dashicons-editor-contract' style='margin-top: 3px;'></span>
+							<?php esc_html_e( 'Compact Log Buffers', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span class='description' style='margin-left: 10px;'>
+							<?php esc_html_e( 'Recommended. Rewrites stored entries to reclaim space and keeps your log history.', 'mcp-ai-wpoos' ); ?>
+						</span>
+					</p>
+
+					<p>
+						<button type='button' class='button button-secondary' id='wp-mcp-ai-clear-log-buffers-btn' style='color: #a00;'>
+							<span class='dashicons dashicons-trash' style='margin-top: 3px;'></span>
+							<?php esc_html_e( 'Delete All Log Entries', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span class='description' style='margin-left: 10px;'>
+							<?php esc_html_e( 'Empties both buffers completely. Recent error and activity history will be lost.', 'mcp-ai-wpoos' ); ?>
+						</span>
+					</p>
+				</div>
+
+				<div id='wp-mcp-ai-log-buffer-message' class='notice' style='display: none; margin: 15px 0;'>
+					<p></p>
+				</div>
+			</div>
+			<?php
+			$this->print_log_buffer_maintenance_script();
+		}
+
+		/**
+		 * Print the inline script driving the log buffer maintenance buttons.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return void
+		 */
+		private function print_log_buffer_maintenance_script() {
+			$nonce         = wp_create_nonce( 'wp_mcp_ai_maintain_log_buffers' );
+			$processing    = __( 'Working...', 'mcp-ai-wpoos' );
+			$generic_error = __( 'An error occurred.', 'mcp-ai-wpoos' );
+			$ajax_error    = __( 'AJAX error: ', 'mcp-ai-wpoos' );
+			$clear_confirm = __( 'WARNING: This permanently deletes all stored error and activity log entries. This cannot be undone. Continue?', 'mcp-ai-wpoos' );
+
+			ob_start();
+			?>
+			jQuery(document).ready(function($) {
+				var buttons = '#wp-mcp-ai-compact-log-buffers-btn, #wp-mcp-ai-clear-log-buffers-btn';
+
+				function maintainBuffers(actionType, buttonId) {
+					var $button = $(buttonId);
+					var $message = $('#wp-mcp-ai-log-buffer-message');
+					var originalText = $button.html();
+
+					$(buttons).prop('disabled', true).addClass('disabled');
+					$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> ' + <?php echo wp_json_encode( $processing ); ?>);
+					$message.hide().removeClass('notice-success notice-error notice-warning');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_maintain_log_buffers',
+							action_type: actionType,
+							nonce: <?php echo wp_json_encode( $nonce ); ?>
+						},
+						success: function(response) {
+							if (response.success) {
+								$message
+									.removeClass('notice-error notice-warning')
+									.addClass('notice-success')
+									.find('p').text(response.data.message);
+								$message.show();
+
+								// Reload so the storage table reflects the new sizes.
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').text((response.data && response.data.message) ? response.data.message : <?php echo wp_json_encode( $generic_error ); ?>);
+								$message.show();
+							}
+						},
+						error: function(xhr, status, error) {
+							$message
+								.removeClass('notice-success notice-warning')
+								.addClass('notice-error')
+								.find('p').text(<?php echo wp_json_encode( $ajax_error ); ?> + error);
+							$message.show();
+						},
+						complete: function() {
+							$(buttons).prop('disabled', false).removeClass('disabled');
+							$button.html(originalText);
+						}
+					});
+				}
+
+				$('#wp-mcp-ai-compact-log-buffers-btn').on('click', function(e) {
+					e.preventDefault();
+					maintainBuffers('compact', '#wp-mcp-ai-compact-log-buffers-btn');
+				});
+
+				$('#wp-mcp-ai-clear-log-buffers-btn').on('click', function(e) {
+					e.preventDefault();
+					if (confirm(<?php echo wp_json_encode( $clear_confirm ); ?>)) {
+						maintainBuffers('clear', '#wp-mcp-ai-clear-log-buffers-btn');
+					}
+				});
+			});
+			<?php
+			wp_print_inline_script_tag( ob_get_clean() );
 		}
 
 		/**

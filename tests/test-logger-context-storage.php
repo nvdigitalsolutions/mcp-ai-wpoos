@@ -61,6 +61,12 @@ class WP_MCP_AI_Logger_Context_Storage_Test extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );
 		delete_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION );
 
+		// The per-test DB rollback restores the settings row without firing
+		// update_option hooks, so the static settings cache would otherwise leak
+		// enable_logging into later test files in the same process.
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 		if ( false !== $this->original_error_log && null !== $this->original_error_log ) {
 			ini_set( 'error_log', (string) $this->original_error_log );
 		}
@@ -87,6 +93,8 @@ class WP_MCP_AI_Logger_Context_Storage_Test extends WP_UnitTestCase {
 				'enable_extended_logging' => (bool) $extended,
 			)
 		);
+
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 	}
 
 	/**
@@ -411,6 +419,198 @@ class WP_MCP_AI_Logger_Context_Storage_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray(
 			$this->get_last_stored_entry( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION )['context']['arguments']
+		);
+	}
+
+	/**
+	 * Seed both buffers with pre-fix bloated entries.
+	 *
+	 * Writes straight to the options so the entries bypass the write-time budget,
+	 * reproducing rows created by an earlier plugin version.
+	 *
+	 * @param int $count Entries per buffer.
+	 * @return void
+	 */
+	protected function seed_bloated_buffers( $count = 5 ) {
+		$entries = array();
+
+		for ( $i = 0; $i < $count; $i++ ) {
+			$entries[] = array(
+				'timestamp' => '2026-01-01 00:00:0' . $i,
+				'type'      => 'tool_error',
+				'message'   => 'Tool execution failed.',
+				'context'   => array(
+					'tool_slug'        => 'create_post',
+					'error_code'       => 'wp_mcp_ai_tool_failed',
+					'assistant_config' => array(
+						'provider'      => 'openai',
+						'model'         => 'gpt-4o',
+						'system_prompt' => $this->build_oversized_prompt(),
+					),
+					'arguments'        => array( 'content' => str_repeat( 'q', 30000 ) ),
+				),
+			);
+		}
+
+		update_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION, $entries, false );
+		update_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION, $entries, false );
+	}
+
+	/**
+	 * The stats report must describe both buffers and their combined size.
+	 */
+	public function test_get_recent_buffer_stats_reports_both_buffers() {
+		$this->seed_bloated_buffers( 4 );
+
+		$stats = WP_MCP_AI_Logger::get_recent_buffer_stats();
+
+		$this->assertArrayHasKey( 'errors', $stats['buffers'] );
+		$this->assertArrayHasKey( 'activity', $stats['buffers'] );
+
+		$this->assertSame(
+			WP_MCP_AI_Logger::RECENT_ERRORS_OPTION,
+			$stats['buffers']['errors']['option']
+		);
+		$this->assertSame( WP_MCP_AI_Logger::MAX_RECENT_ERRORS, $stats['buffers']['errors']['limit'] );
+		$this->assertSame( WP_MCP_AI_Logger::MAX_RECENT_ACTIVITY, $stats['buffers']['activity']['limit'] );
+
+		$this->assertSame( 4, $stats['buffers']['errors']['entries'] );
+		$this->assertSame( 8, $stats['total_entries'] );
+
+		// Four oversized prompts plus 30 KB of arguments per buffer exceeds 100 KB.
+		$this->assertGreaterThan( 100000, $stats['total_bytes'] );
+		$this->assertSame(
+			$stats['buffers']['errors']['bytes'] + $stats['buffers']['activity']['bytes'],
+			$stats['total_bytes']
+		);
+	}
+
+	/**
+	 * Compacting must reclaim space while keeping every entry.
+	 */
+	public function test_compact_recent_buffers_reclaims_space_and_keeps_entries() {
+		$this->seed_bloated_buffers( 5 );
+
+		$before = WP_MCP_AI_Logger::get_recent_buffer_stats();
+		$result = WP_MCP_AI_Logger::compact_recent_buffers();
+
+		$this->assertGreaterThan( 0, $result['bytes_saved'] );
+		$this->assertSame( $before['total_bytes'], $result['bytes_before'] );
+		$this->assertLessThan( $result['bytes_before'], $result['bytes_after'] );
+		$this->assertSame( 10, $result['entries_rewritten'] );
+
+		foreach ( array( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION, WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION ) as $option ) {
+			$entries = get_option( $option, array() );
+
+			// Entries are preserved; only their contexts shrink.
+			$this->assertCount( 5, $entries, 'Entries were dropped from ' . $option );
+			$this->assertStringNotContainsString(
+				self::PROMPT_SENTINEL,
+				(string) wp_json_encode( $entries ),
+				'Prompt body survived compaction in ' . $option
+			);
+
+			// Diagnostics survive.
+			$this->assertSame( 'create_post', $entries[0]['context']['tool_slug'] );
+			$this->assertSame( 'wp_mcp_ai_tool_failed', $entries[0]['context']['error_code'] );
+		}
+	}
+
+	/**
+	 * Compacting must be idempotent.
+	 */
+	public function test_compact_recent_buffers_is_idempotent() {
+		$this->seed_bloated_buffers( 3 );
+
+		WP_MCP_AI_Logger::compact_recent_buffers();
+		$second = WP_MCP_AI_Logger::compact_recent_buffers();
+
+		$this->assertSame( 0, $second['bytes_saved'] );
+		$this->assertSame( 0, $second['entries_rewritten'] );
+		$this->assertSame( $second['bytes_before'], $second['bytes_after'] );
+	}
+
+	/**
+	 * Compacting empty buffers must not error.
+	 */
+	public function test_compact_recent_buffers_handles_empty_buffers() {
+		$result = WP_MCP_AI_Logger::compact_recent_buffers();
+
+		$this->assertSame( 0, $result['bytes_before'] );
+		$this->assertSame( 0, $result['bytes_after'] );
+		$this->assertSame( 0, $result['bytes_saved'] );
+	}
+
+	/**
+	 * Repeated compaction must preserve the original prompt fingerprint.
+	 *
+	 * Re-fingerprinting an existing marker would replace the real prompt length
+	 * and hash with those of the marker itself, destroying the diagnostic.
+	 */
+	public function test_repeated_compaction_preserves_prompt_fingerprint() {
+		$prompt = $this->build_oversized_prompt();
+
+		$this->seed_bloated_buffers( 2 );
+
+		WP_MCP_AI_Logger::compact_recent_buffers();
+
+		$entries     = get_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION, array() );
+		$fingerprint = $entries[0]['context']['assistant_config']['system_prompt'];
+
+		$this->assertStringContainsString( (string) strlen( $prompt ), $fingerprint );
+		$this->assertStringContainsString( substr( md5( $prompt ), 0, 12 ), $fingerprint );
+
+		// Two more passes must leave it byte-identical.
+		WP_MCP_AI_Logger::compact_recent_buffers();
+		WP_MCP_AI_Logger::compact_recent_buffers();
+
+		$entries = get_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION, array() );
+
+		$this->assertSame(
+			$fingerprint,
+			$entries[0]['context']['assistant_config']['system_prompt'],
+			'The prompt fingerprint must survive repeated compaction unchanged.'
+		);
+	}
+
+	/**
+	 * Clearing must delete both option rows outright.
+	 */
+	public function test_clear_recent_buffers_removes_both_options() {
+		$this->seed_bloated_buffers( 6 );
+
+		$result = WP_MCP_AI_Logger::clear_recent_buffers();
+
+		$this->assertSame( 12, $result['entries_removed'] );
+		$this->assertGreaterThan( 0, $result['bytes_freed'] );
+
+		$this->assertFalse( get_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION, false ) );
+		$this->assertFalse( get_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION, false ) );
+
+		$stats = WP_MCP_AI_Logger::get_recent_buffer_stats();
+		$this->assertSame( 0, $stats['total_bytes'] );
+		$this->assertSame( 0, $stats['total_entries'] );
+	}
+
+	/**
+	 * Compaction must re-apply the current retention limit.
+	 */
+	public function test_compact_recent_buffers_applies_retention_limit() {
+		$this->seed_bloated_buffers( 3 );
+
+		// Grow the errors buffer beyond its limit, as an older build could.
+		$entries = get_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION, array() );
+		$padded  = array();
+		for ( $i = 0; $i < WP_MCP_AI_Logger::MAX_RECENT_ERRORS + 20; $i++ ) {
+			$padded[] = $entries[0];
+		}
+		update_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION, $padded, false );
+
+		WP_MCP_AI_Logger::compact_recent_buffers();
+
+		$this->assertCount(
+			WP_MCP_AI_Logger::MAX_RECENT_ERRORS,
+			get_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION, array() )
 		);
 	}
 }

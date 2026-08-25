@@ -82,6 +82,38 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		const MAX_STORED_CONTEXT_DEPTH = 6;
 
 		/**
+		 * Number of entries retained in the recent-errors buffer.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_RECENT_ERRORS = 50;
+
+		/**
+		 * Number of entries retained in the recent-activity buffer.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_RECENT_ACTIVITY = 100;
+
+		/**
+		 * Marker prefix used when a value is replaced by a size descriptor.
+		 *
+		 * Recognising the marker keeps slimming idempotent, so repeated passes (for
+		 * example from {@see self::compact_recent_buffers()}) do not describe an
+		 * existing descriptor.
+		 *
+		 * @since 1.8.0
+		 */
+		const OMITTED_VALUE_PREFIX = '[omitted:';
+
+		/**
+		 * Marker prefix used when a prompt is replaced by its fingerprint.
+		 *
+		 * @since 1.8.0
+		 */
+		const OMITTED_PROMPT_PREFIX = '[prompt omitted:';
+
+		/**
 		 * Maximum number of characters that should be written to the PHP error log
 		 * for a single entry. PHP-FPM buffers log lines at 1024 bytes so we keep a
 		 * safety margin below that threshold to avoid truncation warnings.
@@ -690,6 +722,219 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		}
 
 		/**
+		 * Describe the rolling buffers and their retention limits.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array Keyed by short buffer name.
+		 */
+		protected static function get_recent_buffer_map() {
+			return array(
+				'errors'   => array(
+					'option' => self::RECENT_ERRORS_OPTION,
+					'label'  => __( 'Recent errors', 'mcp-ai-wpoos' ),
+					'limit'  => self::MAX_RECENT_ERRORS,
+				),
+				'activity' => array(
+					'option' => self::RECENT_ACTIVITY_OPTION,
+					'label'  => __( 'Recent activity', 'mcp-ai-wpoos' ),
+					'limit'  => self::MAX_RECENT_ACTIVITY,
+				),
+			);
+		}
+
+		/**
+		 * Measure the stored size of a value as WordPress would persist it.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param mixed $value Option value.
+		 * @return int Byte length of the serialized value.
+		 */
+		protected static function measure_option_bytes( $value ) {
+			if ( empty( $value ) ) {
+				return 0;
+			}
+
+			$serialized = maybe_serialize( $value );
+
+			return is_string( $serialized ) ? strlen( $serialized ) : 0;
+		}
+
+		/**
+		 * Report the stored size of the rolling log buffers.
+		 *
+		 * Used by the Data Management screen to surface how much space the
+		 * `wp_mcp_ai_recent_errors` and `wp_mcp_ai_recent_activity` option rows are
+		 * consuming.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array {
+		 *     @type array $buffers       Per-buffer option name, label, limit, entries, bytes.
+		 *     @type int   $total_bytes   Combined serialized byte length.
+		 *     @type int   $total_entries Combined entry count.
+		 * }
+		 */
+		public static function get_recent_buffer_stats() {
+			$stats = array(
+				'buffers'       => array(),
+				'total_bytes'   => 0,
+				'total_entries' => 0,
+			);
+
+			foreach ( self::get_recent_buffer_map() as $key => $buffer ) {
+				$entries = get_option( $buffer['option'], array() );
+				$entries = is_array( $entries ) ? $entries : array();
+				$bytes   = self::measure_option_bytes( $entries );
+
+				$stats['buffers'][ $key ] = array(
+					'option'  => $buffer['option'],
+					'label'   => $buffer['label'],
+					'limit'   => $buffer['limit'],
+					'entries' => count( $entries ),
+					'bytes'   => $bytes,
+				);
+
+				$stats['total_bytes']   += $bytes;
+				$stats['total_entries'] += count( $entries );
+			}
+
+			return $stats;
+		}
+
+		/**
+		 * Re-slim every entry already stored in the rolling buffers.
+		 *
+		 * The per-entry budget is applied at write time, so rows written before it
+		 * existed still carry their full context — including complete assistant
+		 * system prompts. This rewrites those rows through
+		 * {@see self::slim_context_for_storage()} so the space is reclaimed
+		 * immediately, without discarding the entries themselves.
+		 *
+		 * Safe to run repeatedly; it is a no-op once every entry already fits.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array {
+		 *     @type array $buffers           Per-buffer before/after byte counts.
+		 *     @type int   $bytes_before      Combined size before compaction.
+		 *     @type int   $bytes_after       Combined size after compaction.
+		 *     @type int   $bytes_saved       Bytes reclaimed.
+		 *     @type int   $entries_rewritten Number of entries whose context changed.
+		 * }
+		 */
+		public static function compact_recent_buffers() {
+			$result = array(
+				'buffers'           => array(),
+				'bytes_before'      => 0,
+				'bytes_after'       => 0,
+				'bytes_saved'       => 0,
+				'entries_rewritten' => 0,
+			);
+
+			foreach ( self::get_recent_buffer_map() as $key => $buffer ) {
+				$entries = get_option( $buffer['option'], array() );
+				$entries = is_array( $entries ) ? $entries : array();
+
+				$before    = self::measure_option_bytes( $entries );
+				$compacted = array();
+				$rewritten = 0;
+
+				foreach ( $entries as $entry ) {
+					if ( ! is_array( $entry ) ) {
+						continue;
+					}
+
+					if ( ! empty( $entry['context'] ) ) {
+						$context = self::slim_context_for_storage( $entry['context'] );
+
+						if ( $context !== $entry['context'] ) {
+							++$rewritten;
+						}
+
+						if ( empty( $context ) ) {
+							unset( $entry['context'] );
+						} else {
+							$entry['context'] = $context;
+						}
+					}
+
+					$compacted[] = $entry;
+				}
+
+				// Apply the current retention limit in case it was lowered.
+				$compacted = array_slice( $compacted, - $buffer['limit'] );
+				$after     = self::measure_option_bytes( $compacted );
+
+				if ( $after !== $before || count( $compacted ) !== count( $entries ) ) {
+					update_option( $buffer['option'], $compacted, false );
+				}
+
+				$result['buffers'][ $key ] = array(
+					'option'       => $buffer['option'],
+					'label'        => $buffer['label'],
+					'entries'      => count( $compacted ),
+					'bytes_before' => $before,
+					'bytes_after'  => $after,
+					'rewritten'    => $rewritten,
+				);
+
+				$result['bytes_before']      += $before;
+				$result['bytes_after']       += $after;
+				$result['entries_rewritten'] += $rewritten;
+			}
+
+			$result['bytes_saved'] = max( 0, $result['bytes_before'] - $result['bytes_after'] );
+
+			return $result;
+		}
+
+		/**
+		 * Delete both rolling log buffers outright.
+		 *
+		 * Prefer {@see self::compact_recent_buffers()} when the recent history is
+		 * still wanted; this discards it.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array {
+		 *     @type array $buffers         Per-buffer entry counts and byte sizes removed.
+		 *     @type int   $bytes_freed     Combined bytes removed.
+		 *     @type int   $entries_removed Combined entries removed.
+		 * }
+		 */
+		public static function clear_recent_buffers() {
+			$result = array(
+				'buffers'         => array(),
+				'bytes_freed'     => 0,
+				'entries_removed' => 0,
+			);
+
+			foreach ( self::get_recent_buffer_map() as $key => $buffer ) {
+				$entries = get_option( $buffer['option'], array() );
+				$entries = is_array( $entries ) ? $entries : array();
+
+				$bytes = self::measure_option_bytes( $entries );
+				$count = count( $entries );
+
+				delete_option( $buffer['option'] );
+
+				$result['buffers'][ $key ] = array(
+					'option'  => $buffer['option'],
+					'label'   => $buffer['label'],
+					'entries' => $count,
+					'bytes'   => $bytes,
+				);
+
+				$result['bytes_freed']     += $bytes;
+				$result['entries_removed'] += $count;
+			}
+
+			return $result;
+		}
+
+		/**
 		 * Remove potentially sensitive information from the context payload.
 		 *
 		 * @param array $context Raw context data.
@@ -1145,13 +1390,18 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 * @return array Fingerprint.
 		 */
 		protected static function fingerprint_assistant_config( array $config ) {
-			$tools = isset( $config['tools'] ) && is_array( $config['tools'] ) ? $config['tools'] : array();
+			if ( isset( $config['tools'] ) && is_array( $config['tools'] ) ) {
+				$tool_count = count( $config['tools'] );
+			} else {
+				// Carry the count forward when re-slimming an existing fingerprint.
+				$tool_count = isset( $config['tool_count'] ) ? (int) $config['tool_count'] : 0;
+			}
 
 			return array(
 				'provider'            => isset( $config['provider'] ) ? (string) $config['provider'] : '',
 				'model'               => isset( $config['model'] ) ? (string) $config['model'] : '',
 				'temperature'         => isset( $config['temperature'] ) ? $config['temperature'] : null,
-				'tool_count'          => count( $tools ),
+				'tool_count'          => $tool_count,
 				'required_capability' => isset( $config['required_capability'] ) ? (string) $config['required_capability'] : '',
 				'system_prompt'       => isset( $config['system_prompt'] ) && is_string( $config['system_prompt'] )
 					? self::fingerprint_prompt( $config['system_prompt'] )
@@ -1176,8 +1426,15 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				return '';
 			}
 
+			// Never re-fingerprint a fingerprint: that would replace the original
+			// length and hash with those of the marker itself.
+			if ( 0 === strpos( $prompt, self::OMITTED_PROMPT_PREFIX ) ) {
+				return $prompt;
+			}
+
 			return sprintf(
-				'[prompt omitted: %1$d chars, md5:%2$s]',
+				'%1$s %2$d chars, md5:%3$s]',
+				self::OMITTED_PROMPT_PREFIX,
 				self::string_length( $prompt ),
 				substr( md5( $prompt ), 0, 12 )
 			);
@@ -1192,11 +1449,17 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 * @return string
 		 */
 		protected static function describe_omitted_value( $value ) {
+			// An existing descriptor is already minimal; describing it again would
+			// discard the size it reports.
+			if ( is_string( $value ) && 0 === strpos( $value, self::OMITTED_VALUE_PREFIX ) ) {
+				return $value;
+			}
+
 			$encoded = wp_json_encode( $value );
 			$bytes   = ( false === $encoded ) ? 0 : strlen( $encoded );
 			$type    = is_array( $value ) ? sprintf( 'array(%d)', count( $value ) ) : gettype( $value );
 
-			return sprintf( '[omitted: %1$s, %2$d bytes]', $type, $bytes );
+			return sprintf( '%1$s %2$s, %3$d bytes]', self::OMITTED_VALUE_PREFIX, $type, $bytes );
 		}
 
 		/**
@@ -1269,7 +1532,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 
 			$recent[] = $stored_entry;
 
-			$recent = array_slice( $recent, -50 );
+			$recent = array_slice( $recent, - self::MAX_RECENT_ERRORS );
 
 			update_option( self::RECENT_ERRORS_OPTION, $recent, false );
 		}
@@ -1302,7 +1565,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 
 			$recent[] = $stored_entry;
 
-			$recent = array_slice( $recent, -100 );
+			$recent = array_slice( $recent, - self::MAX_RECENT_ACTIVITY );
 
 			update_option( self::RECENT_ACTIVITY_OPTION, $recent, false );
 		}
