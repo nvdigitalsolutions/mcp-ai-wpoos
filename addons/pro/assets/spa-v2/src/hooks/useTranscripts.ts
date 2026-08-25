@@ -2,6 +2,15 @@
  * useTranscripts — Hook for transcript session management.
  *
  * Mirrors chat-spa's useTranscriptSession with pro text domain.
+ *
+ * The active session key is persisted per-assistant so a reload resumes the
+ * same conversation. Resuming also hydrates that conversation's messages —
+ * without it the sidebar would highlight a saved conversation while the
+ * message pane showed an empty composer.
+ *
+ * Conversations are owned by an assistant, so the hook reports the owning
+ * assistant of whatever conversation it loads (`onSessionAssistantChange`)
+ * and starts a fresh conversation when the caller switches assistants.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -18,6 +27,14 @@ export interface UseTranscriptsOptions {
 	nonce: string;
 	assistantId: number | string;
 	disabled?: boolean;
+	/**
+	 * Called with the id of the assistant that owns the conversation whenever
+	 * one is loaded from the server (restored on mount, or picked from the
+	 * sidebar). Lets the caller keep the assistant selector — and therefore
+	 * the model and the conversation list — pointed at the conversation on
+	 * screen. Only fired when the owner differs from `assistantId`.
+	 */
+	onSessionAssistantChange?: ( assistantId: number ) => void;
 }
 
 export interface UseTranscriptsReturn {
@@ -61,10 +78,28 @@ function normaliseMessages( raw: unknown ): TranscriptMessage[] {
 	return out;
 }
 
+/** Coerce a REST assistant id (number or numeric string) to a positive int. */
+function toAssistantId( raw: unknown ): number {
+	if ( typeof raw === 'number' ) {
+		return Number.isFinite( raw ) && raw > 0 ? raw : 0;
+	}
+	if ( typeof raw === 'string' ) {
+		const parsed = parseInt( raw, 10 );
+		return ! Number.isNaN( parsed ) && parsed > 0 ? parsed : 0;
+	}
+	return 0;
+}
+
 export function useTranscripts(
 	options: UseTranscriptsOptions
 ): UseTranscriptsReturn {
-	const { endpoint, nonce, assistantId, disabled = false } = options;
+	const {
+		endpoint,
+		nonce,
+		assistantId,
+		disabled = false,
+		onSessionAssistantChange,
+	} = options;
 
 	const client = useMemo(
 		() => new TranscriptsClient( { endpoint, nonce, assistantId } ),
@@ -76,6 +111,10 @@ export function useTranscripts(
 		[ assistantId ]
 	);
 
+	// True when the initial key was restored from localStorage — i.e. the user
+	// is resuming a conversation rather than starting a brand-new one.
+	const restoredSessionRef = useRef( false );
+
 	const [ sessionKey, setSessionKey ] = useState< string >( () => {
 		if ( typeof window === 'undefined' ) {
 			return generateSessionKey();
@@ -83,6 +122,7 @@ export function useTranscripts(
 		try {
 			const stored = window.localStorage.getItem( storageKey );
 			if ( stored && /^[a-zA-Z0-9_-]+$/.test( stored ) ) {
+				restoredSessionRef.current = true;
 				return stored;
 			}
 		} catch {
@@ -97,6 +137,42 @@ export function useTranscripts(
 	const [ unavailableMessage, setUnavailableMessage ] = useState< string | null >( null );
 	const [ error, setError ] = useState< string | null >( null );
 
+	// Track the latest in-flight load so a stale response can be ignored when
+	// the user switches conversations before the previous fetch resolves.
+	const abortRef = useRef< AbortController | null >( null );
+
+	// "Latest value" refs so async callbacks can read current props/state
+	// without being re-created (and re-triggering their effects).
+	const assistantIdRef = useRef( assistantId );
+	const assistantChangeRef = useRef( onSessionAssistantChange );
+	const sessionsRef = useRef< TranscriptSession[] | null >( null );
+	useEffect( () => {
+		assistantIdRef.current = assistantId;
+		assistantChangeRef.current = onSessionAssistantChange;
+		sessionsRef.current = sessions;
+	} );
+
+	// Assistant switch we requested ourselves (because the user opened one of
+	// that assistant's conversations) — must not be treated as a manual switch.
+	const pendingAssistantRef = useRef( 0 );
+
+	/**
+	 * Report the assistant that owns the conversation just loaded so the
+	 * caller can move the assistant selector to match it.
+	 */
+	const notifySessionAssistant = useCallback( ( raw: unknown ) => {
+		const nextId = toAssistantId( raw );
+		if ( nextId <= 0 || String( nextId ) === String( assistantIdRef.current ) ) {
+			return;
+		}
+		const handler = assistantChangeRef.current;
+		if ( ! handler ) {
+			return;
+		}
+		pendingAssistantRef.current = nextId;
+		handler( nextId );
+	}, [] );
+
 	useEffect( () => {
 		if ( typeof window === 'undefined' ) {
 			return;
@@ -107,8 +183,6 @@ export function useTranscripts(
 			// Ignore.
 		}
 	}, [ sessionKey, storageKey ] );
-
-	const abortRef = useRef< AbortController | null >( null );
 
 	const refreshList = useCallback( async () => {
 		if ( disabled ) {
@@ -152,6 +226,15 @@ export function useTranscripts(
 				const messages = normaliseMessages( detail?.session?.messages );
 				setInitialMessages( messages );
 				setSessionKey( nextKey );
+
+				// The sidebar summary carries assistant_id too — use it when the
+				// detail payload omits it (legacy rows).
+				const summary = Array.isArray( sessionsRef.current )
+					? sessionsRef.current.find( ( s ) => s.session_key === nextKey )
+					: undefined;
+				notifySessionAssistant(
+					detail?.session?.assistant_id ?? summary?.assistant_id
+				);
 			} catch ( err ) {
 				if ( ! controller.signal.aborted ) {
 					setError( err instanceof Error ? err.message : String( err ) );
@@ -162,7 +245,7 @@ export function useTranscripts(
 				}
 			}
 		},
-		[ client, disabled, sessionKey ]
+		[ client, disabled, notifySessionAssistant, sessionKey ]
 	);
 
 	const startNewSession = useCallback( () => {
@@ -171,6 +254,73 @@ export function useTranscripts(
 		setInitialMessages( [] );
 		setSessionKey( generateSessionKey() );
 	}, [] );
+
+	// ── Resume the stored conversation on first mount ─────────────────────
+	// Restoring only the key would leave the sidebar highlighting a saved
+	// conversation next to an empty composer, and the next turn would be
+	// appended to that conversation without its history. When the stored
+	// session can no longer be read (deleted, empty, or owned by someone
+	// else) rotate to a fresh key so "New Conversation" is selected instead.
+	const hydratedRef = useRef( false );
+	useEffect( () => {
+		if ( hydratedRef.current ) {
+			return;
+		}
+		hydratedRef.current = true;
+		if ( disabled || ! restoredSessionRef.current ) {
+			return;
+		}
+
+		const controller = new AbortController();
+		abortRef.current = controller;
+		setIsLoading( true );
+
+		void ( async () => {
+			try {
+				const detail = await client.get( sessionKey, controller.signal );
+				if ( controller.signal.aborted ) {
+					return;
+				}
+				const messages = normaliseMessages( detail?.session?.messages );
+				if ( messages.length === 0 ) {
+					setSessionKey( generateSessionKey() );
+					return;
+				}
+				setInitialMessages( messages );
+				notifySessionAssistant( detail?.session?.assistant_id );
+			} catch {
+				if ( ! controller.signal.aborted ) {
+					setSessionKey( generateSessionKey() );
+				}
+			} finally {
+				if ( ! controller.signal.aborted ) {
+					setIsLoading( false );
+				}
+			}
+		} )();
+	}, [ client, disabled, notifySessionAssistant, sessionKey ] );
+
+	// ── Assistant switch → start a fresh conversation ─────────────────────
+	// The list, the storage key and the saved rows are all scoped by
+	// assistant_id, so carrying the previous assistant's session across a
+	// switch would leave its messages on screen beside another assistant's
+	// conversation list. Skipped when we asked for the switch ourselves
+	// because the user opened one of that assistant's conversations.
+	const previousAssistantRef = useRef( assistantId );
+	useEffect( () => {
+		const previous = previousAssistantRef.current;
+		const pending = pendingAssistantRef.current;
+		previousAssistantRef.current = assistantId;
+		pendingAssistantRef.current = 0;
+
+		if ( String( previous ) === String( assistantId ) ) {
+			return;
+		}
+		if ( String( pending ) === String( assistantId ) ) {
+			return;
+		}
+		startNewSession();
+	}, [ assistantId, startNewSession ] );
 
 	const deleteSession = useCallback(
 		async ( target: string ) => {

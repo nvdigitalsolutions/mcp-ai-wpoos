@@ -7,11 +7,12 @@
  * the active conversation session.
  */
 
-import { type JSX, useMemo } from 'react';
+import { type JSX, useCallback, useMemo } from 'react';
 import { HashRouter } from 'react-router-dom';
 import { __ } from '@wordpress/i18n';
 
 import { readProSpaConfig } from '../../api/config';
+import { useAssistantStore } from '../../stores/assistantStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useTranscripts } from '../../hooks/useTranscripts';
 import { ChatSidebar } from './ChatSidebar';
@@ -28,6 +29,7 @@ interface LayoutContentProps {
 	transcriptsEndpoint: string;
 	assistantsEndpoint: string;
 	nonce: string;
+	/** Server-provided default assistant — fallback only. */
 	assistantId: number;
 	apiRoot: string;
 	mediaEndpoint: string;
@@ -36,11 +38,37 @@ interface LayoutContentProps {
 function LayoutContent( props: LayoutContentProps ): JSX.Element {
 	const { transcriptsEndpoint, assistantsEndpoint, nonce, assistantId, apiRoot, mediaEndpoint } = props;
 
+	// ---- active assistant (sidebar selector owns it) ----
+	// ChatPage binds the chat transport to the same id, so transcripts have to
+	// follow the selector too — otherwise conversations are listed under one
+	// assistant while new turns are saved against another.
+	const storedAssistantId = useAssistantStore( ( s ) => s.assistantId );
+	const setActiveAssistant = useAssistantStore( ( s ) => s.setActiveAssistant );
+	const assistants = useAssistantStore( ( s ) => s.assistants );
+	const activeAssistantId = storedAssistantId > 0 ? storedAssistantId : assistantId;
+
+	// Opening a conversation moves the selector to the assistant that owns it.
+	// Ignored for assistants the selector has no option for (deleted, draft, or
+	// virtual team ids) so the dropdown never ends up blank.
+	const handleSessionAssistantChange = useCallback(
+		( nextAssistantId: number ) => {
+			if (
+				assistants.length > 0 &&
+				! assistants.some( ( a ) => a.id === nextAssistantId )
+			) {
+				return;
+			}
+			setActiveAssistant( nextAssistantId );
+		},
+		[ assistants, setActiveAssistant ]
+	);
+
 	// ---- transcripts (conversation sessions) — single source of truth ----
 	const transcripts = useTranscripts( {
 		endpoint: transcriptsEndpoint,
 		nonce,
-		assistantId,
+		assistantId: activeAssistantId,
+		onSessionAssistantChange: handleSessionAssistantChange,
 	} );
 
 	// ---- UI store (sidebar / right-panel toggles / theme) ----
@@ -157,13 +185,16 @@ export function Layout(): JSX.Element {
 		apiUrl,
 	} = runtime;
 
+	// Same fallback chain as ChatPage so both bind to the same assistant.
+	const defaultAssistantId = assistantId ?? runtime.user?.assistant_id ?? 0;
+
 	return (
 		<HashRouter>
 			<LayoutContent
 				transcriptsEndpoint={ transcriptsEndpoint }
 				assistantsEndpoint={ assistantsEndpoint }
 				nonce={ nonce }
-				assistantId={ assistantId ?? 0 }
+				assistantId={ defaultAssistantId }
 				apiRoot={ apiUrl }
 				mediaEndpoint={ mediaEndpoint ?? '' }
 			/>
