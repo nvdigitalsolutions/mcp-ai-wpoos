@@ -277,7 +277,7 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 		array_unshift( $logs, $log_entry );
 		$logs = array_slice( $logs, 0, 100 );
 
-		update_option( 'wp_mcp_ai_vault_conflict_logs', $logs );
+		update_option( 'wp_mcp_ai_vault_conflict_logs', $logs, false );
 	}
 
 	/**

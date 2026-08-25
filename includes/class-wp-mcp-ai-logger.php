@@ -42,6 +42,46 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		const RECENT_ACTIVITY_OPTION = 'wp_mcp_ai_recent_activity';
 
 		/**
+		 * Maximum number of JSON-encoded bytes of context that may be persisted
+		 * alongside a single entry in the rolling recent-errors / recent-activity
+		 * buffers.
+		 *
+		 * Those buffers live in `wp_options`, are read and rewritten on every log
+		 * write, and are polled by admin dashboards. Raw contexts routinely carry an
+		 * entire assistant `system_prompt` plus unbounded tool arguments, which grows
+		 * the option row into the megabytes and makes every subsequent write more
+		 * expensive. Contexts above this budget are reduced by
+		 * {@see self::slim_context_for_storage()}.
+		 *
+		 * This cap applies only to the persisted buffers. The `wp_mcp_ai_log_entry`
+		 * filter and the PHP error-log line still receive the full sanitized context.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_STORED_CONTEXT_BYTES = 2048;
+
+		/**
+		 * Per-entry context budget when Extended Logging is enabled.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_STORED_CONTEXT_BYTES_EXTENDED = 16384;
+
+		/**
+		 * Maximum length of an individual string value inside a persisted context.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_STORED_CONTEXT_STRING_LENGTH = 512;
+
+		/**
+		 * Maximum nesting depth retained in a persisted context.
+		 *
+		 * @since 1.8.0
+		 */
+		const MAX_STORED_CONTEXT_DEPTH = 6;
+
+		/**
 		 * Maximum number of characters that should be written to the PHP error log
 		 * for a single entry. PHP-FPM buffers log lines at 1024 bytes so we keep a
 		 * safety margin below that threshold to avoid truncation warnings.
@@ -945,6 +985,263 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		}
 
 		/**
+		 * Reduce a sanitized log context to a size that is safe to persist in
+		 * `wp_options`.
+		 *
+		 * Applied only on the persistence path, so the `wp_mcp_ai_log_entry` filter
+		 * and the PHP error-log line continue to see the full sanitized context.
+		 *
+		 * Three passes:
+		 * 1. Structural — drop keys that carry no diagnostic value, replace assistant
+		 *    configurations and system prompts with fingerprints, truncate long
+		 *    strings, and clamp nesting depth.
+		 * 2. Budget — while the encoded context exceeds the budget, replace the
+		 *    largest remaining top-level values with a size descriptor, biggest
+		 *    first, never touching the preserved diagnostic keys.
+		 * 3. Fallback — if the preserved keys alone still exceed the budget, hard
+		 *    truncate every remaining string.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param mixed $context Sanitized context from {@see self::sanitize_context()}.
+		 * @return array Context safe for option storage.
+		 */
+		protected static function slim_context_for_storage( $context ) {
+			if ( ! is_array( $context ) || empty( $context ) ) {
+				return array();
+			}
+
+			$budget = WP_MCP_AI_Admin_Settings::is_extended_logging_enabled()
+				? self::MAX_STORED_CONTEXT_BYTES_EXTENDED
+				: self::MAX_STORED_CONTEXT_BYTES;
+
+			/**
+			 * Filter the per-entry context byte budget for persisted log buffers.
+			 *
+			 * Raising this grows the `wp_mcp_ai_recent_errors` and
+			 * `wp_mcp_ai_recent_activity` option rows, which are re-read and
+			 * rewritten on every log write. Raise it deliberately.
+			 *
+			 * @since 1.8.0
+			 *
+			 * @param int   $budget  Maximum JSON-encoded bytes of context per entry.
+			 * @param array $context Sanitized context prior to slimming.
+			 */
+			$budget = (int) apply_filters( 'wp_mcp_ai_stored_context_budget', $budget, $context );
+			$budget = max( 256, $budget );
+
+			return self::enforce_context_budget( self::slim_context_branch( $context, 0 ), $budget );
+		}
+
+		/**
+		 * Recursively slim a context branch.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param mixed $value Value to slim.
+		 * @param int   $depth Current nesting depth.
+		 * @return mixed
+		 */
+		protected static function slim_context_branch( $value, $depth ) {
+			if ( is_string( $value ) ) {
+				return self::truncate_string( $value, self::MAX_STORED_CONTEXT_STRING_LENGTH );
+			}
+
+			if ( ! is_array( $value ) ) {
+				return $value;
+			}
+
+			if ( $depth >= self::MAX_STORED_CONTEXT_DEPTH ) {
+				return self::describe_omitted_value( $value );
+			}
+
+			$dropped = self::get_dropped_context_keys();
+			$slim    = array();
+
+			foreach ( $value as $key => $child ) {
+				if ( is_string( $key ) ) {
+					$normalized = strtolower( $key );
+
+					if ( in_array( $normalized, $dropped, true ) ) {
+						continue;
+					}
+
+					if ( 'assistant_config' === $normalized && is_array( $child ) ) {
+						$slim[ $key ] = self::fingerprint_assistant_config( $child );
+						continue;
+					}
+
+					if ( 'system_prompt' === $normalized && is_string( $child ) ) {
+						$slim[ $key ] = self::fingerprint_prompt( $child );
+						continue;
+					}
+				}
+
+				$slim[ $key ] = self::slim_context_branch( $child, $depth + 1 );
+			}
+
+			return $slim;
+		}
+
+		/**
+		 * Drop oversized top-level values until the context fits its budget.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param array $context Structurally slimmed context.
+		 * @param int   $budget  Maximum JSON-encoded bytes.
+		 * @return array
+		 */
+		protected static function enforce_context_budget( array $context, $budget ) {
+			$encoded = wp_json_encode( $context );
+
+			if ( false === $encoded ) {
+				return array( 'context' => '[unserializable context]' );
+			}
+
+			if ( strlen( $encoded ) <= $budget ) {
+				return $context;
+			}
+
+			$preserved = self::get_preserved_context_keys();
+			$sizes     = array();
+
+			foreach ( $context as $key => $child ) {
+				if ( in_array( strtolower( (string) $key ), $preserved, true ) ) {
+					continue;
+				}
+
+				$child_encoded = wp_json_encode( $child );
+				$sizes[ $key ] = ( false === $child_encoded ) ? 0 : strlen( $child_encoded );
+			}
+
+			// Largest first, so the fewest keys are sacrificed.
+			arsort( $sizes );
+
+			foreach ( array_keys( $sizes ) as $key ) {
+				$context[ $key ] = self::describe_omitted_value( $context[ $key ] );
+
+				$encoded = wp_json_encode( $context );
+
+				if ( false === $encoded || strlen( $encoded ) <= $budget ) {
+					return $context;
+				}
+			}
+
+			// Preserved keys alone exceed the budget; hard truncate what is left.
+			return self::truncate_strings_in_structure( $context, 128 );
+		}
+
+		/**
+		 * Replace an assistant configuration with a compact diagnostic fingerprint.
+		 *
+		 * The full configuration carries the resolved `system_prompt`, which includes
+		 * any primary-role and Agent Skills prompt text and can run to tens of
+		 * kilobytes. Keep only what is actionable when reading a log entry.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param array $config Assistant configuration.
+		 * @return array Fingerprint.
+		 */
+		protected static function fingerprint_assistant_config( array $config ) {
+			$tools = isset( $config['tools'] ) && is_array( $config['tools'] ) ? $config['tools'] : array();
+
+			return array(
+				'provider'            => isset( $config['provider'] ) ? (string) $config['provider'] : '',
+				'model'               => isset( $config['model'] ) ? (string) $config['model'] : '',
+				'temperature'         => isset( $config['temperature'] ) ? $config['temperature'] : null,
+				'tool_count'          => count( $tools ),
+				'required_capability' => isset( $config['required_capability'] ) ? (string) $config['required_capability'] : '',
+				'system_prompt'       => isset( $config['system_prompt'] ) && is_string( $config['system_prompt'] )
+					? self::fingerprint_prompt( $config['system_prompt'] )
+					: '',
+			);
+		}
+
+		/**
+		 * Describe a prompt by length and hash instead of storing its text.
+		 *
+		 * Returns a string so that readers which cast the value stay valid.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $prompt Prompt text.
+		 * @return string Fingerprint, or an empty string for an empty prompt.
+		 */
+		protected static function fingerprint_prompt( $prompt ) {
+			$prompt = (string) $prompt;
+
+			if ( '' === $prompt ) {
+				return '';
+			}
+
+			return sprintf(
+				'[prompt omitted: %1$d chars, md5:%2$s]',
+				self::string_length( $prompt ),
+				substr( md5( $prompt ), 0, 12 )
+			);
+		}
+
+		/**
+		 * Describe an omitted value by type and encoded size.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param mixed $value Omitted value.
+		 * @return string
+		 */
+		protected static function describe_omitted_value( $value ) {
+			$encoded = wp_json_encode( $value );
+			$bytes   = ( false === $encoded ) ? 0 : strlen( $encoded );
+			$type    = is_array( $value ) ? sprintf( 'array(%d)', count( $value ) ) : gettype( $value );
+
+			return sprintf( '[omitted: %1$s, %2$d bytes]', $type, $bytes );
+		}
+
+		/**
+		 * Context keys that are never persisted.
+		 *
+		 * `request` holds a WP_REST_Request whose properties are all protected, so it
+		 * already collapses to an empty array during redaction. Dropping it keeps the
+		 * stored shape honest.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array Lowercase key names.
+		 */
+		protected static function get_dropped_context_keys() {
+			return array( 'request' );
+		}
+
+		/**
+		 * Context keys that survive budget enforcement.
+		 *
+		 * These identify what failed and where, so an entry stays actionable even
+		 * after everything else has been dropped.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return array Lowercase key names.
+		 */
+		protected static function get_preserved_context_keys() {
+			return array(
+				'assistant_id',
+				'endpoint',
+				'error_code',
+				'error_message',
+				'event',
+				'guest_request',
+				'iteration',
+				'max_iterations',
+				'reason',
+				'schedule_id',
+				'tool_slug',
+				'user_id',
+			);
+		}
+
+		/**
 		 * Persist a recent entry while keeping the buffer trimmed.
 		 *
 		 * @param array $entry Prepared log entry.
@@ -963,7 +1260,11 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			);
 
 			if ( ! empty( $entry['context'] ) ) {
-				$stored_entry['context'] = $entry['context'];
+				$context = self::slim_context_for_storage( $entry['context'] );
+
+				if ( ! empty( $context ) ) {
+					$stored_entry['context'] = $context;
+				}
 			}
 
 			$recent[] = $stored_entry;
@@ -992,7 +1293,11 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			);
 
 			if ( ! empty( $entry['context'] ) ) {
-				$stored_entry['context'] = $entry['context'];
+				$context = self::slim_context_for_storage( $entry['context'] );
+
+				if ( ! empty( $context ) ) {
+					$stored_entry['context'] = $context;
+				}
 			}
 
 			$recent[] = $stored_entry;
