@@ -67,13 +67,37 @@ class WP_MCP_AI_Validator_Service {
 		$builder = Validation::createValidatorBuilder()
 			->setTranslator( new WP_MCP_AI_Identity_Translator() );
 
-		// enableAttributeMapping() was added in Symfony 6.1.
-		// Symfony 5.4 does not have this method, so guard with method_exists.
-		if ( method_exists( $builder, 'enableAttributeMapping' ) ) {
-			$builder->enableAttributeMapping();
-		}
+		self::enable_constraint_mapping( $builder );
 
 		$this->validator = $builder->getValidator();
+	}
+
+	/**
+	 * Enable PHP-attribute constraint mapping across supported Symfony versions.
+	 *
+	 * Without this the validator loads no constraint metadata at all and every
+	 * `validate()` call returns zero violations — i.e. validation silently does
+	 * nothing. The two APIs are not interchangeable:
+	 *
+	 * - Symfony >= 6.1 exposes `enableAttributeMapping()`.
+	 * - Symfony 5.4 has only `enableAnnotationMapping()`, and it MUST be called
+	 *   with `true` ("skip Doctrine annotations") so it installs the
+	 *   attributes-only loader. Calling it with no argument throws a
+	 *   LogicException demanding doctrine/annotations, which this plugin does
+	 *   not ship.
+	 *
+	 * @param \Symfony\Component\Validator\ValidatorBuilder $builder Validator builder.
+	 * @return void
+	 */
+	private static function enable_constraint_mapping( $builder ) {
+		if ( method_exists( $builder, 'enableAttributeMapping' ) ) {
+			$builder->enableAttributeMapping();
+			return;
+		}
+
+		if ( method_exists( $builder, 'enableAnnotationMapping' ) ) {
+			$builder->enableAnnotationMapping( true );
+		}
 	}
 
 	/**
@@ -104,9 +128,7 @@ class WP_MCP_AI_Validator_Service {
 		$builder = Validation::createValidatorBuilder()
 			->setTranslator( new WP_MCP_AI_Identity_Translator() );
 
-		if ( method_exists( $builder, 'enableAttributeMapping' ) ) {
-			$builder->enableAttributeMapping();
-		}
+		self::enable_constraint_mapping( $builder );
 
 		$this->validator = $builder->getValidator();
 	}
