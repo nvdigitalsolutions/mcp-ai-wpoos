@@ -142,7 +142,13 @@ class Test_WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_UnitTestC
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertEquals( 'validation_failed', $result->get_error_code() );
-		$this->assertStringContainsString( 'json', $result->get_error_message() );
+
+		// The generic message is 'Validation failed'; the per-field violation
+		// text (which names the allowed choices) travels in error_data.
+		$error_data = $result->get_error_data();
+		$this->assertIsArray( $error_data );
+		$violation = isset( $error_data['errors'][0]['message'] ) ? $error_data['errors'][0]['message'] : '';
+		$this->assertStringContainsString( 'json', $violation );
 	}
 
 	/**

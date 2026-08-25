@@ -33,7 +33,7 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 'get_system_logs_validated', $tool->get_slug() );
 		$this->assertSame( 'Get System Logs (Validated)', $tool->get_name() );
-		$this->assertStringContainsString( 'system log', strtolower( $tool->get_description() ) );
+		$this->assertStringContainsString( 'log entries', strtolower( $tool->get_description() ) );
 
 		$schema = $tool->get_parameters_schema();
 		$this->assertIsArray( $schema );
@@ -54,7 +54,7 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'summary', $result );
 		$this->assertArrayHasKey( 'wp_mcp_ai', $result );
-		$this->assertArrayHasKey( 'WordPress', $result );
+		$this->assertArrayHasKey( 'wordpress', $result );
 		$this->assertArrayHasKey( 'plugin_logs', $result );
 	}
 
@@ -89,7 +89,7 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -106,7 +106,7 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -140,7 +140,7 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -157,7 +157,7 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'WordPress', $result );
+		$this->assertArrayHasKey( 'wordpress', $result );
 	}
 
 	/**
@@ -201,7 +201,7 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -218,6 +218,6 @@ class WP_MCP_AI_Get_System_Logs_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 }

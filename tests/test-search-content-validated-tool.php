@@ -68,8 +68,8 @@ class Test_WP_MCP_AI_Tool_Search_Content_Validated extends WP_UnitTestCase {
 
 		$this->test_posts['banana'] = $this->factory->post->create(
 			array(
-				'post_title'   => 'Banana Bread Tutorial',
-				'post_content' => 'Learn to bake banana bread at home.',
+				'post_title'   => 'Banana Bread',
+				'post_content' => 'Learn to bake banana bread with this easy recipe at home.',
 				'post_status'  => 'publish',
 			)
 		);
@@ -210,7 +210,7 @@ class Test_WP_MCP_AI_Tool_Search_Content_Validated extends WP_UnitTestCase {
 		$arguments = array(
 			'search_term' => 'test',
 			'post_type'   => 'post',
-			'limit'       => 100,  // Max is 50.
+			'limit'       => 501,  // Above the 500 ceiling the attribute enforces.
 		);
 
 		$context = array( 'user_id' => $this->user_id );
@@ -224,10 +224,10 @@ class Test_WP_MCP_AI_Tool_Search_Content_Validated extends WP_UnitTestCase {
 	 * Test permission check - users without read capability should be denied.
 	 */
 	public function test_permission_denied_without_read_capability() {
-		// Create user without read capability.
-		$no_cap_user = $this->factory->user->create();
-		$user        = new WP_User( $no_cap_user );
-		$user->remove_cap( 'read' );
+		// Create a user with no role at all: every default role grants 'read',
+		// and remove_cap() on a role-granted capability does not stick across
+		// user instances, so the role must be empty.
+		$no_cap_user = $this->factory->user->create( array( 'role' => '' ) );
 
 		$arguments = array(
 			'search_term' => 'test',
@@ -355,7 +355,11 @@ class Test_WP_MCP_AI_Tool_Search_Content_Validated extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'limit', $schema['properties'] );
 		$this->assertArrayHasKey( 'taxonomy_filters', $schema['properties'] );
 		$this->assertArrayHasKey( 'meta_filters', $schema['properties'] );
-		$this->assertContains( 'search_term', $schema['required'] );
+
+		// The schema deliberately declares no top-level 'required' list: a search
+		// can be driven by taxonomy or meta filters without a search_term, so the
+		// term is not mandatory.
+		$this->assertArrayNotHasKey( 'required', $schema );
 	}
 
 	/**

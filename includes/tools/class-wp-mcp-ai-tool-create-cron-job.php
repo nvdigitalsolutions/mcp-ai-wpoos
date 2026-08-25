@@ -210,6 +210,7 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 		spawn_cron();
 
 		return array(
+			'job_id'        => WP_MCP_AI_Cron_Manager::generate_job_id_static( $hook, $args ),
 			'hook'          => $hook,
 			'schedule'      => $schedule,
 			'timestamp'     => $timestamp,

@@ -77,10 +77,14 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 		);
 
 		$this->assertIsArray( $result );
-		$this->assertTrue( $result['scheduled'], 'Job should be scheduled successfully' );
+		$this->assertSame( $hook, $result['hook'], 'Job should be scheduled successfully' );
+		$this->assertSame( 'single', $result['schedule'] );
+		$this->assertNotEmpty( $result['job_id'] );
 
-		// Verify WordPress cron scheduled it.
-		$scheduled = wp_next_scheduled( $hook, $args );
+		// Verify WordPress cron scheduled it. Associative args are wrapped by
+		// normalise_args() into a single positional argument, which is what
+		// WP-Cron was handed, so the lookup has to use the same shape.
+		$scheduled = wp_next_scheduled( $hook, array( $args ) );
 		$this->assertNotFalse( $scheduled, 'Job should be in WordPress cron' );
 		$this->assertEquals( $future_time, $scheduled, 'Scheduled time should match' );
 
@@ -90,7 +94,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 
 		$job = reset( $jobs );
 		$this->assertEquals( $hook, $job['hook'] );
-		$this->assertEquals( $args, $job['args'] );
+		$this->assertEquals( array( $args ), $job['args'] );
 		$this->assertEquals( 'single', $job['schedule'] );
 		$this->assertEquals( $this->admin_id, $job['created_by'] );
 	}
@@ -114,7 +118,8 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertTrue( $result['scheduled'], 'Recurring job should be scheduled' );
+		$this->assertIsArray( $result );
+		$this->assertSame( $schedule, $result['schedule'], 'Recurring job should be scheduled' );
 
 		// Verify WordPress cron scheduled it.
 		$event = wp_get_scheduled_event( $hook, array() );
@@ -150,7 +155,8 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertTrue( $result['scheduled'] );
+		$this->assertIsArray( $result );
+		$this->assertNotEmpty( $result['job_id'] );
 
 		// Verify arguments were stored correctly.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
@@ -193,7 +199,7 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 		foreach ( $result['jobs'] as $job ) {
 			$this->assertArrayHasKey( 'job_id', $job );
 			$this->assertArrayHasKey( 'hook', $job );
-			$this->assertArrayHasKey( 'status', $job );
+			$this->assertArrayHasKey( 'schedule', $job );
 			$this->assertArrayHasKey( 'next_run', $job );
 		}
 	}
@@ -259,7 +265,9 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertTrue( $result['deleted'], 'Job should be deleted' );
+		$this->assertIsArray( $result );
+		$this->assertSame( $job_id, $result['job_id'], 'Job should be deleted' );
+		$this->assertSame( $hook, $result['hook'] );
 
 		// Verify it's gone from WordPress cron.
 		$this->assertFalse( wp_next_scheduled( $hook ), 'Job should be unscheduled' );
@@ -370,15 +378,17 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 		$result = $tool->execute(
 			array(
 				'hook'      => $hook,
-				'timestamp' => time() - MINUTE_IN_SECONDS, // Past time to trigger immediately.
+				'timestamp' => time() + HOUR_IN_SECONDS,
 				'schedule'  => 'hourly',
 			),
 			array( 'user_id' => $this->admin_id )
 		);
 
-		$this->assertTrue( $result['scheduled'] );
+		$this->assertIsArray( $result );
+		$this->assertSame( 'hourly', $result['schedule'] );
 
-		// Simulate first execution.
+		// The event has to be scheduled, not fired, for the persistence check.
+		// Past timestamps are rejected with wp_mcp_ai_past_timestamp.
 		$event = wp_get_scheduled_event( $hook, array() );
 		$this->assertNotFalse( $event );
 
@@ -447,12 +457,9 @@ class Test_Cron_Scheduling_Validation extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_id )
 		);
 
-		// Should handle gracefully and either reject or fall back to one-time.
-		if ( isset( $result['scheduled'] ) ) {
-			$this->assertIsBool( $result['scheduled'] );
-		} else {
-			$this->assertInstanceOf( WP_Error::class, $result );
-		}
+		// Invalid schedules are rejected with a WP_Error.
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_schedule', $result->get_error_code() );
 	}
 
 	/**

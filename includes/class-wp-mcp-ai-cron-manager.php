@@ -211,7 +211,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 						// Only remove if it's been longer than the retention period.
 						$first_timestamp = isset( $job['first_timestamp'] ) ? (int) $job['first_timestamp'] : 0;
 
-						if ( $first_timestamp > 0 && ( time() - $first_timestamp ) > $retention_period ) {
+						if ( $first_timestamp <= 0 || ( time() - $first_timestamp ) > $retention_period ) {
+							// Jobs with a missing/zero first timestamp have no
+							// scheduling provenance and are pruned immediately.
 							unset( $jobs[ $job_id ] );
 							$changed = true;
 						}
