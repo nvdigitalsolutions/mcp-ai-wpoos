@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Manage connected accounts.
  */
-class WP_MCP_AI_Tool_Composio_Manage_Accounts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Composio_Manage_Accounts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -589,6 +589,17 @@ class WP_MCP_AI_Tool_Composio_Manage_Accounts implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_capability_flags(): array {
 		return array( 'write', 'state-changing', 'destructive', 'pro', 'requires-capability', 'remote-api', 'sensitive-data' );
+	}
+
+	/**
+	 * The reconnect action returns a hosted re-authorisation URL whose path can
+	 * itself be the bearer capability (both the upstream `redirect_url` and the
+	 * `lk_...` fallback Connect Link).
+	 *
+	 * {@inheritdoc}
+	 */
+	public function get_sensitive_result_fields(): array {
+		return array( 'data.url' );
 	}
 
 	/**

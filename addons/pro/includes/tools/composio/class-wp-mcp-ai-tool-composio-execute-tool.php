@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Execute tool.
  */
-class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -460,6 +460,17 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags(): array {
 		return array( 'write', 'state-changing', 'pro', 'requires-capability', 'remote-api' );
+	}
+
+	/**
+	 * `result` passes through an arbitrary third-party API response whose shape
+	 * is not enumerable — it can carry share links, presigned URLs, or tokens
+	 * under innocuous keys — so it is masked wholesale in logs.
+	 *
+	 * {@inheritdoc}
+	 */
+	public function get_sensitive_result_fields(): array {
+		return array( 'result' );
 	}
 
 	/**

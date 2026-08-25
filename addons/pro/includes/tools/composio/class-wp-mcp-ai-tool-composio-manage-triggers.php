@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Composio — Manage triggers.
  */
-class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
 	use WP_MCP_AI_Tool_Envelope;
 
 	/**
@@ -212,6 +212,16 @@ class WP_MCP_AI_Tool_Composio_Manage_Triggers implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_capability_flags(): array {
 		return array( 'write', 'state-changing', 'pro', 'requires-capability', 'remote-api' );
+	}
+
+	/**
+	 * `trigger` and `triggers` echo raw upstream trigger objects that can
+	 * embed webhook URLs with opaque ingest paths, so both are masked in logs.
+	 *
+	 * {@inheritdoc}
+	 */
+	public function get_sensitive_result_fields(): array {
+		return array( 'trigger', 'triggers' );
 	}
 
 	/**

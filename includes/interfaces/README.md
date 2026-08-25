@@ -19,7 +19,7 @@ Every file in this folder is part of the public surface — that is the whole po
 
 | Symbol | File | Used by |
 |---|---|---|
-| `WP_MCP_AI_Tool_Interface` (+ `_Shortcuts_`, `_Fallback_Shortcut_`, `_Capability_Flags_`) | `interface-wp-mcp-ai-tool.php` | every class in `tools/` |
+| `WP_MCP_AI_Tool_Interface` (+ `_Shortcuts_`, `_Fallback_Shortcut_`, `_Capability_Flags_`, `_Sensitive_Result_`) | `interface-wp-mcp-ai-tool.php` | every class in `tools/` |
 | `Interface_WP_MCP_AI_Options_Store` | `interface-wp-mcp-ai-options-store.php` | `infrastructure/wp/`, `services/` |
 | `Interface_WP_MCP_AI_HTTP_Client` | `interface-wp-mcp-ai-http-client.php` | `infrastructure/http/`, provider clients |
 | `Interface_WP_MCP_AI_Capability_Checker` | `interface-wp-mcp-ai-capability-checker.php` | `infrastructure/wp/`, tool capability gates |

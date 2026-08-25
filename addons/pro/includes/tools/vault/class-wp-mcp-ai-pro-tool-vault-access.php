@@ -324,4 +324,16 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 
 		return $item;
 	}
+
+	/**
+	 * The decrypted `data` payload holds vault secrets (passwords, TOTP seeds,
+	 * card numbers) under innocuous keys, so it must never reach a log.
+	 *
+	 * @since 1.1.64
+	 *
+	 * @return string[] Dot-notation paths that must never be persisted to a log.
+	 */
+	public function get_sensitive_result_fields() {
+		return array( 'item.data', 'items.*.data' );
+	}
 }
