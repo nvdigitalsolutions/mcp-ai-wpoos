@@ -611,6 +611,18 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 			wp_unschedule_event( $timestamp, 'wp_mcp_ai_model_catalog_discovery' );
 		}
 
+		// Google Calendar: stop every live push notification channel at Google and
+		// clear the sync/renewal cron. Channels are Google-side resources that
+		// survive deactivation and keep firing at a dead endpoint otherwise.
+		if ( class_exists( 'WP_MCP_AI_Google_Calendar_Push' ) ) {
+			foreach ( array_keys( WP_MCP_AI_Google_Calendar_Push::get_channels() ) as $wp_mcp_ai_gcal_channel_id ) {
+				WP_MCP_AI_Google_Calendar_Push::stop( $wp_mcp_ai_gcal_channel_id );
+			}
+		}
+		if ( class_exists( 'WP_MCP_AI_Google_Calendar_Sync' ) ) {
+			WP_MCP_AI_Google_Calendar_Sync::unschedule();
+		}
+
 		// Unschedule service status cron jobs.
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_five_minute_tick' );
 		if ( $timestamp ) {

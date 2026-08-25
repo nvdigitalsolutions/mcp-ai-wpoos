@@ -2,7 +2,7 @@
 
 NV oOS Pro addon — `addons/pro/includes/admin/`
 
-This document is the developer-facing reference for all 24 remote connection types. For a full end-user guide including setup walkthroughs, see [`docs/REMOTE_CONNECTIONS_GUIDE.md`](../../../../docs/REMOTE_CONNECTIONS_GUIDE.md).
+This document is the developer-facing reference for all 26 remote connection types. For a full end-user guide including setup walkthroughs, see [`docs/REMOTE_CONNECTIONS_GUIDE.md`](../../../../docs/REMOTE_CONNECTIONS_GUIDE.md).
 
 ---
 
@@ -33,6 +33,7 @@ Connection types are registered in `class-wp-mcp-ai-pro-remote-sites-admin.php` 
 | `ezuite_erp` | EZuite ERP (Inventory) | Business | `#8c50a7` |
 | `gmail` | Gmail (Email Service) | Google | `#ea4335` |
 | `google_drive` | Google Drive (Cloud Storage) | Google | `#4285f4` |
+| `google_calendar` | Google Calendar (Scheduling) | Google | `#0b8043` |
 | `upwork` | Upwork (Freelance Marketplace) | Freelance | `#14a800` |
 | `telegram` | Telegram (Chat Channel) | Chat | `#0088cc` |
 | `whatsapp` | WhatsApp Business (Chat Channel) | Chat | `#25d366` |
@@ -162,6 +163,33 @@ For remote access, use QRemote to tunnel ODBC calls from the relay to QuickBooks
 | `folder_id` | string | Optional — limits access to a specific Drive folder |
 | `user_email` | string | Auto-filled after OAuth |
 | `url` | string | Auto-set to `https://www.googleapis.com/drive/v3` |
+
+### `google_calendar`
+
+| Meta Key | Type | Notes |
+|----------|------|-------|
+| `client_id` | string | Google OAuth2 Client ID — **required** |
+| `client_secret` | string (encrypted) | Google OAuth2 Client Secret — **required** |
+| `refresh_token` | string (encrypted) | Stored automatically after OAuth2 flow |
+| `user_email` | string | Auto-filled after OAuth; also sent as `quotaUser` for per-user quota attribution |
+| `calendar_id` | string | Target calendar. Optional — blank resolves to `primary` |
+| `scope_profile` | enum | `minimal` \| `standard` \| `full`. Optional — blank normalises to the default (`standard`) |
+| `granted_scopes` | string | Space-delimited scopes Google actually granted (granular consent may grant a subset) |
+| `sync_token` | string | Opaque incremental-sync cursor returned by `events.list` |
+| `channel_id` | string | Active push notification channel identifier |
+| `channel_resource_id` | string | Google resource identifier — required to stop the channel |
+| `channel_expiration` | int | Unix timestamp when the push channel expires (max TTL 7 days) |
+| `enabled` | bool | Standard connection toggle |
+| `url` | string | Auto-set to `https://www.googleapis.com/calendar/v3` |
+| `auth_type` | string | Always `none` (the client sends a minted bearer token) |
+
+Missing `client_id` / `client_secret` on save returns `wp_mcp_ai_pro_missing_google_calendar_credentials`.
+
+`calendar_id` is deliberately a **separate** field from `folder_id` (Google Drive): `folder_id` is populated for every connection type, so sharing it would let a Calendar save clobber a Drive folder scope on the same record.
+
+`test_connection()` returns a saved-credentials acknowledgement until a refresh token exists, then performs a real probe (`calendarList.list` with `maxResults=1`).
+
+Scope profiles and their Google verification requirements: [`docs/reference/google-calendar-api-v3.md`](../../../../docs/reference/google-calendar-api-v3.md).
 
 ### `upwork`
 
@@ -420,6 +448,7 @@ Each webhook controller:
 | `ezuite_erp` | `class-wp-mcp-ai-tool-ezuite-erp.php` |
 | `gmail` | `class-wp-mcp-ai-pro-tool-search-gmail.php` |
 | `google_drive` | `class-wp-mcp-ai-pro-tool-search-drive.php` |
+| `google_calendar` | `class-wp-mcp-ai-pro-tool-create-google-calendar-event.php`, `class-wp-mcp-ai-pro-tool-list-google-calendars.php`, `class-wp-mcp-ai-pro-tool-list-google-calendar-events.php`, `class-wp-mcp-ai-pro-tool-update-google-calendar-event.php`, `class-wp-mcp-ai-pro-tool-delete-google-calendar-event.php`, `class-wp-mcp-ai-pro-tool-check-google-calendar-availability.php`, `class-wp-mcp-ai-pro-tool-quick-add-google-calendar-event.php` |
 | `upwork` | `class-wp-mcp-ai-tool-search-upwork-jobs.php`, `class-wp-mcp-ai-tool-score-upwork-job.php`, `class-wp-mcp-ai-tool-draft-upwork-proposal.php` |
 | `telegram` | `class-wp-mcp-ai-pro-tool-send-telegram-message.php`, `class-wp-mcp-ai-pro-tool-get-telegram-updates.php`, `class-wp-mcp-ai-pro-tool-manage-telegram-commands.php`, `class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php`, `class-wp-mcp-ai-pro-tool-add-telegram-message-reaction.php` |
 | `whatsapp` | `class-wp-mcp-ai-pro-tool-send-whatsapp-message.php`, `class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php` |

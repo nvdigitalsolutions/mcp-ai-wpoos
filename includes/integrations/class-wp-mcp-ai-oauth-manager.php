@@ -47,6 +47,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				$this->handle_gmail_oauth_callback();
 			} elseif ( 'google_drive_callback' === $handler ) {
 				$this->handle_google_drive_oauth_callback();
+			} elseif ( 'google_calendar_callback' === $handler ) {
+				$this->handle_google_calendar_oauth_callback();
 			} elseif ( 'yahoo_callback' === $handler ) {
 				$this->handle_yahoo_oauth_callback();
 			}
@@ -929,10 +931,10 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'         => 'wp-mcp-ai-dashboard',
-						'tab'          => 'tools',
-						'subtab'       => 'connections',
-						'connection'   => 'gmail',
+						'page'          => 'wp-mcp-ai-dashboard',
+						'tab'           => 'tools',
+						'subtab'        => 'connections',
+						'connection'    => 'gmail',
 						'gmail_success' => rawurlencode( __( 'Disconnected from Gmail. Your OAuth credentials remain saved for future connections.', 'mcp-ai-wpoos' ) ),
 					),
 					admin_url( 'admin.php' )
@@ -967,13 +969,295 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'         => 'wp-mcp-ai-dashboard',
-						'tab'          => 'tools',
-						'subtab'       => 'connections',
-						'connection'   => 'google_drive',
+						'page'          => 'wp-mcp-ai-dashboard',
+						'tab'           => 'tools',
+						'subtab'        => 'connections',
+						'connection'    => 'google_drive',
 						'drive_success' => rawurlencode( __( 'Disconnected from Google Drive. Your OAuth credentials remain saved for future connections.', 'mcp-ai-wpoos' ) ),
 					),
 					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+
+		// Google Calendar.
+		//
+		// Unlike the Gmail and Drive handlers above, these delegate to
+		// WP_MCP_AI_Google_OAuth_Service rather than re-implementing the flow.
+		// That service owns state handling, redirect-URI construction, token
+		// exchange, and access-token caching, so the base and Pro Calendar
+		// surfaces cannot drift apart the way the two Drive flows did.
+
+		/**
+		 * Ensure the shared Google service classes are loaded.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return void
+		 */
+		protected function require_google_services() {
+			require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+			require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+		}
+
+		/**
+		 * Build the Google Calendar connection screen URL.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array<string,string> $extra Optional additional query arguments.
+		 * @return string Admin URL.
+		 */
+		protected function google_calendar_settings_url( array $extra = array() ) {
+			return add_query_arg(
+				array_merge(
+					array(
+						'page'       => 'wp-mcp-ai-dashboard',
+						'tab'        => 'tools',
+						'subtab'     => 'connections',
+						'connection' => 'google_calendar',
+					),
+					$extra
+				),
+				admin_url( 'admin.php' )
+			);
+		}
+
+		/**
+		 * Redirect back to the Google Calendar connection screen with an error.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $message Human-readable error message.
+		 * @return void
+		 */
+		protected function google_calendar_fail( $message ) {
+			wp_safe_redirect( $this->google_calendar_settings_url( array( 'calendar_error' => rawurlencode( $message ) ) ) );
+			exit;
+		}
+
+		/**
+		 * Handle the Google Calendar OAuth start request.
+		 *
+		 * Reachable only from an explicit "Connect" click. This must never be
+		 * triggered by a settings save: Google silently invalidates the oldest
+		 * refresh token once an account exceeds 100 live refresh tokens per client
+		 * ID, so repeatedly re-authorising can destroy a working connection.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return void
+		 */
+		public function handle_google_calendar_oauth_start() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
+			}
+
+			check_admin_referer( 'wp_mcp_ai_google_calendar_oauth_start' );
+
+			$this->require_google_services();
+
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['google_calendar_client_id'] ) ? trim( (string) $settings['google_calendar_client_id'] ) : '';
+			$client_secret = isset( $settings['google_calendar_client_secret'] ) ? trim( (string) $settings['google_calendar_client_secret'] ) : '';
+
+			if ( '' === $client_id || '' === $client_secret ) {
+				$this->google_calendar_fail(
+					__( 'Save your Google Calendar Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$profile = WP_MCP_AI_Google_Calendar_Scopes::normalise_profile(
+				isset( $settings['google_calendar_scope_profile'] ) ? $settings['google_calendar_scope_profile'] : ''
+			);
+
+			$state = WP_MCP_AI_Google_OAuth_Service::store_state( 'google_calendar' );
+
+			$authorize_url = WP_MCP_AI_Google_OAuth_Service::build_authorize_url(
+				array(
+					'client_id'    => $client_id,
+					'redirect_uri' => WP_MCP_AI_Google_OAuth_Service::build_redirect_uri(
+						WP_MCP_AI_Admin_Settings::GOOGLE_CALENDAR_OAUTH_CALLBACK_HANDLER
+					),
+					'scope'        => WP_MCP_AI_Google_Calendar_Scopes::get_profile_scope_string( $profile ),
+					'state'        => $state,
+					'login_hint'   => isset( $settings['google_calendar_user_email'] ) ? (string) $settings['google_calendar_user_email'] : '',
+				)
+			);
+
+			if ( is_wp_error( $authorize_url ) ) {
+				$this->google_calendar_fail( $authorize_url->get_error_message() );
+			}
+
+			add_filter(
+				'allowed_redirect_hosts',
+				array( 'WP_MCP_AI_Google_OAuth_Service', 'filter_allowed_redirect_hosts' )
+			);
+
+			wp_safe_redirect( $authorize_url );
+			exit;
+		}
+
+		/**
+		 * Handle the Google Calendar OAuth callback.
+		 *
+		 * CSRF protection is provided by the single-use `state` transient rather
+		 * than a nonce, because Google controls the inbound request.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return void
+		 */
+		protected function handle_google_calendar_oauth_callback() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
+			}
+
+			$this->require_google_services();
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+			if ( '' !== $error ) {
+				$this->google_calendar_fail(
+					sprintf(
+						/* translators: %s: OAuth error code returned by Google. */
+						__( 'Google returned an authorization error: %s', 'mcp-ai-wpoos' ),
+						$error
+					)
+				);
+			}
+
+			$state_data = WP_MCP_AI_Google_OAuth_Service::consume_state( 'google_calendar', $state );
+
+			if ( is_wp_error( $state_data ) ) {
+				$this->google_calendar_fail( $state_data->get_error_message() );
+			}
+
+			if ( '' === $code ) {
+				$this->google_calendar_fail( __( 'No authorization code was received from Google.', 'mcp-ai-wpoos' ) );
+			}
+
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['google_calendar_client_id'] ) ? trim( (string) $settings['google_calendar_client_id'] ) : '';
+			$client_secret = isset( $settings['google_calendar_client_secret'] ) ? trim( (string) $settings['google_calendar_client_secret'] ) : '';
+
+			if ( '' === $client_id || '' === $client_secret ) {
+				$this->google_calendar_fail( __( 'Google Calendar OAuth credentials are missing. Save them and try again.', 'mcp-ai-wpoos' ) );
+			}
+
+			$tokens = WP_MCP_AI_Google_OAuth_Service::exchange_code(
+				array(
+					'code'          => $code,
+					'client_id'     => $client_id,
+					'client_secret' => $client_secret,
+					// Must byte-match the authorize request.
+					'redirect_uri'  => WP_MCP_AI_Google_OAuth_Service::build_redirect_uri(
+						WP_MCP_AI_Admin_Settings::GOOGLE_CALENDAR_OAUTH_CALLBACK_HANDLER
+					),
+				)
+			);
+
+			if ( is_wp_error( $tokens ) ) {
+				$this->google_calendar_fail( $tokens->get_error_message() );
+			}
+
+			$refresh_token = isset( $tokens['refresh_token'] ) ? trim( (string) $tokens['refresh_token'] ) : '';
+			$access_token  = isset( $tokens['access_token'] ) ? trim( (string) $tokens['access_token'] ) : '';
+			$granted       = isset( $tokens['scope'] ) ? trim( (string) $tokens['scope'] ) : '';
+
+			// Google omits the refresh token on re-consent when one already exists.
+			if ( '' === $refresh_token && ! empty( $settings['google_calendar_refresh_token'] ) ) {
+				$refresh_token = (string) $settings['google_calendar_refresh_token'];
+			}
+
+			if ( '' === $refresh_token ) {
+				$this->google_calendar_fail(
+					__( 'Google did not return a refresh token. Revoke the app under your Google Account permissions, then reconnect.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$email = WP_MCP_AI_Google_OAuth_Service::fetch_userinfo_email( $access_token );
+
+			$settings['google_calendar_refresh_token'] = $refresh_token;
+
+			if ( '' !== $granted ) {
+				$settings['google_calendar_granted_scopes'] = $granted;
+			}
+
+			if ( '' !== $email ) {
+				$settings['google_calendar_user_email'] = $email;
+			}
+
+			if ( empty( $settings['google_calendar_default_calendar_id'] ) ) {
+				$settings['google_calendar_default_calendar_id'] = 'primary';
+			}
+
+			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+			// A rotated refresh token invalidates any cached access token.
+			WP_MCP_AI_Google_OAuth_Service::forget_access_token( 'settings:' . get_current_blog_id() );
+
+			$message = '' !== $email
+				? sprintf(
+					/* translators: %s: Google account email address. */
+					__( 'Google Calendar connected successfully for %s.', 'mcp-ai-wpoos' ),
+					$email
+				)
+				: __( 'Google Calendar connected successfully.', 'mcp-ai-wpoos' );
+
+			wp_safe_redirect( $this->google_calendar_settings_url( array( 'calendar_success' => rawurlencode( $message ) ) ) );
+			exit;
+		}
+
+		/**
+		 * Handle disconnecting from Google Calendar.
+		 *
+		 * Revokes the token upstream, then clears the local tokens. The client ID
+		 * and secret are preserved so the account can be reconnected without
+		 * re-entering credentials. Upstream revocation failure is non-fatal: local
+		 * credentials must be cleared regardless.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return void
+		 */
+		public function handle_google_calendar_disconnect() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
+			}
+
+			check_admin_referer( 'wp_mcp_ai_google_calendar_disconnect' );
+
+			$this->require_google_services();
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$token    = isset( $settings['google_calendar_refresh_token'] ) ? (string) $settings['google_calendar_refresh_token'] : '';
+
+			if ( '' !== $token ) {
+				WP_MCP_AI_Google_OAuth_Service::revoke( $token );
+			}
+
+			WP_MCP_AI_Google_OAuth_Service::forget_access_token( 'settings:' . get_current_blog_id() );
+
+			unset( $settings['google_calendar_refresh_token'] );
+			unset( $settings['google_calendar_user_email'] );
+			unset( $settings['google_calendar_granted_scopes'] );
+
+			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+			wp_safe_redirect(
+				$this->google_calendar_settings_url(
+					array(
+						'calendar_success' => rawurlencode(
+							__( 'Disconnected from Google Calendar. Your OAuth credentials remain saved for future connections.', 'mcp-ai-wpoos' )
+						),
+					)
 				)
 			);
 			exit;

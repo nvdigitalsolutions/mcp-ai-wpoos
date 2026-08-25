@@ -13,6 +13,12 @@ Search, create, and report across Google Workspace. Each tool gates on its respe
 | `WP_MCP_AI_Pro_Tool_Search_Gmail` | `search_gmail` | Gmail message search |
 | `WP_MCP_AI_Pro_Tool_Search_Drive` | `search_drive` | Google Drive file search |
 | `WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event` | `create_google_calendar_event` | Calendar event creation |
+| `WP_MCP_AI_Pro_Tool_List_Google_Calendars` | `list_google_calendars` | Calendar discovery |
+| `WP_MCP_AI_Pro_Tool_List_Google_Calendar_Events` | `list_google_calendar_events` | Calendar event listing (paginated) |
+| `WP_MCP_AI_Pro_Tool_Update_Google_Calendar_Event` | `update_google_calendar_event` | Calendar event update (full replace or PATCH) |
+| `WP_MCP_AI_Pro_Tool_Delete_Google_Calendar_Event` | `delete_google_calendar_event` | Calendar event deletion |
+| `WP_MCP_AI_Pro_Tool_Check_Google_Calendar_Availability` | `check_google_calendar_availability` | Calendar freeBusy lookup (max 50 calendars) |
+| `WP_MCP_AI_Pro_Tool_Quick_Add_Google_Calendar_Event` | `quick_add_google_calendar_event` | Calendar event creation from natural language |
 | `WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report` | `get_google_analytics_report` | GA4 reporting |
 
 ## Tier

@@ -41,6 +41,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		const GOOGLE_DRIVE_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 
+		/*
+		 * Google Calendar OAuth.
+		 *
+		 * Scopes are NOT declared here: they are profile-driven and owned by
+		 * WP_MCP_AI_Google_Calendar_Scopes, which is the single source of truth for
+		 * both the base and Pro connection surfaces. Declaring a scope constant here
+		 * is what allowed the base and Pro Google Drive flows to drift apart.
+		 */
+		const GOOGLE_CALENDAR_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
+		const GOOGLE_CALENDAR_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
+		const GOOGLE_CALENDAR_OAUTH_REVOKE_ENDPOINT    = 'https://oauth2.googleapis.com/revoke';
+		const GOOGLE_CALENDAR_API_BASE                 = 'https://www.googleapis.com/calendar/v3';
+		const GOOGLE_CALENDAR_OAUTH_CALLBACK_HANDLER   = 'google_calendar_callback';
+
 		// Embedded LLM provider defaults (Pro addon).
 		const DEFAULT_EMBEDDED_MODEL = 'gemma-2-2b-it-q4f16_1-MLC';
 
@@ -109,6 +123,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'admin_post_wp_mcp_ai_gmail_disconnect', array( $this->oauth_manager, 'handle_gmail_disconnect' ) );
 			add_action( 'admin_post_wp_mcp_ai_google_drive_oauth_start', array( $this->oauth_manager, 'handle_google_drive_oauth_start' ) );
 			add_action( 'admin_post_wp_mcp_ai_google_drive_disconnect', array( $this->oauth_manager, 'handle_google_drive_disconnect' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_calendar_oauth_start', array( $this->oauth_manager, 'handle_google_calendar_oauth_start' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_calendar_disconnect', array( $this->oauth_manager, 'handle_google_calendar_disconnect' ) );
 			// Yahoo OAuth start hook removed - button now links directly to Yahoo OAuth.
 			// OAuth state is generated when button is rendered in class-wp-mcp-ai-section-integrations.php.
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this->settings_base, 'filter_memory_max_file_bytes' ), 10, 2 );
