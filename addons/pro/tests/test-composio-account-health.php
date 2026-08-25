@@ -329,6 +329,137 @@ class Test_Composio_Account_Health extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that discovery is deterministic regardless of catalog order.
+	 *
+	 * Taking the first match in catalog order made verification unreproducible:
+	 * the same account could verify or not depending on which safe candidate the
+	 * API happened to return first, and candidates differ in whether they
+	 * tolerate an empty argument payload.
+	 */
+	public function test_resolve_probe_tool_is_deterministic_across_catalog_order() {
+		$forward = array(
+			array(
+				'slug'             => 'SLACK_LIST_ALL_USERS',
+				'input_parameters' => array( 'required' => array() ),
+			),
+			array(
+				'slug'             => 'SLACK_FETCH_HISTORY',
+				'input_parameters' => array( 'required' => array() ),
+			),
+		);
+
+		$this->mock_routes( array( 'catalog' => array( 'items' => $forward ) ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_order_a' );
+		$first  = WP_MCP_AI_Composio_Account_Health::resolve_probe_tool( $client, 'conn_order_a', 'slack' );
+
+		remove_all_filters( 'pre_http_request' );
+
+		// Same candidate set, reversed order, fresh connection so the 24h probe
+		// cache cannot mask the difference.
+		$this->mock_routes( array( 'catalog' => array( 'items' => array_reverse( $forward ) ) ) );
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_order_b' );
+		$second = WP_MCP_AI_Composio_Account_Health::resolve_probe_tool( $client, 'conn_order_b', 'slack' );
+
+		$this->assertSame( $first, $second );
+		$this->assertSame( 'SLACK_LIST_ALL_USERS', $first );
+	}
+
+	/**
+	 * Test that candidates are ranked by the verb order declared in
+	 * SAFE_PROBE_VERBS, so an identity-style GET beats a collection LIST.
+	 */
+	public function test_resolve_probe_tool_prefers_declared_verb_order() {
+		$this->mock_routes(
+			array(
+				'catalog' => array(
+					'items' => array(
+						array(
+							'slug'             => 'SLACK_LIST_ALL_USERS',
+							'input_parameters' => array( 'required' => array() ),
+						),
+						array(
+							'slug'             => 'SLACK_GET_PROFILE',
+							'input_parameters' => array( 'required' => array() ),
+						),
+					),
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_verb_rank' );
+
+		$this->assertSame(
+			'SLACK_GET_PROFILE',
+			WP_MCP_AI_Composio_Account_Health::resolve_probe_tool( $client, 'conn_verb_rank', 'slack' )
+		);
+	}
+
+	/**
+	 * Test that candidates sharing a verb break ties alphabetically.
+	 */
+	public function test_resolve_probe_tool_breaks_verb_ties_alphabetically() {
+		$this->mock_routes(
+			array(
+				'catalog' => array(
+					'items' => array(
+						array(
+							'slug'             => 'SLACK_GET_TEAM',
+							'input_parameters' => array( 'required' => array() ),
+						),
+						array(
+							'slug'             => 'SLACK_GET_PROFILE',
+							'input_parameters' => array( 'required' => array() ),
+						),
+					),
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_verb_tie' );
+
+		$this->assertSame(
+			'SLACK_GET_PROFILE',
+			WP_MCP_AI_Composio_Account_Health::resolve_probe_tool( $client, 'conn_verb_tie', 'slack' )
+		);
+	}
+
+	/**
+	 * Test that Google Calendar probes with a real provider read.
+	 *
+	 * Without a curated entry, discovery would rank GOOGLECALENDAR_GET_CURRENT_DATE_TIME
+	 * first (GET verb, genuinely zero-argument) — but that tool answers locally
+	 * and never contacts Google, so it would report a revoked credential as
+	 * verified. That is precisely the false positive this engine exists to stop.
+	 */
+	public function test_google_calendar_probe_hits_the_provider() {
+		$this->mock_routes(
+			array(
+				'schema'  => array(
+					'slug'             => 'GOOGLECALENDAR_LIST_CALENDARS',
+					'input_parameters' => array( 'required' => array() ),
+				),
+				'catalog' => array(
+					'items' => array(
+						array(
+							'slug'             => 'GOOGLECALENDAR_GET_CURRENT_DATE_TIME',
+							'input_parameters' => array( 'required' => array() ),
+						),
+					),
+				),
+			)
+		);
+
+		$client = new WP_MCP_AI_Composio_Client( 'ak_test', '', 'conn_gcal' );
+
+		$this->assertSame(
+			'GOOGLECALENDAR_LIST_CALENDARS',
+			WP_MCP_AI_Composio_Account_Health::resolve_probe_tool( $client, 'conn_gcal', 'googlecalendar' )
+		);
+	}
+
+	/**
 	 * Test that a pinned probe tool from another toolkit is rejected, so the
 	 * filter cannot be used to execute an arbitrary action.
 	 */

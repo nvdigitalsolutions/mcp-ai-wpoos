@@ -27,7 +27,7 @@ Pro integration with Composio Connect: one remote-site connection type (`composi
 ## Inputs / Outputs / Neighbors
 
 - **Reads from:** `WP_MCP_AI_Pro_Remote_Site_Manager` connections (`connection_type === 'composio'`); WordPress transients for caching/state/dedup; the `wp_mcp_ai_composio_health_{connection_id}` option for stored credential verdicts.
-- **Writes to:** WordPress transients (GET caches, 429 cooldowns, link state, event dedup, resolved probe tools); the per-connection health ledger option; audit log via `WP_MCP_AI_Logger` when available.
+- **Writes to:** WordPress transients (GET caches, the per-connection GET cache-key index that makes those hash-keyed caches invalidatable, 429 cooldowns, link state, event dedup, resolved probe tools); the per-connection health ledger option; audit log via `WP_MCP_AI_Logger` when available.
 - **Upstream callers:** Remote Sites admin page (save/test/Connect Link/refresh/disconnect actions), the seven `composio_*` tools, Composio webhook deliveries.
 - **Downstream collaborators:** Composio backend API (`https://backend.composio.dev`, API `v3.1`, `x-api-key` auth); Pro Workflow Builder / Schedule Manager via `wp_mcp_ai_composio_trigger_received`.
 - **Events fired:** `wp_mcp_ai_composio_trigger`, `wp_mcp_ai_composio_account_expired`, `wp_mcp_ai_composio_trigger_disabled`, `wp_mcp_ai_composio_trigger_received`, `wp_mcp_ai_composio_tool_executed`, `wp_mcp_ai_composio_account_managed`.

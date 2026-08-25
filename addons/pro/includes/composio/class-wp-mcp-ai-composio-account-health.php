@@ -97,11 +97,12 @@ class WP_MCP_AI_Composio_Account_Health {
 	 * stale entry degrades to catalog discovery rather than to a bogus call.
 	 */
 	const CURATED_PROBE_TOOLS = array(
-		'gmail'      => 'GMAIL_GET_PROFILE',
-		'googledocs' => 'GOOGLEDOCS_GET_DOCUMENT_BY_ID',
-		'github'     => 'GITHUB_GET_THE_AUTHENTICATED_USER',
-		'notion'     => 'NOTION_GET_ABOUT_ME',
-		'linear'     => 'LINEAR_GET_CURRENT_USER',
+		'gmail'          => 'GMAIL_GET_PROFILE',
+		'googlecalendar' => 'GOOGLECALENDAR_LIST_CALENDARS',
+		'googledocs'     => 'GOOGLEDOCS_GET_DOCUMENT_BY_ID',
+		'github'         => 'GITHUB_GET_THE_AUTHENTICATED_USER',
+		'notion'         => 'NOTION_GET_ABOUT_ME',
+		'linear'         => 'LINEAR_GET_CURRENT_USER',
 	);
 
 	/**
@@ -498,7 +499,10 @@ class WP_MCP_AI_Composio_Account_Health {
 			}
 		}
 
-		// Discovery path — scan the toolkit's catalog for a safe candidate.
+		// Discovery path — collect every safe candidate, then choose one
+		// deterministically. Taking the first match in catalog order made
+		// verification unreproducible: the same account could verify or not
+		// depending on which candidate the API happened to return first.
 		if ( '' === $resolved ) {
 			$catalog = $client->list_tools(
 				array(
@@ -508,6 +512,8 @@ class WP_MCP_AI_Composio_Account_Health {
 			);
 
 			if ( ! is_wp_error( $catalog ) && isset( $catalog['items'] ) && is_array( $catalog['items'] ) ) {
+				$candidates = array();
+
 				foreach ( $catalog['items'] as $tool ) {
 					if ( ! is_array( $tool ) ) {
 						continue;
@@ -527,9 +533,10 @@ class WP_MCP_AI_Composio_Account_Health {
 						continue;
 					}
 
-					$resolved = strtoupper( $slug );
-					break;
+					$candidates[] = strtoupper( $slug );
 				}
+
+				$resolved = self::pick_probe_candidate( $candidates, $toolkit );
 			}
 		}
 
@@ -538,6 +545,82 @@ class WP_MCP_AI_Composio_Account_Health {
 		set_transient( $cache_key, $resolved, self::PROBE_CACHE_TTL );
 
 		return $resolved;
+	}
+
+	/**
+	 * Choose one probe tool from the viable candidates, deterministically.
+	 *
+	 * Candidates are ranked by their read verb's position in SAFE_PROBE_VERBS —
+	 * the preference order already declared there, identity-style reads first —
+	 * and then alphabetically, so a toolkit always probes with the same tool no
+	 * matter what order the catalog came back in.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param array  $candidates Uppercase candidate slugs.
+	 * @param string $toolkit    Toolkit slug.
+	 * @return string Chosen slug, or an empty string when there are no candidates.
+	 */
+	private static function pick_probe_candidate( array $candidates, $toolkit ) {
+		$candidates = array_values( array_unique( $candidates ) );
+
+		if ( empty( $candidates ) ) {
+			return '';
+		}
+
+		usort(
+			$candidates,
+			static function ( $a, $b ) use ( $toolkit ) {
+				$rank_a = self::probe_verb_rank( $a, $toolkit );
+				$rank_b = self::probe_verb_rank( $b, $toolkit );
+
+				if ( $rank_a !== $rank_b ) {
+					return $rank_a <=> $rank_b;
+				}
+
+				return strcmp( $a, $b );
+			}
+		);
+
+		return $candidates[0];
+	}
+
+	/**
+	 * Rank a candidate by its read verb's position in SAFE_PROBE_VERBS.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param string $slug    Candidate tool slug.
+	 * @param string $toolkit Toolkit slug.
+	 * @return int Lower sorts first; PHP_INT_MAX when the verb is not a safe one.
+	 */
+	private static function probe_verb_rank( $slug, $toolkit ) {
+		$rank = array_search( self::probe_verb( $slug, $toolkit ), self::SAFE_PROBE_VERBS, true );
+
+		return false === $rank ? PHP_INT_MAX : (int) $rank;
+	}
+
+	/**
+	 * Extract the verb segment from a `{TOOLKIT}_{VERB}_...` slug.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param string $slug    Candidate tool slug.
+	 * @param string $toolkit Toolkit slug.
+	 * @return string Uppercase verb, or an empty string when the slug does not
+	 *                belong to the toolkit.
+	 */
+	private static function probe_verb( $slug, $toolkit ) {
+		$slug   = strtoupper( trim( (string) $slug ) );
+		$prefix = strtoupper( str_replace( '-', '_', (string) $toolkit ) ) . '_';
+
+		if ( 0 !== strpos( $slug, $prefix ) ) {
+			return '';
+		}
+
+		$segments = explode( '_', substr( $slug, strlen( $prefix ) ) );
+
+		return isset( $segments[0] ) ? $segments[0] : '';
 	}
 
 	/**
@@ -556,17 +639,7 @@ class WP_MCP_AI_Composio_Account_Health {
 			return false;
 		}
 
-		$prefix = strtoupper( str_replace( '-', '_', (string) $toolkit ) ) . '_';
-
-		if ( 0 !== strpos( $slug, $prefix ) ) {
-			return false;
-		}
-
-		$verb = substr( $slug, strlen( $prefix ) );
-		$verb = explode( '_', $verb );
-		$verb = isset( $verb[0] ) ? $verb[0] : '';
-
-		return in_array( $verb, self::SAFE_PROBE_VERBS, true );
+		return in_array( self::probe_verb( $slug, $toolkit ), self::SAFE_PROBE_VERBS, true );
 	}
 
 	/**
