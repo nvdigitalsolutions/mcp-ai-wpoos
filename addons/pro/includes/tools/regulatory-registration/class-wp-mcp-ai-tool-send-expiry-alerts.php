@@ -226,7 +226,7 @@ class WP_MCP_AI_Tool_Send_Expiry_Alerts implements WP_MCP_AI_Tool_Interface, WP_
 				'registrations'  => count( $expiring_registrations ),
 				'days_threshold' => $days_threshold,
 			);
-			update_option( 'wp_mcp_ai_expiry_alert_log', array_slice( $alert_log, -50 ) );
+			update_option( 'wp_mcp_ai_expiry_alert_log', array_slice( $alert_log, -50 ), false );
 		}
 
 		return array(

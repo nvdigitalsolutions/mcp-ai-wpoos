@@ -219,7 +219,7 @@ class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_I
 
 		$notification_history   = get_option( 'wp_mcp_ai_notification_history', array() );
 		$notification_history[] = $notification_log;
-		update_option( 'wp_mcp_ai_notification_history', array_slice( $notification_history, -100 ) );
+		update_option( 'wp_mcp_ai_notification_history', array_slice( $notification_history, -100 ), false );
 
 		return array(
 			'success'         => true,

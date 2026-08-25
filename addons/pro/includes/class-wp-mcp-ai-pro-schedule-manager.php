@@ -68,6 +68,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		const MAX_HISTORY_PER_SCHEDULE = 50;
 
 		/**
+		 * Maximum length of a free-text value retained in a history action log.
+		 *
+		 * The history ring buffer holds up to MAX_HISTORY_PER_SCHEDULE runs for
+		 * every schedule in a single option row, so individual assistant responses,
+		 * step results and broadcast bodies must be bounded before storage.
+		 *
+		 * @since 1.0.0
+		 */
+		const MAX_HISTORY_TEXT_LENGTH = 500;
+
+		/**
 		 * Default per-schedule retention for result envelopes.
 		 *
 		 * @since 1.0.0
@@ -1255,13 +1266,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						$tool_slug,
 						$arguments,
 						$result,
-						array_merge(
-							$step_context,
-							array(
-								'step_label'    => $label,
-								'step_duration' => $step_dur,
-							)
-						)
+						self::build_workflow_step_log_context( $step_context, $previous_results, $label, $step_dur )
 					);
 				}
 
@@ -1296,6 +1301,78 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			do_action( 'wp_mcp_ai_pro_workflow_completed', $schedule_id, $schedule, $previous_results );
 
 			return $previous_results;
+		}
+
+		/**
+		 * Build the context handed to the workflow step logger.
+		 *
+		 * The execution context carries `previous_results` so downstream tools can
+		 * chain on earlier step outputs, but persisting it with every step would
+		 * embed each step's entire history in the log buffers — O(N²) growth within
+		 * a single workflow run. Replace it in the logged context with a bounded
+		 * summary that still shows what ran before.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $step_context     Execution context for the current step.
+		 * @param array  $previous_results Results of earlier steps, keyed by index.
+		 * @param string $label            Human-readable step label.
+		 * @param float  $step_dur         Step execution duration in seconds.
+		 * @return array Log context.
+		 */
+		protected static function build_workflow_step_log_context( array $step_context, array $previous_results, $label, $step_dur ) {
+			unset( $step_context['previous_results'] );
+
+			$summary = array();
+
+			foreach ( $previous_results as $index => $previous ) {
+				if ( ! is_array( $previous ) ) {
+					continue;
+				}
+
+				$summary[ $index ] = array(
+					'tool_slug' => isset( $previous['tool_slug'] ) ? $previous['tool_slug'] : '',
+					'label'     => isset( $previous['label'] ) ? $previous['label'] : '',
+					'duration'  => isset( $previous['duration'] ) ? $previous['duration'] : 0,
+					'result'    => isset( $previous['result'] ) ? self::build_workflow_result_preview( $previous['result'] ) : '',
+				);
+			}
+
+			$step_context['previous_step_count'] = count( $summary );
+			$step_context['previous_steps']      = $summary;
+			$step_context['step_label']          = (string) $label;
+			$step_context['step_duration']       = (float) $step_dur;
+
+			return $step_context;
+		}
+
+		/**
+		 * Bound a workflow step result for the log context.
+		 *
+		 * String results keep a word-limited excerpt; structured results degrade to
+		 * a short JSON preview so the stored entry stays small and serialisable.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param mixed $result Step result.
+		 * @return mixed Bounded preview.
+		 */
+		protected static function build_workflow_result_preview( $result ) {
+			if ( is_string( $result ) ) {
+				return wp_trim_words( $result, 80, '…' );
+			}
+
+			$encoded = wp_json_encode( $result );
+
+			if ( false === $encoded ) {
+				return '[unserializable result]';
+			}
+
+			if ( strlen( $encoded ) <= 200 ) {
+				return $encoded;
+			}
+
+			return substr( $encoded, 0, 200 ) . '…';
 		}
 
 		/**
@@ -2315,7 +2392,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'start_time' => time(),
 				'duration'   => $duration,
 				'error'      => $error_msg,
-				'action_log' => is_array( $action_log ) ? $action_log : array(),
+				'action_log' => is_array( $action_log ) ? self::trim_action_log_for_history( $action_log ) : array(),
 			);
 
 			// Trim to ring buffer limit.
@@ -2352,6 +2429,160 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					self::store_result_envelope( $schedule_id, $envelope, $schedule );
 				}
 			}
+		}
+
+		/**
+		 * Trim an action log for storage in the history ring buffer.
+		 *
+		 * `$action_log` as assembled by {@see self::dispatch()} can carry the entire
+		 * assistant response, every workflow step result, and the full
+		 * workflow-builder node output. Persisting that verbatim for 50 runs per
+		 * schedule grows {@see self::HISTORY_OPTION} without bound, which conflicts
+		 * with the compactness guarantee documented on {@see self::RESULTS_OPTION}.
+		 *
+		 * Preserves exactly the fields the history modal renders (`SM.formatActionLog()`
+		 * in `assets/js/schedule-manager.js`) with every free-text value bounded to
+		 * {@see self::MAX_HISTORY_TEXT_LENGTH}, and replaces the verbose `nodes`
+		 * payload with a count.
+		 *
+		 * Deliberately separate from {@see self::trim_action_log_for_summary()}: that
+		 * method shapes the result envelope and emits different field names
+		 * (`result_excerpt`, `assistant.response`) than the history UI reads
+		 * (`result`, `assistant.message`).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $action_log Raw action log from dispatch().
+		 * @return array Bounded action log safe for option storage.
+		 */
+		protected static function trim_action_log_for_history( array $action_log ) {
+			$limit   = self::MAX_HISTORY_TEXT_LENGTH;
+			$trimmed = array();
+
+			if ( isset( $action_log['type'] ) ) {
+				$trimmed['type'] = $action_log['type'];
+			}
+
+			if ( isset( $action_log['hook'] ) ) {
+				$trimmed['hook'] = $action_log['hook'];
+			}
+
+			if ( isset( $action_log['args'] ) ) {
+				$trimmed['args'] = self::truncate_history_value( $action_log['args'], $limit );
+			}
+
+			if ( isset( $action_log['workflow_builder_id'] ) ) {
+				$trimmed['workflow_builder_id'] = $action_log['workflow_builder_id'];
+			}
+
+			if ( isset( $action_log['assistant'] ) && is_array( $action_log['assistant'] ) ) {
+				$assistant = array();
+
+				if ( isset( $action_log['assistant']['assistant_id'] ) ) {
+					$assistant['assistant_id'] = (int) $action_log['assistant']['assistant_id'];
+				}
+
+				if ( isset( $action_log['assistant']['is_agentic'] ) ) {
+					$assistant['is_agentic'] = ! empty( $action_log['assistant']['is_agentic'] );
+				}
+
+				// Both field names are kept: the history modal reads `message`, the
+				// result envelope reads `response`.
+				foreach ( array( 'message', 'response' ) as $field ) {
+					if ( isset( $action_log['assistant'][ $field ] ) ) {
+						$assistant[ $field ] = self::truncate_history_value( $action_log['assistant'][ $field ], $limit );
+					}
+				}
+
+				$trimmed['assistant'] = $assistant;
+			}
+
+			if ( isset( $action_log['steps'] ) && is_array( $action_log['steps'] ) ) {
+				$trimmed['steps'] = array();
+
+				foreach ( $action_log['steps'] as $index => $step ) {
+					if ( ! is_array( $step ) ) {
+						continue;
+					}
+
+					$trimmed['steps'][ $index ] = array(
+						'tool_slug' => isset( $step['tool_slug'] ) ? $step['tool_slug'] : '',
+						'label'     => isset( $step['label'] ) ? $step['label'] : '',
+						'duration'  => isset( $step['duration'] ) ? $step['duration'] : 0,
+						'result'    => isset( $step['result'] ) ? self::truncate_history_value( $step['result'], $limit ) : '',
+					);
+				}
+			}
+
+			if ( isset( $action_log['broadcast'] ) && is_array( $action_log['broadcast'] ) ) {
+				$broadcast = array();
+
+				if ( isset( $action_log['broadcast']['channels'] ) ) {
+					$broadcast['channels'] = $action_log['broadcast']['channels'];
+				}
+
+				if ( isset( $action_log['broadcast']['message'] ) ) {
+					$broadcast['message'] = self::truncate_history_value( $action_log['broadcast']['message'], $limit );
+				}
+
+				if ( isset( $action_log['broadcast']['summary'] ) ) {
+					$broadcast['summary'] = $action_log['broadcast']['summary'];
+				}
+
+				$trimmed['broadcast'] = $broadcast;
+			}
+
+			// The full node payload is only needed by build_result_envelope() during
+			// dispatch; keep a count so the history entry still conveys the shape.
+			if ( isset( $action_log['nodes'] ) && is_array( $action_log['nodes'] ) ) {
+				$trimmed['node_count'] = count( $action_log['nodes'] );
+			}
+
+			return $trimmed;
+		}
+
+		/**
+		 * Bound a single action-log value for history storage.
+		 *
+		 * Arrays and objects keep their original shape while they encode to within
+		 * the limit, so the history modal can still render structured `args` and
+		 * `summary` payloads. Anything larger degrades to a truncated JSON string.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param mixed $value Raw value.
+		 * @param int   $limit Maximum retained length.
+		 * @return mixed Bounded value.
+		 */
+		protected static function truncate_history_value( $value, $limit ) {
+			if ( null === $value || is_bool( $value ) || is_int( $value ) || is_float( $value ) ) {
+				return $value;
+			}
+
+			$keep_shape = false;
+
+			if ( is_array( $value ) || is_object( $value ) ) {
+				$encoded = wp_json_encode( $value );
+
+				if ( false === $encoded ) {
+					return '';
+				}
+
+				$keep_shape = true;
+				$string     = $encoded;
+			} else {
+				$string = (string) $value;
+			}
+
+			if ( strlen( $string ) <= $limit ) {
+				return $keep_shape ? $value : $string;
+			}
+
+			$truncated = function_exists( 'mb_substr' )
+				? mb_substr( $string, 0, $limit )
+				: substr( $string, 0, $limit );
+
+			return $truncated . '…';
 		}
 
 		/**

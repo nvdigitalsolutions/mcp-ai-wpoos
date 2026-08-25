@@ -65,6 +65,7 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 		'wp_ajax_wp_mcp_ai_sync_all_playbooks',
 		'wp_ajax_wp_mcp_ai_delete_old_playbooks',
 		'wp_ajax_wp_mcp_ai_sync_media_templates',
+		'wp_ajax_wp_mcp_ai_maintain_log_buffers',
 		'wp_ajax_wp_mcp_ai_test_mcp_endpoint',
 		'wp_ajax_wp_mcp_ai_test_mcp_method',
 		'wp_ajax_wp_mcp_ai_test_provider',

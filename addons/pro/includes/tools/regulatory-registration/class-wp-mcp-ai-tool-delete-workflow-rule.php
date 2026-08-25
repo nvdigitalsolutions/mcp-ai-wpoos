@@ -142,7 +142,7 @@ class WP_MCP_AI_Tool_Delete_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 			'rule_id'   => $rule_id,
 			'rule_name' => $rule_name,
 		);
-		update_option( 'wp_mcp_ai_workflow_log', array_slice( $workflow_log, -200 ) );
+		update_option( 'wp_mcp_ai_workflow_log', array_slice( $workflow_log, -200 ), false );
 
 		return array(
 			'success'    => true,

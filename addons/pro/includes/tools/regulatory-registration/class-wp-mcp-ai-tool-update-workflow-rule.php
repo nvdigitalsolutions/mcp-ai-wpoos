@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Update_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 			'rule_name'      => $rule['name'],
 			'updated_fields' => $updated_fields,
 		);
-		update_option( 'wp_mcp_ai_workflow_log', array_slice( $workflow_log, -200 ) );
+		update_option( 'wp_mcp_ai_workflow_log', array_slice( $workflow_log, -200 ), false );
 
 		return array(
 			'success'        => true,

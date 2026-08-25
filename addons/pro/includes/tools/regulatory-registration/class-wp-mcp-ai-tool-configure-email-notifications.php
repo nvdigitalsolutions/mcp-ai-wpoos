@@ -171,7 +171,7 @@ class WP_MCP_AI_Tool_Configure_Email_Notifications implements WP_MCP_AI_Tool_Int
 
 		$notification_log   = get_option( 'wp_mcp_ai_notification_log', array() );
 		$notification_log[] = $log_entry;
-		update_option( 'wp_mcp_ai_notification_log', array_slice( $notification_log, -100 ) ); // Keep last 100 entries.
+		update_option( 'wp_mcp_ai_notification_log', array_slice( $notification_log, -100 ), false ); // Keep last 100 entries.
 
 		return array(
 			'success'           => true,

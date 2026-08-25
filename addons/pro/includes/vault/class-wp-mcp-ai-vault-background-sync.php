@@ -178,7 +178,7 @@ class WP_MCP_AI_Vault_Background_Sync {
 		$logs = array_slice( $logs, 0, 50 );
 
 		// Save logs.
-		update_option( 'wp_mcp_ai_vault_sync_logs', $logs );
+		update_option( 'wp_mcp_ai_vault_sync_logs', $logs, false );
 
 		// Also log to WordPress debug log if enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

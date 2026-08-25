@@ -1515,6 +1515,33 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Check if extended (verbose) logging is enabled.
+		 *
+		 * Extended logging raises the per-entry context budget used when persisting
+		 * entries to the rolling `wp_mcp_ai_recent_errors` and
+		 * `wp_mcp_ai_recent_activity` buffers, so more diagnostic detail survives
+		 * into the admin log views. Entries remain size-capped either way — see
+		 * {@see WP_MCP_AI_Logger::slim_context_for_storage()}.
+		 *
+		 * Unlike the other granular logging helpers, this one defaults to disabled
+		 * when the key is absent, matching the field default and the performance
+		 * warning shown in the settings UI.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @return bool True if both base logging and extended logging are enabled.
+		 */
+		public static function is_extended_logging_enabled() {
+			if ( ! self::is_logging_enabled() ) {
+				return false;
+			}
+
+			$settings = self::get_settings();
+
+			return ! empty( $settings['enable_extended_logging'] );
+		}
+
+		/**
 		 * Write a message to the PHP error log when logging is enabled.
 		 *
 		 * @param string $message Message to log.
