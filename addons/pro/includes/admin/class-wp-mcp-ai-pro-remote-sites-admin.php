@@ -207,6 +207,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->handle_google_drive_oauth_callback();
 		}
 
+		// Handle Google Calendar OAuth connect action.
+		if ( 'google_calendar_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'google_calendar_oauth_connect_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_google_calendar_oauth_start( $connection_id );
+		}
+
+		// Handle Google Calendar OAuth callback action.
+		if ( 'google_calendar_oauth_callback' === $oauth_handler ) {
+			$this->handle_google_calendar_oauth_callback();
+		}
+
 		// Handle Upwork OAuth connect action.
 		if ( 'upwork_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
 			$nonce         = sanitize_key( wp_unslash( $_GET['_wpnonce'] ) );
@@ -476,6 +493,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$refresh_token = isset( $_POST['google_drive_refresh_token'] ) ? wp_unslash( $_POST['google_drive_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$user_email    = isset( $_POST['google_drive_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_drive_user_email'] ) ) : '';
 					break;
+				case 'google_calendar':
+					$client_id     = isset( $_POST['google_calendar_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_calendar_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['google_calendar_client_secret'] ) ? wp_unslash( $_POST['google_calendar_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token = isset( $_POST['google_calendar_refresh_token'] ) ? wp_unslash( $_POST['google_calendar_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$user_email    = isset( $_POST['google_calendar_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_calendar_user_email'] ) ) : '';
+					break;
 				case 'upwork':
 					$client_id     = isset( $_POST['upwork_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_client_id'] ) ) : '';
 					$client_secret = isset( $_POST['upwork_client_secret'] ) ? wp_unslash( $_POST['upwork_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -600,6 +623,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'google_drive' === $connection_type ) {
 				$url       = 'https://www.googleapis.com/drive/v3';
 				$auth_type = 'none'; // Google Drive uses OAuth, not standard auth types.
+			}
+
+			// For Google Calendar connections, always use the Calendar API URL.
+			if ( 'google_calendar' === $connection_type ) {
+				$url       = 'https://www.googleapis.com/calendar/v3';
+				$auth_type = 'none'; // Google Calendar uses OAuth, not standard auth types.
 			}
 
 			// For Upwork connections, always use the Upwork GraphQL API URL.
@@ -805,6 +834,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'user_email'                     => $user_email,
 				// Google Drive-specific fields.
 				'folder_id'                      => isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '',
+				// Google Calendar-specific fields. `calendar_id` is deliberately NOT
+				// folded into `folder_id`: that key is read unconditionally for every
+				// connection type, so reusing it would let a Calendar save clobber a
+				// Drive connection's folder scope.
+				'calendar_id'                    => isset( $_POST['google_calendar_calendar_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_calendar_calendar_id'] ) ) : '',
+				'scope_profile'                  => isset( $_POST['google_calendar_scope_profile'] ) ? sanitize_key( wp_unslash( $_POST['google_calendar_scope_profile'] ) ) : '',
 				// Upwork-specific fields.
 				'upwork_username'                => isset( $_POST['upwork_user_email'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_user_email'] ) ) : '',
 				'upwork_mode'                    => isset( $_POST['upwork_mode'] ) && in_array( $_POST['upwork_mode'], array( 'api', 'web_search' ), true )
@@ -1745,6 +1780,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'ezuite_erp'         => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
 									'gmail'              => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
 									'google_drive'       => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
+									'google_calendar'    => __( 'Google Calendar', 'mcp-ai-wpoos-pro' ),
 									'upwork'             => __( 'Upwork', 'mcp-ai-wpoos-pro' ),
 									'telegram'           => __( 'Telegram', 'mcp-ai-wpoos-pro' ),
 									'whatsapp'           => __( 'WhatsApp', 'mcp-ai-wpoos-pro' ),
@@ -1776,6 +1812,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'ezuite_erp'         => '#8c50a7',
 									'gmail'              => '#ea4335', // Google red color.
 									'google_drive'       => '#4285f4', // Google blue color.
+									'google_calendar'    => '#0b8043', // Google Calendar green.
 									'upwork'             => '#14a800', // Upwork green.
 									'telegram'           => '#0088cc', // Telegram blue.
 									'whatsapp'           => '#25d366', // WhatsApp green.
@@ -2103,6 +2140,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="google_drive" <?php selected( $connection_type, 'google_drive' ); ?>>
 								<?php esc_html_e( 'Google Drive (Cloud Storage)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="google_calendar" <?php selected( $connection_type, 'google_calendar' ); ?>>
+								<?php esc_html_e( 'Google Calendar (Scheduling)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="upwork" <?php selected( $connection_type, 'upwork' ); ?>>
 								<?php esc_html_e( 'Upwork (Freelance Marketplace)', 'mcp-ai-wpoos-pro' ); ?>
@@ -3416,6 +3456,146 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description"><?php esc_html_e( 'The Google account email associated with this connection for reference.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
+
+				<!-- Type-specific fields for Google Calendar -->
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="google_calendar_client_id" id="google_calendar_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console. The Google Calendar API must be enabled for the project.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="google_calendar_client_secret" id="google_calendar_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<?php if ( ! empty( $connection['client_secret'] ) ) : ?>
+								<p class="description">
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+									<?php esc_html_e( 'Client secret is set. Leave blank to keep the existing secret, or enter a new one to replace it.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php else : ?>
+								<p class="description"><?php esc_html_e( 'Client secret is not set. Enter the OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<?php endif; ?>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Authorized Redirect URI', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						// Built via the shared service so the authorize request and the
+						// token exchange cannot drift apart.
+						require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+						$google_calendar_redirect_uri = WP_MCP_AI_Google_OAuth_Service::build_remote_redirect_uri( 'google_calendar_oauth_callback' );
+						?>
+						<input type="text" readonly="readonly" value="<?php echo esc_url( $google_calendar_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description">
+							<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'mcp-ai-wpoos-pro' ); ?>
+							<br>
+							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
+								<?php esc_html_e( 'Open Google Cloud Console', 'mcp-ai-wpoos-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+							</a>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_scope_profile"><?php esc_html_e( 'Permission Level', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+						$gcal_profile  = WP_MCP_AI_Google_Calendar_Scopes::normalise_profile(
+							$is_edit && isset( $connection['scope_profile'] ) ? $connection['scope_profile'] : ''
+						);
+						$gcal_profiles = WP_MCP_AI_Google_Calendar_Scopes::get_profiles();
+						?>
+						<select name="google_calendar_scope_profile" id="google_calendar_scope_profile" class="regular-text">
+							<?php foreach ( $gcal_profiles as $gcal_slug => $gcal_definition ) : ?>
+								<option value="<?php echo esc_attr( $gcal_slug ); ?>" <?php selected( $gcal_profile, $gcal_slug ); ?>>
+									<?php echo esc_html( isset( $gcal_definition['label'] ) ? $gcal_definition['label'] : $gcal_slug ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php echo esc_html( WP_MCP_AI_Google_Calendar_Scopes::get_profile_description( $gcal_profile ) ); ?>
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'Changing this after connecting invalidates the existing authorisation — reconnect afterwards.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="google_calendar_refresh_token" id="google_calendar_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
+						<?php if ( $is_edit && ! empty( $connection['refresh_token'] ) ) : ?>
+							<p class="description">
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php esc_html_e( 'Refresh token is set. Leave blank to keep the existing token, or paste a new token to replace it.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Optional. Normally obtained automatically by the Connect button below.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_calendar_id"><?php esc_html_e( 'Default Calendar ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_calendar_calendar_id" id="google_calendar_calendar_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['calendar_id'] ) ? esc_attr( $connection['calendar_id'] ) : ''; ?>" autocomplete="off" placeholder="primary">
+						<p class="description"><?php esc_html_e( 'Calendar used when a tool does not specify one. Use "primary" for the account\'s main calendar, or paste a calendar ID from Google Calendar settings. Defaults to "primary" when blank.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_calendar-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_calendar_user_email"><?php esc_html_e( 'Google User Email (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="email" name="google_calendar_user_email" id="google_calendar_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="user@example.com">
+						<p class="description"><?php esc_html_e( 'The Google account email associated with this connection. Also used to attribute per-user API quota.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<?php if ( $is_edit && ! empty( $connection['granted_scopes'] ) ) : ?>
+					<tr class="google_calendar-only-field" style="display: none;">
+						<th scope="row"><?php esc_html_e( 'Granted Permissions', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<?php
+							require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+							$gcal_granted = WP_MCP_AI_Google_Calendar_Scopes::parse_granted( $connection['granted_scopes'] );
+							?>
+							<ul style="list-style: disc; margin-left: 20px; margin-top: 0;">
+								<?php foreach ( $gcal_granted as $gcal_scope ) : ?>
+									<li><code><?php echo esc_html( $gcal_scope ); ?></code></li>
+								<?php endforeach; ?>
+							</ul>
+							<p class="description">
+								<?php esc_html_e( 'Google allows approving a subset of the requested permissions. If a feature reports a missing scope, reconnect and approve every Calendar permission.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+				<?php endif; ?>
 				<?php if ( $is_edit && 'gmail' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
 					<tr class="gmail-only-field" style="display: none;">
 						<th scope="row">
@@ -3529,6 +3709,47 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
 							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endif; ?>
+
+				<!-- Google Calendar OAuth Connection Button -->
+				<?php if ( $is_edit && 'google_calendar' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+					<tr class="google_calendar-only-field" style="display: none;">
+						<th scope="row">
+							<label><?php esc_html_e( 'OAuth Connection', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<?php
+							$gcal_oauth_url = wp_nonce_url(
+								add_query_arg(
+									array(
+										'page'          => 'wp-mcp-ai-remote-sites',
+										'oauth_handler' => 'google_calendar_oauth_connect',
+										'connection_id' => $connection['id'],
+									),
+									admin_url( 'admin.php' )
+								),
+								'google_calendar_oauth_connect_' . $connection['id']
+							);
+							?>
+							<a href="<?php echo esc_url( $gcal_oauth_url ); ?>" class="button button-secondary">
+								<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Connect to Google Calendar', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+							<p class="description">
+								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain a refresh token. Save the Client ID and Client Secret first.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
+								<p class="description" style="color: #46b450;">
+									<span class="dashicons dashicons-yes-alt"></span>
+									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
+							<p class="description">
+								<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'While the Google Cloud OAuth consent screen is in "Testing" status, Google issues refresh tokens that expire after 7 days. Set the publishing status to "In production" for a durable connection.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
 						</td>
 					</tr>
 				<?php endif; ?>
@@ -7168,6 +7389,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
 			var gmailFields = document.querySelectorAll('.gmail-only-field');
 			var googleDriveFields = document.querySelectorAll('.google_drive-only-field');
+			var googleCalendarFields = document.querySelectorAll('.google_calendar-only-field');
 			var telegramFields = document.querySelectorAll('.telegram-only-field');
 			var whatsappFields = document.querySelectorAll('.whatsapp-only-field');
 			var slackFields = document.querySelectorAll('.slack-only-field');
@@ -7223,6 +7445,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			googleDriveFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			googleCalendarFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 			telegramFields.forEach(function(field) {
@@ -7381,6 +7606,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				// Google Drive doesn't use the standard auth_type, it has its own OAuth flow
+				authTypeSelect.value = 'none';
+			} else if (connectionType === 'google_calendar') {
+				googleCalendarFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Google Calendar uses OAuth, set URL to Google's Calendar API
+				urlField.value = 'https://www.googleapis.com/calendar/v3';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				// Google Calendar doesn't use the standard auth_type, it has its own OAuth flow
 				authTypeSelect.value = 'none';
 			} else if (connectionType === 'upwork') {
 				upworkFields.forEach(function(field) {
@@ -10730,6 +10966,199 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$email_address
 			);
 		}
+
+		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
+	}
+
+	/**
+	 * Load the shared Google OAuth and Calendar service classes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	protected function require_google_calendar_services() {
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+	}
+
+	/**
+	 * Handle Google Calendar OAuth start for a remote connection.
+	 *
+	 * Delegates state handling, redirect-URI construction, and authorization-URL
+	 * building to WP_MCP_AI_Google_OAuth_Service so this flow cannot drift from
+	 * the base-plugin Calendar flow.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return void
+	 */
+	protected function handle_google_calendar_oauth_start( $connection_id ) {
+		$this->require_google_calendar_services();
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		if ( 'google_calendar' !== $connection['connection_type'] ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Calendar connection.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$profile = WP_MCP_AI_Google_Calendar_Scopes::normalise_profile(
+			isset( $connection['scope_profile'] ) ? $connection['scope_profile'] : ''
+		);
+
+		$state = WP_MCP_AI_Google_OAuth_Service::store_state(
+			'google_calendar_remote',
+			array( 'connection_id' => $connection_id )
+		);
+
+		$authorize_url = WP_MCP_AI_Google_OAuth_Service::build_authorize_url(
+			array(
+				'client_id'    => $connection['client_id'],
+				'redirect_uri' => WP_MCP_AI_Google_OAuth_Service::build_remote_redirect_uri( 'google_calendar_oauth_callback' ),
+				'scope'        => WP_MCP_AI_Google_Calendar_Scopes::get_profile_scope_string( $profile ),
+				'state'        => $state,
+				'login_hint'   => isset( $connection['user_email'] ) ? (string) $connection['user_email'] : '',
+			)
+		);
+
+		if ( is_wp_error( $authorize_url ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $authorize_url->get_error_message() ) ) );
+		}
+
+		$this->redirect_and_exit( $authorize_url );
+	}
+
+	/**
+	 * Handle Google Calendar OAuth callback for a remote connection.
+	 *
+	 * CSRF protection comes from the single-use `state` transient rather than a
+	 * nonce, because Google controls the inbound request.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	protected function handle_google_calendar_oauth_callback() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$this->require_google_calendar_services();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+		if ( $error ) {
+			$this->redirect_and_exit(
+				admin_url(
+					'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode(
+						sprintf(
+							/* translators: %s: OAuth error from Google */
+							__( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ),
+							$error
+						)
+					)
+				)
+			);
+		}
+
+		$state_data = WP_MCP_AI_Google_OAuth_Service::consume_state( 'google_calendar_remote', $state );
+
+		if ( is_wp_error( $state_data ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $state_data->get_error_message() ) ) );
+		}
+
+		if ( empty( $code ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$connection_id = isset( $state_data['connection_id'] ) ? sanitize_key( $state_data['connection_id'] ) : '';
+		$connection    = '' !== $connection_id ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+
+		if ( ! $connection ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+
+		$tokens = WP_MCP_AI_Google_OAuth_Service::exchange_code(
+			array(
+				'code'          => $code,
+				'client_id'     => $connection['client_id'],
+				'client_secret' => $client_secret,
+				// Must byte-match the authorize request.
+				'redirect_uri'  => WP_MCP_AI_Google_OAuth_Service::build_remote_redirect_uri( 'google_calendar_oauth_callback' ),
+			)
+		);
+
+		if ( is_wp_error( $tokens ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $tokens->get_error_message() ) ) );
+		}
+
+		$refresh_token = isset( $tokens['refresh_token'] ) ? trim( (string) $tokens['refresh_token'] ) : '';
+		$access_token  = isset( $tokens['access_token'] ) ? trim( (string) $tokens['access_token'] ) : '';
+		$granted       = isset( $tokens['scope'] ) ? trim( (string) $tokens['scope'] ) : '';
+
+		// Google omits the refresh token on re-consent when one already exists.
+		if ( '' === $refresh_token && ! empty( $connection['refresh_token'] ) ) {
+			$refresh_token = $connection['refresh_token'];
+		}
+
+		if ( '' === $refresh_token ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+		}
+
+		$email_address = WP_MCP_AI_Google_OAuth_Service::fetch_userinfo_email( $access_token );
+
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => $connection['name'],
+			'url'             => $connection['url'],
+			'connection_type' => 'google_calendar',
+			'auth_type'       => 'none',
+			'client_id'       => $connection['client_id'],
+			'client_secret'   => '', // Preserve the stored encrypted value.
+			'refresh_token'   => $refresh_token,
+			'user_email'      => $email_address ? $email_address : $connection['user_email'],
+			'calendar_id'     => isset( $connection['calendar_id'] ) ? $connection['calendar_id'] : '',
+			'scope_profile'   => isset( $connection['scope_profile'] ) ? $connection['scope_profile'] : '',
+			'granted_scopes'  => $granted,
+			'enabled'         => $connection['enabled'],
+		);
+
+		// Tell the manager the omitted client_secret is already encrypted so it is
+		// preserved rather than blanked or double-encrypted.
+		$update_data['_client_secret_encrypted'] = true;
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		if ( is_wp_error( $result ) ) {
+			$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+		}
+
+		// A rotated refresh token invalidates any cached access token.
+		WP_MCP_AI_Google_OAuth_Service::forget_access_token( 'connection:' . $connection_id );
+
+		$success_message = $email_address
+			? sprintf(
+				/* translators: %s: email address */
+				__( 'Google Calendar connected successfully for %s!', 'mcp-ai-wpoos-pro' ),
+				$email_address
+			)
+			: __( 'Google Calendar connected successfully!', 'mcp-ai-wpoos-pro' );
 
 		$this->redirect_and_exit( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
 	}

@@ -750,14 +750,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// account bindings via its fallback that reuses old refresh tokens.
 				$oauth_credential_token_map = array(
 					// Gmail.
-					'gmail_client_id'            => array( 'gmail_refresh_token', 'gmail_user_email' ),
-					'gmail_client_secret'        => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					'gmail_client_id'               => array( 'gmail_refresh_token', 'gmail_user_email' ),
+					'gmail_client_secret'           => array( 'gmail_refresh_token', 'gmail_user_email' ),
 					// Google Drive.
-					'google_drive_client_id'     => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
-					'google_drive_client_secret' => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					'google_drive_client_id'        => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					'google_drive_client_secret'    => array( 'google_drive_refresh_token', 'google_drive_user_email' ),
+					// Google Calendar. The scope profile is included because changing it
+					// changes the requested scope set, which invalidates the existing grant.
+					'google_calendar_client_id'     => array( 'google_calendar_refresh_token', 'google_calendar_user_email', 'google_calendar_granted_scopes' ),
+					'google_calendar_client_secret' => array( 'google_calendar_refresh_token', 'google_calendar_user_email', 'google_calendar_granted_scopes' ),
+					'google_calendar_scope_profile' => array( 'google_calendar_refresh_token', 'google_calendar_user_email', 'google_calendar_granted_scopes' ),
 					// Meta.
-					'meta_app_id'                => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
-					'meta_app_secret'            => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+					'meta_app_id'                   => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
+					'meta_app_secret'               => array( 'meta_access_token', 'meta_connected_user_name', 'meta_connected_user_id' ),
 				);
 
 				foreach ( $oauth_credential_token_map as $credential_key => $token_keys ) {

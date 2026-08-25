@@ -263,6 +263,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['folder_id'] = $existing_connection['folder_id'];
 			}
 
+			// Preserve Google Calendar fields when not supplied. The OAuth callback
+			// re-saves a partial connection, so without these an authorisation
+			// round-trip would silently blank the calendar and sync state.
+			foreach ( array( 'calendar_id', 'scope_profile', 'granted_scopes', 'sync_token', 'channel_id', 'channel_resource_id', 'channel_expiration' ) as $gcal_field ) {
+				if ( empty( $connection_data[ $gcal_field ] ) && ! empty( $existing_connection[ $gcal_field ] ) ) {
+					$connection_data[ $gcal_field ] = $existing_connection[ $gcal_field ];
+				}
+			}
+
 			// Preserve existing proxy_password if not provided.
 			if ( empty( $connection_data['proxy_password'] ) && ! empty( $existing_connection['proxy_password'] ) ) {
 				$connection_data['proxy_password']            = $existing_connection['proxy_password'];
@@ -597,6 +606,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'user_email'                     => isset( $connection_data['user_email'] ) ? sanitize_email( $connection_data['user_email'] ) : '',
 			// Google Drive-specific fields.
 			'folder_id'                      => isset( $connection_data['folder_id'] ) ? sanitize_text_field( $connection_data['folder_id'] ) : '',
+			// Google Calendar-specific fields. `calendar_id` is intentionally separate
+			// from `folder_id`: that key is populated for every connection type, so
+			// sharing it would let a Calendar save overwrite a Drive folder scope.
+			'calendar_id'                    => isset( $connection_data['calendar_id'] ) ? sanitize_text_field( $connection_data['calendar_id'] ) : '',
+			'scope_profile'                  => isset( $connection_data['scope_profile'] ) ? sanitize_key( $connection_data['scope_profile'] ) : '',
+			'granted_scopes'                 => isset( $connection_data['granted_scopes'] ) ? sanitize_text_field( $connection_data['granted_scopes'] ) : '',
+			'sync_token'                     => isset( $connection_data['sync_token'] ) ? sanitize_text_field( $connection_data['sync_token'] ) : '',
+			'channel_id'                     => isset( $connection_data['channel_id'] ) ? sanitize_text_field( $connection_data['channel_id'] ) : '',
+			'channel_resource_id'            => isset( $connection_data['channel_resource_id'] ) ? sanitize_text_field( $connection_data['channel_resource_id'] ) : '',
+			'channel_expiration'             => isset( $connection_data['channel_expiration'] ) ? absint( $connection_data['channel_expiration'] ) : 0,
 			// Telegram-specific fields.
 			'bot_username'                   => isset( $connection_data['bot_username'] ) ? sanitize_text_field( $connection_data['bot_username'] ) : '',
 			'enable_groups'                  => ! empty( $connection_data['enable_groups'] ),
@@ -1124,6 +1143,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
+		// Handle Google Calendar connections separately.
+		// Unlike the Gmail and Drive stubs above, this performs a real probe once a
+		// refresh token exists, so "Test" reports actual reachability rather than
+		// merely confirming that fields were saved.
+		if ( 'google_calendar' === $connection_type ) {
+			return self::test_google_calendar_connection( $connection );
+		}
+
 		// Handle Upwork connections separately.
 		if ( 'upwork' === $connection_type ) {
 			return array(
@@ -1220,6 +1247,89 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * Supports Service Account JSON key, OAuth refresh token, or OAuth
 	 * Client ID + Secret only (partial setup — OAuth flow not yet completed).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	/**
+	 * Test a Google Calendar connection.
+	 *
+	 * Performs a real single-item `calendarList.list` probe once a refresh token
+	 * exists, so the result reflects actual reachability rather than merely
+	 * confirming that the credential fields were saved. Before authorisation it
+	 * falls back to a saved-credentials acknowledgement, matching the Gmail and
+	 * Drive behaviour.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_google_calendar_connection( $connection ) {
+		$client_id     = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+		$client_secret = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
+		$refresh_token = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
+
+		if ( '' === $refresh_token ) {
+			return array(
+				'success'         => true,
+				'google_calendar' => true,
+				'message'         => __( 'Google Calendar OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-credentials.php';
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		$credentials = array(
+			'client_id'       => $client_id,
+			'client_secret'   => self::decrypt_value( $client_secret ),
+			'refresh_token'   => self::decrypt_value( $refresh_token ),
+			'access_token'    => '',
+			'user_email'      => isset( $connection['user_email'] ) ? (string) $connection['user_email'] : '',
+			'calendar_id'     => isset( $connection['calendar_id'] ) ? (string) $connection['calendar_id'] : 'primary',
+			'granted_scopes'  => isset( $connection['granted_scopes'] ) ? (string) $connection['granted_scopes'] : '',
+			'scope_profile'   => isset( $connection['scope_profile'] ) ? (string) $connection['scope_profile'] : '',
+			'cache_key'       => '' !== $connection_id ? 'connection:' . $connection_id : 'connection:test',
+			'service_account' => array(),
+		);
+
+		$client = WP_MCP_AI_Google_Calendar_Credentials::make_client( $credentials );
+
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		$result = $client->list_calendars( array( 'maxResults' => 1 ) );
+
+		if ( is_wp_error( $result ) ) {
+			$needs_reconnect = WP_MCP_AI_Google_Calendar_Client::is_auth_failure( $result );
+
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_calendar_test_failed',
+				$needs_reconnect
+					? __( 'Google rejected the stored credentials. Reconnect this Google Calendar connection.', 'mcp-ai-wpoos-pro' )
+					: $result->get_error_message(),
+				array( 'needs_reconnect' => $needs_reconnect )
+			);
+		}
+
+		$calendar_count = isset( $result['items'] ) && is_array( $result['items'] ) ? count( $result['items'] ) : 0;
+
+		return array(
+			'success'         => true,
+			'google_calendar' => true,
+			'message'         => $calendar_count > 0
+				? __( 'Connected to Google Calendar successfully.', 'mcp-ai-wpoos-pro' )
+				: __( 'Connected to Google Calendar, but no calendars were returned. Check that the account has at least one calendar and that the granted permissions include calendar list access.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test a Google Chat connection.
 	 *
 	 * @since 1.0.0
 	 *
@@ -3219,6 +3329,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow.
 			// Note: folder_id is optional - if not provided, full drive access within granted scopes.
+		}
+
+		if ( 'google_calendar' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_google_calendar_credentials',
+					__( 'OAuth Client ID and client secret are required for Google Calendar connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through the OAuth flow.
+			// Note: calendar_id is optional - defaults to "primary" when blank.
+			// Note: scope_profile is optional - normalised to the default profile when blank.
 		}
 
 		if ( 'upwork' === $connection_type ) {

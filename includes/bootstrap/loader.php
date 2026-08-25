@@ -279,6 +279,10 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/integrati
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 }
 
+// Google Calendar: shared OAuth/API services, sync engine, and push receiver.
+// Self-gating - nothing is scheduled until a connection is authorised.
+require_once WP_MCP_AI_PATH . 'includes/google/google-calendar-init.php';
+
 // ---------------------------------------------------------------------------
 // Infrastructure utilities (must load early)
 // ---------------------------------------------------------------------------

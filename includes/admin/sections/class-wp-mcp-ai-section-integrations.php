@@ -83,16 +83,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$gmail_notice = ' <em>' . __( '(Pro enables multiple connections via Remote Sites)', 'mcp-ai-wpoos' ) . '</em>';
 			$drive_notice = ' <em>' . __( '(Pro enables multiple connections via Remote Sites)', 'mcp-ai-wpoos' ) . '</em>';
 
+			// Google Calendar shares the same base/Pro cardinality split as Gmail and Drive.
+			$calendar_notice = $drive_notice;
+
+			require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+			require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-credentials.php';
+
+			$calendar_profiles   = WP_MCP_AI_Google_Calendar_Scopes::get_profile_options();
+			$calendar_default_tz = WP_MCP_AI_Google_Calendar_Credentials::default_timezone();
+
 			return array(
 				// Gmail OAuth.
-				'gmail_client_id'               => array(
+				'gmail_client_id'                     => array(
 					'type'         => 'text',
 					'label'        => __( 'Gmail OAuth Client ID', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'mcp-ai-wpoos' ) . $gmail_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'gmail_client_secret'           => array(
+				'gmail_client_secret'                 => array(
 					'type'         => 'password',
 					'label'        => __( 'Gmail OAuth Client Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $gmail_notice,
@@ -101,14 +110,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Google Drive OAuth.
-				'google_drive_client_id'        => array(
+				'google_drive_client_id'              => array(
 					'type'         => 'text',
 					'label'        => __( 'Google Drive OAuth Client ID', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Google Drive integration.', 'mcp-ai-wpoos' ) . $drive_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'google_drive_client_secret'    => array(
+				'google_drive_client_secret'          => array(
 					'type'         => 'password',
 					'label'        => __( 'Google Drive OAuth Client Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $drive_notice,
@@ -116,15 +125,52 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
+				// Google Calendar OAuth.
+				'google_calendar_client_id'           => array(
+					'type'         => 'text',
+					'label'        => __( 'Google Calendar OAuth Client ID', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Google Calendar integration.', 'mcp-ai-wpoos' ) . $calendar_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+				),
+				'google_calendar_client_secret'       => array(
+					'type'         => 'password',
+					'label'        => __( 'Google Calendar OAuth Client Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $calendar_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'google_calendar_scope_profile'       => array(
+					'type'        => 'select',
+					'label'       => __( 'Permission Level', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls which Google Calendar permissions are requested. Changing this clears the existing authorisation — you must reconnect afterwards.', 'mcp-ai-wpoos' ),
+					'options'     => $calendar_profiles,
+					'default'     => WP_MCP_AI_Google_Calendar_Scopes::DEFAULT_PROFILE,
+				),
+				'google_calendar_default_calendar_id' => array(
+					'type'         => 'text',
+					'label'        => __( 'Default Calendar ID', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Calendar used when a tool does not specify one. Use "primary" for the account\'s main calendar, or paste a calendar ID from Google Calendar settings.', 'mcp-ai-wpoos' ),
+					'placeholder'  => 'primary',
+					'autocomplete' => 'off',
+				),
+				'google_calendar_timezone'            => array(
+					'type'         => 'text',
+					'label'        => __( 'Default Time Zone', 'mcp-ai-wpoos' ),
+					'description'  => __( 'IANA time zone identifier applied to event times, for example "Europe/Zurich". Leave blank to use this site\'s time zone. UTC offsets such as "+02:00" are not accepted by the Calendar API.', 'mcp-ai-wpoos' ),
+					'placeholder'  => $calendar_default_tz,
+					'autocomplete' => 'off',
+				),
+
 				// Crawl4AI.
-				'crawl4ai_base_url'             => array(
+				'crawl4ai_base_url'                   => array(
 					'type'         => 'url',
 					'label'        => __( 'Crawl4AI Base URL', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Base URL for Crawl4AI service (if using external crawler).', 'mcp-ai-wpoos' ),
 					'placeholder'  => 'http://localhost:8000',
 					'autocomplete' => 'url',
 				),
-				'crawl4ai_api_key'              => array(
+				'crawl4ai_api_key'                    => array(
 					'type'         => 'password',
 					'label'        => __( 'Crawl4AI API Key', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API key for Crawl4AI service (if required).', 'mcp-ai-wpoos' ),
@@ -133,7 +179,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Brave Search.
-				'brave_search_api_key'          => array(
+				'brave_search_api_key'                => array(
 					'type'         => 'password',
 					'label'        => __( 'Brave Search API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -144,7 +190,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'tavily_api_key'                => array(
+				'tavily_api_key'                      => array(
 					'type'         => 'password',
 					'label'        => __( 'Tavily API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -157,7 +203,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Mubert Music API.
-				'mubert_api_key'                => array(
+				'mubert_api_key'                      => array(
 					'type'         => 'password',
 					'label'        => __( 'Mubert API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -170,20 +216,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Cloudflare.
-				'cloudflare_api_token'          => array(
+				'cloudflare_api_token'                => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudflare API Token', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API token for Cloudflare integration. Create a token in your Cloudflare dashboard.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudflare_zone_id'            => array(
+				'cloudflare_zone_id'                  => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudflare Zone ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Cloudflare zone ID for cache management.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'enable_cloudflare_pro_toolkit' => array(
+				'enable_cloudflare_pro_toolkit'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Cloudflare Pro Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Cloudflare advanced features and integrations (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -196,26 +242,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				// get_subtabs() when Pro is not active (see below).
 
 				// Cloudways.
-				'cloudways_api_key'             => array(
+				'cloudways_api_key'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudways API Key', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API key for Cloudways hosting integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudways_email'               => array(
+				'cloudways_email'                     => array(
 					'type'        => 'email',
 					'label'       => __( 'Cloudways Account Email', 'mcp-ai-wpoos' ),
 					'description' => __( 'Email address associated with your Cloudways account.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'you@example.com',
 				),
-				'cloudways_server_id'           => array(
+				'cloudways_server_id'                 => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudways Server ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Cloudways server identifier for server management operations. Find this in your Cloudways dashboard under Servers.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'cloudways_app_id'              => array(
+				'cloudways_app_id'                    => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudways Application ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Cloudways application identifier for app-specific operations. Find this in your Cloudways dashboard under Applications.', 'mcp-ai-wpoos' ),
@@ -223,7 +269,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// remove.bg API.
-				'removebg_api_key'              => array(
+				'removebg_api_key'                    => array(
 					'type'         => 'password',
 					'label'        => __( 'remove.bg API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -236,14 +282,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// OpenTelemetry (OTLP/HTTP span exporter).
-				'otel_endpoint'                 => array(
+				'otel_endpoint'                       => array(
 					'type'         => 'url',
 					'label'        => __( 'OTLP/HTTP Endpoint', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OTLP/HTTP endpoint URL for exporting OpenTelemetry spans (e.g. http://localhost:4318/v1/traces). Leave blank to disable span export. The environment variable WP_MCP_AI_OTEL_ENDPOINT takes precedence when set.', 'mcp-ai-wpoos' ),
 					'placeholder'  => 'http://localhost:4318/v1/traces',
 					'autocomplete' => 'url',
 				),
-				'otel_token'                    => array(
+				'otel_token'                          => array(
 					'type'         => 'password',
 					'label'        => __( 'OTLP Bearer Token', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Optional bearer token sent in the Authorization header with each export request. Leave blank if your collector does not require authentication.', 'mcp-ai-wpoos' ),
@@ -255,7 +301,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				// These settings have been removed. Please use Remote Sites page to manage these connections.
 
 				// ITA Tariff Rate API.
-				'ita_tariff_api_key'            => array(
+				'ita_tariff_api_key'                  => array(
 					'type'         => 'password',
 					'label'        => __( 'ITA Tariff Rate API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -268,58 +314,58 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Meta.
-				'meta_access_token'             => array(
+				'meta_access_token'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'Meta Access Token', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Long-lived access token for Meta Graph API. Used for Facebook, Instagram, and WhatsApp integrations.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'meta_app_id'                   => array(
+				'meta_app_id'                         => array(
 					'type'        => 'text',
 					'label'       => __( 'Meta App ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Meta (Facebook) App ID.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'meta_app_secret'               => array(
+				'meta_app_secret'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'Meta App Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Your Meta (Facebook) App Secret.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'meta_business_account_id'      => array(
+				'meta_business_account_id'            => array(
 					'type'        => 'text',
 					'label'       => __( 'Meta Business Account ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Meta Business Account ID (for WhatsApp Business API).', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'meta_connected_user_name'      => array(
+				'meta_connected_user_name'            => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
-				'meta_connected_user_id'        => array(
+				'meta_connected_user_id'              => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
 
 				// TikTok.
-				'tiktok_access_token'           => array(
+				'tiktok_access_token'                 => array(
 					'type'         => 'password',
 					'label'        => __( 'TikTok Access Token', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Access token for TikTok Open API with video.share scope.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'tiktok_client_key'             => array(
+				'tiktok_client_key'                   => array(
 					'type'        => 'text',
 					'label'       => __( 'TikTok Client Key', 'mcp-ai-wpoos' ),
 					'description' => __( 'Client Key from TikTok developer portal.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'tiktok_client_secret'          => array(
+				'tiktok_client_secret'                => array(
 					'type'         => 'password',
 					'label'        => __( 'TikTok Client Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Client Secret from TikTok developer portal.', 'mcp-ai-wpoos' ),
@@ -328,7 +374,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Plaid (Financial Services).
-				'plaid_client_id'               => array(
+				'plaid_client_id'                     => array(
 					'type'         => 'text',
 					'label'        => __( 'Plaid Client ID', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -340,7 +386,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'off',
 					// Removed pro gating - WordPress.org compliance.
 				),
-				'plaid_secret'                  => array(
+				'plaid_secret'                        => array(
 					'type'         => 'password',
 					'label'        => __( 'Plaid Secret Key', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Secret key from Plaid dashboard. Keep this secure and never share publicly.', 'mcp-ai-wpoos' ),
@@ -348,7 +394,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 					// Removed pro gating - WordPress.org compliance.
 				),
-				'plaid_environment'             => array(
+				'plaid_environment'                   => array(
 					'type'        => 'select',
 					'label'       => __( 'Plaid Environment', 'mcp-ai-wpoos' ),
 					'description' => __( 'Select Plaid environment: Sandbox for testing, Development for development, Production for live use.', 'mcp-ai-wpoos' ),
@@ -373,50 +419,62 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		protected function get_subtab_groups() {
 			return array(
-				'gmail'         => array(
+				'gmail'           => array(
 					'id'     => 'gmail',
 					'label'  => __( 'Gmail', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email',
 					'fields' => array( 'gmail_client_id', 'gmail_client_secret' ),
 				),
-				'google_drive'  => array(
+				'google_drive'    => array(
 					'id'     => 'google_drive',
 					'label'  => __( 'Google Drive', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'google_drive_client_id', 'google_drive_client_secret' ),
 				),
-				'crawl4ai'      => array(
+				'google_calendar' => array(
+					'id'     => 'google_calendar',
+					'label'  => __( 'Google Calendar', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-calendar-alt',
+					'fields' => array(
+						'google_calendar_client_id',
+						'google_calendar_client_secret',
+						'google_calendar_scope_profile',
+						'google_calendar_default_calendar_id',
+						'google_calendar_timezone',
+					),
+				),
+				'crawl4ai'        => array(
 					'id'     => 'crawl4ai',
 					'label'  => __( 'Crawl4AI', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'crawl4ai_base_url', 'crawl4ai_api_key' ),
 				),
-				'brave_search'  => array(
+				'brave_search'    => array(
 					'id'     => 'brave_search',
 					'label'  => __( 'Brave Search', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'brave_search_api_key' ),
 				),
-				'tavily'        => array(
+				'tavily'          => array(
 					'id'     => 'tavily',
 					'label'  => __( 'Tavily', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'tavily_api_key' ),
 				),
-				'mubert'        => array(
+				'mubert'          => array(
 					'id'     => 'mubert',
 					'label'  => __( 'Mubert', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-format-audio',
 					'fields' => array( 'mubert_api_key' ),
 				),
 				// PayHere, Flowhub, iSAMS, and QuickBooks have been moved to Remote Sites.
-				'removebg'      => array(
+				'removebg'        => array(
 					'id'     => 'removebg',
 					'label'  => __( 'remove.bg', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-format-image',
 					'fields' => array( 'removebg_api_key' ),
 				),
-				'cloudflare'    => array(
+				'cloudflare'      => array(
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
@@ -427,25 +485,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						? array( 'cloudflare_api_token', 'cloudflare_zone_id', 'enable_cloudflare_pro_toolkit' )
 						: array( 'cloudflare_api_token', 'cloudflare_zone_id' ),
 				),
-				'cloudways'     => array(
+				'cloudways'       => array(
 					'id'     => 'cloudways',
 					'label'  => __( 'Cloudways', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud-upload',
 					'fields' => array( 'cloudways_api_key', 'cloudways_email', 'cloudways_server_id', 'cloudways_app_id' ),
 				),
-				'meta'          => array(
+				'meta'            => array(
 					'id'     => 'meta',
 					'label'  => __( 'Meta', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-share',
 					'fields' => array( 'meta_access_token', 'meta_app_id', 'meta_app_secret', 'meta_business_account_id', 'meta_connected_user_name', 'meta_connected_user_id' ),
 				),
-				'tiktok'        => array(
+				'tiktok'          => array(
 					'id'     => 'tiktok',
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
 				),
-				'opentelemetry' => array(
+				'opentelemetry'   => array(
 					'id'     => 'opentelemetry',
 					'label'  => __( 'OpenTelemetry', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-chart-area',
@@ -544,6 +602,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					break;
 				case 'google_drive':
 					$this->render_google_drive_footer();
+					break;
+				case 'google_calendar':
+					$this->render_google_calendar_footer();
 					break;
 				case 'brave_search':
 					$this->render_brave_search_footer();
@@ -945,12 +1006,240 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<li><?php esc_html_e( 'Requires drive.readonly and drive.metadata.readonly scopes for read access', 'mcp-ai-wpoos' ); ?></li>
 						<?php if ( $is_pro_active ) : ?>
 						<li><?php esc_html_e( 'Pro users can configure multiple Google Drive connections via Remote Sites', 'mcp-ai-wpoos' ); ?></li>
-					<?php else : ?>
-						<li><?php esc_html_e( 'Base version supports 1 connection. Upgrade to Pro for multiple connections', 'mcp-ai-wpoos' ); ?></li>
-					<?php endif; ?>
+				<?php else : ?>
+					<li><?php esc_html_e( 'Base version supports 1 connection. Upgrade to Pro for multiple connections', 'mcp-ai-wpoos' ); ?></li>
+				<?php endif; ?>
+			</ul>
+		</td>
+	</tr>
+			<?php
+		}
+
+		/**
+		 * Render Google Calendar footer content.
+		 *
+		 * Renders the three-state connection UI (connected / credentials saved /
+		 * credentials missing), the read-only authorised redirect URI, the granted
+		 * scope readout, and the Google publishing-status warning.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return void
+		 */
+		private function render_google_calendar_footer() {
+			require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+			require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$is_connected    = ! empty( $settings['google_calendar_refresh_token'] );
+			$account_email   = isset( $settings['google_calendar_user_email'] ) ? (string) $settings['google_calendar_user_email'] : '';
+			$has_credentials = ! empty( $settings['google_calendar_client_id'] ) && ! empty( $settings['google_calendar_client_secret'] );
+			$is_pro_active   = defined( 'WP_MCP_AI_PRO_VERSION' );
+
+			$profile        = WP_MCP_AI_Google_Calendar_Scopes::normalise_profile(
+				isset( $settings['google_calendar_scope_profile'] ) ? $settings['google_calendar_scope_profile'] : ''
+			);
+			$profile_scopes = WP_MCP_AI_Google_Calendar_Scopes::get_profile_scopes( $profile );
+			$needs_review   = WP_MCP_AI_Google_Calendar_Scopes::profile_requires_verification( $profile );
+			$granted_scopes = WP_MCP_AI_Google_Calendar_Scopes::parse_granted(
+				isset( $settings['google_calendar_granted_scopes'] ) ? $settings['google_calendar_granted_scopes'] : ''
+			);
+
+			// Scopes requested by the active profile but not granted by the user.
+			// Google's granular consent lets users approve a subset, so this is a
+			// normal state that must be surfaced rather than discovered as a 403.
+			$missing_scopes = array();
+
+			if ( $is_connected && ! empty( $granted_scopes ) ) {
+				foreach ( $profile_scopes as $needed ) {
+					if ( ! WP_MCP_AI_Google_Calendar_Scopes::has_scope( implode( ' ', $granted_scopes ), $needed ) ) {
+						$missing_scopes[] = $needed;
+					}
+				}
+			}
+
+			$connect_url    = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_google_calendar_oauth_start' ),
+				'wp_mcp_ai_google_calendar_oauth_start'
+			);
+			$disconnect_url = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_google_calendar_disconnect' ),
+				'wp_mcp_ai_google_calendar_disconnect'
+			);
+
+			$redirect_uri = WP_MCP_AI_Google_OAuth_Service::build_redirect_uri(
+				WP_MCP_AI_Admin_Settings::GOOGLE_CALENDAR_OAUTH_CALLBACK_HANDLER
+			);
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only flash message.
+			$flash_success = isset( $_GET['calendar_success'] ) ? sanitize_text_field( wp_unslash( $_GET['calendar_success'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only flash message.
+			$flash_error = isset( $_GET['calendar_error'] ) ? sanitize_text_field( wp_unslash( $_GET['calendar_error'] ) ) : '';
+			?>
+	<tr>
+		<th scope="row"><?php esc_html_e( 'Authorized Redirect URI', 'mcp-ai-wpoos' ); ?></th>
+		<td>
+			<input type="text" readonly="readonly" value="<?php echo esc_url( $redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+			<p class="description">
+				<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos' ); ?></strong>
+				<?php esc_html_e( 'Copy this exact URL into the "Authorized redirect URIs" list of your Google Cloud Console OAuth 2.0 client. It must match character for character, including the scheme.', 'mcp-ai-wpoos' ); ?>
+				<br>
+				<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
+					<?php esc_html_e( 'Open Google Cloud Console', 'mcp-ai-wpoos' ); ?>
+					<span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+				</a>
+			</p>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"><?php esc_html_e( 'Connection Status', 'mcp-ai-wpoos' ); ?></th>
+		<td>
+			<?php if ( '' !== $flash_success ) : ?>
+				<div class="notice notice-success inline" style="margin: 0 0 12px;">
+					<p><?php echo esc_html( $flash_success ); ?></p>
+				</div>
+			<?php endif; ?>
+			<?php if ( '' !== $flash_error ) : ?>
+				<div class="notice notice-error inline" style="margin: 0 0 12px;">
+					<p><?php echo esc_html( $flash_error ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( $is_connected ) : ?>
+				<p style="color: #46b450; font-weight: 600; margin-top: 0;">
+					<span class="dashicons dashicons-yes-alt"></span>
+					<?php
+					if ( '' !== $account_email ) {
+						printf(
+							/* translators: %s: Google account email address. */
+							esc_html__( 'Connected as %s', 'mcp-ai-wpoos' ),
+							esc_html( $account_email )
+						);
+					} else {
+						esc_html_e( 'Connected', 'mcp-ai-wpoos' );
+					}
+					?>
+				</p>
+				<p>
+					<a href="<?php echo esc_url( $connect_url ); ?>" class="button">
+						<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+						<?php esc_html_e( 'Reconnect', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button button-link-delete">
+						<?php esc_html_e( 'Disconnect', 'mcp-ai-wpoos' ); ?>
+					</a>
+				</p>
+				<p class="description">
+					<?php esc_html_e( 'Disconnecting revokes the token at Google and clears it locally. Your Client ID and Client Secret are kept so you can reconnect without re-entering them.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			<?php elseif ( $has_credentials ) : ?>
+				<p style="color: #b26200; font-weight: 600; margin-top: 0;">
+					<span class="dashicons dashicons-warning"></span>
+					<?php esc_html_e( 'Credentials saved — not yet authorised', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<p>
+					<a href="<?php echo esc_url( $connect_url ); ?>" class="button button-primary">
+						<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
+						<?php esc_html_e( 'Connect Google Calendar Account', 'mcp-ai-wpoos' ); ?>
+					</a>
+				</p>
+			<?php else : ?>
+				<p style="color: #d63638; font-weight: 600; margin-top: 0;">
+					<span class="dashicons dashicons-dismiss"></span>
+					<?php esc_html_e( 'OAuth credentials required', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<p class="description">
+					<?php esc_html_e( 'Enter and save the Client ID and Client Secret above, then a Connect button will appear here.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			<?php endif; ?>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"><?php esc_html_e( 'Granted Permissions', 'mcp-ai-wpoos' ); ?></th>
+		<td>
+			<p class="description" style="margin-top: 0;">
+					<?php
+					printf(
+					/* translators: %s: scope profile label. */
+						esc_html__( 'Active profile: %s', 'mcp-ai-wpoos' ),
+						'<strong>' . esc_html( WP_MCP_AI_Google_Calendar_Scopes::get_profile_label( $profile ) ) . '</strong>'
+					);
+					?>
+			</p>
+			<p class="description"><?php echo esc_html( WP_MCP_AI_Google_Calendar_Scopes::get_profile_description( $profile ) ); ?></p>
+
+				<?php if ( $is_connected && ! empty( $granted_scopes ) ) : ?>
+				<p style="margin-bottom: 4px;"><strong><?php esc_html_e( 'Scopes granted by Google:', 'mcp-ai-wpoos' ); ?></strong></p>
+				<ul style="list-style: disc; margin-left: 20px;">
+					<?php foreach ( $granted_scopes as $scope ) : ?>
+						<li><code><?php echo esc_html( $scope ); ?></code></li>
+					<?php endforeach; ?>
 				</ul>
-			</td>
-		</tr>
+			<?php elseif ( $is_connected ) : ?>
+				<p class="description">
+					<?php esc_html_e( 'This connection was authorised before permission tracking was added. Reconnect to record the granted scopes.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			<?php endif; ?>
+
+				<?php if ( ! empty( $missing_scopes ) ) : ?>
+				<div class="notice notice-warning inline" style="margin: 12px 0 0;">
+					<p>
+						<strong><?php esc_html_e( 'Some requested permissions were declined.', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'Google lets you approve a subset of permissions. The following scopes were requested but not granted, so the matching features will fail:', 'mcp-ai-wpoos' ); ?>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<?php foreach ( $missing_scopes as $scope ) : ?>
+							<li><code><?php echo esc_html( $scope ); ?></code></li>
+						<?php endforeach; ?>
+					</ul>
+					<p><?php esc_html_e( 'Click Reconnect and tick every Calendar permission on the Google consent screen.', 'mcp-ai-wpoos' ); ?></p>
+				</div>
+			<?php endif; ?>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"></th>
+		<td>
+			<div class="notice notice-info inline" style="margin: 0 0 12px;">
+				<p>
+					<strong><?php esc_html_e( 'Publish your Google Cloud app before relying on this connection.', 'mcp-ai-wpoos' ); ?></strong>
+				</p>
+				<p>
+					<?php esc_html_e( 'While your OAuth consent screen publishing status is "Testing", Google issues refresh tokens that expire after 7 days. The connection will then break weekly until you set the publishing status to "In production".', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<?php if ( $needs_review ) : ?>
+					<p>
+						<?php esc_html_e( 'The selected permission level uses sensitive Google scopes, so publishing also requires OAuth app verification (typically 3-5 business days). To avoid verification entirely, switch the permission level to Minimal — NV oOS will then manage its own dedicated calendar instead of your existing ones.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				<?php else : ?>
+					<p>
+						<?php esc_html_e( 'The selected permission level uses only non-sensitive Google scopes, so no OAuth app verification is required.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				<?php endif; ?>
+				<p>
+					<a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" rel="noopener noreferrer">
+						<?php esc_html_e( 'Open OAuth consent screen settings', 'mcp-ai-wpoos' ); ?>
+						<span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+					</a>
+				</p>
+			</div>
+
+			<p class="description">
+				<strong><?php esc_html_e( 'About Google Calendar Integration:', 'mcp-ai-wpoos' ); ?></strong>
+			</p>
+			<ul style="list-style: disc; margin-left: 20px;">
+				<li><?php esc_html_e( 'Enable the Google Calendar API for your project in the Cloud Console before connecting', 'mcp-ai-wpoos' ); ?></li>
+				<li><?php esc_html_e( 'Access tokens are minted from the stored refresh token and cached automatically', 'mcp-ai-wpoos' ); ?></li>
+				<li><?php esc_html_e( 'Supports creating, reading, updating, and deleting events, plus availability lookups', 'mcp-ai-wpoos' ); ?></li>
+				<li><?php esc_html_e( 'Time zones must be IANA identifiers such as "America/New_York" — UTC offsets are rejected by Google', 'mcp-ai-wpoos' ); ?></li>
+				<?php if ( $is_pro_active ) : ?>
+					<li><?php esc_html_e( 'Pro users can configure multiple Google Calendar connections via Remote Sites', 'mcp-ai-wpoos' ); ?></li>
+				<?php else : ?>
+					<li><?php esc_html_e( 'Base version supports 1 connection. Upgrade to Pro for multiple connections', 'mcp-ai-wpoos' ); ?></li>
+				<?php endif; ?>
+			</ul>
+		</td>
+	</tr>
 			<?php
 		}
 
