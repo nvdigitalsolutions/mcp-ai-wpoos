@@ -187,7 +187,13 @@ class WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow implements WP_MCP_AI_Tool_
 						continue;
 					}
 					// Strip common list bullets / numbering.
-					$line = preg_replace( '/^( ? ( :[-*•]|\d+[\.\)])\s+/', '', $line );
+					// The group must be non-capturing and closed; a stray parenthesis
+					// made the pattern invalid, so preg_replace returned null for
+					// every line and no item ever survived parsing.
+					$line = preg_replace( '/^(?:[-*•]|\d+[\.\)])\s+/', '', $line );
+					if ( null === $line ) {
+						$line = '';
+					}
 					$line = trim( (string) $line );
 					if ( '' === $line ) {
 						continue;

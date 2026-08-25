@@ -91,7 +91,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array
+	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Enforce manage_options capability regardless of tool-framework checks.
@@ -193,7 +193,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	 * Search vault items
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @return array
+	 * @return array|WP_Error
 	 */
 	protected function search_items( $arguments ) {
 		if ( empty( $arguments['query'] ) ) {
@@ -254,7 +254,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	 * Get single vault item
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @return array
+	 * @return array|WP_Error
 	 */
 	protected function get_item( $arguments ) {
 		if ( empty( $arguments['item_id'] ) ) {

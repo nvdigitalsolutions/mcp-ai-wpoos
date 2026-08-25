@@ -83,14 +83,14 @@ class Test_Tool_Pro_Vault_Manage extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that omitting 'action' returns a failure array.
+	 * Test that omitting 'action' returns a WP_Error.
 	 */
 	public function test_missing_action_returns_failure() {
 		$result = $this->tool->execute( array(), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'action', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_missing_action', $result->get_error_code() );
+		$this->assertStringContainsString( 'action', $result->get_error_message() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -98,13 +98,13 @@ class Test_Tool_Pro_Vault_Manage extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that an unknown action value returns a failure array.
+	 * Test that an unknown action value returns a WP_Error.
 	 */
 	public function test_invalid_action_returns_failure() {
 		$result = $this->tool->execute( array( 'action' => 'frobnicate' ), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_invalid_action', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -112,14 +112,14 @@ class Test_Tool_Pro_Vault_Manage extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that creating without 'name' and 'item_type' returns a failure array.
+	 * Test that creating without 'name' and 'item_type' returns a WP_Error.
 	 */
 	public function test_create_missing_name_and_item_type_returns_failure() {
 		$result = $this->tool->execute( array( 'action' => 'create' ), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'name', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_missing_fields', $result->get_error_code() );
+		$this->assertStringContainsString( 'name', $result->get_error_message() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -127,13 +127,13 @@ class Test_Tool_Pro_Vault_Manage extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that deleting without 'item_id' returns a failure array.
+	 * Test that deleting without 'item_id' returns a WP_Error.
 	 */
 	public function test_delete_missing_item_id_returns_failure() {
 		$result = $this->tool->execute( array( 'action' => 'delete' ), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_missing_item_id', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -141,7 +141,7 @@ class Test_Tool_Pro_Vault_Manage extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that deleting a non-existent item returns a failure array.
+	 * Test that deleting a non-existent item returns a WP_Error.
 	 */
 	public function test_delete_nonexistent_item_returns_failure() {
 		$result = $this->tool->execute(
@@ -152,8 +152,8 @@ class Test_Tool_Pro_Vault_Manage extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_item_not_found', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -161,12 +161,12 @@ class Test_Tool_Pro_Vault_Manage extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that updating without 'item_id' returns a failure array.
+	 * Test that updating without 'item_id' returns a WP_Error.
 	 */
 	public function test_update_missing_item_id_returns_failure() {
 		$result = $this->tool->execute( array( 'action' => 'update' ), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_missing_item_id', $result->get_error_code() );
 	}
 }

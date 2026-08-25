@@ -202,6 +202,7 @@ class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool 
 		spawn_cron();
 
 		return array(
+			'job_id'        => WP_MCP_AI_Cron_Manager::generate_job_id_static( $hook, $args ),
 			'hook'          => $hook,
 			'schedule'      => $schedule,
 			'timestamp'     => $timestamp,

@@ -258,12 +258,13 @@ class WP_MCP_AI_Tool_Get_Elementor_Form_Submissions implements WP_MCP_AI_Tool_In
 			);
 		}
 
-		// Get total count for pagination reference.
+		// Get total count for pagination reference. `$where` is already built from
+		// prepared fragments and the query has no remaining placeholders, so it must
+		// not be passed through prepare() again — that is flagged as incorrect usage
+		// and would re-process any literal percent signs in the prepared values.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$total = (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$submissions_table} s WHERE {$where}"
-			)
+			"SELECT COUNT(*) FROM {$submissions_table} s WHERE {$where}"
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 

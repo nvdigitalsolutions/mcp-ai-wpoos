@@ -81,14 +81,14 @@ class Test_Tool_Pro_Vault_Access extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that omitting 'action' returns a failure array.
+	 * Test that omitting 'action' returns a WP_Error.
 	 */
 	public function test_missing_action_returns_failure() {
 		$result = $this->tool->execute( array(), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'action', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_missing_action', $result->get_error_code() );
+		$this->assertStringContainsString( 'action', $result->get_error_message() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -96,13 +96,13 @@ class Test_Tool_Pro_Vault_Access extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that an unknown action value returns a failure array.
+	 * Test that an unknown action value returns a WP_Error.
 	 */
 	public function test_invalid_action_returns_failure() {
 		$result = $this->tool->execute( array( 'action' => 'frobnicate' ), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_invalid_action', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -126,13 +126,13 @@ class Test_Tool_Pro_Vault_Access extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that the search action without a query returns a failure array.
+	 * Test that the search action without a query returns a WP_Error.
 	 */
 	public function test_search_missing_query_returns_failure() {
 		$result = $this->tool->execute( array( 'action' => 'search' ), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_missing_query', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -140,13 +140,13 @@ class Test_Tool_Pro_Vault_Access extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that the get action without item_id returns a failure array.
+	 * Test that the get action without item_id returns a WP_Error.
 	 */
 	public function test_get_missing_item_id_returns_failure() {
 		$result = $this->tool->execute( array( 'action' => 'get' ), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_missing_item_id', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -154,7 +154,7 @@ class Test_Tool_Pro_Vault_Access extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that the get action with a non-existent item_id returns a failure array.
+	 * Test that the get action with a non-existent item_id returns a WP_Error.
 	 */
 	public function test_get_nonexistent_item_returns_failure() {
 		$result = $this->tool->execute(
@@ -165,7 +165,7 @@ class Test_Tool_Pro_Vault_Access extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_vault_item_not_found', $result->get_error_code() );
 	}
 }
