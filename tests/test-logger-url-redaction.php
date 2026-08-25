@@ -105,7 +105,10 @@ class WP_MCP_AI_Logger_Url_Redaction_Test extends WP_UnitTestCase {
 			$stored,
 			'The one-time OAuth state grant must never be persisted.'
 		);
-		$this->assertStringContainsString( 'state=[redacted]', $stored );
+		// `composio_create_connect_link` declares `url` as a sensitive result
+		// field, so the whole value is masked rather than just its query string.
+		$this->assertStringContainsString( 'url', $stored );
+		$this->assertStringContainsString( '[redacted]', $stored );
 	}
 
 	/**
@@ -115,7 +118,7 @@ class WP_MCP_AI_Logger_Url_Redaction_Test extends WP_UnitTestCase {
 	 */
 	public function test_redaction_preserves_url_and_non_secret_parameters() {
 		$context = $this->capture_tool_context(
-			'composio_create_connect_link',
+			'run_crawl4ai_job',
 			array( 'toolkit' => 'gmail' ),
 			array(
 				'url' => 'https://connect.composio.dev/cb?connection_id=abc123&state=' . self::SECRET . '&toolkit=gmail',
@@ -196,7 +199,7 @@ class WP_MCP_AI_Logger_Url_Redaction_Test extends WP_UnitTestCase {
 	 */
 	public function test_fragment_carried_tokens_are_redacted() {
 		$context = $this->capture_tool_context(
-			'composio_create_connect_link',
+			'run_crawl4ai_job',
 			array(),
 			array( 'url' => 'https://example.test/#access_token=' . self::SECRET . '&expires_in=3600' )
 		);
@@ -297,7 +300,7 @@ class WP_MCP_AI_Logger_Url_Redaction_Test extends WP_UnitTestCase {
 
 		try {
 			$context = $this->capture_tool_context(
-				'composio_create_connect_link',
+				'run_crawl4ai_job',
 				array(),
 				array( 'url' => 'https://example.test/?custom_grant=' . self::SECRET )
 			);
@@ -321,7 +324,7 @@ class WP_MCP_AI_Logger_Url_Redaction_Test extends WP_UnitTestCase {
 
 		try {
 			$context = $this->capture_tool_context(
-				'composio_create_connect_link',
+				'run_crawl4ai_job',
 				array(),
 				array( 'url' => 'https://example.test/?state=' . self::SECRET )
 			);
@@ -354,7 +357,7 @@ class WP_MCP_AI_Logger_Url_Redaction_Test extends WP_UnitTestCase {
 
 		try {
 			$context = $this->capture_tool_context(
-				'composio_create_connect_link',
+				'run_crawl4ai_job',
 				array(),
 				array( 'url' => 'https://example.test/?ok_param=' . self::SECRET . '&state=' . self::SECRET )
 			);

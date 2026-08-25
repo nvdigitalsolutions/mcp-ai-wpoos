@@ -243,6 +243,56 @@ hint planners; it does **not** validate inputs at runtime.
 
 ---
 
+## Non-Loggable Result Fields (capability credentials)
+
+Most secrets are caught automatically before a log entry is persisted: the
+logger's key deny-list masks `api_key` / `*_token` / `*_secret`-style keys, and
+its URL redactor masks credential-bearing **query parameters**. Neither can
+help when the credential *is* an opaque URL path segment, or when it sits under
+an innocuous key like `url`, `link`, or `data` — `/link/lk_9XgCEUuh9JIN` is
+indistinguishable from `/uploads/2026/08/image.png` to any heuristic. **Only
+the tool knows its own result field is secret.**
+
+Tools that return such values implement
+`WP_MCP_AI_Tool_Sensitive_Result_Interface`
+(`includes/interfaces/interface-wp-mcp-ai-tool.php`):
+
+```php
+class WP_MCP_AI_Tool_Example
+    implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
+
+    public function get_sensitive_result_fields() {
+        return array(
+            'url',                                // top-level key
+            'data.url',                           // nested key
+            'components.plugins.*.download_url',  // any list element
+        );
+    }
+}
+```
+
+`WP_MCP_AI_Logger::log_tool_execution()` masks every declared path with
+`[redacted]` **before** `limit_result_payload()` JSON-truncates the preview
+(otherwise the paths would no longer be addressable). The same paths are masked
+in `arguments` and on the `tool_error` path. Declaring a container key masks its
+whole subtree, which is how tools returning an unbounded third-party payload
+(`composio_execute_tool` → `result`) opt out wholesale.
+
+This affects **logging only** — the value returned to the caller and to the
+model is never altered. Tools that declare nothing are completely unaffected.
+Legacy-format tools reach the mechanism by exposing the same method; the
+`WP_MCP_AI_Legacy_Tool_Wrapper` forwards it.
+
+Filter `wp_mcp_ai_tool_sensitive_result_fields` ( `$declared`, `$tool_slug` ) is
+additive-only, so it can shield a third-party tool that does not declare its
+own fields but can never weaken a tool's own declaration.
+
+Current declarers: `composio_create_connect_link`, `composio_manage_accounts`,
+`composio_execute_tool`, `composio_manage_triggers`, `generate_booking_link`,
+`vault_access`, `yahoo_ff_auth`, `get_update_status`.
+
+---
+
 ## Deprecated Aliases (Unix Theory P5 — back-compat for decompositions)
 
 When a multi-action mega-tool is decomposed into single-purpose tools,

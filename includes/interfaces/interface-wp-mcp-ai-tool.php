@@ -372,6 +372,46 @@ if ( ! trait_exists( 'WP_MCP_AI_Tool_Legacy_Definition' ) ) {
 	require_once dirname( __DIR__ ) . '/tools/trait-wp-mcp-ai-tool-legacy-definition.php';
 }
 
+/**
+ * Optional interface for tools that declare non-loggable result fields.
+ *
+ * Some tools legitimately return capability credentials in their success
+ * envelope: one-time OAuth connect links, booking URLs whose path segment is
+ * a bearer token, or decrypted vault payloads. No key deny-list or
+ * string-pattern heuristic can reliably identify those values — only the
+ * tool itself knows that a given result field is secret — so tools that
+ * produce them opt in here.
+ *
+ * `WP_MCP_AI_Logger::log_tool_execution()` consults this declaration before
+ * building `result_preview`, masking every declared path with the standard
+ * `[redacted]` placeholder. The same paths are masked inside `arguments` and
+ * on the `tool_error` path. The declaration affects logging only: the value
+ * returned to the caller is never altered.
+ *
+ * Path syntax is dot-notation with `*` as a single-segment wildcard for
+ * numerically-indexed lists, e.g.:
+ *   - 'url'                              → top-level key
+ *   - 'data.url'                         → nested key
+ *   - 'components.plugins.*.download_url' → any list element
+ *
+ * A path names the value to mask; when a non-final segment matches, the
+ * entire subtree below it is masked (declaring 'result' hides an arbitrary
+ * third-party payload wholesale). Declaring a key that is absent from the
+ * payload is a safe no-op.
+ *
+ * @since 1.1.64
+ */
+interface WP_MCP_AI_Tool_Sensitive_Result_Interface {
+	/**
+	 * Result keys whose values must never be persisted to a log.
+	 *
+	 * @since 1.1.64
+	 *
+	 * @return string[] Dot-notation paths, e.g. array( 'url', 'data.token' ).
+	 */
+	public function get_sensitive_result_fields();
+}
+
 // Load the legacy-tool wrapper so pre-interface tool classes can be
 // transparently wrapped into this interface at registration time.
 if ( ! class_exists( 'WP_MCP_AI_Legacy_Tool_Wrapper' ) ) {

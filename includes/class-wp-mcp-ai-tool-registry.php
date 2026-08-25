@@ -162,6 +162,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Whether the registry has already been initialised.
+		 *
+		 * Exposed so read-mostly consumers (e.g. the logger) can decide whether a
+		 * tool lookup is free or would trigger the full tool-suite bootstrap as a
+		 * side effect.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @return bool True when init() has completed at least once.
+		 */
+		public function is_bootstrapped() {
+			return $this->bootstrapped;
+		}
+
+		/**
 		 * Register admin notices on init action.
 		 *
 		 * WordPress 6.7.0+ requires translations to be loaded at init or later.

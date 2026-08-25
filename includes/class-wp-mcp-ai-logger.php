@@ -143,6 +143,19 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		protected static $sensitive_query_pattern = null;
 
 		/**
+		 * Resolved sensitive-result-field declarations, keyed by tool slug.
+		 *
+		 * Populated lazily by {@see self::resolve_sensitive_result_fields()} so the
+		 * registry lookup (and any filter callbacks) run at most once per slug per
+		 * request.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @var array<string, string[]>
+		 */
+		protected static $declared_sensitive_fields = array();
+
+		/**
 		 * Reset the cached log file path. Primarily used in automated tests.
 		 */
 		public static function reset_log_file_cache() {
@@ -159,6 +172,18 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 */
 		public static function reset_sensitive_query_pattern_cache() {
 			self::$sensitive_query_pattern = null;
+		}
+
+		/**
+		 * Reset the resolved sensitive-result-field declarations cache.
+		 *
+		 * Primarily used in automated tests that swap tool instances inside the
+		 * registry mid-request.
+		 *
+		 * @since 1.1.64
+		 */
+		public static function reset_sensitive_result_fields_cache() {
+			self::$declared_sensitive_fields = array();
 		}
 
 		/**
@@ -632,6 +657,16 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		public static function log_tool_execution( $tool_slug, $arguments, $result, $context = array() ) {
 			$context              = self::sanitize_context( $context );
 			$context['tool_slug'] = sanitize_key( $tool_slug );
+
+			// A tool may declare that some of its own result fields carry capability
+			// credentials (connect links, bearer path tokens, decrypted payloads).
+			// Those paths are masked before anything else touches the payload so the
+			// declaration also covers `arguments` and the `tool_error` path, where
+			// the same field names can appear.
+			$declared = self::resolve_sensitive_result_fields( $tool_slug );
+			if ( ! empty( $declared ) ) {
+				$arguments = self::mask_declared_sensitive_fields( $arguments, $declared );
+			}
 			$context['arguments'] = $arguments;
 
 			if ( is_wp_error( $result ) ) {
@@ -639,6 +674,10 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				$context['error_message'] = $result->get_error_message();
 				self::log_event( 'tool_error', 'Tool execution failed.', $context );
 				return;
+			}
+
+			if ( ! empty( $declared ) ) {
+				$result = self::mask_declared_sensitive_fields( $result, $declared );
 			}
 
 			$context['result_preview'] = self::limit_result_payload( $result );
@@ -2122,6 +2161,156 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			}
 
 			return $result;
+		}
+
+		/**
+		 * Resolve the sensitive-result-field paths declared for a tool.
+		 *
+		 * Consulted on every `log_tool_execution()` call. The registry lookup is
+		 * skipped when the registry has not bootstrapped yet (the logger must never
+		 * force the full tool-suite init as a side effect of logging). Tools opt in
+		 * via {@see WP_MCP_AI_Tool_Sensitive_Result_Interface}, and legacy-format
+		 * tools reach the mechanism through {@see WP_MCP_AI_Legacy_Tool_Wrapper}.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @param string $tool_slug Tool slug.
+		 * @return string[] Dot-notation paths of result fields that must never be logged.
+		 */
+		protected static function resolve_sensitive_result_fields( $tool_slug ) {
+			$tool_slug = sanitize_key( $tool_slug );
+
+			if ( isset( self::$declared_sensitive_fields[ $tool_slug ] ) ) {
+				return self::$declared_sensitive_fields[ $tool_slug ];
+			}
+
+			$declared = array();
+
+			if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				$registry = WP_MCP_AI_Tool_Registry::get_instance();
+				if ( $registry->is_bootstrapped() ) {
+					$tool = $registry->get_tool( $tool_slug );
+
+					if ( $tool && method_exists( $tool, 'get_sensitive_result_fields' ) ) {
+						$fields = $tool->get_sensitive_result_fields();
+						if ( is_array( $fields ) ) {
+							$declared = array_values( array_filter( array_map( 'strval', $fields ) ) );
+						}
+					}
+				}
+			}
+
+			/**
+			 * Filter the sensitive result fields masked before a tool execution log
+			 * entry is persisted.
+			 *
+			 * Additive only: the returned list is unioned with the tool's own
+			 * declaration, so this filter can widen redaction but never weaken it.
+			 * Use it to shield a third-party tool that does not implement
+			 * {@see WP_MCP_AI_Tool_Sensitive_Result_Interface} itself.
+			 *
+			 * @since 1.1.64
+			 *
+			 * @param string[] $declared  Dot-notation paths declared by the tool.
+			 * @param string   $tool_slug Slug of the tool being logged.
+			 */
+			$declared = apply_filters( 'wp_mcp_ai_tool_sensitive_result_fields', $declared, $tool_slug );
+
+			if ( ! is_array( $declared ) ) {
+				$declared = array();
+			}
+
+			// Normalise, de-duplicate, and drop empty paths.
+			$normalized = array();
+			foreach ( $declared as $path ) {
+				if ( ! is_scalar( $path ) ) {
+					continue;
+				}
+
+				$path = trim( (string) $path, " \t\n\r\0\x0B." );
+				if ( '' === $path || isset( $normalized[ $path ] ) ) {
+					continue;
+				}
+
+				$normalized[ $path ] = true;
+			}
+
+			self::$declared_sensitive_fields[ $tool_slug ] = array_keys( $normalized );
+
+			return self::$declared_sensitive_fields[ $tool_slug ];
+		}
+
+		/**
+		 * Mask every declared path in a tool payload.
+		 *
+		 * Copies the payload and replaces each declared path's value with the
+		 * standard `[redacted]` placeholder. `*` matches a single array segment and
+		 * exists to reach values inside numerically-indexed lists. When a declared
+		 * path names a container, the entire subtree is masked — that is how tools
+		 * with an unbounded third-party payload (e.g. `result`) opt out of logging
+		 * it wholesale. The input value is never modified.
+		 *
+		 * Fail-safe by design: when a declared path expects to descend but the
+		 * matched value is a scalar, that scalar is masked rather than skipped.
+		 * Over-masking a log line is harmless; under-masking is a leak.
+		 *
+		 * @since 1.1.64
+		 *
+		 * @param mixed    $value   Raw tool arguments or result.
+		 * @param string[] $declared Dot-notation paths from {@see self::resolve_sensitive_result_fields()}.
+		 * @return mixed Copy of the value with declared paths replaced by `[redacted]`.
+		 */
+		protected static function mask_declared_sensitive_fields( $value, $declared ) {
+			if ( $value instanceof \Traversable ) {
+				$value = iterator_to_array( $value );
+			}
+
+			if ( is_object( $value ) ) {
+				$value = get_object_vars( $value );
+			}
+
+			if ( ! is_array( $value ) || empty( $declared ) ) {
+				return $value;
+			}
+
+			$groups = array();
+			foreach ( $declared as $path ) {
+				$segments = explode( '.', (string) $path );
+				if ( empty( $segments ) ) {
+					continue;
+				}
+
+				$groups[ $segments[0] ][] = array_slice( $segments, 1 );
+			}
+
+			foreach ( $value as $key => $child ) {
+				foreach ( $groups as $segment => $paths ) {
+					$matches = ( '*' === $segment ) || ( (string) $key === (string) $segment );
+					if ( ! $matches || ! ( is_array( $child ) || $child instanceof \Traversable ) ) {
+						if ( $matches ) {
+							$value[ $key ] = self::redact_sensitive_value( $child );
+						}
+						continue;
+					}
+
+					$remaining = array();
+					foreach ( $paths as $rest ) {
+						if ( empty( $rest ) ) {
+							// Declared path ends here — mask the whole subtree.
+							$value[ $key ] = self::redact_sensitive_value( $child );
+							$remaining     = array();
+							break;
+						}
+						$remaining[] = implode( '.', $rest );
+					}
+
+					if ( ! empty( $remaining ) ) {
+						$value[ $key ] = self::mask_declared_sensitive_fields( $child, $remaining );
+					}
+				}
+			}
+
+			return $value;
 		}
 
 		/**

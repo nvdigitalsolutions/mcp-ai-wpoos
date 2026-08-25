@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Handles Yahoo Fantasy Sports API OAuth authentication.
  * Manages OAuth tokens and authorization for accessing user's fantasy leagues.
  */
-class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Sensitive_Result_Interface {
 
 	use WP_MCP_AI_Tool_Default_Capability;
 	use WP_MCP_AI_Tool_Chat_Response;
@@ -290,5 +290,16 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'requires-credentials',
 			'requires-capability',
 		);
+	}
+
+	/**
+	 * The OAuth start URL and its state nonce are single-use grants; neither
+	 * should be persisted to a log (the markdown message is already covered by
+	 * the shared URL query-string redactor).
+	 *
+	 * {@inheritdoc}
+	 */
+	public function get_sensitive_result_fields() {
+		return array( 'auth_url', 'state' );
 	}
 }
