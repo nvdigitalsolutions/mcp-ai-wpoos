@@ -133,23 +133,89 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * Look up the identity that owns an explicitly supplied account.
 	 *
-	 * Returns an empty string when the lookup fails so execution falls back to
-	 * the connection's resolved identity instead of erroring out.
+	 * A definitive "no such account" is returned as a WP_Error, because
+	 * continuing would send a dead ID to Composio and surface an opaque upstream
+	 * failure — and the usual cause is a caller replaying a stale `ca_...` from
+	 * earlier in the conversation. Any *other* lookup failure (rate limit,
+	 * transport blip) is swallowed so execution still falls back to the
+	 * connection's resolved identity.
 	 *
 	 * @since 1.4.0
+	 * @since 1.4.2 An account Composio does not know fails fast with the live list.
 	 *
 	 * @param WP_MCP_AI_Composio_Client $client     Client instance.
 	 * @param string                    $account_id Connected account nanoid.
-	 * @return string
+	 * @param string                    $toolkit    Toolkit slug, for the listing hint.
+	 * @return string|WP_Error Owner identity, or an empty string when unknown.
 	 */
-	private function resolve_account_owner( $client, $account_id ) {
+	private function resolve_account_owner( $client, $account_id, $toolkit = '' ) {
 		$account = $client->get_connected_account( $account_id, WP_MCP_AI_Composio_Client::ACCOUNTS_CACHE_TTL );
 
-		if ( is_wp_error( $account ) || ! is_array( $account ) ) {
+		if ( is_wp_error( $account ) ) {
+			if ( 'wp_mcp_ai_composio_http_404' !== $account->get_error_code() ) {
+				return '';
+			}
+
+			return $this->unknown_account_error( $client, $account_id, $toolkit );
+		}
+
+		if ( ! is_array( $account ) ) {
 			return '';
 		}
 
 		return $this->extract_account_owner( $account );
+	}
+
+	/**
+	 * Build a self-correcting error for an account Composio does not know.
+	 *
+	 * Names the live accounts so the caller can retry without another
+	 * round-trip, and says plainly that a remembered ID must not be reused.
+	 *
+	 * @since 1.4.2
+	 *
+	 * @param WP_MCP_AI_Composio_Client $client     Client instance.
+	 * @param string                    $account_id Supplied account nanoid.
+	 * @param string                    $toolkit    Toolkit slug, or an empty string.
+	 * @return WP_Error
+	 */
+	private function unknown_account_error( $client, $account_id, $toolkit ) {
+		$available = array();
+		$accounts  = $client->list_connected_accounts( '' !== $toolkit ? array( 'toolkit' => $toolkit ) : array() );
+
+		if ( ! is_wp_error( $accounts ) && is_array( $accounts ) ) {
+			foreach ( $accounts as $account ) {
+				if ( is_array( $account ) && ! empty( $account['id'] ) ) {
+					$available[] = (string) $account['id'];
+				}
+			}
+		}
+
+		$available = array_slice( array_unique( $available ), 0, 10 );
+
+		$message = sprintf(
+			/* translators: %s: the connected-account ID that was supplied */
+			__( 'Connected account %s does not exist on this Composio connection — it was deleted, or it belongs to a different Composio project. Do not reuse an account ID from earlier in the conversation: run composio_list_connected_accounts for the current list, or omit connected_account_id to auto-resolve the best account.', 'mcp-ai-wpoos-pro' ),
+			$account_id
+		);
+
+		if ( ! empty( $available ) ) {
+			$message .= ' ' . sprintf(
+				/* translators: %s: comma-separated connected-account IDs */
+				__( 'Accounts that do exist on this connection: %s.', 'mcp-ai-wpoos-pro' ),
+				implode( ', ', $available )
+			);
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_composio_unknown_account',
+			$message,
+			array(
+				'supplied'           => $account_id,
+				'toolkit'            => $toolkit,
+				'available_accounts' => $available,
+			)
+		);
 	}
 
 	/**
@@ -256,7 +322,11 @@ class WP_MCP_AI_Tool_Composio_Execute_Tool implements WP_MCP_AI_Tool_Interface, 
 				$ambiguous = WP_MCP_AI_Composio_Tools::present_candidates( $account['candidates'] );
 			}
 		} else {
-			$owner = $this->resolve_account_owner( $client, $account_id );
+			$owner = $this->resolve_account_owner( $client, $account_id, $toolkit );
+
+			if ( is_wp_error( $owner ) ) {
+				return $owner;
+			}
 
 			if ( '' !== $owner ) {
 				$user_id = $owner;

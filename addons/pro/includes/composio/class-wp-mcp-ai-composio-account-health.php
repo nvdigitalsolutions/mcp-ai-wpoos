@@ -122,6 +122,7 @@ class WP_MCP_AI_Composio_Account_Health {
 		'invalid grant',
 		'invalid_credentials',
 		'invalid credentials',
+		'invalid authentication credentials',
 		'token has been expired',
 		'token expired',
 		'token has expired',
@@ -140,6 +141,18 @@ class WP_MCP_AI_Composio_Account_Health {
 		'connected account is not active',
 		'connection is not active',
 	);
+
+	/**
+	 * Matches a 401/403 proxied into an error message, e.g. Composio relaying
+	 * "HTTP 401: Request had invalid authentication credentials.".
+	 *
+	 * Unanchored, unlike the client's failure *detector*: this classifier only
+	 * ever runs on something already known to be an error, so it cannot invent a
+	 * failure — at worst it labels an existing one as recoverable.
+	 *
+	 * @since 1.4.2
+	 */
+	const PROXIED_AUTH_STATUS_PATTERN = '/\bhttp[\s:\/]*(?:1\.[01]\s+)?(?:401|403)\b/';
 
 	/**
 	 * Read the health record for a single account.
@@ -599,6 +612,7 @@ class WP_MCP_AI_Composio_Account_Health {
 	 * Classify an error as an authentication/authorisation failure.
 	 *
 	 * @since 1.4.1
+	 * @since 1.4.2 Recognises a 401/403 proxied into the message text.
 	 *
 	 * @param string $code    Error code (WP_Error code or upstream code).
 	 * @param string $message Error message.
@@ -619,6 +633,10 @@ class WP_MCP_AI_Composio_Account_Health {
 
 		if ( '' === $haystack ) {
 			return false;
+		}
+
+		if ( preg_match( self::PROXIED_AUTH_STATUS_PATTERN, $haystack ) ) {
+			return true;
 		}
 
 		foreach ( self::AUTH_ERROR_SIGNATURES as $needle ) {

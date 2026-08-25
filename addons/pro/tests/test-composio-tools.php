@@ -790,6 +790,118 @@ class Test_Composio_Tools extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test the failure mode observed in production: Composio answers
+	 * `successful: true` because it delivered the call, and Google's 401 arrives
+	 * proxied inside `data.message`. That was reported to the assistant as
+	 * "Composio tool X executed", so the agentic loop could not tell the call
+	 * had failed and retried for minutes.
+	 */
+	public function test_execute_tool_reports_reconnect_on_proxied_provider_401() {
+		$this->mock_routes(
+			array(
+				'account' => array(
+					'id'      => 'ca_proxied',
+					'status'  => 'ACTIVE',
+					'toolkit' => array( 'slug' => 'googlecalendar' ),
+				),
+				'execute' => array(
+					'successful' => true,
+					'data'       => array(
+						'message' => 'HTTP 401: Request had invalid authentication credentials. Expected OAuth 2 access token.',
+					),
+				),
+			)
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Composio_Execute_Tool();
+		$result = $tool->execute(
+			array(
+				'tool_slug'            => 'GOOGLECALENDAR_EVENTS_LIST',
+				'connected_account_id' => 'ca_proxied',
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_account_auth_required', $result->get_error_code() );
+
+		$data = $result->get_error_data();
+		$this->assertSame( 401, $data['provider_status'] );
+		$this->assertTrue( $data['needs_reconnect'] );
+		$this->assertStringContainsString( 'invalid authentication credentials', $data['upstream_error'] );
+
+		// A failed execution must not be recorded as a verification.
+		$record = WP_MCP_AI_Composio_Account_Health::get( $this->connection['id'], 'ca_proxied' );
+		$this->assertTrue( $record['needs_reconnect'] );
+		$this->assertFalse( $record['verified'] );
+	}
+
+	/**
+	 * Test that an account Composio does not know fails fast and names the live
+	 * accounts, instead of sending a stale `ca_...` upstream and returning an
+	 * opaque failure. Replaying a remembered account ID is the common cause.
+	 */
+	public function test_execute_tool_rejects_unknown_account_with_live_list() {
+		$executed = false;
+
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( &$executed ) {
+				$status = 200;
+				$body   = array();
+
+				if ( false !== strpos( $url, '/tools/execute/' ) ) {
+					$executed = true;
+					$body     = array( 'successful' => true );
+				} elseif ( preg_match( '#/connected_accounts/[^/?]+#', $url ) ) {
+					$status = 404;
+					$body   = array( 'error' => array( 'message' => 'Connected account not found.' ) );
+				} elseif ( false !== strpos( $url, '/connected_accounts' ) ) {
+					$body = array(
+						'items' => array(
+							array(
+								'id'      => 'ca_live_1',
+								'status'  => 'ACTIVE',
+								'toolkit' => array( 'slug' => 'googlecalendar' ),
+							),
+						),
+					);
+				}
+
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode( $body ),
+					'response' => array(
+						'code'    => $status,
+						'message' => 200 === $status ? 'OK' : 'Not Found',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			3
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Composio_Execute_Tool();
+		$result = $tool->execute(
+			array(
+				'tool_slug'            => 'GOOGLECALENDAR_EVENTS_LIST',
+				'connected_account_id' => 'ca_F0HEJBssnCXL',
+			)
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_composio_unknown_account', $result->get_error_code() );
+		$this->assertStringContainsString( 'ca_live_1', $result->get_error_message() );
+		$this->assertContains( 'ca_live_1', $result->get_error_data()['available_accounts'] );
+		$this->assertFalse( $executed, 'A dead account ID must not reach the execute endpoint.' );
+	}
+
+	/**
 	 * Test that auto-resolution refuses to guess between indistinguishable
 	 * accounts for a write-class action.
 	 */

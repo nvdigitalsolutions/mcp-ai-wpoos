@@ -359,6 +359,10 @@ class Test_Composio_Account_Health extends WP_UnitTestCase {
 			array( 'wp_mcp_ai_composio_http_401', 'HTTP 401: nope' ),
 			array( 'wp_mcp_ai_composio_http_403', 'HTTP 403: nope' ),
 			array( '', 'Request had insufficient authentication scopes.' ),
+			// Google's phrasing, proxied by Composio into the tool result. The
+			// status is not on the transport, so only the text can classify it.
+			array( '', 'HTTP 401: Request had invalid authentication credentials.' ),
+			array( 'wp_mcp_ai_composio_tool_failed', 'Composio tool GMAIL_FETCH_EMAILS failed: HTTP 403: forbidden' ),
 		);
 
 		foreach ( $auth as $case ) {
@@ -372,6 +376,7 @@ class Test_Composio_Account_Health extends WP_UnitTestCase {
 			array( 'wp_mcp_ai_composio_http_500', 'HTTP 500: upstream exploded' ),
 			array( '', 'Message not found' ),
 			array( '', 'Rate limit reached. Retry in 60 seconds.' ),
+			array( '', 'HTTP 404: calendar not found' ),
 		);
 
 		foreach ( $not_auth as $case ) {
