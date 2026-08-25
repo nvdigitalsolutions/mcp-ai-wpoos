@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-vision-request-timeout.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 
 /**
@@ -22,6 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Vision_Request_Timeout;
 
 	/**
 	 * {@inheritdoc}
@@ -70,6 +72,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 					'type'        => 'string',
 					'description' => __( 'Optional context about the image to help generate more relevant alt text.', 'mcp-ai-wpoos' ),
 				),
+				'timeout'       => $this->get_timeout_parameter_schema( 'vision' ),
 			),
 			'required'             => array(),
 			'additionalProperties' => false,
@@ -164,9 +167,10 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		// Build prompt.
 		$user_context = isset( $arguments['context'] ) ? sanitize_text_field( $arguments['context'] ) : '';
 		$prompt       = $this->build_prompt( $user_context );
+		$timeout      = $this->resolve_vision_timeout( $arguments );
 
 		// Call vision model based on provider and capture metadata.
-		$api_response = $this->call_vision_model( $image_url, $image_content, $prompt, $default_provider );
+		$api_response = $this->call_vision_model( $image_url, $image_content, $prompt, $default_provider, $timeout );
 
 		if ( is_wp_error( $api_response ) ) {
 			return $api_response;
@@ -220,18 +224,19 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 * @param string $image_content Base64 image content.
 	 * @param string $prompt        Prompt for the model.
 	 * @param string $provider      AI provider to use.
+	 * @param int    $timeout       HTTP request timeout in seconds.
 	 * @return array|WP_Error Response with metadata or error.
 	 */
-	private function call_vision_model( $image_url, $image_content, $prompt, $provider ) {
+	private function call_vision_model( $image_url, $image_content, $prompt, $provider, $timeout = 30 ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		if ( 'gemini' === $provider ) {
-			return $this->call_gemini_vision( $image_url, $image_content, $prompt, $settings );
+			return $this->call_gemini_vision( $image_url, $image_content, $prompt, $settings, $timeout );
 		} elseif ( 'anthropic' === $provider ) {
-			return $this->call_anthropic_vision( $image_url, $image_content, $prompt, $settings );
+			return $this->call_anthropic_vision( $image_url, $image_content, $prompt, $settings, $timeout );
 		} else {
 			// Default to OpenAI.
-			return $this->call_openai_vision( $image_url, $image_content, $prompt, $settings );
+			return $this->call_openai_vision( $image_url, $image_content, $prompt, $settings, $timeout );
 		}
 	}
 
@@ -242,9 +247,10 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 * @param string $image_content Base64 image content.
 	 * @param string $prompt        Prompt for the model.
 	 * @param array  $settings      Plugin settings.
+	 * @param int    $timeout       HTTP request timeout in seconds.
 	 * @return string|WP_Error Alt text or error.
 	 */
-	private function call_openai_vision( $image_url, $image_content, $prompt, $settings ) {
+	private function call_openai_vision( $image_url, $image_content, $prompt, $settings, $timeout = 30 ) {
 		$api_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
 
 		if ( empty( $api_key ) ) {
@@ -298,7 +304,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 					'Content-Type'  => 'application/json',
 				),
 				'body'    => wp_json_encode( $request_body ),
-				'timeout' => 30,
+				'timeout' => $timeout,
 			)
 		);
 
@@ -349,9 +355,10 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 * @param string $image_content Base64 image content.
 	 * @param string $prompt        Prompt for the model.
 	 * @param array  $settings      Plugin settings.
+	 * @param int    $timeout       HTTP request timeout in seconds.
 	 * @return string|WP_Error Alt text or error.
 	 */
-	private function call_gemini_vision( $image_url, $image_content, $prompt, $settings ) {
+	private function call_gemini_vision( $image_url, $image_content, $prompt, $settings, $timeout = 30 ) {
 		$api_key = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 
 		if ( empty( $api_key ) ) {
@@ -364,7 +371,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 
 		// If we have a URL, we need to download the image to get base64.
 		if ( ! empty( $image_url ) && empty( $image_content ) ) {
-			$image_response = wp_safe_remote_get( $image_url, array( 'timeout' => 30 ) );
+			$image_response = wp_safe_remote_get( $image_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $image_response ) ) {
 				return $image_response;
@@ -399,7 +406,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 					'x-goog-api-key' => $api_key,
 				),
 				'body'    => wp_json_encode( $request_body ),
-				'timeout' => 30,
+				'timeout' => $timeout,
 			)
 		);
 
@@ -456,9 +463,10 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 * @param string $image_content Base64 image content.
 	 * @param string $prompt        Prompt for the model.
 	 * @param array  $settings      Plugin settings.
+	 * @param int    $timeout       HTTP request timeout in seconds.
 	 * @return array|WP_Error Alt text with metadata or error.
 	 */
-	private function call_anthropic_vision( $image_url, $image_content, $prompt, $settings ) {
+	private function call_anthropic_vision( $image_url, $image_content, $prompt, $settings, $timeout = 30 ) {
 		if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_class',
@@ -499,6 +507,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 				array(
 					'model'      => $model,
 					'max_tokens' => 150, // Alt text should be concise.
+					'timeout'    => $timeout,
 				)
 			);
 

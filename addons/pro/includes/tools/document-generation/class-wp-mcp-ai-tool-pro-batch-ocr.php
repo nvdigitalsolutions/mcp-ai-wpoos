@@ -265,7 +265,9 @@ class WP_MCP_AI_Tool_Pro_Batch_OCR implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$start_time  = microtime( true );
 
 		foreach ( $urls as $url ) {
-			$image_data = $client->fetch_and_encode_image( $url );
+			// Match the client's single-image OCR default (120s) so a hung
+			// download never outlives the model request it feeds.
+			$image_data = $client->fetch_and_encode_image( $url, 120 );
 			if ( is_wp_error( $image_data ) ) {
 				++$failed;
 				$results[] = array(

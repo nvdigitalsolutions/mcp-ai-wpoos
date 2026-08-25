@@ -18,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-vision-request-timeout.php';
+
 /**
  * Self-Hosted OCR Client class.
  *
@@ -27,6 +29,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.5.0
  */
 class WP_MCP_AI_Self_Hosted_OCR_Client {
+
+	use WP_MCP_AI_Vision_Request_Timeout;
 
 	/**
 	 * Valid model types.
@@ -137,9 +141,13 @@ class WP_MCP_AI_Self_Hosted_OCR_Client {
 	 * @since 1.5.0
 	 *
 	 * @param string $model_type Model type.
+	 * @param int    $timeout    Optional. HTTP timeout in seconds for the health-check
+	 *                           request. Default 30 — this is a lightweight ping and
+	 *                           should fail fast. Pass the resolved tool timeout when
+	 *                           the ping fronts a real OCR job. Added in 1.1.63.
 	 * @return array|WP_Error Connection test result or error.
 	 */
-	public function test_connection( $model_type ) {
+	public function test_connection( $model_type, $timeout = 30 ) {
 		if ( ! $this->is_valid_model_type( $model_type ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_model_type',
@@ -166,7 +174,7 @@ class WP_MCP_AI_Self_Hosted_OCR_Client {
 		}
 
 		$url     = $endpoint_url . '/v1/models';
-		$timeout = 30;
+		$timeout = max( 5, absint( $timeout ) );
 
 		$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
 
@@ -594,10 +602,15 @@ class WP_MCP_AI_Self_Hosted_OCR_Client {
 	 * @since 1.5.0
 	 *
 	 * @param string $image_url Image URL.
+	 * @param int    $timeout   Optional. HTTP timeout in seconds for the download. Pass 0 to
+	 *                          inherit the global `request_timeout` setting. Default 0.
+	 *                          Added in 1.1.63; previously pinned to 30 seconds.
 	 * @return string|WP_Error Base64-encoded image data or error.
 	 */
-	public function fetch_and_encode_image( $image_url ) {
-		$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
+	public function fetch_and_encode_image( $image_url, $timeout = 0 ) {
+		$timeout = $this->resolve_vision_timeout( array( 'timeout' => absint( $timeout ) ) );
+
+		$response = wp_remote_get( $image_url, array( 'timeout' => $timeout ) );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
