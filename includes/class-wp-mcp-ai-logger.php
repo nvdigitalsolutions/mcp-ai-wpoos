@@ -63,9 +63,12 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		/**
 		 * Per-entry context budget when Extended Logging is enabled.
 		 *
+		 * Kept modest deliberately: the recent-activity buffer retains 100 entries,
+		 * so doubling this constant doubles the worst-case size of that option row.
+		 *
 		 * @since 1.8.0
 		 */
-		const MAX_STORED_CONTEXT_BYTES_EXTENDED = 16384;
+		const MAX_STORED_CONTEXT_BYTES_EXTENDED = 8192;
 
 		/**
 		 * Maximum length of an individual string value inside a persisted context.

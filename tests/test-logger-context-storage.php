@@ -250,12 +250,14 @@ class WP_MCP_AI_Logger_Context_Storage_Test extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );
 		$this->enable_logging( true );
 
+		// 20 x 400 chars = ~8.3 KB of arguments: now over the 8 KB extended
+		// budget, so the field is replaced with a size descriptor.
 		$this->log_failing_tool_execution( $arguments );
 
 		$extended_entry = $this->get_last_stored_entry( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );
 
-		$this->assertIsArray( $extended_entry['context']['arguments'] );
-		$this->assertCount( 20, $extended_entry['context']['arguments'] );
+		$this->assertIsString( $extended_entry['context']['arguments'] );
+		$this->assertStringContainsString( 'omitted', $extended_entry['context']['arguments'] );
 
 		$encoded = wp_json_encode( $extended_entry['context'] );
 		$this->assertLessThanOrEqual(
@@ -266,6 +268,37 @@ class WP_MCP_AI_Logger_Context_Storage_Test extends WP_UnitTestCase {
 
 		// The prompt stays fingerprinted regardless of the budget.
 		$this->assertStringNotContainsString( self::PROMPT_SENTINEL, (string) $encoded );
+	}
+
+	/**
+	 * The extended budget must actually cap payloads that sit between the old
+	 * 16 KB and the current 8 KB limit.
+	 */
+	public function test_extended_budget_caps_mid_range_payloads() {
+		$this->assertSame( 8192, WP_MCP_AI_Logger::MAX_STORED_CONTEXT_BYTES_EXTENDED );
+
+		$this->enable_logging( true );
+
+		// ~15 KB of arguments: above the 8 KB extended budget, below the previous
+		// 16 KB value. Proves the cap still bites at the lowered limit.
+		$arguments = array();
+		for ( $i = 0; $i < 40; $i++ ) {
+			$arguments[ 'field_' . $i ] = str_repeat( 'z', 300 );
+		}
+
+		$this->log_failing_tool_execution( $arguments );
+
+		$entry = $this->get_last_stored_entry( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );
+
+		$this->assertIsString( $entry['context']['arguments'] );
+		$this->assertStringContainsString( 'omitted', $entry['context']['arguments'] );
+
+		$encoded = wp_json_encode( $entry['context'] );
+		$this->assertLessThanOrEqual(
+			WP_MCP_AI_Logger::MAX_STORED_CONTEXT_BYTES_EXTENDED,
+			strlen( $encoded ),
+			'The extended budget must still cap the stored context.'
+		);
 	}
 
 	/**

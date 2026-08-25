@@ -1266,13 +1266,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						$tool_slug,
 						$arguments,
 						$result,
-						array_merge(
-							$step_context,
-							array(
-								'step_label'    => $label,
-								'step_duration' => $step_dur,
-							)
-						)
+						self::build_workflow_step_log_context( $step_context, $previous_results, $label, $step_dur )
 					);
 				}
 
@@ -1307,6 +1301,78 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			do_action( 'wp_mcp_ai_pro_workflow_completed', $schedule_id, $schedule, $previous_results );
 
 			return $previous_results;
+		}
+
+		/**
+		 * Build the context handed to the workflow step logger.
+		 *
+		 * The execution context carries `previous_results` so downstream tools can
+		 * chain on earlier step outputs, but persisting it with every step would
+		 * embed each step's entire history in the log buffers — O(N²) growth within
+		 * a single workflow run. Replace it in the logged context with a bounded
+		 * summary that still shows what ran before.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $step_context     Execution context for the current step.
+		 * @param array  $previous_results Results of earlier steps, keyed by index.
+		 * @param string $label            Human-readable step label.
+		 * @param float  $step_dur         Step execution duration in seconds.
+		 * @return array Log context.
+		 */
+		protected static function build_workflow_step_log_context( array $step_context, array $previous_results, $label, $step_dur ) {
+			unset( $step_context['previous_results'] );
+
+			$summary = array();
+
+			foreach ( $previous_results as $index => $previous ) {
+				if ( ! is_array( $previous ) ) {
+					continue;
+				}
+
+				$summary[ $index ] = array(
+					'tool_slug' => isset( $previous['tool_slug'] ) ? $previous['tool_slug'] : '',
+					'label'     => isset( $previous['label'] ) ? $previous['label'] : '',
+					'duration'  => isset( $previous['duration'] ) ? $previous['duration'] : 0,
+					'result'    => isset( $previous['result'] ) ? self::build_workflow_result_preview( $previous['result'] ) : '',
+				);
+			}
+
+			$step_context['previous_step_count'] = count( $summary );
+			$step_context['previous_steps']      = $summary;
+			$step_context['step_label']          = (string) $label;
+			$step_context['step_duration']       = (float) $step_dur;
+
+			return $step_context;
+		}
+
+		/**
+		 * Bound a workflow step result for the log context.
+		 *
+		 * String results keep a word-limited excerpt; structured results degrade to
+		 * a short JSON preview so the stored entry stays small and serialisable.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param mixed $result Step result.
+		 * @return mixed Bounded preview.
+		 */
+		protected static function build_workflow_result_preview( $result ) {
+			if ( is_string( $result ) ) {
+				return wp_trim_words( $result, 80, '…' );
+			}
+
+			$encoded = wp_json_encode( $result );
+
+			if ( false === $encoded ) {
+				return '[unserializable result]';
+			}
+
+			if ( strlen( $encoded ) <= 200 ) {
+				return $encoded;
+			}
+
+			return substr( $encoded, 0, 200 ) . '…';
 		}
 
 		/**
