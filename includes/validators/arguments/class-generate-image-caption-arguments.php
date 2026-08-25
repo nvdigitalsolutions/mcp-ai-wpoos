@@ -93,4 +93,17 @@ class GenerateImageCaptionArguments {
 		maxMessage: 'Context cannot be longer than {{ limit }} characters.'
 	)]
 	public $context = null;
+
+	/**
+	 * Optional HTTP timeout override in seconds.
+	 *
+	 * @var int|null
+	 */
+	#[Assert\Type( type: 'integer', message: 'Timeout must be an integer.' )]
+	#[Assert\Range(
+		min: 5,
+		max: 300,
+		notInRangeMessage: 'Timeout must be between {{ min }} and {{ max }} seconds.'
+	)]
+	public $timeout = null;
 }
