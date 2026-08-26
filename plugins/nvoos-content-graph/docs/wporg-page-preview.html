@@ -114,6 +114,21 @@
 	main ul, main ol { margin: 0 0 14px; padding-left: 22px; }
 	main li { margin-bottom: 4px; }
 
+	/* Contributors list (Development tab) */
+	.contributors { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+	.contributors li { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+	.contributors .avatar {
+		width: 32px; height: 32px;
+		border-radius: 50%;
+		background: #d7e4f0;
+		color: #2271b1;
+		font-size: 11px;
+		font-weight: 700;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
 	/* Screenshots */
 	.shot { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 24px; background: #fff; }
 	.shot img { width: 100%; height: auto; display: block; }
@@ -273,8 +288,13 @@
 
 				<section class="tab-panel" data-panel="developers" hidden>
 					<h2>Contributors &amp; Developers</h2>
-					<p><strong>NV oOS Content Graph</strong> is open source software licensed under GPL-3.0-or-later. It is developed by <a href="https://profiles.wordpress.org/nvdigitalsolutions/" target="_blank" rel="noopener">NV Digital Solutions</a>.</p>
-					<p>Source on GitHub: <a href="https://github.com/nvdigitalsolutions/nvoos-content-graph" target="_blank" rel="noopener">nvdigitalsolutions/nvoos-content-graph</a>.</p>
+					<p>&#8220;NV oOS Content Graph&#8221; is open source software. The following people have contributed to this plugin.</p>
+					<ul class="contributors">
+						<li><span class="avatar">NV</span> <a href="https://profiles.wordpress.org/nvdigitalsolutions/" target="_blank" rel="noopener">nvdigitalsolutions</a></li>
+						<li><span class="avatar">VS</span> <a href="https://profiles.wordpress.org/vsamtani/" target="_blank" rel="noopener">vsamtani</a></li>
+					</ul>
+					<h3>Interested in development?</h3>
+					<p><a href="https://plugins.trac.wordpress.org/browser/nvoos-content-graph/" target="_blank" rel="noopener">Browse the code</a>, check out the <a href="https://plugins.svn.wordpress.org/nvoos-content-graph/" target="_blank" rel="noopener">SVN repository</a>, or subscribe to the <a href="https://plugins.trac.wordpress.org/log/nvoos-content-graph/" target="_blank" rel="noopener">development log</a> by <a href="https://plugins.trac.wordpress.org/log/nvoos-content-graph/?limit=100&amp;mode=stop_on_copy&amp;format=rss" target="_blank" rel="noopener">RSS</a>.</p>
 
 					<h2>Changelog</h2>
 					<div class="ver">
