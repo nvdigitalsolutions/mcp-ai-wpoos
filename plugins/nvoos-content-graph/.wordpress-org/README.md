@@ -28,7 +28,7 @@ Source files for the icon and banner live in `source/`:
 
 | File | Purpose |
 |---|---|
-| `source/NVOOS-CONTENT-GRAPH-v3.png` | 1024×1024 icon master (RGBA) |
+| `source/NVOOS-CONTENT-GRAPH-v5.png` | 1024×1024 icon master (RGBA) |
 | `source/nvoos-banner-master-1344x768.png` | 1344×768 banner master |
 | `source/screenshot-main-1675x1086.jpg` | 1675×1086 main screenshot source |
 
