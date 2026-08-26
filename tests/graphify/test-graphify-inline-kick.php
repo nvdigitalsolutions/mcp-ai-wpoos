@@ -1,4 +1,7 @@
 <?php
+
+require_once __DIR__ . '/bootstrap.php';
+
 /**
  * Tests — Slice 5a: NV_oOS_Graphify inline-async-tick integration.
  *

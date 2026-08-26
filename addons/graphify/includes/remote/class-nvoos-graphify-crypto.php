@@ -122,6 +122,10 @@ class NV_oOS_Graphify_Crypto {
 				return true;
 			}
 		}
+		// Provider-prefixed API keys (openai_key, gemini_key, …) end in `_key`.
+		if ( '_key' === substr( $key, -4 ) ) {
+			return true;
+		}
 		return false;
 	}
 

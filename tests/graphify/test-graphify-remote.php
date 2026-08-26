@@ -17,6 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/bootstrap.php';
+
 /**
  * @coversDefaultClass NV_oOS_Graphify_Remote_Registry
  */
@@ -38,10 +40,12 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 		$instance->setAccessible( true );
 		$instance->setValue( null, null );
 
-		// Reset the "initialized" flag.
+		// Reset the "initialized" flag. It is an instance property, so it must
+		// be reset on a concrete object rather than the null static context.
+		$fresh       = NV_oOS_Graphify_Remote_Registry::get_instance();
 		$initialized = $reflection->getProperty( 'initialized' );
 		$initialized->setAccessible( true );
-		$initialized->setValue( null, false );
+		$initialized->setValue( $fresh, false );
 	}
 
 	// -------------------------------------------------------------------------
@@ -172,40 +176,30 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 	/**
 	 * Exact match yields confidence 1.0.
 	 *
-	 * @covers NV_oOS_Graphify_Remote_Wikidata::score_result
+	 * @covers NV_oOS_Graphify_Remote_Wikidata::calculate_confidence
 	 */
 	public function test_wikidata_exact_match_confidence() {
 		$driver = new NV_oOS_Graphify_Remote_Wikidata();
 
-		$method = new ReflectionMethod( $driver, 'score_result' );
+		$method = new ReflectionMethod( $driver, 'calculate_confidence' );
 		$method->setAccessible( true );
 
-		$result = array(
-			'match' => array( 'type' => 'label' ),
-			'label' => 'Albert Einstein',
-		);
-
-		$score = $method->invoke( $driver, $result, 'Albert Einstein' );
+		$score = $method->invoke( $driver, 'Albert Einstein', 'Albert Einstein', '', '' );
 		$this->assertEquals( 1.0, $score, '', 0.001 );
 	}
 
 	/**
 	 * Contains match yields confidence below exact match.
 	 *
-	 * @covers NV_oOS_Graphify_Remote_Wikidata::score_result
+	 * @covers NV_oOS_Graphify_Remote_Wikidata::calculate_confidence
 	 */
 	public function test_wikidata_contains_match_confidence() {
 		$driver = new NV_oOS_Graphify_Remote_Wikidata();
 
-		$method = new ReflectionMethod( $driver, 'score_result' );
+		$method = new ReflectionMethod( $driver, 'calculate_confidence' );
 		$method->setAccessible( true );
 
-		$result = array(
-			'match' => array( 'type' => 'alias' ),
-			'label' => 'Einstein',
-		);
-
-		$score = $method->invoke( $driver, $result, 'Albert Einstein' );
+		$score = $method->invoke( $driver, 'Albert Einstein', 'Einstein', '', '' );
 		$this->assertLessThan( 1.0, $score );
 		$this->assertGreaterThanOrEqual( 0.6, $score, 'Score must meet minimum threshold.' );
 	}
