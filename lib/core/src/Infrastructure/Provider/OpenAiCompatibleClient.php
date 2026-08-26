@@ -67,6 +67,10 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 			$payload['stream'] = (bool) $options['stream'];
 		}
 
+		// Model-specific parameter constraints — reasoning models (o-series)
+		// and the gpt-5 family reject `max_tokens` and (o-series) `temperature`.
+		$payload = $this->applyModelConstraints( $payload, $model );
+
 		// Pre-flight context-window validation.
 		$preflight = $this->validateContextWindow( $payload, $model );
 		if ( null !== $preflight && ! empty( $preflight['data']['warning'] ) ) {
@@ -90,22 +94,20 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 		$headers = $this->buildAuthHeaders( $apiKey );
 
 		try {
-			$response   = $this->http->send( 'POST', $baseUrl . '/chat/completions', $headers, $body );
-			$body       = $response->body;
-			$statusCode = $response->statusCode;
+			return $this->sendWithParameterCorrection(
+				$baseUrl . '/chat/completions',
+				$headers,
+				$payload,
+				function ( string $respBody ): mixed {
+					$data = \json_decode( $respBody, true );
 
-			if ( $statusCode >= 400 ) {
-				return $this->parseError( $statusCode, $body );
-			}
-
-			$data = \json_decode( $body, true );
-
-			return is_array( $data ) ? $data : $this->errors->create(
-				'invalid_response',
-				'Provider returned an unexpected response format.',
-				array( 'raw' => $body ),
+					return is_array( $data ) ? $data : $this->errors->create(
+						'invalid_response',
+						'Provider returned an unexpected response format.',
+						array( 'raw' => $respBody ),
+					);
+				}
 			);
-
 		} catch ( \Exception $e ) {
 			return $this->errors->create(
 				'http_request_failed',
@@ -146,6 +148,9 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 			$payload['top_p'] = (float) $options['top_p'];
 		}
 
+		// Model-specific parameter constraints (o-series / gpt-5 family).
+		$payload = $this->applyModelConstraints( $payload, $model );
+
 		// Pre-flight context-window validation.
 		$preflight = $this->validateContextWindow( $payload, $model );
 		if ( null !== $preflight && ! empty( $preflight['data']['warning'] ) ) {
@@ -155,124 +160,273 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 			return $this->contextWindowError( $preflight );
 		}
 
-		try {
-			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
-		} catch ( \JsonException $e ) {
-			return $this->errors->create(
-				'json_encode_failed',
-				'Failed to encode stream request payload.',
-				array( 'error' => $e->getMessage() ),
-			);
-		}
-
 		$headers = $this->buildAuthHeaders( $apiKey );
 
 		try {
-			$response   = $this->http->send( 'POST', $baseUrl . '/chat/completions', $headers, $body );
-			$statusCode = $response->statusCode;
-			$streamBody = $response->body;
+			return $this->sendWithParameterCorrection(
+				$baseUrl . '/chat/completions',
+				$headers,
+				$payload,
+				function ( string $streamBody ) use ( $model, $onChunk ): mixed {
+					// Parse SSE stream.
+					$assembled = '';
+					$finish    = 'stop';
+					$toolCalls = array();
 
-			if ( $statusCode >= 400 ) {
-				return $this->parseError( $statusCode, $streamBody );
-			}
+					foreach ( \preg_split( "/\r?\n/", $streamBody ) as $line ) {
+						$line = \trim( $line );
 
-			// Parse SSE stream.
-			$assembled  = '';
-			$finish     = 'stop';
-			$toolCalls  = array();
+						if ( '' === $line || 0 === \strpos( $line, ':' ) ) {
+							continue;
+						}
 
-			foreach ( \preg_split( "/\r?\n/", $streamBody ) as $line ) {
-				$line = \trim( $line );
+						if ( 0 === \strpos( $line, 'data: ' ) ) {
+							$data = \substr( $line, 6 );
 
-				if ( '' === $line || 0 === \strpos( $line, ':' ) ) {
-					continue;
-				}
+							if ( '[DONE]' === $data ) {
+								break;
+							}
 
-				if ( 0 === \strpos( $line, 'data: ' ) ) {
-					$data = \substr( $line, 6 );
+							$chunk = \json_decode( $data, true );
+							if ( ! is_array( $chunk ) ) {
+								continue;
+							}
 
-					if ( '[DONE]' === $data ) {
-						break;
-					}
+							$delta  = $chunk['choices'][0]['delta'] ?? array();
+							$token  = $delta['content'] ?? '';
+							$finish = $chunk['choices'][0]['finish_reason'] ?? null;
 
-					$chunk = \json_decode( $data, true );
-					if ( ! is_array( $chunk ) ) {
-						continue;
-					}
+							if ( '' !== $token ) {
+								$assembled .= $token;
 
-					$delta  = $chunk['choices'][0]['delta'] ?? array();
-					$token  = $delta['content'] ?? '';
-					$finish = $chunk['choices'][0]['finish_reason'] ?? null;
+								if ( null !== $onChunk ) {
+									$onChunk( $token );
+								}
+							}
 
-					if ( '' !== $token ) {
-						$assembled .= $token;
-
-						if ( null !== $onChunk ) {
-							$onChunk( $token );
+							// Accumulate tool call deltas.
+							if ( ! empty( $delta['tool_calls'] ) ) {
+								foreach ( $delta['tool_calls'] as $tc ) {
+									$idx = (int) ( $tc['index'] ?? 0 );
+									if ( ! isset( $toolCalls[ $idx ] ) ) {
+										$toolCalls[ $idx ] = array(
+											'id'       => $tc['id'] ?? '',
+											'type'     => 'function',
+											'function' => array(
+												'name'      => '',
+												'arguments' => '',
+											),
+										);
+									}
+									if ( ! empty( $tc['id'] ) ) {
+										$toolCalls[ $idx ]['id'] = $tc['id'];
+									}
+									if ( ! empty( $tc['function']['name'] ) ) {
+										$toolCalls[ $idx ]['function']['name'] = $tc['function']['name'];
+									}
+									if ( isset( $tc['function']['arguments'] ) ) {
+										$toolCalls[ $idx ]['function']['arguments'] .= $tc['function']['arguments'];
+									}
+								}
+							}
 						}
 					}
 
-					// Accumulate tool call deltas.
-					if ( ! empty( $delta['tool_calls'] ) ) {
-						foreach ( $delta['tool_calls'] as $tc ) {
-							$idx = (int) ( $tc['index'] ?? 0 );
-							if ( ! isset( $toolCalls[ $idx ] ) ) {
-								$toolCalls[ $idx ] = array(
-									'id'       => $tc['id'] ?? '',
-									'type'     => 'function',
-									'function' => array(
-										'name'      => '',
-										'arguments' => '',
-									),
-								);
-							}
-							if ( ! empty( $tc['id'] ) ) {
-								$toolCalls[ $idx ]['id'] = $tc['id'];
-							}
-							if ( ! empty( $tc['function']['name'] ) ) {
-								$toolCalls[ $idx ]['function']['name'] = $tc['function']['name'];
-							}
-							if ( isset( $tc['function']['arguments'] ) ) {
-								$toolCalls[ $idx ]['function']['arguments'] .= $tc['function']['arguments'];
-							}
-						}
+					// Build the final normalised message.
+					$message = array(
+						'role'    => 'assistant',
+						'content' => $assembled,
+					);
+
+					// Re-index tool calls.
+					$toolCalls = \array_values( $toolCalls );
+					if ( array() !== $toolCalls ) {
+						$message['tool_calls'] = $toolCalls;
 					}
+
+					$finish = $finish ?? 'stop';
+
+					return array(
+						'id'      => '',
+						'object'  => 'chat.completion',
+						'model'   => $model,
+						'choices' => array(
+							array(
+								'index'         => 0,
+								'message'       => $message,
+								'finish_reason' => $finish,
+							),
+						),
+					);
 				}
-			}
-
-			// Build the final normalised message.
-			$message = array(
-				'role'    => 'assistant',
-				'content' => $assembled,
 			);
-
-			// Re-index tool calls.
-			$toolCalls = \array_values( $toolCalls );
-			if ( array() !== $toolCalls ) {
-				$message['tool_calls'] = $toolCalls;
-			}
-
-			$finish = $finish ?? 'stop';
-
-			return array(
-				'id'      => '',
-				'object'  => 'chat.completion',
-				'model'   => $model,
-				'choices' => array(
-					array(
-						'index'         => 0,
-						'message'       => $message,
-						'finish_reason' => $finish,
-					),
-				),
-			);
-
 		} catch ( \Exception $e ) {
 			return $this->errors->create(
 				'http_request_failed',
 				"Stream request failed: {$e->getMessage()}",
 			);
 		}
+	}
+
+	// ─── Model parameter compatibility ─────────────────────────────
+
+	/**
+	 * Send a request, transparently correcting model-incompatible
+	 * parameters once when the API rejects them with a 400.
+	 *
+	 * OpenAI reasoning models (o-series) and the gpt-5 family reject
+	 * `max_tokens` in favor of `max_completion_tokens`; o-series also
+	 * reject `temperature`. Rather than hardcoding every future model,
+	 * the API's own "Unsupported parameter" error drives a single
+	 * correction attempt.
+	 *
+	 * @param string   $url          Endpoint URL.
+	 * @param array    $headers      Request headers.
+	 * @param array    $payload      Request payload.
+	 * @param callable $parseSuccess Body parser for a 2xx response.
+	 * @return mixed  Parsed result or error.
+	 */
+	private function sendWithParameterCorrection( string $url, array $headers, array $payload, callable $parseSuccess ): mixed {
+		$attempt = 0;
+
+		while ( true ) {
+			try {
+				$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
+			} catch ( \JsonException $e ) {
+				return $this->errors->create(
+					'json_encode_failed',
+					'Failed to encode request payload.',
+					array( 'error' => $e->getMessage() ),
+				);
+			}
+
+			$response   = $this->http->send( 'POST', $url, $headers, $body );
+			$statusCode = $response->statusCode;
+			$respBody   = $response->body;
+
+			if ( $statusCode >= 400 ) {
+				if ( 0 === $attempt ) {
+					$corrected = $this->correctUnsupportedParameter( $statusCode, $respBody, $payload );
+					if ( null !== $corrected ) {
+						$payload = $corrected;
+						++$attempt;
+						continue;
+					}
+				}
+
+				return $this->parseError( $statusCode, $respBody );
+			}
+
+			return $parseSuccess( $respBody );
+		}
+	}
+
+	/**
+	 * Parse an OpenAI-style "Unsupported parameter" 400 and return a
+	 * corrected payload, or null when no correction applies.
+	 *
+	 * @param int    $statusCode HTTP status.
+	 * @param string $respBody   Raw response body.
+	 * @param array  $payload    Request payload that was rejected.
+	 * @return array|null  Corrected payload, or null.
+	 */
+	private function correctUnsupportedParameter( int $statusCode, string $respBody, array $payload ): ?array {
+		if ( 400 !== $statusCode ) {
+			return null;
+		}
+
+		$data = \json_decode( $respBody, true );
+		$msg  = is_array( $data ) && isset( $data['error']['message'] )
+			? (string) $data['error']['message']
+			: '';
+
+		if ( '' === $msg || false === \strpos( $msg, 'Unsupported parameter' ) ) {
+			return null;
+		}
+
+		if ( ! \preg_match( "/Unsupported parameter: '([^']+)'/", $msg, $m ) ) {
+			return null;
+		}
+
+		$bad = $m[1];
+
+		switch ( $bad ) {
+			case 'max_tokens':
+				if ( isset( $payload['max_tokens'] ) ) {
+					$payload['max_completion_tokens'] = $payload['max_tokens'];
+					unset( $payload['max_tokens'] );
+					return $payload;
+				}
+				return null;
+
+			case 'max_completion_tokens':
+				if ( isset( $payload['max_completion_tokens'] ) ) {
+					$payload['max_tokens'] = $payload['max_completion_tokens'];
+					unset( $payload['max_completion_tokens'] );
+					return $payload;
+				}
+				return null;
+
+			default:
+				// Drop the offending parameter entirely (e.g. temperature,
+				// top_p on models that reject them).
+				if ( isset( $payload[ $bad ] ) ) {
+					unset( $payload[ $bad ] );
+					return $payload;
+				}
+				return null;
+		}
+	}
+
+	/**
+	 * Apply known model-specific parameter constraints up front, so the
+	 * first request already carries the parameters the model accepts.
+	 *
+	 * Mirrors the base plugin's reasoning-model handling
+	 * (WP_MCP_AI_OpenAI_Client::is_reasoning_model): o-series models use
+	 * `max_completion_tokens` and reject `temperature`; the gpt-5 family
+	 * also requires `max_completion_tokens`.
+	 *
+	 * @param array  $payload Request payload.
+	 * @param string $model   Resolved model id.
+	 * @return array
+	 */
+	protected function applyModelConstraints( array $payload, string $model ): array {
+		if ( $this->requiresMaxCompletionTokens( $model ) && isset( $payload['max_tokens'] ) ) {
+			$payload['max_completion_tokens'] = $payload['max_tokens'];
+			unset( $payload['max_tokens'] );
+		}
+
+		if ( $this->isReasoningModel( $model ) ) {
+			// o-series reasoning models do not accept temperature.
+			unset( $payload['temperature'] );
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * Whether a model id is an OpenAI o-series reasoning model.
+	 *
+	 * Same detection as the base plugin's WP_MCP_AI_OpenAI_Client:
+	 * o1, o1-mini, o3, o4-mini, dated variants, etc.
+	 *
+	 * @param string $model Model id.
+	 * @return bool
+	 */
+	private function isReasoningModel( string $model ): bool {
+		return (bool) \preg_match( '/^o[0-9]+(-|$)/i', $model );
+	}
+
+	/**
+	 * Whether a model requires `max_completion_tokens` instead of
+	 * `max_tokens` (o-series reasoning models and the gpt-5 family).
+	 *
+	 * @param string $model Model id.
+	 * @return bool
+	 */
+	private function requiresMaxCompletionTokens( string $model ): bool {
+		return $this->isReasoningModel( $model ) || 0 === \strpos( $model, 'gpt-5' );
 	}
 
 	public function listModels(): mixed {
