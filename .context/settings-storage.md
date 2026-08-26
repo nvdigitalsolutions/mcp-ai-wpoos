@@ -1,7 +1,9 @@
 # NV oOS Settings Storage Context
 
 > **GSD Context File** — Load this when working on settings, credentials, import/export, or admin save flow.
-> Last reviewed: July 2026.
+> Last reviewed: August 26, 2026 (v1.1.64).
+>
+> **New in v1.1.64 (PR #5952):** the rolling log buffers `wp_mcp_ai_recent_errors` / `wp_mcp_ai_recent_activity` are storage-sensitive options that had grown into the megabytes (full assistant configs incl. `system_prompt` + unbounded arguments per entry). The persistence path now enforces a per-entry byte budget (fingerprinted `assistant_config`/`system_prompt`, string truncation, largest-value dropping, 12 diagnostic keys preserved); Extended Logging budget is 8 KB/entry. Data Management (Settings → Advanced) exposes Compact (rewrites stored entries through the budget) and Delete (empties both buffers) via the `wp_mcp_ai_maintain_log_buffers` AJAX action, with per-buffer entry counts + sizes reported. Keep new log-buffer writes inside this budget machinery — never store raw prompt/argument blobs.
 
 ---
 

@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.63"
-  plugin-version-tested: "1.1.63"
-  last-updated: "2026-08-23"
+  plugin-version: "1.1.64"
+  plugin-version-tested: "1.1.64"
+  last-updated: "2026-08-26"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -43,7 +43,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~303 base / ~1,552 full tools
+     │  Tool Registry     │  ~303 base / ~1,559 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -389,6 +389,36 @@ bundle not found: skill-knowledge").
   `docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md`.
 - **DeepSeek empty-schema fix** — tool schema `properties` must encode as `{}`
   never `[]`; legacy tools are wrapped before the first register attempt.
+
+## Google Calendar Connection & Composio Hardening (v1.1.64+)
+
+- **Google Calendar connection (Base + Pro)** — new shared foundation in
+  `includes/google/` (OAuth service, Calendar v3 client, scope registry,
+  credential resolver, sync + push) replaces four drifted Google OAuth
+  start/callback copies; a `google_calendar` connection type exists on both
+  surfaces (base Settings → Integrations, Pro Remote Sites). Six new Pro
+  tools in `addons/pro/includes/tools/google-workspace/`:
+  `list_google_calendars`, `list_google_calendar_events`,
+  `update_google_calendar_event`, `delete_google_calendar_event`,
+  `check_google_calendar_availability`, `quick_add_google_calendar_event` —
+  credentials resolve from an optional `connection_id` or site-level settings,
+  and every write passes scope enforcement. Docs:
+  `docs/developer/architecture/integrations/google-calendar-connection.md`.
+- **Composio account health + hardening (Pro)** — verified account-health
+  engine (`WP_MCP_AI_Composio_Account_Health`) with live catalog-discovered
+  probes; new seventh tool `composio_manage_accounts`
+  (validate/reconnect/delete/prune); proxied provider 401/403 → reconnect
+  guidance; zero-argument calls send `arguments: {}`; Health column +
+  Verify/Reconnect in Remote Sites.
+- **Log hygiene** — tools declare non-loggable result fields via
+  `WP_MCP_AI_Tool_Sensitive_Result_Interface` (`get_sensitive_result_fields()`,
+  logging-only masking); credential-bearing URL query params are redacted
+  from every logged string; rolling log buffers get per-entry byte budgets
+  plus Data Management Compact/Delete.
+- **Vision tools timeout** — `analyze_image`, `extract_image_text`,
+  `generate_image_alt_text`, `generate_image_caption` accept a 5–300s
+  `timeout` and inherit the global `request_timeout` (fixes cURL error 28 on
+  large images).
 
 ---
 
