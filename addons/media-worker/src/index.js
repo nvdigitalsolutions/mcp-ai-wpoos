@@ -301,11 +301,16 @@ const server = app.listen( PORT, async () => {
 		console.warn( '  - The in-memory job queue is single-process — REDIS_URL is required in cluster mode.' );
 	}
 
-	// Phase 3 W6 (revised): notice, not a flip — the default stays
-	// permissive in single-tenant mode until the shared-volume audit lands.
+	// Phase 3 W6 (Q5, resolved 2026-08-26): the default stays permissive in
+	// single-tenant mode — flipping it would still break existing deployments
+	// whose shared volumes live outside os.tmpdir() and have no TEMP_ROOT set.
+	// The safe default the flip was waiting for now exists: with
+	// STRICT_PATHS=1 (or STRICT_PDF_PATHS=1), TEMP_ROOT is the allowlisted
+	// sandbox root. Re-deferred to worker 4.0.0 (proposal 028).
 	if ( ! isMultiTenant() && '1' !== process.env.STRICT_PATHS && '1' !== process.env.STRICT_PDF_PATHS ) {
 		console.warn( '[Design Worker] PDF path checks are permissive in single-tenant mode.' );
-		console.warn( '  Set STRICT_PATHS=1 to enforce the site namespace now (see proposal 028, W6).' );
+		console.warn( '  Set STRICT_PATHS=1 to enforce the sandbox now — optionally with TEMP_ROOT to allowlist a shared-volume root.' );
+		console.warn( '  Default flip to strict mode is re-deferred to worker 4.0.0 (proposal 028, Q5).' );
 	}
 } );
 

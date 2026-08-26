@@ -431,3 +431,150 @@ crawlRouter.post( '/links', async ( req, res ) => {
 			.json( { success: false, error: err.message } );
 	}
 } );
+
+// ── /full + /full/task/:task_id — full-Crawl4AI parity proxy (031 Phase 3) ──
+//
+// When CRAWL4AI_FULL_URL points at a real Crawl4AI deployment (sibling
+// container or hosted service), the worker acts as the SSRF-validated,
+// token-gated forwarder: every target URL is validated by the shared SSRF
+// guard BEFORE the payload is proxied upstream, so private/loopback targets
+// can never reach the Python service through this route. Without
+// CRAWL4AI_FULL_URL the route answers 503 service_not_configured.
+
+const CRAWL_FULL_TIMEOUT_MS = envInt( 'CRAWL_FULL_TIMEOUT_MS', CRAWL_TIMEOUT_MS, 1000 );
+
+/**
+ * Base URL of the upstream full-Crawl4AI service, or null when unset.
+ *
+ * Operator-configured via CRAWL4AI_FULL_URL; protocol-restricted to
+ * http/https. Unlike target URLs, the upstream itself is NOT SSRF-checked —
+ * it is the whole point of the proxy to reach a private sibling container.
+ *
+ * @param {Object} [env] Environment source (injectable for tests).
+ * @return {URL|null} Parsed base URL, or null when unset/invalid.
+ */
+function fullCrawlBaseUrl( env = process.env ) {
+	const raw = ( env.CRAWL4AI_FULL_URL || '' ).trim();
+	if ( ! raw ) {
+		return null;
+	}
+	let parsed;
+	try {
+		parsed = new URL( raw );
+	} catch {
+		return null;
+	}
+	if ( 'http:' !== parsed.protocol && 'https:' !== parsed.protocol ) {
+		return null;
+	}
+	return parsed;
+}
+
+/**
+ * Append a path segment to the upstream base URL (preserving any base path).
+ *
+ * @param {URL}    base Parsed upstream base URL.
+ * @param {string} seg  Path segment(s) to append.
+ * @return {string} Full upstream URL.
+ */
+function upstreamUrl( base, seg ) {
+	const url = new URL( base.toString() );
+	url.pathname = ( url.pathname.replace( /\/+$/, '' ) + '/' + seg ).replace( /^\/+/, '/' );
+	url.search = '';
+	url.hash = '';
+	return url.toString();
+}
+
+/**
+ * Validate + forward a full-Crawl4AI crawl submission to the upstream.
+ *
+ * Contract-preserving: the request body is forwarded as-is (except that
+ * every `urls` entry is replaced by its SSRF-validated normalisation) and
+ * the upstream response is relayed verbatim, so the WordPress plugin's
+ * Crawl4AI client needs no awareness of the proxy.
+ *
+ * @param {Object} [payload] Request body.
+ * @param {Object} [deps]    Injectable ({ baseUrl, resolvePublicUrlFn, fetchFn }).
+ * @return {Promise<{statusCode: number, body: Object}>} HTTP result.
+ */
+export async function submitFullCrawl( payload = {}, deps = {} ) {
+	const base = undefined !== deps.baseUrl ? deps.baseUrl : fullCrawlBaseUrl();
+	if ( ! base ) {
+		return { statusCode: 503, body: { error: 'service_not_configured' } };
+	}
+
+	const resolver = deps.resolvePublicUrlFn || resolvePublicUrl;
+	const urls = Array.isArray( payload.urls ) ? payload.urls : null;
+	if ( ! urls || 0 === urls.length ) {
+		return { statusCode: 400, body: { error: 'urls must be a non-empty array' } };
+	}
+
+	// SSRF guard: validate every target before forwarding.
+	const normalized = [];
+	for ( const rawUrl of urls ) {
+		if ( 'string' !== typeof rawUrl || '' === rawUrl ) {
+			return { statusCode: 400, body: { error: 'Every url must be a non-empty string.' } };
+		}
+		try {
+			normalized.push( ( await resolver( rawUrl ) ).toString() );
+		} catch {
+			return { statusCode: 400, body: { error: `Invalid URL: ${ rawUrl }` } };
+		}
+	}
+
+	const fetchFn = deps.fetchFn || fetch;
+	let upstream;
+	try {
+		upstream = await fetchFn( upstreamUrl( base, 'crawl' ), {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify( { ...payload, urls: normalized } ),
+			signal: AbortSignal.timeout( CRAWL_FULL_TIMEOUT_MS ),
+		} );
+	} catch {
+		return { statusCode: 502, body: { error: 'upstream_unreachable' } };
+	}
+
+	const json = await upstream.json().catch( () => ( {} ) );
+	return { statusCode: upstream.status, body: json };
+}
+
+/**
+ * Relay a task-status poll to the upstream full-Crawl4AI service.
+ *
+ * @param {string} taskId Task identifier.
+ * @param {Object} [deps] Injectable ({ baseUrl, fetchFn }).
+ * @return {Promise<{statusCode: number, body: Object}>} HTTP result.
+ */
+export async function getFullTaskStatus( taskId, deps = {} ) {
+	const base = undefined !== deps.baseUrl ? deps.baseUrl : fullCrawlBaseUrl();
+	if ( ! base ) {
+		return { statusCode: 503, body: { error: 'service_not_configured' } };
+	}
+	if ( 'string' !== typeof taskId || '' === taskId ) {
+		return { statusCode: 400, body: { error: 'task_id is required' } };
+	}
+
+	const fetchFn = deps.fetchFn || fetch;
+	let upstream;
+	try {
+		upstream = await fetchFn( upstreamUrl( base, `task/${ encodeURIComponent( taskId ) }` ), {
+			signal: AbortSignal.timeout( CRAWL_FULL_TIMEOUT_MS ),
+		} );
+	} catch {
+		return { statusCode: 502, body: { error: 'upstream_unreachable' } };
+	}
+
+	const json = await upstream.json().catch( () => ( {} ) );
+	return { statusCode: upstream.status, body: json };
+}
+
+crawlRouter.post( '/full', async ( req, res ) => {
+	const { statusCode, body } = await submitFullCrawl( req.body || {} );
+	res.status( statusCode ).json( body );
+} );
+
+crawlRouter.get( '/full/task/:task_id', async ( req, res ) => {
+	const { statusCode, body } = await getFullTaskStatus( req.params.task_id );
+	res.status( statusCode ).json( body );
+} );

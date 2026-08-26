@@ -284,7 +284,11 @@ Full spec: proposal
   active.
 - **Strict-path note** — single-tenant PDF path checks stay permissive;
   set `STRICT_PATHS=1` to enforce the site namespace now (boot notice
-  included).
+  included). With `STRICT_PATHS=1` (or `STRICT_PDF_PATHS=1`), an explicit
+  `TEMP_ROOT` becomes the allowlisted sandbox root in single-tenant mode,
+  so Docker shared-volume deployments can opt into enforcement without
+  moving mounts (proposal 028, Q5 — default flip re-deferred to worker
+  4.0.0).
 
 Full plan: proposal
 [028](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/028-media-worker-phase3-proposal.md).

@@ -2,7 +2,7 @@
 
 **Based on:** `026-media-worker-multi-tenancy-sidecar-proposal.md` (Phase 1, merged) and `027-media-worker-multi-tenancy-phase2-spec.md` (Phase 2, PR #5868)
 **Date:** 2026-08-13
-**Status:** Implemented — W1–W7 shipped 2026-08-14 (worker v3.0.0); W6 default flip deferred (open Q5)
+**Status:** Implemented — W1–W7 shipped 2026-08-14 (worker v3.0.0); W6 default flip re-deferred to worker 4.0.0, Q5 closed 2026-08-26 (allowlisted TEMP_ROOT in strict mode)
 **Target releases:** v2.5.1 (W1–W3), v2.6.0 (W4–W5), v3.0.0 (W6 default flip)
 **Standalone repo:** `nvdigitalsolutions/mcp-ai-wpoos-media-worker` (one-way subtree mirror of `addons/media-worker/`)
 
@@ -93,6 +93,8 @@ The charter is a single hard rule:
 3. Multi-tenant mode has been strict since Phase 1 — unaffected either way.
 
 **Status — REVISED during implementation (2026-08-13):** the flip is **deferred**. The audit found that the Docker single-tenant flow relies on shared-volume paths *outside* `os.tmpdir()`, so a default flip would break the primary documented Docker deployment. Shipped instead: the v2.6 boot notice (permissive-mode warning) and `STRICT_PATHS=1`/`STRICT_PDF_PATHS=1` opt-in flags (already present since Phase 1). The flip returns once a safe default for shared-volume paths is defined (e.g. an allowlisted `TEMP_ROOT` in single-tenant strict mode) — tracked as open Q5.
+
+**Status — Q5 RESOLVED (2026-08-26):** the safe default now exists — with `STRICT_PATHS=1` (or `STRICT_PDF_PATHS=1`), an explicit `TEMP_ROOT` becomes the allowlisted sandbox root in single-tenant mode (`siteBaseDir()`/`siteDirFor()` in `src/utils/site-paths.js`), so Docker shared-volume deployments can opt into path enforcement without moving mounts. The **default flip was re-attempted and explicitly re-deferred to worker 4.0.0**: it remains breaking for existing deployments whose shared volumes lie outside `os.tmpdir()` and have no `TEMP_ROOT` set, so it needs a major-version coordinated config change. Boot notice updated accordingly; 5 new tests in `site-paths.test.js` cover the allowlist matrix.
 
 **Tests:** flag matrix (default/strict/legacy) across single- and multi-tenant modes.
 
