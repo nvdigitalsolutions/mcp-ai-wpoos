@@ -2,7 +2,7 @@
 
 **Version:** 1.2.0
 **Date:** 2026-08-18
-**Status:** Phases 1–2 implemented (PR pending) — Phase 3 deferred behind an env flag
+**Status:** Phases 1–3 implemented (Phase 3 = env-gated `/api/crawl/full` proxy, `CRAWL4AI_FULL_URL`; 503 when unset)
 **Scope:** `addons/media-worker/` (Node.js sidecar), optional plugin-side configuration, documentation
 **Related:** [CRAWL4AI_BUNDLING_RECOMMENDATION.md](../../features/tools/crawl4ai/CRAWL4AI_BUNDLING_RECOMMENDATION.md), [026](../026-media-worker-multi-tenancy-sidecar-proposal.md), [028](../028-media-worker-phase3-proposal.md), [sidecar-expansion-plan.md](../sidecar-expansion-plan.md), [PLAYWRIGHT_SERVICE_IMPLEMENTATION.md](../PLAYWRIGHT_SERVICE_IMPLEMENTATION.md)
 
@@ -24,6 +24,17 @@
 > resolution, and hardened JSON parsing of every provider response. See
 > `src/utils/llm-extract.js` and the README "LLM extraction providers"
 > section.
+>
+> **Implementation note (2026-08-26, worker 3.2.1+):** Phase 3 shipped as
+> the env-gated proxy — `POST /api/crawl/full` + `GET /api/crawl/full/task/:id`
+> forward to `CRAWL4AI_FULL_URL` (contract-preserving, SSRF-validated targets,
+> token-gated like every `/api` route, `503 service_not_configured` when the
+> env var is unset, `502 upstream_unreachable` on upstream failure). See
+> `src/routes/crawl.js` → `submitFullCrawl()` / `getFullTaskStatus()` and the
+> README "Managed Node.js hosts (Cloudways Velocity)" section. Compose wiring
+> for the sibling container is intentionally left to deployers (the proxy is
+> host-agnostic; a `crawl4ai` compose service example lives in the standalone
+> repo's README).
 
 ---
 
