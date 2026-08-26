@@ -417,6 +417,10 @@ class RemoteAdmin {
 	 * service. Processes one batch per call; schedules the next batch via
 	 * WP-Cron when more nodes remain.
 	 *
+	 * Each batch is embedded in a single API request (array input) so a
+	 * full reindex never exhausts the PHP execution time with sequential
+	 * HTTP calls.
+	 *
 	 * @since 1.0.2
 	 *
 	 * @return array<string,mixed>|\WP_Error Summary or error.
@@ -462,35 +466,82 @@ class RemoteAdmin {
 			);
 		}
 
-		$processed = 0;
-		$failed    = 0;
-		foreach ( $nodes as $node ) {
-			$text = $node->label ?? '';
+		$model      = isset( $settings['embeddings_model'] ) && '' !== $settings['embeddings_model']
+			? sanitize_text_field( $settings['embeddings_model'] )
+			: 'text-embedding-3-small';
+		$processed  = 0;
+		$failed     = 0;
+		$firstError = '';
+
+		// Build the input list, tracking which node each text belongs to.
+		// Nodes without usable text cannot be embedded — count them failed.
+		$texts   = array();
+		$indexes = array();
+		foreach ( $nodes as $i => $node ) {
+			$text = trim( (string) ( $node->label ?? '' ) );
 			if ( ! empty( $node->properties ) ) {
 				$props = is_string( $node->properties ) ? json_decode( $node->properties, true ) : (array) $node->properties;
-				if ( is_array( $props ) && ! empty( $props['excerpt'] ) ) {
+				if ( is_array( $props ) && ! empty( $props['excerpt'] ) && is_string( $props['excerpt'] ) ) {
 					$text .= ' ' . $props['excerpt'];
 				}
 			}
 
-			$vector = $embed->embed( $text );
-			if ( ! is_array( $vector ) || empty( $vector['vector'] ) ) {
+			if ( '' === $text ) {
 				++$failed;
 				continue;
 			}
 
-			$ok = \NvoosContentGraph\Graph\Db::upsertEmbedding(
-				array(
-					'node_id' => $node->node_id,
-					'model'   => isset( $vector['model'] ) ? sanitize_text_field( $vector['model'] ) : 'text-embedding-3-small',
-					'dim'     => isset( $vector['dim'] ) ? absint( $vector['dim'] ) : count( $vector['vector'] ),
-					'vector'  => wp_json_encode( $vector['vector'] ),
-				)
-			);
-			if ( $ok ) {
-				++$processed;
+			$texts[]   = $text;
+			$indexes[] = $i;
+		}
+
+		if ( array() !== $texts ) {
+			// One API request for the whole batch. Any unexpected
+			// exception becomes a readable error instead of a fatal.
+			try {
+				$vectors = $embed->embedBatch( $texts, '', $model );
+			} catch ( \Throwable $e ) {
+				$vectors = new \WP_Error( 'nvoos_content_graph_embed_exception', $e->getMessage() );
+			}
+
+			if ( is_wp_error( $vectors ) ) {
+				$firstError = $vectors->get_error_message();
+				$failed    += count( $texts );
+			} elseif ( is_array( $vectors ) ) {
+				foreach ( $vectors as $pos => $vector ) {
+					if ( ! isset( $indexes[ $pos ] ) ) {
+						break; // Malformed response — stop mapping.
+					}
+
+					$node = $nodes[ $indexes[ $pos ] ];
+					if ( ! is_array( $vector ) || empty( $vector['vector'] ) ) {
+						++$failed;
+						continue;
+					}
+
+					$ok = \NvoosContentGraph\Graph\Db::upsertEmbedding(
+						array(
+							'node_id' => $node->node_id,
+							'model'   => $model,
+							'dim'     => isset( $vector['dim'] ) ? absint( $vector['dim'] ) : count( $vector['vector'] ),
+							'vector'  => wp_json_encode( $vector['vector'] ),
+						)
+					);
+
+					if ( $ok ) {
+						++$processed;
+					} else {
+						++$failed;
+					}
+				}
+
+				// The API returned fewer vectors than requested — the rest failed.
+				$missing = count( $texts ) - count( $vectors );
+				if ( $missing > 0 ) {
+					$failed += $missing;
+				}
 			} else {
-				++$failed;
+				$failed += count( $texts );
 			}
 		}
 
@@ -503,11 +554,16 @@ class RemoteAdmin {
 			delete_option( 'nvoos_content_graph_reindex_offset' );
 		}
 
-		return array(
+		$summary = array(
 			'processed' => $processed,
 			'failed'    => $failed,
 			'remaining' => $remaining,
 		);
+		if ( '' !== $firstError ) {
+			$summary['error'] = $firstError;
+		}
+
+		return $summary;
 	}
 
 	/**
@@ -622,6 +678,7 @@ class RemoteAdmin {
 					'connectionOk'  => \__( 'Connection OK', 'nvoos-content-graph' ),
 					'deleteConfirm' => \__( 'Delete this source?', 'nvoos-content-graph' ),
 					'reindexing'    => \__( 'Reindexing…', 'nvoos-content-graph' ),
+					'reindexFailed' => \__( 'Reindexing failed', 'nvoos-content-graph' ),
 					'doneStored'    => \__( 'Done. Stored:', 'nvoos-content-graph' ),
 					'failed'        => \__( 'Failed:', 'nvoos-content-graph' ),
 					'checkApiKey'   => \__( 'check OpenAI API key in NV oOS settings', 'nvoos-content-graph' ),
