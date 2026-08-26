@@ -44,7 +44,8 @@ class EmbeddingService {
 		}
 
 		$provider = '' !== $provider ? $provider : $this->settings->getDefaultProvider();
-		$model    = '' !== $model ? $model : self::DEFAULT_MODEL;
+		$provider = $this->resolveEmbeddingProvider( $provider );
+		$model    = $this->resolveModel( $model );
 
 		$apiKey = $this->resolveApiKey( $provider );
 		if ( null === $apiKey ) {
@@ -106,21 +107,26 @@ class EmbeddingService {
 
 		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
 			return $this->errors->create( 'http_request_failed', "Embedding request failed: {$e->getMessage()}" );
+		} catch ( \Throwable $e ) {
+			// Never let an unexpected exception (missing PSR-7 classes,
+			// malformed responses, …) bubble into a fatal error.
+			return $this->errors->create( 'embedding_failed', 'Embedding request failed: ' . $e->getMessage() );
 		}
 	}
 
 	/**
 	 * Generate embeddings for multiple texts in a batch.
-	 *
-	 * @param string[] $texts    Input texts.
-	 * @param string   $provider Provider slug.
-	 * @param string   $model    Embedding model.
-	 *
-	 * @return array<int, array{vector: float[], dim: int}>|mixed  Vectors or error.
-	 */
+		 *
+		 * @param string[] $texts    Input texts.
+		 * @param string   $provider Provider slug.
+		 * @param string   $model    Embedding model.
+		 *
+		 * @return array<int, array{vector: float[], dim: int}>|mixed  Vectors or error.
+		 */
 	public function embedBatch( array $texts, string $provider = '', string $model = '' ): mixed {
 		$provider = '' !== $provider ? $provider : $this->settings->getDefaultProvider();
-		$model    = '' !== $model ? $model : self::DEFAULT_MODEL;
+		$provider = $this->resolveEmbeddingProvider( $provider );
+		$model    = $this->resolveModel( $model );
 
 		$apiKey = $this->resolveApiKey( $provider );
 		if ( null === $apiKey ) {
@@ -176,6 +182,8 @@ class EmbeddingService {
 
 		} catch ( \Psr\Http\Client\ClientExceptionInterface $e ) {
 			return $this->errors->create( 'http_request_failed', $e->getMessage() );
+		} catch ( \Throwable $e ) {
+			return $this->errors->create( 'embedding_failed', 'Embedding batch request failed: ' . $e->getMessage() );
 		}
 	}
 
@@ -188,6 +196,48 @@ class EmbeddingService {
 			return $this->settings->getApiKey( 'openai' );
 		}
 		return ( null !== $apiKey && '' !== $apiKey ) ? $apiKey : null;
+	}
+
+	/**
+	 * Pick the provider that actually serves embedding requests.
+	 *
+	 * Most chat providers (DeepSeek, Kimi, Anthropic, Gemini, Ollama,
+	 * LM Studio) do not expose an OpenAI-style /embeddings endpoint.
+	 * When an OpenAI key is available it is preferred for embeddings;
+	 * otherwise the requested provider is kept so custom
+	 * OpenAI-compatible endpoints still work.
+	 *
+	 * @param string $provider Requested provider slug.
+	 * @return string
+	 */
+	private function resolveEmbeddingProvider( string $provider ): string {
+		if ( 'openai' === $provider ) {
+			return 'openai';
+		}
+
+		$openaiKey = $this->settings->getApiKey( 'openai' );
+
+		return ( null !== $openaiKey && '' !== $openaiKey ) ? 'openai' : $provider;
+	}
+
+	/**
+	 * Resolve the embedding model, honoring the configured
+	 * `embeddings_model` setting so indexing and retrieval always
+	 * target the same model.
+	 *
+	 * @param string $model Explicit model override ('' = configured default).
+	 * @return string
+	 */
+	private function resolveModel( string $model ): string {
+		if ( '' !== $model ) {
+			return $model;
+		}
+
+		$configured = $this->settings->get( 'embeddings_model', '' );
+
+		return is_string( $configured ) && '' !== $configured
+			? $configured
+			: self::DEFAULT_MODEL;
 	}
 
 	private function resolveBaseUrl( string $provider ): string {

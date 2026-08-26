@@ -252,6 +252,8 @@ class ChatController {
 			);
 		}
 
+		$contextMode = $this->graphContextMode();
+
 		return new \WP_REST_Response(
 			array(
 				'success'                  => true,
@@ -261,7 +263,8 @@ class ChatController {
 				'temperature'              => (float) $bridge->settings->get( 'ai_temperature', 0.7 ),
 				'max_tokens'               => (int) $bridge->settings->get( 'ai_max_tokens', 4096 ),
 				'system_prompt_configured' => '' !== (string) $bridge->settings->get( 'ai_system_prompt', '' ),
-				'graph_context_available'  => $this->graphContextAvailable(),
+				'graph_context_available'  => 'none' !== $contextMode,
+				'graph_context_mode'       => $contextMode,
 				'tool_presets'             => $this->getToolPresets(),
 				'tools'                    => $this->getToolList(),
 			),
@@ -487,7 +490,11 @@ class ChatController {
 	}
 
 	/**
-	 * Retrieve relevant knowledge-graph context for a query via RAG.
+	 * Retrieve relevant knowledge-graph context for a query.
+	 *
+	 * Two tiers:
+	 *  1. Semantic retrieval via the embeddings index (when enabled).
+	 *  2. Keyword search over node labels — works without embeddings.
 	 *
 	 * The `nvoos_content_graph_ai_chat_context` filter can short-circuit
 	 * retrieval (return a string to use it, return null to proceed).
@@ -505,14 +512,224 @@ class ChatController {
 			return '';
 		}
 
-		try {
-			$context = CoreBridge::instance()->rag->buildContextPrompt( $query, 5 );
-		} catch ( \Throwable $e ) {
-			// RAG is best-effort — a retrieval failure must never break chat.
+		// Tier 1 — semantic retrieval (only when an index actually exists,
+		// so we never pay for an embedding call against an empty index).
+		if ( $this->embeddingsEnabled() && $this->embeddingsIndexHasRows() ) {
+			try {
+				$context = CoreBridge::instance()->rag->buildContextPrompt( $query, 5 );
+			} catch ( \Throwable $e ) {
+				$context = '';
+			}
+
+			if ( is_string( $context ) && '' !== $context ) {
+				return $context;
+			}
+		}
+
+		// Tier 2 — keyword fallback.
+		return $this->keywordGraphContext( $query );
+	}
+
+	/**
+	 * Build a context block from a keyword search over node labels.
+	 *
+	 * @param string $query Latest user query.
+	 * @return string Context block, or '' when nothing matches.
+	 */
+	private function keywordGraphContext( string $query ): string {
+		if ( ! \class_exists( 'NvoosContentGraph\Graph\Db' ) ) {
 			return '';
 		}
 
-		return is_string( $context ) ? $context : '';
+		$maxNodes = 8;
+		$nodes    = array();
+		$seen     = array();
+
+		// Whole query first — exact-ish phrase hits are the most relevant.
+		foreach ( \NvoosContentGraph\Graph\Db::searchNodes( $query, '', $maxNodes ) as $row ) {
+			if ( ! isset( $row->node_id ) || isset( $seen[ $row->node_id ] ) ) {
+				continue;
+			}
+			$seen[ $row->node_id ] = true;
+			$nodes[]               = $row;
+		}
+
+		// Then per-keyword, in case the full phrase missed.
+		if ( \count( $nodes ) < $maxNodes ) {
+			foreach ( $this->extractKeywords( $query ) as $keyword ) {
+				foreach ( \NvoosContentGraph\Graph\Db::searchNodes( $keyword, '', 4 ) as $row ) {
+					if ( \count( $nodes ) >= $maxNodes ) {
+						break 2;
+					}
+					if ( ! isset( $row->node_id ) || isset( $seen[ $row->node_id ] ) ) {
+						continue;
+					}
+					$seen[ $row->node_id ] = true;
+					$nodes[]               = $row;
+				}
+			}
+		}
+
+		$context = "The following content from the website's knowledge graph may be relevant to the user's query:\n\n";
+		$count   = 0;
+		foreach ( $nodes as $row ) {
+			$label = (string) ( $row->label ?? '' );
+			if ( '' === $label ) {
+				continue;
+			}
+			$type     = (string) ( $row->type ?? '' );
+			$context .= ( ++$count ) . '. [' . $type . '] ' . $label . "\n";
+		}
+
+		if ( 0 === $count ) {
+			return '';
+		}
+
+		$context .= "\nUse this context to inform your response when it is relevant to the user's question.";
+
+		return $context;
+	}
+
+	/**
+	 * Split a query into significant lowercase keywords.
+	 *
+	 * @param string $query Raw query text.
+	 * @return string[]
+	 */
+	private function extractKeywords( string $query ): array {
+		$lower = \function_exists( 'mb_strtolower' ) ? \mb_strtolower( $query ) : \strtolower( $query );
+		$words = \preg_split( '/[\s,;:.!?()\[\]{}"\']+/', $lower, -1, PREG_SPLIT_NO_EMPTY );
+		if ( false === $words ) {
+			return array();
+		}
+
+		$stop = \array_flip(
+			array(
+				'the',
+				'a',
+				'an',
+				'and',
+				'or',
+				'but',
+				'of',
+				'to',
+				'in',
+				'on',
+				'for',
+				'with',
+				'is',
+				'are',
+				'was',
+				'what',
+				'how',
+				'why',
+				'who',
+				'when',
+				'where',
+				'can',
+				'you',
+				'do',
+				'does',
+				'about',
+				'my',
+				'your',
+				'our',
+				'their',
+				'this',
+				'that',
+				'it',
+				'its',
+				'me',
+				'we',
+				'he',
+				'she',
+				'they',
+				'please',
+				'show',
+				'tell',
+				'give',
+				'find',
+				'get',
+				'from',
+				'have',
+				'has',
+				'any',
+				'some',
+				'there',
+				'here',
+				'then',
+				'than',
+			)
+		);
+
+		$keywords = array();
+		foreach ( $words as $word ) {
+			$word   = \trim( $word );
+			$length = \function_exists( 'mb_strlen' ) ? \mb_strlen( $word ) : \strlen( $word );
+			if ( '' === $word || $length < 3 || isset( $stop[ $word ] ) ) {
+				continue;
+			}
+			$keywords[] = $word;
+		}
+
+		return \array_values( \array_unique( $keywords ) );
+	}
+
+	/**
+	 * How graph context will be retrieved for the tester.
+	 *
+	 * @return string One of 'none', 'keyword', or 'rag'.
+	 */
+	private function graphContextMode(): string {
+		if ( ! \class_exists( 'NvoosContentGraph\Graph\Db' ) ) {
+			return 'none';
+		}
+
+		try {
+			$nodes = \NvoosContentGraph\Graph\Db::countNodes();
+		} catch ( \Throwable $e ) {
+			return 'none';
+		}
+
+		if ( $nodes <= 0 ) {
+			return 'none';
+		}
+
+		return $this->embeddingsEnabled() ? 'rag' : 'keyword';
+	}
+
+	/**
+	 * Whether embeddings are enabled in the parent plugin settings.
+	 *
+	 * @return bool
+	 */
+	private function embeddingsEnabled(): bool {
+		if ( ! \class_exists( 'NvoosContentGraph\Settings' ) ) {
+			return false;
+		}
+
+		$settings = \NvoosContentGraph\Settings::all();
+
+		return ! empty( $settings['embeddings_enabled'] );
+	}
+
+	/**
+	 * Whether the embeddings index contains any rows.
+	 *
+	 * @return bool
+	 */
+	private function embeddingsIndexHasRows(): bool {
+		if ( ! \class_exists( 'NvoosContentGraph\Graph\Db' ) ) {
+			return false;
+		}
+
+		global $wpdb;
+		$table = \NvoosContentGraph\Graph\Db::embeddingsTable();
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		return $count > 0;
 	}
 
 	/**
@@ -530,30 +747,6 @@ class ChatController {
 		}
 
 		return '';
-	}
-
-	/**
-	 * Whether the embeddings index has content to retrieve.
-	 *
-	 * @return bool
-	 */
-	private function graphContextAvailable(): bool {
-		if ( ! \class_exists( 'NvoosContentGraph\Settings' ) || ! \class_exists( 'NvoosContentGraph\Graph\Db' ) ) {
-			return false;
-		}
-
-		$settings = \NvoosContentGraph\Settings::all();
-		if ( empty( $settings['embeddings_enabled'] ) ) {
-			return false;
-		}
-
-		global $wpdb;
-		$table = \NvoosContentGraph\Graph\Db::embeddingsTable();
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
-		return $count > 0;
 	}
 
 	/**

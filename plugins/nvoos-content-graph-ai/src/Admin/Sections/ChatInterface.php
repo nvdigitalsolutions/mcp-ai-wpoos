@@ -125,7 +125,7 @@ class ChatInterface extends Section {
 						'configError'        => __( 'Could not load tester configuration. Using fallback provider list.', 'nvoos-content-graph-ai' ),
 						'graphTools'         => __( 'Graph tools (read-only)', 'nvoos-content-graph-ai' ),
 						'noTools'            => __( 'No tools', 'nvoos-content-graph-ai' ),
-						'contextUnavailable' => __( 'Graph context is unavailable — build the graph and enable embeddings first.', 'nvoos-content-graph-ai' ),
+						'contextUnavailable' => __( 'Graph context is unavailable — build the knowledge graph first.', 'nvoos-content-graph-ai' ),
 						'modelsFailed'       => __( 'Could not load the model list for this provider. You can still type a model id manually.', 'nvoos-content-graph-ai' ),
 					),
 				),
@@ -208,7 +208,7 @@ class ChatInterface extends Section {
 						<?php echo \esc_html__( 'System prompt', 'nvoos-content-graph-ai' ); ?>
 					</label>
 
-					<label class="nvoos-chat-toolbar__check" for="nvoos-chat-context" title="<?php echo \esc_attr__( 'Include context from the knowledge-graph embeddings index when available.', 'nvoos-content-graph-ai' ); ?>">
+					<label class="nvoos-chat-toolbar__check" for="nvoos-chat-context" title="<?php echo \esc_attr__( 'Include relevant context from the knowledge graph when available.', 'nvoos-content-graph-ai' ); ?>">
 						<input type="checkbox" id="nvoos-chat-context" checked>
 						<?php echo \esc_html__( 'Graph context', 'nvoos-content-graph-ai' ); ?>
 					</label>

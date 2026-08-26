@@ -116,6 +116,7 @@ class Test_Chat_Controller extends \WP_UnitTestCase {
 		$this->assertIsFloat( $data['temperature'] );
 		$this->assertIsInt( $data['max_tokens'] );
 		$this->assertIsBool( $data['graph_context_available'] );
+		$this->assertContains( $data['graph_context_mode'], array( 'none', 'keyword', 'rag' ) );
 		$this->assertIsArray( $data['tool_presets'] );
 		$this->assertIsArray( $data['tools'] );
 
@@ -367,6 +368,42 @@ class Test_Chat_Controller extends \WP_UnitTestCase {
 		);
 
 		$this->assertStringNotContainsString( 'GRAPH CONTEXT', $messages[0]['content'] );
+	}
+
+	/**
+	 * Without embeddings, graph context falls back to keyword search over
+	 * node labels so the tester still connects to the graph.
+	 */
+	public function test_build_messages_uses_keyword_graph_context_fallback(): void {
+		\NvoosContentGraph\Graph\Db::upsertNode(
+			array(
+				'node_id' => 'test_node_chat_context',
+				'label'   => 'SEO Strategy Guide',
+				'type'    => 'post',
+				'post_id' => 0,
+				'url'     => '',
+			)
+		);
+
+		try {
+			$controller = new ChatController();
+			$messages   = $controller->buildMessages(
+				array(
+					array(
+						'role'    => 'user',
+						'content' => 'Tell me about the SEO strategy',
+					),
+				),
+				true,
+				true
+			);
+
+			$this->assertSame( 'system', $messages[0]['role'] );
+			$this->assertStringContainsString( 'SEO Strategy Guide', $messages[0]['content'] );
+			$this->assertStringContainsString( 'knowledge graph may be relevant', $messages[0]['content'] );
+		} finally {
+			\NvoosContentGraph\Graph\Db::deleteNode( 'test_node_chat_context' );
+		}
 	}
 
 	/**

@@ -147,7 +147,7 @@ flowchart TD
 
 ### Phase 4 — Optional (only if wanted)
 
-24. Graph-context checkbox (system prompt injection via RAG/embeddings when available) — marks the tester's empty-state claim true.
+24. Graph-context checkbox — system prompt injection via RAG/embeddings **with a keyword-search fallback over node labels** (works without an embeddings index; availability is based on graph node count).
 25. Model catalog endpoint with transient caching across all providers (`ProviderRouter::listAllModels()`).
 
 ---

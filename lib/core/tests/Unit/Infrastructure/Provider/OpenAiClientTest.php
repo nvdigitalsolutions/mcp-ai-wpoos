@@ -224,4 +224,199 @@ final class OpenAiClientTest extends TestCase {
 
 		$this->assertSame( array(), $result );
 	}
+
+	/**
+	 * Capture every request body sent through the mocked HTTP client
+	 * into the given array (by reference).
+	 *
+	 * @param array<int, string> $bodies    Collector array, filled in send order.
+	 * @param callable           $responder Callback invoked per send() call.
+	 * @return void
+	 */
+	private function captureBodies( array &$bodies, callable $responder ): void {
+		$this->httpClient->method( 'send' )->willReturnCallback(
+			static function ( string $method, string $url, array $headers, ?string $body ) use ( &$bodies, $responder ): HttpResponse {
+				$bodies[] = (string) $body;
+
+				return $responder( count( $bodies ), (string) $body );
+			}
+		);
+	}
+
+	/**
+	 * The gpt-5 family rejects max_tokens — requests must use
+	 * max_completion_tokens (keeping temperature, which gpt-5 supports).
+	 */
+	public function testChatUsesMaxCompletionTokensForGpt5Models(): void {
+		$success = new HttpResponse( 200, json_encode( array(
+			'id'      => 'chatcmpl-1',
+			'object'  => 'chat.completion',
+			'model'   => 'gpt-5.5',
+			'choices' => array(
+				array(
+					'index'   => 0,
+					'message' => array( 'role' => 'assistant', 'content' => 'OK' ),
+					'finish_reason' => 'stop',
+				),
+			),
+		) ) ?: '' );
+
+		$bodies = array();
+		$this->captureBodies( $bodies, static fn() => $success );
+
+		$result = $this->client->chat(
+			array( array( 'role' => 'user', 'content' => 'Hi' ) ),
+			array( 'model' => 'gpt-5.5', 'max_tokens' => 4096, 'temperature' => 0.7 ),
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertCount( 1, $bodies );
+
+		$payload = json_decode( $bodies[0], true );
+		$this->assertArrayNotHasKey( 'max_tokens', $payload );
+		$this->assertSame( 4096, $payload['max_completion_tokens'] );
+		$this->assertSame( 0.7, $payload['temperature'] );
+	}
+
+	/**
+	 * o-series reasoning models reject both max_tokens and temperature.
+	 */
+	public function testChatDropsTemperatureForReasoningModels(): void {
+		$success = new HttpResponse( 200, json_encode( array(
+			'id'      => 'chatcmpl-1',
+			'object'  => 'chat.completion',
+			'model'   => 'o3-mini',
+			'choices' => array(
+				array(
+					'index'   => 0,
+					'message' => array( 'role' => 'assistant', 'content' => 'OK' ),
+					'finish_reason' => 'stop',
+				),
+			),
+		) ) ?: '' );
+
+		$bodies = array();
+		$this->captureBodies( $bodies, static fn() => $success );
+
+		$this->client->chat(
+			array( array( 'role' => 'user', 'content' => 'Hi' ) ),
+			array( 'model' => 'o3-mini', 'max_tokens' => 4096, 'temperature' => 0.7 ),
+		);
+
+		$payload = json_decode( $bodies[0], true );
+		$this->assertArrayNotHasKey( 'max_tokens', $payload );
+		$this->assertSame( 4096, $payload['max_completion_tokens'] );
+		$this->assertArrayNotHasKey( 'temperature', $payload );
+	}
+
+	/**
+	 * Standard models keep the legacy max_tokens + temperature params.
+	 */
+	public function testChatKeepsMaxTokensForStandardModels(): void {
+		$success = new HttpResponse( 200, json_encode( array(
+			'id'      => 'chatcmpl-1',
+			'object'  => 'chat.completion',
+			'model'   => 'gpt-4o',
+			'choices' => array(
+				array(
+					'index'   => 0,
+					'message' => array( 'role' => 'assistant', 'content' => 'OK' ),
+					'finish_reason' => 'stop',
+				),
+			),
+		) ) ?: '' );
+
+		$bodies = array();
+		$this->captureBodies( $bodies, static fn() => $success );
+
+		$this->client->chat(
+			array( array( 'role' => 'user', 'content' => 'Hi' ) ),
+			array( 'model' => 'gpt-4o', 'max_tokens' => 4096, 'temperature' => 0.7 ),
+		);
+
+		$payload = json_decode( $bodies[0], true );
+		$this->assertSame( 4096, $payload['max_tokens'] );
+		$this->assertArrayNotHasKey( 'max_completion_tokens', $payload );
+		$this->assertSame( 0.7, $payload['temperature'] );
+	}
+
+	/**
+	 * When a model rejects max_tokens with the OpenAI "Unsupported
+	 * parameter" 400, the client retries once with max_completion_tokens.
+	 */
+	public function testChatCorrectsUnsupportedParameterAndRetries(): void {
+		$error = new HttpResponse( 400, json_encode( array(
+			'error' => array(
+				'message' => "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+				'type'    => 'invalid_request_error',
+				'param'   => 'max_tokens',
+				'code'    => 'unsupported_parameter',
+			),
+		) ) ?: '' );
+
+		$success = new HttpResponse( 200, json_encode( array(
+			'id'      => 'chatcmpl-2',
+			'object'  => 'chat.completion',
+			'model'   => 'gpt-4o',
+			'choices' => array(
+				array(
+					'index'   => 0,
+					'message' => array( 'role' => 'assistant', 'content' => 'Recovered' ),
+					'finish_reason' => 'stop',
+				),
+			),
+		) ) ?: '' );
+
+		$bodies = array();
+		$this->captureBodies(
+			$bodies,
+			static function ( int $call ) use ( $error, $success ): HttpResponse {
+				return 1 === $call ? $error : $success;
+			}
+		);
+
+		$result = $this->client->chat(
+			array( array( 'role' => 'user', 'content' => 'Hi' ) ),
+			array( 'model' => 'gpt-4o', 'max_tokens' => 4096 ),
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'Recovered', $result['choices'][0]['message']['content'] );
+		$this->assertCount( 2, $bodies );
+
+		$first  = json_decode( $bodies[0], true );
+		$second = json_decode( $bodies[1], true );
+		$this->assertSame( 4096, $first['max_tokens'] );
+		$this->assertArrayNotHasKey( 'max_completion_tokens', $first );
+		$this->assertArrayNotHasKey( 'max_tokens', $second );
+		$this->assertSame( 4096, $second['max_completion_tokens'] );
+	}
+
+	/**
+	 * The streaming path applies the same gpt-5 constraints.
+	 */
+	public function testStreamUsesMaxCompletionTokensForGpt5Models(): void {
+		$chunk  = json_encode( array(
+			'choices' => array(
+				array( 'delta' => array( 'content' => 'Hello' ) ),
+			),
+		) ) ?: '';
+		$sse    = 'data: ' . $chunk . "\n\n" . "data: [DONE]\n\n";
+		$success = new HttpResponse( 200, $sse );
+		$bodies  = array();
+		$this->captureBodies( $bodies, static fn() => $success );
+
+		$result = $this->client->stream(
+			array( array( 'role' => 'user', 'content' => 'Hi' ) ),
+			array( 'model' => 'gpt-5.5', 'max_tokens' => 4096, 'temperature' => 0.7 ),
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'Hello', $result['choices'][0]['message']['content'] );
+
+		$payload = json_decode( $bodies[0], true );
+		$this->assertArrayNotHasKey( 'max_tokens', $payload );
+		$this->assertSame( 4096, $payload['max_completion_tokens'] );
+		$this->assertSame( 0.7, $payload['temperature'] );
+	}
 }
