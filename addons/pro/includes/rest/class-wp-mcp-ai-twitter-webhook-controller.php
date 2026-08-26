@@ -133,7 +133,7 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_crc_challenge' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => '__return_true', // Public: Twitter's per-connection CRC challenge must reach it without auth.
 				'args'                => array(
 					'crc_token'     => array(
 						'required'          => false,

@@ -153,7 +153,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'verify_webhook' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => '__return_true', // Public endpoint for webhook verification.
 				'args'                => array_merge(
 					$hub_args,
 					array(

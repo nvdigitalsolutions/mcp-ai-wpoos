@@ -43,7 +43,7 @@
 | 3 | **Graphify** | `addons/graphify/` | 0.6.0 | ✅ Production | Proprietary | Base plugin | Knowledge graph builder. Extracts entities and relationships from content, builds navigable graphs, exposes via tools and REST API. Includes WooCommerce, Wikidata, RSS/Sitemap, SPARQL, CSV, and Federation drivers. |
 | 4 | **Chat SPA** | `addons/chat-spa/` | 0.7.0 | ✅ Production | GPL-3.0 | Base plugin | React-based chat surface using Vercel AI SDK. Drop-in shortcode + Gutenberg block. Connects to existing NV oOS REST endpoints. |
 | 5 | **Docs Hub** | `addons/docs-hub/` | 0.3.9 | ✅ Production | GPL-3.0 | Base plugin | React SPA documentation browser. Discovers and renders Markdown from all installed plugins/addons in a GitBook-style interface. |
-| 6 | **Algorave** | `addons/algorave/` | 1.0.7 | ✅ Production | AGPL-3.0 | Base plugin | Live-coding music extension. AI-powered pattern generation, browser-based audio synthesis (Tone.js/Strudel), MIDI export, audio visualization. ⚠️ Has 1 partially-fixed High finding (F-AI-01: `new Function()` sandboxing). |
+| 6 | **Algorave** | `addons/algorave/` | 1.0.7 | ✅ Production | AGPL-3.0 | Base plugin | Live-coding music extension. AI-powered pattern generation, browser-based audio synthesis (Tone.js/Strudel), MIDI export, audio visualization. F-AI-01 accepted with rationale (raw-eval gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` + `edit_posts`; Strudel safe default; warning UI). |
 | 7 | **Fantasy Football** | `addons/fantasy-football/` | 0.1.0 | ✅ Production | Proprietary | Base plugin | ESPN and Yahoo Fantasy Sports API integration. Team management, player research, trade analysis, league reports, AI logo generation. |
 | 8 | **Embedded** | `addons/embedded/` | 0.2.0 | ✅ Production | Proprietary | Base plugin | Server-side LLM inference (llama.cpp GGUF), client-side browser inference (WebLLM/WebGPU), P2P WebChat rooms (WebRTC). Voice tool calling, OpenMed healthcare tools, and MCP abilities (v0.2.0). |
 | 9 | **Canvas** | `addons/canvas/` | 0.1.0 | ✅ Production | Proprietary | Pro addon | Platform-specific Tesseract PDF OCR binaries. Pre-compiled canvas native modules for server-side OCR. |
@@ -84,7 +84,7 @@
 |---|---:|---:|---:|---:|---|
 | Base plugin | 0 | 0 | 6 | 12 | ✅ Solid baseline |
 | Pro addon | 0 | 3* | 7 | 6 | ⚠️ 3 Highs — all now Fixed or Partially Fixed |
-| Algorave | 0 | 1* | 1 | 1 | ⚠️ F-AI-01 partially fixed (live-coding sandbox) |
+| Algorave | 0 | 1* | 1 | 1 | ✅ F-AI-01 accepted with rationale (v1.1.64) |
 | Canvas | 0 | 0 | 2 | 1 | OK |
 | Cornerstone3D | 0 | 1* | 1 | 0 | ⚠️ HIPAA posture addressed (F-PRIV-03) |
 | Embedded | 0 | 0 | 2 | 1 | OK |

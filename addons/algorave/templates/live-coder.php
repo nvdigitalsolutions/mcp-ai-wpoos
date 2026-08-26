@@ -64,6 +64,16 @@ $default_code = sprintf(
 		<span class="algorave-status-indicator" title="<?php esc_attr_e( 'Playback status', 'nvoos-algorave' ); ?>"></span>
 	</div>
 
+	<!--
+		Raw-eval warning (F-AI-01). Shown by algorave-live-coder.js only when the
+		site operator has enabled the Tone.js engine via WP_MCP_AI_ALLOW_TONEJS_EVAL
+		and the Tone.js engine is selected. The Tone.js engine compiles user-typed
+		code with `new Function`, so it runs with the page's own permissions.
+	-->
+	<div class="algorave-eval-warning" role="alert" hidden>
+		⚠️ <?php esc_html_e( 'Tone.js live coding runs pasted code with your site permissions. Only run code you trust.', 'nvoos-algorave' ); ?>
+	</div>
+
 	<!-- Pattern Presets -->
 	<div class="algorave-presets">
 		<span class="algorave-presets-label"><?php esc_html_e( 'Presets:', 'nvoos-algorave' ); ?></span>
