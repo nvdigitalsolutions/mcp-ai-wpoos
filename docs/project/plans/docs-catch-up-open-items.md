@@ -42,6 +42,23 @@
 
 ---
 
+## Doc-level open items → GitHub issues (verified 2026-08-26)
+
+Open items recorded in docs **outside** the catch-up plans (audits, TODO files, implementation plans, security posture, proposals log) that had no GitHub issue. Each was re-verified against the current tree before filing; only genuinely-open items were filed.
+
+| Issue | Doc source | Items |
+|---|---|---|
+| [#5969](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5969) | `docs/developer/toolkit-mcp-server-enhancements-todo.md` | Toolkit MCP server backlog — A.2 (Site Creator settings), A.3 (Extended Cognition settings), A.6 (Healthcare, in-doc deferred), Phases B/D/E/F |
+| [#5970](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5970) | `docs/project/plans/CONVERSATION-IMPORT-CCT-IMPLEMENTATION-PLAN.md` §9 | Import size-cap default; memory-mining toggle UI + `count_imported()` widget |
+| [#5971](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5971) | `docs/project/audits/2026-04/remediation-roadmap.md` | R-T-01 (PHPCS pro close-out), R-T-03 (CodeQL security-extended), R-A-03 (upload-validator decide-or-close), R-Q-04 (120 `innerHTML` audit), R-Q-05 (pro nonce sweep) |
+| [#5972](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5972) | `docs/operations/security/SECURITY_POSTURE.md` | F-AUTHZ-01 (remaining `__return_true` justifications), F-AI-01 (Algorave sandboxed iframe + strict CSP), F-CMP-04 (legacy source-map sweep) |
+| [#5973](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5973) | `docs/project/proposals/proposals-retirement-log.md` | Ralph Wiggum CCT Orchestration — decide implement or defer |
+| [#5974](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5974) | `docs/project/plans/chat-spa-v2-phase1-implementation.md` | 10 remaining SPA gaps (GAP-05, 07, 08, 09, 10, 15–19) |
+
+**Excluded after verification (not filed):** Model Manager UI (shipped — `render_model_manager_view()` + AJAX class present); R-T-02 / R-T-05 (landed in `security.yml` / `security-regression.yml`); R-Q-06 / R-S-02 / R-S-03 / R-S-04 / R-A-01 / R-A-02 / R-A-04 (roadmap-marked Done); TEST-SUITE fixes (own tracker, OI-3); `docs/ROADMAP.md` v1.4.0/v2.0.0 (roadmap, not actionable findings); `docs/history/**` retired docs (`ID: XXX` placeholders) are false positives.
+
+---
+
 ## Closed items (verified done — do not re-raise)
 
 | Item | Raised in | Closed in | Evidence |
