@@ -1,8 +1,18 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.1.64] - 2026-08-26
 
-### Fixed — Composio Connect: Zero-Argument Calls, Opaque 4xx Bodies & Filtered-Listing Invalidation
+### Added — Google Calendar Connection & Shared Google Services (PR #5959)
+
+Google Calendar previously existed only as fragments: `create_google_calendar_event` resolved credentials from filters that default to empty (so it always failed out of the box), and `sync_google_calendar` was a stub that wrote `pending` meta without ever calling the API. Neither connection surface offered the type.
+
+- **New shared Google foundation in `includes/google/`** — `WP_MCP_AI_Google_OAuth_Service`, `WP_MCP_AI_Google_Calendar_Client` (Calendar API v3), `WP_MCP_AI_Google_Calendar_Scopes`, `WP_MCP_AI_Google_Calendar_Credentials`, `WP_MCP_AI_Google_Calendar_Sync`, and `WP_MCP_AI_Google_Calendar_Push`. It exists because the Google OAuth start/callback pair was already copy-pasted four times (base/Pro Gmail, base/Pro Drive) and those copies had drifted — base and Pro Drive request different scope sets for the same product. New Google integrations must build on this folder instead of adding a fifth copy.
+- **New `google_calendar` connection type** on both connection surfaces (base Settings → Integrations and Pro Remote Sites), so credentials resolve from an optional `connection_id` or the site-level Google Calendar settings.
+- **Six new Pro tools** in `addons/pro/includes/tools/google-workspace/`: `list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability` (freeBusy across up to 50 calendar IDs), and `quick_add_google_calendar_event` (natural-language events). `create_google_calendar_event` was reworked onto the shared foundation (scope-enforced writes, `create_meet_link` Meet conferencing) and `sync_google_calendar` now performs a real HTTP sync.
+- **Scope enforcement** — `WP_MCP_AI_Google_Calendar_Scopes` verifies the granted OAuth scope covers the requested read/write before any call; push-notification (channel) support and Action Scheduler sync jobs round out the surface.
+- Docs: [`docs/developer/architecture/integrations/google-calendar-connection.md`](docs/developer/architecture/integrations/google-calendar-connection.md), [`docs/reference/google-calendar-api-v3.md`](docs/reference/google-calendar-api-v3.md), and the implementation plan in `docs/developer/`.
+
+### Fixed — Composio Connect: Zero-Argument Calls, Opaque 4xx Bodies & Filtered-Listing Invalidation (PR #5958)
 
 A reported session showed two Gmail accounts on one connection under the same `nvoos-shared` identity, one probe-verified and one failing with `HTTP 400: Validation error while processing request. Please check the payload.` — a message with no actionable content. Investigation found the plugin both *causing* a class of 400 and *discarding* the evidence needed to diagnose any other.
 
@@ -19,7 +29,7 @@ A reported session showed two Gmail accounts on one connection under the same `n
 - `addons/pro/tests/test-composio-client.php` — 8 new tests: validation `detail` as an array names the rejected field; string `detail` still passes through; upstream body retained on the `WP_Error`; oversized upstream body truncated; empty `arguments` serialised as `{}` (asserted against the raw body, since `json_decode()` maps both `{}` and `[]` onto an empty PHP array and would hide the bug); supplied arguments preserved; filtered listings re-fetched after `clear_accounts_cache()`; `flush_cache()` actually invalidating.
 - `addons/pro/tests/test-composio-account-health.php` — 4 new tests: discovery returns the same tool for a reversed catalog; verb ranking prefers a `GET` over a `LIST`; verb ties break alphabetically; Google Calendar resolves to the curated provider-touching read rather than the local date/time utility.
 
-### Fixed — Composio Connect: Proxied Provider Failures & Stale Account IDs
+### Fixed — Composio Connect: Proxied Provider Failures & Stale Account IDs (PR #5953)
 
 Follow-up to the account-health work below, closing the two paths a real session still fell through.
 
@@ -35,7 +45,7 @@ Follow-up to the account-health work below, closing the two paths a real session
 - `addons/pro/tests/test-composio-tools.php` — 2 new tests: the end-to-end proxied-401 path (reconnect guidance + `needs_reconnect` verdict recorded, `verified` not set) and the unknown-account fast fail (asserting the execute endpoint is never reached).
 - `addons/pro/tests/test-composio-account-health.php` — auth-classifier cases extended with Composio's proxied-status phrasing, plus a negative case ensuring a proxied 404 is not auth-class.
 
-### Fixed — Composio Connect: Verified Account Health & Real Tool Discovery
+### Fixed — Composio Connect: Verified Account Health & Real Tool Discovery (PR #5936)
 
 Two failure modes made the Composio integration untrustworthy in practice: account health was a false-positive machine, and tool discovery came back blank. Both are fixed at the root, plus the lifecycle hygiene that the false positives were hiding.
 
@@ -46,7 +56,7 @@ Two failure modes made the Composio integration untrustworthy in practice: accou
 - **Credential expiry was invisible.** v3.1 has no top-level expiry field; `expired_at` / `expires_in` and `status_reason` live inside `state.val`. `normalize_account()` lifts them out, flattens the nested `toolkit: { slug }` to a string, and exposes `disabled` and `auth_scheme`.
 - **`connection_id` and `connected_account_id` were silently interchangeable.** Both are opaque strings and neither schema description warned against swapping them, so passing a Composio account nanoid (`ca_F0HEJBssnCXL`) where the NV oOS project connection (`conn_...`) was expected produced a bare "Composio connection not found" — the lookup failed before it ever reached Composio. `sanitize_key()` also lowercased the value, hiding the mistake further. The shared resolver now detects the swap by prefix and returns `wp_mcp_ai_composio_id_swapped` naming which kind of ID was supplied, which was expected, and that omitting `connection_id` auto-resolves; the reverse swap (a `conn_...` passed as `connected_account_id`) is caught in `composio_execute_tool`, `composio_manage_accounts` and `composio_manage_triggers`. An unknown-but-plausible `conn_...` now lists the site's real Composio connection IDs instead of failing blind, and all seven tool schemas state the distinction explicitly.
 
-### Added — Composio Account Health Engine
+### Added — Composio Account Health Engine (PR #5936)
 
 - New `WP_MCP_AI_Composio_Account_Health` (`addons/pro/includes/composio/class-wp-mcp-ai-composio-account-health.php`): a per-connection ledger (option `wp_mcp_ai_composio_health_{connection_id}`, autoload off, 200 records, LRU-pruned) plus a live probe. Composio has no `/verify` route and only marks an account `EXPIRED` after its own background refresh has failed repeatedly, so "stored status" cannot detect a token the user revoked minutes ago.
 - Verification is a two-stage, honestly-labelled process: an uncached authoritative account read, then a live execution of a zero-argument read-only tool from the account's own toolkit. Only the second stage sets `verified => true`. `verification_method` distinguishes `probe`, `probe_inconclusive` (probe failed for a non-auth reason — says nothing about the credential), `status_only` (no safe probe exists; never reported as verified), `execution`, `webhook`, `unreachable` and `never_checked`.
@@ -54,21 +64,21 @@ Two failure modes made the Composio integration untrustworthy in practice: accou
 - Records carry `last_validated_at`, `last_checked_at`, `last_error`, `last_error_code`, real `token_expires_at`, `needs_reconnect` and `stale` (verdicts age out after 15 minutes).
 - The `composio.connected_account.expired` webhook now writes a `needs_reconnect` verdict into the ledger immediately (previously only a transient), so auto-resolution stops choosing the account at once. `is_account_expired()` consults the ledger.
 
-### Added — `composio_manage_accounts` Tool
+### Added — `composio_manage_accounts` Tool (PR #5936)
 
 - New seventh Composio tool (`manage_options`, `risk_level: high`, flagged `destructive`) for connected-account lifecycle: `validate` (live probe, never answered from cache; accepts one account or a whole `toolkit`), `reconnect`, `delete`, `prune`, `disable`, `enable`.
 - **`reconnect` re-authorises the existing account in place** via `POST /api/v3.1/connected_accounts/{id}/refresh`, preserving its ID, alias and pinned triggers instead of minting a duplicate and orphaning the broken one. That route is marked Legacy upstream, so the tool falls back to a fresh Connect Link and states plainly that the fallback creates a new account which should then be deleted.
 - **`prune`** requires an explicit `toolkit` so the blast radius is always stated, and re-probes each candidate immediately before deletion — only a definitive `needs_reconnect` verdict authorises removal, so a healthy or merely unconfirmed account is never pruned on a stale verdict.
 - Fires `wp_mcp_ai_composio_account_managed` for every state-changing action.
 
-### Changed — Composio Tool Surfaces
+### Changed — Composio Tool Surfaces (PR #5936)
 
 - `composio_list_tools` — populated results grouped by toolkit, with local relevance re-ranking of natural-language queries (Composio's `query` is a soft filter, so the obvious match could arrive buried), a `connected_only` view for "what can I actually run right now?", a `list_toolkits` app-directory mode, `required_inputs` on every entry (so `composio_get_tool_schema` is often unnecessary), truncated descriptions, cursor pagination and `connected` flags.
 - `composio_list_connected_accounts` — **verifies by default** (`verify: true`, reusing verdicts newer than 15 minutes, capped at 10 probes per call, `force` to override). Each account now returns `status_reason`, `auth_scheme`, `disabled`, `token_expires_at`, a `health` block and a `reconnect_url` when broken, plus a response-level `summary` of verified / needs-reconnect / unverified counts. Skipping verification is stated explicitly in the message rather than implied. The legacy `expired` boolean is retained for compatibility; `health.needs_reconnect` is authoritative.
 - `composio_execute_tool` — auto-resolution is health-aware via the new `WP_MCP_AI_Composio_Tools::resolve_account_for_toolkit()`: accounts with a recent `needs_reconnect` verdict are excluded, the connection's identity is preferred, then probe-verified over unverified, then fresher over staler. When candidates are genuinely indistinguishable and the action is write-class, it returns `wp_mcp_ai_composio_ambiguous_account` with the candidate list rather than silently emailing from the wrong mailbox; read-only actions proceed and report `ambiguous_accounts`. Auth failures become a plain-language, recoverable error naming the app, the provider's reason and a one-click `reconnect_url`. A successful execution records a verification verdict, so health data improves for free with normal use.
 - Removing a connected account from the Remote Sites admin now also drops its health verdict.
 
-### Added — Connected Apps Health Column (Remote Sites Admin)
+### Added — Connected Apps Health Column (Remote Sites Admin) (PR #5936)
 
 - The **Connected Apps** table on a Composio connection now has a **Health** column showing the stored verdict — `Verified` / `Needs reconnect` / `Unconfirmed` / `Not checked` — with how and when it was established, alongside Composio's stored **Status** and the real token expiry. Rendering the page reads the ledger only and never probes, because a probe costs one tool execution per account; a regression test asserts zero executions during render.
 - Per-row **Verify** and **Reconnect** actions plus a connection-wide **Verify all** link. Verify runs the live read-only probe on demand and reports a `N working / N need reconnecting / N unconfirmed` tally. Reconnect re-authorises the same account in place, falling back to a fresh Connect Link when Composio's Legacy route is unavailable, and clears the stale verdict either way.
@@ -85,6 +95,69 @@ Two failure modes made the Composio integration untrustworthy in practice: accou
 ### Documentation
 
 - Updated [`docs/toolkits/composio-connect.md`](docs/toolkits/composio-connect.md) (tool table, architecture diagram, extension points, substantially expanded troubleshooting) and [`docs/composio-connect.md`](docs/composio-connect.md) (new "Checking and fixing a broken connection" section), plus both folder READMEs.
+- New Google Calendar docs: [`docs/developer/architecture/integrations/google-calendar-connection.md`](docs/developer/architecture/integrations/google-calendar-connection.md) and [`docs/reference/google-calendar-api-v3.md`](docs/reference/google-calendar-api-v3.md) (PR #5959).
+
+### Added — Tool-Declared Non-Loggable Result Fields (PR #5961)
+
+Capability credentials still reached `wp_mcp_ai_recent_activity` in plaintext when the secret was an opaque URL path segment (`/link/lk_9XgCEUuh9JIN`) or sat under an innocuous key like `url`, `link`, or `data` — no heuristic can tell such values apart from `/uploads/2026/08/image.png`. Only the tool knows its own result field is secret.
+
+- New `WP_MCP_AI_Tool_Sensitive_Result_Interface` (`includes/interfaces/interface-wp-mcp-ai-tool.php`): tools declare dot-notation paths in `get_sensitive_result_fields()` — top-level keys, nested keys, `*` wildcards for list elements, and container keys that mask a whole subtree (how `composio_execute_tool` opts `result` out wholesale).
+- `WP_MCP_AI_Logger::log_tool_execution()` masks the declared paths with `[redacted]` **before** `limit_result_payload()` truncates the preview; the same paths are masked in `arguments` and on the `tool_error` path. **Logging only** — the value returned to the caller and model is never altered.
+- Legacy-format tools reach the mechanism via `WP_MCP_AI_Legacy_Tool_Wrapper`; the `wp_mcp_ai_tool_sensitive_result_fields` filter is additive-only.
+- Current declarers: `composio_create_connect_link`, `composio_manage_accounts`, `composio_execute_tool`, `composio_manage_triggers`, `generate_booking_link`, `vault_access`, `yahoo_ff_auth`, `get_update_status`.
+
+### Added — Content Graph wp.org Listing Assets (PR #5963)
+
+- Banner, icon, and screenshot assets added under `plugins/nvoos-content-graph/.wordpress-org/` for the standalone plugin's WordPress.org listing.
+
+### Changed — Vision Tools Accept a Timeout Parameter (PR #5964)
+
+- `analyze_image`, `extract_image_text`, `generate_image_alt_text`, and `generate_image_caption` (validated and legacy variants) hardcoded a 30s HTTP timeout, ignoring the global `request_timeout` (default 200s) and failing with cURL error 28 on large images. Each now accepts a 5–300s `timeout` argument and inherits the global setting through the new `WP_MCP_AI_Vision_Request_Timeout` trait; the self-hosted OCR client's download and health-check paths honor it too.
+
+### Fixed — Composio Auth Config Resolution, Connected-Accounts Listing & App Removal (PRs #5932–#5934)
+
+- **Connect Link auth config (PR #5932)** — Composio's link endpoint requires a project *auth config ID*, not a toolkit slug. The toolkit's auth config is now resolved (preferring the Composio-managed default) and `auth_config_id`, `user_id`, and `callback_url` are sent explicitly. 401/403 responses surface Composio's real error messages, project API keys are trimmed/validated on save, and transport failures carry egress guidance.
+- **Connected-accounts listing (PR #5933)** — the v3.1 `{ items: [...] }` envelope is unwrapped so accounts parse correctly, legacy filters map to `toolkit_slugs`/`statuses`/`user_ids`, and the nested toolkit slug renders instead of an empty placeholder. The Remote Sites edit form gains a Connected Apps list with a nonce-protected cache refresh, and hardcoded cache flushes were replaced with `clear_accounts_cache()`.
+- **App removal & execute identity (PR #5934)** — Composio's execute endpoint rejects a `connected_account_id` that arrives without its owning user identity, so shared (site-wide) connections failed with "User ID is required with connected account". The client is now identity-bound via `from_connection()` and prefers the account's own owner; the Connected Apps table gains Identity and Actions columns with a nonce-gated Remove that deletes the account at Composio and revokes the upstream provider grant. Auto-resolution skips non-`ACTIVE` accounts.
+
+### Fixed — Log Context Bloat & Rolling-Buffer Compaction (PR #5952)
+
+- Every `tool_error`/`tool_execution` entry stored the full assistant config — including the resolved `system_prompt` with primary-role and Agent Skills text — plus unbounded tool arguments, growing `wp_mcp_ai_recent_errors` and `wp_mcp_ai_recent_activity` into the megabytes and echoing prompt contents into the database. The persistence path now fingerprints `assistant_config` and `system_prompt`, drops the always-empty request object, truncates strings, and drops the largest remaining values until the entry fits a byte budget (12 diagnostic keys preserved). The `wp_mcp_ai_log_entry` filter and the `error_log()` line still receive the full sanitized context.
+- The Extended Logging budget drops 16 KB → 8 KB per entry, and each workflow step's logged context no longer embeds `previous_results` (a 20-step workflow was assembling O(N²) payloads) — a bounded prior-step summary is logged instead, while the execution context handed to tools and the `wp_mcp_ai_pro_workflow_completed` hook is unchanged.
+- New **Data Management → Compact/Delete** buttons (Settings → Advanced) backed by the `wp_mcp_ai_maintain_log_buffers` AJAX action: Compact rewrites stored entries through the context budget; Delete empties both buffers. The screen reports per-buffer entry counts and stored size.
+
+### Fixed — Secret URL Query Params in Logged Strings (PR #5954)
+
+- Credentials embedded in URL query strings bypassed both redaction layers — they are not the value of a sensitive key, and the value patterns (Bearer, sk-, AIza) don't match them — so a one-time Composio Connect Link `state` grant reached `wp_mcp_ai_recent_activity` in plaintext. The shared redactor now masks 26 credential-bearing parameter names inside any logged string, preserving scheme, host, path, and non-secret parameters; applied at the shared redactor rather than the call site so tool arguments, error messages, and the `error_log()` line are all covered.
+
+### Fixed — MCP JSON-RPC Error Paths & Diagnostics Re-wiring (PR #5957)
+
+- The `/mcp` route declared `jsonrpc` and `method` as required REST args, so WordPress answered `rest_missing_callback_param` before the callback ran — making `handle_mcp_request()`'s own `-32700`/`-32600` responses dead code and giving malformed requests a WordPress error shape instead of the JSON-RPC envelope the spec requires. The `required` flags are dropped and `process_single_mcp_message()` (which validates both fields) owns the check.
+- The MCP Server Diagnostics page, its assets, and its two AJAX handlers were orphaned when the `WP_MCP_AI_MCP_Server_Diagnostic::init()` call was lost in the entry-file rename; re-wired.
+
+### Fixed — Validated-Tool Argument Validation Restored on Symfony 5.4 (PR #5960)
+
+- The validator service enabled constraint mapping through a `method_exists( $builder, 'enableAttributeMapping' )` guard, but that method only exists in Symfony ≥ 6.1 — the project pins ^5.4, where the API is `enableAnnotationMapping( true )`. Constraint loading was therefore silently skipped, so every validated tool (web search, image generation, create post, cron jobs, …) accepted invalid input and validation tests ran against unvalidated execution paths. Fixed with a version-appropriate helper used by both `__construct__()` and `__wakeup__()`; enabling attribute mapping also exposed (and fixed) the latent `WPCapability` constructor bug — its `$capability` parameter was missing.
+
+### Fixed — Pro SPA v2 Conversation & Assistant Sync (PR #5962)
+
+- Selecting a conversation left the assistant dropdown on the previous assistant: `selectSession` discarded the transcript's `assistant_id`, and `Layout`/`ChatPage` bound different assistant values, so new turns were saved under the wrong assistant. A reload also restored the stored session key without its messages — the sidebar highlighted a saved conversation next to an empty composer, and the next turn appended to that conversation without its history. The stored session now hydrates on mount (falling back to a fresh key when unreadable), `selectSession` carries the assistant, and switching assistants starts a new conversation.
+
+### Fixed — WP_Error Envelope Drift & Cron/Memory/Elementor Tool Bugs (PR #5965)
+
+- Canonical-envelope conformance: vault-access/vault-manage/system-logs/cron/memory tests now assert the success array or `WP_Error` shape (never `success => false`).
+- `plan_schedules_from_workflow`: fixed a regex parsing bug that dropped every list item.
+- Elementor form submissions: fixed a double `wpdb::prepare()` call with no placeholders in the total count.
+- Both `create_cron_job` tools now return the tracked `job_id`; cron jobs missing `first_timestamp` are pruned immediately.
+- `TranscribeOpenAIAudioArguments` gained a `#[Assert\Type( type: 'string' )]` constraint on `model` (an integer previously passed `NotBlank`/`Length` and reached execution).
+
+### Fixed — Test-Env Registration & Suite Follow-Ups (PRs #5931, #5935)
+
+- Pro admin classes now load directly in AJAX suites, AJAX dispatch is hardened against leaked state, WordPress.com staging APIs are registered, and WP All Import no longer kills the test bootstrap. Follow-up (#5935) re-points moved-file `require`s at their current paths and updates the workflow/install scripts.
+
+### Versioning
+
+- Bumped to 1.1.64 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.64. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: 1.0.3 (unchanged). Tool count: ~303 base + ~1,256 Pro (~1,559 total; live registry authoritative). Providers: 15. Addons: 26. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: 52.
 
 ## [1.1.63] - 2026-08-23
 
