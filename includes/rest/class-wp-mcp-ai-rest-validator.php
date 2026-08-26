@@ -559,7 +559,9 @@ class WP_MCP_AI_REST_Validator {
 
 			$segment_type = isset( $item['type'] ) ? $item['type'] : '';
 
-			if ( 'text' === $segment_type ) {
+			if ( in_array( $segment_type, array( 'text', 'input_text' ), true ) ) {
+				// `input_text` is the legacy segment type; it is normalised to the
+				// current `text` schema (documented compatibility behaviour).
 				$text_content = isset( $item['text'] ) ? $item['text'] : '';
 				$segment      = $attachments_helper->prepare_input_text_segment( $text_content );
 

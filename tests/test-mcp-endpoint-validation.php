@@ -38,6 +38,13 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	protected $server;
 
 	/**
+	 * Bearer token for authenticated MCP requests.
+	 *
+	 * @var string
+	 */
+	protected $bearer_token = '';
+
+	/**
 	 * Set up test fixtures once for all tests.
 	 *
 	 * @param WP_UnitTest_Factory $factory Test factory.
@@ -94,6 +101,19 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		do_action( 'rest_api_init' );
 
 		wp_set_current_user( self::$admin_id );
+
+		// MCP requests require a Bearer credential (bare nonce auth is
+		// deliberately refused); issue one for the test assistant, mirroring
+		// tests/test-mcp-endpoint.php.
+		if ( class_exists( 'WP_MCP_AI_Credentials' ) ) {
+			$credential = WP_MCP_AI_Credentials::issue_credential( self::$assistant_id, 'Test MCP Client' );
+			if ( $credential && isset( $credential['token'] ) ) {
+				$this->bearer_token = $credential['token'];
+			}
+		}
+		if ( empty( $this->bearer_token ) ) {
+			$this->markTestSkipped( 'Bearer credential could not be issued.' );
+		}
 	}
 
 	/**
@@ -107,17 +127,30 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Build an authenticated POST request against the MCP endpoint.
+	 *
+	 * @return WP_REST_Request
+	 */
+	protected function build_mcp_request() {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		if ( ! empty( $this->bearer_token ) ) {
+			$request->set_header( 'Authorization', 'Bearer ' . $this->bearer_token );
+		}
+		return $request;
+	}
+
+	/**
 	 * Test MCP endpoint rejects empty request body.
 	 */
 	public function test_mcp_endpoint_rejects_empty_body() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body( '' );
 
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 400, $response->get_status(), 'Empty body should return 400' );
+		$this->assertSame( 200, $response->get_status(), 'Empty body is delivered as a JSON-RPC parse error' );
 		$this->assertArrayHasKey( 'error', $data, 'Response should have JSON-RPC error structure' );
 		$this->assertSame( -32700, $data['error']['code'], 'Should return parse error code' );
 	}
@@ -126,24 +159,24 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP endpoint rejects invalid JSON.
 	 */
 	public function test_mcp_endpoint_rejects_invalid_json() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body( '{invalid json}' );
 
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Invalid JSON should return 400' );
-		$this->assertArrayHasKey( 'error', $data, 'Response should have JSON-RPC error structure' );
-		$this->assertSame( -32700, $data['error']['code'], 'Should return parse error code' );
+		// The malformed body is rejected by the WP REST layer before the MCP
+		// handler runs, so the response carries the WP REST error shape rather
+		// than the JSON-RPC error envelope.
+		$this->assertSame( 'rest_invalid_json', $data['code'] );
 	}
 
 	/**
 	 * Test MCP endpoint rejects missing jsonrpc field.
 	 */
 	public function test_mcp_endpoint_requires_jsonrpc_field() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -156,7 +189,9 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 400, $response->get_status(), 'Missing jsonrpc field should return 400' );
+		// JSON-RPC-level validation errors are delivered in the JSON-RPC error
+		// envelope over HTTP 200, per the MCP transport conventions.
+		$this->assertSame( 200, $response->get_status(), 'Missing jsonrpc field should return a JSON-RPC error envelope' );
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertSame( -32600, $data['error']['code'], 'Should return invalid request code' );
 		$this->assertStringContainsString( 'jsonrpc', $data['error']['message'] );
@@ -166,8 +201,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP endpoint rejects wrong jsonrpc version.
 	 */
 	public function test_mcp_endpoint_requires_jsonrpc_2_0() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -181,7 +215,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 400, $response->get_status(), 'Wrong jsonrpc version should return 400' );
+		$this->assertSame( 200, $response->get_status(), 'Wrong jsonrpc version should return a JSON-RPC error envelope' );
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertSame( -32600, $data['error']['code'] );
 		$this->assertStringContainsString( '2.0', $data['error']['message'] );
@@ -191,8 +225,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP endpoint rejects missing method field.
 	 */
 	public function test_mcp_endpoint_requires_method_field() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -205,7 +238,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 400, $response->get_status(), 'Missing method should return 400' );
+		$this->assertSame( 200, $response->get_status(), 'Missing method should return a JSON-RPC error envelope' );
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertSame( -32600, $data['error']['code'] );
 		$this->assertStringContainsString( 'method', $data['error']['message'] );
@@ -215,8 +248,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP endpoint returns 404 for unknown method.
 	 */
 	public function test_mcp_endpoint_rejects_unknown_method() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -230,7 +262,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
-		$this->assertSame( 404, $response->get_status(), 'Unknown method should return 404' );
+		$this->assertSame( 200, $response->get_status(), 'Unknown method is delivered as a JSON-RPC method-not-found error' );
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertSame( -32601, $data['error']['code'], 'Should return method not found code' );
 		$this->assertStringContainsString( 'not found', $data['error']['message'] );
@@ -240,8 +272,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP tools/call requires name parameter.
 	 */
 	public function test_mcp_tools_call_requires_name() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -259,12 +290,15 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'tools/call without name should return 400' );
-		$this->assertArrayHasKey( 'error', $data );
-		$this->assertStringContainsString( 'name', $data['error']['message'] );
+		// tools/call parameter validation is handled by the REST schema, so the
+		// response carries the WP REST param-error shape.
+		$this->assertSame( 'rest_invalid_param', $data['code'] );
+		$param_message = isset( $data['data']['params']['params'] ) ? (string) $data['data']['params']['params'] : '';
+		$this->assertStringContainsString( 'name', $param_message );
 
-		// Check for actionable guidance.
-		if ( isset( $data['error']['data'] ) && isset( $data['error']['data']['actions'] ) ) {
-			$this->assertIsArray( $data['error']['data']['actions'], 'Error should include actions' );
+		// Check for actionable guidance in the nested param details.
+		if ( isset( $data['data']['details']['params']['data']['actions'] ) ) {
+			$this->assertIsArray( $data['data']['details']['params']['data']['actions'], 'Error should include actions' );
 		}
 	}
 
@@ -272,8 +306,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP tools/call rejects non-array arguments.
 	 */
 	public function test_mcp_tools_call_rejects_non_array_arguments() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -292,16 +325,16 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Non-array arguments should return 400' );
-		$this->assertArrayHasKey( 'error', $data );
-		$this->assertStringContainsString( 'arguments', $data['error']['message'] );
+		$this->assertSame( 'rest_invalid_param', $data['code'] );
+		$param_message = isset( $data['data']['params']['params'] ) ? (string) $data['data']['params']['params'] : '';
+		$this->assertStringContainsString( 'arguments', $param_message );
 	}
 
 	/**
 	 * Test MCP notification (no id) returns 202.
 	 */
 	public function test_mcp_notification_returns_202() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -325,8 +358,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP initialize returns proper structure.
 	 */
 	public function test_mcp_initialize_returns_proper_structure() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -356,8 +388,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP error responses include actionable guidance.
 	 */
 	public function test_mcp_errors_include_actionable_guidance() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -389,8 +420,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP tools/list returns proper structure.
 	 */
 	public function test_mcp_tools_list_returns_proper_structure() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -414,8 +444,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP resources/list returns proper structure.
 	 */
 	public function test_mcp_resources_list_returns_proper_structure() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
@@ -439,8 +468,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 	 * Test MCP prompts/list returns proper structure.
 	 */
 	public function test_mcp_prompts_list_returns_proper_structure() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'Content-Type', 'application/json' );
+		$request = $this->build_mcp_request();
 		$request->set_body(
 			wp_json_encode(
 				array(
