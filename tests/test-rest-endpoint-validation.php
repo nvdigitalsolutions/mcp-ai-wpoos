@@ -107,6 +107,41 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Extract the detailed validation message for a field from a WP REST error.
+	 *
+	 * Production nests per-field messages under data.params and actionable
+	 * guidance under details.<field>.data.actions (the standard
+	 * rest_invalid_param shape); the top-level message is only a summary.
+	 *
+	 * @param array  $data  Response data.
+	 * @param string $field Field name.
+	 * @return string
+	 */
+	protected function field_error_message( $data, $field ) {
+		if ( isset( $data['data']['params'][ $field ] ) ) {
+			return (string) $data['data']['params'][ $field ];
+		}
+		if ( isset( $data['details'][ $field ]['message'] ) ) {
+			return (string) $data['details'][ $field ]['message'];
+		}
+		return '';
+	}
+
+	/**
+	 * Extract actionable guidance for a field from a WP REST error.
+	 *
+	 * @param array  $data  Response data.
+	 * @param string $field Field name.
+	 * @return array
+	 */
+	protected function field_actions( $data, $field ) {
+		if ( isset( $data['data']['details'][ $field ]['data']['actions'] ) && is_array( $data['data']['details'][ $field ]['data']['actions'] ) ) {
+			return $data['data']['details'][ $field ]['data']['actions'];
+		}
+		return array();
+	}
+
+	/**
 	 * Test /chat endpoint rejects empty messages array.
 	 */
 	public function test_chat_endpoint_rejects_empty_messages() {
@@ -120,8 +155,8 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$this->assertSame( 400, $response->get_status(), 'Empty messages array should return 400' );
 		$this->assertArrayHasKey( 'code', $data, 'Error response should include code' );
 		$this->assertArrayHasKey( 'message', $data, 'Error response should include message' );
-		$this->assertStringContainsString( 'cannot be empty', $data['message'], 'Error message should mention empty array' );
-		$this->assertArrayHasKey( 'actions', $data, 'Error response should include actionable guidance' );
+		$this->assertStringContainsString( 'cannot be empty', $this->field_error_message( $data, 'messages' ), 'Error message should mention empty array' );
+		$this->assertNotEmpty( $this->field_actions( $data, 'messages' ), 'Error response should include actionable guidance' );
 	}
 
 	/**
@@ -144,8 +179,8 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Message without role should return 400' );
-		$this->assertStringContainsString( 'missing required "role"', $data['message'], 'Error should mention missing role' );
-		$this->assertArrayHasKey( 'actions', $data, 'Error should provide actionable guidance' );
+		$this->assertStringContainsString( 'missing required "role"', $this->field_error_message( $data, 'messages' ), 'Error should mention missing role' );
+		$this->assertNotEmpty( $this->field_actions( $data, 'messages' ), 'Error should provide actionable guidance' );
 	}
 
 	/**
@@ -171,8 +206,9 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Invalid role should return 400' );
-		$this->assertStringContainsString( 'invalid role', $data['message'], 'Error should mention invalid role' );
-		$this->assertStringContainsString( 'system, user, assistant', $data['message'], 'Error should list valid roles' );
+		$message = $this->field_error_message( $data, 'messages' );
+		$this->assertStringContainsString( 'invalid role', $message, 'Error should mention invalid role' );
+		$this->assertStringContainsString( 'system, user, assistant', $message, 'Error should list valid roles' );
 	}
 
 	/**
@@ -195,7 +231,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Message without content should return 400' );
-		$this->assertStringContainsString( 'missing required "content"', $data['message'], 'Error should mention missing content' );
+		$this->assertStringContainsString( 'missing required "content"', $this->field_error_message( $data, 'messages' ), 'Error should mention missing content' );
 	}
 
 	/**
@@ -222,7 +258,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Tool message without tool_call_id should return 400' );
-		$this->assertStringContainsString( 'missing required "tool_call_id"', $data['message'], 'Error should mention missing tool_call_id' );
+		$this->assertStringContainsString( 'missing required "tool_call_id"', $this->field_error_message( $data, 'messages' ), 'Error should mention missing tool_call_id' );
 	}
 
 	/**
@@ -237,7 +273,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Non-array messages should return 400' );
-		$this->assertStringContainsString( 'must be an array', $data['message'], 'Error should mention type mismatch' );
+		$this->assertStringContainsString( 'must be an array', $this->field_error_message( $data, 'messages' ), 'Error should mention type mismatch' );
 	}
 
 	/**
@@ -292,8 +328,8 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Attachment without file reference should return 400' );
-		$this->assertStringContainsString( 'must include either "file_id"', $data['message'], 'Error should mention missing file reference' );
-		$this->assertArrayHasKey( 'actions', $data, 'Error should provide actionable guidance' );
+		$this->assertStringContainsString( 'must include either "file_id"', $this->field_error_message( $data, 'attachments' ), 'Error should mention missing file reference' );
+		$this->assertNotEmpty( $this->field_actions( $data, 'attachments' ), 'Error should provide actionable guidance' );
 	}
 
 	/**
@@ -322,7 +358,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Invalid file_id should return 400' );
-		$this->assertStringContainsString( 'invalid "file_id"', $data['message'], 'Error should mention invalid file_id' );
+		$this->assertStringContainsString( '"file_id"', $this->field_error_message( $data, 'attachments' ), 'Error should mention file_id' );
 	}
 
 	/**
@@ -351,7 +387,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Invalid URL should return 400' );
-		$this->assertStringContainsString( 'invalid "url"', $data['message'], 'Error should mention invalid URL' );
+		$this->assertStringContainsString( '"url"', $this->field_error_message( $data, 'attachments' ), 'Error should mention URL' );
 	}
 
 	/**
@@ -378,9 +414,10 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 400, $response->get_status(), 'tools/call without name should return 400' );
 
-		// MCP returns JSON-RPC error format.
-		$this->assertArrayHasKey( 'error', $data, 'Response should include error object' );
-		$this->assertStringContainsString( 'name', $data['error']['message'], 'Error should mention missing name parameter' );
+		// tools/call parameter validation is handled by the REST schema, so the
+		// response carries the WP REST param-error shape.
+		$this->assertSame( 'rest_invalid_param', $data['code'] );
+		$this->assertStringContainsString( 'name', $this->field_error_message( $data, 'params' ), 'Error should mention missing name parameter' );
 	}
 
 	/**
@@ -404,7 +441,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Non-object params should return 400' );
-		$this->assertArrayHasKey( 'error', $data, 'Response should include error object' );
+		$this->assertSame( 'rest_invalid_param', $data['code'] );
 	}
 
 	/**
@@ -452,9 +489,9 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status() );
-		$this->assertArrayHasKey( 'actions', $data, 'Validation errors should include actionable guidance' );
-		$this->assertIsArray( $data['actions'], 'Actions should be an array' );
-		$this->assertNotEmpty( $data['actions'], 'Actions array should not be empty' );
+		$actions = $this->field_actions( $data, 'messages' );
+		$this->assertIsArray( $actions, 'Actions should be an array' );
+		$this->assertNotEmpty( $actions, 'Actions array should not be empty' );
 	}
 
 	/**
@@ -488,8 +525,9 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Invalid role in message array should fail' );
-		$this->assertStringContainsString( 'index 2', $data['message'], 'Error should identify problematic message index' );
-		$this->assertStringContainsString( 'invalid role', $data['message'], 'Error should identify the issue' );
+		$message = $this->field_error_message( $data, 'messages' );
+		$this->assertStringContainsString( 'index 2', $message, 'Error should identify problematic message index' );
+		$this->assertStringContainsString( 'invalid role', $message, 'Error should identify the issue' );
 	}
 
 	/**
@@ -519,6 +557,6 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'Mixed valid/invalid attachments should fail' );
-		$this->assertStringContainsString( 'index 1', $data['message'], 'Error should identify problematic attachment' );
+		$this->assertStringContainsString( 'index 1', $this->field_error_message( $data, 'attachments' ), 'Error should identify problematic attachment' );
 	}
 }

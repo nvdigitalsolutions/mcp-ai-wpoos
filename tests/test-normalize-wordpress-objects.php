@@ -213,10 +213,19 @@ class Test_Normalize_WordPress_Objects extends WP_UnitTestCase {
 			'message' => 'Test message',
 		);
 
-		// Capture output from send_sse_event.
-		ob_start();
+		// The handler flushes output buffers as part of the SSE protocol, so a
+		// plain ob_start()/ob_get_clean() pair loses the content. A callback
+		// buffer captures content on every flush/clean/end instead.
+		$captured = '';
+		ob_start(
+			static function ( $chunk ) use ( &$captured ) {
+				$captured .= $chunk;
+				return '';
+			}
+		);
 		$this->sse_handler->send_sse_event( 'test_event', $good_data );
-		$output = ob_get_clean();
+		ob_end_clean();
+		$output = $captured;
 
 		// Verify the output format.
 		$this->assertStringContainsString( 'event: test_event', $output );
@@ -230,10 +239,16 @@ class Test_Normalize_WordPress_Objects extends WP_UnitTestCase {
 			'resource' => $temp_file,
 		);
 
-		// Capture output from send_sse_event.
-		ob_start();
+		$captured = '';
+		ob_start(
+			static function ( $chunk ) use ( &$captured ) {
+				$captured .= $chunk;
+				return '';
+			}
+		);
 		$this->sse_handler->send_sse_event( 'test_event', $bad_data );
-		$output = ob_get_clean();
+		ob_end_clean();
+		$output = $captured;
 
 		// The SSE handler should detect JSON encoding failure and send error response.
 		// Note: wp_json_encode actually handles resources by converting them to null,
