@@ -30,6 +30,9 @@ final class Plugin {
 		// embeddings, RAG, agent memory).
 		$bridge = CoreBridge::instance();
 
+		// Expose parent-plugin graph tools to the agentic chat loop.
+		$bridge->registerGraphToolBridge();
+
 		// Admin UI.
 		if ( is_admin() ) {
 			$this->registerAdmin();
@@ -61,6 +64,17 @@ final class Plugin {
 			array( $this, 'handleContinueChat' ),
 			10,
 			2
+		);
+
+		// Provider/model settings changed — drop cached model lists so
+		// the Chat Tester re-fetches them on the next request.
+		add_action(
+			'update_option_' . \NvoosContentGraph\Schema::OPTION_SETTINGS,
+			static function (): void {
+				if ( class_exists( 'NvoosContentGraphAi\Rest\ChatController' ) ) {
+					\NvoosContentGraphAi\Rest\ChatController::clearModelCache();
+				}
+			}
 		);
 	}
 
@@ -106,6 +120,7 @@ final class Plugin {
 				'ai_api_key_digitalocean'  => '',
 				'ai_api_key_kimi'          => '',
 				'ai_api_key_baseten'       => '',
+				'ai_system_prompt'         => 'You are a helpful assistant for the NV oOS Content Graph on this WordPress site. Answer questions about the site content and its knowledge graph accurately and concisely. When tools for querying the graph are provided, use them to ground your answers in real data instead of guessing. Cite nodes, posts, or relationships when relevant. If you do not know something or the data is unavailable, say so plainly. Format answers with Markdown.',
 			)
 		);
 	}

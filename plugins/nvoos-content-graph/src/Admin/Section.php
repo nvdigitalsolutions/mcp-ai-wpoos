@@ -138,6 +138,9 @@ abstract class Section {
 			case 'text':
 				return \sanitize_text_field( (string) $value );
 
+			case 'textarea':
+				return \sanitize_textarea_field( (string) $value );
+
 			case 'array':
 				if ( empty( $value ) || ! \is_array( $value ) ) {
 					return array();
@@ -210,6 +213,18 @@ abstract class Section {
 					'<input type="password" name="%s" value="%s" class="regular-text" autocomplete="new-password">',
 					esc_attr( $name ),
 					\esc_attr( $value )
+				);
+				if ( $desc ) {
+					echo '<p class="description">' . \esc_html( $desc ) . '</p>';
+				}
+				break;
+
+			case 'textarea':
+				printf(
+					'<textarea name="%s" rows="%d" class="large-text">%s</textarea>',
+					esc_attr( $name ),
+					\absint( $field['rows'] ?? 6 ),
+					\esc_textarea( (string) $value )
 				);
 				if ( $desc ) {
 					echo '<p class="description">' . \esc_html( $desc ) . '</p>';

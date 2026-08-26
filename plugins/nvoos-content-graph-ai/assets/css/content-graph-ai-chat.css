@@ -1,4 +1,4 @@
-/* NV oOS Content Graph AI — Admin Chat Interface Styles */
+/* NV oOS Content Graph AI — Admin Chat Tester Styles */
 
 .nvoos-chat-app {
 	max-width: 900px;
@@ -26,7 +26,23 @@
 }
 
 .nvoos-chat-toolbar__select {
-	width: 180px;
+	width: 190px;
+}
+
+.nvoos-chat-toolbar__select--short {
+	width: 110px;
+}
+
+.nvoos-chat-toolbar__input {
+	width: 160px;
+}
+
+.nvoos-chat-toolbar__check {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 13px;
+	white-space: nowrap;
 }
 
 .nvoos-chat-cost {
@@ -61,14 +77,15 @@
 .nvoos-chat-msg {
 	margin-bottom: 12px;
 	display: flex;
+	flex-direction: column;
 }
 
 .nvoos-chat-msg--user {
-	justify-content: flex-end;
+	align-items: flex-end;
 }
 
 .nvoos-chat-msg--assistant {
-	justify-content: flex-start;
+	align-items: flex-start;
 }
 
 .nvoos-chat-msg__content {
@@ -78,12 +95,20 @@
 	font-size: 14px;
 	line-height: 1.5;
 	word-wrap: break-word;
+	overflow-wrap: break-word;
+}
+
+.nvoos-chat-msg__content[data-raw='1'] {
+	white-space: pre-wrap;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 13px;
 }
 
 .nvoos-chat-msg--user .nvoos-chat-msg__content {
 	background: #2271b1;
 	color: #fff;
 	border-bottom-right-radius: 4px;
+	white-space: pre-wrap;
 }
 
 .nvoos-chat-msg--assistant .nvoos-chat-msg__content {
@@ -106,7 +131,109 @@
 	50% { opacity: 0.5; }
 }
 
-/* ─── Error ──────────────────────────────────────────────────────── */
+/* ─── Message meta + actions ─────────────────────────────────────── */
+
+.nvoos-chat-msg__meta {
+	font-size: 11px;
+	color: #8c8f94;
+	margin-top: 4px;
+	padding: 0 4px;
+}
+
+.nvoos-chat-msg__actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 4px;
+	padding: 0 4px;
+}
+
+.nvoos-chat-msg__action {
+	background: none;
+	border: none;
+	padding: 0;
+	color: #2271b1;
+	font-size: 11px;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.nvoos-chat-msg__action:hover {
+	color: #135e96;
+}
+
+/* ─── Markdown-lite content ──────────────────────────────────────── */
+
+.nvoos-chat-msg__content p {
+	margin: 0 0 8px;
+}
+
+.nvoos-chat-msg__content p:last-child {
+	margin-bottom: 0;
+}
+
+.nvoos-chat-msg__content h3,
+.nvoos-chat-msg__content h4,
+.nvoos-chat-msg__content h5 {
+	margin: 10px 0 6px;
+	line-height: 1.3;
+}
+
+.nvoos-chat-msg__content h3 { font-size: 15px; }
+.nvoos-chat-msg__content h4 { font-size: 14px; }
+.nvoos-chat-msg__content h5 { font-size: 13px; }
+
+.nvoos-chat-msg__content ul,
+.nvoos-chat-msg__content ol {
+	margin: 0 0 8px;
+	padding-left: 20px;
+}
+
+.nvoos-chat-msg__content li {
+	margin-bottom: 2px;
+}
+
+.nvoos-chat-msg__content code {
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+	background: #e2e4e7;
+	padding: 1px 5px;
+	border-radius: 3px;
+}
+
+.nvoos-chat-msg__content pre {
+	margin: 0 0 8px;
+	padding: 10px;
+	background: #1d2327;
+	color: #f0f0f1;
+	border-radius: 4px;
+	overflow-x: auto;
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.nvoos-chat-msg__content pre code {
+	background: none;
+	color: inherit;
+	padding: 0;
+	font-size: 12px;
+}
+
+.nvoos-chat-msg__content blockquote {
+	margin: 0 0 8px;
+	padding: 4px 12px;
+	border-left: 3px solid #c3c4c7;
+	color: #50575e;
+}
+
+.nvoos-chat-msg__content a {
+	color: #2271b1;
+}
+
+.nvoos-chat-msg__content strong {
+	font-weight: 600;
+}
+
+/* ─── Error / notice ─────────────────────────────────────────────── */
 
 .nvoos-chat-error {
 	color: #d63638;
@@ -115,6 +242,20 @@
 	border: 1px solid #f86368;
 	border-radius: 4px;
 	font-size: 13px;
+	margin-bottom: 4px;
+}
+
+.nvoos-chat-notice {
+	color: #996800;
+	padding: 8px 12px;
+	background: #fcf9e8;
+	border: 1px solid #dba617;
+	border-radius: 4px;
+	font-size: 13px;
+}
+
+.nvoos-chat-retry {
+	margin-left: 8px;
 }
 
 /* ─── Tool results ───────────────────────────────────────────────── */
@@ -122,6 +263,8 @@
 .nvoos-chat-tool-result {
 	margin-bottom: 8px;
 	padding: 0 14px;
+	align-self: flex-start;
+	max-width: 80%;
 }
 
 .nvoos-chat-tool-details {
@@ -186,4 +329,36 @@
 .nvoos-chat-send {
 	height: 44px;
 	padding: 0 20px !important;
+}
+
+/* ─── Debug panel ────────────────────────────────────────────────── */
+
+.nvoos-chat-debug {
+	margin-top: 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 8px 12px;
+	background: #fff;
+}
+
+.nvoos-chat-debug summary {
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	color: #50575e;
+}
+
+.nvoos-chat-debug__log {
+	margin: 8px 0 0;
+	padding: 10px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 11px;
+	line-height: 1.5;
+	max-height: 240px;
+	overflow: auto;
+	white-space: pre-wrap;
+	word-break: break-all;
 }
