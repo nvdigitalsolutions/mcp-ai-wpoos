@@ -42,6 +42,34 @@
 
 ---
 
+## Doc-level open items → GitHub issues (verified 2026-08-26)
+
+Open items recorded in docs **outside** the catch-up plans (audits, TODO files, implementation plans, security posture, proposals) that had no GitHub issue. Each was re-verified against the current tree before filing; only genuinely-open items were filed.
+
+| Issue | Doc source | Items |
+|---|---|---|
+| [#5969](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5969) | `docs/developer/toolkit-mcp-server-enhancements-todo.md` | Toolkit MCP server backlog — A.2 (Site Creator settings), A.3 (Extended Cognition settings), A.6 (Healthcare, in-doc deferred), Phases B/D/E/F |
+| [#5970](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5970) | `docs/project/plans/CONVERSATION-IMPORT-CCT-IMPLEMENTATION-PLAN.md` §9 | Import size-cap default; memory-mining toggle UI + `count_imported()` widget |
+| [#5971](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5971) | `docs/project/audits/2026-04/remediation-roadmap.md` | R-T-01 (PHPCS pro close-out), R-T-03 (CodeQL security-extended), R-A-03 (upload-validator decide-or-close), R-Q-04 (120 `innerHTML` audit), R-Q-05 (pro nonce sweep) |
+| [#5972](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5972) | `docs/operations/security/SECURITY_POSTURE.md` | F-AUTHZ-01 (remaining `__return_true` justifications), F-AI-01 (Algorave sandboxed iframe + strict CSP), F-CMP-04 (legacy source-map sweep) |
+| [#5973](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5973) | `docs/project/proposals/proposals-retirement-log.md` | Ralph Wiggum CCT Orchestration — decide implement or defer |
+| [#5974](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5974) | `docs/project/plans/chat-spa-v2-phase1-implementation.md` | 10 remaining SPA gaps (GAP-05, 07, 08, 09, 10, 15–19) |
+
+### Proposals directory (verified 2026-08-26)
+
+| Issue | Doc source | Items |
+|---|---|---|
+| [#5975](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5975) | `028-media-worker-phase3-proposal.md`, `031-media-worker-crawl4ai-integration-plan.md` | Media worker: 028 open Q5 (W6 strict-path default flip) + 031 Phase 3 (Crawl4AI parity, `CRAWL4AI_FULL_URL`) |
+| [#5976](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5976) | `022-request-queuing-job-pooling-hardening.md`, `011-queue-worker-implementation-plan.md` | No max-queue-size / per-user cap; `background-only` × `tools/call` close-out; 011 deferred follow-ups (RabbitMQ dispatch, SSE reconnect, queue admin UI) |
+| [#5977](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5977) | `029-oos-orchestration-runtime-consolidation-implementation-plan.md`, `015-mcp-2026-07-28-protocol-upgrade.md` | 029 §2.1 OOS promotion decision (blocking); 015 review decision (+ §2.6 header routing, §2.7 `resources/list` caching minors) |
+| [#5978](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5978) | `007-multi-tenant-toolkit-rollout-plan.md`, `007-multi-tenant-comprehensive-implementation-plan.md` | Phase 4 remaining: 42 CRM tools → Data Store, 22 regulatory tools; rollout vs comprehensive plan status reconciliation |
+
+**Excluded after verification (not filed):** Model Manager UI (shipped — `render_model_manager_view()` + AJAX class present); R-T-02 / R-T-05 (landed in `security.yml` / `security-regression.yml`); R-Q-06 / R-S-02 / R-S-03 / R-S-04 / R-A-01 / R-A-02 / R-A-04 (roadmap-marked Done); TEST-SUITE fixes (own tracker, OI-3); `docs/ROADMAP.md` v1.4.0/v2.0.0 (roadmap, not actionable findings); `docs/history/**` retired docs (`ID: XXX` placeholders) are false positives.
+
+**Proposals excluded after verification (not filed):** 005 WP-CLI gaps (`assistant delete --force --yes` shipped in `includes/cli/`); 021 `get_social_analytics` (shipped — analytics service + tool exist); 007 artifact-evolution Phase G (lineage/approval-queue/governance shipped); 024 Hermes fleet operator (`addons/fleet-operator/` shipped — status header stale); 030 Composio Connect (shipped — proposal status stale); Flowhub/Shopify/Ezuite CCT managers (shipped, multi-tenant Phase 3); 016 code-review L1/L2 fixes (landed) with admin-ajax→REST a documented non-goal; WebLLM Phases 4–8, Firefly III, Bitwarden (retirement-log decisions exist); v1.1.29-era proposals with no later status (CONTEXT-1 orchestration, CREDITS transferable, CHAT_PRELOAD) — parked in `proposals/README.md` as reference/low-priority; candidates for the retirement log, not new issues.
+
+---
+
 ## Closed items (verified done — do not re-raise)
 
 | Item | Raised in | Closed in | Evidence |
