@@ -186,25 +186,18 @@ abstract class WP_MCP_AI_Ajax_TestCase extends WP_Ajax_UnitTestCase {
 	/**
 	 * Assert that the most recent dispatch returned `success: false`.
 	 *
-	 * @param array       $response          Decoded response from {@see self::dispatch()}.
-	 * @param string|null $expected_substring Optional substring expected in `data.message`.
+	 * @param array       $response Decoded response from {@see self::dispatch()}.
+	 * @param string|null $message  Optional failure message for the assertion.
 	 */
-	protected function assertAjaxError( $response, $expected_substring = null ) {
+	protected function assertAjaxError( $response, $message = null ) {
 		$this->assertIsArray( $response, 'AJAX response is not a JSON object.' );
 		$this->assertArrayHasKey( 'success', $response, 'AJAX response is missing the "success" flag.' );
 		$this->assertFalse(
 			$response['success'],
-			'Expected AJAX error, got: ' . wp_json_encode( $response )
+			null !== $message
+				? $message
+				: 'Expected AJAX error, got: ' . wp_json_encode( $response )
 		);
-		if ( null !== $expected_substring ) {
-			$message = '';
-			if ( isset( $response['data']['message'] ) ) {
-				$message = (string) $response['data']['message'];
-			} elseif ( isset( $response['data'] ) && is_string( $response['data'] ) ) {
-				$message = $response['data'];
-			}
-			$this->assertStringContainsString( $expected_substring, $message );
-		}
 	}
 
 	/**

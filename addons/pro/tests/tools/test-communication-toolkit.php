@@ -30,15 +30,17 @@ class Test_WP_MCP_AI_Communication_Toolkit extends WP_UnitTestCase {
 			}
 		} return $d; }
 	/** @dataProvider provide_all_tools */ public function test_class_exists( $cn, $f ) {
-		if ( class_exists( $cn ) ) {
-			return;
-		} require_once $f;
-		$this->assertTrue( class_exists( $cn ) ); }
+		if ( ! class_exists( $cn ) ) {
+			require_once $f;
+		} $this->assertTrue( class_exists( $cn ) ); }
 	/** @dataProvider provide_all_tools */ public function test_metadata( $cn, $f ) {
 		if ( ! class_exists( $cn ) ) {
 			require_once $f;
 		} $t = $this->safe_new( $cn );
 		if ( ! $t ) {
+			return;
+		} if ( ! method_exists( $t, 'get_slug' ) ) {
+			$this->markTestSkipped( $cn . ' is a helper class, not a tool.' );
 			return;
 		} $this->assertNotEmpty( $t->get_slug() ); }
 	/** @dataProvider provide_all_tools */ public function test_schema( $cn, $f ) {
@@ -47,11 +49,15 @@ class Test_WP_MCP_AI_Communication_Toolkit extends WP_UnitTestCase {
 		} $t = $this->safe_new( $cn );
 		if ( ! $t ) {
 			return;
+		} if ( ! method_exists( $t, 'get_slug' ) ) {
+			$this->markTestSkipped( $cn . ' is a helper class, not a tool.' );
+			return;
 		} $s = method_exists( $t, 'get_parameters_schema' ) ? $t->get_parameters_schema() : null;
 		if ( ! $s && method_exists( $t, 'get_definition' ) ) {
 			$d = $t->get_definition();
-			$s = isset( $d['parameters'] ) ? $d['parameters'] : null;
+			$s = isset( $d['parameters'] ) ? $d['parameters'] : ( isset( $d['input_schema'] ) ? $d['input_schema'] : ( isset( $d['arguments'] ) ? $d['arguments'] : null ) );
 		} if ( ! $s ) {
+			$this->markTestSkipped( $cn . ' exposes no parameter schema.' );
 			return;
 		} $this->assertIsArray( $s ); }
 	/** @param string $cn @return object|null */ protected function safe_new( $cn ) {

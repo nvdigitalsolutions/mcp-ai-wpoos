@@ -79,9 +79,9 @@ class NV_oOS_Graphify_Tool_Sync_Remote_Source implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Permission denied.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_forbidden',
+				__( 'Permission denied.', 'nvoos-graphify' )
 			);
 		}
 
@@ -89,22 +89,22 @@ class NV_oOS_Graphify_Tool_Sync_Remote_Source implements WP_MCP_AI_Tool_Interfac
 		$async = isset( $arguments['async'] ) ? (bool) $arguments['async'] : true;
 
 		if ( empty( $slug ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'slug is required.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'nvoos_graphify_missing_slug',
+				__( 'slug is required.', 'nvoos-graphify' )
 			);
 		}
 
 		// Validate source exists.
 		$source = NV_oOS_Graphify_DB::get_remote_source( $slug );
 		if ( ! $source ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
+			return new WP_Error(
+				'nvoos_graphify_source_not_found',
+				sprintf(
 					/* translators: %s source slug */
 					__( 'Remote source not found: %s', 'nvoos-graphify' ),
 					esc_html( $slug )
-				),
+				)
 			);
 		}
 
@@ -112,10 +112,7 @@ class NV_oOS_Graphify_Tool_Sync_Remote_Source implements WP_MCP_AI_Tool_Interfac
 		$summary  = $enricher->sync_source( $slug, $async );
 
 		if ( is_wp_error( $summary ) ) {
-			return array(
-				'success' => false,
-				'error'   => $summary->get_error_message(),
-			);
+			return $summary;
 		}
 
 		return array(
