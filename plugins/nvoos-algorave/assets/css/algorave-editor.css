@@ -1,0 +1,327 @@
+/**
+ * Algorave Editor Styles
+ *
+ * Styles for the live coding editor interface.
+ *
+ * @package NV_oOS_Algorave
+ * @since   1.0.0
+ */
+
+/* Container */
+.algorave-live-coder {
+	font-family: "JetBrains Mono", "Fira Code", "Source Code Pro", "Consolas", monospace;
+	background: #0a0a0a;
+	color: #e0e0e0;
+	border-radius: 8px;
+	overflow: hidden;
+	border: 1px solid #222;
+}
+
+/* Toolbar */
+.algorave-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	background: #111;
+	border-bottom: 1px solid #222;
+	flex-wrap: wrap;
+}
+
+.algorave-toolbar label {
+	color: #888;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Raw-eval warning banner (F-AI-01). Hidden by default; shown when the
+   Tone.js engine is enabled via NVOOS_ALGORAVE_ALLOW_TONEJS_EVAL and selected. */
+.algorave-eval-warning {
+	padding: 8px 12px;
+	background: #2b1a05;
+	border-bottom: 1px solid #5c3d0e;
+	color: #ffc966;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.algorave-eval-warning[hidden] {
+	display: none;
+}
+
+/* Buttons */
+.algorave-btn {
+	padding: 6px 16px;
+	border: 1px solid #333;
+	border-radius: 4px;
+	background: #1a1a1a;
+	color: #e0e0e0;
+	font-family: inherit;
+	font-size: 13px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.algorave-btn:hover {
+	background: #252525;
+	border-color: #444;
+}
+
+.algorave-btn-play {
+	background: #0d3320;
+	border-color: #00ff88;
+	color: #00ff88;
+}
+
+.algorave-btn-play:hover {
+	background: #164a30;
+}
+
+.algorave-btn-stop {
+	background: #331111;
+	border-color: #ff4444;
+	color: #ff4444;
+}
+
+.algorave-btn-stop:hover {
+	background: #4a1616;
+}
+
+/* Status indicator */
+.algorave-status-indicator {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #333;
+	margin-left: auto;
+}
+
+.algorave-status-indicator.is-playing {
+	background: #00ff88;
+	box-shadow: 0 0 8px #00ff88;
+	animation: algorave-pulse 1s ease-in-out infinite;
+}
+
+@keyframes algorave-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+/* Controls */
+.algorave-engine-select,
+.algorave-bpm-input {
+	background: #1a1a1a;
+	border: 1px solid #333;
+	border-radius: 4px;
+	color: #e0e0e0;
+	padding: 4px 8px;
+	font-family: inherit;
+	font-size: 13px;
+}
+
+.algorave-bpm-input {
+	width: 60px;
+	text-align: center;
+}
+
+/* Code editor */
+.algorave-code-editor {
+	display: block;
+	width: 100%;
+	min-height: 300px;
+	padding: 16px;
+	border: none;
+	background: #0a0a0a;
+	color: #00ff88;
+	font-family: "JetBrains Mono", "Fira Code", "Source Code Pro", "Consolas", monospace;
+	font-size: 14px;
+	line-height: 1.6;
+	resize: vertical;
+	tab-size: 2;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.algorave-code-editor::placeholder {
+	color: #333;
+}
+
+.algorave-code-editor:focus {
+	box-shadow: inset 0 0 0 1px #00ff8833;
+}
+
+/* Keyboard shortcuts hint */
+.algorave-hints {
+	display: flex;
+	gap: 16px;
+	padding: 8px 12px;
+	background: #111;
+	border-top: 1px solid #222;
+	font-size: 11px;
+	color: #555;
+}
+
+.algorave-hints kbd {
+	display: inline-block;
+	padding: 1px 5px;
+	border: 1px solid #333;
+	border-radius: 3px;
+	background: #1a1a1a;
+	color: #888;
+	font-family: inherit;
+	font-size: 11px;
+}
+
+/* Error message */
+.algorave-error-message {
+	padding: 8px 16px;
+	background: #331111;
+	border-top: 1px solid #ff4444;
+	color: #ff8888;
+	font-size: 12px;
+	font-family: "JetBrains Mono", "Fira Code", "Source Code Pro", "Consolas", monospace;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+/* Bank select */
+.algorave-bank-select {
+	background: #1a1a1a;
+	border: 1px solid #333;
+	border-radius: 4px;
+	color: #e0e0e0;
+	padding: 4px 8px;
+	font-family: inherit;
+	font-size: 13px;
+}
+
+/* Pattern presets bar */
+.algorave-presets {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 12px;
+	background: #0f0f0f;
+	border-bottom: 1px solid #1a1a1a;
+	flex-wrap: wrap;
+}
+
+.algorave-presets-label {
+	color: #555;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-right: 4px;
+}
+
+.algorave-preset-btn {
+	padding: 2px 10px;
+	border: 1px solid #222;
+	border-radius: 3px;
+	background: #151515;
+	color: #777;
+	font-family: inherit;
+	font-size: 11px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.algorave-preset-btn:hover {
+	background: #1f1f1f;
+	color: #00ff88;
+	border-color: #00ff8844;
+}
+
+/* Effects quick reference (collapsible) */
+.algorave-effects-ref {
+	border-top: 1px solid #1a1a1a;
+	background: #0d0d0d;
+}
+
+.algorave-effects-ref-toggle {
+	padding: 6px 12px;
+	color: #555;
+	font-size: 11px;
+	cursor: pointer;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	list-style: none;
+	user-select: none;
+}
+
+.algorave-effects-ref-toggle::-webkit-details-marker {
+	display: none;
+}
+
+.algorave-effects-ref-toggle::before {
+	content: "▸ ";
+}
+
+.algorave-effects-ref[open] > .algorave-effects-ref-toggle::before {
+	content: "▾ ";
+}
+
+.algorave-effects-ref-toggle:hover {
+	color: #00ff88;
+}
+
+.algorave-effects-ref-content {
+	display: flex;
+	gap: 24px;
+	padding: 8px 16px 12px;
+	flex-wrap: wrap;
+}
+
+.algorave-ref-column {
+	min-width: 160px;
+	flex: 1;
+}
+
+.algorave-ref-column h4 {
+	color: #888;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin: 0 0 6px;
+	padding: 0;
+}
+
+.algorave-ref-column code {
+	color: #00ff88;
+	font-size: 11px;
+	background: none;
+	padding: 0;
+}
+
+.algorave-ref-column br + code {
+	margin-top: 2px;
+}
+
+.algorave-effects-ref-content,
+.algorave-ref-column {
+	color: #555;
+	font-size: 11px;
+	line-height: 1.8;
+}
+
+/* Pattern visualization (pianoroll / punchcard) */
+.algorave-pattern-viz {
+	position: relative;
+	width: 100%;
+	height: 120px;
+	background: #080808;
+	border-top: 1px solid #1a1a1a;
+	overflow: hidden;
+}
+
+.algorave-pattern-viz canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}

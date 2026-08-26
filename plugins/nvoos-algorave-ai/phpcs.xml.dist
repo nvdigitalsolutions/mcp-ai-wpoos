@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<ruleset name="NV oOS Algorave AI">
+    <description>WordPress Coding Standards for NV oOS Algorave — AI</description>
+
+    <config name="text_domain" value="nvoos-algorave-ai"/>
+    <config name="minimum_wp_version" value="6.0"/>
+
+    <file>includes/</file>
+    <file>tests/</file>
+    <file>nvoos-algorave-ai.php</file>
+
+    <exclude-pattern>/vendor/*</exclude-pattern>
+    <exclude-pattern>/node_modules/*</exclude-pattern>
+    <exclude-pattern>/languages/*</exclude-pattern>
+
+    <!-- Base: WordPress-Extra -->
+    <rule ref="WordPress-Extra"/>
+
+    <!--
+        Legacy naming exemptions.
+        This plugin keeps the NV_oOS_* global class/file naming scheme of the
+        original addon, and slash-style hook names (nvoos_algorave/…) for
+        its public filter surface.
+    -->
+    <rule ref="WordPress.Files.FileName">
+        <severity>0</severity>
+    </rule>
+    <rule ref="PEAR.NamingConventions.ValidClassName">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.NamingConventions.ValidHookName">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Test exemptions: global override and Yoda conditions are standard PHPUnit patterns.
+    -->
+    <rule ref="WordPress.WP.GlobalVariablesOverride">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.PHP.YodaConditions">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+
+    <arg name="colors"/>
+    <arg value="ps"/>
+</ruleset>

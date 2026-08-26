@@ -26,6 +26,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ─── Coexistence guard ──────────────────────────────────────────
+// The standalone "NV oOS Algorave" plugin (plugins/nvoos-algorave/)
+// defines the same global classes. If it is already active, bail out
+// instead of fatally redeclaring them. The standalone plugin carries
+// the reverse guard.
+if ( class_exists( 'NV_oOS_Algorave', false ) || defined( 'NVOOS_ALGORAVE_STANDALONE' ) ) {
+	add_action(
+		'admin_notices',
+		static function () {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+			echo '<div class="notice notice-error"><p>';
+			esc_html_e( 'NV oOS Algorave Addon and the standalone NV oOS Algorave plugin cannot both be active. Deactivate one of them.', 'nvoos-algorave' );
+			echo '</p></div>';
+		}
+	);
+	return;
+}
+
 /** Plugin version. */
 define( 'NVOOS_ALGORAVE_VERSION', '1.0.7' );
 

@@ -1,0 +1,34 @@
+{
+	"name": "nvoos-algorave",
+	"version": "1.0.0",
+	"description": "Live coding music studio for WordPress — Strudel and Tone.js audio engines, pattern library, MIDI export and audio visualizer",
+	"private": true,
+	"scripts": {
+		"build": "echo 'No build step required — vendor libs are bundled and enqueued directly.'",
+		"lint": "eslint assets/js/"
+	},
+	"dependencies": {
+		"@tonejs/midi": "^2.0.28",
+		"tonal": "^6.3.0",
+		"tone": "^15.0.4",
+		"webmidi": "^3.1.11"
+	},
+	"optionalDependencies": {
+		"@strudel/web": "^1.2.5"
+	},
+	"keywords": [
+		"wordpress",
+		"algorave",
+		"live-coding",
+		"music",
+		"tone-js",
+		"strudel",
+		"web-audio",
+		"midi"
+	],
+	"author": "NV Digital Solutions",
+	"license": "AGPL-3.0-or-later",
+	"engines": {
+		"node": ">=18.17.0"
+	}
+}

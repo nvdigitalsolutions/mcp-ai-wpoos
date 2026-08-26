@@ -1,0 +1,8 @@
+# Development files — excluded from distribution ZIP
+.distignore
+.gitignore
+node_modules/
+package-lock.json
+tests/
+composer.lock
+.editorconfig

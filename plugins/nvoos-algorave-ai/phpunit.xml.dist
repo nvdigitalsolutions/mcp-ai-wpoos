@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.0/phpunit.xsd"
+    bootstrap="tests/bootstrap.php"
+    colors="true"
+>
+    <testsuites>
+        <testsuite name="Algorave AI">
+            <file>tests/test-algorave-tools.php</file>
+        </testsuite>
+    </testsuites>
+
+    <!--
+        WP_TESTS_* constants are intentionally NOT defined here: wp-phpunit
+        loads them from the tests config (tests/wp-tests-config.php or the
+        WP_PHPUNIT__TESTS_CONFIG env var), and defining them here triggers
+        "constant already defined" warnings.
+    -->
+    <php>
+        <const name="WP_DEBUG" value="true" />
+    </php>
+</phpunit>
