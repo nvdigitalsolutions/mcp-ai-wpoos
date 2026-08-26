@@ -3172,7 +3172,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$last_user_message = '';
 			for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
 				if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
-					$last_user_message = isset( $messages[ $i ]['content'] ) ? (string) $messages[ $i ]['content'] : '';
+					// Guardrail pre-screening only inspects plain-text content;
+					// array content (multi-part segments with attachments) is
+					// skipped rather than coerced with a lossy string cast.
+					$content = isset( $messages[ $i ]['content'] ) ? $messages[ $i ]['content'] : '';
+					$last_user_message = is_string( $content ) ? $content : '';
 					break;
 				}
 			}
