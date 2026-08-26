@@ -837,8 +837,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Store a Slack connection with require_mention enabled and a saved
 		// slack_bot_user_id so that process_event can detect the Slack mention.
-		$connection_id = 'conn_slk_test_' . wp_generate_password( 8, false );
-		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$connection_id = 'conn_slk_test_' . strtolower( wp_generate_password( 8, false ) );
+		$connections   = get_option( 'wp_mcp_ai_pro_remote_sites', array() );
 		$assistant_id  = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_assistant',
@@ -857,7 +857,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'slack_bot_user_id'      => 'UBOTXXX',
 			'assigned_assistant_ids' => array( $assistant_id ),
 		);
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 
 		$controller = new WP_MCP_AI_Slack_Event_Controller();
 		$reflection = new ReflectionClass( $controller );
@@ -880,19 +880,19 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'ts'      => '1700000001.000100',
 		);
 
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 
 		$method->invoke( $controller, $event );
 
 		// The cron job must have been scheduled.
-		$next = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
+		$next = $this->slack_reply_job_scheduled();
 		$this->assertNotFalse( $next, 'Cron job must be scheduled when <@BOT_USER_ID> satisfies require_mention' );
 
 		// Clean up.
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 		wp_delete_post( $assistant_id, true );
 		unset( $connections[ $connection_id ] );
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 	}
 
 	/**
@@ -903,8 +903,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	public function test_slack_process_event_require_mention_drops_unrelated_messages() {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
 
-		$connection_id = 'conn_slk_drop_' . wp_generate_password( 8, false );
-		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$connection_id = 'conn_slk_drop_' . strtolower( wp_generate_password( 8, false ) );
+		$connections   = get_option( 'wp_mcp_ai_pro_remote_sites', array() );
 		$assistant_id  = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_assistant',
@@ -923,7 +923,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'slack_bot_user_id'      => 'UBOTXXX',
 			'assigned_assistant_ids' => array( $assistant_id ),
 		);
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 
 		$controller = new WP_MCP_AI_Slack_Event_Controller();
 		$reflection = new ReflectionClass( $controller );
@@ -935,7 +935,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method = $reflection->getMethod( 'process_event' );
 		$method->setAccessible( true );
 
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 
 		// Regular message that does NOT mention the bot.
 		$event = array(
@@ -948,12 +948,12 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$method->invoke( $controller, $event );
 
-		$next = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
+		$next = $this->slack_reply_job_scheduled();
 		$this->assertFalse( $next, 'Cron job must NOT be scheduled for messages that do not mention the bot' );
 
 		wp_delete_post( $assistant_id, true );
 		unset( $connections[ $connection_id ] );
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 	}
 
 	/**
@@ -964,8 +964,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	public function test_slack_process_event_deduplicates_same_message_ts() {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
 
-		$connection_id = 'conn_slk_dedup_' . wp_generate_password( 8, false );
-		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$connection_id = 'conn_slk_dedup_' . strtolower( wp_generate_password( 8, false ) );
+		$connections   = get_option( 'wp_mcp_ai_pro_remote_sites', array() );
 		$assistant_id  = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_assistant',
@@ -984,7 +984,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'slack_bot_user_id'      => 'UBOTYYY',
 			'assigned_assistant_ids' => array( $assistant_id ),
 		);
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 
 		$controller = new WP_MCP_AI_Slack_Event_Controller();
 		$reflection = new ReflectionClass( $controller );
@@ -996,7 +996,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method = $reflection->getMethod( 'process_event' );
 		$method->setAccessible( true );
 
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 
 		$message_ts = '1700000003.000300';
 		$event_base = array(
@@ -1008,21 +1008,21 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// First event — app_mention — should schedule a cron job.
 		$method->invoke( $controller, array_merge( $event_base, array( 'type' => 'app_mention' ) ) );
-		$next_after_first = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
+		$next_after_first = $this->slack_reply_job_scheduled();
 		$this->assertNotFalse( $next_after_first, 'First event (app_mention) must schedule a cron job' );
 
 		// Second event — message.channels for the same ts — must be deduplicated.
 		// Unschedule the first job to test whether a new one would be added.
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 		$method->invoke( $controller, array_merge( $event_base, array( 'type' => 'message' ) ) );
-		$next_after_second = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
+		$next_after_second = $this->slack_reply_job_scheduled();
 		$this->assertFalse( $next_after_second, 'Duplicate message event (same ts) must not schedule a second cron job' );
 
 		// Clean up.
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 		wp_delete_post( $assistant_id, true );
 		unset( $connections[ $connection_id ] );
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 	}
 
 	/**
@@ -1033,8 +1033,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	public function test_slack_process_event_dm_bypasses_require_mention() {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
 
-		$connection_id = 'conn_slk_dm_' . wp_generate_password( 8, false );
-		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$connection_id = 'conn_slk_dm_' . strtolower( wp_generate_password( 8, false ) );
+		$connections   = get_option( 'wp_mcp_ai_pro_remote_sites', array() );
 		$assistant_id  = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_assistant',
@@ -1053,7 +1053,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'slack_bot_user_id'      => 'UBOTDM1',
 			'assigned_assistant_ids' => array( $assistant_id ),
 		);
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 
 		$controller = new WP_MCP_AI_Slack_Event_Controller();
 		$reflection = new ReflectionClass( $controller );
@@ -1065,7 +1065,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method = $reflection->getMethod( 'process_event' );
 		$method->setAccessible( true );
 
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 
 		// Plain DM message without any @mention — require_mention must be bypassed.
 		$event = array(
@@ -1079,17 +1079,17 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$method->invoke( $controller, $event );
 
-		$next = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
+		$next = $this->slack_reply_job_scheduled();
 		$this->assertNotFalse(
 			$next,
 			'DM message must schedule a reply job even when require_mention is enabled (DMs bypass the mention requirement)'
 		);
 
 		// Clean up.
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 		wp_delete_post( $assistant_id, true );
 		unset( $connections[ $connection_id ] );
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 	}
 
 	/**
@@ -1102,8 +1102,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	public function test_slack_process_event_passes_thread_ts_to_cron_job() {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
 
-		$connection_id = 'conn_slk_thr_' . wp_generate_password( 8, false );
-		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$connection_id = 'conn_slk_thr_' . strtolower( wp_generate_password( 8, false ) );
+		$connections   = get_option( 'wp_mcp_ai_pro_remote_sites', array() );
 		$assistant_id  = wp_insert_post(
 			array(
 				'post_type'   => 'mcp_ai_assistant',
@@ -1122,7 +1122,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'slack_bot_user_id'      => 'UBOTTHREAD',
 			'assigned_assistant_ids' => array( $assistant_id ),
 		);
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 
 		$controller = new WP_MCP_AI_Slack_Event_Controller();
 		$reflection = new ReflectionClass( $controller );
@@ -1134,7 +1134,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method = $reflection->getMethod( 'process_event' );
 		$method->setAccessible( true );
 
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 
 		$root_ts   = '1700000020.000020';
 		$thread_ts = '1700000020.000020'; // Same as root = this IS the thread root.
@@ -1152,7 +1152,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$method->invoke( $controller, $event );
 
-		$next = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
+		$next = $this->slack_reply_job_scheduled();
 		$this->assertNotFalse( $next, 'Thread message must schedule a reply job' );
 
 		// Inspect the scheduled args to confirm thread_ts and channel_type are forwarded.
@@ -1179,10 +1179,10 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertTrue( $found_channel_type, 'channel_type must be forwarded to the scheduled cron job args' );
 
 		// Clean up.
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_unschedule_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 		wp_delete_post( $assistant_id, true );
 		unset( $connections[ $connection_id ] );
-		update_option( 'wp_mcp_ai_remote_connections', $connections );
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 	}
 
 	/**
@@ -1236,6 +1236,28 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	// =========================================================================
 	// Slack convert_markdown_to_mrkdwn + build_slack_blocks
 	// =========================================================================
+
+	/**
+	 * Whether a Slack AI-reply cron job is currently scheduled.
+	 *
+	 * Jobs are scheduled with per-message argument payloads, so the arg-less
+	 * wp_next_scheduled() lookup never matches; scan the raw cron array for the
+	 * hook instead.
+	 *
+	 * @return bool
+	 */
+	private function slack_reply_job_scheduled() {
+		$cron_array = _get_cron_array();
+		if ( ! is_array( $cron_array ) ) {
+			return false;
+		}
+		foreach ( $cron_array as $cron ) {
+			if ( is_array( $cron ) && isset( $cron['wp_mcp_ai_slack_send_ai_reply'] ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Helper: load the Slack event controller and call convert_markdown_to_mrkdwn.
@@ -1339,7 +1361,10 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	public function test_slack_mrkdwn_code_block_not_processed() {
 		$md     = "```\n**not bold** *not italic*\n```";
 		$result = $this->slack_mrkdwn( $md );
-		$this->assertStringNotContainsString( '*not bold*', $result );
+		// The inner content must survive verbatim; note that asserting the
+		// absence of "*not bold*" would be self-contradictory because that
+		// string is a substring of the untouched "**not bold**".
+		$this->assertStringContainsString( '**not bold** *not italic*', $result );
 		$this->assertStringNotContainsString( '_not italic_', $result );
 		$this->assertStringContainsString( '**not bold**', $result );
 	}
@@ -1837,6 +1862,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	public function test_teams_registers_per_connection_route() {
 		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
 
+		// Instantiate the controller so its constructor hooks register_routes
+		// onto rest_api_init, then fire the action on a fresh REST server.
+		new WP_MCP_AI_Teams_Webhook_Controller();
+
+		global $wp_rest_server;
+		$wp_rest_server = null;
+		do_action( 'rest_api_init' );
+
 		$routes = rest_get_server()->get_routes();
 
 		$this->assertArrayHasKey( '/mcp-ai/v1/webhooks/teams', $routes, 'Generic Teams route must be registered' );
@@ -2016,7 +2049,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( $input );
 		$this->assertStringContainsString( '<pre>', $result );
 		$this->assertStringContainsString( '<code', $result );
-		$this->assertStringContainsString( "echo 'hello';", $result );
+		// The converter HTML-escapes the code content, so the single quote is
+		// emitted as &#039; (rendered as ' by Teams).
+		$this->assertStringContainsString( 'echo &#039;hello&#039;;', $result );
 	}
 
 	/**
@@ -2316,6 +2351,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
 		$request->set_header( 'Authorization', 'Bearer some.valid.looking.token' );
+
+		// Simulate Google's tokeninfo endpoint confirming a valid Google-issued token.
+		$this->stub_google_tokeninfo( array( 'iss' => 'accounts.google.com' ) );
 
 		$result = $controller->validate_google_oidc_token( $request );
 
@@ -3173,10 +3211,13 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test validate_webhook_signature passes when no consumer secret is configured
-	 * (soft-fail behaviour matching WhatsApp/Slack pattern).
+	 * Test validate_webhook_signature rejects when no consumer secret is configured.
+	 *
+	 * The endpoint was hardened: an unauthenticated webhook is never accepted,
+	 * so a missing secret now yields rest_forbidden instead of the former
+	 * soft-fail pass-through.
 	 */
-	public function test_twitter_validation_passes_without_consumer_secret() {
+	public function test_twitter_validation_rejects_without_consumer_secret() {
 		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
 
 		// No connections stored — get_consumer_secret() returns empty string.
@@ -3187,7 +3228,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$result = $controller->validate_webhook_signature( $request );
 
-		$this->assertTrue( $result, 'Validation should pass when no consumer secret is configured' );
+		$this->assertInstanceOf( WP_Error::class, $result, 'Validation must reject when no consumer secret is configured' );
+		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
 	}
 
 	/**
@@ -4495,6 +4537,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
 			// Do NOT set_header() — we want get_header() to return empty.
 
+			// Simulate Google's tokeninfo endpoint confirming a valid token.
+			$this->stub_google_tokeninfo( array( 'iss' => 'accounts.google.com' ) );
+
 			$result = $controller->validate_google_oidc_token( $request );
 		} finally {
 			unset( $_SERVER['HTTP_AUTHORIZATION'] );
@@ -4517,6 +4562,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		try {
 			$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 			$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+
+			// Simulate Google's tokeninfo endpoint confirming a valid token.
+			$this->stub_google_tokeninfo( array( 'iss' => 'accounts.google.com' ) );
 
 			$result = $controller->validate_google_oidc_token( $request );
 		} finally {
@@ -4564,6 +4612,38 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Stub Google's tokeninfo endpoint for the duration of the current test.
+	 *
+	 * The validate_google_oidc_token() method performs full RS256 verification
+	 * against Google's tokeninfo API; without this stub the HTTP call fails in
+	 * the test environment and the accept-path tests cannot pass. The test
+	 * harness restores the hook registry after each test, so the filter is
+	 * removed automatically.
+	 *
+	 * @param array $claims Claims the tokeninfo endpoint should report.
+	 */
+	private function stub_google_tokeninfo( array $claims ) {
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( $claims ) {
+				if ( false !== strpos( $url, 'oauth2.googleapis.com/tokeninfo' ) ) {
+					return array(
+						'headers'  => array(),
+						'body'     => wp_json_encode( $claims ),
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+	}
+
+	/**
 	 * Test validate_google_oidc_token accepts a JWT whose 'aud' claim is an array
 	 * containing the configured audience URL.
 	 *
@@ -4605,6 +4685,15 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
 		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		// Simulate Google's tokeninfo endpoint reporting an aud array that
+		// contains the configured audience URL.
+		$this->stub_google_tokeninfo(
+			array(
+				'iss' => 'chat@system.gserviceaccount.com',
+				'aud' => array( $webhook_url ),
+			)
+		);
 
 		$result = $controller->validate_google_oidc_token( $request );
 
@@ -4744,6 +4833,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
 		$request->set_header( 'Authorization', 'Bearer ' . $token );
 
+		// Simulate Google's tokeninfo endpoint confirming the canonical issuer.
+		$this->stub_google_tokeninfo(
+			array(
+				'iss' => 'chat@system.gserviceaccount.com',
+				'aud' => $webhook_url,
+			)
+		);
+
 		$result = $controller->validate_google_oidc_token( $request );
 
 		$this->assertTrue( $result, 'validate_google_oidc_token must accept tokens from the Google Chat system service account issuer' );
@@ -4790,6 +4887,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
 		$request->set_header( 'Authorization', 'Bearer ' . $token );
 
+		// Simulate Google's tokeninfo endpoint confirming the accounts issuer.
+		$this->stub_google_tokeninfo(
+			array(
+				'iss' => 'accounts.google.com',
+				'aud' => $webhook_url,
+			)
+		);
+
 		$result = $controller->validate_google_oidc_token( $request );
 
 		$this->assertTrue( $result, 'validate_google_oidc_token must accept tokens from accounts.google.com for Workspace Add-ons compatibility' );
@@ -4802,14 +4907,17 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * Test get_active_google_chat_connection does NOT fall back to a space-specific
-	 * connection that is configured for a different space.
+	 * Test get_active_google_chat_connection falls back to the first enabled
+	 * connection (documented "last resort" behavior) for an unmatched space.
 	 *
-	 * A connection whose google_chat_space is 'spaces/AAA' must not be used for
-	 * an incoming message from 'spaces/BBB' — doing so would route messages with
-	 * the wrong credentials and potentially the wrong AI assistant.
+	 * The get_active_google_chat_connection() priority order is: (1) exact
+	 * space match, (2) generic connection with no google_chat_space, (3) last
+	 * resort — the first enabled google_chat connection. The last-resort tier
+	 * exists deliberately so Direct Messages (spaces/dm-*) and @mentions in
+	 * unmapped spaces always get a response; the AI reply is always sent back
+	 * to the *incoming* space, never to the connection's configured space.
 	 */
-	public function test_google_chat_space_specific_connection_not_used_for_different_space() {
+	public function test_google_chat_unmatched_space_uses_last_resort_connection() {
 		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -4844,13 +4952,25 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
 		$method->setAccessible( true );
 
-		// Message from spaces/CCC — neither specific connection matches.
+		// Message from spaces/CCC — neither specific connection matches, so the
+		// documented last-resort tier returns the first enabled connection.
 		$result = $method->invoke( $controller, 'spaces/CCC' );
 
-		$this->assertNull(
+		$this->assertNotNull(
 			$result,
-			'get_active_google_chat_connection must return null when only space-specific connections exist and none match the incoming space'
+			'get_active_google_chat_connection must return the last-resort connection when no space-specific connection matches'
 		);
+		$this->assertIsArray( $result );
+		$this->assertSame(
+			'spaces/AAA',
+			$result['google_chat_space'],
+			'The last-resort connection must be the first enabled google_chat connection'
+		);
+
+		// The exact-match tier still wins when the space IS configured.
+		$exact = $method->invoke( $controller, 'spaces/BBB' );
+		$this->assertIsArray( $exact );
+		$this->assertSame( 'spaces/BBB', $exact['google_chat_space'], 'An exact space match must win over the last-resort fallback' );
 
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
@@ -5139,11 +5259,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 	/**
 	 * Test validate_google_oidc_token allows through without a Bearer token when
-	 * disable_oidc_verification is enabled on the connection.
+	 * disable_oidc_verification is enabled on the connection and the request
+	 * supplies the matching shared-secret verification token.
 	 *
-	 * This mirrors the Telegram behavior where validation passes when no secret
-	 * token is configured — allowing environments that strip the Authorization
-	 * header to still receive Google Chat webhook events.
+	 * Security hardening (compliance fix #8) replaced the former total bypass
+	 * with a shared-secret check: when OIDC verification is disabled the request
+	 * must carry the connection's verification_token via the ?token= query
+	 * parameter or the X-Google-Chat-Token header. A request without the token
+	 * is rejected — a completely unauthenticated endpoint is never acceptable.
 	 */
 	public function test_google_chat_oidc_validation_skipped_when_disabled_on_connection() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -5153,7 +5276,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
 
-		// Store a google_chat connection with disable_oidc_verification enabled.
+		// Store a google_chat connection with disable_oidc_verification enabled
+		// and a verification token configured (required by the hardened bypass).
 		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
 			array(
 				'name'                      => 'GC OIDC Disabled Test',
@@ -5163,16 +5287,27 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 				'enabled'                   => true,
 				'api_key'                   => 'dummy_token',
 				'disable_oidc_verification' => true,
+				'verification_token'        => 'oidc-shared-secret',
 			)
 		);
 
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
-		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
-		// Deliberately omit Authorization header — should still pass when OIDC is disabled.
+
+		// No Bearer token, but the shared-secret verification token is supplied.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'X-Google-Chat-Token', 'oidc-shared-secret' );
 
 		$result = $controller->validate_google_oidc_token( $request );
 
-		$this->assertTrue( $result, 'Validation must pass when disable_oidc_verification is enabled, even without a Bearer token' );
+		$this->assertTrue( $result, 'Validation must pass when disable_oidc_verification is enabled and the verification token matches' );
+
+		// A request with no verification token must still be rejected — the
+		// hardened bypass never accepts an unauthenticated request.
+		$no_token_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+
+		$no_token_result = $controller->validate_google_oidc_token( $no_token_request );
+
+		$this->assertFalse( $no_token_result, 'Validation must reject the request when disable_oidc_verification is enabled but no verification token is supplied' );
 
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
@@ -5457,6 +5592,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$request->set_header( 'Authorization', 'Bearer some.valid.looking.token' );
 		// No X-WP-Nonce header set.
 
+		// Production verifies the Bearer token against Google's tokeninfo
+		// endpoint; stub it so the token reports a recognised issuer.
+		$this->stub_google_tokeninfo(
+			array(
+				'iss' => 'chat@system.gserviceaccount.com',
+			)
+		);
+
 		$result = $controller->validate_google_oidc_token( $request );
 
 		$this->assertTrue( $result, 'Without a nonce header the Bearer-token path must still work (no audience → pass)' );
@@ -5533,9 +5676,12 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that validate_webhook_signature returns true when no secret is configured.
+	 * Test that validate_webhook_signature fails closed when no secret is configured.
+	 *
+	 * Security hardening: an unauthenticated webhook endpoint is never acceptable,
+	 * so a missing signing secret now yields a WP_Error(403) instead of a soft pass.
 	 */
-	public function test_apple_messages_signature_passes_without_secret() {
+	public function test_apple_messages_signature_rejects_without_secret() {
 		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
 
 		// Ensure no settings are stored.
@@ -5547,7 +5693,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$result = $controller->validate_webhook_signature( $request );
 
-		$this->assertTrue( $result, 'Webhook should pass validation when no secret is configured' );
+		$this->assertInstanceOf( WP_Error::class, $result, 'Webhook must fail closed when no secret is configured' );
+		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
+		$this->assertSame( 403, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -5615,7 +5763,12 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that validate_webhook_signature accepts a sha256= prefixed signature.
+	 * Test that validate_webhook_signature accepts a sha256= prefixed signature
+	 * sent via the supported X-Apple-Messages-Signature header.
+	 *
+	 * Note: production deliberately narrowed the accepted header candidates to
+	 * x-apple-messages-signature and x-msp-signature (security header narrowing),
+	 * so the legacy x-hub-signature-256 header is no longer honoured.
 	 */
 	public function test_apple_messages_signature_accepted_with_sha256_prefix() {
 		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
@@ -5639,7 +5792,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
 		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
 		$request->set_body( $payload );
-		$request->set_header( 'x-hub-signature-256', $signature );
+		$request->set_header( 'x-apple-messages-signature', $signature );
 
 		$result = $controller->validate_webhook_signature( $request );
 
@@ -5948,8 +6101,13 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertNotSame( $key1, $key2, 'Different connections must produce different history keys' );
 	}
 
-	/** Test validate_outlook_signature allows through when no client_state is set. */
-	public function test_outlook_validation_passes_without_client_state() {
+	/**
+	 * Test validate_outlook_signature fails closed when no client_state is set.
+	 *
+	 * Security hardening: an unauthenticated webhook endpoint is never acceptable,
+	 * so a missing client state now yields a WP_Error(403) instead of a soft pass.
+	 */
+	public function test_outlook_validation_rejects_without_client_state() {
 		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
 
 		$controller = new WP_MCP_AI_Outlook_Webhook_Controller();
@@ -5959,7 +6117,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$result = $controller->validate_outlook_signature( $request );
 
-		$this->assertTrue( $result, 'Validation should pass when no client state is configured' );
+		$this->assertInstanceOf( WP_Error::class, $result, 'Validation must fail closed when no client state is configured' );
+		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
+		$this->assertSame( 403, $result->get_error_data()['status'] );
 	}
 
 	/** Test handle_webhook returns validation token for Graph subscription validation. */
@@ -6041,8 +6201,13 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertNotSame( $key1, $key2, 'Different connections must produce different history keys' );
 	}
 
-	/** Test validate_webhook_signature allows through when no signing secret is set. */
-	public function test_icloud_validation_passes_without_signing_secret() {
+	/**
+	 * Test validate_webhook_signature fails closed when no signing secret is set.
+	 *
+	 * Security hardening: an unauthenticated webhook endpoint is never acceptable,
+	 * so a missing signing secret now yields a WP_Error(403) instead of a soft pass.
+	 */
+	public function test_icloud_validation_rejects_without_signing_secret() {
 		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
 
 		delete_option( 'wp_mcp_ai_settings' );
@@ -6053,7 +6218,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$result = $controller->validate_webhook_signature( $request );
 
-		$this->assertTrue( $result, 'Webhook should pass validation when no signing secret is configured' );
+		$this->assertInstanceOf( WP_Error::class, $result, 'Webhook must fail closed when no signing secret is configured' );
+		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
+		$this->assertSame( 403, $result->get_error_data()['status'] );
 	}
 
 	/** Test handle_webhook acknowledges payload without event_type gracefully. */
@@ -6214,6 +6381,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		}
 
 		// Store a connection that is space-specific AND has OIDC verification disabled.
+		// The hardened bypass requires a shared-secret verification_token (compliance
+		// fix #8) — requests must carry it via ?token= or the X-Google-Chat-Token header.
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
@@ -6224,6 +6393,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 					'api_key'                   => 'dummy_token',
 					'google_chat_space'         => 'spaces/OIDCSPACE',
 					'disable_oidc_verification' => true,
+					'verification_token'        => 'gc-oidc-shared-secret',
 					'assigned_assistant_ids'    => array(),
 				),
 			)
@@ -6249,7 +6419,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
 		$request->set_body( wp_json_encode( $payload ) );
 		$request->set_header( 'Content-Type', 'application/json' );
-		// No connection_id param and NO Authorization header — relies on OIDC bypass.
+		// No connection_id param and NO Authorization header — relies on OIDC bypass
+		// authenticated via the shared verification token.
+		$request->set_header( 'X-Google-Chat-Token', 'gc-oidc-shared-secret' );
 
 		$result = $controller->validate_google_oidc_token( $request );
 
@@ -6490,6 +6662,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		}
 
 		// Space-specific connection with OIDC disabled. DMs arrive from a different space.
+		// The hardened bypass requires a shared-secret verification_token (compliance
+		// fix #8) — requests must carry it via ?token= or the X-Google-Chat-Token header.
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
@@ -6500,6 +6674,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 					'api_key'                   => 'dummy_token',
 					'google_chat_space'         => 'spaces/WORKSPACE',
 					'disable_oidc_verification' => true,
+					'verification_token'        => 'gc-dm-shared-secret',
 					'assigned_assistant_ids'    => array( 1 ),
 				),
 			)
@@ -6524,7 +6699,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
 		$request->set_body( wp_json_encode( $payload ) );
 		$request->set_header( 'Content-Type', 'application/json' );
-		// No Authorization header — OIDC bypass should kick in via last-resort connection.
+		// No Authorization header — OIDC bypass should kick in via last-resort
+		// connection, authenticated via the shared verification token.
+		$request->set_header( 'X-Google-Chat-Token', 'gc-dm-shared-secret' );
 
 		$result = $controller->validate_google_oidc_token( $request );
 

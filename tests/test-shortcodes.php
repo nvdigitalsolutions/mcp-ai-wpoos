@@ -36,6 +36,19 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 
+		// The harness re-fires 'init' every test (after resetting the script
+		// registry) so the plugin's init-hooked asset registration runs again.
+		// WooCommerce Blocks also hooks non-idempotent callbacks to 'init' —
+		// PaymentMethodRegistry::initialize() re-registers the bundled payment
+		// method integrations and BlockTypesController::register_blocks()
+		// re-registers every Woo block. Both raise _doing_it_wrong notices from
+		// Woo's own code. Whitelist them so they do not fail tests that
+		// exercise unrelated plugin code.
+		if ( class_exists( 'Automattic\WooCommerce\Blocks\Package' ) ) {
+			$this->setExpectedIncorrectUsage( 'Automattic\WooCommerce\Blocks\Integrations\IntegrationRegistry::register' );
+			$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		}
+
 		do_action( 'init' );
 	}
 
@@ -231,6 +244,11 @@ class Test_Shortcodes extends WP_UnitTestCase {
 
 	/**
 	 * Ensure the transcription controls are hidden and disabled when uploads are disallowed.
+	 *
+	 * A contributor passes the default edit_posts chat-capability check but
+	 * lacks upload_files, so the widget renders with the controls disabled.
+	 * (Guest access intentionally grants built-in tools, and a subscriber is
+	 * denied the widget entirely, so neither can exercise this path.)
 	 */
 	public function test_chat_shortcode_transcription_controls_hidden_without_upload_capability() {
 		$assistant_id = self::factory()->post->create(
@@ -241,12 +259,12 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			)
 		);
 
-		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $subscriber_id );
+		$contributor_id = self::factory()->user->create( array( 'role' => 'contributor' ) );
+		wp_set_current_user( $contributor_id );
 
 		wp_scripts()->reset();
 
-		$chat_markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="1"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$chat_markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
 
 		$xpath        = $this->get_dom_xpath( $chat_markup );
 		$button_nodes = $xpath->query( '//button[contains(@class, "wp-mcp-ai-chat__transcribe")]' );
@@ -353,7 +371,7 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$data = $response->get_data();
 		$this->assertIsArray( $data );
 		$this->assertArrayHasKey( 'code', $data );
-		$this->assertSame( 'wp_mcp_ai_anonymous_user', $data['code'] );
+		$this->assertSame( 'wp_mcp_ai_missing_credentials', $data['code'] );
 
 		wp_set_current_user( $this->admin_id );
 	}
@@ -391,7 +409,9 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
 			$this->assertArrayHasKey( 'restNonce', $config, 'Instance config should have restNonce key.' );
 			$this->assertNotEmpty( $config['restNonce'], 'restNonce should not be empty.' );
-			$this->assertTrue( wp_verify_nonce( $config['restNonce'], 'wp_rest' ), 'restNonce should be a valid wp_rest nonce.' );
+			// wp_verify_nonce() returns int 1|2 on success, false on failure —
+			// PHPUnit 11's assertTrue() is strict about bool, so use assertNotFalse.
+			$this->assertNotFalse( wp_verify_nonce( $config['restNonce'], 'wp_rest' ), 'restNonce should be a valid wp_rest nonce.' );
 		}
 	}
 
@@ -520,10 +540,12 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that profession title is correctly displayed in the chat label.
+	 * Test that profession title is correctly displayed in the chat header.
 	 *
 	 * This verifies that when a profession test (profession_XXX format) is used,
-	 * the profession's title is displayed in the chat interface, not an empty string.
+	 * the profession's title is displayed in the profile header, not an empty
+	 * string. Note: the .wp-mcp-ai-chat__label element is a fixed screen-reader
+	 * label ("Chat message"); the display title lives in the profile header.
 	 */
 	public function test_profession_title_displayed_in_chat_label() {
 		// Create a test profession with a specific title.
@@ -546,14 +568,15 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		// Verify the title is in the label element.
 		$this->assertStringContainsString( 'wp-mcp-ai-chat__label', $markup, 'Chat label class should be present.' );
 
-		// Parse the HTML to verify the title is in the correct location.
-		$xpath  = $this->get_dom_xpath( $markup );
-		$labels = $xpath->query( '//label[contains(@class, "wp-mcp-ai-chat__label")]' );
-		$this->assertGreaterThan( 0, $labels->length, 'Should find the chat label element.' );
+		// Parse the HTML to verify the title is in the profile header, which is
+		// where production renders the assistant/profession display name.
+		$xpath = $this->get_dom_xpath( $markup );
+		$names = $xpath->query( '//span[contains(@class, "wp-mcp-ai-chat__profile-name")]' );
+		$this->assertGreaterThan( 0, $names->length, 'Should find the profile name element.' );
 
-		if ( $labels->length > 0 ) {
-			$label_text = trim( $labels->item( 0 )->textContent );
-			$this->assertSame( $profession_title, $label_text, 'Label should contain the profession title.' );
+		if ( $names->length > 0 ) {
+			$name_text = trim( $names->item( 0 )->textContent );
+			$this->assertSame( $profession_title, $name_text, 'Profile name should contain the profession title.' );
 		}
 	}
 
@@ -681,9 +704,11 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	 * Ensure embedded-llm-client script is enqueued before chat script when provider is embedded.
 	 */
 	public function test_embedded_provider_script_loading_order() {
-		// Skip if neither Embedded addon nor Pro addon is active.
-		if ( ! class_exists( 'NV_oOS_Embedded' ) && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-			$this->markTestSkipped( 'Embedded provider requires the NV oOS Embedded addon or Pro addon.' );
+		// The embedded provider scripts (webllm, embedded-llm-client) are
+		// registered by the standalone NV oOS Embedded addon, which hooks
+		// wp_mcp_ai_enqueue_embedded_scripts. Skip when that addon is absent.
+		if ( ! class_exists( 'NV_oOS_Embedded' ) ) {
+			$this->markTestSkipped( 'Embedded provider requires the NV oOS Embedded addon.' );
 		}
 
 		// Create an assistant with embedded provider.
