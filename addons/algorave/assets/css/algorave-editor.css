@@ -35,6 +35,21 @@
 	letter-spacing: 0.5px;
 }
 
+/* Raw-eval warning banner (F-AI-01). Hidden by default; shown when the
+   Tone.js engine is enabled via WP_MCP_AI_ALLOW_TONEJS_EVAL and selected. */
+.algorave-eval-warning {
+	padding: 8px 12px;
+	background: #2b1a05;
+	border-bottom: 1px solid #5c3d0e;
+	color: #ffc966;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.algorave-eval-warning[hidden] {
+	display: none;
+}
+
 /* Buttons */
 .algorave-btn {
 	padding: 6px 16px;

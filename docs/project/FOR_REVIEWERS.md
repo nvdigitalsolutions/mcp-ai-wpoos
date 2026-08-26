@@ -106,7 +106,7 @@ The monorepo contains **26 addon directories** under `addons/` (27 entries in th
 | **Graphify** | 0.6.0 | Proprietary | Knowledge graph builder. Entities, relationships, WooCommerce/Wikidata/RSS/SPARQL/CSV drivers. |
 | **Chat SPA** | 0.6.0 | GPLv3 | React chat surface (Vercel AI SDK). Shortcode + Gutenberg block. |
 | **Docs Hub** | 0.3.9 | GPLv3 | React SPA documentation browser (GitBook-style Markdown rendering). |
-| **Algorave** | 1.0.7 | AGPL-3.0 | Live-coding music. Tone.js/Strudel, MIDI export, audio visualization. ⚠️ Has 1 partially-fixed High finding (F-AI-01). |
+| **Algorave** | 1.0.7 | AGPL-3.0 | Live-coding music. Tone.js/Strudel, MIDI export, audio visualization. F-AI-01 accepted with rationale (raw-eval gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` + `edit_posts`; warning UI added). |
 | **Fantasy Football** | 0.1.0 | Proprietary | ESPN/Yahoo Fantasy Sports API. Team management, player research, trade analysis, AI logo generation. |
 | **Embedded** | 0.2.0 | Proprietary | Server-side llama.cpp GGUF inference + client-side WebLLM/WebGPU + P2P WebChat (WebRTC). Voice tool calling, OpenMed healthcare tools, MCP abilities. |
 | **Canvas** | 0.1.0 | Proprietary | Platform-specific Tesseract PDF OCR binaries. |
@@ -150,13 +150,13 @@ The monorepo contains **26 addon directories** under `addons/` (27 entries in th
 
 The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](../operations/compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (19 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.27) resolved 1 Critical + 5 Warnings from code review. **Phase 3 operational security hardening** (July–August 2026, v1.1.38–v1.1.50) added 3 new security classes (audit logger, CSP headers, request guard enhancements), CORS posture signals, error-verbosity control, auth brute-force detection, body-size enforcement, asset-fingerprinting prevention, and OAuth hardening.
 
-### Still open / partially fixed (as of v1.1.52):
+### Closed since the v1.1.52 snapshot (F-AUTHZ-01, F-AI-01, F-CMP-04 — closed in v1.1.64, 2026-08-26):
 | ID | Severity | Status | What |
 |---|---|---|---|
-| F-AUTHZ-01 | High | 🟡 Partial | Webhook routes with `__return_true` permission callbacks — 4 fixed (Telegram, agent-card ×2, Google Chat), remaining 5 are legitimately public GET-only verification endpoints (Twitter CRC, WhatsApp verify, Messenger verify, OPTIONS preflight). Documented with justification comments. |
-| F-AI-01 | High | 🟡 Partial | Algorave live-coding `new Function()` sandboxing. Gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` (default `false`). Strudel engine is the safe default. |
+| F-AUTHZ-01 | High | ✅ Fixed | Webhook routes with `__return_true` permission callbacks — 4 fixed via signature verification (Telegram, agent-card ×2, Google Chat); final sweep added inline justification comments to every remaining legitimately-public route (Twitter CRC GET ×2, WhatsApp verify GET ×2, Messenger verify GET, Telegram Mini App page/validate ×4). |
+| F-AI-01 | High | ⏭️ Accepted | Algorave live-coding `new Function()` sandboxing — accepted with rationale: gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` (default `false`) + `edit_posts`; Strudel engine is the safe default; added raw-eval warning banner + one-time per-session confirm-on-execute. Sandboxed iframe mandatory only if the addon ships on WP.org or Guest Access becomes public. |
 | F-LINT-02 | Low | ✅ Resolved | Pro tree PHPCS blanket exclusion removed. 93% error reduction (1,143 → 82). Remaining errors are parse-error files (8 files) and naming conventions (addons use `NVOOS_*` naming). |
-| F-CMP-04 | Low | 🟡 Partial | Minified JS without source maps — most bundles now have source maps; a few legacy bundles remain. |
+| F-CMP-04 | Low | ✅ Fixed | Minified JS without source maps — final sweep confirmed every plugin-authored bundle has a sibling map (page-agent esbuild emits external maps; tma-markdown regenerated). Third-party vendor bundles exempt per the R-Q-06 Chart.js precedent. |
 | R-T-01 | — | ✅ Resolved | PHPCS re-enabled on `addons/pro/` via PRs #5070, #5078. |
 
 ### Recently fixed (Phase 3 hardening, July–August 2026):
