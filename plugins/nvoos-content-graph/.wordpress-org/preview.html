@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NV oOS Content Graph — WordPress.org Plugin Page Preview</title>
+<style>
+	:root {
+		--accent: #2271b1;
+		--accent-dark: #135e96;
+		--text: #1e1e1e;
+		--text-2: #646970;
+		--border: #dcdcde;
+		--bg: #f0f0f1;
+		--meta-bg: #f6f7f7;
+		--hero-bg: #1d2327;
+	}
+	* { box-sizing: border-box; }
+	body {
+		margin: 0;
+		background: var(--bg);
+		color: var(--text);
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+		font-size: 15px;
+		line-height: 1.6;
+	}
+	a { color: var(--accent); }
+
+	.notice {
+		background: #fff8e5;
+		border-bottom: 1px solid #dba617;
+		color: #614200;
+		font-size: 13px;
+		padding: 8px 16px;
+		text-align: center;
+	}
+
+	.container { max-width: 1080px; margin: 24px auto 48px; padding: 0 16px; }
+
+	.card {
+		background: #fff;
+		border: 1px solid var(--border);
+		border-radius: 10px;
+		overflow: hidden;
+		box-shadow: 0 1px 3px rgba(0,0,0,.06);
+	}
+
+	/* ── Banner: full-bleed, like the live wp.org page ──
+	   wp.org renders <img srcset="…772w, …1544w" sizes="(min-width: 900px) 1544px, 772px">
+	   so on desktop the 1544×500 image fills the whole header edge-to-edge. */
+	.hero { background: var(--hero-bg); }
+	.hero img.banner { width: 100%; height: auto; display: block; }
+
+	/* ── Header: icon + title + byline + Download ── */
+	.plugin-header { padding: 24px; border-bottom: 1px solid var(--border); }
+	.entry-heading-container { display: flex; gap: 20px; align-items: center; justify-content: space-between; }
+	.hgroup { display: flex; gap: 16px; align-items: center; min-width: 0; }
+	.entry-thumbnail img.plugin-icon {
+		width: 64px; height: 64px;
+		border-radius: 10px;
+		border: 1px solid var(--border);
+		background: #fff;
+		display: block;
+	}
+	.plugin-title { margin: 0 0 2px; font-size: 24px; line-height: 1.3; }
+	.byline { color: var(--text-2); font-size: 14px; }
+	.plugin-actions { flex-shrink: 0; }
+	.btn {
+		display: inline-block;
+		background: var(--accent);
+		color: #fff !important;
+		text-decoration: none;
+		font-weight: 600;
+		font-size: 14px;
+		padding: 10px 22px;
+		border-radius: 4px;
+	}
+	.btn:hover { background: var(--accent-dark); }
+
+	/* ── Tabs (Details / Reviews / Installation / Development + Support) ── */
+	.tabbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 0 24px;
+		border-bottom: 1px solid var(--border);
+	}
+	.tabs { display: flex; flex-wrap: wrap; }
+	.tabs button {
+		appearance: none;
+		background: none;
+		border: none;
+		border-bottom: 3px solid transparent;
+		margin-bottom: -1px;
+		padding: 14px 16px;
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--text-2);
+		cursor: pointer;
+	}
+	.tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+	.support-link { font-size: 14px; white-space: nowrap; padding-bottom: 2px; }
+
+	/* ── Layout ── */
+	.layout { display: flex; gap: 32px; padding: 24px; align-items: flex-start; }
+	main { flex: 1; min-width: 0; }
+	aside { width: 300px; flex-shrink: 0; }
+
+	main h2 { font-size: 20px; margin: 0 0 16px; }
+	main h3 { font-size: 16px; margin: 24px 0 8px; }
+	main h4 { font-size: 15px; margin: 18px 0 6px; }
+	main p { margin: 0 0 14px; }
+	main ul, main ol { margin: 0 0 14px; padding-left: 22px; }
+	main li { margin-bottom: 4px; }
+
+	/* Screenshots */
+	.shot { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 24px; background: #fff; }
+	.shot img { width: 100%; height: auto; display: block; }
+	.shot .caption { padding: 10px 14px; border-top: 1px solid var(--border); color: var(--text-2); font-size: 13px; }
+
+	/* FAQ */
+	.faq-item { margin-bottom: 20px; }
+	.faq-item h3 { margin: 0 0 6px; }
+
+	/* Changelog */
+	.ver { margin-bottom: 24px; }
+	.ver h3 { margin: 0 0 2px; }
+	.ver .date { color: var(--text-2); font-size: 13px; margin-bottom: 8px; }
+
+	/* Sidebar */
+	.box { background: var(--meta-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 20px; }
+	.box h3 { margin: 0 0 12px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); }
+	.meta-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+	.meta-row:last-child { border-bottom: none; }
+	.meta-row .k { color: var(--text-2); }
+	.meta-row .v { text-align: right; font-weight: 600; }
+	.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+	.tags span { background: #fff; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; padding: 2px 10px; color: var(--text-2); }
+
+	@media (max-width: 860px) {
+		.layout { flex-direction: column; }
+		aside { width: 100%; }
+		.entry-heading-container { flex-direction: column; align-items: flex-start; }
+		.tabbar { flex-direction: column; align-items: flex-start; gap: 4px; }
+	}
+</style>
+</head>
+<body>
+
+<div class="notice">Preview — approximate rendering of the wordpress.org plugin page using the local assets. Not the live page.</div>
+
+<div class="container">
+	<div class="card">
+
+		<!-- Banner: full-bleed, mirrors wp.org's plugin-banner markup -->
+		<div class="hero">
+			<img class="banner"
+			     src="assets/banner-772x250.png"
+			     srcset="assets/banner-772x250.png 772w, assets/banner-1544x500.png 1544w"
+			     sizes="(min-width: 900px) 1544px, 772px"
+			     alt="NV oOS Content Graph — banner">
+		</div>
+
+		<header class="plugin-header">
+			<div class="entry-heading-container">
+				<div class="hgroup">
+					<div class="entry-thumbnail">
+						<img class="plugin-icon"
+						     src="assets/icon-256x256.png"
+						     srcset="assets/icon-128x128.png, assets/icon-256x256.png 2x"
+						     alt="NV oOS Content Graph icon">
+					</div>
+					<div>
+						<h1 class="plugin-title">NV oOS Content Graph</h1>
+						<span class="byline">By <a href="https://profiles.wordpress.org/nvdigitalsolutions/" target="_blank" rel="noopener">NV Digital Solutions</a></span>
+					</div>
+				</div>
+				<div class="plugin-actions">
+					<a class="btn" href="https://downloads.wordpress.org/plugin/nvoos-content-graph.1.0.3.zip" target="_blank" rel="noopener">Download</a>
+				</div>
+			</div>
+		</header>
+
+		<div class="tabbar">
+			<nav class="tabs">
+				<button class="active" data-tab="details">Details</button>
+				<button data-tab="reviews">Reviews</button>
+				<button data-tab="installation">Installation</button>
+				<button data-tab="developers">Development</button>
+			</nav>
+			<a class="support-link" href="https://wordpress.org/support/plugin/nvoos-content-graph/" target="_blank" rel="noopener">Support</a>
+		</div>
+
+		<div class="layout">
+			<main>
+
+				<section class="tab-panel" data-panel="details">
+
+					<h2>Description</h2>
+					<p>NV oOS Content Graph transforms your WordPress content into a visual knowledge graph — organized, searchable, and interactive. Every post, page, category, tag, and author becomes a node; every relationship becomes an edge.</p>
+					<p><strong>No API keys. No AI required.</strong> The core graph engine runs entirely on your WordPress server using your existing content. Optional remote sources (like Wikidata) are opt-in.</p>
+
+					<h3>What You Get</h3>
+					<h4>One-Click Graph Builder</h4>
+					<p>Click "Build Graph" and ~10-30 seconds later, your entire site becomes a visual graph. Supports incremental rebuilds and scheduled cron updates.</p>
+					<h4>Interactive Graph Explorer</h4>
+					<p>Explore your content visually using Cytoscape.js. Search for nodes by label, click for details, zoom and pan. Color-coded by content type (posts, pages, terms, users).</p>
+					<h4>Content Gap Analysis</h4>
+					<p>Discover orphan content (no internal links), thin topic clusters, and missing link opportunities. Generate actionable content strategy recommendations.</p>
+					<h4>Six Export Formats</h4>
+					<p>Download your graph as JSON (NetworkX), GraphML (Gephi/yEd), CSV, Neo4j Cypher, Obsidian vault, or standalone HTML page.</p>
+					<h4>Schema.org JSON-LD</h4>
+					<p>Automatic structured data injection for SEO — taxonomy terms as <code>about</code> and internal links as <code>relatedLink</code>.</p>
+					<h4>Related Content Widget</h4>
+					<p>Appends graph-neighbor posts to your content based on knowledge graph proximity.</p>
+					<h4>REST API</h4>
+					<p>Full programmatic access with 14 endpoints. Read endpoints require the <code>read</code> capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require <code>manage_options</code>.</p>
+					<h4>Extensible Tool System</h4>
+					<p>14 built-in tools for graph operations: query, search, traverse, analyze, export. Addon plugins can register their own tools.</p>
+
+					<h3>Addon Ecosystem (all optional)</h3>
+					<ul>
+						<li><strong>nvoos-content-graph-ai</strong> — AI chat assistant with 13 AI providers, AI tools, embeddings, RAG, and agent memory</li>
+						<li><strong>nvoos-content-graph-ai-platform</strong> — agents, skills, slash-commands, professions, A2A, ACP, and federation</li>
+					</ul>
+
+					<h2>Screenshots</h2>
+					<div class="shot"><a href="assets/screenshot-1.png" target="_blank"><img src="assets/screenshot-1.png" alt="Screenshot 1"></a><div class="caption">1. Knowledge Graph — main explorer view</div></div>
+					<div class="shot"><a href="assets/screenshot-2.png" target="_blank"><img src="assets/screenshot-2.png" alt="Screenshot 2"></a><div class="caption">2. Settings — build schedule, auto-rebuild, and display options</div></div>
+					<div class="shot"><a href="assets/screenshot-3.png" target="_blank"><img src="assets/screenshot-3.png" alt="Screenshot 3"></a><div class="caption">3. Remote Sources — connect external data (Wikidata, REST APIs, RSS)</div></div>
+					<div class="shot"><a href="assets/screenshot-4.png" target="_blank"><img src="assets/screenshot-4.png" alt="Screenshot 4"></a><div class="caption">4. Sources — choose which post types and content types are indexed</div></div>
+					<div class="shot"><a href="assets/screenshot-5.png" target="_blank"><img src="assets/screenshot-5.png" alt="Screenshot 5"></a><div class="caption">5. Frontend embed — the [nvoos_graph] shortcode on any page</div></div>
+					<div class="shot"><a href="assets/screenshot-6.png" target="_blank"><img src="assets/screenshot-6.png" alt="Screenshot 6"></a><div class="caption">6. Graph Explorer — interactive Cytoscape.js visualization with search and node details</div></div>
+
+					<h2>FAQ</h2>
+					<div class="faq-item"><h3>Do I need an API key?</h3>
+						<p>No. The core graph engine works with zero external dependencies. AI features require their respective addon plugins and API keys.</p></div>
+					<div class="faq-item"><h3>How long does a build take?</h3>
+						<p>~10-30 seconds for a typical WordPress site (100-500 posts). Large sites (10,000+ posts) may take 1-2 minutes.</p></div>
+					<div class="faq-item"><h3>Can I build incrementally?</h3>
+						<p>Yes. Enable "Incremental Builds" in settings to only process content changed since the last build.</p></div>
+					<div class="faq-item"><h3>Is this compatible with my theme?</h3>
+						<p>Yes. The graph explorer, shortcode, related content widget, and schema.org injection work with any theme. The shortcode <code>[nvoos_graph]</code> embeds wherever you place it.</p></div>
+					<div class="faq-item"><h3>Does it work with custom post types?</h3>
+						<p>Yes. Any public post type (including JetEngine CPTs) is automatically detected. You can configure which post types to index in Settings.</p></div>
+					<div class="faq-item"><h3>Does the plugin connect to external services?</h3>
+						<p>The core graph engine runs entirely on your server. The optional "Resolve External Entity" tool queries Wikidata (wikidata.org) when you explicitly ask it to look up a QID. Remote source drivers connect to user-configured endpoints (REST APIs, RSS feeds, SPARQL, etc.) only when you set them up in Settings.</p></div>
+					<div class="faq-item"><h3>Does it work on multisite?</h3>
+						<p>Yes. The plugin supports WordPress multisite with per-site configuration.</p></div>
+					<div class="faq-item"><h3>What happens if I deactivate?</h3>
+						<p>Cron schedules are cleared. Your data stays intact — reactivate at any time.</p></div>
+					<div class="faq-item"><h3>What happens if I uninstall?</h3>
+						<p>All custom tables and options are removed (see <code>uninstall.php</code>). Export your graph first if you want to keep it.</p></div>
+
+				</section>
+
+				<section class="tab-panel" data-panel="reviews" hidden>
+					<h2>Reviews</h2>
+					<p>No reviews yet. Be the first to review this plugin.</p>
+				</section>
+
+				<section class="tab-panel" data-panel="installation" hidden>
+					<h2>Installation</h2>
+					<ol>
+						<li>Upload the <code>nvoos-content-graph</code> folder to <code>/wp-content/plugins/</code></li>
+						<li>Activate the plugin through the 'Plugins' menu</li>
+						<li>Go to <strong>Knowledge Graph → Settings</strong></li>
+						<li>Click "Build Graph"</li>
+					</ol>
+					<p>That's it. Your content is now a knowledge graph.</p>
+				</section>
+
+				<section class="tab-panel" data-panel="developers" hidden>
+					<h2>Contributors &amp; Developers</h2>
+					<p><strong>NV oOS Content Graph</strong> is open source software licensed under GPL-3.0-or-later. It is developed by <a href="https://profiles.wordpress.org/nvdigitalsolutions/" target="_blank" rel="noopener">NV Digital Solutions</a>.</p>
+					<p>Source on GitHub: <a href="https://github.com/nvdigitalsolutions/nvoos-content-graph" target="_blank" rel="noopener">nvdigitalsolutions/nvoos-content-graph</a>.</p>
+
+					<h2>Changelog</h2>
+					<div class="ver">
+						<h3>1.0.3</h3>
+						<div class="date">August 20, 2026</div>
+						<ul>
+							<li>Encrypt remote-source credentials (AES-256-GCM) before storing them</li>
+							<li>Fix <code>[nvoos_graph]</code> shortcode and block embed (invalid inline script)</li>
+							<li>Wire the Scheduled Rebuild setting to WP-Cron (new "Never" option)</li>
+							<li>Fix the admin Test button and REST /test endpoint (now use per-source credentials)</li>
+							<li>Reject unknown drivers and sanitize config in both source-creation paths</li>
+							<li>Re-validate redirects against the SSRF guard</li>
+							<li>Preserve external_id, source_slug, confidence, and expires_at on node updates</li>
+							<li>Remote Sources modal now renders schema field types correctly</li>
+							<li>Remove the unregistered Graph Explorer admin page (embedded in Settings)</li>
+							<li>Ship the Composer autoloader intact in distribution builds</li>
+							<li>Restrict tool-level auto-ingest to administrators</li>
+							<li>Add WordPress.org screenshot assets (.wordpress-org/assets)</li>
+						</ul>
+					</div>
+					<div class="ver">
+						<h3>1.0.2</h3>
+						<div class="date">August 18, 2026</div>
+						<ul>
+							<li>Renamed from "NV oOS Graphify" to "NV oOS Content Graph" (new slug <code>nvoos-content-graph</code>)</li>
+							<li>Hardened Schema.org JSON-LD output against script-tag breakout</li>
+							<li>Restricted REST <code>/resolve</code> auto-ingest to administrators</li>
+							<li>Replaced inline admin JavaScript with enqueued asset</li>
+							<li>Added external-services disclosure (Wikidata terms and privacy policy)</li>
+							<li>Field-map validation is now self-contained (no legacy addon dependency)</li>
+							<li>Embeddings reindexing bridges to the AI addon's embedding service</li>
+						</ul>
+					</div>
+					<div class="ver">
+						<h3>1.0.0</h3>
+						<div class="date">June 5, 2026</div>
+						<ul>
+							<li>Initial standalone release</li>
+							<li>PSR-4 architecture: <code>NvoosContentGraph\</code> namespace</li>
+							<li>5 custom database tables with dbDelta() migrations</li>
+							<li>14 built-in tools implementing <code>NvoosContentGraph\Contracts\Tool</code></li>
+							<li>14 REST API endpoints at <code>/wp-json/nvoos-content-graph/v1/</code></li>
+							<li>Cytoscape.js graph explorer (admin + frontend)</li>
+							<li>Tabbed settings page with per-tab sanitisation</li>
+							<li>6 export formats (JSON, GraphML, CSV, Neo4j, Obsidian, HTML)</li>
+							<li>Schema.org JSON-LD injection for SEO</li>
+							<li>Related content widget based on graph proximity</li>
+							<li>Louvain community detection + content gap analysis</li>
+							<li><code>[nvoos_graph]</code> shortcode + Gutenberg block</li>
+							<li>JetEngine Custom Content Type (CCT) support</li>
+							<li>WordPress multisite compatible</li>
+							<li>PHP 8.1+, WordPress 6.5+, GPL-3.0-or-later</li>
+						</ul>
+					</div>
+				</section>
+
+			</main>
+
+			<aside>
+				<div class="box">
+					<h3>Plugin Information</h3>
+					<div class="meta-row"><span class="k">Version</span><span class="v">1.0.3</span></div>
+					<div class="meta-row"><span class="k">Last updated</span><span class="v">August 20, 2026</span></div>
+					<div class="meta-row"><span class="k">Active installations</span><span class="v">New plugin</span></div>
+					<div class="meta-row"><span class="k">WordPress Version</span><span class="v">6.5 or higher</span></div>
+					<div class="meta-row"><span class="k">Tested up to</span><span class="v">7.1</span></div>
+					<div class="meta-row"><span class="k">PHP Version</span><span class="v">8.1 or higher</span></div>
+					<div class="meta-row"><span class="k">License</span><span class="v">GPL-3.0-or-later</span></div>
+				</div>
+				<div class="box">
+					<h3>Tags</h3>
+					<div class="tags">
+						<span>knowledge graph</span>
+						<span>content visualization</span>
+						<span>cytoscape</span>
+						<span>content strategy</span>
+						<span>semantic web</span>
+					</div>
+				</div>
+				<div class="box">
+					<h3>Related Plugins</h3>
+					<p style="font-size:13px;margin:0;">
+						<a href="https://wordpress.org/plugins/nvoos-content-graph-ai/" target="_blank" rel="noopener">NV oOS Content Graph AI</a><br>
+						<a href="https://wordpress.org/plugins/nvoos-content-graph-ai-platform/" target="_blank" rel="noopener">NV oOS Content Graph AI Platform</a>
+					</p>
+				</div>
+			</aside>
+		</div>
+
+	</div>
+</div>
+
+<script>
+	(function () {
+		var tabs = document.querySelectorAll('.tabs button');
+		var panels = document.querySelectorAll('.tab-panel');
+		tabs.forEach(function (btn) {
+			btn.addEventListener('click', function () {
+				tabs.forEach(function (t) { t.classList.toggle('active', t === btn); });
+				panels.forEach(function (p) { p.hidden = p.dataset.panel !== btn.dataset.tab; });
+				window.scrollTo({ top: document.querySelector('.card').offsetTop, behavior: 'smooth' });
+			});
+		});
+	})();
+</script>
+
+</body>
+</html>
