@@ -77,13 +77,15 @@ final class CoreBridge {
 		$costs = new CostCalculator();
 		$sse   = class_exists( 'WP_MCP_AI_WordPress_Flush' )
 			? new SseHandler( new \WP_MCP_AI_WordPress_Flush() )
-			: new SseHandler( new class implements \Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface {
-				public function flushPlatformBuffers(): void {
-					if ( \function_exists( 'wp_ob_end_flush_all' ) ) {
-						\wp_ob_end_flush_all();
+			: new SseHandler(
+				new class() implements \Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface {
+					public function flushPlatformBuffers(): void {
+						if ( \function_exists( 'wp_ob_end_flush_all' ) ) {
+							\wp_ob_end_flush_all();
+						}
 					}
 				}
-			} );
+			);
 
 		$this->chat = new ChatOrchestrator(
 			$this->tools,
@@ -192,6 +194,47 @@ final class CoreBridge {
 		}
 
 		$this->tools->notifyRegistered();
+	}
+
+	// ─── Graph tool bridging ────────────────────────────────────────
+
+	/**
+	 * Bridge the parent plugin's graph tools into the core tool registry.
+	 *
+	 * The parent plugin registers its built-in tools during the
+	 * `nvoos_content_graph/register_tools` action (fired at
+	 * plugins_loaded priority 10 — after this addon boots at priority 5).
+	 * Hooking at priority 20 guarantees every graph tool is present when
+	 * we wrap it, making them resolvable and executable by the agentic
+	 * chat loop.
+	 *
+	 * @return void
+	 */
+	public function registerGraphToolBridge(): void {
+		\add_action(
+			'nvoos_content_graph/register_tools',
+			function ( \NvoosContentGraph\ToolRegistry $parentRegistry ): void {
+				foreach ( $parentRegistry->all() as $slug => $tool ) {
+					// AI tools are registered directly into the core registry
+					// by registerAiTools(); never wrap them twice.
+					if ( $this->tools->has( $slug ) ) {
+						continue;
+					}
+
+					// The has() guard above makes a duplicate registration
+					// impossible; should one still slip through, the
+					// exception is non-fatal for the chat loop.
+					try {
+						$this->tools->register( new Adapter\GraphToolAdapter( $tool ) );
+					} catch ( \RuntimeException $e ) {
+						\do_action( 'nvoos_content_graph_ai_graph_tool_bridge_skipped', $slug, $e->getMessage() );
+					}
+				}
+
+				$this->tools->notifyRegistered();
+			},
+			20
+		);
 	}
 
 	// ─── Provider listing helper (backward compat) ─────────────────

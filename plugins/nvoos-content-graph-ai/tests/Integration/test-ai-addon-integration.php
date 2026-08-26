@@ -68,19 +68,19 @@ class Test_AiAddon_Integration extends \WP_UnitTestCase {
 	 * Verify ProviderRouter has registered providers.
 	 */
 	public function test_provider_router_has_providers(): void {
-		$bridge = CoreBridge::instance();
+		$bridge    = CoreBridge::instance();
 		$providers = $bridge->providers;
 
 		$this->assertInstanceOf( ProviderRouter::class, $providers );
 
-		$list = $providers->listProviders();
+		$list = $providers->getRegisteredSlugs();
 		$this->assertIsArray( $list );
 		$this->assertNotEmpty( $list, 'At least one provider should be registered' );
 
 		// Core providers that should always be present.
 		$expected = array( 'openai', 'gemini', 'anthropic', 'ollama' );
 		foreach ( $expected as $slug ) {
-			$this->assertArrayHasKey( $slug, $list, "Provider '$slug' should be registered" );
+			$this->assertContains( $slug, $list, "Provider '$slug' should be registered" );
 		}
 	}
 
@@ -100,7 +100,7 @@ class Test_AiAddon_Integration extends \WP_UnitTestCase {
 		do_action( 'rest_api_init' );
 
 		$routes = rest_get_server()->get_routes();
-		$ns = 'nvoos-content-graph/v1';
+		$ns     = 'nvoos-content-graph/v1';
 
 		$this->assertArrayHasKey(
 			'/' . $ns . '/ai/chat',
@@ -116,7 +116,7 @@ class Test_AiAddon_Integration extends \WP_UnitTestCase {
 		do_action( 'rest_api_init' );
 
 		$routes = rest_get_server()->get_routes();
-		$ns = 'nvoos-content-graph/v1';
+		$ns     = 'nvoos-content-graph/v1';
 
 		$this->assertArrayHasKey(
 			'/' . $ns . '/ai/tools',
@@ -129,15 +129,17 @@ class Test_AiAddon_Integration extends \WP_UnitTestCase {
 	 * Verify graph tools are registered in the core tool registry.
 	 */
 	public function test_graph_tools_registered(): void {
-		// Trigger tool registration hook.
-		do_action( 'nvoos_content_graph/register_tools', \NvoosContentGraph\Plugin::instance()->getToolRegistry() );
+		// Trigger tool registration hook (idempotent — the bridge skips
+		// slugs that are already registered).
+		do_action( \NvoosContentGraph\Schema::ACTION_REGISTER_TOOLS, \NvoosContentGraph\Plugin::instance()->getToolRegistry() );
 
-		// AI tools are registered via the AI addon.
+		// AI tools are registered via the AI addon into the core registry.
 		$bridge = CoreBridge::instance();
-		$tools  = $bridge->tools->getTools();
+		$tools  = $bridge->tools->all();
 
 		$this->assertIsArray( $tools );
 		$this->assertNotEmpty( $tools, 'AI tools should be registered' );
+		$this->assertArrayHasKey( 'ai_summarize_text', $tools, 'AI tools should include ai_summarize_text' );
 	}
 
 	/**
@@ -174,17 +176,20 @@ class Test_AiAddon_Integration extends \WP_UnitTestCase {
 
 		$this->assertNotNull( $memory );
 
-		// Store a test memory.
-		$result = $memory->store(
+		// Store a test memory — signature: store( sessionId, summary,
+		// metadata, ttlSeconds ) returning the node id (or false).
+		$nodeId = $memory->store(
+			'test-session-' . uniqid(),
 			'Integration test discussed graph build strategy',
-			array( 'source' => 'test', 'topic' => 'graph' ),
-			1,   // TTL in seconds
-			'test-session-' . uniqid()
+			array(
+				'source' => 'test',
+				'topic'  => 'graph',
+			),
+			60 // TTL in seconds.
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertTrue( $result['success'], 'Memory store should succeed' );
+		$this->assertIsString( $nodeId, 'Memory store should return a node id' );
+		$this->assertStringStartsWith( 'memory_', $nodeId, 'Memory node ids use the memory_ prefix' );
 	}
 
 	/**
