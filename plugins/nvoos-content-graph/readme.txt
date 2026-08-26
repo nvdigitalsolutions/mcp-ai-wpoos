@@ -133,11 +133,12 @@ Both libraries are served locally from `assets/vendor/` and never loaded from th
 
 == Screenshots ==
 
-1. Graph Explorer — interactive Cytoscape.js visualization with search and node details
+1. Knowledge Graph — main explorer view
 2. Settings — build schedule, auto-rebuild, and display options
 3. Remote Sources — connect external data (Wikidata, REST APIs, RSS)
 4. Sources — choose which post types and content types are indexed
 5. Frontend embed — the [nvoos_graph] shortcode on any page
+6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
 
