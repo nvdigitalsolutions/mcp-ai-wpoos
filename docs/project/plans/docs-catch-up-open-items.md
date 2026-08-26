@@ -52,7 +52,6 @@ Open items recorded in docs **outside** the catch-up plans (audits, TODO files, 
 | [#5970](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5970) | `docs/project/plans/CONVERSATION-IMPORT-CCT-IMPLEMENTATION-PLAN.md` §9 | Import size-cap default; memory-mining toggle UI + `count_imported()` widget |
 | [#5971](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5971) | `docs/project/audits/2026-04/remediation-roadmap.md` | R-T-01 (PHPCS pro close-out), R-T-03 (CodeQL security-extended), R-A-03 (upload-validator decide-or-close), R-Q-04 (120 `innerHTML` audit), R-Q-05 (pro nonce sweep) |
 | [#5972](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5972) | `docs/operations/security/SECURITY_POSTURE.md` | F-AUTHZ-01 (remaining `__return_true` justifications), F-AI-01 (Algorave sandboxed iframe + strict CSP), F-CMP-04 (legacy source-map sweep) |
-| [#5973](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5973) | `docs/project/proposals/proposals-retirement-log.md` | Ralph Wiggum CCT Orchestration — decide implement or defer |
 | [#5974](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5974) | `docs/project/plans/chat-spa-v2-phase1-implementation.md` | 10 remaining SPA gaps (GAP-05, 07, 08, 09, 10, 15–19) |
 
 ### Proposals directory (verified 2026-08-26)
@@ -80,6 +79,7 @@ Open items recorded in docs **outside** the catch-up plans (audits, TODO files, 
 | Media Worker version drift (3.0.0/3.1.0 → 3.2.0) | v1.1.59 pass drift | v1.1.59 pass | Media Worker keeps its own 3.2.0 track |
 | Stale `.context/testing.md` "March 2026" stamp | v1.1.63 pass drift | v1.1.63 pass | stamped + sweep/exit-trap notes |
 | Stale `.context/settings-storage.md` "July 2026" stamp | v1.1.64 pass drift | v1.1.64 pass | stamped + log-buffer compaction note |
+| [#5973](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5973) Ralph Wiggum CCT Orchestration — decide implement or defer | filed 2026-08-26 | closed 2026-08-26 | **Implemented** (shipped v1.1.29): 13 orchestration tools, 4 Ralph CCT schemas, PM-toolkit native integration. Decision recorded in `proposals-retirement-log.md` entry #6 + `PROPOSALS_COMPLETION_STATUS.md` |
 
 ---
 
