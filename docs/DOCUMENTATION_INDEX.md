@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 23, 2026
-**Plugin Version:** 1.1.63
+**Last Updated:** August 26, 2026
+**Plugin Version:** 1.1.64
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,7 +9,7 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
-> **AUGUST 23, 2026 UPDATE (v1.1.63):** ARTIFACT EVOLUTION PHASES A–G — THE CONTINUAL HARNESS EVOLVER + META-HARNESS BECOME A GATED DARWINIAN SELF-IMPROVEMENT LOOP FOR SKILLS, PROMPTS, AND ROLES (POPULATIONS, FITNESS-WEIGHTED SELECTION, FAILURE REPLAY + POST-MUTATION VERIFICATION, PRE-COMMIT ADMISSION GATE, HOLDOUT-GATED DEPLOYMENT WITH SHADOW A/B + DRIFT ROLLBACK, GOVERNOR WITH HUMAN APPROVAL QUEUE + LINEAGE GRAPHS) — ALL OPT-IN, SWITCHES IN SETTINGS → ORCHESTRATION LAYER. PRO: NEW ADDONS ADMIN PAGE WITH ONE-CLICK INSTALL FOR STANDALONE ADDONS. CHAT SAVES OFFLOAD JSON STRINGIFY TO A BROWSER STORAGE WORKER ABOVE A 10,000-CHAR THRESHOLD. FIXED: DEEPSEEK 400S ON EMPTY TOOL SCHEMAS, OKF SKILL-KNOWLEDGE CONFORMANCE (TYPE: SKILL FRONTMATTER), PRO SPA v2 SLASH-COMMAND COMPOSER, TEST-SUITE EXIT TRAPS (BIN/SWEEP-TESTS.PHP). TOOL COUNT UNCHANGED: ~303 BASE + ~1,249 PRO (~1,552 TOTAL). UPDATED DOCS: PROPOSAL 007 + IMPLEMENTATION PLAN, PROPOSAL 032 IMPLEMENTATION PLAN, EU AI ACT SELF-EVOLUTION GOVERNANCE, TEST-SUITE REMAINING FIXES PLAN, TOOL REFERENCE.
+> **AUGUST 26, 2026 UPDATE (v1.1.64):** GOOGLE CALENDAR CONNECTION & SHARED GOOGLE SERVICES — A NEW SHARED FOUNDATION IN `includes/google/` (OAUTH SERVICE, CALENDAR API V3 CLIENT, SCOPE REGISTRY, CREDENTIAL RESOLVER, SYNC + PUSH) REPLACES FOUR DRIFTED GOOGLE OAUTH COPIES, WITH A `google_calendar` CONNECTION TYPE ON BOTH CONNECTION SURFACES AND SIX NEW PRO GOOGLE-WORKSPACE TOOLS. COMPOSIO CONNECT GAINS A VERIFIED ACCOUNT-HEALTH ENGINE + `composio_manage_accounts` LIFECYCLE TOOL PLUS HARDENING ACROSS AUTH CONFIG, LISTINGS, APP REMOVAL, AND PROXIED PROVIDER FAILURES. LOG HYGIENE: TOOL-DECLARED NON-LOGGABLE RESULT FIELDS, SECRET URL QUERY-PARAM REDACTION, AND ROLLING LOG-BUFFER COMPACTION. FIXED: VALIDATED-TOOL VALIDATION RESTORED ON SYMFONY 5.4, MCP JSON-RPC ERROR ENVELOPES + DIAGNOSTICS PAGE, PRO SPA v2 CONVERSATION SYNC, VISION-TIME TOUTS. TOOL COUNT: ~303 BASE + ~1,256 PRO (~1,559 TOTAL). UPDATED DOCS: GOOGLE CALENDAR ARCHITECTURE + API REFERENCE + IMPLEMENTATION PLAN, TOOL REFERENCE.
 >
 > **AUGUST 21, 2026 UPDATE (v1.1.61):** AGENT IDENTITY BRIDGING IN MEMORY STORE & RECALL — NEW `WP_MCP_AI_Agent_Identity_Resolver` CANONICALISES VIRTUAL AGENT KEYS TO THE ASSISTANT POST ID; CHAT-MEMORY RECALL MERGES ALIAS BUCKETS (`stored_under` STAMPS, `merged_sources`); MEMORY DRAWERS GAIN SCOPE CHIPS, AGENT-ID DIAGNOSTIC, SHOW-ALL-SCOPES TOGGLE, AND STORE-TRIGGERED REFRESH. OKF SKILL-KNOWLEDGE BUNDLE NOW AUTO-GENERATED FROM BUNDLED SKILLS (BOOTSTRAP + REINSTALL) — OKF TOOLS WORK OUT OF THE BOX. FIXES: `undici` PINNED TO ^7.29.0 (JSDOM COMPAT, CVE FIXES RETAINED) + CONTENT-GRAPH CI CHECKSUM DRIFT. NVOOS-CONTENT-GRAPH SHIPS A WP.ORG REVIEW REPLY + DETAILED REPORT. UPDATED DOCS: `docs/features/memory/chat-client-integration.md`, `docs/features/okf-integration.md`.
 >
@@ -623,7 +623,19 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.63: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API, Artifact Evolution, Chat Web Workers, Addons Installer
+## 🆕 August 2026 — v1.1.55–v1.1.64: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API, Artifact Evolution, Chat Web Workers, Addons Installer, Google Calendar Connection, Composio Account Health, Log Hygiene & Non-Loggable Fields, Vision Timeouts
+
+### New and updated documents (August 26, 2026, v1.1.64)
+
+- **[docs/developer/architecture/integrations/google-calendar-connection.md](developer/architecture/integrations/google-calendar-connection.md)** ⭐ **NEW** — Google Calendar connection architecture: the shared `includes/google/` foundation (OAuth service, Calendar v3 client, scope registry, credential resolver, sync + push), both connection surfaces, and the six new Pro google-workspace tools. (August 26, 2026)
+- **[docs/reference/google-calendar-api-v3.md](reference/google-calendar-api-v3.md)** ⭐ **NEW** — Google Calendar API v3 reference for the reworked calendar tool surface. (August 26, 2026)
+- **[docs/developer/implementation-plan-google-calendar-connection.md](developer/implementation-plan-google-calendar-connection.md)** ⭐ **NEW** — task-level implementation plan for the Google Calendar connection. (August 26, 2026)
+- **[docs/reference/tools/tool-reference.md](reference/tools/tool-reference.md)** ⭐ **UPDATED** — Google Calendar tool entries + reference header reconciled for v1.1.64. (August 26, 2026)
+- **[docs/project/plans/v1.1.64-docs-catch-up.md](project/plans/v1.1.64-docs-catch-up.md)** ⭐ **NEW** — v1.1.64 docs & release catch-up plan. (August 26, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.64 highlights + latest updates (Google Calendar connection, Composio account health, log hygiene, non-loggable fields, vision timeouts). (August 26, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.64] section with PR-level detail. (August 26, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.64 + changelog entry. (August 26, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.64 entry. (August 26, 2026)
 
 ### New and updated documents (August 23, 2026, v1.1.63)
 

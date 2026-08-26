@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.63
+Stable tag: 1.1.64
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.64 - August 26, 2026 =
+
+Google Calendar connection & shared Google services (Base + Pro): a new shared Google foundation in includes/google/ (OAuth service, Calendar API v3 client, scope registry, credential resolver, sync and push) replaces four drifted copy-pasted Google OAuth flows, and a new google_calendar connection type appears on both connection surfaces (base Settings → Integrations and Pro Remote Sites). Six new Pro tools in the google-workspace toolkit (list_google_calendars, list_google_calendar_events, update_google_calendar_event, delete_google_calendar_event, check_google_calendar_availability, quick_add_google_calendar_event) join a reworked create_google_calendar_event (scope-enforced writes, Meet conferencing) and a real sync_google_calendar. Composio Connect hardening: a verified account-health engine with live probe discovery and a new composio_manage_accounts tool (validate/reconnect/delete/prune), in-place reconnect, identity-bound execution, nonce-gated app removal, deterministic zero-argument probes, and proxied provider failures now surface as real errors with reconnect guidance. Tool results can now declare non-loggable fields (new WP_MCP_AI_Tool_Sensitive_Result_Interface) and credential-bearing URL query params are redacted from every logged string. Log buffers gained per-entry context budgets plus Data Management compact/delete actions. Fixed: validated-tool argument validation silently skipped on Symfony 5.4 (constraint loading restored), MCP JSON-RPC error envelopes reachable again and the diagnostics page re-wired, Pro SPA v2 conversation/assistant sync, vision tools now accept a 5–300s timeout (cURL error 28 on large images), WP_Error envelope drift and cron/memory/elementor tool bugs, and test-env registration follow-ups. Tool count: ~303 base + ~1,256 Pro (~1,559 total; live registry authoritative).
 
 = 1.1.63 - August 23, 2026 =
 

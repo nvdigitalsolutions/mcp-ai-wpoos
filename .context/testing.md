@@ -1,7 +1,9 @@
 # NV oOS Testing Patterns
 
 > **GSD Context File** — Load this when writing or reviewing PHPUnit tests.
-> Last reviewed: August 23, 2026 (v1.1.63).
+> Last reviewed: August 26, 2026 (v1.1.64).
+>
+> **New in v1.1.64:** PRs #5931/#5935 — Pro admin classes load directly in AJAX suites, AJAX dispatch is hardened against leaked state, WordPress.com staging APIs are registered, WP All Import no longer kills the test bootstrap, and moved-file `require`s point at their current paths. PR #5960 — validated-tool tests now actually validate: constraint loading was silently skipped on Symfony 5.4 (`enableAnnotationMapping( true )`, not `enableAttributeMapping`), so suites that should fail on invalid input were running against unvalidated paths; keep constraint coverage real when touching the validator service. PR #5965 — envelope assertions must expect the canonical success array or `WP_Error` (never `success => false`).
 >
 > **New in v1.1.63 (PR #5929):** `bin/sweep-tests.php` sweeps every test file in parallel (6 workers, 180s/file cap, `--report` output) to surface exit-trap and drift failures. AJAX test contracts live in `tests/bootstrap.php` (see `tests/AJAX_TESTS_README.md`): admin AJAX hooks are re-registered per test, and handlers that `die()`/`exit()` directly are guarded with `WP_MCP_AI_TESTS_RUNNING` seams that throw a catchable exception instead. SSE and Veo polling loops honor `wp_mcp_ai_sse_job_max_polls` / `wp_mcp_ai_sse_job_poll_interval` / `wp_mcp_ai_veo_poll_max_attempts` / `wp_mcp_ai_veo_poll_interval` filters so tests can bound them. Remaining suite work is tracked in [`docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`](../docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md) — prefer `markTestSkipped()` with an explicit reason over deleting assertions, and never weaken security assertions to make a test pass.
 

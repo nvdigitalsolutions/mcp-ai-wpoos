@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.63
-**Release Date:** 2026-08-23
+**Version:** 1.1.64
+**Release Date:** 2026-08-26
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.63 Highlights:** Artifact Evolution Phases A–G turn the Continual Harness Evolver + Meta-Harness into a gated Darwinian self-improvement loop — populations of competing skill/prompt/role variants with fitness-weighted selection, failure-case replay and post-mutation verification, a pre-commit admission gate (contamination control), holdout-gated deployment with shadow A/B and drift rollback, and a governor with human approval queue + lineage graphs, all opt-in (default off) and now manageable from **Settings → Orchestration Layer**. Pro gains an **Addons admin page** with one-click install for standalone addons. Chat saves offload JSON stringify to a browser storage worker above a 10,000-char threshold. Fixed: DeepSeek 400s on empty tool schemas, OKF skill-knowledge conformance, Pro SPA v2 slash commands, and test-suite exit traps with a new parallel sweep harness.
+**🆕 v1.1.64 Highlights:** Google Calendar gets a real connection — a shared Google foundation (`includes/google/`) with OAuth, Calendar API v3, scope enforcement, sync and push replaces four drifted OAuth copies, and six new Pro google-workspace tools (list calendars/events, update, delete, check availability, quick add) join a reworked event creation. Composio Connect gains a verified account-health engine (live probe discovery, one-click verify/reconnect, a new `composio_manage_accounts` lifecycle tool) plus hardening across auth config, listings, app removal, and proxied provider failures. Tool results can declare non-loggable fields, credential-bearing URL query params are redacted from logs, and log buffers get byte-budget compaction. Fixed: validated-tool validation restored on Symfony 5.4, MCP JSON-RPC error envelopes, Pro SPA v2 conversation sync, and vision-tool timeouts.
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -149,6 +149,14 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.64)
+
+- 📅 **Google Calendar Connection & Shared Google Services.** New `includes/google/` foundation (OAuth service, Calendar v3 client, scope registry, credential resolver, sync + push) replaces four copy-pasted and drifted Google OAuth flows; a `google_calendar` connection type lands on both connection surfaces. Six new Pro tools in `addons/pro/includes/tools/google-workspace/` — `list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability` (freeBusy), `quick_add_google_calendar_event` — plus a reworked `create_google_calendar_event` (scope-enforced writes, Meet links) and a `sync_google_calendar` that actually syncs. See [`docs/developer/architecture/integrations/google-calendar-connection.md`](docs/developer/architecture/integrations/google-calendar-connection.md). (PR #5959)
+- 🔬 **Composio Account Health & Hardening (Pro).** A verified account-health engine probes live credentials with catalog-discovered read-only tools (no invented slugs), a new `composio_manage_accounts` tool handles validate/reconnect/delete/prune, and the Remote Sites Connected Apps table gains a Health column with Verify/Reconnect actions. Auth config resolution, connected-account listings, identity-bound execution, app removal, zero-argument payloads, and proxied provider failures are all fixed. See [`docs/composio-connect.md`](docs/composio-connect.md). (PRs #5932–#5934, #5936, #5953, #5958)
+- 🕵️ **Non-Loggable Result Fields.** Tools whose results carry capability credentials under innocuous keys (or opaque URL path segments) can declare the exact fields via the new `WP_MCP_AI_Tool_Sensitive_Result_Interface`; the logger masks them before preview truncation. Logging-only — caller/model payloads are never altered. (PR #5961)
+- 📉 **Log Hygiene.** Per-entry context budgets (fingerprinting + truncation) stop `wp_mcp_ai_recent_errors`/`wp_mcp_ai_recent_activity` from ballooning into the megabytes; Data Management gains one-click Compact/Delete for both buffers; credential-bearing URL query params are redacted from every logged string. (PRs #5952, #5954)
+- 🐛 **Fixes.** Validated-tool argument validation restored on Symfony 5.4 (constraint loading was silently skipped — every validated tool accepted invalid input); MCP JSON-RPC `-32700`/`-32600` error envelopes reachable and the diagnostics page re-wired; Pro SPA v2 conversation/assistant sync; vision tools accept a 5–300s `timeout`; WP_Error envelope drift + cron/memory/elementor tool bugs. (PRs #5957, #5960, #5962, #5964, #5965)
 
 ### ✨ What's New at a Glance (v1.1.63)
 
@@ -508,9 +516,9 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/reference/EXTERNAL_SERVICES.md) for all 20 services.  
 
-The plugin works standalone with **~303 base tools** and optionally extends through the **Pro addon**, which adds **~1,249 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging, Composio Connect) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,552 built-in tools** (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
+The plugin works standalone with **~303 base tools** and optionally extends through the **Pro addon**, which adds **~1,256 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services — including the new Google Calendar connection — Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization, Cloudways server management, CRM lead/deal/customer lifecycle, support ticket management, multichannel inbound/outbound messaging, Composio Connect) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **~1,559 built-in tools** (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative).
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~303 tools) works standalone. The full version requires the Pro addon and provides ~1,552 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, Composio Connect, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (~303 tools) works standalone. The full version requires the Pro addon and provides ~1,559 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, Cloudways infrastructure management, CRM lead/deal/customer lifecycle + support tickets + multichannel, MCP Apps, Composio Connect, and more. Live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative.
 
 **Addon Ecosystem:** NV oOS ships a growing family of 26 installable addons: **Pro** (`addons/pro/` — ~1,247 additional tools), **Chat SPA** (`addons/chat-spa/` — React chat replacement), **Docs Hub** (`addons/docs-hub/` — in-site documentation SPA), **SaaS Controller** + **Cloud Worker** (`addons/saas-controller/` + `addons/cloud-worker/` — NV oOS Cloud control plane), **Cloudways Dashboard** (`addons/cloudways-dashboard/` — Cloudways server management), **Toolkit Shell / Canvas / Canvas Toolkit / Document Editor / Media Studio** (`addons/toolkit-shell/` etc. — Toolkit SPA Blueprint Tier A–D), **Media Worker** (`addons/media-worker/` — Docker-based Node.js media sidecar, v3.2.0: multi-tenant shared worker mode, per-site provider keys, worker routing with local fallbacks, native `/api/crawl/*` endpoints + Crawl4AI facade), **Graphify** (`addons/graphify/` — knowledge graph), **Comic Reader** (`addons/comic-reader/` — CBR/CBZ/CB7/CBT reader), **Funiq Bridge** (`addons/funiq-bridge/` — Payload-to-WordPress bridge with React SPA), **Fleet Operator** (`addons/fleet-operator/` — scoped `op_` operator credentials for MCP/A2A supervisor agents like Hermes), **LibreChat** (`addons/librechat/` — code interpreter, speech, web search reranker), **Schedule Anything Platform + SPA** (`addons/schedule-anything-platform/` + `addons/schedule-anything-spa/` — SaaS booking with Stripe), **Tenant Router** (`addons/tenant-router/` — multi-tenant routing), **Page Agent** (`addons/page-agent/` — AI-powered browser page control copilot), **Algorave**, **Cornerstone3D**, **Crocoblock DS**, **Embedded**, **Fantasy Football**. Separate standalone plugins: **NVOOS Content Graph** (`plugins/nvoos-content-graph/` — visual knowledge graph), **NVOOS Content Graph AI** (`plugins/nvoos-content-graph-ai/` — AI providers + chat + RAG), **NVOOS Content Graph AI Platform** (`plugins/nvoos-content-graph-ai-platform/` — agents, A2A, blueprints, skills). See [`docs/developer/addons/toolkit-spa-blueprint.md`](docs/developer/addons/toolkit-spa-blueprint.md) for the blueprint all SPA addons follow.
 
@@ -577,7 +585,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
 - **15 language-model providers** — OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, Flowhub
-- **~1,552 tool classes** (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
+- **~1,559 tool classes** (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative) registered through a singleton Tool Registry
 - **36 REST controllers** (16 base + 20 pro) under the `mcp-ai/v1` namespace
 - **64 service classes** powering orchestration, budgets, and workflows
 - **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
@@ -698,6 +706,27 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.64 — August 2026)
+
+### August 24–26, 2026 — Google Calendar Connection, Composio Account Health, Log Hygiene, Non-Loggable Fields
+
+- ✅ **Google Calendar Connection & Shared Google Services — PR #5959 (32 files, +9,373/-206 lines).** New `includes/google/` foundation (OAuth service, Calendar v3 client, scope registry, credential resolver, sync + push) replaces four drifted Google OAuth copies; `google_calendar` connection type on both connection surfaces; six new Pro google-workspace tools (`list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability`, `quick_add_google_calendar_event`) plus a reworked `create_google_calendar_event` and a real `sync_google_calendar`. Scope enforcement on every write; push channels + Action Scheduler sync. Reference: [`docs/developer/architecture/integrations/google-calendar-connection.md`](docs/developer/architecture/integrations/google-calendar-connection.md), [`docs/reference/google-calendar-api-v3.md`](docs/reference/google-calendar-api-v3.md).
+- ✅ **Composio Verified Account Health & Real Tool Discovery — PR #5936 (23 files, +5,602/-258 lines).** `WP_MCP_AI_Composio_Account_Health` ledger + live probe (catalog-discovered zero-argument read-only tools, curated fast path, honest `status_only` degradation), new seventh tool `composio_manage_accounts` (validate/reconnect/delete/prune, in-place reconnect), in-band failure conversion, v3.1 envelope unwrapping + corrected query params, ID-swap diagnosis by prefix, Health column with Verify/Reconnect in Remote Sites. See [`docs/composio-connect.md`](docs/composio-connect.md).
+- ✅ **Composio Proxied Provider Failures & Stale Account IDs — PR #5953 (11 files, +516/-35 lines).** Proxied provider refusals inside `data` are now authoritative failures (401/403 → auth-required + reconnect machinery), bounded execution-error path walk, anchored status scan (content false-positives structurally excluded), stale `connected_account_id` fast-fails.
+- ✅ **Composio Zero-Argument Payload & Probe Determinism — PR #5958 (6 files, +677/-28 lines).** Empty `arguments` encode as `{}` (never `[]`), validation `detail` flattened, bounded `upstream` body on `WP_Error`, cache-index invalidation for filtered listings, deterministic probe ranking + curated Google Calendar probe.
+- ✅ **Composio Auth Config, Listings & App Removal — PRs #5932–#5934 (26 files, +1,715/-80 lines).** Link-endpoint auth config resolution (`auth_config_id`/`user_id`/`callback_url`), real 401/403 error surfaces, API-key trim/validate; v3.1 listing envelope unwrap + Connected Apps list on the edit form; identity-bound execution (`from_connection()`), nonce-gated Remove that revokes the upstream grant.
+- ✅ **Tool-Declared Non-Loggable Result Fields — PR #5961 (16 files, +796/-15 lines).** `WP_MCP_AI_Tool_Sensitive_Result_Interface` with dot-notation/`*`/subtree field declarations; the logger masks before preview truncation on the success, argument, and error paths; legacy-wrapper forwarding; additive-only filter; 8 declarers.
+- ✅ **Log Context Bloat & Rolling-Buffer Compaction — PR #5952 (21 files, +2,599/-22 lines).** Per-entry byte budget on the persistence path (fingerprinted `assistant_config`/`system_prompt`, truncation, 12 diagnostic keys preserved), Extended budget 16→8 KB, `previous_results` no longer embedded (O(N²) fix), Data Management Compact/Delete via `wp_mcp_ai_maintain_log_buffers`.
+- ✅ **Secret URL Query Params in Logged Strings — PR #5954 (3 files, +1,238 lines).** 26 credential-bearing parameter names masked in the shared redactor (scheme/host/path/non-secret params preserved) — covers tool arguments, error messages, and `error_log()`; ships the Google Calendar implementation plan doc.
+- ✅ **MCP JSON-RPC Error Paths & Diagnostics Re-wiring — PR #5957 (10 files, +372/-134 lines).** `/mcp` `jsonrpc`/`method` no longer `required` so `-32700`/`-32600` envelopes are reachable; MCP Server Diagnostics page, assets, and AJAX handlers re-wired after the entry-file rename.
+- ✅ **Validated-Tool Validation Restored on Symfony 5.4 — PR #5960 (14 files, +143/-107 lines).** The `enableAttributeMapping` guard never fired on ^5.4 so constraint loading was silently skipped; version-appropriate helper + `WPCapability` constructor fix.
+- ✅ **Pro SPA v2 Conversation & Assistant Sync — PR #5962 (5 files, +537/-48 lines).** `selectSession` carries `assistant_id`, stored sessions hydrate on mount, assistant switches start fresh conversations.
+- ✅ **Vision Tools Timeout Parameter — PR #5964 (20 files, +446/-113 lines).** 5–300s `timeout` argument + global `request_timeout` inheritance via `WP_MCP_AI_Vision_Request_Timeout`; OCR client download/health paths covered.
+- ✅ **WP_Error Envelope Drift & Tool Bugs — PR #5965 (18 files, +203/-112 lines).** Canonical-envelope test conformance, `plan_schedules_from_workflow` regex fix, double-`prepare()` fix, tracked `job_id` returns, cron pruning, `model` type constraint.
+- ✅ **Test-Env Registration & Suite Follow-Ups — PRs #5931, #5935 (66 files, +1,416/-564 lines).** AJAX suite class loading, dispatch hardening, WP All Import bootstrap guard, moved-file requires.
+- ✅ **Content Graph wp.org Assets — PR #5963 (7 files).** Banner/icon/screenshot assets for the `nvoos-content-graph` listing.
+- 📦 **Versioning** — bumped to **1.1.64** across all version-bearing files. Pro addon: 1.1.64. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.3** (unchanged). Tool count: ~303 base + ~1,256 Pro (~1,559 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
 
 ## 🆕 Latest Updates (v1.1.63 — August 2026)
 
@@ -1742,11 +1771,11 @@ The script mirrors the exclusion list in `.distignore` (used for the WordPress.o
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all ~1,552 tools (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+2. You now have the **complete version** with all ~1,559 tools (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 **What you get from the repository clone:**
 
-- ✅ The full codebase — all ~1,552 built-in tools ready to use (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- ✅ The full codebase — all ~1,559 built-in tools ready to use (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -1975,12 +2004,12 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
 - **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
-- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,552 tool classes, 36 REST controllers)
+- **[Architecture Overview](docs/developer/architecture/ARCHITECTURE.md)** - System architecture (15 providers, ~1,559 tool classes, 36 REST controllers)
 - **[Request Flow Walkthrough](docs/developer/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,552 tools documented (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All ~1,559 tools documented (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/developer/testing-docs/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 

@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **August 23, 2026** · Version: **2.16**
+> Last reviewed: **August 26, 2026** · Version: **2.17**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,552 tools (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,559 tools (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,7 +50,7 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,552 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,559 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
@@ -185,7 +185,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~303 base tool classes) or `false` (~1,552 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~303 base tool classes) or `false` (~1,559 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -427,6 +427,11 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **Chat storage worker offload** (v1.1.63, PR #5928) — saves ≥ `wp_mcp_ai_storage_worker_threshold` (default 10,000 chars) offload `JSON.stringify` to `storage-worker.js` via `wpMcpAiStorageUtil`; sync fallback for small saves/unload/worker failure; kill switch filter (0 = off); localized via `WP_MCP_AI_Shortcode::get_storage_worker_inline_script()`. See `docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md`.
 - **DeepSeek empty-schema fix** (v1.1.63, PR #5926) — tool schema `properties` must encode as `{}`, never `[]` (DeepSeek 400s otherwise); enforced at REST / Tool Service / ChatOrchestrator boundaries; legacy tools wrapped BEFORE first register attempt so the fail-loud registry log only fires for genuine failures.
 - **Test-suite exit traps** (v1.1.63, PR #5929) — `bin/sweep-tests.php` parallel sweep; AJAX test contracts in `tests/bootstrap.php` (`tests/AJAX_TESTS_README.md`); bare-exit test seams (`WP_MCP_AI_TESTS_RUNNING`) in 4 admin handlers; SSE/Veo polling filters; remaining work in `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`.
+- **Google Calendar connection & shared Google services** (v1.1.64, PR #5959) — `includes/google/` is the single Google OAuth/Calendar foundation (`WP_MCP_AI_Google_OAuth_Service`, `_Calendar_Client`, `_Calendar_Scopes`, `_Calendar_Credentials`, `_Calendar_Sync`, `_Calendar_Push`); it replaces four drifted OAuth start/callback copies — new Google integrations must build on it, not copy-paste a fifth. New `google_calendar` connection type on both surfaces; 6 new Pro tools in `addons/pro/includes/tools/google-workspace/`; every Calendar write passes scope enforcement. See `docs/developer/architecture/integrations/google-calendar-connection.md`.
+- **Composio account health + hardening** (v1.1.64, PRs #5932–#5936, #5953, #5958) — `WP_MCP_AI_Composio_Account_Health` ledger + live catalog-discovered probes; new `composio_manage_accounts` (7th tool, validate/reconnect/delete/prune); in-band failures converted to `WP_Error`; proxied provider 401/403 → `wp_mcp_ai_composio_account_auth_required`; zero-arg `arguments` encode as `{}`; `from_connection()` identity binding; Health column + Verify/Reconnect in Remote Sites.
+- **Logger hygiene** (v1.1.64, PRs #5952/#5954) — persistence-path byte budgets (fingerprint `assistant_config`/`system_prompt`, truncate, drop largest, 12 diagnostic keys) keep `wp_mcp_ai_recent_errors`/`wp_mcp_ai_recent_activity` bounded; `previous_results` no longer embedded (O(N²) workflow fix); `wp_mcp_ai_maintain_log_buffers` AJAX (Compact/Delete); shared redactor masks 26 credential-bearing URL query-param names. `wp_mcp_ai_log_entry` + `error_log()` still get full sanitized context.
+- **Non-loggable result fields** (v1.1.64, PR #5961) — `WP_MCP_AI_Tool_Sensitive_Result_Interface::get_sensitive_result_fields()` lets tools declare dot-notation/`*`/subtree paths the logger masks with `[redacted]` before preview truncation; logging-only (caller/model payloads untouched); `wp_mcp_ai_tool_sensitive_result_fields` filter additive-only; legacy wrapper forwards it.
+- **Symfony 5.4 validator restore** (v1.1.64, PR #5960) — constraint mapping must use `enableAnnotationMapping( true )` on ^5.4 (not `enableAttributeMapping`, a ≥6.1 API): the old guard silently skipped validation for every validated tool. Also: vision tools accept a 5–300s `timeout` (`WP_MCP_AI_Vision_Request_Timeout`, PR #5964); `/mcp` `jsonrpc`/`method` not `required` at the REST layer (PR #5957).
 - **REST require_once guards** (v1.1.52) — all REST controller `require_once` calls in `class-wp-mcp-ai-rest.php` now guarded with `file_exists()` checks.
 - **Site Health integration** — WordPress Site Health checks for cron configuration and security posture.
 - **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.

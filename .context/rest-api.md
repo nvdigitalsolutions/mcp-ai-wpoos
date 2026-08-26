@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: August 2026.
+> Last reviewed: August 26, 2026 (v1.1.64).
+>
+> **New in v1.1.64 (PR #5957):** the `/mcp` route no longer declares `jsonrpc`/`method` as `required` REST args — doing so made WordPress answer `rest_missing_callback_param` before the callback ran and turned `handle_mcp_request()`'s spec-correct `-32700`/`-32600` JSON-RPC envelopes into dead code. Let protocol validators own malformed-request handling: REST args stay permissive on raw protocol routes, and the JSON-RPC handler validates `jsonrpc` + `method` itself. The MCP Server Diagnostics page, its assets, and both AJAX handlers were orphaned by the entry-file rename — `WP_MCP_AI_MCP_Server_Diagnostic::init()` is wired again.
 
 ---
 

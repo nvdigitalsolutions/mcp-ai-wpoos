@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: August 23, 2026 (v1.1.63).
+> Last reviewed: August 26, 2026 (v1.1.64).
 
 ---
 
@@ -14,7 +14,9 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,552 (~303 base + ~1,249 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,559 (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.64:** +7 Pro tools. (1) Six Google Calendar tools in `addons/pro/includes/tools/google-workspace/` (`list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability`, `quick_add_google_calendar_event`) plus a reworked `create_google_calendar_event` (moved from `includes/src/Tools/`) — all resolve credentials via the shared `includes/google/` foundation (optional `connection_id` → Pro Remote Sites, else site-level Google Calendar settings) with scope enforcement from `WP_MCP_AI_Google_Calendar_Scopes`. (2) `composio_manage_accounts` (7th Composio tool, `manage_options`, `risk_level: high`, `destructive`): validate/reconnect/delete/prune for connected-account lifecycle. Also: the **Non-Loggable Result Fields** interface (see below) landed in-commit and the logger's redactor now masks credential-bearing URL query params. No base tools added or removed.
 
 **New in v1.1.63:** No new tools — two registry-adjacent fixes. (1) DeepSeek rejects tool schemas whose `properties` encode as a JSON array: schema normalization must keep object-valued property maps as objects and convert empty maps to `stdClass` so every payload boundary (REST `/tools` output in `WP_MCP_AI_REST`, `WP_MCP_AI_Tool_Service`, `ChatOrchestrator`) encodes `"properties": {}` — never `"properties": []`. (2) Legacy-format tool classes are wrapped **before** the first `register_tool()` attempt (both base and Pro registration paths), so the registry's fail-loud "missing interface" log only fires for classes that genuinely fail to register. Tool counts unchanged: ~303 base + ~1,249 Pro (~1,552 total).
 
