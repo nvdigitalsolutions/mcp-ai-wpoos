@@ -12,11 +12,12 @@ plugin's WordPress.org SVN repository.
 | `assets/icon-256x256.png` | Plugin icon, HiDPI (Retina) |
 | `assets/banner-772x250.png` | Listing banner |
 | `assets/banner-1544x500.png` | Listing banner, HiDPI (Retina) |
-| `assets/screenshot-1.png` | Graph Explorer |
+| `assets/screenshot-1.png` | Knowledge Graph — main explorer view |
 | `assets/screenshot-2.png` | Settings — build schedule, auto-rebuild, display options |
 | `assets/screenshot-3.png` | Remote Sources |
 | `assets/screenshot-4.png` | Sources (post types / content types) |
 | `assets/screenshot-5.png` | Frontend `[nvoos_graph]` embed |
+| `assets/screenshot-6.png` | Graph Explorer (Cytoscape.js) |
 
 Screenshots are captured from a running QA site (Playwright) at 1440×900
 viewport. Regenerate with `bin/capture-nvoos-content-graph-screenshots.js`
@@ -27,8 +28,9 @@ Source files for the icon and banner live in `source/`:
 
 | File | Purpose |
 |---|---|
-| `source/NVOOS-CONTENT-GRAPH-v2.png` | 1024×1024 icon master (RGBA) |
+| `source/NVOOS-CONTENT-GRAPH-v3.png` | 1024×1024 icon master (RGBA) |
 | `source/nvoos-banner-master-1344x768.png` | 1344×768 banner master |
+| `source/screenshot-main-1675x1086.jpg` | 1675×1086 main screenshot source |
 
 The banner targets are produced by center-cropping the master to a
 1344×435 band (the artwork occupies the middle of the canvas) and resizing
