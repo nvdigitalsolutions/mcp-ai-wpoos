@@ -96,9 +96,21 @@ class WP_MCP_AI_Pro_Toolkit_Blocks {
 			'vehicle-cleaning-estimator',
 		);
 
+		// Skip blocks that are already registered so re-firing `init` (as the
+		// test harness does) does not raise "already registered" notices.
+		$block_registry = WP_Block_Type_Registry::get_instance();
+
 		foreach ( $block_dirs as $block_dir ) {
 			$block_path = $blocks_dir . $block_dir;
 			if ( file_exists( $block_path . '/block.json' ) ) {
+				$block_json = file_get_contents( $block_path . '/block.json' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read.
+				$block_data = $block_json ? json_decode( $block_json, true ) : null;
+				$block_name = ( is_array( $block_data ) && ! empty( $block_data['name'] ) ) ? $block_data['name'] : 'mcp-ai-toolkits/' . $block_dir;
+
+				if ( $block_registry->is_registered( $block_name ) ) {
+					continue;
+				}
+
 				register_block_type( $block_path );
 			}
 		}

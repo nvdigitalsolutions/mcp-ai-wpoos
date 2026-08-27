@@ -467,11 +467,16 @@ tests_add_filter( 'init', 'wp_mcp_ai_tests_neutralise_elementor_init_replay', PH
  * initial registration.
  */
 function wp_mcp_ai_tests_neutralise_icon_init_replay() {
+	// remove_action() defaults to priority 10 and only removes that one
+	// priority, so both known core priorities are removed explicitly:
+	// collections are hooked at priority 0, icons at the default 10.
 	if ( function_exists( '_wp_register_default_icon_collections' ) ) {
-		remove_action( 'init', '_wp_register_default_icon_collections' );
+		remove_action( 'init', '_wp_register_default_icon_collections', 0 );
+		remove_action( 'init', '_wp_register_default_icon_collections', 10 );
 	}
 	if ( function_exists( '_wp_register_default_icons' ) ) {
-		remove_action( 'init', '_wp_register_default_icons' );
+		remove_action( 'init', '_wp_register_default_icons', 0 );
+		remove_action( 'init', '_wp_register_default_icons', 10 );
 	}
 }
 

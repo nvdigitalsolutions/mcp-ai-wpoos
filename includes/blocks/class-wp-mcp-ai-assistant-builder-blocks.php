@@ -76,9 +76,21 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 			'assistant-builder',
 		);
 
+		// Skip blocks that are already registered so re-firing `init` (as the
+		// test harness does) does not raise "already registered" notices.
+		$block_registry = WP_Block_Type_Registry::get_instance();
+
 		foreach ( $block_types as $block_type ) {
 			$block_path = $blocks_dir . $block_type;
 			if ( file_exists( $block_path . '/block.json' ) ) {
+				$block_json = file_get_contents( $block_path . '/block.json' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read.
+				$block_data = $block_json ? json_decode( $block_json, true ) : null;
+				$block_name = ( is_array( $block_data ) && ! empty( $block_data['name'] ) ) ? $block_data['name'] : 'mcp-ai-wpoos/' . $block_type;
+
+				if ( $block_registry->is_registered( $block_name ) ) {
+					continue;
+				}
+
 				register_block_type( $block_path );
 			}
 		}
