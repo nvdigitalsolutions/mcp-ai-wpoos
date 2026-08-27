@@ -42,10 +42,21 @@ class Test_Remote_Connection_Tool_Workflow extends WP_UnitTestCase {
 	protected $connection_id;
 
 	/**
+	 * Privileged user ID used to satisfy the tool capability gate.
+	 *
+	 * @var int
+	 */
+	protected $admin_user;
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// Create a privileged user so the tool's capability gate passes.
+		$this->admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $this->admin_user );
 
 		// Load required classes.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
@@ -81,9 +92,9 @@ class Test_Remote_Connection_Tool_Workflow extends WP_UnitTestCase {
 			'has_woocommerce' => false,
 		);
 
-		$result = WP_MCP_AI_Pro_Remote_Site_Manager::add_connection( $connection_data );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
-		return $result['id'];
+		return $result;
 	}
 
 	/**
