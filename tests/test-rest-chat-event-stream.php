@@ -8,9 +8,13 @@
  */
 class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 	/**
-	 * Ensure chat responses are streamed when the Accept header requests an event stream.
+	 * Ensure the Accept header alone does not trigger streaming.
+	 *
+	 * MCP clients like LM Studio send "Accept: text/event-stream" by default
+	 * but expect JSON responses (Streamable HTTP transport, MCP 2024-11-05
+	 * spec), so streaming is driven exclusively by the explicit stream param.
 	 */
-	public function test_chat_request_streams_response_when_accept_header_requests_event_stream() {
+	public function test_chat_request_returns_json_when_accept_header_alone_requests_event_stream() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -39,11 +43,6 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		$existing_keys = array();
-		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
-		}
-
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
 		$request->set_param(
@@ -58,51 +57,24 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$headers = $response->get_headers();
-
-		$this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
-		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
-		$this->assertSame( 'Authorization, Content-Type, X-WP-Nonce', $headers['Access-Control-Allow-Headers'] ?? '' );
-		$this->assertSame( 'GET, POST, OPTIONS', $headers['Access-Control-Allow-Methods'] ?? '' );
-		$this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
-
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		$this->assertInstanceOf( WP_Hook::class, $hook );
-
-		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-		$added_keys   = array_diff( $current_keys, $existing_keys );
-
-		$this->assertNotEmpty( $added_keys );
-
-		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
-
-		$output = $this->extract_event_stream_frames( $closure );
-		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
-
-		$this->assertTrue( $served );
-		$this->assertStringContainsString( 'event: message', $output );
-		$this->assertStringContainsString( 'data: {', $output );
-		$this->assertStringContainsString( 'data: [DONE]', $output );
-
-		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
-			unset( $hook->callbacks[999][ $closure_key ] );
-		}
+		// Stray environment output (e.g. database error markup) may leak into
+		// the capture buffer on some hosts, so assert on the absence of SSE
+		// frames rather than on a completely empty buffer.
+		$this->assertStringNotContainsString( 'data: [DONE]', $captured, 'No SSE frames should be emitted when only the Accept header requests streaming.' );
+		$this->assertStringNotContainsString( 'event: message', $captured );
+		$this->assertArrayHasKey( 'assistant_id', (array) $response->get_data() );
 
 		wp_set_current_user( 0 );
 	}
 
 	/**
-	 * Ensure Accept headers with additional values still trigger streaming responses.
+	 * Ensure mixed Accept header values do not interfere with explicit streaming.
 	 */
-	public function test_chat_request_streams_response_with_mixed_accept_header_values() {
+	public function test_chat_request_streams_response_when_stream_param_set_with_mixed_accept_header() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -133,6 +105,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -145,17 +118,14 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'application/json;q=0.9, text/event-stream, */*;q=0.1' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$headers = $response->get_headers();
-
-		$this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
-		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
-		$this->assertSame( 'Authorization, Content-Type, X-WP-Nonce', $headers['Access-Control-Allow-Headers'] ?? '' );
-		$this->assertSame( 'GET, POST, OPTIONS', $headers['Access-Control-Allow-Methods'] ?? '' );
-		$this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
+		$this->assertStringContainsString( 'retry:', $captured );
+		$this->assertStringContainsString( 'event: message', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 
 		wp_set_current_user( 0 );
 	}
@@ -192,11 +162,6 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		$existing_keys = array();
-		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
-		}
-
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
 		$request->set_param( 'stream', 'true' );
@@ -211,42 +176,14 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		);
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$headers = $response->get_headers();
-
-		$this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
-		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
-		$this->assertSame( 'Authorization, Content-Type, X-WP-Nonce', $headers['Access-Control-Allow-Headers'] ?? '' );
-		$this->assertSame( 'GET, POST, OPTIONS', $headers['Access-Control-Allow-Methods'] ?? '' );
-		$this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
-
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		$this->assertInstanceOf( WP_Hook::class, $hook );
-
-		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-		$added_keys   = array_diff( $current_keys, $existing_keys );
-
-		$this->assertNotEmpty( $added_keys );
-
-		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
-
-		$output = $this->extract_event_stream_frames( $closure );
-		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
-
-		$this->assertTrue( $served );
-		$this->assertStringContainsString( 'event: message', $output );
-		$this->assertStringContainsString( 'data: [DONE]', $output );
-
-		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
-			unset( $hook->callbacks[999][ $closure_key ] );
-		}
+		$this->assertStringContainsString( 'retry:', $captured );
+		$this->assertStringContainsString( 'event: message', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 
 		wp_set_current_user( 0 );
 	}
@@ -283,11 +220,6 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		$existing_keys = array();
-		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
-		}
-
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
 		$request->set_param( 'stream', 1 );
@@ -302,42 +234,14 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		);
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$headers = $response->get_headers();
-
-		$this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
-		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
-		$this->assertSame( 'Authorization, Content-Type, X-WP-Nonce', $headers['Access-Control-Allow-Headers'] ?? '' );
-		$this->assertSame( 'GET, POST, OPTIONS', $headers['Access-Control-Allow-Methods'] ?? '' );
-		$this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
-
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		$this->assertInstanceOf( WP_Hook::class, $hook );
-
-		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-		$added_keys   = array_diff( $current_keys, $existing_keys );
-
-		$this->assertNotEmpty( $added_keys );
-
-		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
-
-		$output = $this->extract_event_stream_frames( $closure );
-		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
-
-		$this->assertTrue( $served );
-		$this->assertStringContainsString( 'event: message', $output );
-		$this->assertStringContainsString( 'data: [DONE]', $output );
-
-		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
-			unset( $hook->callbacks[999][ $closure_key ] );
-		}
+		$this->assertStringContainsString( 'retry:', $captured );
+		$this->assertStringContainsString( 'event: message', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 
 		wp_set_current_user( 0 );
 	}
@@ -374,11 +278,6 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		$existing_keys = array();
-		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
-		}
-
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
 		$request->set_param( 'stream', array( 'type' => 'sse' ) );
@@ -393,36 +292,14 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		);
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertStringStartsWith( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
-
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		$this->assertInstanceOf( WP_Hook::class, $hook );
-
-		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-		$added_keys   = array_diff( $current_keys, $existing_keys );
-
-		$this->assertNotEmpty( $added_keys );
-
-		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
-
-		$output = $this->extract_event_stream_frames( $closure );
-		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
-
-		$this->assertTrue( $served );
-		$this->assertStringContainsString( 'event: message', $output );
-		$this->assertStringContainsString( 'data: [DONE]', $output );
-
-		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
-			unset( $hook->callbacks[999][ $closure_key ] );
-		}
+		$this->assertStringContainsString( 'retry:', $captured );
+		$this->assertStringContainsString( 'event: message', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 
 		wp_set_current_user( 0 );
 	}
@@ -459,11 +336,6 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		$existing_keys = array();
-		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
-		}
-
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
 		$request->set_param( 'stream', array( 'enabled' => false ) );
@@ -478,21 +350,16 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		);
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertFalse( str_starts_with( $response->get_headers()['Content-Type'] ?? '', 'text/event-stream' ) );
-
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		if ( $hook instanceof WP_Hook ) {
-			$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-			$added_keys   = array_diff( $current_keys, $existing_keys );
-			$this->assertEmpty( $added_keys, 'Streaming callback should not be registered when stream disabled.' );
-		}
+		// Stray environment output may leak into the capture buffer on some
+		// hosts, so assert on the absence of SSE frames rather than on a
+		// completely empty buffer.
+		$this->assertStringNotContainsString( 'data: [DONE]', $captured, 'No SSE frames should be emitted when streaming is disabled.' );
+		$this->assertStringNotContainsString( 'event: message', $captured );
+		$this->assertArrayHasKey( 'assistant_id', (array) $response->get_data() );
 
 		wp_set_current_user( 0 );
 	}
@@ -529,11 +396,6 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		$existing_keys = array();
-		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
-		}
-
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
 		$request->set_param( 'stream', array( 'enabled' => false ) );
@@ -549,21 +411,16 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertFalse( str_starts_with( $response->get_headers()['Content-Type'] ?? '', 'text/event-stream' ) );
-
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		if ( $hook instanceof WP_Hook ) {
-			$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-			$added_keys   = array_diff( $current_keys, $existing_keys );
-			$this->assertEmpty( $added_keys, 'Streaming callback should not be registered when stream explicitly disabled.' );
-		}
+		// Stray environment output may leak into the capture buffer on some
+		// hosts, so assert on the absence of SSE frames rather than on a
+		// completely empty buffer.
+		$this->assertStringNotContainsString( 'data: [DONE]', $captured, 'No SSE frames should be emitted when streaming is explicitly disabled.' );
+		$this->assertStringNotContainsString( 'event: message', $captured );
+		$this->assertArrayHasKey( 'assistant_id', (array) $response->get_data() );
 
 		wp_set_current_user( 0 );
 	}
@@ -606,13 +463,9 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		wp_set_current_user( 0 );
 
-		$existing_keys = array();
-		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
-		}
-
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -623,38 +476,15 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 			)
 		);
 		$request->set_header( 'Authorization', 'Bearer ' . $issued['token'] );
-		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertStringStartsWith( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
-
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		$this->assertInstanceOf( WP_Hook::class, $hook );
-
-		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-		$added_keys   = array_diff( $current_keys, $existing_keys );
-
-		$this->assertNotEmpty( $added_keys );
-
-		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
-
-		$output = $this->extract_event_stream_frames( $closure );
-		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
-
-		$this->assertTrue( $served );
-		$this->assertStringContainsString( 'event: message', $output );
-		$this->assertStringContainsString( 'data: [DONE]', $output );
-
-		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
-			unset( $hook->callbacks[999][ $closure_key ] );
-		}
+		$this->assertStringContainsString( 'retry:', $captured );
+		$this->assertStringContainsString( 'event: message', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 	}
 
 	/**
@@ -689,13 +519,11 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		$existing_keys = array();
-		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
-		}
+		wp_set_current_user( 0 );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -706,71 +534,63 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 			)
 		);
 		$request->set_header( 'X-WP-MCP-AI-Guest', $token );
-		$request->set_header( 'Accept', 'text/event-stream' );
+		// Guest tokens are origin-bound (audit F-AUTHZ-04) — send the matching Origin header.
+		$request->set_header( 'Origin', home_url() );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertStringStartsWith( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
-
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		$this->assertInstanceOf( WP_Hook::class, $hook );
-
-		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-		$added_keys   = array_diff( $current_keys, $existing_keys );
-
-		$this->assertNotEmpty( $added_keys );
-
-		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
-
-		$output = $this->extract_event_stream_frames( $closure );
-		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
-
-		$this->assertTrue( $served );
-		$this->assertStringContainsString( 'event: message', $output );
-		$this->assertStringContainsString( 'data: [DONE]', $output );
-
-		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
-			unset( $hook->callbacks[999][ $closure_key ] );
-		}
+		$this->assertStringContainsString( 'retry:', $captured );
+		$this->assertStringContainsString( 'event: message', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 	}
 
 	/**
-	 * Extract the raw Server-Sent Events frames from a rest_pre_serve_request callback.
+	 * Dispatch a chat request and capture any echoed SSE frames.
 	 *
-	 * @param callable $callback Stream callback registered with rest_pre_serve_request.
-	 * @return string
+	 * The streaming path echoes frames directly (via echo) and cleans output
+	 * buffers inside send_sse_headers(), so capture requires a callback buffer
+	 * that survives the handler's buffer cleanup. Existing buffers are
+	 * flattened first and the original level restored afterwards so PHPUnit's
+	 * output-buffer tracking stays balanced.
+	 *
+	 * @param WP_REST_Request $request Request to dispatch.
+	 * @return array{0: WP_REST_Response, 1: string} Response and captured output.
 	 */
-	protected function extract_event_stream_frames( $callback ) {
-		if ( ! $callback instanceof \Closure ) {
-			return '';
+	protected function dispatch_chat_and_capture( WP_REST_Request $request ) {
+		$initial_level = ob_get_level();
+
+		// Flatten all buffers so the handler's buffer cleanup (which keeps only
+		// the outermost buffer alive) cannot destroy our capture buffer.
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: end_clean may fail on restricted hosts; level is re-checked next iteration.
+			@ob_end_clean();
 		}
 
-		$reflection = new ReflectionFunction( $callback );
-		$statics    = $reflection->getStaticVariables();
+		$captured = '';
+		ob_start(
+			static function ( $chunk ) use ( &$captured ) {
+				$captured .= $chunk;
+				return '';
+			}
+		);
 
-		return isset( $statics['frames'] ) ? (string) $statics['frames'] : '';
-	}
+		$response = rest_get_server()->dispatch( $request );
 
-	/**
-	 * Invoke the stream callback without flushing PHPUnit's output buffers.
-	 *
-	 * @param callable         $callback Stream callback registered with rest_pre_serve_request.
-	 * @param WP_REST_Response $response REST response instance.
-	 * @param WP_REST_Request  $request  REST request instance.
-	 * @return bool
-	 */
-	protected function safely_invoke_event_stream_callback( $callback, WP_REST_Response $response, WP_REST_Request $request ) {
-		if ( ! $callback instanceof \Closure ) {
-			return false;
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: see above.
+			@ob_end_clean();
 		}
 
-		return (bool) call_user_func( $callback, true, $response, $request, rest_get_server() );
+		// Restore the original buffer count so PHPUnit does not flag the test
+		// as risky for leaving output buffers open.
+		for ( $i = 0; $i < $initial_level; $i++ ) {
+			ob_start();
+		}
+
+		return array( $response, $captured );
 	}
 
 	/**

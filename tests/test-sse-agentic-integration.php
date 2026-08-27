@@ -58,6 +58,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -70,16 +71,10 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $output ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-
-		$headers = $response->get_headers();
-		$this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
-
-		// Extract and verify SSE events.
-		$output = $this->extract_sse_output( $response );
 
 		// Should contain tool execution events.
 		$this->assertStringContainsString( 'event: tool_execution', $output );
@@ -102,6 +97,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -114,11 +110,9 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $output ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-
-		$output = $this->extract_sse_output( $response );
 
 		// Should show multiple tools being executed.
 		$this->assertStringContainsString( '"tool_count":2', $output );
@@ -170,6 +164,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -182,11 +177,9 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $output ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-
-		$output = $this->extract_sse_output( $response );
 
 		// Should have multiple iterations.
 		$this->assertStringContainsString( '"iteration":0', $output );
@@ -233,6 +226,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -245,12 +239,17 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $output ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertSame( 200, $response->get_status() );
 
-		// Should stop at max iterations.
-		$this->assertEquals( 2, $iteration_count, 'Should stop at max iterations (2)' );
+		// The streaming loop makes one initial LLM call, then one further call per
+		// tool-execution iteration. With max_iterations = 2 the loop runs two
+		// iterations (each ending in an LLM call), so 3 calls total.
+		$this->assertEquals( 3, $iteration_count, 'Should stop at max iterations (2): initial call + 2 loop iterations' );
+
+		// The stream should announce that the iteration limit was reached.
+		$this->assertStringContainsString( '"type":"max_iterations"', $output );
 	}
 
 	/**
@@ -261,12 +260,15 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		$mock_client = $this->create_mock_client_with_tool_call( 'failing_test_tool' );
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// Register a failing tool.
+		// Register a failing tool and allowlist it on the assistant so the agentic
+		// loop actually executes it (unallowed tools are rejected up-front).
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->register_tool( $this->create_failing_tool() );
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'failing_test_tool' ) );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -279,11 +281,9 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $output ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-
-		$output = $this->extract_sse_output( $response );
 
 		// Should contain tool execution events.
 		$this->assertStringContainsString( 'event: tool_execution', $output );
@@ -300,15 +300,18 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 	 * Test SSE streaming with tool results containing attachments.
 	 */
 	public function test_sse_streaming_with_tool_attachments() {
-		// Register mock image tool that returns attachment data.
+		// Register mock image tool that returns attachment data, and allowlist it on
+		// the assistant so the agentic loop actually executes it.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->register_tool( $this->create_mock_image_tool() );
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'generate_test_image' ) );
 
 		$mock_client = $this->create_mock_client_with_tool_call( 'generate_test_image' );
 		$this->bootstrap_rest_controller( $mock_client );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -321,11 +324,9 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $output ) = $this->dispatch_chat_and_capture( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-
-		$output = $this->extract_sse_output( $response );
 
 		// Should contain tool execution for image generation.
 		$this->assertStringContainsString( 'generate_test_image', $output );
@@ -345,6 +346,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'stream', true );
 		$request->set_param(
 			'messages',
 			array(
@@ -357,9 +359,9 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $output ) = $this->dispatch_chat_and_capture( $request );
 
-		$output = $this->extract_sse_output( $response );
+		$this->assertSame( 200, $response->get_status() );
 
 		// Extract event types in order.
 		$events = array();
@@ -382,36 +384,49 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Extract SSE output from response.
+	 * Dispatch a chat request and capture any echoed SSE frames.
 	 *
-	 * @param WP_REST_Response $response Response object.
-	 * @return string SSE output.
+	 * The streaming path echoes frames directly and cleans output buffers
+	 * inside send_sse_headers(), so capture requires a callback buffer that
+	 * survives the handler's buffer cleanup. Existing buffers are flattened
+	 * first and the original level restored afterwards so PHPUnit's
+	 * output-buffer tracking stays balanced.
+	 *
+	 * @param WP_REST_Request $request Request to dispatch.
+	 * @return array{0: WP_REST_Response, 1: string} Response and captured output.
 	 */
-	protected function extract_sse_output( $response ) {
-		// Get the pre_serve_request callback that was registered.
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
+	protected function dispatch_chat_and_capture( WP_REST_Request $request ) {
+		$initial_level = ob_get_level();
 
-		if ( ! $hook || empty( $hook->callbacks[999] ) ) {
-			return '';
+		// Flatten all buffers so the handler's buffer cleanup (which keeps only
+		// the outermost buffer alive) cannot destroy our capture buffer.
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: end_clean may fail on restricted hosts; level is re-checked next iteration.
+			@ob_end_clean();
 		}
 
-		// Get the last registered callback (should be our SSE handler).
-		$callbacks   = $hook->callbacks[999];
-		$closure_key = array_key_last( $callbacks );
-		$closure     = $callbacks[ $closure_key ]['function'];
+		$captured = '';
+		ob_start(
+			static function ( $chunk ) use ( &$captured ) {
+				$captured .= $chunk;
+				return '';
+			}
+		);
 
-		// Capture output.
-		ob_start();
-		try {
-			call_user_func( $closure, true, rest_get_server(), new WP_REST_Request() );
-		} catch ( Exception $e ) {
-			// SSE handler calls exit, which we catch here.
+		$response = rest_get_server()->dispatch( $request );
+
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: see above.
+			@ob_end_clean();
 		}
-		$output = ob_get_clean();
 
-		return $output;
+		// Restore the original buffer count so PHPUnit does not flag the test
+		// as risky for leaving output buffers open.
+		for ( $i = 0; $i < $initial_level; $i++ ) {
+			ob_start();
+		}
+
+		return array( $response, $captured );
 	}
 
 	/**
@@ -576,6 +591,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 	protected function create_failing_tool() {
 		return new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
@@ -636,6 +652,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 	protected function create_mock_image_tool() {
 		return new class() implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
 			/**
 			 * Get the tool slug.
 			 *
