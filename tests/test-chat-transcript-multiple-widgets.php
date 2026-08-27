@@ -139,9 +139,18 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 	 * Test that retrieving a session returns the correct assistant_id.
 	 */
 	public function test_session_retrieval_includes_assistant_id() {
-		// Session retrieval depends on JetEngine CCT for persistence.
+		// Session retrieval depends on JetEngine CCT persistence. Besides the
+		// plugin being active, the CCT table must actually exist — when it does
+		// not (e.g. CI), saves fall back to browser-only storage and retrieval
+		// responds with session: null, so the roundtrip cannot be exercised.
 		if ( ! function_exists( 'jet_engine' ) ) {
 			$this->markTestSkipped( 'Requires JetEngine to be active for transcript storage' );
+		}
+		if ( function_exists( 'wp_mcp_ai_get_transcript_repository' ) ) {
+			$repository = wp_mcp_ai_get_transcript_repository();
+			if ( $repository && ! $repository->table_exists() ) {
+				$this->markTestSkipped( 'Requires the JetEngine CCT transcript table to exist' );
+			}
 		}
 		// First, save a transcript for assistant 1.
 		$session_key = 'test-session-' . time();
