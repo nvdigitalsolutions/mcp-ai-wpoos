@@ -39,6 +39,16 @@ if ( ! class_exists( 'WP_MCP_AI_Scheduled_Result_Block' ) ) {
 			if ( ! function_exists( 'register_block_type' ) ) {
 				return;
 			}
+
+			// register_block_type() is not idempotent — re-registering the same
+			// block name raises a _doing_it_wrong notice. Guard against repeated
+			// 'init' fires (which can happen on hosts that re-run init and in the
+			// test harness) so the block is only registered once per request.
+			$registry = WP_Block_Type_Registry::get_instance();
+			if ( $registry->is_registered( 'mcp-ai-wpoos/scheduled-result' ) ) {
+				return;
+			}
+
 			register_block_type(
 				__DIR__ . '/scheduled-result',
 				array(

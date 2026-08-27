@@ -934,6 +934,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'google_chat_space'              => isset( $_POST['google_chat_space'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_space'] ) ) : '',
 				'reply_webhook_url'              => isset( $_POST['google_chat_reply_webhook_url'] ) ? esc_url_raw( wp_unslash( $_POST['google_chat_reply_webhook_url'] ) ) : '',
 				'disable_oidc_verification'      => ! empty( $_POST['google_chat_disable_oidc_verification'] ),
+				'verification_token'             => isset( $_POST['google_chat_verification_token'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_verification_token'] ) ) : '',
 				'connection_method'              => $gc_method,
 				// Twitter/X-specific fields.
 				'twitter_user_id'                => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
@@ -6371,8 +6372,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'Accept incoming webhook events without validating the Google OIDC Bearer token.', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description">
-							<?php esc_html_e( 'Enable this only if Google Chat messages are not being received and you suspect the Authorization header is being stripped by your server, a proxy, or a WAF (e.g., Cloudflare). This mirrors the behavior of the Telegram integration when no secret token is configured. Not recommended for production — enable the Audience URL above instead for secure verification.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'Enable this only if Google Chat messages are not being received and you suspect the Authorization header is being stripped by your server, a proxy, or a WAF (e.g., Cloudflare). When enabled you MUST set a Verification Token below — incoming requests are then authenticated against that token instead of the OIDC Bearer token. Not recommended for production — enable the Audience URL above instead for secure verification.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_verification_token"><?php esc_html_e( 'Verification Token', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_chat_verification_token" id="google_chat_verification_token" class="regular-text" value="<?php echo $is_edit && isset( $connection['verification_token'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['verification_token'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Shared-secret token used to authenticate webhook requests when OIDC Verification is disabled above. Requests must include it via the ?token= URL parameter or the X-Google-Chat-Token header.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 

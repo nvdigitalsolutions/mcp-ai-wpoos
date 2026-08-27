@@ -679,6 +679,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// When true, OIDC token validation is skipped for incoming webhook events.
 			// Useful for environments where the Authorization header is stripped by a proxy or WAF.
 			'disable_oidc_verification'      => ! empty( $connection_data['disable_oidc_verification'] ),
+			// Shared-secret fallback token used to authenticate webhook requests when
+			// disable_oidc_verification is enabled. Requests must supply it via the
+			// ?token= query parameter or the X-Google-Chat-Token header.
+			'verification_token'             => isset( $connection_data['verification_token'] ) ? sanitize_text_field( $connection_data['verification_token'] ) : '',
 			// Google Chat authentication method: service_account | oauth | webhook.
 			'connection_method'              => isset( $connection_data['connection_method'] ) ? sanitize_key( $connection_data['connection_method'] ) : '',
 			// Channel routing: assistant IDs that listen on this connection (used by all chat-channel types).

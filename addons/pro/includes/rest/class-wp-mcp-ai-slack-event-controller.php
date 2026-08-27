@@ -1113,16 +1113,26 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 
 		// 3. Convert HTML anchor tags to Slack link syntax <url|link_text>.
 		// AI responses sometimes emit raw <a href="…">…</a> instead of
-		// Markdown [text](url) syntax.
+		// Markdown [text](url) syntax. The result is stashed behind a
+		// placeholder: wp_strip_all_tags() below would otherwise eat the
+		// Slack link syntax, which looks like an HTML tag.
+		$anchors            = array();
+		$anchor_placeholder = "\x07SLKA:";
+		$an_index           = 0;
+
 		$text = preg_replace_callback(
 			'/<a\b[^>]*\bhref=["\']([^"\']*)["\'][^>]*>(.*?)<\/a>/si',
-			function ( $m ) {
+			function ( $m ) use ( &$anchors, &$an_index, $anchor_placeholder ) {
 				$url       = esc_url( $m[1] );
 				$link_text = wp_strip_all_tags( $m[2] );
+				$key       = $anchor_placeholder . $an_index . "\x07";
 				if ( '' === $url ) {
-					return $link_text;
+					$anchors[ $key ] = $link_text;
+				} else {
+					$anchors[ $key ] = '' !== $link_text ? '<' . $url . '|' . $link_text . '>' : '<' . $url . '>';
 				}
-				return '' !== $link_text ? '<' . $url . '|' . $link_text . '>' : '<' . $url . '>';
+				++$an_index;
+				return $key;
 			},
 			$text
 		);
@@ -1131,17 +1141,24 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$text = wp_strip_all_tags( $text );
 		$text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 
-		// 5. Headings (# … through ######) → *bold* text on its own line.
+		// 4b. Restore the converted anchors.
+		if ( ! empty( $anchors ) ) {
+			$text = str_replace( array_keys( $anchors ), array_values( $anchors ), $text );
+		}
+
+		// 5. Italic: *text* → _text_ (Slack underscore italic).
+		// Runs BEFORE the bold and heading conversions: those steps produce
+		// Slack's own single-asterisk *bold* tokens, and the lookarounds here
+		// only guard against adjacent asterisks (**pairs**), so running this
+		// afterwards would silently convert fresh *bold* output into _italic_.
+		$text = preg_replace( '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '_$1_', $text );
+
+		// 6. Headings (# … through ######) → *bold* text on its own line.
 		$text = preg_replace( '/^#{1,6}\s+(.+)$/m', '*$1*', $text );
 
-		// 6. Bold: **text** or __text__ → *text* (Slack single-asterisk bold).
+		// 7. Bold: **text** or __text__ → *text* (Slack single-asterisk bold).
 		$text = preg_replace( '/\*\*(.+?)\*\*/s', '*$1*', $text );
 		$text = preg_replace( '/__(.+?)__/s', '*$1*', $text );
-
-		// 7. Italic: *text* → _text_ (Slack underscore italic).
-		// Use lookbehind/lookahead to avoid matching Slack's own *bold* tokens
-		// that were just created in step 6.
-		$text = preg_replace( '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '_$1_', $text );
 
 		// 8. Underscored italic: _text_ stays as _text_ (already mrkdwn).
 		// No change needed.

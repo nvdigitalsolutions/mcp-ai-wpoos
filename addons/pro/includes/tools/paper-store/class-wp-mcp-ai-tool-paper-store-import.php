@@ -90,7 +90,7 @@ class WP_MCP_AI_Tool_Paper_Store_Import implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Gate 1 — Sanitize at entry.
-		$collection    = sanitize_key( $arguments['collection'] );
+		$collection    = isset( $arguments['collection'] ) ? sanitize_key( $arguments['collection'] ) : '';
 		$overwrite     = isset( $arguments['overwrite'] ) ? (bool) $arguments['overwrite'] : true;
 		$records       = isset( $arguments['records'] ) && is_array( $arguments['records'] ) ? $arguments['records'] : array();
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
