@@ -336,11 +336,12 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Get a suitable AI model for research.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$provider = $this->get_research_provider( $settings );
-		$model    = $this->get_research_model( $provider, $settings );
 
 		if ( is_wp_error( $provider ) ) {
 			return $provider;
 		}
+
+		$model = $this->get_research_model( $provider, $settings );
 
 		if ( is_wp_error( $model ) ) {
 			return $model;

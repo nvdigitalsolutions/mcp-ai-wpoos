@@ -1051,66 +1051,14 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			wp_send_json_error( array( 'message' => __( 'Workflow coordinator not available.', 'mcp-ai-wpoos' ) ) );
 		}
 
+		$result   = null;
+		$duration = 0;
 		try {
 			$start_time  = microtime( true );
 			$coordinator = new WP_MCP_AI_Enhanced_Workflow_Coordinator();
 			$result      = $coordinator->execute_workflow( $workflow_id );
 			$end_time    = microtime( true );
 			$duration    = round( $end_time - $start_time, 2 );
-
-			if ( is_wp_error( $result ) ) {
-				// Log workflow execution error.
-				WP_MCP_AI_Logger::log_error(
-					'workflow_execution_error',
-					'Workflow execution failed',
-					array(
-						'workflow_id' => $workflow_id,
-						'error_code'  => $result->get_error_code(),
-						'error_msg'   => $result->get_error_message(),
-						'duration'    => $duration,
-					)
-				);
-
-				wp_send_json_error(
-					array(
-						'message'  => $result->get_error_message(),
-						'code'     => $result->get_error_code(),
-						'duration' => $duration,
-					)
-				);
-			}
-
-			// Extract metrics from result if available.
-			$metrics = array(
-				'duration'       => $duration,
-				'workflow_id'    => $workflow_id,
-				'tasks_executed' => isset( $result['tasks_completed'] ) ? $result['tasks_completed'] : 0,
-			);
-
-			// Log token usage if available in result.
-			if ( isset( $result['tokens_used'] ) ) {
-				$metrics['tokens_used'] = $result['tokens_used'];
-			}
-			if ( isset( $result['estimated_cost'] ) ) {
-				$metrics['estimated_cost'] = $result['estimated_cost'];
-			}
-
-			// Log successful workflow execution with metrics.
-			WP_MCP_AI_Logger::log_event(
-				'workflow_execution_completed',
-				'Workflow execution completed successfully',
-				$metrics
-			);
-
-			wp_send_json_success(
-				array(
-					'message'     => __( 'Workflow execution started successfully.', 'mcp-ai-wpoos' ),
-					'workflow_id' => $workflow_id,
-					'result'      => $result,
-					'metrics'     => $metrics,
-				)
-			);
-
 		} catch ( Exception $e ) {
 			// Log exception.
 			WP_MCP_AI_Logger::log_error(
@@ -1133,6 +1081,59 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				)
 			);
 		}
+
+		if ( is_wp_error( $result ) ) {
+			// Log workflow execution error.
+			WP_MCP_AI_Logger::log_error(
+				'workflow_execution_error',
+				'Workflow execution failed',
+				array(
+					'workflow_id' => $workflow_id,
+					'error_code'  => $result->get_error_code(),
+					'error_msg'   => $result->get_error_message(),
+					'duration'    => $duration,
+				)
+			);
+
+			wp_send_json_error(
+				array(
+					'message'  => $result->get_error_message(),
+					'code'     => $result->get_error_code(),
+					'duration' => $duration,
+				)
+			);
+		}
+
+		// Extract metrics from result if available.
+		$metrics = array(
+			'duration'       => $duration,
+			'workflow_id'    => $workflow_id,
+			'tasks_executed' => isset( $result['tasks_completed'] ) ? $result['tasks_completed'] : 0,
+		);
+
+		// Log token usage if available in result.
+		if ( isset( $result['tokens_used'] ) ) {
+			$metrics['tokens_used'] = $result['tokens_used'];
+		}
+		if ( isset( $result['estimated_cost'] ) ) {
+			$metrics['estimated_cost'] = $result['estimated_cost'];
+		}
+
+		// Log successful workflow execution with metrics.
+		WP_MCP_AI_Logger::log_event(
+			'workflow_execution_completed',
+			'Workflow execution completed successfully',
+			$metrics
+		);
+
+		wp_send_json_success(
+			array(
+				'message'     => __( 'Workflow execution started successfully.', 'mcp-ai-wpoos' ),
+				'workflow_id' => $workflow_id,
+				'result'      => $result,
+				'metrics'     => $metrics,
+			)
+		);
 	}
 
 	/**

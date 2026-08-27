@@ -11,30 +11,66 @@
 /**
  * Test case for orchestration AJAX endpoints
  */
-class Test_Orchestration_AJAX_Handlers extends WP_Ajax_UnitTestCase {
+class Test_Orchestration_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
+
+	/**
+	 * Re-register the orchestration dashboard's wp_ajax_* actions per test.
+	 *
+	 * The dashboard class is only loaded under is_admin() in the production
+	 * loader, which is false under CLI phpunit. wp-phpunit additionally
+	 * snapshots hooks once per process and restores that snapshot after every
+	 * test, wiping hooks registered by a previous test, so re-instantiate
+	 * (cheap: the constructor only adds actions) whenever the handler is
+	 * missing. See test-assistant-misc-ajax.php for the same pattern.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Orchestration_Dashboard' ) ) {
+			$path = WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
+			if ( file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Orchestration_Dashboard' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_execute_workflow' ) ) {
+			new WP_MCP_AI_Admin_Orchestration_Dashboard();
+		}
+	}
+
+	/**
+	 * Extract the human-readable error message from a handler response.
+	 *
+	 * Accepts both the array( 'message' => ... ) shape and a plain string
+	 * carried as data.
+	 *
+	 * @param array $response Decoded response from dispatch().
+	 * @return string Error message.
+	 */
+	protected function ajax_error_message( $response ) {
+		if ( isset( $response['data'] ) && is_array( $response['data'] ) && isset( $response['data']['message'] ) ) {
+			return (string) $response['data']['message'];
+		}
+		if ( isset( $response['data'] ) && is_string( $response['data'] ) ) {
+			return $response['data'];
+		}
+		return '';
+	}
 
 	/**
 	 * Test apply orchestration preset AJAX endpoint
 	 */
 	public function test_apply_orchestration_preset_success() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
-		// Set up AJAX request.
-		$_POST['action']    = 'wp_mcp_ai_apply_orchestration_preset';
-		$_POST['preset_id'] = 'balanced';
-		$_POST['nonce']     = wp_create_nonce( 'wp_mcp_ai_dashboard' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_apply_orchestration_preset' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected - AJAX handlers call wp_die().
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_apply_orchestration_preset',
+			array(
+				'preset_id' => 'balanced',
+				'nonce'     => wp_create_nonce( 'wp_mcp_ai_dashboard' ),
+			)
+		);
 
 		// Verify success.
 		$this->assertTrue( $response['success'], 'AJAX request should succeed' );
@@ -49,102 +85,74 @@ class Test_Orchestration_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 	 * Test apply orchestration preset without proper nonce
 	 */
 	public function test_apply_orchestration_preset_invalid_nonce() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
-		// Set up AJAX request with invalid nonce.
-		$_POST['action']    = 'wp_mcp_ai_apply_orchestration_preset';
-		$_POST['preset_id'] = 'balanced';
-		$_POST['nonce']     = 'invalid_nonce';
+		$response = $this->dispatch(
+			'wp_mcp_ai_apply_orchestration_preset',
+			array(
+				'preset_id' => 'balanced',
+				'nonce'     => 'invalid_nonce',
+			)
+		);
 
-		// Expect failure due to nonce check.
-		$this->expectException( 'WPAjaxDieStopException' );
-
-		$this->_handleAjax( 'wp_mcp_ai_apply_orchestration_preset' );
+		// Nonce failures die with -1 and no JSON body.
+		$this->assertAjaxForbidden( $response );
 	}
 
 	/**
 	 * Test apply orchestration preset without proper permissions
 	 */
 	public function test_apply_orchestration_preset_insufficient_permissions() {
-		// Set up subscriber user (no manage_options capability).
-		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $user_id );
+		$this->as_subscriber();
 
-		// Set up AJAX request.
-		$_POST['action']    = 'wp_mcp_ai_apply_orchestration_preset';
-		$_POST['preset_id'] = 'balanced';
-		$_POST['nonce']     = wp_create_nonce( 'wp_mcp_ai_dashboard' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_apply_orchestration_preset' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_apply_orchestration_preset',
+			array(
+				'preset_id' => 'balanced',
+				'nonce'     => wp_create_nonce( 'wp_mcp_ai_dashboard' ),
+			)
+		);
 
 		// Verify failure.
 		$this->assertFalse( $response['success'] );
-		$this->assertStringContainsString( 'permission', $response['data']['message'] );
+		$this->assertStringContainsString( 'permission', $this->ajax_error_message( $response ) );
 	}
 
 	/**
 	 * Test apply orchestration preset with invalid preset ID
 	 */
 	public function test_apply_orchestration_preset_invalid_id() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
-		// Set up AJAX request with invalid preset.
-		$_POST['action']    = 'wp_mcp_ai_apply_orchestration_preset';
-		$_POST['preset_id'] = 'nonexistent_preset';
-		$_POST['nonce']     = wp_create_nonce( 'wp_mcp_ai_dashboard' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_apply_orchestration_preset' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_apply_orchestration_preset',
+			array(
+				'preset_id' => 'nonexistent_preset',
+				'nonce'     => wp_create_nonce( 'wp_mcp_ai_dashboard' ),
+			)
+		);
 
 		// Verify failure.
 		$this->assertFalse( $response['success'] );
-		$this->assertStringContainsString( 'Invalid preset', $response['data']['message'] );
+		$this->assertStringContainsString( 'Invalid preset', $this->ajax_error_message( $response ) );
 	}
 
 	/**
 	 * Test that all presets can be applied successfully
 	 */
 	public function test_apply_all_presets() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
 		$presets = WP_MCP_AI_Orchestration_Preset_Service::get_presets();
 
 		foreach ( $presets as $preset_id => $preset_data ) {
-			// Set up AJAX request.
-			$_POST['action']    = 'wp_mcp_ai_apply_orchestration_preset';
-			$_POST['preset_id'] = $preset_id;
-			$_POST['nonce']     = wp_create_nonce( 'wp_mcp_ai_dashboard' );
-
-			// Make AJAX request.
-			try {
-				$this->_handleAjax( 'wp_mcp_ai_apply_orchestration_preset' );
-			} catch ( WPAjaxDieContinueException $e ) {
-				// Expected.
-			}
-
-			// Get the response.
-			$response = json_decode( $this->_last_response, true );
+			$response = $this->dispatch(
+				'wp_mcp_ai_apply_orchestration_preset',
+				array(
+					'preset_id' => $preset_id,
+					'nonce'     => wp_create_nonce( 'wp_mcp_ai_dashboard' ),
+				)
+			);
 
 			// Verify success.
 			$this->assertTrue(
@@ -158,9 +166,7 @@ class Test_Orchestration_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 	 * Test execute workflow AJAX endpoint - success case
 	 */
 	public function test_execute_workflow_success() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
 		// Create a mock workflow transient.
 		$workflow_id   = 'wf_test_123';
@@ -181,27 +187,20 @@ class Test_Orchestration_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		);
 		set_transient( 'wp_mcp_ai_workflow_' . $workflow_id, $workflow_data, DAY_IN_SECONDS );
 
-		// Set up AJAX request.
-		$_POST['action']      = 'wp_mcp_ai_execute_workflow';
-		$_POST['workflow_id'] = $workflow_id;
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_orchestration' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_execute_workflow' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected - AJAX handlers call wp_die().
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_execute_workflow',
+			array(
+				'workflow_id' => $workflow_id,
+				'nonce'       => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
+			)
+		);
 
 		// Verify success or appropriate error.
 		// Note: This may fail if WP_MCP_AI_Enhanced_Workflow_Coordinator is not available.
 		if ( ! $response['success'] ) {
 			$this->assertStringContainsString(
 				'coordinator',
-				strtolower( $response['data']['message'] ),
+				strtolower( $this->ajax_error_message( $response ) ),
 				'Expected coordinator availability message'
 			);
 		} else {
@@ -214,83 +213,62 @@ class Test_Orchestration_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 	 * Test execute workflow without proper nonce
 	 */
 	public function test_execute_workflow_invalid_nonce() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
-		// Set up AJAX request with invalid nonce.
-		$_POST['action']      = 'wp_mcp_ai_execute_workflow';
-		$_POST['workflow_id'] = 'wf_test_123';
-		$_POST['nonce']       = 'invalid_nonce';
+		$response = $this->dispatch(
+			'wp_mcp_ai_execute_workflow',
+			array(
+				'workflow_id' => 'wf_test_123',
+				'nonce'       => 'invalid_nonce',
+			)
+		);
 
-		// Expect failure due to nonce check.
-		$this->expectException( 'WPAjaxDieStopException' );
-
-		$this->_handleAjax( 'wp_mcp_ai_execute_workflow' );
+		// Nonce failures die with -1 and no JSON body.
+		$this->assertAjaxForbidden( $response );
 	}
 
 	/**
 	 * Test execute workflow without proper permissions
 	 */
 	public function test_execute_workflow_insufficient_permissions() {
-		// Set up subscriber user (no manage_options capability).
-		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $user_id );
+		$this->as_subscriber();
 
-		// Set up AJAX request.
-		$_POST['action']      = 'wp_mcp_ai_execute_workflow';
-		$_POST['workflow_id'] = 'wf_test_123';
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_orchestration' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_execute_workflow' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_execute_workflow',
+			array(
+				'workflow_id' => 'wf_test_123',
+				'nonce'       => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
+			)
+		);
 
 		// Verify failure.
 		$this->assertFalse( $response['success'] );
-		$this->assertStringContainsString( 'permission', strtolower( $response['data']['message'] ) );
+		$this->assertStringContainsString( 'permission', strtolower( $this->ajax_error_message( $response ) ) );
 	}
 
 	/**
 	 * Test execute workflow with missing workflow ID
 	 */
 	public function test_execute_workflow_missing_id() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
-		// Set up AJAX request without workflow_id.
-		$_POST['action'] = 'wp_mcp_ai_execute_workflow';
-		$_POST['nonce']  = wp_create_nonce( 'wp_mcp_ai_orchestration' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_execute_workflow' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_execute_workflow',
+			array(
+				'nonce' => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
+			)
+		);
 
 		// Verify failure.
 		$this->assertFalse( $response['success'] );
-		$this->assertStringContainsString( 'required', strtolower( $response['data']['message'] ) );
+		$this->assertStringContainsString( 'required', strtolower( $this->ajax_error_message( $response ) ) );
 	}
 
 	/**
 	 * Test restart workflow AJAX endpoint - success case
 	 */
 	public function test_restart_workflow_success() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
 		// Create a mock completed workflow transient.
 		$workflow_id   = 'wf_test_456';
@@ -321,20 +299,13 @@ class Test_Orchestration_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		);
 		set_transient( 'wp_mcp_ai_workflow_' . $workflow_id, $workflow_data, DAY_IN_SECONDS );
 
-		// Set up AJAX request.
-		$_POST['action']      = 'wp_mcp_ai_restart_workflow';
-		$_POST['workflow_id'] = $workflow_id;
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_orchestration' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_restart_workflow' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected - AJAX handlers call wp_die().
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_restart_workflow',
+			array(
+				'workflow_id' => $workflow_id,
+				'nonce'       => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
+			)
+		);
 
 		// Verify success.
 		$this->assertTrue( $response['success'], 'AJAX request should succeed' );
@@ -361,101 +332,73 @@ class Test_Orchestration_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 	 * Test restart workflow without proper nonce
 	 */
 	public function test_restart_workflow_invalid_nonce() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
-		// Set up AJAX request with invalid nonce.
-		$_POST['action']      = 'wp_mcp_ai_restart_workflow';
-		$_POST['workflow_id'] = 'wf_test_456';
-		$_POST['nonce']       = 'invalid_nonce';
+		$response = $this->dispatch(
+			'wp_mcp_ai_restart_workflow',
+			array(
+				'workflow_id' => 'wf_test_456',
+				'nonce'       => 'invalid_nonce',
+			)
+		);
 
-		// Expect failure due to nonce check.
-		$this->expectException( 'WPAjaxDieStopException' );
-
-		$this->_handleAjax( 'wp_mcp_ai_restart_workflow' );
+		// Nonce failures die with -1 and no JSON body.
+		$this->assertAjaxForbidden( $response );
 	}
 
 	/**
 	 * Test restart workflow without proper permissions
 	 */
 	public function test_restart_workflow_insufficient_permissions() {
-		// Set up subscriber user (no manage_options capability).
-		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $user_id );
+		$this->as_subscriber();
 
-		// Set up AJAX request.
-		$_POST['action']      = 'wp_mcp_ai_restart_workflow';
-		$_POST['workflow_id'] = 'wf_test_456';
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_orchestration' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_restart_workflow' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_restart_workflow',
+			array(
+				'workflow_id' => 'wf_test_456',
+				'nonce'       => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
+			)
+		);
 
 		// Verify failure.
 		$this->assertFalse( $response['success'] );
-		$this->assertStringContainsString( 'permission', strtolower( $response['data']['message'] ) );
+		$this->assertStringContainsString( 'permission', strtolower( $this->ajax_error_message( $response ) ) );
 	}
 
 	/**
 	 * Test restart workflow with missing workflow ID
 	 */
 	public function test_restart_workflow_missing_id() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
-		// Set up AJAX request without workflow_id.
-		$_POST['action'] = 'wp_mcp_ai_restart_workflow';
-		$_POST['nonce']  = wp_create_nonce( 'wp_mcp_ai_orchestration' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_restart_workflow' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_restart_workflow',
+			array(
+				'nonce' => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
+			)
+		);
 
 		// Verify failure.
 		$this->assertFalse( $response['success'] );
-		$this->assertStringContainsString( 'required', strtolower( $response['data']['message'] ) );
+		$this->assertStringContainsString( 'required', strtolower( $this->ajax_error_message( $response ) ) );
 	}
 
 	/**
 	 * Test restart workflow with non-existent workflow
 	 */
 	public function test_restart_workflow_not_found() {
-		// Set up admin user.
-		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_id );
+		$this->as_admin();
 
-		// Set up AJAX request with non-existent workflow.
-		$_POST['action']      = 'wp_mcp_ai_restart_workflow';
-		$_POST['workflow_id'] = 'wf_nonexistent_999';
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_orchestration' );
-
-		// Make AJAX request.
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_restart_workflow' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
-		}
-
-		// Get the response.
-		$response = json_decode( $this->_last_response, true );
+		$response = $this->dispatch(
+			'wp_mcp_ai_restart_workflow',
+			array(
+				'workflow_id' => 'wf_nonexistent_999',
+				'nonce'       => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
+			)
+		);
 
 		// Verify failure.
 		$this->assertFalse( $response['success'] );
-		$this->assertStringContainsString( 'not found', strtolower( $response['data']['message'] ) );
+		$this->assertStringContainsString( 'not found', strtolower( $this->ajax_error_message( $response ) ) );
 	}
 }
