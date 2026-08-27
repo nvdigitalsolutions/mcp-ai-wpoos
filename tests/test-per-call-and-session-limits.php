@@ -61,7 +61,7 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Enable per-session limits.
-		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', true );
 
 		// Simulate tool execution result.
 		$result = str_repeat( 'a', 4000 ); // ~1000 tokens.
@@ -89,7 +89,7 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Enable per-session limits.
-		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', true );
 
 		// Simulate tool execution.
 		$result = str_repeat( 'a', 4000 ); // ~1000 tokens.
@@ -119,8 +119,8 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Enable per-session limits with low threshold.
-		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
-		update_option( 'wp_mcp_ai_per_session_token_limit', 500 );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'per_session_token_limit', 500 );
 
 		// Record usage that exceeds the limit.
 		$result = str_repeat( 'a', 4000 ); // ~1000 tokens.
@@ -145,8 +145,8 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Disable per-session limits.
-		update_option( 'wp_mcp_ai_enable_per_session_limits', false );
-		update_option( 'wp_mcp_ai_per_session_token_limit', 100 );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', false );
+		WP_MCP_AI_Settings_Registry::update_setting( 'per_session_token_limit', 100 );
 
 		// Record usage that would exceed limit if enabled.
 		$result = str_repeat( 'a', 4000 ); // ~1000 tokens.
@@ -173,7 +173,7 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Enable per-session limits.
-		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', true );
 
 		// Record some usage.
 		$result = str_repeat( 'a', 4000 );
@@ -202,8 +202,8 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Enable per-call limits with low threshold.
-		update_option( 'wp_mcp_ai_enable_per_call_limits', true );
-		update_option( 'wp_mcp_ai_per_call_token_limit', 500 );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_call_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'per_call_token_limit', 500 );
 
 		// Hook into the per-call limit exceeded action.
 		$action_fired = false;
@@ -247,7 +247,7 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Enable per-session limits.
-		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', true );
 
 		// Simulate multiple tool calls.
 		for ( $i = 0; $i < 3; $i++ ) {
@@ -275,7 +275,7 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Enable per-session limits.
-		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', true );
 
 		// Record usage.
 		$result = str_repeat( 'a', 4000 );
@@ -309,8 +309,8 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Enable per-session limits with low threshold (10K tokens).
-		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
-		update_option( 'wp_mcp_ai_per_session_token_limit', 10000 );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'per_session_token_limit', 10000 );
 
 		// First call: Use 6K tokens (60% of limit).
 		$result1 = str_repeat( 'a', 24000 ); // ~6000 tokens.
@@ -351,8 +351,8 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		);
 
 		// Enable per-session limits with very low threshold.
-		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
-		update_option( 'wp_mcp_ai_per_session_token_limit', 5000 );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'per_session_token_limit', 5000 );
 
 		// First call: Use 8K tokens (exceeds 5K limit).
 		$result = str_repeat( 'a', 32000 ); // ~8000 tokens.
@@ -382,13 +382,13 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 
 		// Enable per-session limits with 10K threshold.
 		// Warning fires at 75% (7,500 tokens), effective limit is at 80% (8,000 tokens).
-		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
-		update_option( 'wp_mcp_ai_per_session_token_limit', 10000 );
+		WP_MCP_AI_Settings_Registry::update_setting( 'enable_per_session_limits', true );
+		WP_MCP_AI_Settings_Registry::update_setting( 'per_session_token_limit', 10000 );
 
 		$logged_data = null;
 		add_action(
 			'wp_mcp_ai_session_limit_approaching',
-			function( $user_id, $sid, $usage, $limit ) use ( &$logged_data ) {
+			function ( $user_id, $sid, $usage, $limit ) use ( &$logged_data ) {
 				$logged_data = compact( 'user_id', 'sid', 'usage', 'limit' );
 			},
 			10,

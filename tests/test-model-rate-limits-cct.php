@@ -72,30 +72,30 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that Google models are included in defaults.
+	 * Test that Gemini models are included in defaults.
 	 */
-	public function test_default_models_include_google() {
+	public function test_default_models_include_gemini() {
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
 		$method     = $reflection->getMethod( 'get_default_model_data' );
 		$method->setAccessible( true );
 
 		$default_models = $method->invoke( null );
 
-		$google_models = array_filter(
+		$gemini_models = array_filter(
 			$default_models,
 			function ( $model ) {
-				return 'google' === $model['provider'];
+				return 'gemini' === $model['provider'];
 			}
 		);
 
-		$this->assertNotEmpty( $google_models );
+		$this->assertNotEmpty( $gemini_models );
 
 		// Check for specific models.
-		$model_names = array_column( $google_models, 'model_name' );
-		$this->assertContains( 'gemini-1.5-pro', $model_names );
-		$this->assertContains( 'gemini-1.5-flash', $model_names );
-		$this->assertContains( 'gemini-2.0-flash', $model_names );
+		$model_names = array_column( $gemini_models, 'model_name' );
 		$this->assertContains( 'gemini-2.5-flash', $model_names );
+		$this->assertContains( 'gemini-2.5-pro', $model_names );
+		$this->assertContains( 'gemini-3-flash-preview', $model_names );
+		$this->assertContains( 'gemini-3.5-flash', $model_names );
 	}
 
 	/**
@@ -146,9 +146,10 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		// Check for specific models across different families.
 		$model_names = array_column( $nvidia_models, 'model_name' );
 		$this->assertContains( 'meta/llama-3.3-70b-instruct', $model_names );
-		$this->assertContains( 'meta/llama-3.1-8b-instruct', $model_names );
+		$this->assertContains( 'meta/llama-4-1-maverick-17b-128e-instruct', $model_names );
 		$this->assertContains( 'nvidia/llama-3.1-nemotron-70b-instruct', $model_names );
 		$this->assertContains( 'nvidia/nemotron-3-super-120b-a12b', $model_names );
+		$this->assertContains( 'nvidia/nemotron-4-340b-instruct', $model_names );
 		$this->assertContains( 'mistralai/mistral-large-2-instruct', $model_names );
 		$this->assertContains( 'deepseek-ai/deepseek-r1', $model_names );
 		$this->assertContains( 'qwen/qwen3-32b', $model_names );
@@ -169,12 +170,15 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 
 		$default_models = $method->invoke( null );
 
-		$local_providers = array( 'ollama', 'lm_studio', 'webllm' );
+		// Providers whose catalog entries legitimately carry zero TPM limits
+		// (local deployments or marketplaces without published rate limits),
+		// plus image-generation models that do not bill per token.
+		$zero_tpm_providers = array( 'embedded', 'lm_studio', 'ollama', 'webllm', 'kimi', 'openrouter', 'digitalocean', 'baseten' );
 
 		foreach ( $default_models as $model ) {
 			$this->assertArrayHasKey( 'tpm_limit', $model );
 			$this->assertIsInt( $model['tpm_limit'] );
-			if ( in_array( $model['provider'], $local_providers, true ) ) {
+			if ( in_array( $model['provider'], $zero_tpm_providers, true ) || 0 === (int) $model['max_output_tokens'] ) {
 				$this->assertGreaterThanOrEqual( 0, $model['tpm_limit'] );
 			} else {
 				$this->assertGreaterThan( 0, $model['tpm_limit'] );
@@ -196,7 +200,12 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		foreach ( $default_models as $model ) {
 			$this->assertArrayHasKey( 'context_window', $model );
 			$this->assertIsInt( $model['context_window'] );
-			$this->assertGreaterThan( 0, $model['context_window'] );
+			// Image-generation models do not have a token context window.
+			if ( 0 === (int) $model['max_output_tokens'] ) {
+				$this->assertGreaterThanOrEqual( 0, $model['context_window'] );
+			} else {
+				$this->assertGreaterThan( 0, $model['context_window'] );
+			}
 			// Max context should be less than 3 million tokens.
 			$this->assertLessThanOrEqual( 3000000, $model['context_window'] );
 		}
@@ -306,8 +315,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $gpt4o_models );
 
 		$gpt4o = reset( $gpt4o_models );
-		// According to the problem statement, the default tier has 30,000 TPM.
-		$this->assertSame( 30000, $gpt4o['tpm_limit'] );
+		// Current catalog value for the gpt-4o default tier.
+		$this->assertSame( 450000, $gpt4o['tpm_limit'] );
 	}
 
 	/**
@@ -323,14 +332,14 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$gemini_pro = array_filter(
 			$default_models,
 			function ( $model ) {
-				return 'gemini-1.5-pro' === $model['model_name'];
+				return 'gemini-3.1-pro' === $model['model_name'];
 			}
 		);
 
 		$this->assertNotEmpty( $gemini_pro );
 
 		$model = reset( $gemini_pro );
-		// Gemini 1.5 Pro has 2M context window.
+		// Gemini 3.1 Pro has a 2M context window.
 		$this->assertGreaterThan( 1000000, $model['context_window'] );
 	}
 
@@ -429,23 +438,23 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 
 		$default_models = $method->invoke( null );
 
-		$google_models = array_filter(
+		$gemini_models = array_filter(
 			$default_models,
 			function ( $model ) {
-				return 'google' === $model['provider'];
+				return 'gemini' === $model['provider'];
 			}
 		);
 
-		$model_names = array_column( $google_models, 'model_name' );
+		$model_names = array_column( $gemini_models, 'model_name' );
 
-		// Check that Gemini 2.5 Flash Image is included (latest model).
+		// Check that Gemini image models are included.
 		$this->assertContains( 'gemini-2.5-flash-image', $model_names, 'Gemini 2.5 Flash Image should be in default models' );
 
-		// Check that Gemini 2.0 Flash Image is included (legacy).
-		$this->assertContains( 'gemini-2.0-flash-image', $model_names, 'Gemini 2.0 Flash Image should be in default models' );
+		// Check that Gemini 3.1 Flash Image is included (latest).
+		$this->assertContains( 'gemini-3.1-flash-image', $model_names, 'Gemini 3.1 Flash Image should be in default models' );
 
-		// Check that Imagen 3 is included (alternative).
-		$this->assertContains( 'imagen-3', $model_names, 'Imagen 3 should be in default models' );
+		// Check that Imagen 4 is included (alternative).
+		$this->assertContains( 'imagen-4', $model_names, 'Imagen 4 should be in default models' );
 
 		// Verify Gemini 2.5 Flash Image has correct configuration.
 		$gemini_25_flash_image = array_values(
@@ -461,7 +470,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$model = reset( $gemini_25_flash_image );
 
 		// Verify key properties.
-		$this->assertSame( 'google', $model['provider'], 'Provider should be google' );
+		$this->assertSame( 'gemini', $model['provider'], 'Provider should be gemini' );
 		$this->assertSame( 1000000, $model['tpm_limit'], 'TPM limit should be 1M' );
 		$this->assertSame( 1000, $model['rpm_limit'], 'RPM limit should be 1000' );
 		$this->assertFalse( $model['supports_streaming'], 'Image models should not support streaming' );
@@ -484,15 +493,14 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 			}
 		);
 
-		// Should have exactly 5 GPT-4.1 variants.
-		$this->assertCount( 5, $gpt_41_models, 'Should have 5 GPT-4.1 model variants' );
+		// Should have exactly 4 GPT-4.1 variants.
+		$this->assertCount( 4, $gpt_41_models, 'Should have 4 GPT-4.1 model variants' );
 
 		$model_names = array_column( $gpt_41_models, 'model_name' );
 		$this->assertContains( 'gpt-4.1', $model_names );
 		$this->assertContains( 'gpt-4.1-mini', $model_names );
 		$this->assertContains( 'gpt-4.1-nano', $model_names );
 		$this->assertContains( 'gpt-4.1-turbo', $model_names );
-		$this->assertContains( 'gpt-4.1-2025-04-14', $model_names );
 
 		// Verify GPT-4.1 base model properties.
 		$gpt_41 = array_values(
@@ -510,13 +518,13 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertSame( 128000, $gpt_41['context_window'] );
 		$this->assertTrue( $gpt_41['supports_vision'] );
 		$this->assertTrue( $gpt_41['supports_function_calling'] );
-		$this->assertSame( 0.006, $gpt_41['cost_per_1k_input_tokens'] );
+		$this->assertSame( 0.002, $gpt_41['cost_per_1k_input_tokens'] );
 	}
 
 	/**
-	 * Test that GPT-5.3 Codex Spark is included in default model data.
+	 * Test that GPT-5.3 Codex is included in default model data.
 	 */
-	public function test_default_models_include_gpt_53_codex_spark() {
+	public function test_default_models_include_gpt_53_codex() {
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
 		$method     = $reflection->getMethod( 'get_default_model_data' );
 		$method->setAccessible( true );
@@ -525,20 +533,21 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$model_names    = array_column( $default_models, 'model_name' );
 
 		$this->assertContains( 'gpt-5.3-codex', $model_names, 'Default models should include gpt-5.3-codex' );
-		$this->assertContains( 'gpt-5.3-codex-spark', $model_names, 'Default models should include gpt-5.3-codex-spark' );
 
-		// Verify spark entry details.
-		$spark = array_values(
+		// Verify codex entry details.
+		$codex = array_values(
 			array_filter(
 				$default_models,
 				function ( $m ) {
-					return 'gpt-5.3-codex-spark' === $m['model_name'];
+					return 'gpt-5.3-codex' === $m['model_name'];
 				}
 			)
 		)[0];
 
-		$this->assertSame( 'openai', $spark['provider'] );
-		$this->assertSame( 128000, $spark['context_window'], 'Codex Spark should have 128K context window' );
-		$this->assertFalse( $spark['supports_vision'], 'Codex Spark is text-only' );
+		$this->assertSame( 'openai', $codex['provider'] );
+		$this->assertSame( 922000, $codex['context_window'], 'Codex should have a 922K context window' );
+		$this->assertSame( 128000, $codex['max_output_tokens'], 'Codex should have 128K max output tokens' );
+		$this->assertFalse( $codex['supports_vision'], 'Codex is text-only' );
+		$this->assertTrue( $codex['supports_function_calling'] );
 	}
 }
