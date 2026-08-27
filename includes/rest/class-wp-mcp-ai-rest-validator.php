@@ -113,22 +113,13 @@ class WP_MCP_AI_REST_Validator {
 				);
 			}
 
-			$role        = $message['role'];
-			$valid_roles = array( 'system', 'user', 'assistant', 'tool' );
-
-			if ( ! in_array( $role, $valid_roles, true ) ) {
-				return new WP_Error(
-					'rest_invalid_param',
-					sprintf(
-						/* translators: 1: message index, 2: invalid role, 3: valid roles list */
-						__( 'Message at index %1$d has invalid role "%2$s". Must be one of: %3$s', 'mcp-ai-wpoos' ),
-						$index,
-						$role,
-						implode( ', ', $valid_roles )
-					),
-					array( 'status' => 400 )
-				);
-			}
+			// Role VALUES are intentionally not enforced here: semantic role
+			// validation (including the wp_mcp_ai_allowed_message_roles filter
+			// that lets integrations register custom roles) lives in
+			// sanitize_messages(), which runs immediately after validation.
+			// Enforcing the enum here would reject custom roles before the
+			// filter can see them and duplicate the sanitize-layer error codes.
+			$role = $message['role'];
 
 			// Validate content field (required for most roles).
 			if ( ! isset( $message['content'] ) && 'assistant' !== $role ) {
@@ -571,9 +562,16 @@ class WP_MCP_AI_REST_Validator {
 			} elseif ( in_array( $segment_type, array( 'image_url', 'image_file', 'input_image', 'audio', 'file', 'input_file' ), true ) ) {
 				$segment = $attachments_helper->prepare_input_attachment_segment( $item );
 
-				if ( ! is_wp_error( $segment ) ) {
-					$segments[] = $segment;
+				// Propagate preparation errors (e.g. unknown file references,
+				// forbidden attachments, unsupported MIME types) instead of
+				// silently dropping the segment. Silently dropping produces a
+				// misleading "invalid messages" error downstream and hides the
+				// real failure from the client.
+				if ( is_wp_error( $segment ) ) {
+					return $segment;
 				}
+
+				$segments[] = $segment;
 			}
 		}
 

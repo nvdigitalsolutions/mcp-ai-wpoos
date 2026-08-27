@@ -90,14 +90,30 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Register the plugin's REST routes via the rest_api_init flow and return
+	 * the route table.
+	 *
+	 * Calling register_routes() directly outside rest_api_init raises a
+	 * _doing_it_wrong notice on WP 6.9+. Resetting the server and letting
+	 * rest_get_server() fire rest_api_init exercises the real registration
+	 * path (WP_MCP_AI_REST hooks its register_routes() to rest_api_init).
+	 *
+	 * @return array Registered routes, keyed by route regex.
+	 */
+	private function get_routes_via_init() {
+		global $wp_rest_server;
+
+		$wp_rest_server = null;
+
+		return rest_get_server()->get_routes();
+	}
+
+	/**
 	 * Test that routes are registered correctly.
 	 */
 	public function test_routes_registered() {
-		// Register routes.
-		$this->controller->register_routes();
-
-		// Get all registered routes.
-		$routes = rest_get_server()->get_routes();
+		// Register routes through the rest_api_init flow.
+		$routes = $this->get_routes_via_init();
 
 		// Check that chat routes exist.
 		$expected_routes = array(
@@ -120,15 +136,14 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 	 * Test that /chat route has correct methods.
 	 */
 	public function test_chat_route_methods() {
-		$this->controller->register_routes();
-		$routes = rest_get_server()->get_routes();
-
+		$routes     = $this->get_routes_via_init();
 		$chat_route = $routes['/mcp-ai/v1/chat'];
 
 		// Should have POST and GET methods.
 		$methods = array();
 		foreach ( $chat_route as $endpoint ) {
-			$methods = array_merge( $methods, $endpoint['methods'] );
+			// WP 6.9+ stores methods as keys (array( 'POST' => true )).
+			$methods = array_merge( $methods, array_keys( $endpoint['methods'] ) );
 		}
 
 		$this->assertContains( 'POST', $methods, 'Chat route should support POST' );
@@ -139,15 +154,13 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 	 * Test that /chat-client route has correct methods.
 	 */
 	public function test_chat_client_route_methods() {
-		$this->controller->register_routes();
-		$routes = rest_get_server()->get_routes();
-
+		$routes           = $this->get_routes_via_init();
 		$chat_client_route = $routes['/mcp-ai/v1/chat-client'];
 
 		// Should have POST and GET methods.
 		$methods = array();
 		foreach ( $chat_client_route as $endpoint ) {
-			$methods = array_merge( $methods, $endpoint['methods'] );
+			$methods = array_merge( $methods, array_keys( $endpoint['methods'] ) );
 		}
 
 		$this->assertContains( 'POST', $methods, 'Chat client route should support POST' );
@@ -158,15 +171,13 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 	 * Test that /chat-transcripts route has correct methods.
 	 */
 	public function test_chat_transcripts_route_methods() {
-		$this->controller->register_routes();
-		$routes = rest_get_server()->get_routes();
-
+		$routes            = $this->get_routes_via_init();
 		$transcripts_route = $routes['/mcp-ai/v1/chat-transcripts'];
 
 		// Should have GET and POST methods.
 		$methods = array();
 		foreach ( $transcripts_route as $endpoint ) {
-			$methods = array_merge( $methods, $endpoint['methods'] );
+			$methods = array_merge( $methods, array_keys( $endpoint['methods'] ) );
 		}
 
 		$this->assertContains( 'GET', $methods, 'Transcripts route should support GET' );
@@ -177,15 +188,13 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 	 * Test that individual transcript route has correct methods.
 	 */
 	public function test_individual_transcript_route_methods() {
-		$this->controller->register_routes();
-		$routes = rest_get_server()->get_routes();
-
+		$routes           = $this->get_routes_via_init();
 		$transcript_route = $routes['/mcp-ai/v1/chat-transcripts/(?P<session_key>[^/]+)'];
 
 		// Should have GET and DELETE methods.
 		$methods = array();
 		foreach ( $transcript_route as $endpoint ) {
-			$methods = array_merge( $methods, $endpoint['methods'] );
+			$methods = array_merge( $methods, array_keys( $endpoint['methods'] ) );
 		}
 
 		$this->assertContains( 'GET', $methods, 'Individual transcript route should support GET' );

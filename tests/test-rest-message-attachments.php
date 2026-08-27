@@ -352,15 +352,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 				return true;
 			},
-			function ( $options ) use ( &$resolved_file_id ) {
-				$this->assertArrayHasKey( 'attachments', $options );
-				$this->assertNotEmpty( $options['attachments'] );
-				$attachment = $options['attachments'][0];
-
-				$this->assertSame( $resolved_file_id, $attachment['id'] );
-				$this->assertSame( $resolved_file_id, $attachment['file_id'] );
-				$this->assertSame( 'image/png', $attachment['mime_type'] );
-				$this->assertArrayNotHasKey( 'data', $attachment );
+			function ( $options ) {
+				// Attachments are embedded in the message content segments
+				// (file_id / image_url), not in a separate options key.
+				$this->assertArrayNotHasKey( 'attachments', $options );
 
 				return true;
 			}
@@ -411,14 +406,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 				return true;
 			},
-			function ( $options ) use ( &$resolved_file_id ) {
-				$this->assertArrayHasKey( 'attachments', $options );
-				$this->assertCount( 1, $options['attachments'] );
-
-				$attachment = $options['attachments'][0];
-				$this->assertSame( $resolved_file_id, $attachment['id'] );
-				$this->assertSame( $resolved_file_id, $attachment['file_id'] );
-				$this->assertSame( 'image/png', $attachment['mime_type'] );
+			function ( $options ) {
+				// Attachments are embedded in the message content segments,
+				// not in a separate options key.
+				$this->assertArrayNotHasKey( 'attachments', $options );
 
 				return true;
 			}
@@ -456,15 +447,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 				return true;
 			},
-			function ( $options ) use ( &$resolved_file_id ) {
-				$this->assertArrayHasKey( 'attachments', $options );
-				$this->assertNotEmpty( $options['attachments'] );
-
-				$attachment = $options['attachments'][0];
-				$this->assertSame( $resolved_file_id, $attachment['id'] );
-				$this->assertSame( $resolved_file_id, $attachment['file_id'] );
-				$this->assertSame( 'text/plain', $attachment['mime_type'] );
-				$this->assertArrayNotHasKey( 'data', $attachment );
+			function ( $options ) {
+				// Attachments are embedded in the message content segments,
+				// not in a separate options key.
+				$this->assertArrayNotHasKey( 'attachments', $options );
 
 				return true;
 			}
@@ -502,16 +488,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 				return true;
 			},
-			function ( $options ) use ( &$resolved_file_id ) {
-				$this->assertArrayHasKey( 'attachments', $options );
-				$this->assertNotEmpty( $options['attachments'] );
-
-				$attachment = $options['attachments'][0];
-				$this->assertSame( $resolved_file_id, $attachment['id'] );
-				$this->assertSame( $resolved_file_id, $attachment['file_id'] );
-				$this->assertSame( 'text/plain', $attachment['mime_type'] );
-				$this->assertSame( 0, $attachment['bytes'] );
-				$this->assertArrayNotHasKey( 'data', $attachment );
+			function ( $options ) {
+				// Attachments are embedded in the message content segments,
+				// not in a separate options key.
+				$this->assertArrayNotHasKey( 'attachments', $options );
 
 				return true;
 			}
@@ -602,21 +582,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 				return true;
 			},
-			function ( $options ) use ( &$image_file_id, &$file_file_id ) {
-				$this->assertArrayHasKey( 'attachments', $options );
-				$this->assertCount( 2, $options['attachments'] );
-
-				$image_attachment = $options['attachments'][0];
-				$this->assertSame( $image_file_id, $image_attachment['id'] );
-				$this->assertSame( $image_file_id, $image_attachment['file_id'] );
-				$this->assertSame( 'image/png', $image_attachment['mime_type'] );
-				$this->assertArrayNotHasKey( 'data', $image_attachment );
-
-				$file_attachment = $options['attachments'][1];
-				$this->assertSame( $file_file_id, $file_attachment['id'] );
-				$this->assertSame( $file_file_id, $file_attachment['file_id'] );
-				$this->assertSame( 'text/plain', $file_attachment['mime_type'] );
-				$this->assertArrayNotHasKey( 'data', $file_attachment );
+			function ( $options ) {
+				// Attachments are embedded in the message content segments,
+				// not in a separate options key.
+				$this->assertArrayNotHasKey( 'attachments', $options );
 
 				return true;
 			}
@@ -718,27 +687,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 				return true;
 			},
-			function ( $options ) use ( &$image_file_id1, &$image_file_id2, &$image_file_id3 ) {
-				$this->assertArrayHasKey( 'attachments', $options );
-				$this->assertCount( 3, $options['attachments'] );
-
-				// Verify first image attachment.
-				$attachment1 = $options['attachments'][0];
-				$this->assertSame( $image_file_id1, $attachment1['id'] );
-				$this->assertSame( $image_file_id1, $attachment1['file_id'] );
-				$this->assertSame( 'image/png', $attachment1['mime_type'] );
-
-				// Verify second image attachment.
-				$attachment2 = $options['attachments'][1];
-				$this->assertSame( $image_file_id2, $attachment2['id'] );
-				$this->assertSame( $image_file_id2, $attachment2['file_id'] );
-				$this->assertSame( 'image/png', $attachment2['mime_type'] );
-
-				// Verify third image attachment.
-				$attachment3 = $options['attachments'][2];
-				$this->assertSame( $image_file_id3, $attachment3['id'] );
-				$this->assertSame( $image_file_id3, $attachment3['file_id'] );
-				$this->assertSame( 'image/png', $attachment3['mime_type'] );
+			function ( $options ) {
+				// Attachments are embedded in the message content segments,
+				// not in a separate options key.
+				$this->assertArrayNotHasKey( 'attachments', $options );
 
 				return true;
 			}
@@ -778,15 +730,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 				return true;
 			},
-			function ( $options ) use ( &$resolved_file_id ) {
-				$this->assertArrayHasKey( 'attachments', $options );
-				$this->assertNotEmpty( $options['attachments'] );
-
-				$attachment = $options['attachments'][0];
-				$this->assertSame( $resolved_file_id, $attachment['id'] );
-				$this->assertSame( $resolved_file_id, $attachment['file_id'] );
-				$this->assertSame( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', $attachment['mime_type'] );
-				$this->assertArrayNotHasKey( 'data', $attachment );
+			function ( $options ) {
+				// Attachments are embedded in the message content segments,
+				// not in a separate options key.
+				$this->assertArrayNotHasKey( 'attachments', $options );
 
 				return true;
 			}
@@ -1103,9 +1050,12 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
+		// The download handler registers its rest_pre_serve_request closure at
+		// priority 10, so compare callbacks added at that priority during the
+		// dispatch below.
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
 		}
 
 		$filter_callback = function ( $preempt, $args, $url ) {
@@ -1152,13 +1102,13 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Hook::class, $hook );
 
-		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
+		$current_keys = array_keys( $hook->callbacks[10] ?? array() );
 		$added_keys   = array_diff( $current_keys, $existing_keys );
 
 		$this->assertNotEmpty( $added_keys );
 
 		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
+		$closure     = $hook->callbacks[10][ $closure_key ]['function'];
 
 		ob_start();
 		$served = call_user_func( $closure, false, $response, $request, rest_get_server() );
@@ -1167,7 +1117,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 		$this->assertTrue( $served );
 		$this->assertSame( 'Example content', $output );
 
-		unset( $hook->callbacks[999][ $closure_key ] );
+		unset( $hook->callbacks[10][ $closure_key ] );
 
 		wp_set_current_user( 0 );
 	}

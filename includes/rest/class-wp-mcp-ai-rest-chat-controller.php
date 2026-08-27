@@ -441,12 +441,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'required'          => true,
 				'validate_callback' => array( $this, 'validate_messages_array_wrapper' ),
 			),
-			'attachments'         => array(
-				'description'       => __( 'Optional array of file attachments to include with the request.', 'mcp-ai-wpoos' ),
-				'type'              => 'array',
-				'required'          => false,
-				'validate_callback' => array( $this, 'validate_attachments_array_wrapper' ),
-			),
+			// NOTE: no 'attachments' arg is declared here. Attachments are
+			// embedded in the message content segments (input_image / input_file)
+			// and extracted during sanitization. Declaring a top-level attachments
+			// arg would validate-and-reject legacy clients that still send it as a
+			// separate parameter; undeclared params are ignored by the REST layer.
 			'options'             => array(
 				'description' => __( 'Optional request options to override assistant defaults.', 'mcp-ai-wpoos' ),
 				'type'        => 'object',
