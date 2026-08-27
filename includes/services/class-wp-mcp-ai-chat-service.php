@@ -301,7 +301,7 @@ class WP_MCP_AI_Chat_Service {
 
 			// Execute each tool with iteration context for flow stage validation.
 			$iteration_start_time = microtime( true );
-			$tool_results         = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations );
+			$tool_results         = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations, $messages );
 			$iteration_duration   = microtime( true ) - $iteration_start_time;
 
 			if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
@@ -507,9 +507,10 @@ class WP_MCP_AI_Chat_Service {
 	 * @param array $assistant_config Assistant configuration.
 	 * @param int   $iteration        Current iteration number.
 	 * @param int   $max_iterations   Maximum iterations.
+	 * @param array $messages         Conversation messages, passed to tools for metadata access.
 	 * @return array Tool result messages.
 	 */
-	private function execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration = 0, $max_iterations = 5 ) {
+	private function execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration = 0, $max_iterations = 5, $messages = array() ) {
 		$results = array();
 
 		foreach ( $tool_calls as $tool_call ) {
