@@ -141,6 +141,8 @@ class WP_MCP_AI_REST_Chat_Authentication_Modes_Test extends WP_UnitTestCase {
 			)
 		);
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
+		// Guest tokens are origin-bound — send the matching Origin header.
+		$request->set_header( 'Origin', home_url() );
 
 		$response = rest_get_server()->dispatch( $request );
 

@@ -34,8 +34,28 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-chat-service.php';
 		}
 
-		// Create a fresh registry for each test.
-		$this->registry = new WP_MCP_AI_Tool_Registry();
+		// WP_MCP_AI_Tool_Registry is a singleton (protected constructor) —
+		// reuse the shared instance and reset its registered tools per test.
+		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$this->registry->clear_tools();
+	}
+
+	/**
+	 * Build a chat service wired to the test registry.
+	 *
+	 * The chat service constructor requires typed router/rate-limiter/budget
+	 * dependencies; the exercised path (execute_tool_calls) only needs the
+	 * tool registry, so the other dependencies are unconfigured mocks.
+	 *
+	 * @return WP_MCP_AI_Chat_Service Chat service instance.
+	 */
+	private function create_chat_service() {
+		return new WP_MCP_AI_Chat_Service(
+			$this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )->disableOriginalConstructor()->getMock(),
+			$this->getMockBuilder( WP_MCP_AI_Rate_Limit_Manager::class )->disableOriginalConstructor()->getMock(),
+			$this->getMockBuilder( WP_MCP_AI_Token_Budget_Manager::class )->disableOriginalConstructor()->getMock(),
+			$this->registry
+		);
 	}
 
 	/**
@@ -114,7 +134,7 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 		$this->registry->register_tool( $mock_tool );
 
 		// Use reflection to access private method for testing.
-		$service    = new WP_MCP_AI_Chat_Service( $this->registry );
+		$service    = $this->create_chat_service();
 		$reflection = new ReflectionClass( $service );
 		$method     = $reflection->getMethod( 'execute_tool_calls' );
 		$method->setAccessible( true );
@@ -158,13 +178,14 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 		// Should NOT have error_code (this is key - it's not an error for the LLM).
 		$this->assertArrayNotHasKey( 'error_code', $content );
 
-		// Should have status=unavailable and instructive message.
+		// Pending results are surfaced as status=processing with an instructive
+		// message and the original error message preserved as a note.
 		$this->assertArrayHasKey( 'status', $content );
-		$this->assertSame( 'unavailable', $content['status'] );
+		$this->assertSame( 'processing', $content['status'] );
 
 		$this->assertArrayHasKey( 'message', $content );
-		$this->assertStringContainsString( 'temporarily unavailable', $content['message'] );
 		$this->assertStringContainsString( 'general knowledge', $content['message'] );
+		$this->assertStringContainsString( 'currently processing', $content['message'] );
 
 		// Should include the original error message as a note.
 		$this->assertArrayHasKey( 'note', $content );
@@ -242,7 +263,7 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 		$this->registry->register_tool( $mock_tool );
 
 		// Use reflection to access private method for testing.
-		$service    = new WP_MCP_AI_Chat_Service( $this->registry );
+		$service    = $this->create_chat_service();
 		$reflection = new ReflectionClass( $service );
 		$method     = $reflection->getMethod( 'execute_tool_calls' );
 		$method->setAccessible( true );
