@@ -39,6 +39,11 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 
 		// Get toolkit manager instance.
 		$this->toolkit_manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
+
+		// The manager registers toolkit commands on the init hook (priority 25),
+		// which the test harness does not re-fire; register them manually
+		// against the freshly created handler.
+		$this->toolkit_manager->register_toolkit_commands();
 	}
 
 	/**
@@ -46,7 +51,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_phase2_ecommerce_commands_registered() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		$this->assertArrayHasKey( 'discount-optimize', $commands );
 		$this->assertArrayHasKey( 'inventory-forecast', $commands );
@@ -58,7 +63,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_phase2_social_media_commands_registered() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		$this->assertArrayHasKey( 'social-schedule', $commands );
 		$this->assertArrayHasKey( 'content-calendar', $commands );
@@ -70,7 +75,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_phase2_video_commands_registered() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		$this->assertArrayHasKey( 'video-merge', $commands );
 		$this->assertArrayHasKey( 'video-thumbnail', $commands );
@@ -256,7 +261,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_phase2_commands_have_documentation() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		$phase2_commands = array(
 			'discount-optimize',
@@ -287,7 +292,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_phase2_command_capabilities() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		// E-commerce commands require manage_woocommerce.
 		$ecommerce_commands = array( 'discount-optimize', 'inventory-forecast' );

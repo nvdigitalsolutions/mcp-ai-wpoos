@@ -40,6 +40,11 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 		// Get handler and create orchestrator.
 		$handler            = wp_mcp_ai_get_slash_command_handler();
 		$this->orchestrator = new WP_MCP_AI_Slash_Command_Workflow_Orchestrator( $handler );
+
+		// The toolkit manager registers its commands on the init hook (priority
+		// 25), which the test harness does not re-fire; register them manually
+		// against the freshly created handler.
+		WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance()->register_toolkit_commands();
 	}
 
 	/**
@@ -274,7 +279,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_workflow_commands_are_registered() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		$reflection = new ReflectionClass( $this->orchestrator );
 		$property   = $reflection->getProperty( 'workflows' );
