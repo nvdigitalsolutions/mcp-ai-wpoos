@@ -629,6 +629,21 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	}
 
 	/**
+	 * Get load monitor instance (lazy loaded)
+	 *
+	 * @return WP_MCP_AI_Tool_Load_Monitor|null
+	 */
+	protected function get_load_monitor() {
+		if ( null === $this->load_monitor ) {
+			if ( class_exists( 'WP_MCP_AI_Tool_Load_Monitor' ) ) {
+				$this->load_monitor = new WP_MCP_AI_Tool_Load_Monitor();
+			}
+		}
+
+		return $this->load_monitor;
+	}
+
+	/**
 	 * Get async executor instance (lazy loaded)
 	 *
 	 * @return WP_MCP_AI_Tool_Async_Executor|null

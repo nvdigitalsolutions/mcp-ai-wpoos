@@ -139,23 +139,12 @@ class WP_MCP_AI_REST_Validator {
 				);
 			}
 
-			// Validate tool_call_id for tool messages.
-			if ( 'tool' === $role && empty( $message['tool_call_id'] ) ) {
-				return new WP_Error(
-					'rest_invalid_param',
-					sprintf(
-						/* translators: %d: message index */
-						__( 'Tool message at index %d is missing required "tool_call_id" property.', 'mcp-ai-wpoos' ),
-						$index
-					),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'add_tool_call_id' => __( 'Messages with role "tool" must include a "tool_call_id" matching the assistant\'s tool call.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
-			}
+			// Pairing semantics for tool messages (tool_call_id matching the
+			// preceding assistant tool call) are intentionally NOT enforced here:
+			// orphaned tool messages are silently discarded by
+			// WP_MCP_AI_REST::filter_tool_messages_without_matching_calls() before
+			// the payload reaches the provider. Rejecting them at the REST args
+			// gate would turn a tolerated legacy payload into a hard 400.
 		}
 
 		return true;

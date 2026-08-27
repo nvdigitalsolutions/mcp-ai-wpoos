@@ -3164,6 +3164,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$messages    = $sanitized_messages['messages'];
 			$attachments = $sanitized_messages['attachments'];
 
+			// Discard orphaned tool messages (missing or mismatched tool_call_id)
+			// before dispatch — the provider rejects payloads with unpaired tool
+			// messages, and silently dropping them preserves conversation flow
+			// for clients that resubmit legacy transcripts.
+			$messages = $this->filter_tool_messages_without_matching_calls( $messages );
+
 			if ( empty( $messages ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_messages', __( 'Messages must be provided as an array of role/content pairs.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
