@@ -37,7 +37,15 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->rest           = new WP_MCP_AI_REST();
+		// The REST controller requires a tool registry and a language model
+		// router. The extraction helper under test uses neither, so the
+		// shared registry and a mocked router are sufficient.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$client   = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->rest           = new WP_MCP_AI_REST( $registry, $client );
 		$this->extract_method = new ReflectionMethod( $this->rest, 'extract_text_from_tool_results' );
 		$this->extract_method->setAccessible( true );
 	}
