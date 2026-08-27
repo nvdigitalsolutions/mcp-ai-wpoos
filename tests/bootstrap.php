@@ -454,6 +454,30 @@ function wp_mcp_ai_tests_neutralise_elementor_init_replay() {
 tests_add_filter( 'init', 'wp_mcp_ai_tests_neutralise_elementor_init_replay', PHP_INT_MAX );
 
 /**
+ * Neutralise WordPress 7.1+ icon registration when tests re-fire `init`.
+ *
+ * Several tests call do_action( 'init' ) in setUp to bootstrap plugin
+ * subsystems or register REST routes. WordPress 7.1+ hooks
+ * _wp_register_default_icon_collections() and _wp_register_default_icons()
+ * to `init`; re-firing the action re-registers the same collections and
+ * icons, which raises _doing_it_wrong notices ("Icon collection is already
+ * registered." / "Icon is already registered.") that fail unrelated tests.
+ * After the first real `init`, detach both callbacks so later `init`
+ * firings skip the re-registration; the registry stays populated from the
+ * initial registration.
+ */
+function wp_mcp_ai_tests_neutralise_icon_init_replay() {
+	if ( function_exists( '_wp_register_default_icon_collections' ) ) {
+		remove_action( 'init', '_wp_register_default_icon_collections' );
+	}
+	if ( function_exists( '_wp_register_default_icons' ) ) {
+		remove_action( 'init', '_wp_register_default_icons' );
+	}
+}
+
+tests_add_filter( 'init', 'wp_mcp_ai_tests_neutralise_icon_init_replay', PHP_INT_MAX );
+
+/**
  * Provide wc_get_page_screen_id() for tests that fire the `current_screen`
  * hook — WooCommerce's OrderAttributionController calls it from there.
  *
