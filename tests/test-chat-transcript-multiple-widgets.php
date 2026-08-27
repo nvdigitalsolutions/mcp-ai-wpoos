@@ -96,6 +96,10 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 		// WP 6.9 may emit a breadcrumbs block re-registration notice during
 		// rest_do_request. Suppress it so the test framework doesn't fail.
 		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		// WooCommerce Blocks hooks non-idempotent init callbacks (payment
+		// method integrations) — re-firing init in the harness re-registers
+		// them and raises a _doing_it_wrong notice from Woo's own code.
+		$this->setExpectedIncorrectUsage( 'Automattic\WooCommerce\Blocks\Integrations\IntegrationRegistry::register' );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );

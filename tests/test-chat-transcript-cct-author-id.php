@@ -44,6 +44,10 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 
 		// WP 6.9 may re-register breadcrumbs block during rest_api_init.
 		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		// WooCommerce Blocks hooks non-idempotent init callbacks (payment
+		// method integrations) — re-firing init in the harness re-registers
+		// them and raises a _doing_it_wrong notice from Woo's own code.
+		$this->setExpectedIncorrectUsage( 'Automattic\WooCommerce\Blocks\Integrations\IntegrationRegistry::register' );
 
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
@@ -147,21 +151,10 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 	public function test_cct_author_id_is_zero_for_guest_users() {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 
-		// Create a guest token for authentication.
-		$guest_token = 'guest_test_token_' . wp_generate_password( 32, false );
-
-		// Mock the guest token validation.
-		add_filter(
-			'wp_mcp_ai_validate_guest_token',
-			function ( $is_valid, $token ) use ( $guest_token ) {
-				if ( $token === $guest_token ) {
-					return true;
-				}
-				return $is_valid;
-			},
-			10,
-			2
-		);
+		// Guest tokens are origin-bound (audit F-AUTHZ-04): generate a real
+		// token and send the matching Origin header on the request.
+		$guest_token = WP_MCP_AI_Shortcode::generate_guest_token( $this->assistant_id );
+		$this->assertNotEmpty( $guest_token, 'Guest token should be generated' );
 
 		// Set current user to 0 (guest).
 		wp_set_current_user( 0 );
@@ -169,6 +162,7 @@ class WP_MCP_AI_Chat_Transcript_CCT_Author_ID_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
+		$request->set_header( 'Origin', home_url() );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'session_key', 'test-guest-cct-author-session' );
 		$request->set_param(

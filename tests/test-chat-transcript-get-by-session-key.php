@@ -297,6 +297,8 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'user_id', 0 );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
+		// Guest tokens are origin-bound — send the matching Origin header.
+		$request->set_header( 'Origin', home_url() );
 
 		$response = rest_get_server()->dispatch( $request );
 

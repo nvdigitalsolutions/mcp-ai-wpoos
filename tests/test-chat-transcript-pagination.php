@@ -36,6 +36,10 @@ class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 
 		// Suppress WP 6.9 breadcrumbs block re-registration notice.
 		$this->setExpectedIncorrectUsage( 'WP_Block_Type_Registry::register' );
+		// WooCommerce Blocks hooks non-idempotent init callbacks (payment
+		// method integrations) — re-firing init in the harness re-registers
+		// them and raises a _doing_it_wrong notice from Woo's own code.
+		$this->setExpectedIncorrectUsage( 'Automattic\WooCommerce\Blocks\Integrations\IntegrationRegistry::register' );
 
 		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 			wp_mcp_ai_bootstrap();
