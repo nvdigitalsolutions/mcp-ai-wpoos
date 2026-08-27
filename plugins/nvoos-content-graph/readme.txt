@@ -1,6 +1,6 @@
 === NV oOS Content Graph ===
 
-Contributors: nvdigitalsolutions, vsamtani
+Contributors: vsamtani
 Tags: knowledge graph, content visualization, cytoscape, content strategy, semantic web
 Requires at least: 6.5
 Tested up to: 7.1
