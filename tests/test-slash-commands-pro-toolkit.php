@@ -39,6 +39,11 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 
 		// Get toolkit manager instance.
 		$this->toolkit_manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
+
+		// The manager registers toolkit commands on the init hook (priority 25),
+		// which the test harness does not re-fire; register them manually
+		// against the freshly created handler.
+		$this->toolkit_manager->register_toolkit_commands();
 	}
 
 	/**
@@ -57,7 +62,7 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 		$this->assertNotNull( $handler );
 
 		// Check if upsell-suggest command is registered.
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 		$this->assertArrayHasKey( 'upsell-suggest', $commands );
 		$this->assertArrayHasKey( 'abandoned-recover', $commands );
 		$this->assertArrayHasKey( 'ecom-analytics', $commands );
@@ -70,7 +75,7 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 		$handler = wp_mcp_ai_get_slash_command_handler();
 		$this->assertNotNull( $handler );
 
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 		$this->assertArrayHasKey( 'hashtag-suggest', $commands );
 		$this->assertArrayHasKey( 'social-analytics', $commands );
 	}
@@ -82,7 +87,7 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 		$handler = wp_mcp_ai_get_slash_command_handler();
 		$this->assertNotNull( $handler );
 
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 		$this->assertArrayHasKey( 'video-subtitle', $commands );
 		$this->assertArrayHasKey( 'video-template', $commands );
 		$this->assertArrayHasKey( 'video-analytics', $commands );
@@ -203,7 +208,7 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 	 */
 	public function test_command_parameter_documentation() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		// Check upsell-suggest has proper documentation.
 		$this->assertArrayHasKey( 'upsell-suggest', $commands );
@@ -225,7 +230,7 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 	 */
 	public function test_command_capability_requirements() {
 		$handler  = wp_mcp_ai_get_slash_command_handler();
-		$commands = $handler->get_registered_commands();
+		$commands = $handler->get_commands();
 
 		// E-commerce commands should require manage_woocommerce.
 		$this->assertArrayHasKey( 'upsell-suggest', $commands );

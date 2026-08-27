@@ -164,6 +164,16 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @since 1.3.0
 	 */
 	public function register_toolkit_commands() {
+		// Resolve the handler at registration time: the toolkit manager is a
+		// singleton created during wp_mcp_ai_init_slash_commands(), but that
+		// init also (re)creates the handler global — and any later init
+		// re-fire does too. Re-resolving keeps the two in sync instead of
+		// relying on the handler instance captured at construction time.
+		$handler = wp_mcp_ai_get_slash_command_handler();
+		if ( ! $handler ) {
+			$handler = $this->handler;
+		}
+
 		foreach ( $this->toolkit_commands as $toolkit_slug => $commands ) {
 			// Only register commands for enabled toolkits.
 			if ( ! $this->is_toolkit_enabled( $toolkit_slug ) ) {
@@ -171,7 +181,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			foreach ( $commands as $command ) {
-				$this->handler->register( $command['name'], $command['config'] );
+				$handler->register( $command['name'], $command['config'] );
 			}
 		}
 	}
@@ -8886,7 +8896,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				return $this->error_response( __( 'Video IDs are required.', 'mcp-ai-wpoos' ) );
 			}
 
-			$video_ids   = array_map( 'absint', explode( ', ', $args['videos'] ) );
+			// Split on comma (with optional spaces) so both "123,456" and
+			// "123, 456" inputs are accepted; absint() strips whitespace.
+			$video_ids   = array_filter( array_map( 'absint', explode( ',', (string) $args['videos'] ) ) );
 			$output_name = isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : 'merged-video-' . time();
 			$transitions = isset( $args['transitions'] );
 
@@ -8919,7 +8931,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		$tool = new WP_MCP_AI_Tool_Merge_Videos();
 
 		$tool_args = array(
-			'video_ids'   => array_map( 'absint', explode( ', ', $args['videos'] ) ),
+			// Split on comma (with optional spaces) so both "123,456" and
+			// "123, 456" inputs are accepted; absint() strips whitespace.
+			'video_ids'   => array_filter( array_map( 'absint', explode( ',', (string) $args['videos'] ) ) ),
 			'output_name' => isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : null,
 			'transitions' => isset( $args['transitions'] ),
 		);
@@ -9096,7 +9110,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$bundle_name = sanitize_text_field( $args['name'] );
-		$product_ids = array_map( 'absint', explode( ', ', $args['products'] ) );
+		// Split on comma (with optional spaces) so both "123,456" and
+		// "123, 456" inputs are accepted; absint() strips whitespace.
+		$product_ids = array_filter( array_map( 'absint', explode( ',', (string) $args['products'] ) ) );
 		$discount    = isset( $args['discount'] ) ? floatval( $args['discount'] ) : 10;
 		$fixed_price = isset( $args['fixed-price'] ) ? floatval( $args['fixed-price'] ) : null;
 
