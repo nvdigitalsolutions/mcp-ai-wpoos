@@ -369,7 +369,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_pro_missing_connection',
 				sprintf(
 					/* translators: 1: action name, 2: list of available connections */
-					__( 'Connection ID is required for action "%1$s".%2$s You must provide the connection_id parameter with one of the available connection IDs.', 'mcp-ai-wpoos-pro' ),
+					__( 'Connection ID is required for action "%1$s". Call list_connections FIRST to discover the available connection IDs, then provide one as the connection_id parameter.%2$s', 'mcp-ai-wpoos-pro' ),
 					$action,
 					$connection_list
 				),
@@ -396,7 +396,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_pro_invalid_connection',
 				sprintf(
 					/* translators: 1: connection ID, 2: list of available connections */
-					__( 'Invalid connection ID "%1$s".%2$s Use one of the available connection IDs.', 'mcp-ai-wpoos-pro' ),
+					__( 'Invalid connection ID "%1$s". Call list_connections FIRST to discover the available connection IDs, then use one of them.%2$s', 'mcp-ai-wpoos-pro' ),
 					$connection_id,
 					$connection_list
 				),

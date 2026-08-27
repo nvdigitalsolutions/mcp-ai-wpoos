@@ -414,6 +414,19 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 			return;
 		}
 
+		// The Service Account flow signs a JWT assertion with the private key
+		// before any HTTP request, so use a real (throwaway) RSA key generated
+		// at runtime instead of a placeholder that fails openssl_sign().
+		$key_resource = openssl_pkey_new(
+			array(
+				'private_key_bits' => 2048,
+				'private_key_type' => OPENSSL_KEYTYPE_RSA,
+			)
+		);
+		$this->assertNotFalse( $key_resource, 'openssl_pkey_new should generate a private key' );
+		$private_key_pem = '';
+		openssl_pkey_export( $key_resource, $private_key_pem );
+
 		// Save connection with a dummy api_key so the code path is reached.
 		$connection_data = array(
 			'name'            => 'Google Chat Service Account',
@@ -421,7 +434,20 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 			'connection_type' => 'google_chat',
 			'auth_type'       => 'none',
 			'enabled'         => true,
-			'api_key'         => '{"type":"service_account","project_id":"test","private_key_id":"k1","private_key":"FAKE","client_email":"bot@test.iam.gserviceaccount.com","client_id":"123","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/bot%40test.iam.gserviceaccount.com"}',
+			'api_key'         => wp_json_encode(
+				array(
+					'type'                        => 'service_account',
+					'project_id'                  => 'test',
+					'private_key_id'              => 'k1',
+					'private_key'                 => $private_key_pem,
+					'client_email'                => 'bot@test.iam.gserviceaccount.com',
+					'client_id'                   => '123',
+					'auth_uri'                    => 'https://accounts.google.com/o/oauth2/auth',
+					'token_uri'                   => 'https://oauth2.googleapis.com/token',
+					'auth_provider_x509_cert_url' => 'https://www.googleapis.com/oauth2/v1/certs',
+					'client_x509_cert_url'        => 'https://www.googleapis.com/robot/v1/metadata/x509/bot%40test.iam.gserviceaccount.com',
+				)
+			),
 		);
 
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
