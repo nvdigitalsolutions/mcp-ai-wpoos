@@ -27,6 +27,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class NV_oOS_Graphify_DB {
 
+	/**
+	 * Cached result of the schema-install check.
+	 *
+	 * @var bool|null
+	 */
+	private static $tables_installed = null;
+
 	// -------------------------------------------------------------------------
 	// Table name helpers
 	// -------------------------------------------------------------------------
@@ -83,6 +90,36 @@ class NV_oOS_Graphify_DB {
 	public static function embeddings_table() {
 		global $wpdb;
 		return $wpdb->prefix . 'nvoos_graph_node_embeddings';
+	}
+
+	/**
+	 * Whether the graph tables exist in the database.
+	 *
+	 * Consumers (for example the memory bridge) must call this before
+	 * issuing queries: on sites where the addon is loaded but its schema
+	 * has not been installed yet, querying would spam database errors.
+	 *
+	 * The result is cached for the lifetime of the request; install()
+	 * refreshes it after creating the schema.
+	 *
+	 * @since 1.8.1
+	 *
+	 * @return bool True when the nodes table exists.
+	 */
+	public static function tables_installed() {
+		if ( null !== self::$tables_installed ) {
+			return self::$tables_installed;
+		}
+
+		global $wpdb;
+		$nodes_table = self::nodes_table();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off schema check; cached in a static.
+		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $nodes_table ) );
+
+		self::$tables_installed = ( $nodes_table === $found );
+
+		return self::$tables_installed;
 	}
 
 	// -------------------------------------------------------------------------
@@ -203,6 +240,10 @@ class NV_oOS_Graphify_DB {
 		dbDelta( $sql_embeddings );
 
 		update_option( 'nvoos_graphify_db_version', NVOOS_GRAPHIFY_DB_VERSION );
+
+		// Refresh the cached schema check so consumers (memory bridge) start
+		// working immediately after installation.
+		self::$tables_installed = true;
 	}
 
 	/**
@@ -220,6 +261,9 @@ class NV_oOS_Graphify_DB {
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::nodes_table() ) );
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::meta_table() ) );
 		delete_option( 'nvoos_graphify_db_version' );
+
+		// Invalidate the cached schema check.
+		self::$tables_installed = false;
 	}
 
 	/**

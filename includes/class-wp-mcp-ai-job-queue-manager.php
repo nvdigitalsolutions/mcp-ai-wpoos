@@ -127,7 +127,11 @@ class WP_MCP_AI_Job_Queue_Manager {
 		}
 		dbDelta( $sql );
 
-		self::$table_exists = true;
+		// Verify instead of optimistically trusting dbDelta: it can fail
+		// silently (e.g. unsupported SQL on the active engine), and a
+		// poisoned cache would turn every queue read into a flood of
+		// "table doesn't exist" database errors.
+		self::$table_exists = null;
 	}
 
 	/**
