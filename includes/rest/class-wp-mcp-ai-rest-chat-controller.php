@@ -461,10 +461,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'model'           => array(
 						'type' => 'string',
 					),
+					// Out-of-range temperatures are intentionally NOT rejected at the
+					// schema layer: the sanitize layer clamps values into [0, 2] and
+					// falls back to the assistant default (clamp-chat-temperatures
+					// contract). Schema bounds would reject such requests before the
+					// clamp logic can run.
 					'temperature'     => array(
-						'type'    => 'number',
-						'minimum' => 0,
-						'maximum' => 2,
+						'type' => 'number',
 					),
 					'stream'          => array(
 						'type' => 'boolean',
