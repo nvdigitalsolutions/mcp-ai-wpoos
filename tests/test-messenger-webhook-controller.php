@@ -75,6 +75,23 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Build a Messenger webhook POST request carrying a JSON body.
+	 *
+	 * WP_REST_Request exposes get_json_params() but no setter, so encode the
+	 * payload into the raw body and declare the JSON content type, which is
+	 * exactly what get_json_params() requires to parse it.
+	 *
+	 * @param array $payload Webhook payload.
+	 * @return WP_REST_Request
+	 */
+	private function json_request( array $payload ) {
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( $payload ) );
+		return $request;
+	}
+
+	/**
 	 * Test that the controller can retrieve verify token from a Messenger connection.
 	 */
 	public function test_get_verify_token_from_connection() {
@@ -290,8 +307,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 			return;
 		}
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'whatsapp_business_account',
 				'entry'  => array(),
@@ -313,8 +329,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 			return;
 		}
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'page',
 				'entry'  => array(),
@@ -368,8 +383,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 			1
 		);
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'page',
 				'entry'  => array(
@@ -422,8 +436,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 			1
 		);
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'page',
 				'entry'  => array(
@@ -477,8 +490,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 
 		$watermark = time() * 1000;
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'page',
 				'entry'  => array(
@@ -524,8 +536,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 			}
 		);
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'page',
 				'entry'  => array(
@@ -575,8 +586,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 			1
 		);
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'page',
 				'entry'  => array(
@@ -625,8 +635,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 			}
 		);
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'page',
 				'entry'  => array(
@@ -635,8 +644,8 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 						'time'      => time(),
 						'messaging' => array(
 							array(
-								'sender'    => array( 'id' => '123456789' ),
-								'recipient' => array( 'id' => '9876543210' ),
+								'sender'    => array( 'id' => '9876543210' ),
+								'recipient' => array( 'id' => '123456789' ),
 								'timestamp' => time(),
 								'message'   => array(
 									'mid'     => 'mid.echo123',
@@ -678,8 +687,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 			1
 		);
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'page',
 				'entry'  => array(
@@ -731,8 +739,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 			1
 		);
 
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
-		$request->set_json_params(
+		$request = $this->json_request(
 			array(
 				'object' => 'page',
 				'entry'  => array(
@@ -766,13 +773,13 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test validate_webhook_signature returns true when App Secret is not configured.
+	 * Test validate_webhook_signature hard-fails when no App Secret is configured.
 	 *
-	 * This mirrors the fix for WhatsApp: when no App Secret is stored, we skip
-	 * HMAC validation and allow the webhook through rather than rejecting it with
-	 * 401/403 (which would cause Meta to retry endlessly and never deliver messages).
+	 * Mirrors the webhook auth hard-fail security fix applied to all webhook
+	 * controllers: when no App Secret is stored the request is rejected with a
+	 * 403 WP_Error instead of allowing unauthenticated payloads through.
 	 */
-	public function test_validate_signature_allows_when_no_app_secret_configured() {
+	public function test_validate_signature_rejects_when_no_app_secret_configured() {
 		if ( ! $this->load_controller() ) {
 			return;
 		}
@@ -787,7 +794,8 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 		$controller = new WP_MCP_AI_Messenger_Webhook_Controller();
 		$result     = $controller->validate_webhook_signature( $request );
 
-		$this->assertTrue( $result, 'Should allow webhook through when App Secret is not configured (skip validation)' );
+		$this->assertInstanceOf( 'WP_Error', $result, 'Should hard-fail with a WP_Error when App Secret is not configured.' );
+		$this->assertEquals( 403, $result->get_error_data()['status'] );
 	}
 
 	/**

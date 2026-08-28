@@ -40,12 +40,17 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		$this->admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 
-		// Make sure the class is available.
-		$file = WP_MCP_AI_PATH . 'addons/pro/includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php';
-		if ( file_exists( $file ) ) {
-			// Define the pro version constant so the class can instantiate.
-			if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-				define( 'WP_MCP_AI_PRO_VERSION', '2.0.0-test' );
+		// Make sure the class is available: the pro addon loads it only in
+		// admin context (false under CLI phpunit), so require it explicitly.
+		// Mirrors tests/test-pro-workflow-builder-ajax.php.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Builder_Page' ) ) {
+			$file = WP_MCP_AI_PATH . 'addons/pro/includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php';
+			if ( file_exists( $file ) ) {
+				// Define the pro version constant so the class can instantiate.
+				if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+					define( 'WP_MCP_AI_PRO_VERSION', '2.0.0-test' );
+				}
+				require_once $file;
 			}
 		}
 
@@ -129,7 +134,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -144,7 +149,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_list_pro_workflows' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -183,7 +188,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_export_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -219,7 +224,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_workflow_execution' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -254,7 +259,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_execute_workflow_node' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -282,7 +287,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_execute_workflow_node' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -308,7 +313,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_execute_workflow_node' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -356,7 +361,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_duplicate_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -386,7 +391,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_duplicate_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -426,7 +431,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_rename_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -477,11 +482,12 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['workflow_id'] = 'workflow-a';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$_POST['new_name'] = 'Workflow B';
+		// 'Workflow-B' sanitizes (sanitize_key) to the existing 'workflow-b' key.
+		$_POST['new_name'] = 'Workflow-B';
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_rename_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -520,7 +526,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_rename_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -548,7 +554,7 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_duplicate_pro_workflow' );
-		} catch ( WPAjaxDieContinuedException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 

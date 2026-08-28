@@ -46,7 +46,8 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
+		$client->refresh_config();
 		$this->assertFalse( $client->is_available(), 'Should return false when RabbitMQ is disabled.' );
 	}
 
@@ -66,7 +67,8 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
+		$client->refresh_config();
 		$status = $client->health_check();
 
 		$this->assertIsArray( $status );
@@ -94,7 +96,8 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
+		$client->refresh_config();
 		$status = $client->health_check();
 
 		$this->assertIsArray( $status );
@@ -125,7 +128,8 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
+		$client->refresh_config();
 
 		$this->assertEquals( true, $client->get_config( 'enabled' ) );
 		$this->assertEquals( 'my-broker.local', $client->get_config( 'host' ) );
@@ -142,7 +146,7 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
 		}
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
 
 		$this->assertNull( $client->get_config( 'nonexistent_key' ) );
 		$this->assertEquals( 'fallback', $client->get_config( 'nonexistent_key', 'fallback' ) );
@@ -164,7 +168,8 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
+		$client->refresh_config();
 
 		$this->assertEquals( 'my_prefix.tool.execution', $client->get_queue_name( 'tool.execution' ) );
 		$this->assertEquals( 'my_prefix.deadletter.queue', $client->get_queue_name( 'deadletter.queue' ) );
@@ -186,7 +191,8 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
+		$client->refresh_config();
 		$job_id = $client->queue_tool_execution(
 			'test_tool',
 			array( 'param' => 'value' ),
@@ -205,7 +211,7 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_RabbitMQ_Client class not loaded.' );
 		}
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
 		$result = $client->get_job_result( 'nonexistent-job-id-12345' );
 
 		$this->assertNull( $result, 'Should return null for unknown job IDs.' );
@@ -276,7 +282,8 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$client  = new WP_MCP_AI_RabbitMQ_Client();
+		$client  = WP_MCP_AI_RabbitMQ_Client::get_instance();
+		$client->refresh_config();
 		$success = $client->publish( 'tools', 'test.routing', array( 'test' => 'data' ) );
 
 		$this->assertFalse( $success, 'Should return false when RabbitMQ is unavailable.' );
@@ -292,7 +299,7 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 
 		$job_id = 'test-job-' . wp_generate_uuid4();
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
 		$client->store_job_result( $job_id, array( 'ok' => true ), 'success' );
 
 		$saved = get_transient( 'wp_mcp_ai_job_result_' . $job_id );
@@ -327,7 +334,7 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 		);
 		set_transient( 'wp_mcp_ai_job_' . $job_id, array( 'tool_name' => 'test' ), 3600 );
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
 		$result = $client->get_job_result( $job_id );
 
 		$this->assertIsArray( $result );
@@ -355,7 +362,8 @@ class Test_RabbitMQ_Client extends WP_UnitTestCase {
 			)
 		);
 
-		$client = new WP_MCP_AI_RabbitMQ_Client();
+		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
+		$client->refresh_config();
 		$stats  = $client->get_queue_stats();
 
 		$this->assertIsArray( $stats );

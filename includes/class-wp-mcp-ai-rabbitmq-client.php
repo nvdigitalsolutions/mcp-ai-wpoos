@@ -170,6 +170,21 @@ class WP_MCP_AI_RabbitMQ_Client {
 	}
 
 	/**
+	 * Reload configuration from settings or constants.
+	 *
+	 * Re-reads the plugin settings and resets the cached availability flag so
+	 * the next {@see self::is_available()} call re-evaluates against the fresh
+	 * configuration. Useful when settings change after the singleton was
+	 * constructed (e.g. admin saves, or tests updating the settings option).
+	 *
+	 * @since 1.2.0
+	 */
+	public function refresh_config() {
+		$this->load_config();
+		$this->available = null;
+	}
+
+	/**
 	 * Load configuration from settings or constants.
 	 */
 	private function load_config() {
