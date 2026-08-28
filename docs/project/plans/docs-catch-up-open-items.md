@@ -18,7 +18,7 @@
 | Group | Tag | Location | Shipped in | First noted in |
 |---|---|---|---|---|
 | 1 | `@since 1.1.57` | `addons/pro/includes/composition/` — 3 files (PR #5881) | 1.1.58 | v1.1.58 plan |
-| 2 | `@since 1.2.0` | `includes/class-wp-mcp-ai-tool-registry.php` (8×) + `mcp-ai-wpoos.php` export-provider block (2×) | 1.1.x (implies a planned 1.2.0) | v1.1.59 plan |
+| 2 | `@since 1.2.0` | `includes/class-wp-mcp-ai-tool-registry.php` (8×) + `mcp-ai-wpoos.php` export-provider block (2×) + `includes/class-wp-mcp-ai-rabbitmq-client.php` → `refresh_config()` (1×, PR #6007) | 1.1.x (implies a planned 1.2.0) | v1.1.59 plan |
 | 3 | `@since 1.9.0` | `includes/harness/class-wp-mcp-ai-artifact-*.php` (19 files) + ~50 more base/Pro files (PR #5923) | 1.1.63 | v1.1.63 plan |
 | 4 | `@since 1.0.0` | `includes/google/*` — 7 files (PR #5959) | 1.1.64 | v1.1.64 plan |
 

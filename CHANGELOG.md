@@ -63,7 +63,7 @@ Closes the last findings tracked from the April 2026 audit (issue #5972):
 
 ### Tests
 
-- Test-suite cluster fixes: SSE streaming suites aligned to the explicit stream-param contract (PR #5995), WP 7.1 icon init replay neutralised in the test bootstrap (PR #5996), transcript suite follow-ups for CI environment differences (PR #5998), Phase 4 slash-command workflow tests vs the current API (PR #5999), SSE tool-result text extraction for the REST constructor (PR #6001), and the transcript retrieval roundtrip skipped when the CCT table is missing (PR #6002). Docs-only: doc open items mapped to GitHub issues (PR #5979) and the Ralph Wiggum CCT-orchestration proposal recorded as implemented (PR #5984).
+- Test-suite cluster fixes: SSE streaming suites aligned to the explicit stream-param contract (PR #5995), WP 7.1 icon init replay neutralised in the test bootstrap (PR #5996), transcript suite follow-ups for CI environment differences (PR #5998), Phase 4 slash-command workflow tests vs the current API (PR #5999), SSE tool-result text extraction for the REST constructor (PR #6001), and the transcript retrieval roundtrip skipped when the CCT table is missing (PR #6002). Messaging/AJAX test clusters reworked (Messenger webhook controller, async-AJAX provider testing, RabbitMQ client suites) with one production-side additive API — `WP_MCP_AI_RabbitMQ_Client::refresh_config()` re-reads settings and resets the cached availability flag so post-construction settings changes are honored (PR #6007). Docs-only: doc open items mapped to GitHub issues (PR #5979) and the Ralph Wiggum CCT-orchestration proposal recorded as implemented (PR #5984).
 
 ### Versioning
 
