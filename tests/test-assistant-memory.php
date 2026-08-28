@@ -553,6 +553,9 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
 			)
 		);
 		$request->set_header( 'X-WP-MCP-AI-Guest', $token );
+		// Guest tokens are bound to the issuance origin (audit F-AUTHZ-04);
+		// the request must carry the site's own Origin to validate.
+		$request->set_header( 'Origin', home_url() );
 
 		$response = rest_get_server()->dispatch( $request );
 

@@ -220,8 +220,8 @@ class WP_MCP_AI_SSE_Auth_CORS_Test extends WP_UnitTestCase {
 
 		// Verify the handler can detect event stream preference.
 		$this->assertTrue(
-			method_exists( $sse_handler, 'prefers_event_stream' ),
-			'SSE handler should have prefers_event_stream method'
+			method_exists( $sse_handler, 'request_wants_event_stream' ),
+			'SSE handler should have request_wants_event_stream method'
 		);
 	}
 
@@ -244,6 +244,9 @@ class WP_MCP_AI_SSE_Auth_CORS_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/sse' );
 		$request->set_header( 'Accept', 'text/event-stream' );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $guest_token );
+		// Guest tokens are bound to the issuance origin (audit F-AUTHZ-04);
+		// the request must carry the site's own Origin to validate.
+		$request->set_header( 'Origin', home_url() );
 		$request->set_param( 'assistant_id', $assistant_id );
 
 		$response = rest_do_request( $request );
