@@ -364,7 +364,11 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			if ( ! empty( $url ) ) {
 				$url = esc_url_raw( $url );
 				if ( empty( $url ) ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_image_url', __( 'Image segment URL is invalid.', 'mcp-ai-wpoos' ) );
+					return new WP_Error(
+						'wp_mcp_ai_invalid_image_url',
+						__( 'Image segment URL is invalid.', 'mcp-ai-wpoos' ),
+						array( 'status' => 400 )
+					);
 				}
 
 				$allowed_schemes = apply_filters(
@@ -501,7 +505,11 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			}
 
 			if ( empty( $segment['attachment_id'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_image_attachment', __( 'Image segments must include an attachment ID or URL.', 'mcp-ai-wpoos' ) );
+				return new WP_Error(
+					'wp_mcp_ai_missing_image_attachment',
+					__( 'Image segments must include an attachment ID or URL.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
 			}
 
 			$attachment_id       = absint( $segment['attachment_id'] );
@@ -583,7 +591,11 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			if ( ! empty( $url ) ) {
 				$url = esc_url_raw( $url );
 				if ( empty( $url ) ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_file_url', __( 'File segment URL is invalid.', 'mcp-ai-wpoos' ) );
+					return new WP_Error(
+						'wp_mcp_ai_invalid_file_url',
+						__( 'File segment URL is invalid.', 'mcp-ai-wpoos' ),
+						array( 'status' => 400 )
+					);
 				}
 
 				$allowed_schemes = apply_filters(
@@ -698,7 +710,11 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			}
 
 			if ( empty( $segment['attachment_id'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_file_attachment', __( 'File segments must include an attachment ID.', 'mcp-ai-wpoos' ) );
+				return new WP_Error(
+					'wp_mcp_ai_missing_file_attachment',
+					__( 'File segments must include an attachment ID.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
 			}
 
 			$attachment_id       = absint( $segment['attachment_id'] );
