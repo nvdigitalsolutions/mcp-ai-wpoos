@@ -7414,8 +7414,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		public function validate_assistant_access( $assistant_id ) {
 			$assistant_id = absint( $assistant_id );
 
-			// Check cache for repeated validations within the same request (optimization can be disabled with WP_MCP_AI_DISABLE_CACHE).
-			if ( ! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE ) {
+			// Check cache for repeated validations within the same request. Caching
+			// can be disabled globally with WP_MCP_AI_DISABLE_CACHE or scoped via
+			// the filter (used by tests to disable without leaking a process-wide
+			// constant into later tests).
+			$cache_enabled = apply_filters(
+				'wp_mcp_ai_assistant_access_cache_enabled',
+				! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE
+			);
+
+			if ( $cache_enabled ) {
 				$cache_key = 'assistant_' . $assistant_id;
 				if ( isset( $this->assistant_cache[ $cache_key ] ) ) {
 					return $this->assistant_cache[ $cache_key ];
@@ -7424,11 +7432,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$assistant_post = $assistant_id ? get_post( $assistant_id ) : null;
 
 			if ( ! $assistant_post || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant_post->post_type ) {
-				return new WP_Error(
+				$denied = new WP_Error(
 					'wp_mcp_ai_assistant_forbidden',
 					__( 'You do not have access to this assistant.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
+				if ( $cache_enabled ) {
+					$this->assistant_cache[ $cache_key ] = $denied;
+				}
+				return $denied;
 			}
 
 			$token_bypasses_visibility = false;
@@ -7447,15 +7459,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			if ( 'publish' !== $assistant_post->post_status && ! $this->user_can_access_post( $assistant_id ) && ! $token_bypasses_visibility ) {
-				return new WP_Error(
+				$denied = new WP_Error(
 					'wp_mcp_ai_assistant_forbidden',
 					__( 'You do not have access to this assistant.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
+				if ( $cache_enabled ) {
+					$this->assistant_cache[ $cache_key ] = $denied;
+				}
+				return $denied;
 			}
 
 			// Cache the successful result.
-			if ( ! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE ) {
+			if ( $cache_enabled ) {
 				$this->assistant_cache[ $cache_key ] = $assistant_post;
 			}
 			return $assistant_post;
