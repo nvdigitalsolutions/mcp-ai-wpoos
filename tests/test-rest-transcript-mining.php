@@ -36,11 +36,15 @@ class Test_REST_Transcript_Mining_Controller extends WP_UnitTestCase {
 		parent::setUp();
 
 		global $wp_rest_server;
-		$wp_rest_server = new WP_REST_Server();
-		$this->server   = $wp_rest_server;
+		$this->server   = new WP_REST_Server();
+		$wp_rest_server = $this->server;
 
-		$controller = new WP_MCP_AI_REST_Transcript_Mining_Controller();
-		$controller->register_routes();
+		// Fire rest_api_init so the plugin controllers (including
+		// WP_MCP_AI_REST, which instantiates the transcript-mining controller)
+		// register their routes in the correct action context. Calling
+		// register_rest_route() outside rest_api_init raises an
+		// incorrect-usage notice.
+		do_action( 'rest_api_init' );
 	}
 
 	/**
