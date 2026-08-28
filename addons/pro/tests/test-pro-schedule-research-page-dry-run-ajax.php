@@ -15,12 +15,27 @@ class Test_Pro_Schedule_Research_Page_Dry_Run_Ajax extends WP_Ajax_UnitTestCase 
 	 */
 	protected function setUp(): void {
 		parent::setUp();
+
+		$page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-schedule-research-page.php';
+		if ( file_exists( $page_file ) ) {
+			require_once $page_file;
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 			$this->markTestSkipped( 'Pro Schedule Research Page not available.' );
 		}
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$this->markTestSkipped( 'Pro Schedule Manager not available.' );
 		}
+
+		// The page class auto-inits (registering its wp_ajax_* handlers) when
+		// the file is first required. If that require happened inside another
+		// suite's test method, WP_UnitTestCase::tear_down() restores the hook
+		// state captured before that test and wipes the handlers for the rest
+		// of the run. Re-register them so this test's dispatch reaches the
+		// handler. Re-adding identical static callbacks is safe here because
+		// tear_down() strips them again after each test.
+		WP_MCP_AI_Pro_Schedule_Research_Page::init();
 	}
 
 	/**
