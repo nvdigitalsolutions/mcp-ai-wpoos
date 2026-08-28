@@ -1441,6 +1441,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					'openai_external_action_request',
 					'openai_external_action_response',
 					'schedule_run',
+					'token_tier_changed',
 					'cloudflare_invalid_tool_call',
 					'cloudflare_tool_calls_detected',
 					'cloudflare_tool_calls_filtered',
@@ -2520,6 +2521,47 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			}
 
 			return substr( $value, $start, $length );
+		}
+
+		/**
+		 * Resolve the client IP address from the request headers.
+		 *
+		 * Checks the standard proxy headers first (Cloudflare, X-Forwarded-For,
+		 * X-Real-IP) and falls back to REMOTE_ADDR. Values are sanitized and
+		 * validated; comma-separated lists (X-Forwarded-For) return the first
+		 * entry.
+		 *
+		 * @since 1.8.1
+		 *
+		 * @return string Client IP address, or '0.0.0.0' when undeterminable.
+		 */
+		public static function get_client_ip() {
+			$ip_keys = array(
+				'HTTP_CF_CONNECTING_IP', // Cloudflare.
+				'HTTP_X_FORWARDED_FOR',  // Proxy/load balancer.
+				'HTTP_X_REAL_IP',        // Nginx proxy.
+				'REMOTE_ADDR',           // Direct connection.
+			);
+
+			foreach ( $ip_keys as $key ) {
+				if ( ! isset( $_SERVER[ $key ] ) ) {
+					continue;
+				}
+
+				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized on the same line and validated via filter_var() below.
+
+				// X-Forwarded-For can carry multiple comma-separated IPs; the
+				// first entry is the originating client.
+				if ( strpos( $ip, ',' ) !== false ) {
+					$ip = trim( explode( ',', $ip )[0] );
+				}
+
+				if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+					return $ip;
+				}
+			}
+
+			return '0.0.0.0';
 		}
 	}
 }

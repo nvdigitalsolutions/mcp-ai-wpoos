@@ -359,6 +359,10 @@ class WP_MCP_AI_Tiered_Token_Limits_Test extends WP_UnitTestCase {
 	public function test_audit_logging_tier_change() {
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
+		// The audit trail is only persisted while logging is enabled.
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 'enable_logging' => 1 ) );
+		delete_option( 'wp_mcp_ai_recent_activity' );
+
 		// Set tier and verify logging happens.
 		WP_MCP_AI_Tool_Token_Limits::set_user_tier( $user_id, 'enterprise' );
 
@@ -368,7 +372,7 @@ class WP_MCP_AI_Tiered_Token_Limits_Test extends WP_UnitTestCase {
 		// Find the tier change log.
 		$found_log = false;
 		foreach ( $activity as $log ) {
-			if ( 'token_tier_changed' === $log['event'] ) {
+			if ( 'token_tier_changed' === $log['type'] ) {
 				$found_log = true;
 				$this->assertEquals( $user_id, $log['context']['user_id'] );
 				$this->assertEquals( 'free', $log['context']['old_tier'] );
@@ -380,6 +384,10 @@ class WP_MCP_AI_Tiered_Token_Limits_Test extends WP_UnitTestCase {
 		}
 
 		$this->assertTrue( $found_log, 'Tier change should be logged in activity' );
+
+		// Restore default state so logging settings do not leak into other tests.
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		delete_option( 'wp_mcp_ai_recent_activity' );
 	}
 
 	/**
