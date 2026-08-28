@@ -2793,7 +2793,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return true|WP_Error
 		 */
 		protected function validate_bearer_token( $token, WP_REST_Request $request ) {
-				return $this->authenticator->validate_bearer_token( $token, $request );
+				$result = $this->authenticator->validate_bearer_token( $token, $request );
+
+				// Keep the cached auth context in sync with the authenticator. The
+				// authenticator updates its own context (e.g. the mapped WordPress
+				// user for a pre-validated bearer token) inside the validation
+				// call; permissions_check() reads the cached copy immediately
+				// after, so it must reflect the post-validation state.
+				$this->auth_context = $this->authenticator->get_auth_context();
+
+				return $result;
 		}
 
 			/**

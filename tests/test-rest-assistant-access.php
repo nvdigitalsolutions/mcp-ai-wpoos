@@ -697,6 +697,11 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
+		// A pre-validated bearer token must also map to a WordPress user: the
+		// capability gate rejects unmapped bearers (privilege-escalation
+		// guard), so map 'test-token' to an administrator.
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
 		add_filter(
 			'wp_mcp_ai_pre_validate_bearer_token',
 			function ( $pre, $token ) {
@@ -708,6 +713,15 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 			},
 			10,
 			2
+		);
+
+		add_filter(
+			'wp_mcp_ai_map_bearer_to_user_id',
+			function ( $user_id ) use ( $admin_id ) {
+				return $admin_id;
+			},
+			10,
+			3
 		);
 
 		try {
@@ -730,6 +744,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 			$this->assertSame( 200, $response->get_status() );
 		} finally {
 			remove_all_filters( 'wp_mcp_ai_pre_validate_bearer_token' );
+			remove_all_filters( 'wp_mcp_ai_map_bearer_to_user_id' );
 		}
 	}
 
@@ -957,12 +972,13 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $data );
 		$this->assertArrayHasKey( 'result', $data );
 		$this->assertIsArray( $data['result'] );
-		$this->assertNotEmpty( $data['result'] );
-		$this->assertSame( $public_id, $data['result'][0]['id'] );
+		$this->assertArrayHasKey( 'attachments', $data['result'] );
+		$this->assertNotEmpty( $data['result']['attachments'] );
+		$this->assertSame( $public_id, $data['result']['attachments'][0]['id'] );
 
-		$returned_ids = wp_list_pluck( $data['result'], 'id' );
+		$returned_ids = wp_list_pluck( $data['result']['attachments'], 'id' );
 		$this->assertNotContains( $private_id, $returned_ids );
-		$this->assertNotEmpty( $data['result'][0]['download_url'] );
+		$this->assertNotEmpty( $data['result']['attachments'][0]['download_url'] );
 
 		wp_set_current_user( 0 );
 	}
@@ -1020,7 +1036,10 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'token_authenticated', $captured_context );
 			$this->assertTrue( $captured_context['token_authenticated'] );
 			$this->assertSame( 'local_token', $captured_context['token_type'] );
-			$this->assertSame( 0, $captured_context['user_id'] );
+			// Tool executions authenticated by a local credential are attributed
+			// to the credential issuer (for auditing and rate limiting) without
+			// requiring a logged-in session.
+			$this->assertSame( $issuer_id, $captured_context['user_id'] );
 			$this->assertArrayHasKey( 'token_context', $captured_context );
 			$this->assertArrayHasKey( 'credential', $captured_context['token_context'] );
 		} finally {
@@ -1051,7 +1070,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		$mapped_user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		$mapped_user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 
 		$pre_callback = function ( $pre, $token, $request ) {
 			return true;
@@ -1153,6 +1172,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
  */
 class WP_MCP_AI_Dummy_Tool implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Get the tool slug.
 	 *
