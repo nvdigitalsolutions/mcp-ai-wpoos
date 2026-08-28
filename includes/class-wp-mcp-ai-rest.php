@@ -2071,26 +2071,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return $validated;
 				}
 
-				// If the bearer token was validated but did not map to a WordPress user,
-				// reject the request if the assistant requires an authenticated user.
-				// This prevents privilege escalation where an unmapped bearer token
-				// could piggyback on an existing WordPress session cookie.
-				$auth_user_id = isset( $this->auth_context['authenticated_user_id'] )
-					? (int) $this->auth_context['authenticated_user_id']
+				// The authenticator maintains its own copy of the auth context and
+				// mutates it during validation (e.g. the WordPress user mapped from
+				// a pre-validated bearer token). Re-sync the cached copy so the
+				// gates below observe the post-validation state.
+				$this->auth_context = $this->authenticator->get_auth_context();
+
+				// If the bearer token was validated but did not map to a WordPress
+				// user, drop any WordPress session identity for the remainder of
+				// this request. This prevents privilege escalation where an
+				// unmapped bearer token could piggyback on an existing session
+				// cookie: the downstream assistant access checks then evaluate the
+				// request as anonymous and surface wp_mcp_ai_assistant_forbidden.
+				$token_mapped_user = isset( $this->auth_context['token_context']['user_id'] )
+					? (int) $this->auth_context['token_context']['user_id']
 					: 0;
-				if ( $requires_authenticated_user && $auth_user_id <= 0 ) {
-					// Check if the mapped user ID is available from the authenticator context.
-					$mapped_id = isset( $this->auth_context['user_id'] )
-						? (int) $this->auth_context['user_id']
-						: 0;
-					if ( $mapped_id <= 0 ) {
-						return $this->insufficient_permissions_error( $capability );
-					}
-					// Use the mapped user for capability checks.
-					$mapped_user = get_userdata( $mapped_id );
-					if ( ! $mapped_user || ! user_can( $mapped_id, $capability ) ) {
-						return $this->insufficient_permissions_error( $capability );
-					}
+				if ( $requires_authenticated_user && $token_mapped_user <= 0 ) {
+					// Neutralize both the authenticator's cached context and the
+					// global session user so no check can inherit the session
+					// identity.
+					$this->set_authenticated_user_id( 0 );
+					wp_set_current_user( 0 );
 				}
 
 				// Check rate limiting for bearer token authenticated requests.
