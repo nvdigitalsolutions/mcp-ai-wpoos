@@ -1,5 +1,74 @@
 # oOS – Changelog
 
+## [1.1.65] - 2026-08-28
+
+### Changed — Media Worker Full-Crawl4AI Proxy (031 Phase 3) & Strict-Path TEMP_ROOT (PR #5983)
+
+The optional Phase 3 of the Crawl4AI integration plan is now shipped: when the operator points `CRAWL4AI_FULL_URL` at a real Crawl4AI deployment (sibling container or hosted service), the worker acts as the SSRF-validated, token-gated forwarder.
+
+- **New env-gated routes** — `POST /api/crawl/full` and `GET /api/crawl/full/task/:task_id` in `addons/media-worker/src/routes/crawl.js`. Every target URL passes the shared SSRF guard *before* the payload is proxied upstream, so private/loopback targets can never reach the Python service through the worker. Unset env var → `503 service_not_configured`; unreachable upstream → `502 upstream_unreachable`; the body is forwarded contract-preserving, so the plugin's Crawl4AI client needs no proxy awareness.
+- **TEMP_ROOT allowlist (proposal 028, Q5)** — with `STRICT_PATHS=1` (or `STRICT_PDF_PATHS=1`) an explicit `TEMP_ROOT` becomes the allowlisted sandbox root in single-tenant mode, so Docker shared-volume deployments can opt into strict paths without moving mounts. The default flip stays deferred to worker 4.0.0.
+- Worker version stays **v3.2.0** (`package.json` unchanged — the feature is env-gated and additive). Proposals 028/031 + worker README updated in-commit.
+
+### Fixed — OpenAI Reasoning-Model Parameter Rejection & Embeddings Resilience (PR #5985)
+
+- **Reasoning models rejected `max_tokens` (and o-series `temperature`).** `lib/core`'s `OpenAiCompatibleClient` now applies model-specific parameter constraints (`applyModelConstraints()`) before sending — o-series and the gpt-5 family get the unsupported parameters stripped — and both the sync and streaming paths retry through `sendWithParameterCorrection()`, which re-sends a corrected payload when the provider answers 400 with an unsupported-parameter error.
+- **Content Graph AI embedding 500s.** `EmbeddingService` now resolves the embedding provider deliberately (OpenAI is preferred when a key exists, since most chat providers expose no `/embeddings` endpoint), honors the configured `embeddings_model` so indexing and retrieval always target the same model, and unexpected exceptions (`\Throwable`) return a `WP_Error` instead of bubbling into a fatal.
+- **Graph context without an embeddings index.** The chat API now reports `graph_context_mode` (`semantic`/`keyword`/`none`) and falls back to keyword search over node labels when the embeddings index is unavailable — the reindex-500/stuck-UI path degrades gracefully instead of blocking; the reindex button is always restored on server errors and batch reindexing embeds arrays in single API requests.
+
+### Fixed — Security-Posture Findings Closed: Algorave Eval Gate, Source Maps, Webhook Justifications (PR #5981)
+
+Closes the last findings tracked from the April 2026 audit (issue #5972):
+
+- **F-AI-01 (Algorave Tone.js raw eval)** — when the operator has opted into the raw-eval Tone.js engine, pasted code now requires one explicit confirmation per browser session plus a visible eval warning banner; the permission flag is capability-scoped from PHP via `nvoosAlgoraveConfig`. Strudel (the default sandboxed engine) is unaffected.
+- **F-CMP-04 (minified JS without source maps)** — the Telegram Mini App markdown bundle no longer ships a dangling source map.
+- **F-AUTHZ-01** — remaining legitimately-public webhook `__return_true` permission callbacks now carry inline justification comments (no auth relaxation).
+- `docs/operations/security/SECURITY_POSTURE.md` updated in-commit.
+
+### Fixed — Chat, REST & Transcript Hardening (PRs #5991, #5993, #5994)
+
+- **Legacy attachment payloads tolerated** — the REST chat route no longer declares a top-level `attachments` arg (embedded content segments are authoritative), so legacy clients that send the parameter are ignored rather than rejected with a hard 400; attachment segment preparation errors are now propagated to the client instead of silently dropped into a misleading "invalid messages" error.
+- **Custom message roles work again** — role enum validation moved to the sanitize layer where the `wp_mcp_ai_allowed_message_roles` filter runs.
+- **Orphaned tool messages are silently discarded** before provider dispatch (`filter_tool_messages_without_matching_calls()`) — providers reject unpaired tool messages, and dropping them preserves conversation flow for clients resubmitting legacy transcripts.
+- **Transcript pagination** — `page`/`per_page` sanitizers preserve negative values so the handler's clamp-to-default works (`absint()` was flipping negatives to positives); a guest-token identification helper powers guest transcript queries.
+- **Guardrail pre-screening** inspects only plain-text content; multi-part array content is skipped rather than lossy-cast.
+
+### Fixed — Webhook, Shortcode & Pro-Tool Fixes (PR #5990)
+
+- **Google Chat verification token** — when OIDC verification is disabled, incoming webhooks can now authenticate against a shared-secret `verification_token` (`?token=` URL parameter or `X-Google-Chat-Token` header) instead of being completely unauthenticated; the Remote Sites form exposes the field.
+- **Slack message conversion** — converted `<a>` links are stashed behind placeholders so `wp_strip_all_tags()` can't eat the `<url|text>` Slack syntax, and the italic conversion now runs before the bold/heading conversions so freshly produced `*bold*` is never turned into `_italic_`.
+- **paper-store import/export** tolerate a missing `collection` argument instead of an undefined-key warning.
+- **Scheduled-result block** registers idempotently (no `_doing_it_wrong` on repeated `init` fires).
+
+### Fixed — Slash Commands & Block Registration (PRs #6000, #5997)
+
+- **Slash-command handler staleness** — the toolkit manager re-resolves the handler at registration time, so an `init` re-fire can't leave commands bound to a stale instance.
+- **CSV-style lists** — video/product list arguments accept both `"123,456"` and `"123, 456"` (comma split + filter) instead of only the comma-space form.
+- **Idempotent block registration** — assistant-builder and Pro toolkit blocks skip already-registered names, silencing WP 7.1 icon/block re-registration notices.
+
+### Fixed — AJAX Handlers, Model TPM Fallbacks & Admin Settings (PRs #6004, #6005, #6006)
+
+- **Workflow-execution AJAX** — `wp_send_json_*` moved out of the try block so an exception can't produce double output; model-manager accepts `overwrite` as any of `1`/`true`/`yes`/`on`; `research_model` checks the provider `WP_Error` before reading the model.
+- **TPM limits without JetEngine** — the token-budget service falls back to the bundled model catalog (longest-prefix match for date-versioned IDs) when the rate-limits CCT has no entry.
+- **Legacy admin settings cleanup** — dangling high-token and security-monitor section registrations removed (their renderers moved to the modern dashboard or were deleted); the WP 7.0 bridge checks `WP_Connector_Registry::is_registered()` before `wp_get_connector()` to avoid doing-it-wrong notices.
+
+### Fixed — Graphify & Remote-Connection Tool Guidance (PRs #5986, #6003)
+
+- Graphify's remote-source crypto treats provider-prefixed `*_key` fields as sensitive, and `sync_remote_source` now returns the canonical `WP_Error` envelope instead of `array( 'success' => false, ... )`.
+- `remote_wp_connection` error messages now instruct callers to run `list_connections` first when a connection ID is missing or invalid.
+
+### Changed — Content Graph wp.org Listing & AI Chat Tester (PRs #5980, #5988, #5982, #5992)
+
+- Updated icons (v5 master), main screenshot, and a generated wp.org page preview for `nvoos-content-graph`; Contributors field fixed in the readme; the Content Graph AI chat tester fixed (settings store, graph tool adapter, chat interface/settings sections, SSE handling, core bridge).
+
+### Tests
+
+- Test-suite cluster fixes: SSE streaming suites aligned to the explicit stream-param contract (PR #5995), WP 7.1 icon init replay neutralised in the test bootstrap (PR #5996), transcript suite follow-ups for CI environment differences (PR #5998), Phase 4 slash-command workflow tests vs the current API (PR #5999), SSE tool-result text extraction for the REST constructor (PR #6001), and the transcript retrieval roundtrip skipped when the CCT table is missing (PR #6002). Messaging/AJAX test clusters reworked (Messenger webhook controller, async-AJAX provider testing, RabbitMQ client suites) with one production-side additive API — `WP_MCP_AI_RabbitMQ_Client::refresh_config()` re-reads settings and resets the cached availability flag so post-construction settings changes are honored (PR #6007). Docs-only: doc open items mapped to GitHub issues (PR #5979) and the Ralph Wiggum CCT-orchestration proposal recorded as implemented (PR #5984).
+
+### Versioning
+
+- Bumped to 1.1.65 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.65. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: 1.0.3 (unchanged). Tool count: ~303 base + ~1,256 Pro (~1,559 total; live registry authoritative). Providers: 15. Addons: 26. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: 52.
+
 ## [1.1.64] - 2026-08-26
 
 ### Added — Google Calendar Connection & Shared Google Services (PR #5959)

@@ -1,7 +1,9 @@
 # NV oOS Testing Patterns
 
 > **GSD Context File** — Load this when writing or reviewing PHPUnit tests.
-> Last reviewed: August 26, 2026 (v1.1.64).
+> Last reviewed: August 28, 2026 (v1.1.65).
+>
+> **New in v1.1.65:** A cluster of suite-alignment PRs (mostly test-only): SSE streaming suites assert the explicit `stream` parameter contract (#5995); WP 7.1 icon-init replay is neutralised in the test bootstrap (#5996); transcript suite follow-ups handle CI environment differences (#5998); Phase 4 slash-command workflow tests run against the current handler API (#5999); SSE tool-result text-extraction tests use the REST constructor (#6001); the transcript retrieval roundtrip is skipped when the CCT table is missing (#6002). Production-side seams that tests depend on: assistant-builder + Pro toolkit blocks skip already-registered names so re-firing `init` doesn't raise notices (#5997); workflow-execution AJAX moved `wp_send_json_*` out of the try block so exceptions can't double-output (#6004). Keep those seams when touching block registration or the orchestration dashboard AJAX.
 >
 > **New in v1.1.64:** PRs #5931/#5935 — Pro admin classes load directly in AJAX suites, AJAX dispatch is hardened against leaked state, WordPress.com staging APIs are registered, WP All Import no longer kills the test bootstrap, and moved-file `require`s point at their current paths. PR #5960 — validated-tool tests now actually validate: constraint loading was silently skipped on Symfony 5.4 (`enableAnnotationMapping( true )`, not `enableAttributeMapping`), so suites that should fail on invalid input were running against unvalidated paths; keep constraint coverage real when touching the validator service. PR #5965 — envelope assertions must expect the canonical success array or `WP_Error` (never `success => false`).
 >

@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: August 26, 2026 (v1.1.64).
+> Last reviewed: August 28, 2026 (v1.1.65).
 
 ---
 
@@ -15,6 +15,8 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
 **Total tools:** ~1,559 (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.65:** No tools added or removed — four tool-adjacent fixes. (1) Graphify `sync_remote_source` returns the canonical `WP_Error` envelope (never `array( 'success' => false, ... )`) and the remote-source crypto treats provider-prefixed `*_key` fields as sensitive. (2) `paper_store_import`/`paper_store_export` guard a missing `collection` argument (`isset()` before `sanitize_key()`). (3) `remote_wp_connection` error messages instruct callers to run `list_connections` first when a connection ID is missing/invalid. (4) `WP_MCP_AI_Token_Budget_Manager` falls back to the bundled model catalog (longest-prefix match for date-versioned IDs) when the rate-limits CCT has no entry — TPM limits work without JetEngine. Also: `research_model` checks the provider `WP_Error` before reading the model.
 
 **New in v1.1.64:** +7 Pro tools. (1) Six Google Calendar tools in `addons/pro/includes/tools/google-workspace/` (`list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability`, `quick_add_google_calendar_event`) plus a reworked `create_google_calendar_event` (moved from `includes/src/Tools/`) — all resolve credentials via the shared `includes/google/` foundation (optional `connection_id` → Pro Remote Sites, else site-level Google Calendar settings) with scope enforcement from `WP_MCP_AI_Google_Calendar_Scopes`. (2) `composio_manage_accounts` (7th Composio tool, `manage_options`, `risk_level: high`, `destructive`): validate/reconnect/delete/prune for connected-account lifecycle. Also: the **Non-Loggable Result Fields** interface (see below) landed in-commit and the logger's redactor now masks credential-bearing URL query params. No base tools added or removed.
 

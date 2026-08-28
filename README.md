@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.64
-**Release Date:** 2026-08-26
+**Version:** 1.1.65
+**Release Date:** 2026-08-28
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.64 Highlights:** Google Calendar gets a real connection — a shared Google foundation (`includes/google/`) with OAuth, Calendar API v3, scope enforcement, sync and push replaces four drifted OAuth copies, and six new Pro google-workspace tools (list calendars/events, update, delete, check availability, quick add) join a reworked event creation. Composio Connect gains a verified account-health engine (live probe discovery, one-click verify/reconnect, a new `composio_manage_accounts` lifecycle tool) plus hardening across auth config, listings, app removal, and proxied provider failures. Tool results can declare non-loggable fields, credential-bearing URL query params are redacted from logs, and log buffers get byte-budget compaction. Fixed: validated-tool validation restored on Symfony 5.4, MCP JSON-RPC error envelopes, Pro SPA v2 conversation sync, and vision-tool timeouts.
+**🆕 v1.1.65 Highlights:** A hardening-and-stability release. OpenAI reasoning models (o-series, gpt-5) no longer fail on `max_tokens`/`temperature` — unsupported parameters are stripped and 400 rejections retried with corrected payloads, and Content Graph AI embeddings stop 500ing (provider/model resolution, exception guards, keyword-search graph context without an index). The Media Worker ships the optional full-Crawl4AI proxy (`/api/crawl/full`, env-gated `CRAWL4AI_FULL_URL`, SSRF-validated) plus a strict-path `TEMP_ROOT` allowlist. The April-audit security-posture findings close out: Algorave Tone.js raw eval gets a per-session confirmation gate, source maps are cleaned up, and webhook `__return_true` callbacks are justified. Chat/REST hardening: legacy attachment payloads tolerated, custom message roles work again, orphaned tool messages silently discarded, sign-preserving transcript pagination, and a Google Chat verification-token webhook auth option.
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -43,20 +43,20 @@
 ### Getting Started
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
-- [🛡️ Active Security Monitoring](#-active-security-monitoring)
-- [⚠️ Warranty & Safe Use](#-warranty--safe-use)
+- [🛡️ Active Security Monitoring](#active-security-monitoring)
+- [⚠️ Warranty & Safe Use](#warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
   - [🌱 Beginner 3-Step Install (Try it on Your PC)](#-beginner-3-step-install-try-it-on-your-pc)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
+- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
 - [🧠 Memory & Tool Stack Overview](#-memory--tool-stack-overview)
 - [🛠 Built-in tools & automations](#-built-in-tools--automations)
-- [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
+- [🗨️ Front-end chat surfaces](#front-end-chat-surfaces)
 - [💬 Frontend Shortcode](#-frontend-shortcode)
 
 ### Addons & Extensions
@@ -68,7 +68,7 @@
 - [🏗 System Architecture (covers orchestration, harnessing, MCP servers, memory bridge)](#-system-architecture)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-anthropic-nvidia-nim-ollama-lm-studio-hugging-face--cloudflare)
+- [🧠 Language Model Providers](#language-model-providers)
 - [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [📡 Job Notification System](#-job-notification-system)
@@ -100,7 +100,7 @@
 
 ### Development
 - [🐳 Local Development with Docker](#-local-development-with-docker)
-- [🧑‍💻 Development Tooling](#-development-tooling)
+- [🧑‍💻 Development Tooling](#development-tooling)
 - [📦 NPM Packages](#-npm-packages)
 - [🧪 Testing & QA](#-testing--qa)
 - [🧩 Hooks & Filters](#-hooks--filters)
@@ -149,6 +149,17 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.65)
+
+- 🧠 **OpenAI Reasoning-Model Parameter Fix.** o-series and gpt-5 models reject `max_tokens` (and o-series `temperature`) — `lib/core`'s `OpenAiCompatibleClient` now strips unsupported parameters per model (`applyModelConstraints()`) and retries 400 rejections with corrected payloads on both sync and streaming paths. (PR #5985)
+- 🕷️ **Media Worker Full-Crawl4AI Proxy (031 Phase 3).** New env-gated `POST /api/crawl/full` + `GET /api/crawl/full/task/:id` routes forward to a `CRAWL4AI_FULL_URL` deployment — SSRF-validated targets before proxying, token-gated, `503 service_not_configured`/`502 upstream_unreachable` envelopes — plus a strict-path `TEMP_ROOT` allowlist (proposal 028 Q5) for Docker shared-volume deployments. Worker stays v3.2.0. (PR #5983)
+- 🛡️ **Security-Posture Findings Closed (issue #5972).** Algorave Tone.js raw eval now requires one explicit confirmation per browser session plus a visible warning banner (capability-scoped); the TMA markdown source map is removed; remaining webhook `__return_true` permission callbacks carry justification comments. `SECURITY_POSTURE.md` updated. (PR #5981)
+- 💬 **Chat, REST & Transcript Hardening.** Legacy clients sending a top-level `attachments` parameter are tolerated instead of hard-400'd; custom message roles work again (`wp_mcp_ai_allowed_message_roles`); orphaned tool messages are silently discarded before provider dispatch; attachment prep errors propagate to the client; transcript pagination preserves negative values so clamping works; Content Graph AI embeddings stop 500ing and graph context falls back to keyword search without an index. (PRs #5991, #5993, #5994, #5985)
+- 🔔 **Webhook & Tool Fixes.** Google Chat gains a shared-secret `verification_token` for OIDC-disabled webhooks; Slack link/italic conversion ordering fixed; paper-store import/export tolerate missing `collection`; scheduled-result block registers idempotently; Graphify treats provider-prefixed `*_key` fields as sensitive and returns canonical `WP_Error`s; `remote_wp_connection` errors direct callers to `list_connections` first. (PRs #5990, #5986, #6003)
+- ⚙️ **Slash Commands, Blocks & Admin.** Slash-command handler staleness on `init` re-fire fixed; CSV list parsing accepts `"1,2"` and `"1, 2"`; assistant-builder/Pro toolkit blocks register idempotently (WP 7.1 notices); workflow AJAX double-output fix; TPM limits fall back to the bundled model catalog without JetEngine; dangling legacy admin settings removed; WP 7.0 connector registry guard. (PRs #6000, #5997, #6004, #6005, #6006)
+- 📦 **Content Graph wp.org Refresh.** Icons (v5), main screenshot, and a generated page preview for the `nvoos-content-graph` listing; Contributors field fixed; Content Graph AI chat tester fixed. (PRs #5980, #5988, #5982, #5992)
+- 🧪 **Test-Suite Cluster Fixes.** SSE stream-contract alignment, WP 7.1 bootstrap neutralisation, transcript/slash-command/remote-connection suite follow-ups. (PRs #5995–#5999, #6001, #6002)
 
 ### ✨ What's New at a Glance (v1.1.64)
 
@@ -532,6 +543,8 @@ The plugin works standalone with **~303 base tools** and optionally extends thro
 - **Compliance & Audit Tools** - Comprehensive logging, rate limiting, and usage tracking built-in
 - **Zero Technical Debt** - Modern codebase following WordPress standards, ready for current technology stacks
 
+<!-- Manual anchor — GitHub prefixes emoji headings that carry a VS16 (U+FE0F) or ZWJ (U+200D) with an invisible character in the slug (e.g. the "⚠️ Warranty" heading resolves to "#️-warranty--safe-use"), which clean TOC links cannot match. These explicit ids keep the TOC working; keep them in sync with the links above. -->
+<a id="active-security-monitoring"></a>
 ### 🛡️ Active Security Monitoring
 
 **NV oOS actively prevents and monitors against nefarious behavior**. The plugin includes:
@@ -549,6 +562,7 @@ The plugin works standalone with **~303 base tools** and optionally extends thro
 
 **WordPress.org compliance hardening (May 9, 2026):** [`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) — findings B3, B8, B10, B13, and production vendor remap all resolved.
 
+<a id="warranty--safe-use"></a>
 ### ⚠️ Warranty & Safe Use
 
 > **We make every effort to keep NV oOS safe and secure — but by design, it can be destructive and resource-intensive when not properly configured.**
@@ -706,6 +720,22 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.65 — August 2026)
+
+### August 26–28, 2026 — Reasoning-Model Fixes, Full-Crawl4AI Proxy, Security-Posture Closure, Chat/REST Hardening
+
+- ✅ **OpenAI Reasoning-Model Parameter Rejection — PR #5985.** `OpenAiCompatibleClient` strips `max_tokens`/`temperature` from o-series/gpt-5 payloads (`applyModelConstraints()`) and retries 400 rejections with corrected payloads (`sendWithParameterCorrection()`) on both sync and streaming paths. Content Graph AI: `EmbeddingService` resolves the embedding provider deliberately (OpenAI preferred when keyed — most chat providers lack `/embeddings`) and honors the configured `embeddings_model`; `\Throwable` guards return `WP_Error` instead of fataling; the chat API reports `graph_context_mode` and falls back to keyword search over node labels without an index; the reindex button is always restored on server errors.
+- ✅ **Media Worker Full-Crawl4AI Proxy (031 Phase 3) — PR #5983.** Env-gated `POST /api/crawl/full` + `GET /api/crawl/full/task/:id` in `src/routes/crawl.js`: every target URL is SSRF-validated before the payload is proxied to `CRAWL4AI_FULL_URL`, token-gated like every `/api` route, with `503 service_not_configured` / `502 upstream_unreachable` / `400` envelopes. `TEMP_ROOT` becomes the allowlisted sandbox root under `STRICT_PATHS=1` (028 Q5, default flip deferred to worker 4.0.0). Worker stays **v3.2.0**. Proposals 028/031 updated.
+- ✅ **Security-Posture Findings Closed — PR #5981 (issue #5972).** F-AI-01: Algorave Tone.js raw eval requires a per-session confirmation + warning banner (capability-scoped via `nvoosAlgoraveConfig`; Strudel unaffected). F-CMP-04: TMA markdown source map removed. F-AUTHZ-01: webhook `__return_true` callbacks carry justification comments. `SECURITY_POSTURE.md` updated in-commit.
+- ✅ **Chat, REST & Transcript Hardening — PRs #5991, #5993, #5994.** Chat route no longer declares a top-level `attachments` arg (embedded segments authoritative; legacy clients tolerated); role enum validation moved to the sanitize layer (custom-role filter works again); attachment segment prep errors propagate to the client; orphaned tool messages silently discarded before dispatch; sign-preserving pagination sanitizer + guest-token helper; guardrail pre-screening skips array content.
+- ✅ **Webhook, Shortcode & Pro-Tool Fixes — PR #5990.** Google Chat `verification_token` shared-secret auth when OIDC is disabled (`?token=` / `X-Google-Chat-Token`); Slack conversion anchor placeholders + italic-before-bold ordering; paper-store import/export missing-`collection` guards; idempotent scheduled-result block registration.
+- ✅ **Slash Commands & Blocks — PRs #6000, #5997.** Toolkit manager re-resolves the handler at registration (`init` re-fire sync); CSV lists accept `"1,2"` and `"1, 2"`; assistant-builder/Pro toolkit blocks skip already-registered names (WP 7.1 notices).
+- ✅ **AJAX, TPM & Admin Settings — PRs #6004, #6005, #6006.** Workflow-execution `wp_send_json_*` moved out of the try block; model-manager `overwrite` accepts `1`/`true`/`yes`/`on`; `research_model` provider-error ordering; TPM falls back to the bundled model catalog (longest-prefix) when the CCT has no entry; dangling legacy high-token/security-monitor sections removed; WP 7.0 bridge checks `WP_Connector_Registry::is_registered()` first.
+- ✅ **Graphify & Remote-Connection Guidance — PRs #5986, #6003.** Provider-prefixed `*_key` fields treated as sensitive; `sync_remote_source` returns canonical `WP_Error`; `remote_wp_connection` errors direct callers to `list_connections` first.
+- ✅ **Content Graph wp.org Refresh — PRs #5980, #5988, #5982, #5992.** Icons (v5), main screenshot, generated page preview; Contributors field fixed; Content Graph AI chat tester fixed (settings store, graph adapter, SSE, core bridge).
+- ✅ **Test-Suite Cluster Fixes — PRs #5995–#5999, #6001, #6002.** SSE stream-contract alignment, WP 7.1 icon-init replay neutralisation, transcript CI follow-ups, Phase 4 slash-command suites, SSE tool-result extraction, transcript roundtrip skip without CCT. Docs-only: doc open items → GitHub issues (PR #5979), Ralph Wiggum proposal recorded as implemented (PR #5984).
+- 📦 **Versioning** — bumped to **1.1.65** across all version-bearing files. Pro addon: 1.1.65. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.3** (unchanged). Tool count: ~303 base + ~1,256 Pro (~1,559 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **52**.
 
 ## 🆕 Latest Updates (v1.1.64 — August 2026)
 
@@ -1595,6 +1625,7 @@ This file-based approach allows quick status updates without code changes, makin
 
 ---
 
+<a id="front-end-chat-surfaces"></a>
 ## 🗨️ Front-end chat surfaces
 
 NV oOS ships multiple ways to embed assistants on the front end:
@@ -2057,6 +2088,7 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 
 ---
 
+<a id="configuration-checklist-action-items"></a>
 ## ⚙️ Configuration Checklist (Action Items)
 
 Complete these after installation to unlock every integration point:
@@ -2081,6 +2113,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/features/security/root-security-key.md†L1-L511】
 - [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/operations/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
+<a id="language-model-providers"></a>
 ## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, Baseten, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare)
 
 A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
@@ -3310,6 +3343,7 @@ Override any of these values by exporting the environment variables `WORDPRESS_U
 
 ---
 
+<a id="development-tooling"></a>
 ## 🧑‍💻 Development Tooling
 
 Install the PHP development dependencies (including PHP_CodeSniffer, the WordPress Coding Standards ruleset, and PHPUnit) with:

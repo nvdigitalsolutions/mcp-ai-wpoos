@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.64
+Stable tag: 1.1.65
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.65 - August 28, 2026 =
+
+Media Worker full-Crawl4AI proxy (proposal 031 Phase 3): new env-gated POST /api/crawl/full and GET /api/crawl/full/task/:id routes forward to a CRAWL4AI_FULL_URL deployment with SSRF-validated targets, token gating, and 503/502/400 envelopes, plus a TEMP_ROOT allowlist for strict-path single-tenant mode (proposal 028 Q5). Fixed: OpenAI reasoning models (o-series/gpt-5) no longer receive max_tokens/temperature — unsupported parameters are stripped and 400 rejections retried with corrected payloads; Content Graph AI embedding 500s (provider/model resolution, exception guards) and keyword-search graph context without an embeddings index. Security-posture findings closed (issue #5972): Algorave Tone.js raw eval now requires a per-session confirmation plus warning banner, the TMA markdown source map is removed, and remaining webhook __return_true callbacks carry justification comments. Chat/REST hardening: legacy top-level attachments parameters tolerated, custom message roles work again, orphaned tool messages silently discarded before dispatch, attachment prep errors propagated, sign-preserving transcript pagination. Webhook/shortcode fixes: Google Chat verification-token shared-secret auth when OIDC is disabled, Slack link/italic conversion ordering, paper-store collection guards, idempotent scheduled-result block registration. Slash-command handler staleness + CSV list parsing fixed; assistant-builder/Pro toolkit blocks register idempotently. AJAX double-output fix, model-manager overwrite parsing, TPM fallback to the bundled model catalog without JetEngine, legacy admin-settings cleanup, WP 7.0 connector registry guard, Graphify sensitive _key fields + canonical WP_Error, and remote_wp_connection list_connections guidance. Content Graph wp.org assets refreshed (icons v5, screenshot, page preview) and the AI chat tester fixed. Test-suite cluster fixes across SSE, WP 7.1 bootstrap, transcripts, slash commands, and remote-connection suites. Tool count unchanged: ~303 base + ~1,256 Pro (~1,559 total; live registry authoritative).
 
 = 1.1.64 - August 26, 2026 =
 

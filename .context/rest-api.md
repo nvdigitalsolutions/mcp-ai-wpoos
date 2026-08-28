@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: August 26, 2026 (v1.1.64).
+> Last reviewed: August 28, 2026 (v1.1.65).
+>
+> **New in v1.1.65 (PRs #5987, #5991, #5993, #5994):** the chat route no longer declares a top-level `attachments` arg — embedded content segments are authoritative and undeclared params are ignored, so legacy clients that still send `attachments` are tolerated instead of hard-400'd; attachment segment preparation errors now propagate to the client (`WP_Error` returned) instead of silently dropping the segment. Role enum validation moved from the REST args validator to the sanitize layer so the `wp_mcp_ai_allowed_message_roles` filter sees custom roles. Orphaned tool messages (missing/mismatched `tool_call_id`) are silently discarded by `WP_MCP_AI_REST::filter_tool_messages_without_matching_calls()` before dispatch. Transcript pagination uses a sign-preserving `sanitize_signed_page_number()` callback (absint() flipped negatives to positives, defeating the clamp-to-default). Legacy `input_text` content segments are normalized to `text` in the validator (documented compatibility behaviour).
 >
 > **New in v1.1.64 (PR #5957):** the `/mcp` route no longer declares `jsonrpc`/`method` as `required` REST args — doing so made WordPress answer `rest_missing_callback_param` before the callback ran and turned `handle_mcp_request()`'s spec-correct `-32700`/`-32600` JSON-RPC envelopes into dead code. Let protocol validators own malformed-request handling: REST args stay permissive on raw protocol routes, and the JSON-RPC handler validates `jsonrpc` + `method` itself. The MCP Server Diagnostics page, its assets, and both AJAX handlers were orphaned by the entry-file rename — `WP_MCP_AI_MCP_Server_Diagnostic::init()` is wired again.
 

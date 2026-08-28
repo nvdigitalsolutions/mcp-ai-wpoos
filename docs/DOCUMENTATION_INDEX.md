@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 26, 2026
-**Plugin Version:** 1.1.64
+**Last Updated:** August 28, 2026
+**Plugin Version:** 1.1.65
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,8 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **AUGUST 28, 2026 UPDATE (v1.1.65):** HARDENING & STABILITY. OPENAI REASONING MODELS (O-SERIES/GPT-5) NO LONGER RECEIVE `max_tokens`/`temperature` — `OpenAiCompatibleClient` STRIPS UNSUPPORTED PARAMETERS AND RETRIES 400 REJECTIONS WITH CORRECTED PAYLOADS; CONTENT GRAPH AI EMBEDDINGS STOP 500ING (PROVIDER/MODEL RESOLUTION, EXCEPTION GUARDS) AND GRAPH CONTEXT FALLS BACK TO KEYWORD SEARCH WITHOUT AN INDEX. MEDIA WORKER SHIPS THE OPTIONAL FULL-CRAWL4AI PROXY (`/api/crawl/full`, ENV-GATED `CRAWL4AI_FULL_URL`, SSRF-VALIDATED) + STRICT-PATH `TEMP_ROOT` ALLOWLIST. SECURITY-POSTURE FINDINGS CLOSED (ISSUE #5972): ALGORAVE TONE.JS EVAL CONFIRMATION GATE, TMA SOURCE-MAP REMOVAL, WEBHOOK `__return_true` JUSTIFICATIONS. CHAT/REST HARDENING: LEGACY ATTACHMENT PARAMETERS TOLERATED, CUSTOM MESSAGE ROLES WORK AGAIN, ORPHANED TOOL MESSAGES SILENTLY DISCARDED, SIGN-PRESERVING TRANSCRIPT PAGINATION, GOOGLE CHAT `verification_token` WEBHOOK AUTH. TOOL COUNT UNCHANGED: ~303 BASE + ~1,256 PRO (~1,559 TOTAL). UPDATED DOCS: SECURITY POSTURE, PROPOSALS 028/031, TOOL REFERENCE, THIS PLAN.
+>
 > **AUGUST 26, 2026 UPDATE (v1.1.64):** GOOGLE CALENDAR CONNECTION & SHARED GOOGLE SERVICES — A NEW SHARED FOUNDATION IN `includes/google/` (OAUTH SERVICE, CALENDAR API V3 CLIENT, SCOPE REGISTRY, CREDENTIAL RESOLVER, SYNC + PUSH) REPLACES FOUR DRIFTED GOOGLE OAUTH COPIES, WITH A `google_calendar` CONNECTION TYPE ON BOTH CONNECTION SURFACES AND SIX NEW PRO GOOGLE-WORKSPACE TOOLS. COMPOSIO CONNECT GAINS A VERIFIED ACCOUNT-HEALTH ENGINE + `composio_manage_accounts` LIFECYCLE TOOL PLUS HARDENING ACROSS AUTH CONFIG, LISTINGS, APP REMOVAL, AND PROXIED PROVIDER FAILURES. LOG HYGIENE: TOOL-DECLARED NON-LOGGABLE RESULT FIELDS, SECRET URL QUERY-PARAM REDACTION, AND ROLLING LOG-BUFFER COMPACTION. FIXED: VALIDATED-TOOL VALIDATION RESTORED ON SYMFONY 5.4, MCP JSON-RPC ERROR ENVELOPES + DIAGNOSTICS PAGE, PRO SPA v2 CONVERSATION SYNC, VISION-TIME TOUTS. TOOL COUNT: ~303 BASE + ~1,256 PRO (~1,559 TOTAL). UPDATED DOCS: GOOGLE CALENDAR ARCHITECTURE + API REFERENCE + IMPLEMENTATION PLAN, TOOL REFERENCE.
 >
 > **AUGUST 21, 2026 UPDATE (v1.1.61):** AGENT IDENTITY BRIDGING IN MEMORY STORE & RECALL — NEW `WP_MCP_AI_Agent_Identity_Resolver` CANONICALISES VIRTUAL AGENT KEYS TO THE ASSISTANT POST ID; CHAT-MEMORY RECALL MERGES ALIAS BUCKETS (`stored_under` STAMPS, `merged_sources`); MEMORY DRAWERS GAIN SCOPE CHIPS, AGENT-ID DIAGNOSTIC, SHOW-ALL-SCOPES TOGGLE, AND STORE-TRIGGERED REFRESH. OKF SKILL-KNOWLEDGE BUNDLE NOW AUTO-GENERATED FROM BUNDLED SKILLS (BOOTSTRAP + REINSTALL) — OKF TOOLS WORK OUT OF THE BOX. FIXES: `undici` PINNED TO ^7.29.0 (JSDOM COMPAT, CVE FIXES RETAINED) + CONTENT-GRAPH CI CHECKSUM DRIFT. NVOOS-CONTENT-GRAPH SHIPS A WP.ORG REVIEW REPLY + DETAILED REPORT. UPDATED DOCS: `docs/features/memory/chat-client-integration.md`, `docs/features/okf-integration.md`.
@@ -623,7 +625,19 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.64: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API, Artifact Evolution, Chat Web Workers, Addons Installer, Google Calendar Connection, Composio Account Health, Log Hygiene & Non-Loggable Fields, Vision Timeouts
+## 🆕 August 2026 — v1.1.55–v1.1.65: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API, Artifact Evolution, Chat Web Workers, Addons Installer, Google Calendar Connection, Composio Account Health, Log Hygiene & Non-Loggable Fields, Vision Timeouts, Full-Crawl4AI Proxy, Reasoning-Model Fixes, Security-Posture Closure, Chat/REST Hardening
+
+### New and updated documents (August 28, 2026, v1.1.65)
+
+- **[docs/project/plans/v1.1.65-docs-catch-up.md](project/plans/v1.1.65-docs-catch-up.md)** ⭐ **NEW** — v1.1.65 docs & release catch-up plan (PRs #5979–#6006). (August 28, 2026)
+- **[docs/operations/security/SECURITY_POSTURE.md](operations/security/SECURITY_POSTURE.md)** ⭐ **UPDATED** — F-AUTHZ-01 / F-AI-01 / F-CMP-04 closed or accepted-with-rationale (in-commit, PR #5981). (August 26, 2026)
+- **[docs/project/proposals/031-media-worker-crawl4ai-integration-plan.md](project/proposals/031-media-worker-crawl4ai-integration-plan.md)** ⭐ **UPDATED** — Phase 3 (full-Crawl4AI proxy) implemented; worker-version note reconciled to v3.2.0. (August 28, 2026)
+- **[docs/project/proposals/028-media-worker-phase3-proposal.md](project/proposals/028-media-worker-phase3-proposal.md)** ⭐ **UPDATED** — Q5 TEMP_ROOT allowlist shipped; default flip deferred to worker 4.0.0. (August 26, 2026)
+- **[docs/reference/tools/tool-reference.md](reference/tools/tool-reference.md)** ⭐ **UPDATED** — header reconciled for v1.1.65 (counts unchanged). (August 28, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.65 highlights + latest updates (reasoning-model fixes, full-crawl proxy, security-posture closure, chat/REST hardening). (August 28, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.65] section with PR-level detail. (August 28, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.65 + changelog entry. (August 28, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.65 entry. (August 28, 2026)
 
 ### New and updated documents (August 26, 2026, v1.1.64)
 
