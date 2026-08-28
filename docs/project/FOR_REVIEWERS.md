@@ -150,7 +150,7 @@ The monorepo contains **26 addon directories** under `addons/` (27 entries in th
 
 The April 2026 security audit ([SECURITY_AUDIT_2026_04.md](../operations/compliance/SECURITY_AUDIT_2026_04.md)) found **50 findings: 0 Critical, 5 High (3 Fixed + 2 Partially Fixed), 14 Medium (all Fixed), 21 Low (19 Fixed), 10 Informational.** Additional hardening in May–June 2026 (v1.1.15–v1.1.27) resolved 1 Critical + 5 Warnings from code review. **Phase 3 operational security hardening** (July–August 2026, v1.1.38–v1.1.50) added 3 new security classes (audit logger, CSP headers, request guard enhancements), CORS posture signals, error-verbosity control, auth brute-force detection, body-size enforcement, asset-fingerprinting prevention, and OAuth hardening.
 
-### Closed since the v1.1.52 snapshot (F-AUTHZ-01, F-AI-01, F-CMP-04 — closed in v1.1.64, 2026-08-26):
+### Closed since the v1.1.52 snapshot (F-AUTHZ-01, F-AI-01, F-CMP-04 — closed in v1.1.65, 2026-08-28):
 | ID | Severity | Status | What |
 |---|---|---|---|
 | F-AUTHZ-01 | High | ✅ Fixed | Webhook routes with `__return_true` permission callbacks — 4 fixed via signature verification (Telegram, agent-card ×2, Google Chat); final sweep added inline justification comments to every remaining legitimately-public route (Twitter CRC GET ×2, WhatsApp verify GET ×2, Messenger verify GET, Telegram Mini App page/validate ×4). |

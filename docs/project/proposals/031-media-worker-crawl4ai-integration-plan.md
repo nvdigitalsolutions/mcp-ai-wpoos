@@ -25,7 +25,7 @@
 > `src/utils/llm-extract.js` and the README "LLM extraction providers"
 > section.
 >
-> **Implementation note (2026-08-26, worker 3.2.1+):** Phase 3 shipped as
+> **Implementation note (2026-08-26, worker v3.2.0+):** Phase 3 shipped as
 > the env-gated proxy — `POST /api/crawl/full` + `GET /api/crawl/full/task/:id`
 > forward to `CRAWL4AI_FULL_URL` (contract-preserving, SSRF-validated targets,
 > token-gated like every `/api` route, `503 service_not_configured` when the

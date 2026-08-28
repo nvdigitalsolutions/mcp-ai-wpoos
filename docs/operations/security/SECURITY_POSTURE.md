@@ -1,14 +1,14 @@
 # Security Posture — Current State
 
-> **Last Updated:** August 26, 2026
-> **Based on:** April 2026 Security Audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) + subsequent remediation through v1.1.64 (closure of F-AUTHZ-01, F-AI-01, F-CMP-04)
+> **Last Updated:** August 28, 2026
+> **Based on:** April 2026 Security Audit ([SECURITY_AUDIT_2026_04.md](compliance/SECURITY_AUDIT_2026_04.md)) + subsequent remediation through v1.1.65 (closure of F-AUTHZ-01, F-AI-01, F-CMP-04)
 > **Audit scope:** Base plugin + Pro addon + 6 minor addons = 2,983 PHP files, ~1,500 tools
 
 ---
 
 ## Executive Summary
 
-The base plugin (the part that would ship to WordPress.org) has **0 Critical, 0 High, 6 Medium (all Fixed), and 12 Low** findings. The remaining open items are concentrated in addons and tooling — not in the base plugin's security surface. As of v1.1.64 the last three partially-fixed findings from the April 2026 audit (F-AUTHZ-01, F-AI-01, F-CMP-04) are closed or explicitly accepted.
+The base plugin (the part that would ship to WordPress.org) has **0 Critical, 0 High, 6 Medium (all Fixed), and 12 Low** findings. The remaining open items are concentrated in addons and tooling — not in the base plugin's security surface. As of v1.1.65 the last three partially-fixed findings from the April 2026 audit (F-AUTHZ-01, F-AI-01, F-CMP-04) are closed or explicitly accepted.
 
 ---
 
@@ -28,13 +28,13 @@ Low Fixed count includes 4 findings closed as false-positive in the April 2026 a
 
 ---
 
-## Previously Open / Partially-Fixed Findings (all closed as of v1.1.64)
+## Previously Open / Partially-Fixed Findings (all closed as of v1.1.65)
 
 ### F-AUTHZ-01 — Webhook `__return_true` Permission Callbacks
 | Field | Value |
 |---|---|
 | Severity | **High** |
-| Status | ✅ **Fixed** (closed 2026-08-26, v1.1.64) |
+| Status | ✅ **Fixed** (closed 2026-08-26, v1.1.65) |
 | What | 11 webhook REST routes used `__return_true` as their `permission_callback` |
 | Fixed | 4 routes moved to proper signature verification (Telegram login, agent-card ×2, Google Chat legacy fallback). Final sweep: every remaining legitimately-public route now carries an **inline justification comment** on its `__return_true` — Twitter CRC GET ×2, WhatsApp verify GET ×2, Messenger verify GET ×1, Telegram Mini App page/validate ×4. |
 | Remaining | None. The OPTIONS preflight route in `includes/rest/class-wp-mcp-ai-rest-mcp-controller.php` already carried a justification comment. |
@@ -45,7 +45,7 @@ Low Fixed count includes 4 findings closed as false-positive in the April 2026 a
 | Field | Value |
 |---|---|
 | Severity | **High** |
-| Status | ✅ **Accepted with rationale** (decision recorded 2026-08-26, v1.1.64) |
+| Status | ✅ **Accepted with rationale** (decision recorded 2026-08-26, v1.1.65) |
 | What | Algorave addon uses `new Function('Tone', code)` in the browser's main JS context |
 | Fixed | (1) Shortcode refuses to render below `edit_posts` capability. (2) `new Function()` gated behind `WP_MCP_AI_ALLOW_TONEJS_EVAL` (default `false`). Strudel engine is the safe default. (3) New: visible raw-eval warning banner in the live-coder UI when the Tone.js engine is selected, plus a one-time per-session confirm-on-execute before compiling pasted code. |
 | Rationale | The sandboxed-iframe recommendation is **deferred, not lost**. Residual exposure requires three compounding conditions: an explicit operator opt-in (`WP_MCP_AI_ALLOW_TONEJS_EVAL`), an `edit_posts`-capable actor, and a victim who pastes untrusted code — and the addon is excluded from the WP.org tree via `.distignore`. An opaque-origin sandboxed iframe would additionally require a CORS-enabled sample-serving endpoint and would conflict with the optional Strudel CDN setting, making the cost disproportionate to the residual risk. |
@@ -65,7 +65,7 @@ Low Fixed count includes 4 findings closed as false-positive in the April 2026 a
 | Field | Value |
 |---|---|
 | Severity | **Low** |
-| Status | ✅ **Fixed** (closed 2026-08-26, v1.1.64) |
+| Status | ✅ **Fixed** (closed 2026-08-26, v1.1.65) |
 | What | Minified JS shipped without source maps |
 | Fixed | Final sweep of every `.min.js` under `addons/` (excluding `node_modules`): all plugin-authored minified bundles committed to the repo now ship sibling `.map` files. The last tracked one was `addons/pro/assets/js/tma-markdown.min.js`, regenerated from `tma-markdown.js` with a map (API surface verified identical). The page-agent `esbuild.config.js` now always emits external maps for its bundles, which are gitignored local build artifacts. |
 | Exempt | Third-party vendor bundles are explicitly exempt per the R-Q-06 Chart.js precedent: cytoscape, currency.js, exceljs ×2, i18next, regression, subtitle, tesseract.js (all under `*/vendor/`). |
@@ -137,9 +137,9 @@ Based on the April 2026 re-audit and May 2026 hardening (re-audit May 19, code r
 ## What Would Need Work Before .org Resubmission
 
 1. **The 90-day window has expired.** The author would need to negotiate with the .org plugin team or create a new submission.
-2. **F-AUTHZ-01** — ✅ closed in v1.1.64: all legitimately-public webhook `__return_true` callbacks carry inline justification comments.
-3. **F-AI-01** — ✅ accepted with rationale in v1.1.64 (layered gates + warning UI). Sandboxed iframe becomes mandatory only if the addon ships on WordPress.org or Guest Access makes the live coder a public paste-and-share surface.
-4. **F-CMP-04** — ✅ closed in v1.1.64: every plugin-authored minified bundle has a sibling source map; third-party vendor bundles exempt per the R-Q-06 precedent.
+2. **F-AUTHZ-01** — ✅ closed in v1.1.65: all legitimately-public webhook `__return_true` callbacks carry inline justification comments.
+3. **F-AI-01** — ✅ accepted with rationale in v1.1.65 (layered gates + warning UI). Sandboxed iframe becomes mandatory only if the addon ships on WordPress.org or Guest Access makes the live coder a public paste-and-share surface.
+4. **F-CMP-04** — ✅ closed in v1.1.65: every plugin-authored minified bundle has a sibling source map; third-party vendor bundles exempt per the R-Q-06 precedent.
 
 ---
 
