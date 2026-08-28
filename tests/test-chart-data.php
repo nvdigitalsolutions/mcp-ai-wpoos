@@ -241,12 +241,16 @@ class Test_Chart_Data extends WP_UnitTestCase {
 	 * Test get_usage_forecast_data.
 	 */
 	public function test_get_usage_forecast_data() {
-		$data = WP_MCP_AI_Analytics_Dashboard::get_usage_forecast_data();
+		// The dashboard helpers are private and aggregated by the widget
+		// render methods; invoke the forecast helper via reflection.
+		$method = new \ReflectionMethod( WP_MCP_AI_Analytics_Dashboard::class, 'get_usage_forecast_data' );
+		$method->setAccessible( true );
+		$data = $method->invoke( null );
 
 		// Verify data structure.
 		$this->assertIsArray( $data, 'Should return an array' );
-		$this->assertArrayHasKey( 'current_usage', $data, 'Should have current_usage' );
 		$this->assertArrayHasKey( 'projected_usage', $data, 'Should have projected_usage' );
+		$this->assertArrayHasKey( 'projected_date', $data, 'Should have projected_date' );
 		$this->assertArrayHasKey( 'trend', $data, 'Should have trend' );
 		$this->assertArrayHasKey( 'confidence', $data, 'Should have confidence' );
 

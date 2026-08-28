@@ -38,6 +38,11 @@ class WP_MCP_AI_Tool_Token_Limits {
 	const USAGE_META_KEY = '_wp_mcp_ai_tool_token_usage';
 
 	/**
+	 * User meta key for storing the assigned token tier.
+	 */
+	const TIER_META_KEY = '_wp_mcp_ai_token_tier';
+
+	/**
 	 * Default token limit for general tools (per user, per 24 hours).
 	 */
 	const DEFAULT_GENERAL_LIMIT = 100000;
@@ -219,7 +224,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		// Check user meta for custom tier.
-		$custom_tier = get_user_meta( $user_id, '_wp_mcp_ai_token_tier', true );
+		$custom_tier = get_user_meta( $user_id, self::TIER_META_KEY, true );
 
 		if ( $custom_tier && isset( self::$tier_limits[ $custom_tier ] ) ) {
 			// Check if tier has expired.
@@ -228,7 +233,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			if ( $tier_expires && is_numeric( $tier_expires ) ) {
 				if ( $tier_expires < time() ) {
 					// Tier has expired, delete custom tier and proceed to role-based detection.
-					delete_user_meta( $user_id, '_wp_mcp_ai_token_tier' );
+					delete_user_meta( $user_id, self::TIER_META_KEY );
 					delete_user_meta( $user_id, '_wp_mcp_ai_token_tier_expires' );
 					self::invalidate_tier_cache( $user_id );
 				} else {
@@ -649,7 +654,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 		$old_tier = self::get_user_tier( $user_id );
 
-		update_user_meta( $user_id, '_wp_mcp_ai_token_tier', $tier );
+		update_user_meta( $user_id, self::TIER_META_KEY, $tier );
 
 		if ( $expires > 0 ) {
 			update_user_meta( $user_id, '_wp_mcp_ai_token_tier_expires', $expires );
@@ -2052,7 +2057,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			}
 
 			// Skip if user already has a custom tier.
-			if ( get_user_meta( $user_id, '_wp_mcp_ai_token_tier', true ) ) {
+			if ( get_user_meta( $user_id, self::TIER_META_KEY, true ) ) {
 				continue;
 			}
 
