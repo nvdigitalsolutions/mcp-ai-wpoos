@@ -24,12 +24,13 @@ class Test_Pro_Dashboard_Constant extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
 		// Verify the method exists and is callable.
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 		$this->assertTrue( method_exists( $dashboard, 'is_pro_active' ), 'is_pro_active method should exist' );
 
-		// Without constant or filter, should be false.
+		// The test bootstrap defines WP_MCP_AI_PRO_DASHBOARD_ENABLED as false,
+		// and without an opt-in filter Pro should be disabled.
 		$result = $dashboard->is_pro_active();
-		$this->assertIsBool( $result, 'is_pro_active should return a boolean' );
+		$this->assertFalse( $result, 'is_pro_active should be false without constant or filter' );
 	}
 
 	/**
@@ -68,7 +69,7 @@ class Test_Pro_Dashboard_Constant extends WP_UnitTestCase {
 	public function test_filter_backward_compatibility() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 
-		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		// Initially disabled.
 		$this->assertFalse( $dashboard->is_pro_active() );
@@ -82,14 +83,16 @@ class Test_Pro_Dashboard_Constant extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that filter works in License class.
+	 * Test that the License class constant opt-out wins over the filter.
 	 */
 	public function test_license_filter_backward_compatibility() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-license.php';
 
-		// Enable with filter.
+		// The License class treats a false constant as a hard opt-out: the
+		// filter cannot re-enable Pro when the admin disabled it via the
+		// constant. The test bootstrap defines the constant as false.
 		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
-		$this->assertTrue( WP_MCP_AI_Pro_License::is_pro_active(), 'Filter should enable Pro in License class' );
+		$this->assertFalse( WP_MCP_AI_Pro_License::is_pro_active(), 'Constant opt-out should win over the filter in License class' );
 
 		// Clean up.
 		remove_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
@@ -109,7 +112,7 @@ class Test_Pro_Dashboard_Constant extends WP_UnitTestCase {
 		// Enable with filter.
 		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
 		$result = $rest_api->check_pro_permission();
-		$this->assertTrue( $result === true, 'Filter should enable Pro in REST API' );
+		$this->assertTrue( true === $result, 'Filter should enable Pro in REST API' );
 
 		// Clean up.
 		remove_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
@@ -119,9 +122,8 @@ class Test_Pro_Dashboard_Constant extends WP_UnitTestCase {
 	 * Test documentation for constant usage.
 	 */
 	public function test_constant_documentation() {
-		// This test documents how users should use the constant.
-		// In wp-config.php, users would add:
-		// define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );
+		// This test documents how users should use the constant: adding
+		// `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php.
 
 		// Verify constant name is correct in our checks.
 		$expected_constant = 'WP_MCP_AI_PRO_DASHBOARD_ENABLED';

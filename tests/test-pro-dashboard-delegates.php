@@ -53,9 +53,20 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 			}
 		}
 
-		// Get singleton instance and trigger lazy initialization.
+		// The dashboard singleton is constructed during plugin bootstrap, before
+		// the delegate admin classes above are loaded, so its delegate registry
+		// is empty. If the boot instance never registered the delegates, reset
+		// the singleton so the constructor re-runs delegate initialization now
+		// that the classes exist. Subsequent tests reuse the initialized
+		// instance, so this happens at most once per run.
 		$this->dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
-		$this->dashboard->lazy_init_delegates();
+		if ( empty( $this->dashboard->get_delegates() ) ) {
+			$instance_prop = new ReflectionProperty( WP_MCP_AI_Pro_Dashboard::class, 'instance' );
+			$instance_prop->setAccessible( true );
+			$instance_prop->setValue( null, null );
+
+			$this->dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+		}
 	}
 
 	/**
@@ -189,8 +200,12 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 			}
 		);
 
-		// Reinitialize to trigger action.
-		new WP_MCP_AI_Pro_Dashboard();
+		// Reset the singleton and re-fetch it; the constructor re-runs delegate
+		// initialization, which fires the action.
+		$instance_prop = new ReflectionProperty( WP_MCP_AI_Pro_Dashboard::class, 'instance' );
+		$instance_prop->setAccessible( true );
+		$instance_prop->setValue( null, null );
+		WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		$this->assertTrue( $action_fired, 'Delegate initialization action should fire' );
 	}
