@@ -162,6 +162,9 @@ class WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $assistant_id );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $token );
+		// Guest tokens are bound to the issuance origin (audit F-AUTHZ-04):
+		// the request must carry the site's own Origin to validate.
+		$request->set_header( 'Origin', 'http://' . wp_parse_url( home_url(), PHP_URL_HOST ) );
 
 		$result = $this->rest_controller->permissions_check( $request );
 
@@ -195,6 +198,9 @@ class WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $other_assistant );
 		$request->set_header( 'X-WP-MCP-AI-Guest', $token );
+		// A matching origin lets validation reach the assistant scope check;
+		// the scope mismatch is what must reject this request.
+		$request->set_header( 'Origin', 'http://' . wp_parse_url( home_url(), PHP_URL_HOST ) );
 
 		$result = $this->rest_controller->permissions_check( $request );
 
