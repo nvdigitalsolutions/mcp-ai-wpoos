@@ -547,6 +547,7 @@ require_once __DIR__ . '/helpers/trait-wp-mcp-ai-rest-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-http-test-helper.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-request-context-test-helper.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-test-helper.php';
+require_once __DIR__ . '/helpers/class-wp-mcp-ai-job-queue-manager-test-worker.php';
 
 // NOTE: paper-store trait loaded after WP bootstrap below
 // (it has an ABSPATH guard that requires WordPress to be loaded first).
