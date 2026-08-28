@@ -45,8 +45,10 @@ class Test_REST_Analytics_Endpoints extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-token-limits.php';
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
 
-		// Register REST routes.
-		WP_MCP_AI_REST_Analytics_Manager::register_routes();
+		// Register REST routes within rest_api_init - register_rest_route()
+		// outside the action raises an incorrect-usage notice. The manager is
+		// not wired into the plugin bootstrap, so hook it explicitly here.
+		add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Analytics_Manager', 'register_routes' ) );
 
 		// Set up REST server.
 		global $wp_rest_server;
@@ -74,6 +76,10 @@ class Test_REST_Analytics_Endpoints extends WP_UnitTestCase {
 	 * Test trends endpoint without authentication.
 	 */
 	public function test_trends_endpoint_requires_auth() {
+		// Pin to an anonymous user: the bootstrap may leave an admin as the
+		// current user, which would satisfy the permission gate.
+		wp_set_current_user( 0 );
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/analytics/trends/' . $this->test_users[0] );
 
 		$response = rest_do_request( $request );
@@ -161,12 +167,17 @@ class Test_REST_Analytics_Endpoints extends WP_UnitTestCase {
 		$user_1 = $this->test_users[0];
 		$user_2 = $this->test_users[1];
 
+		// Use dates within the 30-day comparison window; older dates are
+		// filtered out by the cutoff and would compare as equal (0 vs 0).
+		$date_1 = gmdate( 'Y-m-d', strtotime( '-2 days' ) );
+		$date_2 = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+
 		// Create usage data.
 		$usage_1 = array(
 			'test_tool' => array(
 				'daily' => array(
-					'2025-01-01' => 500,
-					'2025-01-02' => 600,
+					$date_1 => 500,
+					$date_2 => 600,
 				),
 			),
 		);
@@ -174,8 +185,8 @@ class Test_REST_Analytics_Endpoints extends WP_UnitTestCase {
 		$usage_2 = array(
 			'test_tool' => array(
 				'daily' => array(
-					'2025-01-01' => 100,
-					'2025-01-02' => 150,
+					$date_1 => 100,
+					$date_2 => 150,
 				),
 			),
 		);
@@ -211,8 +222,10 @@ class Test_REST_Analytics_Endpoints extends WP_UnitTestCase {
 		$response = rest_do_request( $request );
 		$data     = $response->get_data();
 
+		// Three user IDs fail the validate_user_ids() args gate, which
+		// rejects with the standard rest_invalid_param envelope.
 		$this->assertEquals( 400, $response->get_status() );
-		$this->assertArrayHasKey( 'error', $data );
+		$this->assertSame( 'rest_invalid_param', $data['code'] );
 	}
 
 	/**
@@ -221,16 +234,20 @@ class Test_REST_Analytics_Endpoints extends WP_UnitTestCase {
 	public function test_anomalies_endpoint_single_user() {
 		$user_id = $this->test_users[0];
 
+		// Build 20 baseline days inside the 30-day detection window plus one
+		// spike. A small sample cannot exceed the 3.0 Z-score threshold: the
+		// maximum Z-score for n points is (n-1)/sqrt(n), so 5 points can only
+		// reach ~1.79.
+		$daily = array();
+		for ( $i = 21; $i >= 2; $i-- ) {
+			$daily[ gmdate( 'Y-m-d', strtotime( "-{$i} days" ) ) ] = 100;
+		}
+		$daily[ gmdate( 'Y-m-d', strtotime( '-1 day' ) ) ] = 500; // Anomaly!
+
 		// Create usage data with anomaly.
 		$usage = array(
 			'test_tool' => array(
-				'daily' => array(
-					'2025-01-01' => 100,
-					'2025-01-02' => 105,
-					'2025-01-03' => 98,
-					'2025-01-04' => 102,
-					'2025-01-05' => 500, // Anomaly!
-				),
+				'daily' => $daily,
 			),
 		);
 
@@ -257,29 +274,22 @@ class Test_REST_Analytics_Endpoints extends WP_UnitTestCase {
 	public function test_anomalies_endpoint_severity_filter() {
 		$user_id = $this->test_users[0];
 
+		// Use dates within the 30-day detection window; older dates are
+		// filtered out by the cutoff and produce no anomalies.
+		$dates = array();
+		for ( $i = 11; $i >= 2; $i-- ) {
+			$dates[] = gmdate( 'Y-m-d', strtotime( "-{$i} days" ) );
+		}
+
 		// Create usage data.
 		$usage = array(
 			'test_tool' => array(
-				'daily' => array_fill_keys(
-					array(
-						'2025-01-01',
-						'2025-01-02',
-						'2025-01-03',
-						'2025-01-04',
-						'2025-01-05',
-						'2025-01-06',
-						'2025-01-07',
-						'2025-01-08',
-						'2025-01-09',
-						'2025-01-10',
-					),
-					100
-				),
+				'daily' => array_fill_keys( $dates, 100 ),
 			),
 		);
 
 		// Add high severity anomaly.
-		$usage['test_tool']['daily']['2025-01-11'] = 1000;
+		$usage['test_tool']['daily'][ gmdate( 'Y-m-d', strtotime( '-1 day' ) ) ] = 1000;
 
 		update_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $usage );
 
