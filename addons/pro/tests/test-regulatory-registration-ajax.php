@@ -58,6 +58,26 @@ class Test_Regulatory_Registration_AJAX extends WP_Ajax_UnitTestCase {
 		// action so the tools register before the REST requests below.
 		do_action( 'wp_mcp_ai_register_tools', WP_MCP_AI_Tool_Registry::get_instance() );
 
+		// A preceding suite may have replaced the global REST controller with
+		// an instance wired to a mocked tool registry and left its
+		// register_routes callback attached to rest_api_init. The shared REST
+		// server's /mcp-ai/v1/tools route then points at that controller,
+		// whose get_tool() returns null for every slug, so every request
+		// fails with a 404 wp_mcp_ai_tool_missing error. Rebuild a controller
+		// bound to the real registry and re-fire rest_api_init so this suite's
+		// requests always dispatch through it.
+		if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
+			remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
+			remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'clean_output_buffer' ), 1 );
+		}
+
+		$rest_registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$mock_client   = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
+		$GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $rest_registry, $mock_client );
+
+		rest_get_server();
+		do_action( 'rest_api_init' );
+
 		// Create admin user.
 		$this->admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
