@@ -251,7 +251,7 @@ class WP_MCP_AI_Job_Queue_Manager {
 		}
 
 		// Fallback: legacy option-based storage.
-		return self::enqueue_to_option( $job_id, $job_data, $priority, $sla_tier, $timeout );
+		return self::enqueue_to_option( $job_id, $job_data, $callable_class, $callable_method, $priority, $sla_tier, $timeout );
 	}
 
 	/**
@@ -342,14 +342,16 @@ class WP_MCP_AI_Job_Queue_Manager {
 	 *
 	 * @deprecated 1.1.37 Use enqueue_to_table() instead.
 	 *
-	 * @param string      $job_id   Job identifier.
-	 * @param array       $job_data Full job data.
-	 * @param int         $priority Job priority.
-	 * @param string|null $sla_tier SLA tier.
-	 * @param int         $timeout  Job timeout.
+	 * @param string      $job_id          Job identifier.
+	 * @param array       $job_data        Full job data.
+	 * @param string|null $callable_class  Callable class name.
+	 * @param string|null $callable_method Callable method name.
+	 * @param int         $priority        Job priority.
+	 * @param string|null $sla_tier        SLA tier.
+	 * @param int         $timeout         Job timeout.
 	 * @return bool True on success.
 	 */
-	private static function enqueue_to_option( $job_id, $job_data, $priority, $sla_tier, $timeout ) {
+	private static function enqueue_to_option( $job_id, $job_data, $callable_class, $callable_method, $priority, $sla_tier, $timeout ) {
 		$queue = self::get_queue_state_from_option();
 
 		if ( isset( $queue[ $job_id ] ) ) {
@@ -362,14 +364,18 @@ class WP_MCP_AI_Job_Queue_Manager {
 		}
 
 		$queue[ $job_id ] = array(
-			'callable'    => $job_data['callable'],
-			'args'        => isset( $job_data['args'] ) ? $job_data['args'] : array(),
-			'priority'    => $priority,
-			'sla_tier'    => $sla_tier,
-			'timeout'     => $timeout,
-			'enqueued_at' => time(),
-			'retry_count' => 0,
-			'status'      => self::STATUS_PENDING,
+			// Store the serializable callable reference instead of the raw
+			// callable: closures and object instances cannot be persisted
+			// through the options API. Mirrors enqueue_to_table().
+			'callable_class'  => $callable_class,
+			'callable_method' => $callable_method,
+			'args'            => isset( $job_data['args'] ) ? $job_data['args'] : array(),
+			'priority'        => $priority,
+			'sla_tier'        => $sla_tier,
+			'timeout'         => $timeout,
+			'enqueued_at'     => time(),
+			'retry_count'     => 0,
+			'status'          => self::STATUS_PENDING,
 		);
 
 		$saved = self::save_queue_state_to_option( $queue );
@@ -760,6 +766,16 @@ class WP_MCP_AI_Job_Queue_Manager {
 					),
 					array( 'job_id' => $job_id )
 				);
+			} else {
+				// Legacy option fallback: requeue with an incremented retry count.
+				$queue = self::get_queue_state_from_option();
+				if ( isset( $queue[ $job_id ] ) ) {
+					$queue[ $job_id ]['status']      = self::STATUS_PENDING;
+					$queue[ $job_id ]['retry_count'] = $retry_count + 1;
+					$queue[ $job_id ]['last_error']  = $error->get_error_message();
+					self::save_queue_state_to_option( $queue );
+				}
+				self::remove_job_from_active_option( $job_id );
 			}
 			return;
 		}
@@ -800,6 +816,16 @@ class WP_MCP_AI_Job_Queue_Manager {
 				),
 				array( 'job_id' => $job_id )
 			);
+		} else {
+			// Legacy option fallback: record the failed status in the queue.
+			$queue = self::get_queue_state_from_option();
+			if ( isset( $queue[ $job_id ] ) ) {
+				$queue[ $job_id ]['status']     = self::STATUS_FAILED;
+				$queue[ $job_id ]['failed_at']  = time();
+				$queue[ $job_id ]['last_error'] = $error->get_error_message();
+				self::save_queue_state_to_option( $queue );
+			}
+			self::remove_job_from_active_option( $job_id );
 		}
 	}
 
@@ -819,6 +845,13 @@ class WP_MCP_AI_Job_Queue_Manager {
 				self::get_table_name(),
 				array( 'job_id' => $job_id )
 			);
+		} else {
+			// Legacy option fallback: remove the completed job so it is not
+			// claimed again on the next processing cycle.
+			$queue = self::get_queue_state_from_option();
+			unset( $queue[ $job_id ] );
+			self::save_queue_state_to_option( $queue );
+			self::remove_job_from_active_option( $job_id );
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -994,6 +1027,26 @@ class WP_MCP_AI_Job_Queue_Manager {
 			'started_at' => time(),
 			'timeout'    => isset( $job['timeout'] ) ? absint( $job['timeout'] ) : self::DEFAULT_JOB_TIMEOUT,
 		);
+
+		return self::save_active_jobs_to_option( $active_jobs );
+	}
+
+	/**
+	 * Remove a job from the legacy active-jobs option.
+	 *
+	 * @deprecated 1.1.37
+	 *
+	 * @param string $job_id Job identifier.
+	 * @return bool True on success.
+	 */
+	private static function remove_job_from_active_option( $job_id ) {
+		$active_jobs = self::get_active_jobs_from_option();
+
+		if ( ! isset( $active_jobs[ $job_id ] ) ) {
+			return true;
+		}
+
+		unset( $active_jobs[ $job_id ] );
 
 		return self::save_active_jobs_to_option( $active_jobs );
 	}
