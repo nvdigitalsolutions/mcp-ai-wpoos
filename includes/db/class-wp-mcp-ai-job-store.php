@@ -34,6 +34,13 @@ class WP_MCP_AI_Job_Store {
 	const TABLE_NAME = 'mcp_ai_jobs';
 
 	/**
+	 * Cached result of the table-existence check.
+	 *
+	 * @var bool|null
+	 */
+	private static $table_exists_cache = null;
+
+	/**
 	 * Valid job statuses.
 	 *
 	 * @var string[]
@@ -87,6 +94,8 @@ class WP_MCP_AI_Job_Store {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		}
 		dbDelta( $sql );
+
+		self::$table_exists_cache = true;
 	}
 
 	/**
@@ -96,13 +105,19 @@ class WP_MCP_AI_Job_Store {
 	 * @return bool True if table exists.
 	 */
 	public static function table_exists() {
+		if ( null !== self::$table_exists_cache ) {
+			return self::$table_exists_cache;
+		}
+
 		global $wpdb;
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
-		return ( $table_name === $exists );
+		self::$table_exists_cache = ( $table_name === $exists );
+
+		return self::$table_exists_cache;
 	}
 
 	/**
@@ -133,6 +148,10 @@ class WP_MCP_AI_Job_Store {
 	 * @return bool True on success, false on failure.
 	 */
 	public static function insert( array $data ) {
+		if ( ! self::table_exists() ) {
+			return false;
+		}
+
 		global $wpdb;
 
 		$defaults = array(
@@ -191,6 +210,10 @@ class WP_MCP_AI_Job_Store {
 	 * @return array|null Job row as associative array, or null if not found.
 	 */
 	public static function get( $job_id ) {
+		if ( ! self::table_exists() ) {
+			return null;
+		}
+
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -215,11 +238,15 @@ class WP_MCP_AI_Job_Store {
 	 * @return bool True on success.
 	 */
 	public static function update_status( $job_id, $status ) {
-		global $wpdb;
-
 		if ( ! in_array( $status, self::VALID_STATUSES, true ) ) {
 			return false;
 		}
+
+		if ( ! self::table_exists() ) {
+			return false;
+		}
+
+		global $wpdb;
 
 		$data = array( 'status' => $status );
 
@@ -251,6 +278,10 @@ class WP_MCP_AI_Job_Store {
 	 * @return bool True on success.
 	 */
 	public static function complete( $job_id, $result = null, $error = null ) {
+		if ( ! self::table_exists() ) {
+			return false;
+		}
+
 		global $wpdb;
 
 		$data = array(
@@ -279,6 +310,10 @@ class WP_MCP_AI_Job_Store {
 	 * @return bool True on success.
 	 */
 	public static function increment_attempts( $job_id ) {
+		if ( ! self::table_exists() ) {
+			return false;
+		}
+
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom plugin table.
@@ -304,6 +339,10 @@ class WP_MCP_AI_Job_Store {
 	 * @return bool True if claimed successfully, false if already claimed.
 	 */
 	public static function claim( $job_id, $worker_id ) {
+		if ( ! self::table_exists() ) {
+			return false;
+		}
+
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom plugin table.
@@ -330,6 +369,10 @@ class WP_MCP_AI_Job_Store {
 	 * @return bool True on success.
 	 */
 	public static function release( $job_id ) {
+		if ( ! self::table_exists() ) {
+			return false;
+		}
+
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom plugin table.
@@ -355,6 +398,10 @@ class WP_MCP_AI_Job_Store {
 	 * @return bool True on success.
 	 */
 	public static function delete( $job_id ) {
+		if ( ! self::table_exists() ) {
+			return false;
+		}
+
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom plugin table.
@@ -375,6 +422,10 @@ class WP_MCP_AI_Job_Store {
 	 * @return int Number of deleted rows.
 	 */
 	public static function purge_completed( $max_age_seconds = 604800 ) {
+		if ( ! self::table_exists() ) {
+			return 0;
+		}
+
 		global $wpdb;
 
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - $max_age_seconds );
@@ -459,6 +510,10 @@ class WP_MCP_AI_Job_Store {
 	 * @return array Array of job rows.
 	 */
 	public static function list_jobs( array $filters = array(), $limit = 50 ) {
+		if ( ! self::table_exists() ) {
+			return array();
+		}
+
 		global $wpdb;
 
 		$where = array( '1=1' );
