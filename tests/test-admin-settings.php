@@ -27,17 +27,17 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'default_model', $defaults );
 		$this->assertSame( 'gpt-4.1', $defaults['default_model'] );
 		$this->assertArrayHasKey( 'default_gemini_model', $defaults );
-		$this->assertSame( 'gemini-2.5-flash', $defaults['default_gemini_model'] );
+		$this->assertSame( 'gemini-3.5-flash', $defaults['default_gemini_model'] );
 		$this->assertArrayHasKey( 'default_provider', $defaults );
 		$this->assertSame( 'openai', $defaults['default_provider'] );
 		$this->assertArrayHasKey( 'openai_image_model', $defaults );
-			$this->assertSame( 'dall-e-3', $defaults['openai_image_model'] );
+			$this->assertSame( 'gpt-image-1', $defaults['openai_image_model'] );
 		$this->assertArrayHasKey( 'openai_image_size', $defaults );
 		$this->assertSame( '1024x1024', $defaults['openai_image_size'] );
 		$this->assertArrayHasKey( 'openai_image_quality', $defaults );
 		$this->assertSame( 'medium', $defaults['openai_image_quality'] );
 		$this->assertArrayHasKey( 'openai_image_response_format', $defaults );
-		$this->assertSame( 'b64_json', $defaults['openai_image_response_format'] );
+		$this->assertSame( 'url', $defaults['openai_image_response_format'] );
 	}
 
 	/**
@@ -69,8 +69,9 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'label="GPT-5"', $output );
 		$this->assertStringContainsString( 'value="gpt-4o"', $output );
 		$this->assertStringContainsString( 'value="gpt-4.1-mini"', $output );
-		$this->assertStringContainsString( 'label="GPT-4o mini"', $output );
-		$this->assertStringContainsString( '>GPT-4o mini<', $output );
+		// Labels come from the bundled model catalog.
+		$this->assertStringContainsString( 'label="Cost-effective variant of GPT-4o"', $output );
+		$this->assertStringContainsString( '>Cost-effective variant of GPT-4o<', $output );
 	}
 
 	/**
@@ -89,16 +90,14 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Verify some key models are present.
 		$this->assertArrayHasKey( 'gpt-5', $choices );
 		$this->assertArrayHasKey( 'gpt-5-mini', $choices );
+		$this->assertArrayHasKey( 'gpt-5-codex', $choices );
 		$this->assertArrayHasKey( 'gpt-4o', $choices );
 		$this->assertArrayHasKey( 'gpt-4o-mini', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1-mini', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1-nano', $choices );
-		$this->assertArrayHasKey( 'gpt-4-turbo', $choices );
-		$this->assertArrayHasKey( 'gpt-4', $choices );
-		$this->assertArrayHasKey( 'gpt-3.5-turbo', $choices );
-		$this->assertArrayHasKey( 'o1-preview', $choices );
-		$this->assertArrayHasKey( 'o1-mini', $choices );
+		$this->assertArrayHasKey( 'gpt-4.1-turbo', $choices );
+		$this->assertArrayHasKey( 'gpt-5.2', $choices );
 	}
 
 	/**
@@ -116,8 +115,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertSame( 'GPT-4o Mini', $method->invoke( $admin_settings, 'gpt-4o-mini' ) );
 		$this->assertSame( 'GPT-4.1', $method->invoke( $admin_settings, 'gpt-4.1' ) );
 		$this->assertSame( 'GPT-4 Turbo', $method->invoke( $admin_settings, 'gpt-4-turbo' ) );
-		$this->assertSame( 'O1 Preview', $method->invoke( $admin_settings, 'o1-preview' ) );
-		$this->assertSame( 'O1 Mini', $method->invoke( $admin_settings, 'o1-mini' ) );
+		$this->assertSame( 'o1 Preview', $method->invoke( $admin_settings, 'o1-preview' ) );
+		$this->assertSame( 'o1 Mini', $method->invoke( $admin_settings, 'o1-mini' ) );
 	}
 
 	/**
@@ -266,7 +265,9 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( 'https://example.com/crawl/', $sanitized['crawl4ai_base_url'] );
-		$this->assertSame( 'secret token', $sanitized['crawl4ai_api_key'] );
+		// Sensitive values are encrypted at rest.
+		$this->assertNotSame( 'secret token', $sanitized['crawl4ai_api_key'] );
+		$this->assertSame( 'secret token', WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $sanitized['crawl4ai_api_key'] ) );
 	}
 
 	/**
@@ -297,14 +298,14 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 				'openai_image_model'           => 'gpt-image-1',
 				'openai_image_size'            => '1536x1024',
 				'openai_image_quality'         => 'hd',
-				'openai_image_response_format' => 'url',
+				'openai_image_response_format' => 'b64_json',
 			)
 		);
 
 		$this->assertSame( 'gpt-image-1', $sanitized['openai_image_model'] );
 		$this->assertSame( '1536x1024', $sanitized['openai_image_size'] );
 		$this->assertSame( 'hd', $sanitized['openai_image_quality'] );
-		$this->assertSame( 'url', $sanitized['openai_image_response_format'] );
+		$this->assertSame( 'b64_json', $sanitized['openai_image_response_format'] );
 	}
 
 	/**
@@ -390,9 +391,25 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure the default provider field includes LM Studio as an option.
+	 * Ensure the default provider field lists configured providers with their slugs.
 	 */
 	public function test_default_provider_field_includes_lm_studio() {
+		// Configure the providers under test: API-key providers need both the
+		// enable toggle and a credential; local providers need an endpoint URL.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'enable_openai'          => true,
+				'openai_api_key'         => 'sk-test',
+				'enable_gemini'          => true,
+				'gemini_api_key'         => 'test-key',
+				'enable_ollama'          => true,
+				'ollama_endpoint_url'    => 'http://localhost:11434',
+				'enable_lm_studio'       => true,
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+			)
+		);
+
 		$admin_settings = new WP_MCP_AI_Admin_Settings();
 
 		$output = $this->capture_field_output( array( $admin_settings, 'render_default_provider_field' ) );
@@ -401,7 +418,9 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'value="gemini"', $output );
 		$this->assertStringContainsString( 'value="ollama"', $output );
 		$this->assertStringContainsString( 'value="lm_studio"', $output );
-		$this->assertStringContainsString( 'LM Studio (Local AI)', $output );
+		$this->assertStringContainsString( 'LM Studio (Local)', $output );
+
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 	}
 
 	/**
@@ -489,7 +508,9 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertSame( 'test-api-key-123', $sanitized['cloudways_api_key'] );
+		// Sensitive values are encrypted at rest.
+		$this->assertNotSame( 'test-api-key-123', $sanitized['cloudways_api_key'] );
+		$this->assertSame( 'test-api-key-123', WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $sanitized['cloudways_api_key'] ) );
 	}
 
 	/**
@@ -853,11 +874,11 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that settings cache is properly cleared when temporarily updating settings.
+	 * Test that the settings cache is cleared when the option is updated.
 	 *
-	 * This test verifies the fix for the issue where test connection handlers
-	 * were not able to use updated endpoint URLs because the settings cache
-	 * was not cleared after calling update_option().
+	 * The update_option() call fires the update_option_{$option} hook that the
+	 * settings class wires to reset_settings_cache(), so cached values never
+	 * leak into test-connection handlers or subsequent reads.
 	 */
 	public function test_settings_cache_is_cleared_after_update() {
 		// First, set and cache some initial settings.
@@ -878,31 +899,15 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $updated_settings );
 
-		// Without clearing the cache, get_settings() would return the cached values.
-		// But we need to verify that in the test connection handlers, the cache IS cleared.
-		// Since we can't directly test private static properties from here,.
-		// we'll use reflection to access and verify the cache state.
-
-		$reflection     = new ReflectionClass( 'WP_MCP_AI_Admin_Settings' );
-		$cache_property = $reflection->getProperty( 'settings_cache' );
-		$cache_property->setAccessible( true );
-
-		// The cache should still contain the old values at this point.
-		$cache_value = $cache_property->getValue();
-		$this->assertNotNull( $cache_value, 'Cache should be populated' );
-		$this->assertEquals( 'http://initial-endpoint:11434', $cache_value['ollama_endpoint_url'] );
-
-		// Now simulate what the fix does: clear the cache.
-		$cache_property->setValue( null );
-
-		// After clearing, get_settings should fetch fresh data from the database.
+		// The update_option hook clears the cache, so get_settings must now
+		// return the fresh values from the database.
 		$fresh_settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$this->assertEquals( 'http://updated-endpoint:11434', $fresh_settings['ollama_endpoint_url'] );
 		$this->assertEquals( 'http://updated-lm-studio:1234', $fresh_settings['lm_studio_endpoint_url'] );
 
 		// Clean up.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
-		$cache_property->setValue( null );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 	}
 
 	/**
@@ -949,7 +954,17 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$sanitized = $settings_base->sanitize_settings( $input );
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
-		$this->assertEquals( array( 'gemini', 'ollama', 'openai', 'lm_studio' ), $sanitized['provider_priority_list'] );
+		// Submitted providers keep their order and lead the list.
+		$this->assertSame(
+			array( 'gemini', 'ollama', 'openai', 'lm_studio' ),
+			array_slice( $sanitized['provider_priority_list'], 0, 4 )
+		);
+		// All known providers end up in the list exactly once.
+		$this->assertEqualsCanonicalizing(
+			WP_MCP_AI_Model_Config::get_all_provider_slugs(),
+			$sanitized['provider_priority_list']
+		);
+		$this->assertCount( count( WP_MCP_AI_Model_Config::get_all_provider_slugs() ), $sanitized['provider_priority_list'] );
 	}
 
 	/**
@@ -989,7 +1004,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$sanitized = $settings_base->sanitize_settings( $input );
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
-		$this->assertEquals( 4, count( $sanitized['provider_priority_list'] ) );
+		// The full list is preserved (deduped), so count equals all slugs.
+		$this->assertCount( count( WP_MCP_AI_Model_Config::get_all_provider_slugs() ), $sanitized['provider_priority_list'] );
 		// Should only have one instance of openai.
 		$this->assertEquals( 1, count( array_keys( $sanitized['provider_priority_list'], 'openai' ) ) );
 	}
@@ -1009,8 +1025,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
 		$this->assertIsArray( $sanitized['provider_priority_list'] );
-		// Should return default list.
-		$this->assertEquals( array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ), $sanitized['provider_priority_list'] );
+		// Non-array input falls back to the full available provider list.
+		$this->assertEquals( WP_MCP_AI_Model_Config::get_all_provider_slugs(), $sanitized['provider_priority_list'] );
 	}
 
 	/**
@@ -1027,7 +1043,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$sanitized = $settings_base->sanitize_settings( $input );
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
-		$this->assertEquals( 5, count( $sanitized['provider_priority_list'] ) );
+		$this->assertCount( count( WP_MCP_AI_Model_Config::get_all_provider_slugs() ), $sanitized['provider_priority_list'] );
 		// Specified providers should be first.
 		$this->assertEquals( 'gemini', $sanitized['provider_priority_list'][0] );
 		$this->assertEquals( 'openai', $sanitized['provider_priority_list'][1] );
