@@ -43,20 +43,20 @@
 ### Getting Started
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
-- [🛡️ Active Security Monitoring](#-active-security-monitoring)
-- [⚠️ Warranty & Safe Use](#-warranty--safe-use)
+- [🛡️ Active Security Monitoring](#active-security-monitoring)
+- [⚠️ Warranty & Safe Use](#warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
   - [🌱 Beginner 3-Step Install (Try it on Your PC)](#-beginner-3-step-install-try-it-on-your-pc)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
+- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
 - [🧠 Memory & Tool Stack Overview](#-memory--tool-stack-overview)
 - [🛠 Built-in tools & automations](#-built-in-tools--automations)
-- [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
+- [🗨️ Front-end chat surfaces](#front-end-chat-surfaces)
 - [💬 Frontend Shortcode](#-frontend-shortcode)
 
 ### Addons & Extensions
@@ -68,7 +68,7 @@
 - [🏗 System Architecture (covers orchestration, harnessing, MCP servers, memory bridge)](#-system-architecture)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-anthropic-nvidia-nim-ollama-lm-studio-hugging-face--cloudflare)
+- [🧠 Language Model Providers](#language-model-providers)
 - [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [📡 Job Notification System](#-job-notification-system)
@@ -100,7 +100,7 @@
 
 ### Development
 - [🐳 Local Development with Docker](#-local-development-with-docker)
-- [🧑‍💻 Development Tooling](#-development-tooling)
+- [🧑‍💻 Development Tooling](#development-tooling)
 - [📦 NPM Packages](#-npm-packages)
 - [🧪 Testing & QA](#-testing--qa)
 - [🧩 Hooks & Filters](#-hooks--filters)
@@ -543,6 +543,8 @@ The plugin works standalone with **~303 base tools** and optionally extends thro
 - **Compliance & Audit Tools** - Comprehensive logging, rate limiting, and usage tracking built-in
 - **Zero Technical Debt** - Modern codebase following WordPress standards, ready for current technology stacks
 
+<!-- Manual anchor — GitHub prefixes emoji headings that carry a VS16 (U+FE0F) or ZWJ (U+200D) with an invisible character in the slug (e.g. the "⚠️ Warranty" heading resolves to "#️-warranty--safe-use"), which clean TOC links cannot match. These explicit ids keep the TOC working; keep them in sync with the links above. -->
+<a id="active-security-monitoring"></a>
 ### 🛡️ Active Security Monitoring
 
 **NV oOS actively prevents and monitors against nefarious behavior**. The plugin includes:
@@ -560,6 +562,7 @@ The plugin works standalone with **~303 base tools** and optionally extends thro
 
 **WordPress.org compliance hardening (May 9, 2026):** [`docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md`](docs/operations/compliance/WORDPRESS_ORG_COMPLIANCE_2026_05_09.md) — findings B3, B8, B10, B13, and production vendor remap all resolved.
 
+<a id="warranty--safe-use"></a>
 ### ⚠️ Warranty & Safe Use
 
 > **We make every effort to keep NV oOS safe and secure — but by design, it can be destructive and resource-intensive when not properly configured.**
@@ -1622,6 +1625,7 @@ This file-based approach allows quick status updates without code changes, makin
 
 ---
 
+<a id="front-end-chat-surfaces"></a>
 ## 🗨️ Front-end chat surfaces
 
 NV oOS ships multiple ways to embed assistants on the front end:
@@ -2084,6 +2088,7 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 
 ---
 
+<a id="configuration-checklist-action-items"></a>
 ## ⚙️ Configuration Checklist (Action Items)
 
 Complete these after installation to unlock every integration point:
@@ -2108,6 +2113,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/features/security/root-security-key.md†L1-L511】
 - [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/operations/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
+<a id="language-model-providers"></a>
 ## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, Baseten, DeepSeek, OpenRouter, Kimi, DigitalOcean, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare)
 
 A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, DigitalOcean, NVIDIA NIM, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
@@ -3337,6 +3343,7 @@ Override any of these values by exporting the environment variables `WORDPRESS_U
 
 ---
 
+<a id="development-tooling"></a>
 ## 🧑‍💻 Development Tooling
 
 Install the PHP development dependencies (including PHP_CodeSniffer, the WordPress Coding Standards ruleset, and PHPUnit) with:
