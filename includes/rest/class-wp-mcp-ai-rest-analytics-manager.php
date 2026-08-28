@@ -150,7 +150,11 @@ class WP_MCP_AI_REST_Analytics_Manager {
 							'required'          => false,
 							'type'              => 'number',
 							'default'           => 3.0,
-							'sanitize_callback' => 'floatval',
+							// REST sanitize callbacks receive ($value, $request, $param),
+							// so a bare 'floatval' would raise an ArgumentCountError.
+							'sanitize_callback' => static function ( $value ) {
+								return (float) $value;
+							},
 						),
 					),
 				)
