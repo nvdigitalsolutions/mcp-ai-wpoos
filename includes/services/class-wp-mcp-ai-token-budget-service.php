@@ -355,6 +355,19 @@ class WP_MCP_AI_Token_Budget_Manager {
 			}
 		}
 
+		// Fall back to the bundled model catalog when the CCT has no entry
+		// (e.g. JetEngine is inactive or the CCT has not been populated yet).
+		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			$catalog_entry = self::find_catalog_model(
+				WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data(),
+				$model
+			);
+
+			if ( $catalog_entry && ! empty( $catalog_entry['tpm_limit'] ) ) {
+				return absint( $catalog_entry['tpm_limit'] );
+			}
+		}
+
 		// Fall back to hardcoded TPM defaults (Anthropic Tier 1 defaults, etc.).
 		// Check exact match first, then try prefix matching for date-versioned model IDs
 		// (e.g. 'claude-opus-4-6-20260301' matches 'claude-opus-4-6').
@@ -369,6 +382,45 @@ class WP_MCP_AI_Token_Budget_Manager {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Find a model entry in the bundled catalog by exact name or longest prefix.
+	 *
+	 * Mirrors the CCT's prefix-matching behaviour so date-versioned model IDs
+	 * (e.g. 'gpt-5-2025-08-07') resolve to their base family entry.
+	 *
+	 * @param array  $catalog Model catalog entries.
+	 * @param string $model   Model identifier.
+	 *
+	 * @return array|null Matching entry or null.
+	 */
+	protected static function find_catalog_model( $catalog, $model ) {
+		if ( ! is_array( $catalog ) ) {
+			return null;
+		}
+
+		$best_match        = null;
+		$best_match_length = 0;
+
+		foreach ( $catalog as $entry ) {
+			if ( ! is_array( $entry ) || empty( $entry['model_name'] ) ) {
+				continue;
+			}
+
+			$stored_model = sanitize_text_field( $entry['model_name'] );
+
+			if ( 0 === strpos( $model, $stored_model ) ) {
+				$match_length = strlen( $stored_model );
+
+				if ( $match_length > $best_match_length ) {
+					$best_match        = $entry;
+					$best_match_length = $match_length;
+				}
+			}
+		}
+
+		return $best_match;
 	}
 
 	/**

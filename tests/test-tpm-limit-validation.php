@@ -138,12 +138,12 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 
 		$selected_model = WP_MCP_AI_Model_Selector::select_model( $messages, $options );
 
-		// Should fallback to a model with higher limits.
+		// Should fallback to the high-capacity default model.
 		$this->assertNotEquals( 'gpt-4o-mini', $selected_model, 'Should fallback from gpt-4o-mini for large requests.' );
-		$this->assertContains(
+		$this->assertEquals(
+			'gemini-2.5-flash',
 			$selected_model,
-			array( 'gpt-4o', 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash' ),
-			'Should fallback to a higher-capacity model.'
+			'Should fallback to the default high-capacity model.'
 		);
 	}
 
@@ -212,10 +212,10 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$result = $method->invoke( null, $messages, $model, $options );
 
 		$this->assertNotEquals( $model, $result, 'Should suggest fallback model when exceeding TPM limits.' );
-		$this->assertContains(
+		$this->assertEquals(
+			'gemini-2.5-flash',
 			$result,
-			array( 'gpt-4o', 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash' ),
-			'Should suggest a higher-capacity model.'
+			'Should suggest the default high-capacity model.'
 		);
 	}
 
@@ -239,9 +239,10 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$client = new WP_MCP_AI_Enhanced_OpenAI_Client();
 		$result = $client->create_chat_completion( $messages, $options );
 
-		// Should return WP_Error due to TPM limit exceeded.
-		$this->assertInstanceOf( 'WP_Error', $result, 'Should return WP_Error when TPM limit exceeded.' );
-		$this->assertEquals( 'wp_mcp_ai_tpm_limit_exceeded', $result->get_error_code() );
+		// The enhanced client validates input tokens first (12k cap), so an
+		// oversized single message is rejected before the TPM check runs.
+		$this->assertInstanceOf( 'WP_Error', $result, 'Should return WP_Error when token limits are exceeded.' );
+		$this->assertEquals( 'wp_mcp_ai_input_tokens_exceeded', $result->get_error_code() );
 	}
 
 	/**
@@ -253,11 +254,11 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$this->assertEquals( 200000, $gpt4o_mini_limit, 'gpt-4o-mini should have 200k TPM limit.' );
 
 		$gpt4o_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( 'gpt-4o' );
-		$this->assertEquals( 30000, $gpt4o_limit, 'gpt-4o should have 30k TPM limit (Tier 1).' );
+		$this->assertEquals( 450000, $gpt4o_limit, 'gpt-4o should have 450k TPM limit.' );
 
 		// Test Gemini models.
-		$gemini_flash_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( 'gemini-1.5-flash' );
-		$this->assertEquals( 1000000, $gemini_flash_limit, 'gemini-1.5-flash should have 1M TPM limit.' );
+		$gemini_flash_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( 'gemini-2.5-flash' );
+		$this->assertEquals( 1000000, $gemini_flash_limit, 'gemini-2.5-flash should have 1M TPM limit.' );
 
 		// Test local models (no TPM limit).
 		$llama3_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( 'llama3' );
@@ -268,7 +269,8 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 	 * Test error message includes helpful suggestions.
 	 */
 	public function test_tpm_error_includes_suggestions() {
-		$large_content = str_repeat( 'Content. ', 50000 );
+		// ~225k estimated tokens, above gpt-4o-mini's 200k TPM limit.
+		$large_content = str_repeat( 'Content. ', 100000 );
 		$messages      = array(
 			array(
 				'role'    => 'user',
@@ -350,8 +352,9 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'check_tpm_and_suggest_fallback' );
 		$method->setAccessible( true );
 
-		// Create a large request that exceeds gpt-4o's 30k TPM limit.
-		$large_content = str_repeat( 'Very large test content. ', 10000 );
+		// Create a large request that exceeds gpt-4o's 450k TPM limit.
+		// estimate_tokens uses chars/4, so 2M chars ≈ 500k tokens.
+		$large_content = str_repeat( 'a', 2000000 );
 		$messages      = array(
 			array(
 				'role'    => 'user',
@@ -365,10 +368,10 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$result = $method->invoke( null, $messages, $model, $options );
 
 		// Should use the fallback logic (not the configured high-capacity model).
-		// For gpt-4o with > 30k tokens, it should fallback to get_high_capacity_fallback_model().
+		// For gpt-4o with > 450k tokens, it should fallback to get_high_capacity_fallback_model().
 		$this->assertContains(
 			$result,
-			array( 'gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash' ),
+			array( 'gemini-2.0-flash-exp', 'gemini-2.5-flash', 'gemini-1.5-flash' ),
 			'Should use default fallback logic when high-capacity model switch is disabled.'
 		);
 	}
