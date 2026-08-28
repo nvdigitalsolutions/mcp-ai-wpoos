@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.64"
-  plugin-version-tested: "1.1.64"
-  last-updated: "2026-08-26"
+  plugin-version: "1.1.65"
+  plugin-version-tested: "1.1.65"
+  last-updated: "2026-08-28"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -583,6 +583,36 @@ Import external AI conversation exports into the JetEngine
   `docs/project/proposals/032-chat-web-workers-wiring-implementation-plan.md`.
 - **DeepSeek empty-schema fix** — tool schema `properties` must encode as `{}`
   never `[]`; legacy tools are wrapped before the first register attempt.
+
+## Reasoning Models, Full-Crawl Proxy & Security-Posture Closure (v1.1.65+)
+
+- **OpenAI reasoning-model parameters** — o-series and gpt-5 models reject
+  `max_tokens` (o-series also `temperature`); `lib/core`
+  `OpenAiCompatibleClient` strips unsupported parameters per model
+  (`applyModelConstraints()`) and retries 400 rejections with corrected
+  payloads (`sendWithParameterCorrection()`) on sync and streaming paths.
+  Do not blanket-add `max_tokens` for reasoning models.
+- **Media Worker full-Crawl4AI proxy (031 Phase 3)** — env-gated
+  `POST /api/crawl/full` + `GET /api/crawl/full/task/:id` forward to
+  `CRAWL4AI_FULL_URL` with SSRF-validated targets, token gating, and
+  503/502/400 envelopes; `TEMP_ROOT` is the strict-path sandbox root
+  (028 Q5). Worker version stays **v3.2.0** — `package.json` is
+  authoritative.
+- **Security-posture closure (issue #5972)** — Algorave Tone.js raw eval
+  requires per-session confirmation + warning banner; TMA source map
+  removed; webhook `__return_true` callbacks carry justification comments.
+- **Chat/REST hardening** — legacy top-level `attachments` parameters
+  tolerated; custom message roles work via
+  `wp_mcp_ai_allowed_message_roles`; orphaned tool messages silently
+  discarded; sign-preserving transcript pagination; legacy `input_text`
+  segments normalized to `text`.
+- **TPM fallback** — token-budget service falls back to the bundled model
+  catalog when the rate-limits CCT has no entry (TPM limits work without
+  JetEngine).
+- **Slash commands & blocks** — toolkit manager re-resolves the handler on
+  registration; CSV list args accept `"1,2"` and `"1, 2"`;
+  assistant-builder and Pro toolkit blocks register idempotently
+  (WP 7.1 notices).
 
 ## Google Calendar Connection & Composio Hardening (v1.1.64+)
 
