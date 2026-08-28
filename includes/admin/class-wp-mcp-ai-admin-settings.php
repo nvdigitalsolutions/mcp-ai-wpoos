@@ -1934,35 +1934,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_assistant_section'
 			);
 
+			// High-token switching settings moved to the modern settings
+			// dashboard (Section_Providers); the legacy render callbacks were
+			// removed, so this legacy section keeps no fields and is skipped
+			// by render_collapsible_sections().
 			add_settings_section(
 				'wp_mcp_ai_high_token_section',
 				__( 'High Token Tool Handling', 'mcp-ai-wpoos' ),
-				array( $this, 'render_high_token_section_description' ),
+				'',
 				self::PAGE_SLUG
-			);
-
-			add_settings_field(
-				'enable_high_token_model_switch',
-				__( 'Auto-Switch to High-Capacity Model', 'mcp-ai-wpoos' ),
-				array( $this, 'render_enable_high_token_model_switch_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_high_token_section'
-			);
-
-			add_settings_field(
-				'high_token_fallback_model',
-				__( 'High-Capacity Fallback Model (Global)', 'mcp-ai-wpoos' ),
-				array( $this, 'render_high_token_fallback_model_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_high_token_section'
-			);
-
-			add_settings_field(
-				'per_model_fallbacks',
-				__( 'Per-Model Fallback Configuration', 'mcp-ai-wpoos' ),
-				array( $this, 'render_per_model_fallbacks_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_high_token_section'
 			);
 
 			add_settings_section(
@@ -2439,36 +2419,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_mesh_section'
 			);
 
-			add_settings_section(
-				'wp_mcp_ai_security_monitor_section',
-				__( 'Security Monitoring', 'mcp-ai-wpoos' ),
-				array( $this, 'render_security_monitor_section_description' ),
-				self::PAGE_SLUG
-			);
-
-			add_settings_field(
-				'security_monitor_enabled',
-				__( 'Enable Security Monitoring', 'mcp-ai-wpoos' ),
-				array( $this, 'render_security_monitor_enabled_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_security_monitor_section'
-			);
-
-			add_settings_field(
-				'security_monitor_auto_shutdown',
-				__( 'Auto-Shutdown Tools', 'mcp-ai-wpoos' ),
-				array( $this, 'render_security_monitor_auto_shutdown_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_security_monitor_section'
-			);
-
-			add_settings_field(
-				'security_monitor_violations',
-				__( 'Security Violations', 'mcp-ai-wpoos' ),
-				array( $this, 'render_security_monitor_violations_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_security_monitor_section'
-			);
+			// The security-monitor section renderers were removed with the legacy
+			// settings UI; the monitor options are managed through
+			// WP_MCP_AI_Security_Monitor_Admin. Drop the dangling registrations
+			// so render_collapsible_sections() never invokes missing callbacks.
 		}
 
 		/**
@@ -3295,8 +3249,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php $this->render_error_log_section(); ?>
 
 			<?php $this->render_token_usage_section(); ?>
-
-			<?php $this->render_tool_token_limits_section(); ?>
 
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
@@ -5086,13 +5038,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_provider]" id="wp-mcp-ai-default-provider" class="regular-text">
 			<?php
-			foreach ( $choices as $choice ) {
+			// The choices array is slug => label; iterate the slugs and use the
+			// mapped label so multi-word slugs don't get sanitized into mush.
+			foreach ( array_keys( $choices ) as $choice ) {
 				$choice = sanitize_key( $choice );
 				if ( '' === $choice ) {
 					continue;
 				}
 
-				if ( 'openai' === $choice ) {
+				if ( isset( $choices[ $choice ] ) && is_string( $choices[ $choice ] ) && '' !== $choices[ $choice ] ) {
+					$label = $choices[ $choice ];
+				} elseif ( 'openai' === $choice ) {
 					$label = __( 'OpenAI', 'mcp-ai-wpoos' );
 				} elseif ( 'gemini' === $choice ) {
 					$label = __( 'Gemini', 'mcp-ai-wpoos' );

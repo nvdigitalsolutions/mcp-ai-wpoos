@@ -300,9 +300,17 @@ if ( ! class_exists( 'WP_MCP_AI_WP70_Bridge' ) ) :
 		 */
 		public static function get_connector_setting_name( string $provider_id ): string {
 			if ( function_exists( 'wp_get_connector' ) ) {
-				$connector = wp_get_connector( $provider_id );
-				if ( is_array( $connector ) && ! empty( $connector['authentication']['setting_name'] ) ) {
-					return $connector['authentication']['setting_name'];
+				// The registry emits a doing-it-wrong notice for unknown IDs, so
+				// check registration first (the connector may not be registered
+				// yet, e.g. before wp_connectors_init has run or for providers
+				// this bridge does not manage).
+				$registry = class_exists( 'WP_Connector_Registry' ) ? WP_Connector_Registry::get_instance() : null;
+
+				if ( $registry instanceof WP_Connector_Registry && $registry->is_registered( $provider_id ) ) {
+					$connector = wp_get_connector( $provider_id );
+					if ( is_array( $connector ) && ! empty( $connector['authentication']['setting_name'] ) ) {
+						return $connector['authentication']['setting_name'];
+					}
 				}
 			}
 
