@@ -115,12 +115,18 @@ class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				$query->the_post();
 				$quiz_id = get_the_ID();
 
+				// Questions are stored as a serialized array; when a quiz has no
+				// questions meta (e.g. created via wp_insert_post directly),
+				// get_post_meta() returns an empty string, which count() would
+				// reject with a TypeError on PHP 8+.
+				$questions = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
+
 				$quizzes[] = array(
 					'quiz_id'        => $quiz_id,
 					'title'          => get_the_title(),
 					'description'    => get_post_meta( $quiz_id, '_mcp_ai_quiz_description', true ),
 					'time_limit'     => absint( get_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', true ) ),
-					'question_count' => count( get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true ) ),
+					'question_count' => is_array( $questions ) ? count( $questions ) : 0,
 					'total_points'   => absint( get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true ) ),
 					'passing_score'  => absint( get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true ) ),
 					'author_id'      => absint( get_the_author_meta( 'ID' ) ),
