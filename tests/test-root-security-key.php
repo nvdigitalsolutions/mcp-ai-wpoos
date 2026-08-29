@@ -33,6 +33,22 @@ class Test_Root_Security_Key extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Skip tests that assert the not-configured contract when an earlier suite
+	 * defined WP_MCP_AI_ROOT_SECURITY_KEY.
+	 *
+	 * Constants cannot be undefined once set, and the shared PHPUnit process
+	 * runs the security test suites before this one, so the constant may
+	 * already be defined by the time these tests run.
+	 */
+	private function skip_when_key_constant_defined() {
+		if ( defined( 'WP_MCP_AI_ROOT_SECURITY_KEY' ) && '' !== WP_MCP_AI_ROOT_SECURITY_KEY ) {
+			$this->markTestSkipped(
+				'WP_MCP_AI_ROOT_SECURITY_KEY is already defined by an earlier suite; the not-configured contract is untestable in a shared process.'
+			);
+		}
+	}
+
+	/**
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {
@@ -48,6 +64,7 @@ class Test_Root_Security_Key extends WP_UnitTestCase {
 	 * Test that key is not configured by default.
 	 */
 	public function test_key_not_configured_by_default() {
+		$this->skip_when_key_constant_defined();
 		$this->assertFalse( $this->security_key->is_key_configured() );
 	}
 
@@ -69,6 +86,7 @@ class Test_Root_Security_Key extends WP_UnitTestCase {
 	 * Test enabling key requirement fails when key is not configured.
 	 */
 	public function test_enable_key_requirement_fails_without_configured_key() {
+		$this->skip_when_key_constant_defined();
 		$result = $this->security_key->enable_key_requirement( 'Test reason' );
 		$this->assertFalse( $result );
 	}
@@ -77,6 +95,7 @@ class Test_Root_Security_Key extends WP_UnitTestCase {
 	 * Test get status returns correct information.
 	 */
 	public function test_get_status() {
+		$this->skip_when_key_constant_defined();
 		$status = $this->security_key->get_status();
 
 		$this->assertIsArray( $status );
@@ -95,6 +114,7 @@ class Test_Root_Security_Key extends WP_UnitTestCase {
 	 * Test verification fails without configured key.
 	 */
 	public function test_verify_key_fails_without_configured_key() {
+		$this->skip_when_key_constant_defined();
 		$result = $this->security_key->verify_key( 'test_key' );
 
 		$this->assertInstanceOf( 'WP_Error', $result );
@@ -105,6 +125,7 @@ class Test_Root_Security_Key extends WP_UnitTestCase {
 	 * Test disable key requirement fails without configured key.
 	 */
 	public function test_disable_key_requirement_fails_without_configured_key() {
+		$this->skip_when_key_constant_defined();
 		$result = $this->security_key->disable_key_requirement( 'test_key' );
 
 		$this->assertInstanceOf( 'WP_Error', $result );
@@ -115,6 +136,7 @@ class Test_Root_Security_Key extends WP_UnitTestCase {
 	 * Test that failed attempts are not recorded when key is not configured.
 	 */
 	public function test_no_failed_attempts_without_configured_key() {
+		$this->skip_when_key_constant_defined();
 		$this->security_key->verify_key( 'test_key' );
 
 		$status = $this->security_key->get_status();
