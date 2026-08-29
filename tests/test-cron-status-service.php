@@ -82,7 +82,10 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		$args      = array( 'test' => 'pending' );
 		$timestamp = time() + HOUR_IN_SECONDS;
 
-		wp_schedule_single_event( $timestamp, $hook, $args );
+		// Schedule with normalised args (associative arrays are wrapped) so
+		// wp_get_scheduled_event() matches the record stored by record_job().
+		$scheduled_args = WP_MCP_AI_Cron_Manager::normalise_args( $args );
+		wp_schedule_single_event( $timestamp, $hook, $scheduled_args );
 		WP_MCP_AI_Cron_Manager::record_job( $hook, $args, 'single', $timestamp, $this->user_id );
 
 		// Get status summary.

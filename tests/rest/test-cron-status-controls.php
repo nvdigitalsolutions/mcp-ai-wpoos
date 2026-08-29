@@ -77,10 +77,19 @@ class Test_Cron_Status_Controls extends WP_UnitTestCase {
 		$this->author_id     = self::factory()->user->create( array( 'role' => 'author' ) );
 		$this->subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 
-		// Pre-generate nonces so authenticated tests can attach them to requests.
-		$this->admin_nonce      = wp_create_nonce( 'wp_rest' );
-		$this->author_nonce     = wp_create_nonce( 'wp_rest' );
+		// Pre-generate REST nonces per user. WordPress nonces are bound to
+		// the current user, so each nonce must be minted while that user is
+		// current or wp_verify_nonce() will reject it later.
+		wp_set_current_user( $this->admin_id );
+		$this->admin_nonce = wp_create_nonce( 'wp_rest' );
+
+		wp_set_current_user( $this->author_id );
+		$this->author_nonce = wp_create_nonce( 'wp_rest' );
+
+		wp_set_current_user( $this->subscriber_id );
 		$this->subscriber_nonce = wp_create_nonce( 'wp_rest' );
+
+		wp_set_current_user( 0 );
 	}
 
 	/**
