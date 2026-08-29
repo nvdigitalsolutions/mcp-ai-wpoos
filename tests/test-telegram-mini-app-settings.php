@@ -531,7 +531,9 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 				array(
 					'type'   => 'bot_command',
 					'offset' => 0,
-					'length' => 20,
+					// Telegram entity length excludes trailing whitespace:
+					// '/start@my_cool_bot' is exactly 18 characters.
+					'length' => 18,
 				),
 			),
 		);
@@ -1565,7 +1567,9 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 				array(
 					'type'   => 'mention',
 					'offset' => 0,
-					'length' => 13,
+					// Telegram entity length excludes trailing whitespace:
+					// '@my_test_bot' is exactly 12 characters.
+					'length' => 12,
 				),
 			),
 		);
