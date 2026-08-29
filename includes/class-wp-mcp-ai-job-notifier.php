@@ -537,8 +537,27 @@ class WP_MCP_AI_Job_Notifier {
 	 * @return bool True on success.
 	 */
 	protected static function cache_job_status( $job_id, array $status ) {
-		$cache_key = self::CACHE_PREFIX . sanitize_key( $job_id );
+		$cache_key = self::CACHE_PREFIX . self::sanitize_cache_job_id( $job_id );
 		return set_transient( $cache_key, $status, self::CACHE_DURATION );
+	}
+
+	/**
+	 * Sanitize a job ID for use in transient cache keys.
+	 *
+	 * Job IDs produced with uniqid( '', true ) legitimately contain dots
+	 * (e.g. veo_69203b5b2388f5.11575461). sanitize_key() strips those dots,
+	 * which breaks lookup parity with the REST layer's dot-preserving
+	 * sanitize_job_id(). Mirror that sanitisation here while still blocking
+	 * path traversal and other unsafe characters.
+	 *
+	 * @param string $job_id Job identifier.
+	 * @return string Sanitized job ID suitable for a cache key.
+	 */
+	protected static function sanitize_cache_job_id( $job_id ) {
+		$job_id = preg_replace( '/[^a-zA-Z0-9_.\-]/', '', (string) $job_id );
+		$job_id = preg_replace( '/\.{2,}/', '', $job_id );
+
+		return $job_id;
 	}
 
 	/**
@@ -551,7 +570,7 @@ class WP_MCP_AI_Job_Notifier {
 	 * @return array|null Status data or null if not found.
 	 */
 	public static function get_job_status( $job_id ) {
-		$cache_key = self::CACHE_PREFIX . sanitize_key( $job_id );
+		$cache_key = self::CACHE_PREFIX . self::sanitize_cache_job_id( $job_id );
 		$status    = get_transient( $cache_key );
 
 		// If not in cache, check persistent store.
