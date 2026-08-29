@@ -170,6 +170,15 @@ if ( ! defined( 'WP_MCP_AI_TESTS_RUNNING' ) ) {
 	define( 'WP_MCP_AI_TESTS_RUNNING', true );
 }
 
+// Pro Dashboard is enabled by default in production (constants.php defaults
+// WP_MCP_AI_PRO_DASHBOARD_ENABLED to true). Defining it false here mirrors a
+// site that opted out, which keeps the filter-based opt-in path
+// (wp_mcp_ai_pro_dashboard_available) testable: with the constant true the
+// filter fallback in is_pro_active() is unreachable.
+if ( ! defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) ) {
+	define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', false );
+}
+
 // ============================================================
 // PHPUnit 11 Compatibility: parseTestMethodAnnotations() was
 // removed in PHPUnit 10+. The wp-phpunit abstract-testcase.php
