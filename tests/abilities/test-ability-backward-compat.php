@@ -10,12 +10,47 @@
  * @since   2.0.0
  */
 
+require_once __DIR__ . '/class-wp-mcp-ai-ability-bridge-mock-tool.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-ability-test-bootstrap.php';
+
 /**
  * Integration tests for backward compatibility.
  *
  * @since 2.0.0
  */
 class WP_MCP_AI_Ability_Backward_Compat_Test extends WP_UnitTestCase {
+
+	use WP_MCP_AI_Ability_Test_Bootstrap;
+
+	/**
+	 * Ability identifiers registered by the current test.
+	 *
+	 * @since 2.0.0
+	 * @var string[]
+	 */
+	private $registered_abilities = array();
+
+	/**
+	 * Mock tool slugs registered in the tool registry by the current test.
+	 *
+	 * @since 2.0.0
+	 * @var string[]
+	 */
+	private $registered_tool_slugs = array();
+
+	/**
+	 * Clean up abilities and mock tools registered by the test.
+	 *
+	 * @since 2.0.0
+	 * @return void
+	 */
+	public function tearDown(): void {
+		$this->clean_up_ability_registrations( $this->registered_abilities, $this->registered_tool_slugs );
+		$this->registered_abilities   = array();
+		$this->registered_tool_slugs = array();
+
+		parent::tearDown();
+	}
 
 	/**
 	 * Ensure abilities-init.php does not cause fatal errors when
@@ -70,7 +105,9 @@ class WP_MCP_AI_Ability_Backward_Compat_Test extends WP_UnitTestCase {
 		$tool = new WP_MCP_AI_Ability_Bridge_Mock_Tool();
 		$tool->set_slug( 'nonexistent_tool' );
 
-		WP_MCP_AI_Ability_Bridge::register( $tool, 'nvoos-site' );
+		$this->bootstrap_ability_categories();
+		$this->register_ability_via_api( $tool, 'nvoos-site' );
+		$this->registered_abilities[] = 'nvoos/nonexistent-tool';
 
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
@@ -126,7 +163,14 @@ class WP_MCP_AI_Ability_Backward_Compat_Test extends WP_UnitTestCase {
 			)
 		);
 
-		WP_MCP_AI_Ability_Bridge::register( $tool, 'nvoos-site' );
+		$this->bootstrap_ability_categories();
+		$this->register_ability_via_api( $tool, 'nvoos-site' );
+		$this->registered_abilities[] = 'nvoos/hook-test';
+
+		// The bridge resolves tools lazily through the tool registry, so the
+		// mock must be registered there for the execute callback to run.
+		WP_MCP_AI_Tool_Registry::get_instance()->register_tool( $tool );
+		$this->registered_tool_slugs[] = 'hook_test';
 
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
