@@ -55,6 +55,9 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 			'status'     => 'running',
 			'progress'   => 50,
 			'started_at' => current_time( 'mysql', true ),
+			'metadata'   => array(
+				'user_id' => $this->user_id,
+			),
 		);
 
 		// Cache the job status.
@@ -87,12 +90,17 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 	public function test_job_stream_endpoint_with_dot_in_job_id() {
 		wp_set_current_user( $this->user_id );
 
-		// Create a mock job with dot in ID.
+		// Create a mock job with dot in ID. The status is terminal so the
+		// SSE stream loop exits on its first poll instead of polling for
+		// the full max duration.
 		$job_id = 'test_' . uniqid( '', true );
 		$status = array(
 			'job_id'     => $job_id,
-			'status'     => 'started',
+			'status'     => 'completed',
 			'started_at' => current_time( 'mysql', true ),
+			'metadata'   => array(
+				'user_id' => $this->user_id,
+			),
 		);
 
 		// Cache the job status.
@@ -148,8 +156,11 @@ class Test_Job_Notifier_REST_Job_ID_With_Dots extends WP_UnitTestCase {
 
 		// Create status for the job.
 		$status = array(
-			'job_id' => $job_id,
-			'status' => 'completed',
+			'job_id'   => $job_id,
+			'status'   => 'completed',
+			'metadata' => array(
+				'user_id' => $this->user_id,
+			),
 		);
 		set_transient( WP_MCP_AI_Job_Notifier::CACHE_PREFIX . $job_id, $status, WP_MCP_AI_Job_Notifier::CACHE_DURATION );
 
