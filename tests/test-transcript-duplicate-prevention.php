@@ -33,7 +33,7 @@ class WP_MCP_AI_Transcript_Duplicate_Prevention_Test extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 
 		rest_get_server();
-		do_action( 'init' );
+		do_action( 'rest_api_init' );
 	}
 
 	/**
