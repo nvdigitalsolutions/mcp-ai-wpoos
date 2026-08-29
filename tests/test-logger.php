@@ -302,10 +302,14 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9', $sanitized['body'], 'Bearer JWT must be masked in body string' );
 		$this->assertStringContainsString( 'Bearer [redacted]', $sanitized['body'], 'Bearer [redacted] placeholder must appear' );
 
-		$this->assertStringNotContainsString( $google_key, $sanitized['response']['raw'], 'Google key must be masked in nested string' );
-		$this->assertStringContainsString( 'AIza[redacted]', $sanitized['response']['raw'], 'AIza[redacted] placeholder must appear' );
-
-		$this->assertSame( 'hello world', $sanitized['response']['safe_val'], 'Plain string without secrets must be unchanged' );
+		// Since 1.8.0 response payloads are collapsed into a JSON preview before
+		// redaction, so the nested keys no longer exist verbatim. The contract
+		// still holds: secrets inside the preview string are masked.
+		$this->assertArrayHasKey( 'preview', $sanitized['response'] );
+		$this->assertIsString( $sanitized['response']['preview'] );
+		$this->assertStringNotContainsString( $google_key, $sanitized['response']['preview'], 'Google key must be masked in nested response payload' );
+		$this->assertStringContainsString( 'AIza[redacted]', $sanitized['response']['preview'], 'AIza[redacted] placeholder must appear' );
+		$this->assertStringContainsString( 'hello world', $sanitized['response']['preview'], 'Plain string without secrets must be preserved' );
 	}
 
 	/**
@@ -428,6 +432,10 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
 			$result = WP_MCP_AI_Logger::prune_error_log();
 
 			$this->assertTrue( $result );
+
+			// fopen( 'w' ) truncation does not invalidate PHP's stat cache, so
+			// refresh it before measuring the file size.
+			clearstatcache( true, $temp_file );
 			$this->assertSame( 0, filesize( $temp_file ) );
 			$this->assertSame( array(), WP_MCP_AI_Logger::get_recent_error_messages() );
 			$this->assertSame( array(), WP_MCP_AI_Logger::get_recent_activity_entries( 5 ) );
