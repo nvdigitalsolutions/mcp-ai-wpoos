@@ -46,7 +46,7 @@ class WP_MCP_AI_Chat_Client_Agentic_Workflow_Test extends WP_UnitTestCase {
 		$arguments = array(
 			'text'     => 'Hello world, this is a test message.',
 			'method'   => 'heuristic',
-			// Extra parameters that should be filtered out:
+			// Extra parameters that should be filtered out.
 			'messages' => array(
 				array(
 					'role'    => 'user',
@@ -143,7 +143,10 @@ class WP_MCP_AI_Chat_Client_Agentic_Workflow_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $tool );
 
 		// Create a REST controller instance.
-		$rest = new WP_MCP_AI_REST();
+		$rest = new WP_MCP_AI_REST(
+			$registry,
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 
 		// Simulate a tool call with extra parameters.
 		$tool_call = array(

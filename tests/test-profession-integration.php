@@ -87,7 +87,10 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_default_assistant', $this->assistant_id );
 
 		// Get REST controller instance using reflection to access protected methods.
-		$this->rest_controller = new WP_MCP_AI_REST();
+		$this->rest_controller = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 	}
 
 	/**
@@ -364,7 +367,7 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 
 		// Verify profession knowledge is used as primary system prompt.
 		$this->assertStringContainsString( 'professional tax advisor', $merged_config['system_prompt'], 'Should use profession knowledge as primary' );
-		$this->assertNotStringContainsString( 'Professional Role & Expertise:', $merged_config['system_prompt'], 'Should NOT have append header when no base assistant' );
+		$this->assertStringNotContainsString( 'Professional Role & Expertise:', $merged_config['system_prompt'], 'Should NOT have append header when no base assistant' );
 
 		// Verify profession tools are used.
 		$this->assertContains( 'search', $merged_config['tools'], 'Should use profession tools' );
