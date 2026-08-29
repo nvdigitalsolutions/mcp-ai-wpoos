@@ -29,7 +29,7 @@ class WP_MCP_AI_Proxy_Utils {
 	 */
 	public static function build_rest_url( $namespace, $route ) {
 		$namespace = trim( (string) $namespace, '/' );
-		$route     = ltrim( (string) $route, '/' );
+		$route     = trim( (string) $route, '/' );
 
 		$path = $namespace;
 		if ( '' !== $route ) {
