@@ -166,6 +166,16 @@ class WP_MCP_AI_Job_Notifier {
 			);
 		}
 
+		// A job emitting progress is definitively running. Promote
+		// transitional statuses (e.g. 'started' set by handle_job_started)
+		// so consumers — including the Little's Law enhancement in
+		// get_job_status() — observe an accurate lifecycle state.
+		// Terminal statuses are never resurrected by late progress events.
+		$transitional_statuses = array( 'started', 'pending', 'queued' );
+		if ( isset( $status['status'] ) && in_array( $status['status'], $transitional_statuses, true ) ) {
+			$status['status'] = 'running';
+		}
+
 		// Extract context if embedded in metadata for ID tracking.
 		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
 
