@@ -27,10 +27,15 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 		);
 		wp_set_current_user( $this->admin_user );
 
-		// Ensure admin classes are loaded.
-		if ( ! did_action( 'admin_init' ) ) {
-			do_action( 'admin_init' );
-		}
+		// Construct the admin settings service so its constructor registers the
+		// connection-test AJAX handlers. In production this happens inside the
+		// is_admin() loader block; the CLI test context is never admin, so the
+		// tests construct it explicitly instead of firing admin_init (which
+		// would re-register WooCommerce/admin-only hooks and trip
+		// _doing_it_wrong notices). A fresh instance is used per test because
+		// WP_UnitTestCase restores the hook snapshot in tearDown, wiping
+		// registrations made during setUp.
+		new WP_MCP_AI_Admin_Settings();
 	}
 
 	/**
@@ -58,7 +63,9 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 		// Start output buffering.
 		ob_start();
 
-		// Simulate being on the removebg connection page.
+		// Simulate being on the removebg connection page. render_wrapper() only
+		// renders when the Tools > Connections subtab is active.
+		$_GET['subtab']    = 'connections';
 		$_GET['connection'] = 'removebg';
 
 		// Render the section.
@@ -93,6 +100,7 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 		);
 
 		// Cleanup.
+		unset( $_GET['subtab'] );
 		unset( $_GET['connection'] );
 	}
 
@@ -111,7 +119,9 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 		// Start output buffering.
 		ob_start();
 
-		// Simulate being on the removebg connection page.
+		// Simulate being on the removebg connection page. render_wrapper() only
+		// renders when the Tools > Connections subtab is active.
+		$_GET['subtab']    = 'connections';
 		$_GET['connection'] = 'removebg';
 
 		// Render the section.
@@ -134,6 +144,7 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 		);
 
 		// Cleanup.
+		unset( $_GET['subtab'] );
 		unset( $_GET['connection'] );
 	}
 
@@ -145,12 +156,18 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 		$_POST['nonce']   = wp_create_nonce( 'wp-mcp-ai-settings' );
 		$_POST['api_key'] = '';
 
-		// Create instance and call handler.
+		// Create instance and call handler. The handler terminates via
+		// wp_send_json, which the test framework converts into a
+		// WPAjaxDieContinueException.
 		$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
 
 		// Capture output.
 		ob_start();
-		$ajax_handlers->handle_test_removebg_connection();
+		try {
+			$ajax_handlers->handle_test_removebg_connection();
+		} catch ( WPAjaxDieContinueException $e ) {
+			unset( $e ); // Expected: wp_send_json ends the request through the test die handler.
+		}
 		$response = ob_get_clean();
 
 		// Parse JSON response.
@@ -208,8 +225,11 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 		// Get the settings dashboard instance.
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 
-		// Call sanitize_settings directly to test the sanitization.
+		// Call sanitize_settings directly to test the sanitization. Nonce and
+		// sanitization checks are skipped: this is test data, not real input.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		$sanitized = $dashboard->sanitize_settings( $_POST['wp_mcp_ai_settings'], 'tools' );
+		// phpcs:enable
 
 		// Verify the API key was sanitized.
 		$this->assertArrayHasKey( 'removebg_api_key', $sanitized, 'RemoveBG API key should be in sanitized array' );
