@@ -110,6 +110,11 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 			'user_id' => 1,
 		);
 
+		// Capture a single time baseline before invoking so the timing
+		// assertions don't drift with how long queue_async_polling() itself
+		// takes (transient save, spawn_cron(), hooks, etc.).
+		$before = time();
+
 		$result = $method->invoke( $service, $operation, $args );
 
 		$this->assertIsArray( $result, 'Should return async result' );
@@ -123,9 +128,11 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 		$event = wp_get_scheduled_event( $hook, array( $job_id ) );
 
 		$this->assertNotFalse( $event, 'Veo cron event should be scheduled' );
-		$this->assertGreaterThan( time(), $event->timestamp, 'Veo cron should be scheduled in the future (not immediate)' );
-		$this->assertLessThanOrEqual( time() + 21, $event->timestamp, 'Veo cron should be scheduled within 21 seconds (20s delay + 1s tolerance)' );
-		$this->assertGreaterThanOrEqual( time() + 19, $event->timestamp, 'Veo cron should be scheduled at least 19 seconds in the future (20s delay - 1s tolerance)' );
+
+		// The first poll is deliberately scheduled 1 second in the future
+		// so the transient write completes before cron can execute.
+		$this->assertGreaterThanOrEqual( $before + 1, $event->timestamp, 'Veo cron should be scheduled at least 1 second in the future' );
+		$this->assertLessThanOrEqual( $before + 3, $event->timestamp, 'Veo cron should be scheduled within 3 seconds' );
 
 		// Check that job was recorded in cron manager.
 		$recorded_job = WP_MCP_AI_Cron_Manager::get_job(
@@ -154,10 +161,18 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 	protected function create_mock_tool( $slug ) {
 		return new class( $slug ) implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
+			/**
+			 * Tool slug.
+			 *
+			 * @var string
+			 */
 			private $slug;
 
 			/**
 			 * Constructor.
+			 *
+			 * @param string $slug Tool slug.
 			 */
 			public function __construct( $slug ) {
 				$this->slug = $slug;
