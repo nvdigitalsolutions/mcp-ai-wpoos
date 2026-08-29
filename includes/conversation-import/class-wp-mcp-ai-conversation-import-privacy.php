@@ -75,6 +75,13 @@ class WP_MCP_AI_Conversation_Import_Privacy {
 			return;
 		}
 
+		// WP 6.9+ flags registrations outside wp-admin as incorrect usage
+		// (and the PHPUnit context is never wp-admin). Privacy guide content
+		// only ever renders in the admin, so skip gracefully elsewhere.
+		if ( ! is_admin() ) {
+			return;
+		}
+
 		$content = __(
 			'<h3>Imported AI Conversations</h3>
 <p>When you import conversation history from external AI services (for example OpenAI ChatGPT or Google Gemini) into this website, the imported messages, conversation titles, source identifiers, and timestamps are stored on our server. Imported conversations are visible to site administrators only and are deleted when you request erasure of your personal data or when the site\'s transcript retention policy expires.</p>',

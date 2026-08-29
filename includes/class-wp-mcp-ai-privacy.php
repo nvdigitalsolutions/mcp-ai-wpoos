@@ -53,6 +53,13 @@ class WP_MCP_AI_Privacy {
 			return;
 		}
 
+		// WP 6.9+ flags registrations outside wp-admin as incorrect usage
+		// (and the PHPUnit context is never wp-admin). Privacy guide content
+		// only ever renders in the admin, so skip gracefully elsewhere.
+		if ( ! is_admin() ) {
+			return;
+		}
+
 		$content = $this->get_privacy_policy_content();
 
 		wp_add_privacy_policy_content(

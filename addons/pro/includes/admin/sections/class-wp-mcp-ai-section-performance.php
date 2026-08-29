@@ -100,8 +100,11 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 	 * Render the section.
 	 */
 	public function render() {
+		// Capability gating lives at the page controller level. Rendering
+		// this section is a display concern only; a hard wp_die() here would
+		// take down any page (or test) that renders the Advanced tab.
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos-pro' ) );
+			return;
 		}
 
 		// Load performance reporter.

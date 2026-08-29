@@ -19,6 +19,10 @@ class WP_MCP_AI_Textarea_Array_Handling_Test extends WP_UnitTestCase {
 	 * This prevents the fatal error: "htmlspecialchars(): Argument #1 ($string) must be of type string, array given"
 	 */
 	public function test_textarea_renders_array_as_json() {
+		// The advanced section renders per-subtab; the JWKS textarea lives in
+		// the Federation & Mesh subtab.
+		$_GET['subtab'] = 'federation_mesh';
+
 		// Set up a test setting with an array value (simulating what might be in the database).
 		$test_array = array(
 			array(
@@ -59,6 +63,7 @@ class WP_MCP_AI_Textarea_Array_Handling_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'federation_jwks_keys', $output );
 
 		// Clean up.
+		unset( $_GET['subtab'] );
 		delete_option( 'wp_mcp_ai_settings' );
 	}
 
@@ -66,6 +71,10 @@ class WP_MCP_AI_Textarea_Array_Handling_Test extends WP_UnitTestCase {
 	 * Test that string values in textarea fields are rendered normally.
 	 */
 	public function test_textarea_renders_string_normally() {
+		// The advanced section renders per-subtab; the JWKS textarea lives in
+		// the Federation & Mesh subtab.
+		$_GET['subtab'] = 'federation_mesh';
+
 		// Set up a test setting with a string value.
 		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['federation_jwks_keys'] = '{"kty":"RSA","use":"sig"}';
@@ -85,6 +94,7 @@ class WP_MCP_AI_Textarea_Array_Handling_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'Fatal error', $output );
 
 		// Clean up.
+		unset( $_GET['subtab'] );
 		delete_option( 'wp_mcp_ai_settings' );
 	}
 
@@ -92,6 +102,10 @@ class WP_MCP_AI_Textarea_Array_Handling_Test extends WP_UnitTestCase {
 	 * Test that empty values in textarea fields are rendered as empty strings.
 	 */
 	public function test_textarea_renders_empty_value() {
+		// The advanced section renders per-subtab; the JWKS textarea lives in
+		// the Federation & Mesh subtab.
+		$_GET['subtab'] = 'federation_mesh';
+
 		// Set up a test setting with an empty value.
 		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['federation_jwks_keys'] = '';
@@ -111,6 +125,7 @@ class WP_MCP_AI_Textarea_Array_Handling_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'Fatal error', $output );
 
 		// Clean up.
+		unset( $_GET['subtab'] );
 		delete_option( 'wp_mcp_ai_settings' );
 	}
 }

@@ -1701,6 +1701,38 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		}
 
 		/**
+		 * Detect PHPUnit's throwing wp_die() exceptions by class name.
+		 *
+		 * Under tests, wp_die() is intercepted and thrown as WPDieException (or
+		 * its WPAjaxDie* subclasses) once wp_send_json_*() has already emitted
+		 * the response. The per-provider catch blocks must let those propagate
+		 * instead of converting them into a second wp_send_json_error() call,
+		 * which would double-die and corrupt the AJAX harness output buffers.
+		 * The class names are compared as strings so production never depends
+		 * on test-framework classes.
+		 *
+		 * @param object $exception Caught exception.
+		 * @return bool True when the exception is a test die exception.
+		 */
+		private static function is_test_die_exception( $exception ) {
+			if ( ! is_object( $exception ) ) {
+				return false;
+			}
+
+			$class = get_class( $exception );
+
+			return in_array(
+				$class,
+				array(
+					'WPDieException',
+					'WPAjaxDieContinueException',
+					'WPAjaxDieStopException',
+				),
+				true
+			);
+		}
+
+		/**
 		 * Handle AJAX request to test a provider.
 		 */
 		public static function handle_test_provider() {
@@ -1799,6 +1831,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Test OpenAI connection.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_openai( $settings ) {
 			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
@@ -1870,6 +1906,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -1886,6 +1928,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Test Anthropic connection.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_anthropic( $settings ) {
 			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
@@ -1974,6 +2020,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -1990,6 +2042,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Test Gemini connection.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_gemini( $settings ) {
 			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
@@ -2060,6 +2116,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2076,6 +2138,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Test Ollama connection.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_ollama( $settings ) {
 			if ( empty( $settings['ollama_endpoint_url'] ) ) {
@@ -2104,6 +2170,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2120,6 +2192,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Test Hugging Face connection.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_huggingface( $settings ) {
 			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
@@ -2159,6 +2235,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2175,6 +2257,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Test LM Studio connection.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_lm_studio( $settings ) {
 			if ( empty( $settings['lm_studio_endpoint_url'] ) ) {
@@ -2203,6 +2289,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2219,6 +2311,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Test Cloudflare Workers AI connection.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_cloudflare( $settings ) {
 			if ( empty( $settings['enable_cloudflare'] ) ) {
@@ -2292,6 +2388,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2308,6 +2410,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Test NVIDIA NIM connection.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_nvidia( $settings ) {
 			if ( empty( $settings['enable_nvidia'] ) ) {
@@ -2363,6 +2469,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2383,6 +2495,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * network connectivity to api.deepseek.com.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_deepseek( $settings ) {
 			if ( empty( $settings['enable_deepseek'] ) ) {
@@ -2471,6 +2587,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2491,6 +2613,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * `HTTP-Referer` and `X-Title` headers per OpenRouter best practices.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_openrouter( $settings ) {
 			if ( empty( $settings['enable_openrouter'] ) ) {
@@ -2593,6 +2719,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2613,6 +2745,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * inference credits during the diagnostic probe.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_digitalocean( $settings ) {
 			if ( empty( $settings['enable_digitalocean'] ) ) {
@@ -2699,6 +2835,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2717,6 +2859,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Sends a minimal chat completion request to verify the API key and connectivity.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_kimi( $settings ) {
 			if ( empty( $settings['enable_kimi'] ) ) {
@@ -2809,6 +2955,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2827,6 +2979,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Sends a minimal chat completion to verify API key and endpoint reachability.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_baseten( $settings ) {
 			if ( empty( $settings['enable_baseten'] ) ) {
@@ -2919,6 +3075,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -2937,6 +3099,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Tests configuration for client-side WebLLM models.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_embedded( $settings ) {
 			// Check if Pro version is not available (embedded requires Pro).
@@ -2997,6 +3163,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -3015,6 +3187,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Verifies that the llama-cli binary is installed and operational.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_embedded_server( $settings ) {
 			if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
@@ -3070,6 +3246,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -3086,6 +3268,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * Test Google Maps connection.
 		 *
 		 * @param array $settings Plugin settings.
+		 *
+		 * @throws Exception When a PHPUnit die exception must propagate
+		 *                   instead of being converted into a second error
+		 *                   response.
 		 */
 		private static function test_google_maps( $settings ) {
 			$has_key = class_exists( 'WP_MCP_AI_Credential_Resolver' )
@@ -3126,6 +3312,12 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					)
 				);
 			} catch ( Exception $e ) {
+				// Under PHPUnit, wp_send_json_*() terminates via a throwable
+				// WPDieException; converting that into a second error response
+				// would double-die and corrupt the AJAX test harness buffers.
+				if ( self::is_test_die_exception( $e ) ) {
+					throw $e;
+				}
 				wp_send_json_error(
 					array(
 						'message' => sprintf(

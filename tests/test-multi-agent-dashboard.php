@@ -100,6 +100,7 @@ class Test_Multi_Agent_Dashboard extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$dashboard->ajax_get_stats();
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -131,8 +132,10 @@ class Test_Multi_Agent_Dashboard extends WP_UnitTestCase {
 		ob_start();
 		try {
 			$dashboard->ajax_reinstall_agents();
-		} catch ( WPAjaxDieStopException $e ) {
-			// Expected exception.
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_error() terminates via a throwable WPDieException under the test bootstrap (subclasses included).
+		} catch ( WPDieException $e ) {
+			// Expected: wp_send_json_error() terminates via a throwable
+			// WPDieException under the test bootstrap (subclasses included).
 		}
 		$response = ob_get_clean();
 

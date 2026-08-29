@@ -284,7 +284,15 @@ class Test_Transcript_Mining_Job extends WP_UnitTestCase {
 		// Fire WordPress' `shutdown` action manually. This invokes the
 		// closure that enqueue() just registered, which calls
 		// kick_inline() → handle_tick() in-process.
-		do_action( 'shutdown' );
+		// Core hooks wp_ob_end_flush_all() onto `shutdown` at priority 1;
+		// firing the action directly would drain PHPUnit's own output
+		// buffers, so neutralize it for the simulated shutdown.
+		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
+		try {
+			do_action( 'shutdown' );
+		} finally {
+			add_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
+		}
 
 		$progress = WP_MCP_AI_Transcript_Mining_Job::get_progress( $state['id'] );
 		$this->assertSame( 'completed', $progress['status'], 'inline shutdown should drive the job to completion' );
