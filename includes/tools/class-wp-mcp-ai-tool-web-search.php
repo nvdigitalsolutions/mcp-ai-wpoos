@@ -1253,6 +1253,22 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
+	 * Build a canonical tool result envelope for a provider response.
+	 *
+	 * Ensures the payload always carries a user-facing 'message' field
+	 * alongside the provider data, matching the shape returned by the
+	 * other search providers (Brave, DuckDuckGo, Tavily) via
+	 * ensure_response_message().
+	 *
+	 * @param array  $result_data      Provider response data.
+	 * @param string $fallback_message Optional fallback message.
+	 * @return array Canonical result envelope.
+	 */
+	protected function build_tool_result( $result_data, $fallback_message = '' ) {
+		return $this->ensure_response_message( $result_data, $fallback_message );
+	}
+
+	/**
 	 * Perform a web search using Perplexity's Sonar API.
 	 *
 	 * Perplexity Sonar is an AI-powered search model that produces grounded answers
@@ -1901,6 +1917,24 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		// Add optional fields if present.
 		if ( isset( $result['note'] ) ) {
 			$normalized['note'] = $this->sanitize_utf8( $result['note'] );
+		}
+
+		// Preserve Perplexity's synthesized answer and citations when present.
+		// These are the primary value of the Sonar API and must survive
+		// normalization for chat clients to render them.
+		if ( isset( $result['answer'] ) ) {
+			$normalized['answer'] = $this->sanitize_utf8( $result['answer'] );
+		}
+
+		if ( isset( $result['citations'] ) && is_array( $result['citations'] ) ) {
+			$citations = array();
+			foreach ( $result['citations'] as $citation ) {
+				$citation = is_string( $citation ) ? esc_url_raw( $citation ) : '';
+				if ( '' !== $citation ) {
+					$citations[] = $citation;
+				}
+			}
+			$normalized['citations'] = $citations;
 		}
 
 		if ( isset( $result['system_message'] ) ) {
