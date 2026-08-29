@@ -10,12 +10,17 @@
  * @since   2.0.0
  */
 
+require_once __DIR__ . '/class-wp-mcp-ai-ability-bridge-mock-tool.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-ability-test-bootstrap.php';
+
 /**
  * Tests for WP_MCP_AI_Ability_Bridge.
  *
  * @covers WP_MCP_AI_Ability_Bridge
  */
 class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
+
+	use WP_MCP_AI_Ability_Test_Bootstrap;
 
 	/**
 	 * Mock tool instance.
@@ -26,6 +31,22 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 	private $tool;
 
 	/**
+	 * Ability identifiers registered by the current test.
+	 *
+	 * @since 2.0.0
+	 * @var string[]
+	 */
+	private $registered_abilities = array();
+
+	/**
+	 * Mock tool slugs registered in the tool registry by the current test.
+	 *
+	 * @since 2.0.0
+	 * @var string[]
+	 */
+	private $registered_tool_slugs = array();
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @since 2.0.0
@@ -33,7 +54,53 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 	 */
 	public function set_up() {
 		parent::set_up();
+		$this->bootstrap_ability_categories();
 		$this->tool = new WP_MCP_AI_Ability_Bridge_Mock_Tool();
+	}
+
+	/**
+	 * Clean up abilities and mock tools registered by the test.
+	 *
+	 * @since 2.0.0
+	 * @return void
+	 */
+	public function tear_down() {
+		$this->clean_up_ability_registrations( $this->registered_abilities, $this->registered_tool_slugs );
+		$this->registered_abilities   = array();
+		$this->registered_tool_slugs = array();
+
+		parent::tear_down();
+	}
+
+	/**
+	 * Bridge a mock tool through the abilities init action.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param WP_MCP_AI_Ability_Bridge_Mock_Tool $tool     Mock tool.
+	 * @param string                             $category Category slug.
+	 * @return WP_Ability|null|false
+	 */
+	private function register_mock_tool( $tool, $category ) {
+		$ability = $this->register_ability_via_api( $tool, $category );
+		if ( $ability instanceof WP_Ability ) {
+			$this->registered_abilities[] = 'nvoos/' . str_replace( '_', '-', $tool->get_slug() );
+		}
+		return $ability;
+	}
+
+	/**
+	 * Register the mock tool in the tool registry so the bridge's lazy
+	 * registry lookup can resolve it at execute time.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param WP_MCP_AI_Ability_Bridge_Mock_Tool $tool Mock tool.
+	 * @return void
+	 */
+	private function register_mock_tool_in_registry( $tool ) {
+		WP_MCP_AI_Tool_Registry::get_instance()->register_tool( $tool );
+		$this->registered_tool_slugs[] = $tool->get_slug();
 	}
 
 	/**
@@ -62,13 +129,15 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'wp_register_ability() not available.' );
 		}
 
-		$this->tool->set_slug( 'get_post' );
-		$result = WP_MCP_AI_Ability_Bridge::register( $this->tool, 'nvoos-content' );
+		// Use a slug that is NOT in the production allowlist so the mock cannot
+		// collide with the bulk-registered nvoos/get-post ability.
+		$this->tool->set_slug( 'mock_get_post' );
+		$result = $this->register_mock_tool( $this->tool, 'nvoos-content' );
 
 		$this->assertNotFalse( $result );
 		$this->assertTrue(
-			wp_has_ability( 'nvoos/get-post' ),
-			'Ability should be registered as nvoos/get-post (hyphenated slug).'
+			wp_has_ability( 'nvoos/mock-get-post' ),
+			'Ability should be registered as nvoos/mock-get-post (hyphenated slug).'
 		);
 	}
 
@@ -86,7 +155,7 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 		$this->tool->set_flags( array( 'read-only', 'idempotent', 'local-only' ) );
 		$this->tool->set_slug( 'annotation_test' );
 
-		$result = WP_MCP_AI_Ability_Bridge::register( $this->tool, 'nvoos-site' );
+		$result = $this->register_mock_tool( $this->tool, 'nvoos-site' );
 		$this->assertNotFalse( $result );
 
 		$ability = wp_get_ability( 'nvoos/annotation-test' );
@@ -116,7 +185,7 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 		$this->tool->set_flags( array( 'write', 'irreversible', 'external-api', 'long-running' ) );
 		$this->tool->set_slug( 'dangerous_tool' );
 
-		$result = WP_MCP_AI_Ability_Bridge::register( $this->tool, 'nvoos-system' );
+		$result = $this->register_mock_tool( $this->tool, 'nvoos-system' );
 		$this->assertNotFalse( $result );
 
 		$ability     = wp_get_ability( 'nvoos/dangerous-tool' );
@@ -142,7 +211,7 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 		$this->tool->set_flags( array( 'write', 'data-destruction' ) );
 		$this->tool->set_slug( 'purge_tool' );
 
-		WP_MCP_AI_Ability_Bridge::register( $this->tool, 'nvoos-system' );
+		$this->register_mock_tool( $this->tool, 'nvoos-system' );
 
 		$ability     = wp_get_ability( 'nvoos/purge-tool' );
 		$annotations = $ability->get_meta()['annotations'];
@@ -164,7 +233,8 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 		$this->tool->set_capability( 'manage_options' );
 		$this->tool->set_slug( 'admin_tool' );
 
-		WP_MCP_AI_Ability_Bridge::register( $this->tool, 'nvoos-system' );
+		$this->register_mock_tool( $this->tool, 'nvoos-system' );
+		$this->register_mock_tool_in_registry( $this->tool );
 
 		$ability = wp_get_ability( 'nvoos/admin-tool' );
 
@@ -197,7 +267,8 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 		$this->tool->set_slug( 'error_tool' );
 		$this->tool->set_result( new WP_Error( 'test_error_code', 'Test error message.' ) );
 
-		WP_MCP_AI_Ability_Bridge::register( $this->tool, 'nvoos-site' );
+		$this->register_mock_tool( $this->tool, 'nvoos-site' );
+		$this->register_mock_tool_in_registry( $this->tool );
 
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
@@ -227,23 +298,12 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 		$tool->set_result(
 			array(
 				'success' => true,
-				'context' => '__to_be_replaced__',
+				'context' => 'ability_context_received',
 			)
 		);
 
-		// Override execute to capture the context.
-		$captured_context = null;
-		add_filter(
-			'wp_mcp_ai_after_ability_execute',
-			function ( $ability_id, $tool_slug, $input, $result ) use ( &$captured_context ) {
-				// Context is not directly inspectable through the Ability API,
-				// but we can verify the execution hook receives correct params.
-			},
-			10,
-			4
-		);
-
-		WP_MCP_AI_Ability_Bridge::register( $tool, 'nvoos-site' );
+		$this->register_mock_tool( $tool, 'nvoos-site' );
+		$this->register_mock_tool_in_registry( $tool );
 
 		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
@@ -266,7 +326,7 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 		}
 
 		$this->tool->set_slug( 'schema_test' );
-		WP_MCP_AI_Ability_Bridge::register( $this->tool, 'nvoos-site' );
+		$this->register_mock_tool( $this->tool, 'nvoos-site' );
 
 		$ability = wp_get_ability( 'nvoos/schema-test' );
 		$schema  = $ability->get_output_schema();

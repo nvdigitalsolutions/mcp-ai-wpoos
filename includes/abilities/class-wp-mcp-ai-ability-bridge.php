@@ -226,7 +226,11 @@ class WP_MCP_AI_Ability_Bridge {
 					'type'        => 'string',
 					'description' => 'Human-readable summary.',
 				),
+				// Operation-specific payloads vary by tool, so accept any JSON
+				// value type rather than forcing one (REST schema validation
+				// requires a declared type on every property).
 				'data'    => array(
+					'type'        => array( 'boolean', 'integer', 'number', 'string', 'array', 'object', 'null' ),
 					'description' => 'Operation-specific result payload.',
 				),
 			),

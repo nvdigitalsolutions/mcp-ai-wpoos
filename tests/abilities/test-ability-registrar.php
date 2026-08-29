@@ -17,6 +17,65 @@
 class WP_MCP_AI_Ability_Registrar_Test extends WP_UnitTestCase {
 
 	/**
+	 * Clean up abilities registered by the suite.
+	 *
+	 * The core registry is process-wide, so bulk registrations made while
+	 * firing the abilities init action are removed again after each test.
+	 *
+	 * @since 2.0.0
+	 * @return void
+	 */
+	public function tearDown(): void {
+		if ( function_exists( 'wp_unregister_ability' ) ) {
+			foreach ( WP_MCP_AI_Ability_Registrar::TOOL_CATEGORY_MAP as $slug => $category ) {
+				unset( $category );
+				$ability_name = 'nvoos/' . str_replace( '_', '-', $slug );
+				if ( wp_has_ability( $ability_name ) ) {
+					wp_unregister_ability( $ability_name );
+				}
+			}
+		}
+
+		parent::tearDown();
+	}
+
+	/**
+	 * Fire the ability registration action with a clean slate.
+	 *
+	 * The core registries persist process-wide, so allowlist abilities may
+	 * already exist (registered by the lazy init in an earlier suite). They
+	 * are unregistered first and the action is re-fired with only the bulk
+	 * registrar attached, making register_all() run exactly once per call.
+	 *
+	 * @since 2.0.0
+	 * @return void
+	 */
+	private function fire_registration_actions() {
+		// Warm the registry first: its lazy first access fires the action and
+		// would otherwise re-enter while our manual firing below is running.
+		if ( class_exists( 'WP_Abilities_Registry' ) ) {
+			WP_Abilities_Registry::get_instance();
+		}
+
+		if ( function_exists( 'wp_unregister_ability' ) ) {
+			foreach ( WP_MCP_AI_Ability_Registrar::TOOL_CATEGORY_MAP as $slug => $category ) {
+				unset( $category );
+				$ability_name = 'nvoos/' . str_replace( '_', '-', $slug );
+				if ( wp_has_ability( $ability_name ) ) {
+					wp_unregister_ability( $ability_name );
+				}
+			}
+		}
+
+		remove_all_filters( 'wp_abilities_api_init' );
+		if ( ! has_action( 'wp_abilities_api_init', array( 'WP_MCP_AI_Ability_Registrar', 'register_all' ) ) ) {
+			WP_MCP_AI_Ability_Registrar::init();
+		}
+
+		do_action( 'wp_abilities_api_init' );
+	}
+
+	/**
 	 * Ensure the registrar hooks into wp_abilities_api_init.
 	 *
 	 * @since 2.0.0
@@ -127,8 +186,7 @@ class WP_MCP_AI_Ability_Registrar_Test extends WP_UnitTestCase {
 			}
 		);
 
-		WP_MCP_AI_Ability_Category_Registrar::register();
-		WP_MCP_AI_Ability_Registrar::register_all();
+		$this->fire_registration_actions();
 
 		$this->assertTrue( $fired, 'wp_mcp_ai_abilities_registered action should fire after registration.' );
 	}
@@ -147,8 +205,7 @@ class WP_MCP_AI_Ability_Registrar_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		WP_MCP_AI_Ability_Category_Registrar::register();
-		WP_MCP_AI_Ability_Registrar::register_all();
+		$this->fire_registration_actions();
 
 		// Verify that get_post exists and was registered.
 		if ( $registry->get_tool( 'get_post' ) ) {
@@ -178,8 +235,7 @@ class WP_MCP_AI_Ability_Registrar_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'wp_register_ability() not available.' );
 		}
 
-		WP_MCP_AI_Ability_Category_Registrar::register();
-		WP_MCP_AI_Ability_Registrar::register_all();
+		$this->fire_registration_actions();
 
 		// delete_post is a real tool but NOT in our selective allowlist.
 		$this->assertFalse(
