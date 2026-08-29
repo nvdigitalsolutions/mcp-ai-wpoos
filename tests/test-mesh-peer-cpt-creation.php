@@ -30,8 +30,10 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 			)
 		);
 
-		// Reinitialize federation to pick up new settings.
-		$federation = new WP_MCP_AI_Federation();
+		// Reinitialize federation to pick up new settings. `init` has already
+		// fired in the test context, so trigger the feature loader directly.
+		$federation = new WP_MCP_AI_Federation( WP_MCP_AI_Tool_Registry::get_instance() );
+		$federation->maybe_load_federation_features();
 
 		// Verify that mesh_peer_sync was initialized.
 		$reflection = new ReflectionClass( $federation );
@@ -71,8 +73,10 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 			)
 		);
 
-		// Initialize federation and mesh sync.
-		$federation = new WP_MCP_AI_Federation();
+		// Initialize federation and mesh sync. `init` has already fired in the
+		// test context, so trigger the feature loader directly.
+		$federation = new WP_MCP_AI_Federation( WP_MCP_AI_Tool_Registry::get_instance() );
+		$federation->maybe_load_federation_features();
 
 		// Verify mesh sync was initialized.
 		$reflection = new ReflectionClass( $federation );
@@ -152,8 +156,10 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 			)
 		);
 
-		// Initialize federation and mesh sync.
-		$federation = new WP_MCP_AI_Federation();
+		// Initialize federation and mesh sync. `init` has already fired in the
+		// test context, so trigger the feature loader directly.
+		$federation = new WP_MCP_AI_Federation( WP_MCP_AI_Tool_Registry::get_instance() );
+		$federation->maybe_load_federation_features();
 
 		// Verify mesh sync was initialized.
 		$reflection = new ReflectionClass( $federation );
@@ -228,8 +234,11 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 			)
 		);
 
-		// Initialize federation (mesh sync should NOT initialize).
-		$federation = new WP_MCP_AI_Federation();
+		// Initialize federation (mesh sync should NOT initialize). `init` has
+		// already fired in the test context, so trigger the feature loader
+		// directly.
+		$federation = new WP_MCP_AI_Federation( WP_MCP_AI_Tool_Registry::get_instance() );
+		$federation->maybe_load_federation_features();
 
 		// Verify that mesh_peer_sync was NOT initialized.
 		$reflection = new ReflectionClass( $federation );

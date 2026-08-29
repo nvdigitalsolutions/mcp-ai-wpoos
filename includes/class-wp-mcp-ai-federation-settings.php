@@ -269,6 +269,10 @@ class WP_MCP_AI_Federation_Settings {
 		$defaults = array(
 			'enable_federation'           => false,
 			'enable_federation_directory' => false,
+			// Mesh networking shares the main settings option with federation;
+			// without this key in the pass-through list is_mesh_enabled() can
+			// never observe the stored value.
+			'enable_mesh'                 => false,
 			'federation_regions'          => array( 'global' ),
 			'federation_data_tags'        => array(),
 			'federation_qps'              => 5,
