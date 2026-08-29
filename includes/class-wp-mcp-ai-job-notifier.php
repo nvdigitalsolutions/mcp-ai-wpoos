@@ -578,6 +578,52 @@ class WP_MCP_AI_Job_Notifier {
 	}
 
 	/**
+	 * Update the cached status for a job to an explicit value.
+	 *
+	 * Used by callers that transition a job outside the standard lifecycle
+	 * handlers — for example the async executor's cancel_job() and
+	 * retry_job() paths. The cached record is what get_job_status() returns
+	 * and what the cron-status service merges into job details.
+	 *
+	 * @since 1.1.65
+	 *
+	 * @param string $job_id Job identifier.
+	 * @param string $status New status (pending, running, cancelled, completed, failed).
+	 * @return bool True on success, false when input is invalid.
+	 */
+	public static function update_status( $job_id, $status = 'running' ) {
+		$job_id = is_string( $job_id ) ? trim( $job_id ) : '';
+		$status = is_string( $status ) ? sanitize_key( $status ) : '';
+
+		$valid_statuses = array( 'pending', 'running', 'cancelled', 'completed', 'failed' );
+		if ( '' === $job_id || ! in_array( $status, $valid_statuses, true ) ) {
+			return false;
+		}
+
+		$cached = self::get_job_status( $job_id );
+		if ( ! is_array( $cached ) ) {
+			$cached = array(
+				'job_id' => $job_id,
+				'status' => $status,
+			);
+		}
+
+		$cached['status']     = $status;
+		$cached['updated_at'] = current_time( 'mysql', true );
+
+		if ( 'cancelled' === $status ) {
+			$cached['cancelled_at'] = current_time( 'mysql', true );
+		} elseif ( 'pending' === $status ) {
+			// A retry resets prior terminal-state timestamps.
+			unset( $cached['completed_at'], $cached['failed_at'], $cached['cancelled_at'] );
+		}
+
+		self::cache_job_status( $job_id, $cached );
+
+		return true;
+	}
+
+	/**
 	 * Persist job result to the durable job store.
 	 *
 	 * Mirrors the transient cache into the database so that
