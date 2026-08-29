@@ -42,7 +42,10 @@ class Test_Profession_Model_Merge extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-assistant-cpt.php';
 		}
 
-		$this->rest_controller = new WP_MCP_AI_REST();
+		$this->rest_controller = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 	}
 
 	/**

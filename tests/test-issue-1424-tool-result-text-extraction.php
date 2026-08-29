@@ -43,10 +43,14 @@ class WP_MCP_AI_Issue_1424_Tool_Result_Text_Extraction_Test extends WP_UnitTestC
 	 * @param object $mock_client Mock language model client.
 	 */
 	private function bootstrap_rest_controller( $mock_client ) {
-		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
-		$validator  = new WP_MCP_AI_REST_Validator();
-		$controller = new WP_MCP_AI_REST( $mock_client, $registry, $validator );
-		$controller->register_routes();
+		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
+		$validator = new WP_MCP_AI_REST_Validator();
+
+		// The constructor hooks register_routes() onto rest_api_init, so
+		// instantiating the server registers the routes without triggering
+		// a register_rest_route doing-it-wrong notice.
+		new WP_MCP_AI_REST( $registry, $mock_client, null, $validator );
+		rest_get_server();
 	}
 
 	/**

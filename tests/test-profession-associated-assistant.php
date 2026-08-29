@@ -287,7 +287,10 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		update_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, $this->assistant_id );
 
 		// Create REST instance to access protected method.
-		$rest       = new WP_MCP_AI_REST();
+		$rest       = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'resolve_assistant_id' );
 		$method->setAccessible( true );
@@ -326,7 +329,10 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		}
 
 		// Create REST instance to access protected method.
-		$rest       = new WP_MCP_AI_REST();
+		$rest       = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'resolve_assistant_id' );
 		$method->setAccessible( true );
@@ -359,7 +365,10 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		update_post_meta( $this->profession_id, '_wp_mcp_ai_profession_default_tools', array( 'search_posts', 'create_post' ) );
 
 		// Create REST instance to access protected method.
-		$rest       = new WP_MCP_AI_REST();
+		$rest       = new WP_MCP_AI_REST(
+			WP_MCP_AI_Tool_Registry::get_instance(),
+			$this->createMock( WP_MCP_AI_Language_Model_Router::class )
+		);
 		$reflection = new ReflectionClass( $rest );
 		$method     = $reflection->getMethod( 'load_profession_configuration' );
 		$method->setAccessible( true );
