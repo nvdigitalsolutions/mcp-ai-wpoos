@@ -86,7 +86,7 @@ class Test_Veo_Transient_Workflow extends WP_UnitTestCase {
 
 		$this->assertIsArray( $metadata );
 		$this->assertEquals( $job_id, $metadata['job_id'] );
-		$this->assertEquals( 'pending', $metadata['status'] );
+		$this->assertEquals( 'polling', $metadata['status'] );
 		$this->assertEquals( 'operations/test-op-123', $metadata['operation_name'] );
 		$this->assertEquals( 0, $metadata['poll_attempt'] );
 	}
@@ -268,9 +268,11 @@ class Test_Veo_Transient_Workflow extends WP_UnitTestCase {
 			array( 'tool' => 'generate_veo_video' )
 		);
 
-		// Verify transient exists.
-		$cache_key = WP_MCP_AI_Job_Notifier::CACHE_PREFIX . sanitize_key( $job_id );
-		$status    = get_transient( $cache_key );
+		// Verify the notifier's cached status exists. Use the notifier's own
+		// lookup rather than hand-building the cache key: keys preserve dots
+		// since the dot-safe cache-key sanitisation, so sanitize_key() no
+		// longer produces the matching key for uniqid() job IDs.
+		$status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
 
 		$this->assertIsArray( $status );
 

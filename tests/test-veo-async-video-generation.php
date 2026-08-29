@@ -74,7 +74,7 @@ class Test_Veo_Async_Video_Generation extends WP_UnitTestCase {
 
 		$this->assertIsArray( $metadata );
 		$this->assertEquals( $job_id, $metadata['job_id'] );
-		$this->assertEquals( 'pending', $metadata['status'] );
+		$this->assertEquals( 'polling', $metadata['status'] );
 		$this->assertEquals( $operation['operation_name'], $metadata['operation_name'] );
 		$this->assertEquals( 0, $metadata['poll_attempt'] );
 	}
