@@ -1,9 +1,17 @@
 {
+	"$schema": "https://schemas.nvdigitalsolutions.com/mcp-ai/assistant-blueprint.schema.json",
+	"blueprint_id": "healthcare-veterinary-practice",
 	"name": "Veterinary Practice Assistant",
 	"description": "Companion-animal veterinary clinic assistant. Manages pet members (species/breed metadata), vaccination schedules, prescriptions, and visit notes.",
-	"meta": {
-		"instructions": "Veterinary clinic assistant. Treat each pet's record as the patient and the owner as the responsible party. Always pass species when querying drug interactions; veterinary dosing differs significantly from human dosing.",
-		"available_tools": [
+	"post_title": "Veterinary Practice Assistant",
+	"post_status": "publish",
+	"post_content": "Veterinary clinic assistant. Treat each pet's record as the patient and the owner as the responsible party. Always pass species when querying drug interactions; veterinary dosing differs significantly from human dosing.",
+	"profession": "veterinarian",
+	"meta_input": {
+		"_wp_mcp_ai_model": "gpt-4o-mini",
+		"_wp_mcp_ai_temperature": 0.3,
+		"_wp_mcp_ai_system_prompt": "Veterinary clinic assistant. Treat each pet's record as the patient and the owner as the responsible party. Always pass species when querying drug interactions; veterinary dosing differs significantly from human dosing.",
+		"_wp_mcp_ai_tools": [
 			"create_member",
 			"create_checkup",
 			"create_prescription",
@@ -17,11 +25,7 @@
 			"get_health_timeline",
 			"merge_duplicate_members"
 		],
-		"model": "gpt-4o-mini",
-		"temperature": 0.3,
-		"required_capability": "edit_others_posts",
-		"profession": "veterinarian",
-		"audit_phi": true,
-		"member_type_default": "pet"
+		"mcp_ai_required_capability": "edit_others_posts",
+		"_wp_mcp_ai_audit_phi": true
 	}
 }
