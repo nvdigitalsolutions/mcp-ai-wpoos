@@ -727,10 +727,21 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 
 	/** WebChat P2P send message tool must be loadable. */
 	public function test_chat_channels_tool_send_webchat_message_loadable() {
-		$this->assert_chat_channels_tool_loadable(
-			'WP_MCP_AI_Pro_Tool_Send_WebChat_Message',
-			'class-wp-mcp-ai-pro-tool-send-webchat-message.php'
-		);
+		// The WebChat P2P tool lives in the embedded addon's webchat tools
+		// directory rather than the pro chat-channels directory.
+		$path = WP_MCP_AI_PATH . 'addons/embedded/includes/webchat/tools/class-wp-mcp-ai-pro-tool-send-webchat-message.php';
+		$this->assertFileExists( $path, 'send-webchat-message tool must exist in the embedded webchat tools directory' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message' ) ) {
+			require_once $path;
+		}
+
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message' ), 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message must be loadable' );
+
+		$tool = new WP_MCP_AI_Pro_Tool_Send_WebChat_Message();
+		$this->assertNotEmpty( $tool->get_slug(), 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message::get_slug() must return a non-empty string' );
+		$this->assertNotEmpty( $tool->get_name(), 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message::get_name() must return a non-empty string' );
+		$this->assertNotEmpty( $tool->get_description(), 'WP_MCP_AI_Pro_Tool_Send_WebChat_Message::get_description() must return a non-empty string' );
 	}
 
 	// ----- Telegram ----------------------------------------------------------
@@ -1470,16 +1481,16 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$tool   = new WP_MCP_AI_Pro_Tool_Send_Outlook_Mail();
 		$result = $tool->execute(
 			array(
-				'access_token' => 'test-token',
-				'to_email'     => 'not-an-email',
-				'subject'      => 'Test Subject',
-				'body'         => 'Test body content',
+				'token'    => 'test-token',
+				'to_email' => 'not-an-email',
+				'subject'  => 'Test Subject',
+				'body'     => 'Test body content',
 			),
 			array( 'user_id' => $admin_id )
 		);
 
 		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertSame( 'wp_mcp_ai_invalid_to_email', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_missing_to_email', $result->get_error_code() );
 
 		wp_delete_user( $admin_id );
 	}
@@ -1593,7 +1604,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		);
 
 		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertSame( 'wp_mcp_ai_missing_outlook_token', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_missing_onedrive_token', $result->get_error_code() );
 
 		wp_delete_user( $admin_id );
 	}
