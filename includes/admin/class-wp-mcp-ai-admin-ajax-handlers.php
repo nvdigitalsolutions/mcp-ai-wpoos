@@ -4085,6 +4085,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Use reflection to call protected method.
+			// The success response is sent OUTSIDE the try block: under PHPUnit
+			// wp_send_json_success() terminates via a throwable WPDieException,
+			// which the catch below would otherwise convert into a second
+			// wp_send_json_error() — a double wp_die() that also corrupts the
+			// output-buffer bookkeeping of the AJAX test harness.
 			try {
 				$loader = new WP_MCP_AI_Profession_Playbook_Loader();
 				$seeder = new WP_MCP_AI_Profession_Playbook_Seeder();
@@ -4092,16 +4097,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				$method = new ReflectionMethod( 'WP_MCP_AI_Profession_Playbook_Seeder', 'sync_profession_playbook' );
 				$method->setAccessible( true );
 				$method->invoke( null, $profession, $loader, true ); // Force regeneration.
-
-				wp_send_json_success(
-					array(
-						'message' => sprintf(
-							/* translators: %s: Profession title */
-							__( 'Playbook for "%s" regenerated successfully!', 'mcp-ai-wpoos' ),
-							$profession->post_title
-						),
-					)
-				);
 			} catch ( \Throwable $e ) {
 				wp_send_json_error(
 					array(
@@ -4112,7 +4107,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 						),
 					)
 				);
+				return;
 			}
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: %s: Profession title */
+						__( 'Playbook for "%s" regenerated successfully!', 'mcp-ai-wpoos' ),
+						$profession->post_title
+					),
+				)
+			);
 		}
 
 		/**

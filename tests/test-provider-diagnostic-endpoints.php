@@ -91,6 +91,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -111,6 +112,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -136,6 +138,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -154,6 +157,15 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 		unset( $settings['gemini_api_key'] );
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
+		// Neutralize environment-provided credentials so the
+		// not-configured path is exercised deterministically regardless of
+		// the CI environment (the resolver falls back to {PROVIDER}_API_KEY).
+		$original_gemini_env = getenv( 'GEMINI_API_KEY' );
+		putenv( 'GEMINI_API_KEY' );
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			WP_MCP_AI_Credential_Resolver::clear_cache();
+		}
+
 		// Simulate AJAX request.
 		$_POST['action']   = 'wp_mcp_ai_test_provider';
 		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
@@ -161,8 +173,17 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
+		}
+
+		// Restore the environment variable.
+		if ( false !== $original_gemini_env ) {
+			putenv( 'GEMINI_API_KEY=' . $original_gemini_env );
+		}
+		if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+			WP_MCP_AI_Credential_Resolver::clear_cache();
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -186,6 +207,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -211,6 +233,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -237,7 +260,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
 		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Expected exception.
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -263,7 +286,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
 		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Expected exception.
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -285,6 +308,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}
@@ -312,7 +336,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
 		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Expected exception.
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -336,6 +360,7 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_Ajax_UnitTestCase 
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected exception.
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected exception.
 		}

@@ -31,6 +31,12 @@ class Test_Mubert_Connection_Test extends WP_UnitTestCase {
 		if ( ! did_action( 'admin_init' ) ) {
 			do_action( 'admin_init' );
 		}
+
+		// WooCommerce registers privacy-policy content on admin_init without
+		// an is_admin() guard; WP 6.9 flags that as incorrect usage in the
+		// non-admin test context. The notice is environmental, not from the
+		// code under test.
+		$this->setExpectedIncorrectUsage( 'wp_add_privacy_policy_content' );
 	}
 
 	/**
@@ -104,7 +110,13 @@ class Test_Mubert_Connection_Test extends WP_UnitTestCase {
 
 		// Capture output.
 		ob_start();
-		$ajax_handlers->handle_test_mubert_connection();
+		try {
+			$ajax_handlers->handle_test_mubert_connection();
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: the handler terminates via wp_send_json_error(), which the test bootstrap converts into a throwable WPDieException.
+		} catch ( WPDieException $e ) {
+			// Expected: the handler terminates via wp_send_json_error(), which
+			// the test bootstrap converts into a throwable WPDieException.
+		}
 		$response = ob_get_clean();
 
 		// Parse JSON response.

@@ -19,6 +19,9 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 	 * Test that AI Peer links are NOT shown when directory service is disabled.
 	 */
 	public function test_ai_peer_links_hidden_when_directory_disabled() {
+		// The peer links render under the Federation & Mesh subtab.
+		$_GET['subtab'] = 'federation_mesh';
+
 		// Set directory service to disabled.
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
@@ -49,11 +52,15 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 	 * Test that AI Peer links ARE shown when directory service is enabled.
 	 */
 	public function test_ai_peer_links_shown_when_directory_enabled() {
+		// The peer links render under the Federation & Mesh subtab.
+		$_GET['subtab'] = 'federation_mesh';
+
 		// Set directory service to enabled.
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation' => true,
+				'enable_federation'           => true,
+				'enable_federation_directory' => true,
 			)
 		);
 
@@ -64,13 +71,19 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-registry.php';
 		}
-		$registry = new WP_MCP_AI_Tool_Registry();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
 		if ( ! class_exists( 'WP_MCP_AI_Federation' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 		}
 		$federation = new WP_MCP_AI_Federation( $registry );
 		$federation->maybe_load_federation_features();
+
+		// `init` has already fired in the test context, so the CPT hooks
+		// registered by the constructor never ran — register it explicitly.
+		if ( class_exists( 'WP_MCP_AI_AI_Peer_CPT' ) ) {
+			WP_MCP_AI_AI_Peer_CPT::register_post_type();
+		}
 
 		// Ensure the post type is registered.
 		$this->assertTrue( post_type_exists( 'ai_peer' ), 'AI Peer post type should be registered when directory is enabled' );
@@ -94,6 +107,9 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 	 * Test that post type check prevents errors when post type doesn't exist.
 	 */
 	public function test_no_error_when_post_type_not_registered() {
+		// The peer links render under the Federation & Mesh subtab.
+		$_GET['subtab'] = 'federation_mesh';
+
 		// Set directory service to disabled.
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
@@ -119,18 +135,24 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 
 		// Should complete successfully without errors.
 		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( 'Federation & Mesh Computing', $output );
+		// The heading is output through esc_html_e(), so the ampersand is
+		// HTML-escaped in the rendered markup.
+		$this->assertStringContainsString( 'Federation &amp; Mesh Computing', $output );
 	}
 
 	/**
 	 * Test that AI Peers are counted correctly when directory is enabled.
 	 */
 	public function test_ai_peers_counted_correctly_when_enabled() {
+		// The peer links render under the Federation & Mesh subtab.
+		$_GET['subtab'] = 'federation_mesh';
+
 		// Set directory service to enabled.
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation' => true,
+				'enable_federation'           => true,
+				'enable_federation_directory' => true,
 			)
 		);
 
@@ -141,13 +163,19 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-registry.php';
 		}
-		$registry = new WP_MCP_AI_Tool_Registry();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
 		if ( ! class_exists( 'WP_MCP_AI_Federation' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 		}
 		$federation = new WP_MCP_AI_Federation( $registry );
 		$federation->maybe_load_federation_features();
+
+		// `init` has already fired in the test context, so the CPT hooks
+		// registered by the constructor never ran — register it explicitly.
+		if ( class_exists( 'WP_MCP_AI_AI_Peer_CPT' ) ) {
+			WP_MCP_AI_AI_Peer_CPT::register_post_type();
+		}
 
 		// Create a test AI peer.
 		$peer_id = wp_insert_post(
@@ -181,6 +209,9 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		parent::tearDown();
+
+		// Clear the subtab selection.
+		unset( $_GET['subtab'] );
 
 		// Clear the settings cache.
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
