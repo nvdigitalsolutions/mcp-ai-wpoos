@@ -29,6 +29,7 @@ use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\WordPress\Adapter\AuthProvider;
 use Nvoos\WordPress\Adapter\ErrorFactory;
 use Nvoos\WordPress\Adapter\EventDispatcher;
 use Nvoos\WordPress\Adapter\HttpClient as WordPressHttpClient;
@@ -95,6 +96,12 @@ final class CoreBridge {
 			$costs,
 			$sse,
 		);
+
+		// Wire per-tool capability checks. ToolRegistry::execute() fails
+		// closed when no auth provider is set, so every tool declaring a
+		// required capability (all graph tools and AI tools) would deny
+		// even administrators in the chat tester.
+		$this->chat->setAuthProvider( new AuthProvider() );
 
 		// 3. Register built-in providers.
 		$this->registerBuiltinProviders();

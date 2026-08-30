@@ -3,7 +3,7 @@
  * Plugin Name:  NV oOS Content Graph — AI
  * Plugin URI:   https://github.com/nvdigitalsolutions/nvoos-content-graph-ai
  * Description:  AI chat assistant addon for NV oOS Content Graph. Adds chat, 13 AI providers, AI tools, embeddings, and agent memory to your knowledge graph. One install, one API key.
- * Version:      1.0.2
+ * Version:      1.0.3
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Requires Plugins: nvoos-content-graph
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NVOOS_CONTENT_GRAPH_AI_VERSION', '1.0.2' );
+define( 'NVOOS_CONTENT_GRAPH_AI_VERSION', '1.0.3' );
 define( 'NVOOS_CONTENT_GRAPH_AI_FILE', __FILE__ );
 define( 'NVOOS_CONTENT_GRAPH_AI_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NVOOS_CONTENT_GRAPH_AI_URL', plugin_dir_url( __FILE__ ) );
