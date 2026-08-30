@@ -40,8 +40,8 @@ class WP_MCP_AI_Crawl4AI_Inline_Kick_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * register_remote_job() must register a shutdown action when the inline
-	 * kick is enabled (default).
+	 * The register_remote_job() method must register a shutdown action when
+	 * the inline kick is enabled (default).
 	 */
 	public function test_register_remote_job_adds_shutdown_action() {
 		$task_id = 'test_kick_reg_' . wp_generate_uuid4();
@@ -57,8 +57,8 @@ class WP_MCP_AI_Crawl4AI_Inline_Kick_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * register_remote_job() must NOT register a shutdown action when the
-	 * wp_mcp_ai_inline_kick_enabled filter returns false.
+	 * The register_remote_job() method must NOT register a shutdown action
+	 * when the wp_mcp_ai_inline_kick_enabled filter returns false.
 	 */
 	public function test_register_remote_job_skips_shutdown_action_when_filter_disabled() {
 		add_filter( 'wp_mcp_ai_inline_kick_enabled', '__return_false' );
@@ -88,8 +88,8 @@ class WP_MCP_AI_Crawl4AI_Inline_Kick_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * handle_poll_event() must bail early when the cooperative tick lock is
-	 * already held (simulated by pre-setting the transient).
+	 * The handle_poll_event() method must bail early when the cooperative
+	 * tick lock is already held (simulated by pre-setting the transient).
 	 */
 	public function test_handle_poll_event_bails_when_lock_held() {
 		$task_id  = 'test_lock_held_' . wp_generate_uuid4();
@@ -115,19 +115,26 @@ class WP_MCP_AI_Crawl4AI_Inline_Kick_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * do_poll_event() must return early when no job is stored for the given
-	 * task_id.
+	 * The do_poll_event() method must return early when no job is stored for
+	 * the given task_id.
 	 */
 	public function test_do_poll_event_bails_on_missing_job() {
 		$task_id = 'test_missing_job_' . wp_generate_uuid4();
 
+		// do_poll_event is protected static; reach it via reflection like the
+		// save_job helper below.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Crawler' );
+		$poll_event = $reflection->getMethod( 'do_poll_event' );
+		$poll_event->setAccessible( true );
+
 		// No stored job — do_poll_event should silently return.
-		$this->assertNull( WP_MCP_AI_Crawler::do_poll_event( $task_id ) );
+		$this->assertNull( $poll_event->invoke( null, $task_id ) );
 	}
 
 	/**
-	 * do_poll_event() must return early for jobs with skip_polling set,
-	 * e.g. completed synchronous jobs registered via register_completed_job().
+	 * The do_poll_event() method must return early for jobs with skip_polling
+	 * set, e.g. completed synchronous jobs registered via
+	 * register_completed_job().
 	 */
 	public function test_do_poll_event_bails_on_skip_polling_flag() {
 		$task_id = 'test_skip_polling_' . wp_generate_uuid4();
@@ -147,6 +154,11 @@ class WP_MCP_AI_Crawl4AI_Inline_Kick_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertNull( WP_MCP_AI_Crawler::do_poll_event( $task_id ) );
+		// do_poll_event is protected static; reach it via reflection.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Crawler' );
+		$poll_event = $reflection->getMethod( 'do_poll_event' );
+		$poll_event->setAccessible( true );
+
+		$this->assertNull( $poll_event->invoke( null, $task_id ) );
 	}
 }
