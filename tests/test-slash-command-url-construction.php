@@ -32,12 +32,14 @@ class Test_Slash_Command_URL_Construction extends WP_UnitTestCase {
 	 * with WordPress filters modifying rest_url() calls.
 	 */
 	public function test_rest_url_uses_constant() {
-		// Initialize slash commands.
-		do_action( 'init' );
+		// Initialize slash commands directly. Firing the full 'init' action
+		// in unit tests re-runs WooCommerce and block registrations and
+		// produces incorrect-usage notices.
+		wp_mcp_ai_init_slash_commands();
 
 		// Get localized data.
 		global $wp_scripts;
-		$script_data = $wp_scripts->get_data( 'mcp-ai-slash-commands', 'data' );
+		$script_data = $wp_scripts->get_data( 'wp-mcp-ai-slash-commands', 'data' );
 
 		// Verify mcpAiData is localized.
 		$this->assertStringContainsString( 'mcpAiData', $script_data, 'Script should have mcpAiData localized' );
@@ -100,9 +102,11 @@ class Test_Slash_Command_URL_Construction extends WP_UnitTestCase {
 		// Verify the route exists with correct format.
 		$this->assertArrayHasKey( '/mcp-ai/v1/slash-command/list', $routes, 'Slash command list route should exist' );
 
-		// Verify route doesn't have duplicate namespace.
+		// Verify route doesn't have duplicate namespace. Only core mcp-ai/v1
+		// routes are checked: Pro addons legitimately register their own
+		// namespaces (e.g. /mcp-ai-pro/v1/slash-commands).
 		foreach ( array_keys( $routes ) as $route ) {
-			if ( strpos( $route, 'slash-command' ) !== false ) {
+			if ( 0 === strpos( $route, '/mcp-ai/v1/' ) && false !== strpos( $route, 'slash-command' ) ) {
 				$namespace_count = substr_count( $route, 'mcp-ai/v1' );
 				$this->assertEquals( 1, $namespace_count, "Route $route should contain namespace exactly once" );
 			}
