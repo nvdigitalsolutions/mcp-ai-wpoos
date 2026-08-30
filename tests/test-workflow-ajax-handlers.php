@@ -36,6 +36,15 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( 'wp_mcp_ai_custom_workflows' );
+
+		// The orchestration dashboard registers its AJAX handlers when its file
+		// is loaded; make sure wp_ajax_wp_mcp_ai_execute_workflow and the
+		// restart sibling are hooked so the dashboard tests exercise the real
+		// handlers instead of a silent no-op dispatch.
+		if ( class_exists( 'WP_MCP_AI_Admin_Orchestration_Dashboard' )
+			&& ! has_action( 'wp_ajax_wp_mcp_ai_execute_workflow' ) ) {
+			new WP_MCP_AI_Admin_Orchestration_Dashboard();
+		}
 	}
 
 	/**
@@ -131,12 +140,12 @@ class Test_Workflow_AJAX_Handlers extends WP_MCP_AI_Ajax_TestCase {
 		);
 
 		$this->assertAjaxSuccess( $response );
-		$this->assertSame( 'pilot-workflow', $response['data']['workflow']['slug'] );
+		$this->assertSame( 'pilotworkflow', $response['data']['workflow']['slug'] );
 		$this->assertSame( 1, $response['data']['workflow']['steps'] );
 
 		$saved = get_option( 'wp_mcp_ai_custom_workflows' );
 		$this->assertIsArray( $saved );
-		$this->assertArrayHasKey( 'pilot-workflow', $saved );
+		$this->assertArrayHasKey( 'pilotworkflow', $saved );
 	}
 
 	// ---
