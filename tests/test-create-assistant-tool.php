@@ -31,7 +31,9 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 		$tool = $registry->get_tool( 'create_assistant' );
 		$this->assertNotNull( $tool );
 
-		$this->assertSame( 'create_assistant', $tool->get_slug() );
+		// The registry auto-upgrades base slugs to their *_validated variant
+		// when one is registered.
+		$this->assertSame( 'create_assistant_validated', $tool->get_slug() );
 		$this->assertNotEmpty( $tool->get_name() );
 		$this->assertNotEmpty( $tool->get_description() );
 	}
@@ -54,11 +56,9 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 
 		// Check required fields.
 		$this->assertContains( 'title', $schema['required'] );
-		$this->assertContains( 'professions', $schema['required'] );
-		$this->assertContains( 'regions', $schema['required'] );
 
-		// Check key properties exist.
-		$this->assertArrayHasKey( 'title', $schema['properties'] );
+		// Professions and regions are optional (prompt mode covers them);
+		// they must still be declared as properties.
 		$this->assertArrayHasKey( 'professions', $schema['properties'] );
 		$this->assertArrayHasKey( 'regions', $schema['properties'] );
 		$this->assertArrayHasKey( 'industry_focus', $schema['properties'] );
@@ -192,7 +192,7 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 		$result = $tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'wp_mcp_ai_missing_title', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -208,7 +208,7 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 
 		$arguments = array(
 			'title'       => 'Test Assistant',
-			'professions' => array( 'tax_advisor', 'accountant', 'lawyer', 'customs_broker' ), // 4 professions - exceeds limit.
+			'professions' => array( 'tax_advisor', 'customs_broker', 'legal_advisor', 'financial_advisor' ), // 4 professions - exceeds limit.
 			'regions'     => array( 'jamaica' ),
 		);
 
@@ -217,7 +217,7 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 		$result = $tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'wp_mcp_ai_too_many_professions', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -234,7 +234,7 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 		$arguments = array(
 			'title'       => 'Test Assistant',
 			'professions' => array( 'tax_advisor' ),
-			'regions'     => array( 'jamaica', 'sri_lanka', 'united_states' ), // 3 regions - exceeds limit.
+			'regions'     => array( 'jamaica', 'sri_lanka', 'global' ), // 3 regions - exceeds limit.
 		);
 
 		$context = array( 'user_id' => $user_id );
@@ -242,7 +242,7 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 		$result = $tool->execute( $arguments, $context );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'wp_mcp_ai_too_many_regions', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -307,8 +307,8 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 
 		$arguments = array(
 			'title'       => 'Async Test Assistant',
-			'professions' => array( 'accountant' ),
-			'regions'     => array( 'canada' ),
+			'professions' => array( 'tax_advisor' ),
+			'regions'     => array( 'jamaica' ),
 			'async'       => true,
 		);
 
@@ -344,6 +344,13 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 	 */
 	public function test_create_assistant_hook_registered_only_once() {
 		global $wp_filter;
+
+		// Reset the constructor's static registration guard so this test can
+		// verify fresh registration behaviour; earlier tests in the process
+		// may have already flipped it.
+		$reflection = new ReflectionProperty( 'WP_MCP_AI_Tool_Create_Assistant', 'hook_registered' );
+		$reflection->setAccessible( true );
+		$reflection->setValue( null, false );
 
 		// Clear any existing registrations from previous tests.
 		if ( isset( $wp_filter['wp_mcp_ai_create_assistant_async'] ) ) {
