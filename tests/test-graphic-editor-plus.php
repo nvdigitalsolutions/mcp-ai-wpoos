@@ -389,7 +389,7 @@ class WP_MCP_AI_Graphic_Editor_Plus_Test extends WP_UnitTestCase {
 		// Test bottom-left.
 		$coords = $method->invoke( $tool, $image_size, $logo_size, 'bottom-left', $margin );
 		$this->assertSame( 20, $coords['x'] );
-		$this->assertSame( 700, $coords['y'] );
+		$this->assertSame( 680, $coords['y'] ); // 800 - 100 - 20 margin from bottom edge.
 
 		// Test top-right.
 		$coords = $method->invoke( $tool, $image_size, $logo_size, 'top-right', $margin );
