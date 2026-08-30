@@ -37,6 +37,25 @@ class Test_ISAMS_Connection_Test extends WP_UnitTestCase {
 		// non-admin test context. The notice is environmental, not from the
 		// code under test.
 		$this->setExpectedIncorrectUsage( 'wp_add_privacy_policy_content' );
+
+		// The iSAMS action is registered by WP_MCP_AI_Admin_Settings in
+		// production, which never loads under CLI phpunit (is_admin() is
+		// false). Load the handler class and register the action here;
+		// wp-phpunit restores its once-per-process hook snapshot after
+		// every test, so re-register per test when the hook is missing.
+		if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
+			$path = WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php';
+			if ( file_exists( $path ) ) {
+				require_once $path;
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
+			$handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+			if ( ! has_action( 'wp_ajax_wp_mcp_ai_test_isams_connection' ) ) {
+				add_action( 'wp_ajax_wp_mcp_ai_test_isams_connection', array( $handlers, 'safe_ajax_handler' ) );
+			}
+		}
 	}
 
 	/**
@@ -50,9 +69,11 @@ class Test_ISAMS_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the test button is rendered.
+	 * Test that the legacy iSAMS test button is no longer rendered by the
+	 * Integrations section: iSAMS connection management moved to Remote Sites
+	 * (Pro), so the section must not emit the old connection-test UI.
 	 */
-	public function test_isams_test_button_renders() {
+	public function test_isams_not_rendered_in_integrations_section() {
 		// Clear credentials.
 		$settings                     = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['isams_api_url']    = '';
@@ -66,7 +87,8 @@ class Test_ISAMS_Connection_Test extends WP_UnitTestCase {
 		// Start output buffering.
 		ob_start();
 
-		// Simulate being on the isams connection page.
+		// Simulate the legacy isams connection page within Tools > Connections.
+		$_GET['subtab']     = 'connections';
 		$_GET['connection'] = 'isams';
 
 		// Render the section.
@@ -74,25 +96,17 @@ class Test_ISAMS_Connection_Test extends WP_UnitTestCase {
 
 		$output = ob_get_clean();
 
-		// Check that the test button is present.
-		$this->assertStringContainsString(
+		// iSAMS moved to Remote Sites; the integrations section must not
+		// render the old test button or result span.
+		$this->assertStringNotContainsString(
 			'wp-mcp-ai-test-isams-connection',
 			$output,
-			'Test button should be rendered'
+			'iSAMS test button should not be rendered by the Integrations section'
 		);
-
-		// Check that the test button has correct attributes.
-		$this->assertStringContainsString(
-			'id="wp-mcp-ai-test-isams-connection"',
-			$output,
-			'Test button should have correct ID'
-		);
-
-		// Check that the result span is present.
-		$this->assertStringContainsString(
+		$this->assertStringNotContainsString(
 			'wp-mcp-ai-isams-test-result',
 			$output,
-			'Result span should be rendered'
+			'iSAMS result span should not be rendered by the Integrations section'
 		);
 
 		// Cleanup.
@@ -133,19 +147,24 @@ class Test_ISAMS_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that iSAMS is in the connections subtab groups.
+	 * Test that iSAMS is no longer an Integrations subtab group.
+	 *
+	 * Connection management for iSAMS, PayHere, Flowhub, and QuickBooks
+	 * moved to Remote Sites (Pro), so the Integrations section must not
+	 * advertise an iSAMS subtab.
 	 */
-	public function test_isams_in_subtab_groups() {
+	public function test_isams_not_in_subtab_groups() {
 		$section    = new WP_MCP_AI_Section_Integrations();
 		$reflection = new ReflectionClass( $section );
 		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtab_groups = $method->invoke( $section );
 
-		$this->assertArrayHasKey( 'isams', $subtab_groups, 'iSAMS should be in subtab groups' );
-
-		$isams_group = $subtab_groups['isams'];
-		$this->assertEquals( 'isams', $isams_group['id'] );
+		$this->assertArrayNotHasKey(
+			'isams',
+			$subtab_groups,
+			'iSAMS moved to Remote Sites and should not be in the Integrations subtab groups'
+		);
 	}
 
 	/**
@@ -153,6 +172,7 @@ class Test_ISAMS_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		// Clean up.
+		unset( $_GET['subtab'] );
 		unset( $_GET['connection'] );
 		unset( $_POST['nonce'] );
 		unset( $_POST['api_url'] );
