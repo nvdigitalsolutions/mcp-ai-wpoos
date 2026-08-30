@@ -46,14 +46,14 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Set up AJAX request.
 		$_POST['action']   = 'wp_mcp_ai_bulk_assign_tier';
 		$_POST['user_ids'] = $user_ids;
-		$_POST['tier']     = 'premium';
+		$_POST['tier']     = WP_MCP_AI_Tool_Token_Limits::TIER_PRO;
 		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_dashboard' );
 
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_bulk_assign_tier' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -64,8 +64,8 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 
 		// Verify users were assigned tier.
 		foreach ( $user_ids as $user_id ) {
-			$user_tier = get_user_meta( $user_id, 'wp_mcp_ai_token_tier', true );
-			$this->assertEquals( 'premium', $user_tier, 'User should be assigned premium tier' );
+			$user_tier = get_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::TIER_META_KEY, true );
+			$this->assertEquals( WP_MCP_AI_Tool_Token_Limits::TIER_PRO, $user_tier, 'User should be assigned pro tier' );
 		}
 	}
 
@@ -80,14 +80,14 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Set up AJAX request with empty user_ids.
 		$_POST['action']   = 'wp_mcp_ai_bulk_assign_tier';
 		$_POST['user_ids'] = array();
-		$_POST['tier']     = 'premium';
+		$_POST['tier']     = WP_MCP_AI_Tool_Token_Limits::TIER_PRO;
 		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_dashboard' );
 
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_bulk_assign_tier' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -109,14 +109,14 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Set up AJAX request.
 		$_POST['action']   = 'wp_mcp_ai_bulk_assign_tier';
 		$_POST['user_ids'] = array( $user_id );
-		$_POST['tier']     = 'premium';
+		$_POST['tier']     = WP_MCP_AI_Tool_Token_Limits::TIER_PRO;
 		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_dashboard' );
 
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_bulk_assign_tier' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -142,8 +142,8 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_apply_all_recommendations' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -170,8 +170,8 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_apply_preset' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -202,8 +202,8 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -232,8 +232,8 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_tool_settings' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -253,16 +253,16 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		wp_set_current_user( $admin_id );
 
 		// Set up AJAX request.
-		$_POST['action']    = 'wp_mcp_ai_toggle_tool';
-		$_POST['tool_slug'] = 'get_user_info';
-		$_POST['enabled']   = '1';
-		$_POST['nonce']     = wp_create_nonce( 'wp_mcp_ai_dashboard' );
+		$_POST['action']      = 'wp_mcp_ai_toggle_tool';
+		$_POST['tool_slug']   = 'get_user_info';
+		$_POST['tool_action'] = 'enable';
+		$_POST['nonce']       = wp_create_nonce( 'wp-mcp-ai-settings' );
 
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_toggle_tool' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -295,13 +295,13 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Simulate first bulk operation.
 		$_POST['action']   = 'wp_mcp_ai_bulk_assign_tier';
 		$_POST['user_ids'] = $group1_users;
-		$_POST['tier']     = 'premium';
+		$_POST['tier']     = WP_MCP_AI_Tool_Token_Limits::TIER_PRO;
 		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_dashboard' );
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_bulk_assign_tier' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		$response1 = json_decode( $this->_last_response, true );
@@ -311,13 +311,13 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 
 		// Simulate second bulk operation.
 		$_POST['user_ids'] = $group2_users;
-		$_POST['tier']     = 'basic';
+		$_POST['tier']     = WP_MCP_AI_Tool_Token_Limits::TIER_FREE;
 		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_dashboard' );
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_bulk_assign_tier' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		$response2 = json_decode( $this->_last_response, true );
@@ -328,11 +328,11 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 
 		// Verify correct tier assignments.
 		foreach ( $group1_users as $user_id ) {
-			$this->assertEquals( 'premium', get_user_meta( $user_id, 'wp_mcp_ai_token_tier', true ) );
+			$this->assertEquals( WP_MCP_AI_Tool_Token_Limits::TIER_PRO, get_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::TIER_META_KEY, true ) );
 		}
 
 		foreach ( $group2_users as $user_id ) {
-			$this->assertEquals( 'basic', get_user_meta( $user_id, 'wp_mcp_ai_token_tier', true ) );
+			$this->assertEquals( WP_MCP_AI_Tool_Token_Limits::TIER_FREE, get_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::TIER_META_KEY, true ) );
 		}
 	}
 
@@ -346,7 +346,7 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 
 		// Create test user with token usage.
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		update_user_meta( $user_id, 'wp_mcp_ai_tokens_used', 1000 );
+		update_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, 1000 );
 
 		// Set up AJAX request.
 		$_POST['action']  = 'wp_mcp_ai_reset_user_token_usage';
@@ -356,8 +356,8 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reset_user_token_usage' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -367,8 +367,8 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		$this->assertTrue( $response['success'], 'Token reset should succeed' );
 
 		// Verify tokens were reset.
-		$tokens_used = get_user_meta( $user_id, 'wp_mcp_ai_tokens_used', true );
-		$this->assertEquals( 0, $tokens_used, 'Tokens should be reset to 0' );
+		$tokens_used = get_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, true );
+		$this->assertEmpty( $tokens_used, 'Tokens should be reset' );
 	}
 
 	/**
@@ -387,7 +387,7 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		);
 
 		foreach ( $user_ids as $user_id ) {
-			update_user_meta( $user_id, 'wp_mcp_ai_tokens_used', 5000 );
+			update_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, 5000 );
 		}
 
 		// Set up AJAX request.
@@ -397,8 +397,8 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reset_all_token_usage' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Expected: wp_send_json_* terminates the request under PHPUnit.
+			// The handler's wp_send_json_* call invokes wp_die(), which throws this exception in tests.
 		}
 
 		// Get the response.
@@ -409,8 +409,8 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 
 		// Verify all tokens were reset.
 		foreach ( $user_ids as $user_id ) {
-			$tokens_used = get_user_meta( $user_id, 'wp_mcp_ai_tokens_used', true );
-			$this->assertEquals( 0, $tokens_used, 'All user tokens should be reset' );
+			$tokens_used = get_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, true );
+			$this->assertEmpty( $tokens_used, 'All user tokens should be reset' );
 		}
 	}
 }
