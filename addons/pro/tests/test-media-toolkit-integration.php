@@ -163,9 +163,10 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_user )
 		);
 
-		// The apply will fail because Graphic Editor Plus tool doesn't exist in test environment,
-		// but we verify the template and attachment validation passed.
-		$this->assertArrayHasKey( 'success', $apply_result );
+		// The apply will fail because the Graphic Editor Plus tool is not fully
+		// available in the test environment, but the template and attachment
+		// validation must have passed and the tool returns its WP_Error.
+		$this->assertWPError( $apply_result );
 	}
 
 	/**
@@ -323,8 +324,8 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_user )
 		);
 
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Invalid template', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'Invalid template', $result->get_error_message() );
 
 		// Test with invalid attachment ID.
 		$create_tool     = new WP_MCP_AI_Tool_Create_Media_Template();
@@ -349,8 +350,8 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_user )
 		);
 
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Invalid attachment', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'Invalid attachment', $result->get_error_message() );
 	}
 
 	/**
@@ -365,8 +366,8 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_user )
 		);
 
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Invalid collection', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'Invalid collection', $result->get_error_message() );
 
 		// Test with collection that has no items.
 		$empty_collection_id = $this->factory->post->create(
@@ -382,8 +383,8 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 			array( 'user_id' => $this->admin_user )
 		);
 
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'no items', strtolower( $result['error'] ) );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'no items', strtolower( $result->get_error_message() ) );
 	}
 
 	/**

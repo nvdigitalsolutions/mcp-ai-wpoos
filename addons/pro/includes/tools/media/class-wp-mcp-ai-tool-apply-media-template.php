@@ -227,6 +227,10 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 		// Execute the tool.
 		$result = $tool->execute( $tool_args, $context );
 
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
 		// Update template usage statistics on success.
 		if ( ! empty( $result['success'] ) ) {
 			$usage_count = absint( get_post_meta( $template_id, '_mcp_ai_template_usage_count', true ) );
