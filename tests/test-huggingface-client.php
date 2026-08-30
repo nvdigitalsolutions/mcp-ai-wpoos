@@ -66,11 +66,11 @@ class WP_MCP_AI_Huggingface_Client_Tests extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_endpoint_url with no configuration.
+	 * Test get_endpoint_url with no configuration falls back to the router default.
 	 */
 	public function test_get_endpoint_url_with_no_config() {
 		$url = $this->client->get_endpoint_url();
-		$this->assertEmpty( $url );
+		$this->assertEquals( 'https://router.huggingface.co/v1', $url );
 	}
 
 	/**
@@ -200,7 +200,8 @@ class WP_MCP_AI_Huggingface_Client_Tests extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'huggingface_api_key' => 'hf_test123',
+				'huggingface_api_key'      => 'hf_test123',
+				'huggingface_endpoint_url' => '',
 			)
 		);
 
@@ -226,6 +227,8 @@ class WP_MCP_AI_Huggingface_Client_Tests extends WP_UnitTestCase {
 			array(
 				'huggingface_api_key'      => 'hf_test123',
 				'huggingface_endpoint_url' => 'https://api-inference.huggingface.co/v1',
+				'huggingface_model'        => '',
+				'default_model'            => '',
 			)
 		);
 
@@ -259,7 +262,8 @@ class WP_MCP_AI_Huggingface_Client_Tests extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'huggingface_api_key' => 'hf_test123',
+				'huggingface_api_key'      => 'hf_test123',
+				'huggingface_endpoint_url' => '',
 			)
 		);
 
@@ -286,7 +290,8 @@ class WP_MCP_AI_Huggingface_Client_Tests extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'huggingface_api_key' => 'hf_test123',
+				'huggingface_api_key'      => 'hf_test123',
+				'huggingface_endpoint_url' => '',
 			)
 		);
 
