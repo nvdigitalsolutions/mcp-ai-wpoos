@@ -408,6 +408,23 @@ class SettingsPage {
 			true
 		);
 
+		// Stripe.js + the addon purchase modal. Only enqueued on this page;
+		// Stripe is contacted exclusively when the user opens the checkout.
+		\wp_enqueue_script(
+			'stripe-v3',
+			'https://js.stripe.com/v3/',
+			array(),
+			'3',
+			true
+		);
+		\wp_enqueue_script(
+			'nvoos-content-graph-commerce',
+			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-commerce.js',
+			array( 'stripe-v3' ),
+			NVOOS_CONTENT_GRAPH_VERSION,
+			true
+		);
+
 		\wp_enqueue_style(
 			'nvoos-content-graph-admin',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/css/content-graph-admin.css',
@@ -427,6 +444,31 @@ class SettingsPage {
 				'ajax_nonce' => wp_create_nonce( 'nvoos_content_graph_admin' ),
 				'height'     => esc_js( $settings['cytoscape_height'] ),
 				'max_nodes'  => absint( $settings['max_display_nodes'] ),
+			)
+		);
+
+		// Commerce config. No Stripe keys live in this plugin — the publishable
+		// key is returned per-session by the vendor checkout API.
+		\wp_localize_script(
+			'nvoos-content-graph-commerce',
+			'nvoosContentGraphCommerce',
+			array(
+				'rest_url'    => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
+				'nonce'       => wp_create_nonce( 'wp_rest' ),
+				'price_label' => \NvoosContentGraph\Commerce\Payments::priceLabel(),
+				'i18n'        => array(
+					'title'         => __( 'Get NV oOS Content Graph — AI', 'nvoos-content-graph' ),
+					'pay'           => __( 'Pay', 'nvoos-content-graph' ),
+					'cancel'        => __( 'Cancel', 'nvoos-content-graph' ),
+					'close'         => __( 'Close', 'nvoos-content-graph' ),
+					'secure_note'   => __( 'Payments are processed securely by Stripe. Your card never touches this server.', 'nvoos-content-graph' ),
+					'generic_error' => __( 'Something went wrong. Please try again.', 'nvoos-content-graph' ),
+					'installing'    => __( 'Recording your license and installing the addon…', 'nvoos-content-graph' ),
+					'success_title' => __( 'You’re all set!', 'nvoos-content-graph' ),
+					'refresh'       => __( 'Reload page', 'nvoos-content-graph' ),
+					'license_label' => __( 'License key', 'nvoos-content-graph' ),
+					'test_mode'     => __( 'Test mode — no real payment will be taken.', 'nvoos-content-graph' ),
+				),
 			)
 		);
 	}

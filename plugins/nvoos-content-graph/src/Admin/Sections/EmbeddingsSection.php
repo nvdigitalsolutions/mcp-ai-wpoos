@@ -124,8 +124,11 @@ class EmbeddingsSection extends Section {
 				<?php esc_html_e( 'NV oOS Content Graph — AI adds vector embeddings, semantic search, RAG retrieval, and agent memory to your knowledge graph. Once installed, you can generate embeddings for every node using OpenAI, Google Gemini, or any of the 13 supported providers.', 'nvoos-content-graph' ); ?>
 			</p>
 			<p style="margin:0;">
-				<a href="https://github.com/nvdigitalsolutions/nvoos-content-graph-ai" class="button button-secondary" target="_blank" rel="noopener">
+				<button type="button" class="button button-primary nvoos-content-graph-buy-ai">
 					<?php esc_html_e( 'Get NV oOS Content Graph — AI', 'nvoos-content-graph' ); ?>
+				</button>
+				<a href="https://github.com/nvdigitalsolutions/nvoos-content-graph-ai" class="button button-link" target="_blank" rel="noopener">
+					<?php esc_html_e( 'Learn more', 'nvoos-content-graph' ); ?>
 				</a>
 			</p>
 		</div>
