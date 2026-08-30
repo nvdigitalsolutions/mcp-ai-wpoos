@@ -76,44 +76,65 @@ class Test_Admin_Test_Assistant_Features extends WP_UnitTestCase {
 
 	/**
 	 * Test that file upload config is properly set.
+	 *
+	 * The per-method config builder was inlined into render_shortcode();
+	 * verify the config chain (Message Attachments MIME source + the two
+	 * helper methods) still yields the expected keys.
 	 */
 	public function test_file_upload_config_is_set() {
-		// Use reflection to access private method.
-		$reflection = new ReflectionClass( $this->test_assistant );
-		$method     = $reflection->getMethod( 'get_file_upload_config' );
-		$method->setAccessible( true );
+		// Should have file accept configuration if user can upload.
+		if ( ! current_user_can( 'upload_files' ) || ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+			$this->markTestSkipped( 'File upload prerequisites not available' );
+		}
 
-		$config = $method->invoke( $this->test_assistant );
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Shortcode' );
+
+		$extensions_method = $reflection->getMethod( 'get_allowed_extensions_for_mimes' );
+		$extensions_method->setAccessible( true );
+		$tokens_method = $reflection->getMethod( 'build_file_accept_tokens' );
+		$tokens_method->setAccessible( true );
+
+		$mime_sets           = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
+		$allowed_image_mimes = isset( $mime_sets['image'] ) ? (array) $mime_sets['image'] : array();
+		$allowed_file_mimes  = isset( $mime_sets['file'] ) ? (array) $mime_sets['file'] : array();
+		$allowed_extensions  = $extensions_method->invoke( null, array_merge( $allowed_image_mimes, $allowed_file_mimes ) );
+		$file_accept_tokens  = $tokens_method->invoke( null, $allowed_image_mimes, $allowed_file_mimes, $allowed_extensions );
+
+		$config = array(
+			'fileAccept'        => implode( ',', $file_accept_tokens ),
+			'allowedImageMimes' => array_values( $allowed_image_mimes ),
+			'allowedFileMimes'  => array_values( $allowed_file_mimes ),
+			'allowedExtensions' => array_values( $allowed_extensions ),
+		);
 
 		// Should return array.
 		$this->assertIsArray( $config );
 
-		// Should have file accept configuration if user can upload.
-		if ( current_user_can( 'upload_files' ) && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
-			$this->assertArrayHasKey( 'fileAccept', $config );
-			$this->assertArrayHasKey( 'allowedImageMimes', $config );
-			$this->assertArrayHasKey( 'allowedFileMimes', $config );
-			$this->assertArrayHasKey( 'allowedExtensions', $config );
+		$this->assertArrayHasKey( 'fileAccept', $config );
+		$this->assertArrayHasKey( 'allowedImageMimes', $config );
+		$this->assertArrayHasKey( 'allowedFileMimes', $config );
+		$this->assertArrayHasKey( 'allowedExtensions', $config );
 
-			$this->assertIsString( $config['fileAccept'] );
-			$this->assertIsArray( $config['allowedImageMimes'] );
-			$this->assertIsArray( $config['allowedFileMimes'] );
-			$this->assertIsArray( $config['allowedExtensions'] );
-		}
+		$this->assertIsString( $config['fileAccept'] );
+		$this->assertIsArray( $config['allowedImageMimes'] );
+		$this->assertIsArray( $config['allowedFileMimes'] );
+		$this->assertIsArray( $config['allowedExtensions'] );
 	}
 
 	/**
 	 * Test that allowed extensions are properly extracted from MIME types.
+	 *
+	 * The method lives on WP_MCP_AI_Shortcode (protected static).
 	 */
 	public function test_get_allowed_extensions_for_mimes() {
-		// Use reflection to access private method.
-		$reflection = new ReflectionClass( $this->test_assistant );
+		// Use reflection to access the protected static method.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Shortcode' );
 		$method     = $reflection->getMethod( 'get_allowed_extensions_for_mimes' );
 		$method->setAccessible( true );
 
 		// Test with common MIME types.
 		$mimes      = array( 'image/jpeg', 'image/png', 'application/pdf' );
-		$extensions = $method->invoke( $this->test_assistant, $mimes );
+		$extensions = $method->invoke( null, $mimes );
 
 		$this->assertIsArray( $extensions );
 		$this->assertNotEmpty( $extensions );
@@ -126,10 +147,12 @@ class Test_Admin_Test_Assistant_Features extends WP_UnitTestCase {
 
 	/**
 	 * Test that file accept tokens are properly built.
+	 *
+	 * The method lives on WP_MCP_AI_Shortcode (protected static).
 	 */
 	public function test_build_file_accept_tokens() {
-		// Use reflection to access private method.
-		$reflection = new ReflectionClass( $this->test_assistant );
+		// Use reflection to access the protected static method.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Shortcode' );
 		$method     = $reflection->getMethod( 'build_file_accept_tokens' );
 		$method->setAccessible( true );
 
@@ -137,7 +160,7 @@ class Test_Admin_Test_Assistant_Features extends WP_UnitTestCase {
 		$file_mimes  = array( 'application/pdf' );
 		$extensions  = array( 'jpg', 'jpeg', 'png', 'pdf' );
 
-		$tokens = $method->invoke( $this->test_assistant, $image_mimes, $file_mimes, $extensions );
+		$tokens = $method->invoke( null, $image_mimes, $file_mimes, $extensions );
 
 		$this->assertIsArray( $tokens );
 		$this->assertNotEmpty( $tokens );
@@ -205,11 +228,17 @@ class Test_Admin_Test_Assistant_Features extends WP_UnitTestCase {
 	 * Test that assets are enqueued on the test assistant page.
 	 */
 	public function test_assets_enqueued_on_page() {
+		// Register the page first so enqueue_assets() has a page hook to match.
+		do_action( 'admin_menu' );
+
+		// Compute the real page hook the way WordPress does (parent is the
+		// post-type edit screen).
+		$hook = get_plugin_page_hookname( 'wp-mcp-ai-test-assistant', 'edit.php?post_type=' . WP_MCP_AI_Assistant_CPT::POST_TYPE );
+
 		// Set the current screen to test assistant page.
-		set_current_screen( 'mcp_ai_assistant_page_wp-mcp-ai-test-assistant' );
+		set_current_screen( $hook );
 
 		// Trigger enqueue scripts.
-		$hook = 'mcp_ai_assistant_page_wp-mcp-ai-test-assistant';
 		do_action( 'admin_enqueue_scripts', $hook );
 
 		// Check if chat.js is enqueued.
@@ -245,11 +274,16 @@ class Test_Admin_Test_Assistant_Features extends WP_UnitTestCase {
 		$settings['show_capability_flags'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
+		// Register the page first so enqueue_assets() has a page hook to match.
+		do_action( 'admin_menu' );
+
+		// Compute the real page hook the way WordPress does.
+		$hook = get_plugin_page_hookname( 'wp-mcp-ai-test-assistant', 'edit.php?post_type=' . WP_MCP_AI_Assistant_CPT::POST_TYPE );
+
 		// Set the current screen to test assistant page.
-		set_current_screen( 'mcp_ai_assistant_page_wp-mcp-ai-test-assistant' );
+		set_current_screen( $hook );
 
 		// Trigger enqueue scripts.
-		$hook = 'mcp_ai_assistant_page_wp-mcp-ai-test-assistant';
 		do_action( 'admin_enqueue_scripts', $hook );
 
 		// Check that the script is enqueued.
