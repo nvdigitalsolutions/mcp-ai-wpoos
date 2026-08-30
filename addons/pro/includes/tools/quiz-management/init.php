@@ -32,6 +32,8 @@ if ( function_exists( 'jet_engine' ) ) {
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-research-page.php';
 	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-settings-page.php';
+	WP_MCP_AI_Quiz_Research_Page::init();
+	new WP_MCP_AI_Quiz_Settings_Page();
 }
 
 /**

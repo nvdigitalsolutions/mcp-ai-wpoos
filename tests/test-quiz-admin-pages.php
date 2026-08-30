@@ -83,12 +83,30 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 	protected $original_submenu;
 
 	/**
+	 * Load the quiz admin page classes and register their hooks.
+	 *
+	 * The production init wires them inside its is_admin() branch, which
+	 * never executes under WP_UnitTestCase (init.php is already required
+	 * by the module registry before set_current_screen() makes is_admin()
+	 * true), so the suite wires them itself. WP_UnitTestCase resets hooks
+	 * between tests, so this must run in every test that asserts menus.
+	 */
+	private function load_admin_pages() {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-settings-page.php';
+		WP_MCP_AI_Quiz_Research_Page::init();
+		new WP_MCP_AI_Quiz_Settings_Page();
+	}
+
+	/**
 	 * Test that Quiz CPT is registered when enabled.
 	 */
 	public function test_quiz_cpt_registered_when_enabled() {
-		// Initialize the CPT.
-		WP_MCP_AI_Quiz_CPT::init();
-		do_action( 'init' );
+		// Register the CPT directly. Production wires this on the 'init'
+		// hook, but re-firing that action under WP_UnitTestCase re-runs
+		// WooCommerce's block registrations and pollutes the test with
+		// incorrect-usage notices.
+		WP_MCP_AI_Quiz_CPT::register_post_types();
 
 		// Check if the post type is registered.
 		$post_type = get_post_type_object( 'mcp_ai_quiz' );
@@ -106,10 +124,10 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php';
 		}
+		$this->load_admin_pages();
 
-		// Initialize CPT to ensure it's registered.
-		WP_MCP_AI_Quiz_CPT::init();
-		do_action( 'init' );
+		// Register the CPT directly (see test_quiz_cpt_registered_when_enabled).
+		WP_MCP_AI_Quiz_CPT::register_post_types();
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
@@ -143,10 +161,10 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php';
 		}
+		$this->load_admin_pages();
 
-		// Initialize CPT to ensure it's registered.
-		WP_MCP_AI_Quiz_CPT::init();
-		do_action( 'init' );
+		// Register the CPT directly (see test_quiz_cpt_registered_when_enabled).
+		WP_MCP_AI_Quiz_CPT::register_post_types();
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
@@ -180,10 +198,10 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php';
 		}
+		$this->load_admin_pages();
 
-		// Initialize CPT.
-		WP_MCP_AI_Quiz_CPT::init();
-		do_action( 'init' );
+		// Register the CPT directly (see test_quiz_cpt_registered_when_enabled).
+		WP_MCP_AI_Quiz_CPT::register_post_types();
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
@@ -229,10 +247,12 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/quiz-management/init.php';
 		}
+		$this->load_admin_pages();
 
-		// Initialize CPT (it won't register when disabled, but that's expected).
+		// When the quiz system is disabled, the CPT init() bails without
+		// hooking registration — the CPT stays unregistered in a fresh
+		// state (it may persist from earlier tests in this process).
 		WP_MCP_AI_Quiz_CPT::init();
-		do_action( 'init' );
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
