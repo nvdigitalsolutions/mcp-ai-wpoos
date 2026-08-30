@@ -11,7 +11,40 @@
  * @license   GPL-3.0-or-later
  */
 
+/**
+ * Class Test_Pro_Dashboard_Diagnostic_Scripts.
+ */
 class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
+
+	/**
+	 * Set up before each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// The Pro Dashboard singleton registers its enqueue hooks only on
+		// first construction; re-invoke init_hooks() so they exist in this
+		// test (wp-phpunit resets hooks between tests).
+		if ( class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
+			$dashboard            = WP_MCP_AI_Pro_Dashboard::get_instance();
+			$dashboard_reflection = new ReflectionClass( $dashboard );
+			$init_hooks_method    = $dashboard_reflection->getMethod( 'init_hooks' );
+			$init_hooks_method->setAccessible( true );
+			$init_hooks_method->invoke( $dashboard );
+		}
+
+		// Reset script and style queues so enqueue assertions are not
+		// affected by leftovers from previous tests. Dequeueing via the
+		// public API also invalidates the internal dependency memo.
+		global $wp_scripts;
+		foreach ( (array) $wp_scripts->queue as $handle ) {
+			wp_dequeue_script( $handle );
+		}
+		foreach ( (array) wp_styles()->queue as $handle ) {
+			wp_dequeue_style( $handle );
+		}
+	}
+
 	/**
 	 * Test that scripts are registered on main dashboard page.
 	 */
