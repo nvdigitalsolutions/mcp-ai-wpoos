@@ -75,7 +75,7 @@ class WP_MCP_AI_A2A_Webhook_Handler {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 			$task_id = isset( $task['id'] ) ? $task['id'] : 'unknown';
 			$state   = isset( $task['status']['state'] ) ? $task['status']['state'] : 'unknown';
-			WP_MCP_AI_Logger::info(
+			WP_MCP_AI_Logger::log_info(
 				sprintf( 'A2A webhook: task %s updated to state %s', $task_id, $state )
 			);
 		}
