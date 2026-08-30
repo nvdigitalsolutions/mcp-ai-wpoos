@@ -192,7 +192,7 @@ jobs:
 
             1. Download the ZIP below and upload it via Plugins → Add New → Upload Plugin
             2. Configure Stripe keys, price, addon version, and ZIP source under **NV oOS Checkout** in WP-Admin
-            3. Point a Stripe webhook at the endpoint shown on the settings page (`charge.refunded`, `charge.dispute.created`)
+            3. Point a Stripe webhook at the endpoint shown on the settings page (`payment_intent.succeeded`, `charge.refunded`, `charge.dispute.created`)
 
             See `addons/checkout-api/README.md` in the repository for the full setup guide.
 

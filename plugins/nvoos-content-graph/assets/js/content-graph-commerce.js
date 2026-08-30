@@ -182,7 +182,51 @@
 	}
 
 	/**
+	 * Read a remembered, paid-but-unverified PaymentIntent ID.
+	 *
+	 * @return {string} Intent ID or empty string.
+	 */
+	function readPendingIntent() {
+		try {
+			return sessionStorage.getItem( 'nvoosCgPendingIntent' ) || '';
+		} catch ( e ) {
+			return '';
+		}
+	}
+
+	/**
+	 * Remember an intent whose verification did not complete, so a later
+	 * modal visit can resume instead of charging the buyer twice.
+	 *
+	 * @param {string} intentId PaymentIntent ID.
+	 * @return {void}
+	 */
+	function rememberPendingIntent( intentId ) {
+		try {
+			sessionStorage.setItem( 'nvoosCgPendingIntent', intentId );
+		} catch ( e ) {
+			// Storage unavailable — recovery simply won't survive a reload.
+		}
+	}
+
+	/**
+	 * Forget the remembered pending intent.
+	 *
+	 * @return {void}
+	 */
+	function forgetPendingIntent() {
+		try {
+			sessionStorage.removeItem( 'nvoosCgPendingIntent' );
+		} catch ( e ) {
+			// Ignore.
+		}
+	}
+
+	/**
 	 * Create the Stripe PaymentIntent session and mount the Payment Element.
+	 *
+	 * When a previous payment never finished verifying, resume it first —
+	 * the vendor may have issued the license via webhook in the meantime.
 	 *
 	 * @param {HTMLElement} payBox Container for the payment element.
 	 * @param {HTMLButtonElement} payBtn The pay/verify button.
@@ -191,6 +235,12 @@
 	function startCheckout( payBox, payBtn ) {
 		if ( ! window.Stripe ) {
 			showError( 'Stripe failed to load. Check your network connection and try again.' );
+			return;
+		}
+
+		var pendingId = readPendingIntent();
+		if ( pendingId ) {
+			verifyAndInstall( pendingId, { fromPending: true } );
 			return;
 		}
 
@@ -244,7 +294,8 @@
 					showError( i18n.generic_error );
 					return;
 				}
-				if ( 'succeeded' === intent.status ) {
+			if ( 'succeeded' === intent.status ) {
+					rememberPendingIntent( intent.id );
 					verifyAndInstall( intent.id );
 				} else {
 					showError( 'Payment is still processing. Click Verify once it completes.' );
@@ -273,9 +324,11 @@
 			}
 
 			if ( 'succeeded' === intent.status ) {
+				rememberPendingIntent( intent.id );
 				verifyAndInstall( intent.id );
 			} else if ( 'processing' === intent.status ) {
 				verifying = true;
+				rememberPendingIntent( intent.id );
 				payBtn.textContent = 'Verify';
 				showError( 'Payment is still processing. Click Verify once it completes.' );
 				setBusy( false );
@@ -291,9 +344,13 @@
 	 * Verify the payment server-side, then install and activate the addon.
 	 *
 	 * @param {string} paymentIntentId Stripe PaymentIntent ID.
+	 * @param {Object} opts            Options: { fromPending: bool } marks a
+	 *                                 recovery attempt for a remembered intent.
 	 * @return {void}
 	 */
-	function verifyAndInstall( paymentIntentId ) {
+	function verifyAndInstall( paymentIntentId, opts ) {
+		opts = opts || {};
+
 		var payBox = dialog.querySelector( '.nvoos-cg-pay-element' );
 		var spinner = el( 'div', 'nvoos-cg-installing', i18n.installing || 'Installing…' );
 		payBox.innerHTML = '';
@@ -306,6 +363,31 @@
 				payBox.innerHTML = '';
 				var message = ( data.message || i18n.generic_error ) + '';
 				showError( message );
+
+				// Recovery attempt for a remembered purchase: offer retry
+				// (the vendor webhook may not have fired yet) or a fresh
+				// checkout. Never silently start a new chargeable intent.
+				if ( opts.fromPending ) {
+					errorBox.style.display = 'none';
+					payBox.appendChild( el( 'p', 'nvoos-cg-pending-message', message ) );
+					var retryBtn = el( 'button', 'button button-primary', i18n.pending_retry || 'Check again' );
+					retryBtn.type = 'button';
+					retryBtn.addEventListener( 'click', function () {
+						verifyAndInstall( paymentIntentId, { fromPending: true } );
+					} );
+					var newBtn = el( 'button', 'button', i18n.pending_new || 'Start a new purchase' );
+					newBtn.type = 'button';
+					newBtn.addEventListener( 'click', function () {
+						forgetPendingIntent();
+						closeModal();
+						openModal();
+					} );
+					payBox.appendChild( retryBtn );
+					payBox.appendChild( document.createTextNode( ' ' ) );
+					payBox.appendChild( newBtn );
+					return;
+				}
+
 				if ( data.zip_url ) {
 					errorBox.style.display = 'none';
 					var dl = el( 'a', 'button', 'Download ZIP manually' );
@@ -318,6 +400,7 @@
 				return;
 			}
 
+			forgetPendingIntent();
 			renderSuccess( data );
 		} ).catch( function () {
 			showError( i18n.generic_error );

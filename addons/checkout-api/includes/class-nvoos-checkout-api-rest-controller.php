@@ -256,9 +256,12 @@ class NVOOS_Checkout_API_Rest_Controller {
 	/**
 	 * POST /webhooks/stripe — signature-gated, idempotent webhook receiver.
 	 *
-	 * Handles charge.refunded / charge.dispute.created by revoking the
-	 * matching license. First delivery of an event returns 200 quickly;
-	 * Stripe retries are acknowledged (200) without reprocessing.
+	 * `payment_intent.succeeded` issues the license server-side, so a buyer
+	 * whose browser died right after paying still gets their license (their
+	 * site's /verify call finds it later — idempotent per intent).
+	 * `charge.refunded` / `charge.dispute.created` revoke the matching
+	 * license. First delivery of an event returns 200 quickly; Stripe
+	 * retries are acknowledged (200) without reprocessing.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
@@ -294,6 +297,17 @@ class NVOOS_Checkout_API_Rest_Controller {
 		self::record_event( (string) $event['id'] );
 
 		$type = (string) ( $event['type'] ?? '' );
+
+		// A payment succeeded — issue the license server-side so an
+		// interrupted browser flow never strands a paid buyer.
+		if ( 'payment_intent.succeeded' === $type ) {
+			$intent = $event['data']['object'] ?? array();
+			if ( is_array( $intent ) ) {
+				$this->issue_license_for_intent( $intent );
+			}
+			return rest_ensure_response( array( 'received' => true ) );
+		}
+
 		if ( in_array( $type, array( 'charge.refunded', 'charge.dispute.created' ), true ) ) {
 			$charge = $event['data']['object'] ?? array();
 			if ( is_array( $charge ) && ! empty( $charge['payment_intent'] ) ) {
@@ -305,6 +319,56 @@ class NVOOS_Checkout_API_Rest_Controller {
 		}
 
 		return rest_ensure_response( array( 'received' => true ) );
+	}
+
+	/**
+	 * Issue a license from a webhook-delivered PaymentIntent.
+	 *
+	 * Idempotent per payment intent and gated by the same server-side
+	 * checks as the verify endpoint: succeeded status, amount, product
+	 * and site binding from the intent metadata.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string,mixed> $intent PaymentIntent object from the event.
+	 * @return string Outcome: 'issued', 'exists', 'not_succeeded', 'invalid_metadata', 'amount_mismatch', or 'insert_failed'.
+	 */
+	private function issue_license_for_intent( array $intent ): string {
+		if ( 'succeeded' !== ( $intent['status'] ?? '' ) ) {
+			return 'not_succeeded';
+		}
+
+		$metadata  = $intent['metadata'] ?? array();
+		$product   = (string) ( $metadata['product'] ?? '' );
+		$site_url  = (string) ( $metadata['site_url'] ?? '' );
+		$intent_id = (string) ( $intent['id'] ?? '' );
+
+		if ( '' === $intent_id || ! in_array( $product, self::PRODUCTS, true ) || '' === $site_url ) {
+			return 'invalid_metadata';
+		}
+
+		if ( (int) ( $intent['amount_received'] ?? 0 ) < NVOOS_Checkout_API_Settings::price_cents() ) {
+			return 'amount_mismatch';
+		}
+
+		if ( null !== NVOOS_Checkout_API_License_Store::get_by_payment_intent( $intent_id ) ) {
+			return 'exists';
+		}
+
+		$created = NVOOS_Checkout_API_License_Store::create(
+			array(
+				'license_key'           => bin2hex( random_bytes( 20 ) ),
+				'product'               => $product,
+				'site_url'              => $site_url,
+				'stripe_payment_intent' => $intent_id,
+				'stripe_customer'       => isset( $intent['customer'] ) ? sanitize_text_field( (string) $intent['customer'] ) : '',
+				'amount'                => (int) $intent['amount_received'],
+				'currency'              => NVOOS_Checkout_API_Settings::currency(),
+				'addon_version'         => NVOOS_Checkout_API_Settings::addon_version(),
+			)
+		);
+
+		return is_wp_error( $created ) ? 'insert_failed' : 'issued';
 	}
 
 	/**

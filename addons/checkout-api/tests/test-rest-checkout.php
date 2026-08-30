@@ -303,4 +303,111 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 		$license = NVOOS_Checkout_API_License_Store::get_by_key( 'revoke-me' );
 		$this->assertSame( NVOOS_Checkout_API_License_Store::STATUS_REVOKED, $license['status'] );
 	}
+
+	/**
+	 * payment_intent.succeeded issues the license server-side (interrupted
+	 * browser recovery) and is idempotent across Stripe retries.
+	 *
+	 * @return void
+	 */
+	public function test_webhook_issues_license_on_intent_succeeded(): void {
+		update_option(
+			NVOOS_Checkout_API_Settings::OPTION,
+			array_merge(
+				get_option( NVOOS_Checkout_API_Settings::OPTION, array() ),
+				array( 'stripe_webhook_secret' => 'whsec_test' )
+			)
+		);
+
+		$payload = wp_json_encode(
+			array(
+				'id'   => 'evt_intent_ok',
+				'type' => 'payment_intent.succeeded',
+				'data' => array(
+					'object' => array(
+						'id'              => 'pi_orphan',
+						'status'          => 'succeeded',
+						'amount_received' => 4900,
+						'currency'        => 'usd',
+						'customer'        => 'cus_orphan',
+						'metadata'        => array(
+							'product'  => 'nvoos-content-graph-ai',
+							'site_url' => 'https://customer.example',
+						),
+					),
+				),
+			)
+		);
+
+		$timestamp = time();
+		$signature = hash_hmac( 'sha256', $timestamp . '.' . $payload, 'whsec_test' );
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/webhooks/stripe' );
+		$request->set_header( 'stripe-signature', 't=' . $timestamp . ',v1=' . $signature );
+		$request->set_body( $payload );
+
+		$response = $this->controller->handle_webhook( $request );
+
+		$this->assertNotWPError( $response );
+		$this->assertTrue( $response->get_data()['received'] );
+
+		$license = NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_orphan' );
+		$this->assertNotNull( $license );
+		$this->assertSame( NVOOS_Checkout_API_License_Store::STATUS_ACTIVE, $license['status'] );
+		$this->assertSame( 1, NVOOS_Checkout_API_License_Store::count() );
+
+		// A retried delivery of the same event must not duplicate the license.
+		$retry = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/webhooks/stripe' );
+		$retry->set_header( 'stripe-signature', 't=' . $timestamp . ',v1=' . $signature );
+		$retry->set_body( $payload );
+
+		$retry_response = $this->controller->handle_webhook( $retry );
+
+		$this->assertNotWPError( $retry_response );
+		$this->assertTrue( $retry_response->get_data()['duplicate'] );
+		$this->assertSame( 1, NVOOS_Checkout_API_License_Store::count() );
+	}
+
+	/**
+	 * A subsequent /verify for a webhook-issued license returns it with a
+	 * fresh signed download URL (the interrupted buyer's recovery path).
+	 *
+	 * @return void
+	 */
+	public function test_verify_picks_up_webhook_issued_license(): void {
+		$this->test_webhook_issues_license_on_intent_succeeded();
+
+		$this->stub_stripe(
+			array(
+				array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode(
+						array(
+							'id'              => 'pi_orphan',
+							'status'          => 'succeeded',
+							'amount_received' => 4900,
+							'currency'        => 'usd',
+							'metadata'        => array(
+								'product'  => 'nvoos-content-graph-ai',
+								'site_url' => 'https://customer.example',
+							),
+						)
+					),
+				)
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/verify' );
+		$request->set_param( 'product', 'nvoos-content-graph-ai' );
+		$request->set_param( 'site_url', 'https://customer.example' );
+		$request->set_param( 'payment_intent', 'pi_orphan' );
+
+		$response = $this->controller->verify_payment( $request );
+
+		$this->assertNotWPError( $response );
+		$data = $response->get_data();
+		$this->assertSame( NVOOS_Checkout_API_License_Store::get_by_payment_intent( 'pi_orphan' )['license_key'], $data['license_key'] );
+		$this->assertStringContainsString( 'nvoos_checkout_download=1', $data['download_url'] );
+		$this->assertSame( 1, NVOOS_Checkout_API_License_Store::count() );
+	}
 }

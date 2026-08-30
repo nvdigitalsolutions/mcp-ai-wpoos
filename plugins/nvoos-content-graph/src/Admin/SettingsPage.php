@@ -468,6 +468,8 @@ class SettingsPage {
 					'refresh'       => __( 'Reload page', 'nvoos-content-graph' ),
 					'license_label' => __( 'License key', 'nvoos-content-graph' ),
 					'test_mode'     => __( 'Test mode — no real payment will be taken.', 'nvoos-content-graph' ),
+					'pending_retry' => __( 'Check again', 'nvoos-content-graph' ),
+					'pending_new'   => __( 'Start a new purchase', 'nvoos-content-graph' ),
 				),
 			)
 		);

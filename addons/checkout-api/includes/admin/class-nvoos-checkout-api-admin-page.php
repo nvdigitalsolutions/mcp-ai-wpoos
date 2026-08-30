@@ -138,7 +138,7 @@ class NVOOS_Checkout_API_Admin_Page {
 									echo wp_kses(
 										sprintf(
 											/* translators: %s: webhook endpoint URL. */
-											__( 'whsec_…. Point Stripe at %s with events: charge.refunded, charge.dispute.created.', 'nvoos-checkout-api' ),
+											__( 'whsec_…. Point Stripe at %s with events: payment_intent.succeeded, charge.refunded, charge.dispute.created.', 'nvoos-checkout-api' ),
 											'<code>' . esc_html( rest_url( NVOOS_Checkout_API_Rest_Controller::REST_NAMESPACE . '/webhooks/stripe' ) ) . '</code>'
 										),
 										array( 'code' => array() )

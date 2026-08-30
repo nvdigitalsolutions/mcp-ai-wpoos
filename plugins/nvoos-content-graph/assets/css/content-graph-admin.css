@@ -216,6 +216,11 @@
 	}
 }
 
+.nvoos-cg-pending-message {
+	font-size: 13px;
+	margin: 0 0 12px;
+}
+
 .nvoos-cg-success-title {
 	margin-top: 0;
 }

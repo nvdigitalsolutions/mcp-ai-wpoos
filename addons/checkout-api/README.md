@@ -42,7 +42,7 @@ sequenceDiagram
 |---|---|---|
 | `POST /wp-json/nvoos-checkout/v1/session` | Public, IP rate-limited | Create a Stripe PaymentIntent |
 | `POST /wp-json/nvoos-checkout/v1/verify` | Public, IP rate-limited | Verify payment, issue license + signed download URL |
-| `POST /wp-json/nvoos-checkout/v1/webhooks/stripe` | Stripe signature | Refund/dispute → license revocation |
+| `POST /wp-json/nvoos-checkout/v1/webhooks/stripe` | Stripe signature | `payment_intent.succeeded` issues the license server-side (interrupted-browser recovery); refunds/disputes revoke |
 | `GET /?nvoos_checkout_download=1&license=…&expires=…&token=…` | Signed HMAC token | Stream the addon ZIP |
 
 ### Why the session/verify routes are public
@@ -63,8 +63,11 @@ replayed from a different site (site binding) or for a different product.
    ZIP source (defaults to the GitHub release pattern; set a private mirror
    URL or absolute path if you want the download gated behind your CDN).
 3. In the Stripe dashboard, add a webhook endpoint pointing at the URL shown
-   on the settings screen, with events `charge.refunded` and
-   `charge.dispute.created`, and paste the signing secret (`whsec_…`).
+   on the settings screen, with events `payment_intent.succeeded`,
+   `charge.refunded`, and `charge.dispute.created`, and paste the signing
+   secret (`whsec_…`). The `payment_intent.succeeded` event is what issues
+   the license when a buyer's browser flow is interrupted after paying —
+   their site picks the license up via `/verify` when they return.
 4. Publish the first addon release so the ZIP source resolves (the addon
    caches it under `wp-content/uploads/nvoos-checkout/` per version).
 5. Verify with Stripe test cards while test mode is on; switch to live keys
