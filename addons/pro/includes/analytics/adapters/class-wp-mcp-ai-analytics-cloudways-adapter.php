@@ -45,7 +45,7 @@ class WP_MCP_AI_Analytics_Cloudways_Adapter implements WP_MCP_AI_Analytics_Adapt
 			return false;
 		}
 		$client = WP_MCP_AI_Cloudways_Client::instance();
-		return $client->is_authenticated();
+		return $client->is_configured();
 	}
 
 	/**
@@ -85,8 +85,8 @@ class WP_MCP_AI_Analytics_Cloudways_Adapter implements WP_MCP_AI_Analytics_Adapt
 		try {
 			$servers = $client->get_servers();
 			if ( is_array( $servers ) ) {
-				$server_count = count( $servers );
-				$app_count    = 0;
+				$server_count  = count( $servers );
+				$app_count     = 0;
 				$total_traffic = 0;
 
 				foreach ( $servers as $server ) {
