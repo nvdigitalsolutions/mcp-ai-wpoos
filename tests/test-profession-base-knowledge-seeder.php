@@ -63,6 +63,9 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 		// Clear seeded options.
 		delete_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION );
 		delete_option( WP_MCP_AI_Profession_Base_Knowledge_Seeder::SEEDED_OPTION );
+
+		// Clear the repository cache so find_all() sees fresh data.
+		( new WP_MCP_AI_Profession_Repository() )->clear_cache();
 	}
 
 	/**
@@ -80,20 +83,19 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test creating a profession and seeding base knowledge.
+	 * Test that seeding populates knowledge base content from a document.
 	 */
-	public function test_seed_base_knowledge_creates_attachment() {
-		// Create a test profession.
+	public function test_seed_base_knowledge_populates_content() {
+		// Create a profession with a slug that has a bundled knowledge document.
 		$repository      = new WP_MCP_AI_Profession_Repository();
 		$profession_data = array(
-			'title'            => 'Test Profession',
-			'slug'             => 'test_profession',
+			'title'            => 'Test Accountant',
+			'slug'             => 'accountant',
 			'description'      => 'A test profession for unit testing.',
-			'category'         => 'technical',
+			'category'         => 'advisory',
 			'role_description' => 'Test role description',
 			'expertise'        => array( 'Testing', 'Quality Assurance' ),
 			'warnings'         => array( 'This is a test warning' ),
-			'knowledge_base'   => 'Test knowledge base content',
 			'default_tools'    => array( 'web_search', 'search_content' ),
 		);
 
@@ -107,40 +109,27 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 		// Run base knowledge seeder.
 		WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( false );
 
-		// Check that META_MEMORY_FILES is set.
-		$memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
-		$this->assertIsArray( $memory_files, 'META_MEMORY_FILES should be an array' );
-		$this->assertNotEmpty( $memory_files, 'META_MEMORY_FILES should not be empty' );
-		$this->assertCount( 1, $memory_files, 'Should have exactly one attachment' );
+		// Check that META_KNOWLEDGE_BASE was populated from the bundled document.
+		$knowledge_base = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true );
+		$this->assertIsString( $knowledge_base, 'Knowledge base should be a string' );
+		$this->assertNotEmpty( $knowledge_base, 'Knowledge base should not be empty' );
 
-		// Check that the attachment exists.
-		$attachment_id = $memory_files[0];
-		$attachment    = get_post( $attachment_id );
-		$this->assertNotNull( $attachment, 'Attachment should exist' );
-		$this->assertEquals( 'attachment', $attachment->post_type, 'Should be an attachment' );
-		$this->assertEquals( $post_id, $attachment->post_parent, 'Attachment should be attached to profession' );
-
-		// Check idempotency markers.
-		$slug_marker = get_post_meta( $attachment_id, '_wp_mcp_ai_seeded_profession_slug', true );
-		$this->assertEquals( 'test_profession', $slug_marker, 'Slug marker should match profession slug' );
-
-		$doc_type_marker = get_post_meta( $attachment_id, '_wp_mcp_ai_seeded_profession_doc_type', true );
-		$this->assertEquals( 'base_knowledge', $doc_type_marker, 'Doc type marker should be base_knowledge' );
+		// The base knowledge seeding flag should now be set.
+		$this->assertTrue( get_option( WP_MCP_AI_Profession_Base_Knowledge_Seeder::SEEDED_OPTION, false ) );
 
 		// Clean up.
 		wp_delete_post( $post_id, true );
-		wp_delete_attachment( $attachment_id, true );
 	}
 
 	/**
 	 * Test that META_SUPPORTED_MIME_TYPES is set correctly.
 	 */
 	public function test_supported_mime_types_are_set() {
-		// Create a test profession.
+		// Create a test profession with a slug that has a bundled document.
 		$repository      = new WP_MCP_AI_Profession_Repository();
 		$profession_data = array(
-			'title'            => 'Test Technical Profession',
-			'slug'             => 'test_technical',
+			'title'            => 'Test Architect',
+			'slug'             => 'architect',
 			'description'      => 'A technical test profession.',
 			'category'         => 'technical',
 			'role_description' => 'Test role',
@@ -171,14 +160,14 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test idempotency - running seed_base_knowledge twice should not create duplicates.
+	 * Test idempotency - running seed_base_knowledge twice should not change content.
 	 */
-	public function test_idempotency_no_duplicate_attachments() {
-		// Create a test profession.
+	public function test_idempotency_second_seed_keeps_content() {
+		// Create a test profession with a slug that has a bundled document.
 		$repository      = new WP_MCP_AI_Profession_Repository();
 		$profession_data = array(
 			'title'            => 'Test Idempotency',
-			'slug'             => 'test_idempotency',
+			'slug'             => 'accountant',
 			'description'      => 'Test idempotency.',
 			'category'         => 'advisory',
 			'role_description' => 'Test role',
@@ -194,60 +183,28 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 		// Run base knowledge seeder first time.
 		WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( false );
 
-		$memory_files_1 = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
-		$this->assertIsArray( $memory_files_1 );
-		$this->assertCount( 1, $memory_files_1, 'Should have one attachment after first seed' );
-		$attachment_id_1 = $memory_files_1[0];
+		$knowledge_1 = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true );
+		$this->assertNotEmpty( $knowledge_1, 'First seed should populate knowledge base' );
 
-		// Run base knowledge seeder second time (should be idempotent).
+		// Run base knowledge seeder second time (should be a no-op).
 		WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( false );
 
-		$memory_files_2 = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
-		$this->assertIsArray( $memory_files_2 );
-		$this->assertCount( 1, $memory_files_2, 'Should still have only one attachment after second seed' );
-		$attachment_id_2 = $memory_files_2[0];
-
-		$this->assertEquals( $attachment_id_1, $attachment_id_2, 'Attachment ID should be the same' );
-
-		// Verify no duplicate attachments were created.
-		$attachments = get_posts(
-			array(
-				'post_type'      => 'attachment',
-				'posts_per_page' => -1,
-				'post_status'    => 'any',
-				'fields'         => 'ids',
-				'meta_query'     => array(
-					'relation' => 'AND',
-					array(
-						'key'     => '_wp_mcp_ai_seeded_profession_slug',
-						'value'   => 'test_idempotency',
-						'compare' => '=',
-					),
-					array(
-						'key'     => '_wp_mcp_ai_seeded_profession_doc_type',
-						'value'   => 'base_knowledge',
-						'compare' => '=',
-					),
-				),
-			)
-		);
-
-		$this->assertCount( 1, $attachments, 'Should have exactly one attachment in database' );
+		$knowledge_2 = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true );
+		$this->assertEquals( $knowledge_1, $knowledge_2, 'Second seed should not change content' );
 
 		// Clean up.
 		wp_delete_post( $post_id, true );
-		wp_delete_attachment( $attachment_id_1, true );
 	}
 
 	/**
 	 * Test force mode can refresh MIME types.
 	 */
 	public function test_force_mode_refreshes_mime_types() {
-		// Create a test profession.
+		// Create a test profession with a slug that has a bundled document.
 		$repository      = new WP_MCP_AI_Profession_Repository();
 		$profession_data = array(
 			'title'            => 'Test Force Refresh',
-			'slug'             => 'test_force_refresh',
+			'slug'             => 'animator',
 			'description'      => 'Test force refresh.',
 			'category'         => 'creative',
 			'role_description' => 'Test role',
@@ -292,7 +249,7 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 		// Test financial category.
 		$financial_data = array(
 			'title'       => 'Test Financial',
-			'slug'        => 'test_financial',
+			'slug'        => 'bookkeeper',
 			'description' => 'Test',
 			'category'    => 'financial',
 		);
@@ -301,7 +258,7 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 		// Test healthcare category.
 		$healthcare_data = array(
 			'title'       => 'Test Healthcare',
-			'slug'        => 'test_healthcare',
+			'slug'        => 'biologist',
 			'description' => 'Test',
 			'category'    => 'healthcare',
 		);
@@ -348,16 +305,16 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that attachment file actually exists on disk.
+	 * Test that the bundled knowledge document exists on disk and matches the seeded content.
 	 */
-	public function test_attachment_file_exists() {
-		// Create a test profession.
+	public function test_knowledge_document_file_populates_content() {
+		// Create a test profession with a slug that has a bundled document.
 		$repository      = new WP_MCP_AI_Profession_Repository();
 		$profession_data = array(
 			'title'       => 'Test File Exists',
-			'slug'        => 'test_file_exists',
+			'slug'        => 'accountant',
 			'description' => 'Test',
-			'category'    => 'technical',
+			'category'    => 'advisory',
 		);
 
 		$post_id = $repository->save( $profession_data );
@@ -369,25 +326,20 @@ class Test_Profession_Base_Knowledge_Seeder extends WP_UnitTestCase {
 		// Run base knowledge seeder.
 		WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( false );
 
-		// Get attachment ID.
-		$memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
-		$this->assertIsArray( $memory_files );
-		$this->assertNotEmpty( $memory_files );
-		$attachment_id = $memory_files[0];
+		// Seeded knowledge base should be populated from the document.
+		$knowledge_base = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true );
+		$this->assertNotEmpty( $knowledge_base, 'Knowledge base content should be populated' );
 
-		// Get attached file path.
-		$file_path = get_attached_file( $attachment_id );
-		$this->assertNotEmpty( $file_path, 'File path should not be empty' );
-		$this->assertFileExists( $file_path, 'Attachment file should exist on disk' );
+		// The bundled document must exist on disk.
+		$doc_path = WP_MCP_AI_PATH . 'includes/knowledge-base/profession-documents/accountant.txt';
+		$this->assertFileExists( $doc_path, 'Knowledge document should exist on disk' );
 
-		// Verify it's in the correct subdirectory.
-		$this->assertStringContainsString( 'wp-mcp-ai/profession-knowledge', $file_path, 'File should be in correct subdirectory' );
-
-		// Verify filename format.
-		$this->assertStringContainsString( 'profession-test_file_exists-base-knowledge.txt', $file_path, 'Filename should match expected format' );
+		// The seeded content should match the bundled document; the meta value
+		// is sanitized through wp_kses_post on write.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Comparing seeded content against the bundled fixture file in a unit test.
+		$this->assertEquals( wp_kses_post( file_get_contents( $doc_path ) ), $knowledge_base, 'Seeded content should match the sanitized document file' );
 
 		// Clean up.
 		wp_delete_post( $post_id, true );
-		wp_delete_attachment( $attachment_id, true );
 	}
 }
