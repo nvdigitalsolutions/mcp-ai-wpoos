@@ -84,7 +84,7 @@ class WP_MCP_AI_Create_Woo_Product_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -103,7 +103,7 @@ class WP_MCP_AI_Create_Woo_Product_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -123,7 +123,7 @@ class WP_MCP_AI_Create_Woo_Product_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -170,7 +170,7 @@ class WP_MCP_AI_Create_Woo_Product_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -190,7 +190,7 @@ class WP_MCP_AI_Create_Woo_Product_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -210,7 +210,7 @@ class WP_MCP_AI_Create_Woo_Product_Validated_Tool_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertSame( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
