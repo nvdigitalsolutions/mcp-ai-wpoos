@@ -137,8 +137,10 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 			return $source_image;
 		}
 
-		// Get the source file path for processing.
-		$source_path = $source_image->generate_filename();
+		// Get the source file path for processing. load_source_image() stashes
+		// the actual on-disk path on the editor; generate_filename() is only a
+		// fallback because it appends a size suffix that may not exist.
+		$source_path = ! empty( $source_image->source_file_path ) ? $source_image->source_file_path : $source_image->generate_filename();
 
 		// Try methods based on preference.
 		$result = null;
@@ -155,7 +157,9 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 		}
 
 		// If free method failed or wasn't tried, and we're allowed to use paid.
-		if ( is_wp_error( $result ) && ( 'paid' === $method || 'auto' === $method ) ) {
+		// A null result means the free branch never ran (paid-only mode), so it
+		// must also be treated as "try paid".
+		if ( ( null === $result || is_wp_error( $result ) ) && ( 'paid' === $method || 'auto' === $method ) ) {
 			$result = $this->remove_background_paid( $source_path );
 			if ( is_wp_error( $result ) ) {
 				$errors['paid'] = $result->get_error_message();
