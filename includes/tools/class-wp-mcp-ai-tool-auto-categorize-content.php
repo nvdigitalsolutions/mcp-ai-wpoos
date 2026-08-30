@@ -375,14 +375,14 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 
 		// Call AI model.
 		try {
-			$response = $client->complete(
+			$response = $client->create_chat_completion(
 				array(
-					'messages'    => array(
-						array(
-							'role'    => 'user',
-							'content' => $prompt,
-						),
+					array(
+						'role'    => 'user',
+						'content' => $prompt,
 					),
+				),
+				array(
 					'model'       => $arguments['model'] ?? 'gpt-4o-mini',
 					'temperature' => 0.3, // Lower temperature for more consistent categorization.
 				)
@@ -392,8 +392,13 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 				return $response;
 			}
 
+			// Extract content from the OpenAI-compatible response shape.
+			$content = isset( $response['choices'][0]['message']['content'] )
+				? $response['choices'][0]['message']['content']
+				: '';
+
 			// Parse AI response.
-			return $this->parse_ai_response( $response['content'] ?? '', $categories );
+			return $this->parse_ai_response( $content, $categories );
 		} catch ( Exception $e ) {
 			return new WP_Error(
 				'ai_analysis_failed',
@@ -523,10 +528,13 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	 * @return object|WP_Error AI client instance.
 	 */
 	private function get_ai_client( $arguments, $context ) {
-		// Get model router or client.
-		if ( class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
-			$router = WP_MCP_AI_Language_Model_Router::get_instance();
-			return $router->get_client( $arguments['model'] ?? 'gpt-4o-mini' );
+		// Get the model router from the DI container (the router is built with
+		// all provider clients and has no get_instance() accessor).
+		if ( function_exists( 'wp_mcp_ai_container' ) ) {
+			$container = wp_mcp_ai_container();
+			if ( $container->has( 'router' ) ) {
+				return $container->get( 'router' );
+			}
 		}
 
 		// Fallback to OpenAI client.
