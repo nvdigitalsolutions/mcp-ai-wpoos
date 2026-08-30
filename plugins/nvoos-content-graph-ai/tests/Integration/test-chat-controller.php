@@ -16,7 +16,10 @@ declare(strict_types=1);
 namespace NvoosContentGraphAi\Tests;
 
 use NvoosContentGraphAi\Plugin;
+use NvoosContentGraphAi\CoreBridge;
 use NvoosContentGraphAi\Rest\ChatController;
+use Nvoos\Core\Application\Chat\ChatOrchestrator;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 
 /**
  * @group integration
@@ -414,5 +417,51 @@ class Test_Chat_Controller extends \WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'ai_system_prompt', $defaults );
 		$this->assertNotSame( '', $defaults['ai_system_prompt'] );
+	}
+
+	/**
+	 * Capability regression — the chat tester must not deny capable users.
+	 *
+	 * CoreBridge must wire a WordPress AuthProvider into the
+	 * ChatOrchestrator. Without it, ToolRegistry::execute() fails closed
+	 * and every tool declaring a required capability (all graph tools)
+	 * is denied even for administrators, surfacing as
+	 * "You do not have permission to execute '...'" in the chat tester.
+	 */
+	public function test_graph_stats_tool_executes_for_capable_user(): void {
+		$user = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user );
+
+		// Ensure the graph tools are bridged into the core registry
+		// (idempotent — the bridge skips slugs already registered).
+		do_action(
+			\NvoosContentGraph\Schema::ACTION_REGISTER_TOOLS,
+			\NvoosContentGraph\Plugin::instance()->getToolRegistry()
+		);
+
+		$bridge = CoreBridge::instance();
+
+		// The orchestrator must hold a wired auth provider (the root cause).
+		$reflection = new \ReflectionProperty( ChatOrchestrator::class, 'authProvider' );
+		$reflection->setAccessible( true );
+		$authProvider = $reflection->getValue( $bridge->chat );
+		$this->assertInstanceOf( AuthProviderInterface::class, $authProvider );
+
+		// Execute through the core registry exactly as the agentic loop does.
+		$result = $bridge->tools->execute(
+			'nvoos_content_graph_graph_stats',
+			array(),
+			array(
+				'user_id'       => get_current_user_id(),
+				'assistant_id'  => 0,
+				'agentic_loop'  => true,
+				'iteration'     => 1,
+				'auth_provider' => $authProvider,
+			)
+		);
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( (bool) ( $result['success'] ?? false ) );
+		$this->assertArrayHasKey( 'stats', $result );
 	}
 }
