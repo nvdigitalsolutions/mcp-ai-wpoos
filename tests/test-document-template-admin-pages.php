@@ -78,12 +78,33 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 	protected $original_submenu;
 
 	/**
+	 * Load the document template admin page classes and register their hooks.
+	 *
+	 * The production init wires them inside its is_admin() branch, which
+	 * never executes under WP_UnitTestCase (init.php is already required
+	 * by the module registry before set_current_screen() makes is_admin()
+	 * true), so the suite wires them itself. WP_UnitTestCase resets hooks
+	 * between tests, so this must run in every test that asserts menus.
+	 */
+	private function load_admin_pages() {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-template-research-page.php';
+		new WP_MCP_AI_Document_Generation_Settings_Page();
+		WP_MCP_AI_Document_Template_Research_Page::init();
+	}
+
+	/**
 	 * Test that Document Template CPT is registered.
 	 */
 	public function test_document_template_cpt_registered() {
-		// Initialize the CPT.
-		WP_MCP_AI_Document_Template_CPT::init();
-		do_action( 'init' );
+		// Ensure the CPT class is loaded when this suite runs in isolation.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-document-template-cpt.php';
+
+		// Register the CPT directly. Production wires this on the 'init'
+		// hook, but re-firing that action under WP_UnitTestCase re-runs
+		// WooCommerce's block registrations and pollutes the test with
+		// incorrect-usage notices.
+		WP_MCP_AI_Document_Template_CPT::register_post_type();
 
 		// Check if the post type is registered.
 		$post_type = get_post_type_object( 'mcp_ai_doc_tpl' );
@@ -101,10 +122,10 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/init.php' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/init.php';
 		}
+		$this->load_admin_pages();
 
-		// Initialize CPT to ensure it's registered.
-		WP_MCP_AI_Document_Template_CPT::init();
-		do_action( 'init' );
+		// Register the CPT directly (see test_document_template_cpt_registered).
+		WP_MCP_AI_Document_Template_CPT::register_post_type();
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
@@ -138,10 +159,10 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/init.php' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/init.php';
 		}
+		$this->load_admin_pages();
 
-		// Initialize CPT to ensure it's registered.
-		WP_MCP_AI_Document_Template_CPT::init();
-		do_action( 'init' );
+		// Register the CPT directly (see test_document_template_cpt_registered).
+		WP_MCP_AI_Document_Template_CPT::register_post_type();
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
@@ -180,10 +201,12 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/init.php' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/init.php';
 		}
+		$this->load_admin_pages();
 
-		// Initialize CPT to ensure it's registered.
-		WP_MCP_AI_Document_Template_CPT::init();
-		do_action( 'init' );
+		// The Document Template CPT is always registered (its init() does
+		// not gate registration on the toolkit setting), so register it
+		// directly here as well.
+		WP_MCP_AI_Document_Template_CPT::register_post_type();
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
