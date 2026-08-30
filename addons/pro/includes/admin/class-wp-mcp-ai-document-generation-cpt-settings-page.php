@@ -577,7 +577,9 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 		}
 
 		if ( isset( $input['ocr_max_pages_default'] ) ) {
-			$value = absint( $input['ocr_max_pages_default'] );
+			// Cast to int (not absint) so negative values clamp to 0 below
+			// instead of being coerced to their positive magnitude.
+			$value = (int) $input['ocr_max_pages_default'];
 			// Enforce min/max bounds.
 			$sanitized['ocr_max_pages_default'] = min( 100, max( 0, $value ) );
 		}
