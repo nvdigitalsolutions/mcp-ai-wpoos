@@ -25,6 +25,11 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
+		// The recall tool checks user_can( $user_id, 'read' ) before
+		// validating arguments; provide an authenticated admin so the
+		// suite exercises the wing/room logic instead of the permission gate.
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
 		// Skip the transient persistence leg in the headless test env so we
 		// can observe the canonical event payload without depending on the
 		// agent context manager singleton.
