@@ -19,6 +19,8 @@
 class Test_CRM_Toolkit extends WP_UnitTestCase {
 
 	/**
+	 * Tool registry instance.
+	 *
 	 * @var WP_MCP_AI_Tool_Registry
 	 */
 	private $registry;
@@ -44,13 +46,20 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	 */
 	private $test_activity_ids = array();
 
-	/** @var int */
+	/**
+	 * Admin user ID used as the current user.
+	 *
+	 * @var int
+	 */
 	private $admin_user_id;
 
 	// ────────────────────────────────────────────────────────
 	// Phase A — Engine infrastructure
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * SetUp.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -58,6 +67,53 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$settings                       = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_crm_toolkit'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Load the shared CRM engine classes when this suite runs in
+		// isolation. In a full run they are loaded by the pro module
+		// registry, so these requires are no-ops there.
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
+			$crm_dir      = WP_MCP_AI_PRO_PATH . 'includes/tools/crm/';
+			$engine_files = array(
+				'class-wp-mcp-ai-crm-engine.php',
+				'class-wp-mcp-ai-crm-codes.php',
+				'class-wp-mcp-ai-crm-audit.php',
+				'class-wp-mcp-ai-crm-capabilities.php',
+				'class-wp-mcp-ai-crm-consent.php',
+				'class-wp-mcp-ai-crm-pipeline-stages.php',
+				'class-wp-mcp-ai-crm-classifier.php',
+			);
+			foreach ( $engine_files as $file ) {
+				$path = $crm_dir . $file;
+				if ( file_exists( $path ) ) {
+					require_once $path;
+				}
+			}
+		}
+
+		// Register the CRM post types. Production wires these through
+		// CRM init.php on the 'init' hook, which has already fired inside
+		// WP_UnitTestCase, so register directly for this suite.
+		$cpt_map = array(
+			'WP_MCP_AI_Lead_CPT'              => 'mcp_ai_lead',
+			'WP_MCP_AI_Deal_CPT'              => 'mcp_ai_deal',
+			'WP_MCP_AI_CRM_Activity_CPT'      => 'mcp_ai_crm_activity',
+			'WP_MCP_AI_Sequence_CPT'          => 'mcp_ai_sequence',
+			'WP_MCP_AI_CRM_Workflow_Rule_CPT' => 'mcp_ai_crm_wf_rule',
+		);
+		foreach ( $cpt_map as $class_name => $post_type ) {
+			if ( post_type_exists( $post_type ) ) {
+				continue;
+			}
+			if ( ! class_exists( $class_name ) ) {
+				$file = WP_MCP_AI_PRO_PATH . 'includes/class-' . strtolower( str_replace( '_', '-', $class_name ) ) . '.php';
+				if ( file_exists( $file ) ) {
+					require_once $file;
+				}
+			}
+			if ( class_exists( $class_name ) && method_exists( $class_name, 'register_post_type' ) ) {
+				$class_name::register_post_type();
+			}
+		}
 
 		$this->admin_user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_user_id );
@@ -67,6 +123,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * TearDown.
+	 */
 	public function tearDown(): void {
 		foreach ( $this->test_lead_ids as $id ) {
 			wp_delete_post( $id, true );
@@ -89,34 +148,58 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase A — Engine classes exist
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test engine class exists.
+	 */
 	public function test_engine_class_exists() {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_CRM_Engine' ), 'CRM Engine class should exist.' );
 	}
 
+	/**
+	 * Test codes class exists.
+	 */
 	public function test_codes_class_exists() {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_CRM_Codes' ), 'CRM Codes class should exist.' );
 	}
 
+	/**
+	 * Test audit class exists.
+	 */
 	public function test_audit_class_exists() {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_CRM_Audit' ), 'CRM Audit class should exist.' );
 	}
 
+	/**
+	 * Test capabilities class exists.
+	 */
 	public function test_capabilities_class_exists() {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_CRM_Capabilities' ), 'CRM Capabilities class should exist.' );
 	}
 
+	/**
+	 * Test consent class exists.
+	 */
 	public function test_consent_class_exists() {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_CRM_Consent' ), 'CRM Consent class should exist.' );
 	}
 
+	/**
+	 * Test pipeline stages class exists.
+	 */
 	public function test_pipeline_stages_class_exists() {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_CRM_Pipeline_Stages' ), 'CRM Pipeline Stages class should exist.' );
 	}
 
+	/**
+	 * Test classifier class exists.
+	 */
 	public function test_classifier_class_exists() {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_CRM_Classifier' ), 'CRM Classifier class should exist.' );
 	}
 
+	/**
+	 * Test engine returns settings.
+	 */
 	public function test_engine_returns_settings() {
 		$settings = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
 		$this->assertIsArray( $settings );
@@ -127,6 +210,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'consent', $settings );
 	}
 
+	/**
+	 * Test engine score label.
+	 */
 	public function test_engine_score_label() {
 		$this->assertSame( 'hot', WP_MCP_AI_CRM_Engine::score_label( 85 ), 'Score 85 should be hot.' );
 		$this->assertSame( 'warm', WP_MCP_AI_CRM_Engine::score_label( 55 ), 'Score 55 should be warm.' );
@@ -134,6 +220,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertSame( 'unscored', WP_MCP_AI_CRM_Engine::score_label( null ), 'Null score should be unscored.' );
 	}
 
+	/**
+	 * Test engine calculate lead score.
+	 */
 	public function test_engine_calculate_lead_score() {
 		$score = WP_MCP_AI_CRM_Engine::calculate_lead_score(
 			array(
@@ -147,17 +236,26 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertLessThanOrEqual( 100, $score );
 	}
 
+	/**
+	 * Test codes validates channels.
+	 */
 	public function test_codes_validates_channels() {
 		$this->assertTrue( WP_MCP_AI_CRM_Codes::is_valid_channel( 'email' ) );
 		$this->assertTrue( WP_MCP_AI_CRM_Codes::is_valid_channel( 'whatsapp' ) );
 		$this->assertFalse( WP_MCP_AI_CRM_Codes::is_valid_channel( 'snail_mail' ) );
 	}
 
+	/**
+	 * Test codes validates intents.
+	 */
 	public function test_codes_validates_intents() {
 		$this->assertTrue( WP_MCP_AI_CRM_Codes::is_valid_intent( 'demo_request' ) );
 		$this->assertTrue( WP_MCP_AI_CRM_Codes::is_valid_intent( 'complaint' ) );
 	}
 
+	/**
+	 * Test pipeline stages returns all.
+	 */
 	public function test_pipeline_stages_returns_all() {
 		$stages = WP_MCP_AI_CRM_Pipeline_Stages::get_stages();
 		$this->assertIsArray( $stages );
@@ -166,12 +264,18 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'closed_lost', $stages );
 	}
 
+	/**
+	 * Test pipeline stages is won lost.
+	 */
 	public function test_pipeline_stages_is_won_lost() {
 		$this->assertTrue( WP_MCP_AI_CRM_Pipeline_Stages::is_won( 'closed_won' ) );
 		$this->assertTrue( WP_MCP_AI_CRM_Pipeline_Stages::is_lost( 'closed_lost' ) );
 		$this->assertFalse( WP_MCP_AI_CRM_Pipeline_Stages::is_won( 'prospecting' ) );
 	}
 
+	/**
+	 * Test audit records entry.
+	 */
 	public function test_audit_records_entry() {
 		WP_MCP_AI_CRM_Audit::record( 'test_event', 'test_type', 123, array( 'key' => 'value' ) );
 		$entries = WP_MCP_AI_CRM_Audit::get_entries( 1, 1, 'test_event' );
@@ -181,6 +285,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		WP_MCP_AI_CRM_Audit::clear();
 	}
 
+	/**
+	 * Test classifier classify returns structure.
+	 */
 	public function test_classifier_classify_returns_structure() {
 		$result = WP_MCP_AI_CRM_Classifier::classify( 'I need a demo of your product', 'email' );
 		if ( ! is_wp_error( $result ) ) {
@@ -191,6 +298,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Test classifier bant extraction.
+	 */
 	public function test_classifier_bant_extraction() {
 		$bant = WP_MCP_AI_CRM_Classifier::extract_bant(
 			'We have budget approved and need a solution urgently. I am the VP of Engineering.'
@@ -207,22 +317,37 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase B — CPT registration
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test lead cpt registered.
+	 */
 	public function test_lead_cpt_registered() {
 		$this->assertTrue( post_type_exists( 'mcp_ai_lead' ), 'Lead CPT should be registered.' );
 	}
 
+	/**
+	 * Test deal cpt registered.
+	 */
 	public function test_deal_cpt_registered() {
 		$this->assertTrue( post_type_exists( 'mcp_ai_deal' ), 'Deal CPT should be registered.' );
 	}
 
+	/**
+	 * Test activity cpt registered.
+	 */
 	public function test_activity_cpt_registered() {
 		$this->assertTrue( post_type_exists( 'mcp_ai_crm_activity' ), 'Activity CPT should be registered.' );
 	}
 
+	/**
+	 * Test sequence cpt registered.
+	 */
 	public function test_sequence_cpt_registered() {
 		$this->assertTrue( post_type_exists( 'mcp_ai_sequence' ), 'Sequence CPT should be registered.' );
 	}
 
+	/**
+	 * Test workflow rule cpt registered.
+	 */
 	public function test_workflow_rule_cpt_registered() {
 		$this->assertTrue( post_type_exists( 'mcp_ai_crm_wf_rule' ), 'Workflow Rule CPT should be registered.' );
 	}
@@ -231,6 +356,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase B — Lead CRUD
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test create lead.
+	 */
 	public function test_create_lead() {
 		$lead_id = wp_insert_post(
 			array(
@@ -250,6 +378,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertSame( 'test@example.com', $email );
 	}
 
+	/**
+	 * Test lead meta fields persist.
+	 */
 	public function test_lead_meta_fields_persist() {
 		$lead_id               = wp_insert_post(
 			array(
@@ -279,6 +410,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertSame( (string) $this->admin_user_id, get_post_meta( $lead_id, 'contact_owner', true ) );
 	}
 
+	/**
+	 * Test lead delete trashes.
+	 */
 	public function test_lead_delete_trashes() {
 		$lead_id = wp_insert_post(
 			array(
@@ -293,6 +427,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		wp_delete_post( $lead_id, true );
 	}
 
+	/**
+	 * Test convert lead to customer.
+	 */
 	public function test_convert_lead_to_customer() {
 		$lead_id               = wp_insert_post(
 			array(
@@ -318,6 +455,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase B — Deal CRUD
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test create deal.
+	 */
 	public function test_create_deal() {
 		$lead_id = $this->create_test_lead();
 
@@ -341,6 +481,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertEquals( 10000, (float) get_post_meta( $deal_id, 'deal_amount', true ) );
 	}
 
+	/**
+	 * Test move deal stage.
+	 */
 	public function test_move_deal_stage() {
 		$deal_id = $this->create_test_deal();
 
@@ -360,6 +503,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase B — Activity CRUD
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test create activity.
+	 */
 	public function test_create_activity() {
 		$lead_id = $this->create_test_lead();
 
@@ -385,6 +531,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertSame( 'connected', get_post_meta( $activity_id, 'disposition', true ) );
 	}
 
+	/**
+	 * Test complete activity.
+	 */
 	public function test_complete_activity() {
 		$activity_id               = wp_insert_post(
 			array(
@@ -406,6 +555,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase B — Routing
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test assign lead to owner.
+	 */
 	public function test_assign_lead_to_owner() {
 		$lead_id = $this->create_test_lead();
 
@@ -421,6 +573,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase C — Inbound triage
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test classify message intent.
+	 */
 	public function test_classify_message_intent() {
 		$result = WP_MCP_AI_CRM_Classifier::classify(
 			'Can I get a demo of your enterprise plan?',
@@ -432,6 +587,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Test spam detection.
+	 */
 	public function test_spam_detection() {
 		$result = WP_MCP_AI_CRM_Classifier::classify(
 			'You won the lottery! Click here to claim your prize.',
@@ -442,6 +600,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Test buying signal detection.
+	 */
 	public function test_buying_signal_detection() {
 		$signals = array();
 		$kw      = apply_filters( 'wp_mcp_ai_crm_buying_signal_keywords', array( 'pricing', 'demo', 'budget' ) );
@@ -462,6 +623,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase C — Consent gates
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test record consent.
+	 */
 	public function test_record_consent() {
 		$lead_id = $this->create_test_lead();
 		$result  = WP_MCP_AI_CRM_Consent::record(
@@ -475,6 +639,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_CRM_Consent::is_permitted( $lead_id, 'email' ) );
 	}
 
+	/**
+	 * Test revoke consent.
+	 */
 	public function test_revoke_consent() {
 		$lead_id = $this->create_test_lead();
 
@@ -486,18 +653,32 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_CRM_Consent::is_permitted( $lead_id, 'sms' ) );
 	}
 
+	/**
+	 * Test dnc list.
+	 */
 	public function test_dnc_list() {
 		$email = 'blocked@example.com';
 		WP_MCP_AI_CRM_Engine::add_to_dnc( $email, 'email' );
 		$this->assertTrue( WP_MCP_AI_CRM_Engine::check_dnc( $email, 'email' ) );
-		$this->assertTrue( WP_MCP_AI_CRM_Engine::check_dnc( $email, 'all' ) );
+		// 'all' is its own suppression bucket: a channel-only entry must
+		// not suppress the global query.
+		$this->assertFalse( WP_MCP_AI_CRM_Engine::check_dnc( $email, 'all' ) );
+		$this->assertFalse( WP_MCP_AI_CRM_Engine::check_dnc( $email, 'sms' ) );
 		$this->assertFalse( WP_MCP_AI_CRM_Engine::check_dnc( 'clean@example.com', 'email' ) );
+
+		// A global suppression covers every channel.
+		WP_MCP_AI_CRM_Engine::add_to_dnc( $email, 'all' );
+		$this->assertTrue( WP_MCP_AI_CRM_Engine::check_dnc( $email, 'all' ) );
+		$this->assertTrue( WP_MCP_AI_CRM_Engine::check_dnc( $email, 'sms' ) );
 	}
 
 	// ────────────────────────────────────────────────────────
 	// Phase D — Sequences
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test create sequence.
+	 */
 	public function test_create_sequence() {
 		$seq_id = wp_insert_post(
 			array(
@@ -529,6 +710,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertSame( 2, (int) get_post_meta( $seq_id, 'step_count', true ) );
 	}
 
+	/**
+	 * Test enroll lead in sequence.
+	 */
 	public function test_enroll_lead_in_sequence() {
 		$lead_id = $this->create_test_lead();
 
@@ -554,6 +738,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase D — Workflow Rules
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test create workflow rule.
+	 */
 	public function test_create_workflow_rule() {
 		$rule_id = wp_insert_post(
 			array(
@@ -586,6 +773,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase E — Compliance
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test process opt out.
+	 */
 	public function test_process_opt_out() {
 		$email = 'optout@example.com';
 		WP_MCP_AI_CRM_Engine::add_to_dnc( $email, 'all' );
@@ -593,6 +783,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_CRM_Engine::check_dnc( $email, 'sms' ) );
 	}
 
+	/**
+	 * Test consent audit retrieval.
+	 */
 	public function test_consent_audit_retrieval() {
 		$lead_id = $this->create_test_lead();
 		WP_MCP_AI_CRM_Consent::record( $lead_id, 'email', 'consent', 'web_form' );
@@ -605,6 +798,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Phase E — CSV import
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test csv import parsing.
+	 */
 	public function test_csv_import_parsing() {
 		$csv   = "first_name,last_name,email,company\nAlice,Smith,alice@example.com,Acme\nBob,Jones,bob@example.com,Beta";
 		$lines = explode( "\n", trim( $csv ) );
@@ -622,6 +818,9 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Blueprint file existence
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Test blueprint files exist.
+	 */
 	public function test_blueprint_files_exist() {
 		$base       = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH : dirname( __DIR__, 3 ) . '/addons/pro/';
 		$blueprints = array(
@@ -648,6 +847,11 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 	// Helpers
 	// ────────────────────────────────────────────────────────
 
+	/**
+	 * Create test lead.
+	 *
+	 * @return int
+	 */
 	private function create_test_lead(): int {
 		$lead_id               = wp_insert_post(
 			array(
@@ -661,6 +865,11 @@ class Test_CRM_Toolkit extends WP_UnitTestCase {
 		return $lead_id;
 	}
 
+	/**
+	 * Create test deal.
+	 *
+	 * @return int
+	 */
 	private function create_test_deal(): int {
 		$lead_id               = $this->create_test_lead();
 		$deal_id               = wp_insert_post(
