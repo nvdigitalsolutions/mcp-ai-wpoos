@@ -27,6 +27,9 @@ class NVOOS_Checkout_API_Download_Server {
 
 	public const CACHE_DIR = 'nvoos-checkout';
 
+	/** Max downloads served per issued link. */
+	public const DOWNLOAD_BUDGET = 10;
+
 	/**
 	 * Register the query var + parse_request handler.
 	 *
@@ -81,6 +84,12 @@ class NVOOS_Checkout_API_Download_Server {
 
 		if ( NVOOS_Checkout_API_License_Store::STATUS_ACTIVE !== ( $license['status'] ?? '' ) ) {
 			self::fail( 402, __( 'This license is no longer active. Please contact support.', 'nvoos-checkout-api' ) );
+		}
+
+		// Bound re-downloads per issued link — a captured URL stays usable
+		// only for a limited number of requests even within its TTL.
+		if ( ! self::within_download_budget( $license_key, $expires ) ) {
+			self::fail( 429, __( 'Download limit reached for this link. Please re-verify your purchase.', 'nvoos-checkout-api' ) );
 		}
 
 		$file = self::ensure_cached_zip( (string) $license['addon_version'] );
@@ -153,6 +162,30 @@ class NVOOS_Checkout_API_Download_Server {
 		}
 
 		return $file;
+	}
+
+	/**
+	 * Budget downloads per issued link.
+	 *
+	 * Counts requests per (license, expiry) pair in a transient that lives
+	 * until the link itself expires, so a captured URL cannot be hammered
+	 * for unlimited re-downloads.
+	 *
+	 * @param string $license_key License key.
+	 * @param int    $expires     Link expiry timestamp.
+	 * @return bool True while the budget remains.
+	 */
+	private static function within_download_budget( string $license_key, int $expires ): bool {
+		$key   = 'nvoos_checkout_dl_' . md5( $license_key . '|' . $expires );
+		$count = (int) get_transient( $key );
+
+		if ( $count >= self::DOWNLOAD_BUDGET ) {
+			return false;
+		}
+
+		$ttl = max( 60, $expires - time() );
+		set_transient( $key, $count + 1, $ttl );
+		return true;
 	}
 
 	/**

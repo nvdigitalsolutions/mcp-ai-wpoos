@@ -21,6 +21,7 @@ if ( ! defined( 'NVOOS_CHECKOUT_API_PATH' ) ) {
 }
 
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-settings.php';
+require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-crypto.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-license-store.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-token.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-rate-limiter.php';

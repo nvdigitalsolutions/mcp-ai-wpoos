@@ -38,7 +38,8 @@ class CommerceTest extends TestCase {
 
 		delete_option( Schema::OPTION_LICENSE );
 		delete_option( Schema::OPTION_SETTINGS );
-		delete_transient( Schema::TRANSIENT_PREFIX . 'commerce_throttle_' . $this->adminId );
+		delete_transient( Schema::TRANSIENT_PREFIX . 'commerce_session_throttle_' . $this->adminId );
+		delete_transient( Schema::TRANSIENT_PREFIX . 'commerce_verify_throttle_' . $this->adminId );
 	}
 
 	/**
@@ -179,6 +180,30 @@ class CommerceTest extends TestCase {
 		}
 
 		$result = $controller->createSession( new \WP_REST_Request() );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'nvoos_content_graph_rate_limited', $result->get_error_code() );
+	}
+
+	/** @test */
+	public function verifyIsRateLimited(): void {
+		$this->stubVendor(
+			array(
+				array(
+					'response' => array( 'code' => 402 ),
+					'body'     => wp_json_encode( array( 'message' => 'Not completed.' ) ),
+				),
+			)
+		);
+
+		$controller = new CommerceController();
+		$request    = new \WP_REST_Request();
+		$request->set_param( 'payment_intent', 'pi_1234567890' );
+
+		for ( $i = 0; $i < 15; $i++ ) {
+			$controller->verifyPayment( $request );
+		}
+
+		$result = $controller->verifyPayment( $request );
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'nvoos_content_graph_rate_limited', $result->get_error_code() );
 	}

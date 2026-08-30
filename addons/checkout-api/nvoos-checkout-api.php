@@ -47,6 +47,7 @@ define( 'NVOOS_CHECKOUT_API_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NVOOS_CHECKOUT_API_URL', plugin_dir_url( __FILE__ ) );
 
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-settings.php';
+require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-crypto.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-license-store.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-token.php';
 require_once NVOOS_CHECKOUT_API_PATH . 'includes/class-nvoos-checkout-api-rate-limiter.php';

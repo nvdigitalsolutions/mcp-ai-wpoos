@@ -78,7 +78,7 @@ class NVOOS_Checkout_API_Settings {
 	/**
 	 * The Stripe secret key (constant → setting).
 	 *
-	 * Never logged, never exposed by any endpoint.
+	 * Stored encrypted at rest; never logged, never exposed by any endpoint.
 	 *
 	 * @return string
 	 */
@@ -86,7 +86,7 @@ class NVOOS_Checkout_API_Settings {
 		if ( defined( 'NVOOS_CHECKOUT_STRIPE_SECRET_KEY' ) ) {
 			return (string) NVOOS_CHECKOUT_STRIPE_SECRET_KEY;
 		}
-		return (string) self::get( 'stripe_secret_key', '' );
+		return NVOOS_Checkout_API_Crypto::decrypt( (string) self::get( 'stripe_secret_key', '' ) );
 	}
 
 	/**
@@ -104,13 +104,15 @@ class NVOOS_Checkout_API_Settings {
 	/**
 	 * The Stripe webhook signing secret (constant → setting).
 	 *
+	 * Stored encrypted at rest.
+	 *
 	 * @return string
 	 */
 	public static function stripe_webhook_secret(): string {
 		if ( defined( 'NVOOS_CHECKOUT_STRIPE_WEBHOOK_SECRET' ) ) {
 			return (string) NVOOS_CHECKOUT_STRIPE_WEBHOOK_SECRET;
 		}
-		return (string) self::get( 'stripe_webhook_secret', '' );
+		return NVOOS_Checkout_API_Crypto::decrypt( (string) self::get( 'stripe_webhook_secret', '' ) );
 	}
 
 	/**
@@ -194,11 +196,17 @@ class NVOOS_Checkout_API_Settings {
 		$sanitized = array();
 
 		// Keys keep existing stored values when the submitted field is
-		// empty — re-saving settings must never wipe credentials.
-		foreach ( array( 'stripe_secret_key', 'stripe_publishable_key', 'stripe_webhook_secret' ) as $key ) {
+		// empty — re-saving settings must never wipe credentials. The
+		// secret key and webhook secret are encrypted at rest; the
+		// publishable key is public by design and stored as-is.
+		foreach ( array( 'stripe_secret_key', 'stripe_webhook_secret' ) as $key ) {
 			if ( isset( $raw[ $key ] ) && is_string( $raw[ $key ] ) && '' !== trim( $raw[ $key ] ) ) {
-				$sanitized[ $key ] = sanitize_text_field( $raw[ $key ] );
+				$sanitized[ $key ] = NVOOS_Checkout_API_Crypto::encrypt( sanitize_text_field( $raw[ $key ] ) );
 			}
+		}
+
+		if ( isset( $raw['stripe_publishable_key'] ) && is_string( $raw['stripe_publishable_key'] ) && '' !== trim( $raw['stripe_publishable_key'] ) ) {
+			$sanitized['stripe_publishable_key'] = sanitize_text_field( $raw['stripe_publishable_key'] );
 		}
 
 		if ( isset( $raw['price_cents'] ) ) {

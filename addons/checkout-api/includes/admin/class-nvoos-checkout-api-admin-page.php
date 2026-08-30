@@ -118,21 +118,21 @@ class NVOOS_Checkout_API_Admin_Page {
 						<tr>
 							<th scope="row"><label for="nvoos-checkout-secret"><?php esc_html_e( 'Stripe secret key', 'nvoos-checkout-api' ); ?></label></th>
 							<td>
-								<input type="password" id="nvoos-checkout-secret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_secret_key]" value="<?php echo esc_attr( $settings['stripe_secret_key'] ); ?>" class="regular-text" autocomplete="new-password">
-								<p class="description"><?php esc_html_e( 'sk_live_… or sk_test_…. Leave blank to keep the stored value. Never expose this via any endpoint.', 'nvoos-checkout-api' ); ?></p>
+								<input type="password" id="nvoos-checkout-secret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_secret_key]" value="<?php echo esc_attr( NVOOS_Checkout_API_Settings::stripe_secret_key() ); ?>" class="regular-text" autocomplete="new-password">
+								<p class="description"><?php esc_html_e( 'sk_live_… or sk_test_…. Leave blank to keep the stored value. Stored encrypted at rest; never exposed via any endpoint.', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
 						<tr>
 							<th scope="row"><label for="nvoos-checkout-publishable"><?php esc_html_e( 'Stripe publishable key', 'nvoos-checkout-api' ); ?></label></th>
 							<td>
-								<input type="text" id="nvoos-checkout-publishable" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_publishable_key]" value="<?php echo esc_attr( $settings['stripe_publishable_key'] ); ?>" class="regular-text">
+								<input type="text" id="nvoos-checkout-publishable" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_publishable_key]" value="<?php echo esc_attr( NVOOS_Checkout_API_Settings::stripe_publishable_key() ); ?>" class="regular-text">
 								<p class="description"><?php esc_html_e( 'pk_live_… or pk_test_…. Sent to customer sites with each payment session.', 'nvoos-checkout-api' ); ?></p>
 							</td>
 						</tr>
 						<tr>
 							<th scope="row"><label for="nvoos-checkout-whsecret"><?php esc_html_e( 'Stripe webhook secret', 'nvoos-checkout-api' ); ?></label></th>
 							<td>
-								<input type="password" id="nvoos-checkout-whsecret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_webhook_secret]" value="<?php echo esc_attr( $settings['stripe_webhook_secret'] ); ?>" class="regular-text" autocomplete="new-password">
+								<input type="password" id="nvoos-checkout-whsecret" name="<?php echo esc_attr( NVOOS_Checkout_API_Settings::OPTION ); ?>[stripe_webhook_secret]" value="<?php echo esc_attr( NVOOS_Checkout_API_Settings::stripe_webhook_secret() ); ?>" class="regular-text" autocomplete="new-password">
 								<p class="description">
 									<?php
 									echo wp_kses(

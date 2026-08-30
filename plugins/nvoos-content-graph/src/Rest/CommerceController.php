@@ -44,7 +44,6 @@ use function wp_parse_url;
 class CommerceController {
 
 	private const THROTTLE_WINDOW = 10 * MINUTE_IN_SECONDS;
-	private const THROTTLE_MAX    = 5;
 
 	/**
 	 * Register the payment routes.
@@ -118,7 +117,7 @@ class CommerceController {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function createSession( WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- REST callback signature
-		if ( ! $this->passesThrottle() ) {
+		if ( ! $this->passesThrottle( 'session', 5 ) ) {
 			return new WP_Error(
 				'nvoos_content_graph_rate_limited',
 				__( 'Too many checkout attempts. Please wait a few minutes and try again.', 'nvoos-content-graph' ),
@@ -134,7 +133,7 @@ class CommerceController {
 			);
 		}
 
-		$vendor = new Vendor( Payments::vendorApiUrl() );
+		$vendor  = new Vendor( Payments::vendorApiUrl() );
 		$session = $vendor->createSession();
 
 		if ( is_wp_error( $session ) ) {
@@ -174,6 +173,14 @@ class CommerceController {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function verifyPayment( WP_REST_Request $request ) {
+		if ( ! $this->passesThrottle( 'verify', 15 ) ) {
+			return new WP_Error(
+				'nvoos_content_graph_rate_limited',
+				__( 'Too many attempts. Please wait a few minutes and try again.', 'nvoos-content-graph' ),
+				array( 'status' => 429 )
+			);
+		}
+
 		$intentId = (string) $request->get_param( 'payment_intent' );
 
 		if ( License::isLicensed() && Installer::isActive() ) {
@@ -297,17 +304,22 @@ class CommerceController {
 	}
 
 	/**
-	 * Cheap per-user throttle on checkout-session creation.
+	 * Cheap per-user throttle on checkout endpoints.
+	 *
+	 * Each endpoint has its own bucket so a busy session flow never blocks
+	 * the verification step that follows a successful payment.
 	 *
 	 * @since 1.0.4
 	 *
+	 * @param string $bucket Bucket name ('session' | 'verify').
+	 * @param int    $max    Max requests per window.
 	 * @return bool True when the request may proceed.
 	 */
-	private function passesThrottle(): bool {
-		$key   = Schema::TRANSIENT_PREFIX . 'commerce_throttle_' . get_current_user_id();
+	private function passesThrottle( string $bucket, int $max ): bool {
+		$key   = Schema::TRANSIENT_PREFIX . 'commerce_' . $bucket . '_throttle_' . get_current_user_id();
 		$count = (int) get_transient( $key );
 
-		if ( $count >= self::THROTTLE_MAX ) {
+		if ( $count >= $max ) {
 			return false;
 		}
 
