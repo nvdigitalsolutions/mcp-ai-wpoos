@@ -107,13 +107,7 @@ class Test_Async_Veo_Tool_Call_ID_Display extends WP_UnitTestCase {
 		);
 
 		// Simulate job completion via Job Notifier.
-		WP_MCP_AI_Job_Notifier::set_job_status(
-			$job_id,
-			'completed',
-			array(
-				'result' => $video_result,
-			)
-		);
+		WP_MCP_AI_Job_Notifier::handle_job_completed( $job_id, $video_result );
 
 		// Get job details as the chat client would.
 		$job_details = $this->service->get_job_details( $job_id, $this->user_id );
@@ -166,14 +160,11 @@ class Test_Async_Veo_Tool_Call_ID_Display extends WP_UnitTestCase {
 		set_transient( 'wp_mcp_ai_async_meta_' . $job_id, $metadata, DAY_IN_SECONDS );
 
 		// Simulate completion.
-		WP_MCP_AI_Job_Notifier::set_job_status(
+		WP_MCP_AI_Job_Notifier::handle_job_completed(
 			$job_id,
-			'completed',
 			array(
-				'result' => array(
-					'success' => true,
-					'url'     => 'https://example.com/video2.mp4',
-				),
+				'success' => true,
+				'url'     => 'https://example.com/video2.mp4',
 			)
 		);
 
@@ -218,12 +209,9 @@ class Test_Async_Veo_Tool_Call_ID_Display extends WP_UnitTestCase {
 		set_transient( 'wp_mcp_ai_async_meta_' . $job_id, $metadata, DAY_IN_SECONDS );
 
 		// Simulate completion.
-		WP_MCP_AI_Job_Notifier::set_job_status(
+		WP_MCP_AI_Job_Notifier::handle_job_completed(
 			$job_id,
-			'completed',
-			array(
-				'result' => array( 'success' => true ),
-			)
+			array( 'success' => true )
 		);
 
 		// Get job details.
@@ -239,7 +227,7 @@ class Test_Async_Veo_Tool_Call_ID_Display extends WP_UnitTestCase {
 
 		// Fallback format in PHP: async_{tool_name}_{job_id}.
 		// Note: JavaScript uses async_{tool_name}_{timestamp}_{random} format which is different.
-		// PHP backend generates: async_generate_veo_video_{job_id}
+		// PHP backend generates: async_generate_veo_video_{job_id}.
 		$fallback_pattern = '/^async_generate_veo_video_' . preg_quote( $job_id, '/' ) . '$/';
 		$this->assertMatchesRegularExpression( $fallback_pattern, $tool_message['tool_call_id'], 'Fallback tool_call_id should follow expected PHP backend pattern' );
 	}
