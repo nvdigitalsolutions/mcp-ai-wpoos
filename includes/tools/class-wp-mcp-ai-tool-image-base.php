@@ -370,6 +370,11 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			return $image_editor;
 		}
 
+		// Stash the on-disk path on the editor so tools can read the actual
+		// source file. The core file property is protected and
+		// generate_filename() returns a size-suffixed path that may not exist.
+		$image_editor->source_file_path = $file_path;
+
 		// Store whether this is a temp file for cleanup later.
 		// Don't mark local upload files as temp - only mark truly temporary files.
 		if ( ! $attachment_id && ! $is_local_file ) {
@@ -408,6 +413,26 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	protected function delete_temp_file( $file_path ) {
 		if ( file_exists( $file_path ) ) {
 			wp_delete_file( $file_path );
+		}
+	}
+
+	/**
+	 * Clean up a temporary source image after processing.
+	 *
+	 * The load_source_image() method marks editor instances created from
+	 * downloaded or base64 input with a `temp_file` property; only those files
+	 * are deleted. Attachment and uploads-local files are never touched.
+	 *
+	 * @param WP_Image_Editor $source_image Source image editor instance.
+	 * @param array           $arguments    Original tool arguments (kept for
+	 *                                      backward compatibility with callers).
+	 * @return void
+	 */
+	protected function cleanup_source_image( $source_image, $arguments = array() ) {
+		unset( $arguments );
+
+		if ( is_object( $source_image ) && isset( $source_image->temp_file ) && is_string( $source_image->temp_file ) ) {
+			$this->delete_temp_file( $source_image->temp_file );
 		}
 	}
 
