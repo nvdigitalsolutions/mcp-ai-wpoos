@@ -43,6 +43,17 @@ class Test_Project_Management_Submenu_Registration extends WP_UnitTestCase {
 		// Set admin context.
 		set_current_screen( 'dashboard' );
 
+		// The WPCode optional test plugin (insert-headers-and-footers) hooks
+		// its load_components() onto plugins_loaded at priority -1. Under CLI
+		// phpunit its bootstrap skips the is_admin() require block, so firing
+		// the manual do_action( 'plugins_loaded' ) below makes WPCode
+		// instantiate admin-only classes whose files never loaded, fatalling
+		// the test. The menu assertions don't need WPCode, so detach the
+		// callback for the duration of this suite.
+		if ( class_exists( 'WPCode' ) ) {
+			remove_action( 'plugins_loaded', array( WPCode::instance(), 'load_components' ), -1 );
+		}
+
 		// The Research & Add and Settings page files only load under
 		// is_admin() in production (see tools/project-management/init.php),
 		// which is false in the CLI test environment. Load them here so the
