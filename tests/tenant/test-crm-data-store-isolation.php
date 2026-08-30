@@ -48,6 +48,26 @@ class Test_CRM_Data_Store_Isolation extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// Load tenant infrastructure classes when this suite runs in
+		// isolation. In a full run they are loaded by the plugin bootstrap,
+		// so these requires are no-ops there.
+		if ( ! class_exists( 'WP_MCP_AI_Tenant_Database' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/tenant/class-wp-mcp-ai-tenant-database.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Tenant_Context' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/tenant/class-wp-mcp-ai-tenant-context.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-toolkit-data-store-factory.php';
+		}
+
+		// Create the tenant tables if they are missing. Production wires
+		// this via admin_init and the activation hook, neither of which
+		// fire under WP_UnitTestCase.
+		if ( ! WP_MCP_AI_Tenant_Database::tables_installed() ) {
+			WP_MCP_AI_Tenant_Database::create_tables();
+		}
+
 		global $wpdb;
 		$table = $wpdb->prefix . 'mcp_ai_tenants';
 
