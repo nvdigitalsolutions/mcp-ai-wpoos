@@ -117,14 +117,18 @@ class WP_MCP_AI_Memory_Capture_Service {
 		$normalised = $this->normalise_envelope( $envelope );
 
 		if ( is_wp_error( $normalised ) ) {
-			// The capture service keeps the canonical envelope contract on
+			// The capture service keeps the documented envelope contract on
 			// validation failures: consumers (Pro capture tool, auto-capture
 			// service) read 'success' / 'code' / 'context_id' as array keys.
+			// This is a service return, not a tool execute(), so the canonical
+			// tool-envelope rule does not apply.
+			// phpcs:disable WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Service contract: callers consume the failure envelope as array keys.
 			return array(
 				'success' => false,
 				'message' => $normalised->get_error_message(),
 				'code'    => $normalised->get_error_code(),
 			);
+			// phpcs:enable WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray
 		}
 
 		// Apply redaction / pre-store transform filter exactly once. Verbatim
