@@ -276,7 +276,7 @@ class Test_Architectural_Tools_Phase_A extends WP_UnitTestCase {
 		$tool   = new WP_MCP_AI_Tool_Estimate_Construction_Cost();
 		$result = $tool->execute(
 			array(
-				'floor_plan'        => array(),
+				'floor_plan'        => array( 'rooms' => 3 ),
 				'total_area'        => 1000.0,
 				'area_unit'         => 'sqft',
 				'country_code'      => 'US',
@@ -313,7 +313,7 @@ class Test_Architectural_Tools_Phase_A extends WP_UnitTestCase {
 		$tool   = new WP_MCP_AI_Tool_Estimate_Construction_Cost();
 		$result = $tool->execute(
 			array(
-				'floor_plan'          => array(),
+				'floor_plan'          => array( 'rooms' => 2 ),
 				'total_area'          => 100.0,
 				'area_unit'           => 'sqm',
 				'country_code'        => 'LK',
