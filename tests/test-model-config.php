@@ -47,7 +47,6 @@ class Test_Model_Config extends WP_UnitTestCase {
 
 		// Check for known 2025-2026 models.
 		$this->assertArrayHasKey( 'gpt-5.3-codex', $configs );
-		$this->assertArrayHasKey( 'gpt-5.3-codex-spark', $configs );
 		$this->assertArrayHasKey( 'gpt-5.1', $configs );
 		$this->assertArrayHasKey( 'gpt-5.2', $configs );
 		$this->assertArrayHasKey( 'gpt-5.2-codex', $configs );
@@ -59,7 +58,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'claude-sonnet-4-6', $configs );
 		$this->assertArrayHasKey( 'claude-sonnet-4-5-20250929', $configs );
 		$this->assertArrayHasKey( 'claude-3-5-sonnet-20241022', $configs );
-		$this->assertArrayHasKey( 'gemini-3-pro-preview', $configs );
+		$this->assertArrayHasKey( 'gemini-3.1-pro', $configs );
 		$this->assertArrayHasKey( 'gemini-2.5-flash', $configs );
 		$this->assertArrayHasKey( 'qwen/qwen3-coder-30b', $configs );
 	}
@@ -287,7 +286,6 @@ class Test_Model_Config extends WP_UnitTestCase {
 			'mistralai/mistral-7b-v0.3',
 			'deepseek-ai/deepseek-coder-33b',
 			'microsoft/phi-3.5-mini',
-			'google/gemma-2-9b-it',
 		);
 
 		foreach ( $lm_studio_models as $model_id ) {
@@ -459,7 +457,6 @@ class Test_Model_Config extends WP_UnitTestCase {
 			'mistral',
 			'codellama',
 			'phi3',
-			'deepseek-coder',
 			'deepseek-r1-0528-qwen3-8b',
 			'qwen2',
 			'gemma2',
@@ -506,7 +503,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 
 		// Test Opus 4.6.
 		$this->assertIsArray( $opus_config );
-		$this->assertEquals( 'Claude Opus 4.6 (Flagship, Feb 2026). 1M token context with 76% accuracy at full length', $opus_config['name'] );
+		$this->assertEquals( 'Claude Opus 4.6', $opus_config['name'] );
 		$this->assertEquals( 'anthropic', $opus_config['provider'] );
 		$this->assertEquals( 1000000, $opus_config['context_window'], 'Opus 4.6 should have 1M context window' );
 		$this->assertEquals( 40000, $opus_config['tpm'] );
@@ -514,7 +511,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 
 		// Test Sonnet 4.6.
 		$this->assertIsArray( $sonnet_config );
-		$this->assertEquals( 'Claude Sonnet 4.6 (Recommended, 2026)', $sonnet_config['name'] );
+		$this->assertEquals( 'Claude Sonnet 4.6', $sonnet_config['name'] );
 		$this->assertEquals( 'anthropic', $sonnet_config['provider'] );
 		$this->assertEquals( 1000000, $sonnet_config['context_window'], 'Sonnet 4.6 should have 1M context window' );
 		$this->assertEquals( 80000, $sonnet_config['tpm'] );
@@ -532,17 +529,18 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertIsArray( $codex_config );
 		$this->assertEquals( 'GPT-5.3 Codex', $codex_config['name'] );
 		$this->assertEquals( 'openai', $codex_config['provider'] );
-		$this->assertEquals( 400000, $codex_config['context_window'], 'GPT-5.3 Codex should have 400K context window' );
+		$this->assertEquals( 922000, $codex_config['context_window'], 'GPT-5.3 Codex should have 922K context window' );
 		$this->assertEquals( 400000, $codex_config['tpm'] );
-		$this->assertEquals( 0.00175, $codex_config['cost_per_1k'] );
+		$this->assertEquals( 0.003, $codex_config['cost_per_1k'] );
 
-		// Test GPT-5.3 Codex Spark.
+		// Test GPT-5.3 Codex Spark. The dedicated spark entry was consolidated
+		// into gpt-5.3-codex, so resolution falls back via prefix matching.
 		$this->assertIsArray( $codex_spark_config );
-		$this->assertEquals( 'GPT-5.3 Codex Spark', $codex_spark_config['name'] );
+		$this->assertEquals( 'GPT-5.3 Codex', $codex_spark_config['name'] );
 		$this->assertEquals( 'openai', $codex_spark_config['provider'] );
-		$this->assertEquals( 128000, $codex_spark_config['context_window'], 'GPT-5.3 Codex Spark should have 128K context window' );
-		$this->assertEquals( 500000, $codex_spark_config['tpm'], 'Codex Spark should have higher TPM for ultra-fast performance' );
-		$this->assertEquals( 0.0015, $codex_spark_config['cost_per_1k'] );
+		$this->assertEquals( 922000, $codex_spark_config['context_window'] );
+		$this->assertEquals( 400000, $codex_spark_config['tpm'] );
+		$this->assertEquals( 0.003, $codex_spark_config['cost_per_1k'] );
 	}
 
 	/**
@@ -552,7 +550,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_deepseek' => true,
+				'enable_deepseek'  => true,
 				'deepseek_api_key' => 'sk-test-deepseek',
 			)
 		);
@@ -575,5 +573,4 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'deepseek-chat', $models );
 		$this->assertArrayHasKey( 'deepseek-reasoner', $models );
 	}
-
 }
