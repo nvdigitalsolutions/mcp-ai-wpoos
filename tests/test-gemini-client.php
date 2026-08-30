@@ -511,7 +511,13 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure tool messages that do not immediately follow the originating tool call are skipped.
+	 * Ensure tool messages that do not immediately follow the originating tool
+	 * call are skipped.
+	 *
+	 * A user message between the function call and its response orphans both
+	 * the dangling function call group and the later tool response (Gemini
+	 * requires every function call to be answered immediately), so the payload
+	 * keeps only the three plain messages.
 	 */
 	public function test_create_chat_completion_skips_tool_messages_not_immediately_after_call() {
 		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -592,7 +598,9 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'contents', $payload );
-		$this->assertCount( 4, $payload['contents'] );
+		// The assistant functionCall group and the orphaned tool response are
+		// both dropped; the three plain messages remain.
+		$this->assertCount( 3, $payload['contents'] );
 
 		foreach ( $payload['contents'] as $entry ) {
 			foreach ( $entry['parts'] as $part ) {
