@@ -28,8 +28,8 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		$message_sequence = array();
 
 		// The agentic loop makes TWO calls:
-		// 1. Initial call returns assistant message with tool_calls
-		// 2. Second call after tool execution (even when tool returns error)
+		// 1. Initial call returns assistant message with tool_calls.
+		// 2. Second call after tool execution (even when tool returns error).
 		$mock_client
 			->expects( $this->exactly( 2 ) )
 			->method( 'create_chat_completion' )
@@ -106,7 +106,9 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $data['tool_results'] );
 
 		$tool_result = $data['tool_results'][0];
-		$this->assertStringContainsString( 'invalid JSON arguments', $tool_result['content'] );
+		$this->assertIsArray( $tool_result['content'], 'Tool result content should be a structured error array.' );
+		$this->assertArrayHasKey( 'message', $tool_result['content'] );
+		$this->assertStringContainsString( 'invalid JSON arguments', $tool_result['content']['message'] );
 	}
 
 	/**
@@ -214,8 +216,8 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		$message_sequence = array();
 
 		// The agentic loop makes TWO calls:
-		// 1. Initial call returns assistant message with tool_calls
-		// 2. Second call after tool execution (even when tool returns error)
+		// 1. Initial call returns assistant message with tool_calls.
+		// 2. Second call after tool execution (even when tool returns error).
 		$mock_client
 			->expects( $this->exactly( 2 ) )
 			->method( 'create_chat_completion' )
@@ -292,7 +294,9 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $data['tool_results'] );
 
 		$tool_result = $data['tool_results'][0];
-		$this->assertStringContainsString( 'expected JSON object', $tool_result['content'] );
+		$this->assertIsArray( $tool_result['content'], 'Tool result content should be a structured error array.' );
+		$this->assertArrayHasKey( 'message', $tool_result['content'] );
+		$this->assertStringContainsString( 'expected JSON object', $tool_result['content']['message'] );
 	}
 
 	/**
@@ -412,6 +416,8 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 
 	/**
 	 * Bootstrap the REST controller with a mock client.
+	 *
+	 * @param WP_MCP_AI_Language_Model_Router $mock_client Mock router to inject.
 	 */
 	private function bootstrap_rest_controller( $mock_client ) {
 		$rest = WP_MCP_AI_REST::get_instance();
@@ -421,6 +427,16 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		$property   = $reflection->getProperty( 'client' );
 		$property->setAccessible( true );
 		$property->setValue( $rest, $mock_client );
+
+		// Routes must be registered on the rest_api_init action; calling
+		// register_routes() directly would trigger a doing_it_wrong notice
+		// that the test harness converts into a failure. Fire the action
+		// first (the controller's own hook registers the routes with the
+		// mock client already injected), then keep the direct call, which
+		// is a safe no-op because duplicate routes are skipped.
+		if ( ! did_action( 'rest_api_init' ) ) {
+			do_action( 'rest_api_init' );
+		}
 
 		$rest->register_routes();
 	}
