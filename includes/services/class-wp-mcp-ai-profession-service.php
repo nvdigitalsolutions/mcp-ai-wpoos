@@ -282,7 +282,12 @@ class WP_MCP_AI_Profession_Service {
 
 		$professions = array();
 		foreach ( $query->posts as $post ) {
-			$profession                      = $this->transform_profession_for_display( $post );
+			// Use the assistant transformer: this method returns profession
+			// data arrays (callers treat each entry as an array), whereas
+			// transform_profession_for_display() returns a display-name
+			// string and would fatal with "Cannot access offset of type
+			// string on string" on PHP 8.
+			$profession                      = $this->transform_profession_for_assistant( $post );
 			$profession['orchestration']     = $this->get_orchestration_config( $post->ID );
 			$professions[ $post->post_name ] = $profession;
 		}
