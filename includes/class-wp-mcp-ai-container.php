@@ -843,7 +843,7 @@ class WP_MCP_AI_Container {
 			'service.assistant',
 			function ( $container ) {
 				return new WP_MCP_AI_Assistant_Service(
-					$container->get( 'settings_repository' )
+					$container->get( 'repository.settings' )
 				);
 			}
 		);
