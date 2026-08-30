@@ -23,6 +23,13 @@
  */
 class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * Creates an authenticated admin so the recall tool's permission gate
+	 * passes, and skips the transient persistence leg in the headless test
+	 * env so the canonical event payload is observable directly.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		// The recall tool checks user_can( $user_id, 'read' ) before
@@ -37,6 +44,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Memory_Capture_Service::RETENTION_OPTION );
 	}
 
+	/**
+	 * Tear down test fixtures.
+	 */
 	public function tearDown(): void {
 		remove_all_filters( 'wp_mcp_ai_memory_capture_skip_transient' );
 		remove_all_filters( 'wp_mcp_ai_wing_retention_overrides' );
@@ -49,6 +59,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 	// Memory Capture Service
 	// -----------------------------------------------------------------
 
+	/**
+	 * Store must require both a wing and a room.
+	 */
 	public function test_store_requires_wing_and_room() {
 		$service = WP_MCP_AI_Memory_Capture_Service::get_instance();
 
@@ -73,6 +86,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertSame( 'mempalace_capture_missing_room', $missing_room['code'] );
 	}
 
+	/**
+	 * Store defaults to verbatim capture at the recall tier.
+	 */
 	public function test_store_defaults_verbatim_true_and_recall_tier() {
 		$captured = null;
 		add_action(
@@ -100,6 +116,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 0.5, $captured['importance'], 0.0001 );
 	}
 
+	/**
+	 * Store clamps importance values into the unit interval.
+	 */
 	public function test_store_clamps_importance_to_unit_interval() {
 		$captured = null;
 		add_action(
@@ -132,15 +151,18 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 0.0, $captured['importance'], 0.0001 );
 	}
 
+	/**
+	 * Per-wing overrides cap TTL, tier, and sensitivity.
+	 */
 	public function test_per_wing_overrides_cap_ttl_tier_and_sensitivity() {
 		update_option(
 			WP_MCP_AI_Memory_Capture_Service::RETENTION_OPTION,
 			array(
 				'patient/jane-doe' => array(
-					'ttl'                  => 3600,    // 1 hour ceiling
-					'tier_ceiling'         => 'recall', // never promote to core
-					'sensitivity_ceiling'  => 'phi',    // floor sensitivity at PHI
-					'consent_basis_default'=> 'consent',
+					'ttl'                   => 3600,    // 1 hour ceiling.
+					'tier_ceiling'          => 'recall', // Never promote to core.
+					'sensitivity_ceiling'   => 'phi',    // Floor sensitivity at PHI.
+					'consent_basis_default' => 'consent',
 				),
 			)
 		);
@@ -159,9 +181,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 				'wing'        => 'patient/jane-doe',
 				'room'        => 'vitals',
 				'content'     => 'BP 120/80',
-				'tier'        => 'core',          // requested but capped
-				'ttl'         => DAY_IN_SECONDS,  // requested 24h, capped to 1h
-				'sensitivity' => 'internal',      // raised to phi by ceiling
+				'tier'        => 'core',          // Requested but capped.
+				'ttl'         => DAY_IN_SECONDS,  // Requested 24h, capped to 1h.
+				'sensitivity' => 'internal',      // Raised to phi by ceiling.
 			)
 		);
 
@@ -171,6 +193,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertSame( 'consent', $captured['consent_basis'], 'consent default applies' );
 	}
 
+	/**
+	 * Per-wing prefix wildcard overrides apply to matching wings.
+	 */
 	public function test_per_wing_prefix_wildcard_overrides() {
 		update_option(
 			WP_MCP_AI_Memory_Capture_Service::RETENTION_OPTION,
@@ -205,6 +230,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertSame( 'phi', $captured['sensitivity'] );
 	}
 
+	/**
+	 * Store emits subject_refs and attachments on the canonical event.
+	 */
 	public function test_store_emits_subject_refs_and_attachments() {
 		$captured = null;
 		add_action(
@@ -222,7 +250,11 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 				'content'       => 'Filed amended complaint.',
 				'subject_refs'  => array( 'matter:123', 'party:plaintiff:42' ),
 				'attachments'   => array(
-					array( 'attachment_id' => 99, 'sha256' => 'a' . str_repeat( '0', 63 ), 'mime' => 'application/pdf' ),
+					array(
+						'attachment_id' => 99,
+						'sha256'        => 'a' . str_repeat( '0', 63 ),
+						'mime'          => 'application/pdf',
+					),
 				),
 				'consent_basis' => 'legitimate-interest',
 			)
@@ -238,6 +270,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 	// Memory Tier Manager
 	// -----------------------------------------------------------------
 
+	/**
+	 * Tier manager promotes when importance and access are both high.
+	 */
 	public function test_tier_manager_promotes_when_importance_and_access_high() {
 		$manager = WP_MCP_AI_Memory_Tier_Manager::get_instance();
 		$record  = array(
@@ -257,6 +292,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertSame( 'core', $transition['to'] );
 	}
 
+	/**
+	 * Tier manager does not promote on a single signal alone.
+	 */
 	public function test_tier_manager_does_not_promote_on_one_signal_only() {
 		$manager = WP_MCP_AI_Memory_Tier_Manager::get_instance();
 
@@ -279,6 +317,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertNull( $manager->evaluate( $rec2 ) );
 	}
 
+	/**
+	 * Tier manager demotes inactive core records to recall.
+	 */
 	public function test_tier_manager_demotes_inactive_core_to_recall() {
 		$manager = WP_MCP_AI_Memory_Tier_Manager::get_instance();
 		$record  = array(
@@ -294,6 +335,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertSame( 'recall', $transition['to'] );
 	}
 
+	/**
+	 * Tier manager demotes long-idle recall records to archival.
+	 */
 	public function test_tier_manager_demotes_extended_idle_recall_to_archival() {
 		$manager = WP_MCP_AI_Memory_Tier_Manager::get_instance();
 		$record  = array(
@@ -311,6 +355,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertTrue( $transition['verbatim'] );
 	}
 
+	/**
+	 * Tier sweep emits the canonical transition event.
+	 */
 	public function test_tier_sweep_emits_canonical_transition_event() {
 		$events = array();
 		add_action(
@@ -354,6 +401,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 	// Recall Memory tool — hierarchical recall + always-on core
 	// -----------------------------------------------------------------
 
+	/**
+	 * Recall filters by wing and always includes the core tier.
+	 */
 	public function test_recall_filters_by_wing_and_includes_all_core_records() {
 		$tool = new WP_MCP_AI_Tool_Recall_Memory();
 
@@ -382,7 +432,7 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 					),
 					array(
 						'context_id' => 'ctx_c',
-						'wing'       => 'patient/john-smith',  // different wing
+						'wing'       => 'patient/john-smith',  // Different wing.
 						'room'       => 'vitals',
 						'tier'       => 'core',
 						'importance' => 0.9,
@@ -410,6 +460,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 		$this->assertNotContains( 'ctx_c', $ids );
 	}
 
+	/**
+	 * Recall room filter narrows the candidate pool.
+	 */
 	public function test_recall_room_filter_narrows_pool() {
 		$tool = new WP_MCP_AI_Tool_Recall_Memory();
 		add_filter(
@@ -417,8 +470,24 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 			static function () {
 				$now = current_time( 'mysql' );
 				return array(
-					array( 'context_id' => 'a', 'wing' => 'matter/1', 'room' => 'pleadings', 'tier' => 'recall', 'importance' => 0.5, 'content' => 'Motion filed', 'valid_from' => $now ),
-					array( 'context_id' => 'b', 'wing' => 'matter/1', 'room' => 'billable', 'tier' => 'recall', 'importance' => 0.5, 'content' => '0.5h call', 'valid_from' => $now ),
+					array(
+						'context_id' => 'a',
+						'wing'       => 'matter/1',
+						'room'       => 'pleadings',
+						'tier'       => 'recall',
+						'importance' => 0.5,
+						'content'    => 'Motion filed',
+						'valid_from' => $now,
+					),
+					array(
+						'context_id' => 'b',
+						'wing'       => 'matter/1',
+						'room'       => 'billable',
+						'tier'       => 'recall',
+						'importance' => 0.5,
+						'content'    => '0.5h call',
+						'valid_from' => $now,
+					),
 				);
 			}
 		);
@@ -429,10 +498,13 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 				'room'     => 'pleadings',
 			)
 		);
-		$ids = array_column( $result['memories'], 'context_id' );
+		$ids    = array_column( $result['memories'], 'context_id' );
 		$this->assertSame( array( 'a' ), $ids );
 	}
 
+	/**
+	 * Recall honours bi-temporal validity with an as_of timestamp.
+	 */
 	public function test_recall_bi_temporal_as_of() {
 		$tool = new WP_MCP_AI_Tool_Recall_Memory();
 		$past = gmdate( 'Y-m-d H:i:s', time() - ( 30 * DAY_IN_SECONDS ) );
@@ -474,7 +546,7 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 				'wing'     => 'deal/1',
 			)
 		);
-		$ids = array_column( $now_result['memories'], 'context_id' );
+		$ids        = array_column( $now_result['memories'], 'context_id' );
 		$this->assertSame( array( 'new' ), $ids );
 
 		// As-of in the past: only the original covenant was valid.
@@ -485,10 +557,13 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 				'as_of'    => gmdate( 'Y-m-d H:i:s', time() - ( 15 * DAY_IN_SECONDS ) ),
 			)
 		);
-		$ids = array_column( $past_result['memories'], 'context_id' );
+		$ids         = array_column( $past_result['memories'], 'context_id' );
 		$this->assertSame( array( 'old' ), $ids );
 	}
 
+	/**
+	 * Recall requires a wing.
+	 */
 	public function test_recall_requires_wing() {
 		$tool   = new WP_MCP_AI_Tool_Recall_Memory();
 		$result = $tool->execute( array( 'agent_id' => 'a' ) );
@@ -500,6 +575,9 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 	// CCT bridge propagation of new envelope fields
 	// -----------------------------------------------------------------
 
+	/**
+	 * The CCT bridge propagates the new envelope fields.
+	 */
 	public function test_cct_bridge_propagates_new_envelope_fields() {
 		$record = WP_MCP_AI_Agent_Memory_CCT_Bridge::build_record_from_event(
 			array(
@@ -513,7 +591,11 @@ class WP_MCP_AI_MemPalace_Capture_Framework_Test extends WP_UnitTestCase {
 				'consent_basis' => 'consent',
 				'subject_refs'  => array( 'patient:42' ),
 				'attachments'   => array(
-					array( 'attachment_id' => 7, 'sha256' => 'abc', 'mime' => 'image/png' ),
+					array(
+						'attachment_id' => 7,
+						'sha256'        => 'abc',
+						'mime'          => 'image/png',
+					),
 				),
 				'stored_at'     => current_time( 'mysql' ),
 				'expires_at'    => gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
