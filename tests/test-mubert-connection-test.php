@@ -64,7 +64,10 @@ class Test_Mubert_Connection_Test extends WP_UnitTestCase {
 		// Start output buffering.
 		ob_start();
 
-		// Simulate being on the mubert connection page.
+		// Simulate being on the mubert connection page within the
+		// Tools > Connections subtab; render_wrapper() only renders when
+		// the 'connections' subtab is active.
+		$_GET['subtab']     = 'connections';
 		$_GET['connection'] = 'mubert';
 
 		// Render the section.
@@ -155,6 +158,7 @@ class Test_Mubert_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		// Clean up.
+		unset( $_GET['subtab'] );
 		unset( $_GET['connection'] );
 		unset( $_POST['nonce'] );
 		unset( $_POST['api_key'] );
