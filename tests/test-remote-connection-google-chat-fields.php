@@ -555,7 +555,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * handle_channel_send_reply must pass through unchanged for non-google_chat channels.
+	 * Verifies handle_channel_send_reply passes through unchanged for non-google_chat channels.
 	 */
 	public function test_handle_channel_send_reply_ignores_other_channels() {
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
@@ -587,8 +587,8 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_google_chat_space_for_contact falls back to connection's google_chat_space
-	 * when the messages CCT table is not available.
+	 * Verifies resolve_google_chat_space_for_contact falls back to the connection's
+	 * google_chat_space when the messages CCT table is not available.
 	 */
 	public function test_resolve_google_chat_space_falls_back_to_connection_space() {
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
@@ -617,7 +617,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_google_chat_space_for_contact returns empty string when neither
+	 * Verifies resolve_google_chat_space_for_contact returns an empty string when neither
 	 * the messages CCT nor the connection has a space configured.
 	 */
 	public function test_resolve_google_chat_space_returns_empty_when_no_space() {
@@ -644,7 +644,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_channel_send_reply returns WP_Error when no Google Chat connection is found.
+	 * Verifies handle_channel_send_reply returns WP_Error when no Google Chat connection is found.
 	 */
 	public function test_handle_channel_send_reply_returns_error_when_no_connection() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -670,7 +670,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_channel_send_reply returns WP_Error when connection is found but no space can be resolved.
+	 * Verifies handle_channel_send_reply returns WP_Error when a connection is found but no space can be resolved.
 	 */
 	public function test_handle_channel_send_reply_returns_error_when_no_space() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -709,7 +709,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_channel_send_reply sends the message to the Google Chat API and returns true on success.
+	 * Verifies handle_channel_send_reply sends the message to the Google Chat API and returns true on success.
 	 */
 	public function test_handle_channel_send_reply_sends_message_on_success() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -824,7 +824,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_webhook must look up the connection by URL connection_id when that
+	 * Verifies handle_webhook looks up the connection by URL connection_id when that
 	 * route parameter is present, bypassing the space-name-based lookup.
 	 */
 	public function test_handle_webhook_uses_url_connection_id() {
@@ -870,7 +870,8 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat/' . $connection_id );
 		$request->set_param( 'connection_id', $connection_id );
-		$request->set_json_params( $payload );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( $payload ) );
 
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 		$response   = $controller->handle_webhook( $request );
@@ -888,7 +889,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * allow_google_oidc_auth passes non-error values through unchanged.
+	 * Verifies allow_google_oidc_auth passes non-error values through unchanged.
 	 */
 	public function test_allow_google_oidc_auth_passes_through_null() {
 		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
@@ -903,7 +904,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * allow_google_oidc_auth clears WP_Error for requests to the webhook base path.
+	 * Verifies allow_google_oidc_auth clears WP_Error for requests to the webhook base path.
 	 */
 	public function test_allow_google_oidc_auth_clears_error_for_webhook_path() {
 		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
@@ -926,7 +927,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * allow_google_oidc_auth leaves WP_Error untouched for unrelated paths.
+	 * Verifies allow_google_oidc_auth leaves WP_Error untouched for unrelated paths.
 	 */
 	public function test_allow_google_oidc_auth_preserves_error_for_other_paths() {
 		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
@@ -948,7 +949,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * allow_google_oidc_auth also clears errors for connection-specific webhook URLs.
+	 * Verifies allow_google_oidc_auth also clears errors for connection-specific webhook URLs.
 	 */
 	public function test_allow_google_oidc_auth_clears_error_for_connection_specific_path() {
 		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
@@ -1027,7 +1028,8 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
-		$request->set_json_params( $payload );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( $payload ) );
 
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
 
@@ -1096,7 +1098,8 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
-		$request->set_json_params( $payload );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( $payload ) );
 
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
 
@@ -1115,7 +1118,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	// APP_COMMAND (slash command) handling.
 	// =========================================================================
 	/**
-	 * extract_app_command_text returns the commandText from the payload.
+	 * Verifies extract_app_command_text returns the commandText from the payload.
 	 */
 	public function test_extract_app_command_text_returns_command_text() {
 		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
@@ -1139,7 +1142,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_app_command_text returns a non-empty fallback when commandText is absent.
+	 * Verifies extract_app_command_text returns a non-empty fallback when commandText is absent.
 	 */
 	public function test_extract_app_command_text_returns_fallback_for_empty_command_text() {
 		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
@@ -1163,7 +1166,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_webhook schedules a cron reply for APP_COMMAND events.
+	 * Verifies handle_webhook schedules a cron reply for APP_COMMAND events.
 	 */
 	public function test_handle_webhook_schedules_reply_for_app_command_event() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -1218,7 +1221,8 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
-		$request->set_json_params( $payload );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( $payload ) );
 
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
 
@@ -1442,7 +1446,8 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
-		$request->set_json_params( $payload );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( $payload ) );
 
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
 
