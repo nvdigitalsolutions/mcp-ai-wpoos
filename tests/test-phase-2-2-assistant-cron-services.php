@@ -57,17 +57,22 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 	 * Test that Assistant Service uses Settings Repository for default assistant
 	 */
 	public function test_assistant_service_uses_settings_repository() {
-		// Set up a test default assistant in options.
-		update_option( 'wp_mcp_ai_default_assistant', '123' );
-
 		$container = wp_mcp_ai_container();
-		$service   = $container->get( 'service.assistant' );
+		$repo      = $container->get( 'repository.settings' );
+
+		// Seed through the repository so its instance cache stays consistent
+		// with the option table (the container singleton survives between
+		// tests in the same process).
+		$repo->update( 'default_assistant', '123' );
+
+		$service = $container->get( 'service.assistant' );
 
 		$default_id = $service->get_default_assistant_id();
 		$this->assertEquals( 123, $default_id );
 
-		// Clean up.
-		delete_option( 'wp_mcp_ai_default_assistant' );
+		// Clean up through the repository as well, clearing both the option
+		// and the cached value.
+		$repo->delete( 'default_assistant' );
 	}
 
 	/**
@@ -233,7 +238,7 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 		// Get all registered services.
 		$services = $container->get_registered_services();
 
-		// Verify Phase 2.2 services are registered
+		// Verify Phase 2.2 services are registered.
 		$this->assertContains( 'service.assistant', $services );
 		$this->assertContains( 'service.cron_status', $services );
 
@@ -246,16 +251,16 @@ class Test_Phase_2_2_Assistant_Cron_Services extends WP_UnitTestCase {
 	 * Test that all Phase 2.2 changes maintain backward compatibility
 	 */
 	public function test_phase_2_2_backward_compatibility() {
-		// Test 1: Assistant Service can still be instantiated manually
+		// Test 1: Assistant Service can still be instantiated manually.
 		$assistant_service = new WP_MCP_AI_Assistant_Service();
 		$this->assertInstanceOf( 'WP_MCP_AI_Assistant_Service', $assistant_service );
 
-		// Test 2: REST Controller still works (it's created by container in normal flow)
+		// Test 2: REST Controller still works (it's created by container in normal flow).
 		$container  = wp_mcp_ai_container();
 		$controller = $container->get( 'rest_controller' );
 		$this->assertInstanceOf( 'WP_MCP_AI_REST', $controller );
 
-		// Test 3: Services can still be retrieved from container
+		// Test 3: Services can still be retrieved from container.
 		$service = $container->get( 'service.assistant' );
 		$this->assertInstanceOf( 'WP_MCP_AI_Assistant_Service', $service );
 	}
