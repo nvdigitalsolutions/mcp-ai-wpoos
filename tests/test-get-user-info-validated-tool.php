@@ -61,8 +61,8 @@ class Test_Get_User_Info_Validated_Tool extends WP_UnitTestCase {
 
 		$this->assertNotInstanceOf( 'WP_Error', $result );
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'user_id', $result );
-		$this->assertEquals( $user_id, $result['user_id'] );
+		$this->assertArrayHasKey( 'ID', $result );
+		$this->assertEquals( $user_id, $result['ID'] );
 	}
 
 	/**
@@ -84,7 +84,7 @@ class Test_Get_User_Info_Validated_Tool extends WP_UnitTestCase {
 
 		$this->assertNotInstanceOf( 'WP_Error', $result );
 		$this->assertIsArray( $result );
-		$this->assertEquals( $target_user_id, $result['user_id'] );
+		$this->assertEquals( $target_user_id, $result['ID'] );
 	}
 
 	/**
@@ -99,7 +99,7 @@ class Test_Get_User_Info_Validated_Tool extends WP_UnitTestCase {
 		);
 
 		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -114,7 +114,7 @@ class Test_Get_User_Info_Validated_Tool extends WP_UnitTestCase {
 		);
 
 		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertEquals( 'wp_mcp_ai_validation_error', $result->get_error_code() );
+		$this->assertEquals( 'validation_failed', $result->get_error_code() );
 	}
 
 	/**
@@ -163,7 +163,7 @@ class Test_Get_User_Info_Validated_Tool extends WP_UnitTestCase {
 		);
 
 		$this->assertNotInstanceOf( 'WP_Error', $result );
-		$this->assertEquals( $user_id, $result['user_id'] );
+		$this->assertEquals( $user_id, $result['ID'] );
 	}
 
 	/**
@@ -173,7 +173,7 @@ class Test_Get_User_Info_Validated_Tool extends WP_UnitTestCase {
 		$flags = $this->tool->get_capability_flags();
 		$this->assertIsArray( $flags );
 		// The original tool implements capability flags interface.
-		$this->assertContains( 'read', $flags );
+		$this->assertContains( 'read-only', $flags );
 		$this->assertContains( 'requires-capability', $flags );
 	}
 
@@ -189,7 +189,7 @@ class Test_Get_User_Info_Validated_Tool extends WP_UnitTestCase {
 		);
 
 		$this->assertNotInstanceOf( 'WP_Error', $result );
-		$this->assertEquals( $user_id, $result['user_id'] );
+		$this->assertEquals( $user_id, $result['ID'] );
 	}
 
 	/**
@@ -205,7 +205,7 @@ class Test_Get_User_Info_Validated_Tool extends WP_UnitTestCase {
 		);
 
 		$this->assertNotInstanceOf( 'WP_Error', $result );
-		$this->assertEquals( $user_id, $result['user_id'] );
+		$this->assertEquals( $user_id, $result['ID'] );
 	}
 
 	/**
