@@ -37,6 +37,13 @@ class Test_REST_Tools_Controller extends WP_UnitTestCase {
 
 		// Create tools controller instance.
 		$this->controller = new WP_MCP_AI_REST_Tools_Controller( $this->main_controller );
+
+		// Register routes via the canonical rest_api_init action. Calling
+		// register_routes() directly triggers the register_rest_route
+		// doing-it-wrong notice (routes must be registered on rest_api_init).
+		global $wp_rest_server;
+		$wp_rest_server = new WP_REST_Server();
+		do_action( 'rest_api_init' );
 	}
 
 	/**
@@ -92,10 +99,7 @@ class Test_REST_Tools_Controller extends WP_UnitTestCase {
 	 * Test that routes are registered correctly.
 	 */
 	public function test_routes_registered() {
-		// Register routes.
-		$this->controller->register_routes();
-
-		// Get all registered routes.
+		// Get all registered routes (registered via rest_api_init in setUp).
 		$routes = rest_get_server()->get_routes();
 
 		// Check that tools routes exist.
@@ -118,7 +122,6 @@ class Test_REST_Tools_Controller extends WP_UnitTestCase {
 	 * Test that /tools route has correct HTTP methods.
 	 */
 	public function test_tools_route_methods() {
-		$this->controller->register_routes();
 		$routes = rest_get_server()->get_routes();
 
 		$this->assertArrayHasKey( '/mcp-ai/v1/tools', $routes );
@@ -143,7 +146,6 @@ class Test_REST_Tools_Controller extends WP_UnitTestCase {
 	 * Test that /files/{file_id}/download route has correct HTTP methods.
 	 */
 	public function test_file_download_route_methods() {
-		$this->controller->register_routes();
 		$routes = rest_get_server()->get_routes();
 
 		$route_pattern = '/mcp-ai/v1/files/(?P<file_id>[^/]+)/download';
@@ -168,7 +170,6 @@ class Test_REST_Tools_Controller extends WP_UnitTestCase {
 	 * Test that /cron-status route has correct HTTP methods.
 	 */
 	public function test_cron_status_route_methods() {
-		$this->controller->register_routes();
 		$routes = rest_get_server()->get_routes();
 
 		$this->assertArrayHasKey( '/mcp-ai/v1/cron-status', $routes );
@@ -227,8 +228,11 @@ class Test_REST_Tools_Controller extends WP_UnitTestCase {
 		$standalone_controller = new WP_MCP_AI_REST_Tools_Controller();
 		$this->assertInstanceOf( WP_MCP_AI_REST_Tools_Controller::class, $standalone_controller );
 
-		// Routes should still register.
-		$standalone_controller->register_routes();
+		// Routes should still register — via the canonical action.
+		add_action( 'rest_api_init', array( $standalone_controller, 'register_routes' ) );
+		global $wp_rest_server;
+		$wp_rest_server = new WP_REST_Server();
+		do_action( 'rest_api_init' );
 		$routes = rest_get_server()->get_routes();
 
 		$this->assertArrayHasKey( '/mcp-ai/v1/tools', $routes );
