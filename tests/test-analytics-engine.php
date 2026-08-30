@@ -51,13 +51,14 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 	 * Test linear regression calculation.
 	 */
 	public function test_calculate_trend() {
-		// Create simple increasing trend data.
+		// Create simple increasing trend data (slope above the 100/day
+		// significance threshold used by the engine).
 		$data_points = array(
 			strtotime( '2025-01-01' ) => 100,
-			strtotime( '2025-01-02' ) => 150,
-			strtotime( '2025-01-03' ) => 200,
-			strtotime( '2025-01-04' ) => 250,
-			strtotime( '2025-01-05' ) => 300,
+			strtotime( '2025-01-02' ) => 250,
+			strtotime( '2025-01-03' ) => 400,
+			strtotime( '2025-01-04' ) => 550,
+			strtotime( '2025-01-05' ) => 700,
 		);
 
 		$trend = WP_MCP_AI_Analytics_Engine::calculate_trend( $data_points );
@@ -84,10 +85,10 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 	 */
 	public function test_calculate_trend_decreasing() {
 		$data_points = array(
-			strtotime( '2025-01-01' ) => 300,
-			strtotime( '2025-01-02' ) => 250,
-			strtotime( '2025-01-03' ) => 200,
-			strtotime( '2025-01-04' ) => 150,
+			strtotime( '2025-01-01' ) => 700,
+			strtotime( '2025-01-02' ) => 550,
+			strtotime( '2025-01-03' ) => 400,
+			strtotime( '2025-01-04' ) => 250,
 			strtotime( '2025-01-05' ) => 100,
 		);
 
@@ -230,13 +231,18 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 		$user_1 = $this->test_users[0];
 		$user_2 = $this->test_users[1];
 
+		// The engine analyzes a rolling window, so use recent dates.
+		$day_3 = gmdate( 'Y-m-d', strtotime( '-3 days' ) );
+		$day_2 = gmdate( 'Y-m-d', strtotime( '-2 days' ) );
+		$day_1 = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+
 		// Create usage data for user 1 (higher usage).
 		$usage_1 = array(
 			'test_tool' => array(
 				'daily' => array(
-					'2025-01-01' => 500,
-					'2025-01-02' => 600,
-					'2025-01-03' => 550,
+					$day_3 => 500,
+					$day_2 => 600,
+					$day_1 => 550,
 				),
 			),
 		);
@@ -245,9 +251,9 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 		$usage_2 = array(
 			'test_tool' => array(
 				'daily' => array(
-					'2025-01-01' => 100,
-					'2025-01-02' => 150,
-					'2025-01-03' => 120,
+					$day_3 => 100,
+					$day_2 => 150,
+					$day_1 => 120,
 				),
 			),
 		);
@@ -277,20 +283,21 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 	public function test_detect_anomalies() {
 		$user_id = $this->test_users[0];
 
-		// Create usage data with one anomaly.
-		$usage = array(
-			'test_tool' => array(
-				'daily' => array(
-					'2025-01-01' => 100,
-					'2025-01-02' => 105,
-					'2025-01-03' => 98,
-					'2025-01-04' => 102,
-					'2025-01-05' => 500, // Anomaly!
-					'2025-01-06' => 100,
-					'2025-01-07' => 95,
-				),
-			),
-		);
+		// The engine analyzes a rolling 30-day window, so use recent dates.
+		// A long stable baseline keeps the standard deviation small enough
+		// for the spike to clear the 3-sigma threshold.
+		$usage      = array();
+		$date       = strtotime( '-20 days' );
+		$spike_date = '';
+		for ( $i = 0; $i < 20; $i++ ) {
+			$date_key                                 = gmdate( 'Y-m-d', $date );
+			$usage['test_tool']['daily'][ $date_key ] = 100 + ( $i % 3 ) * 2;
+			$date                                    += DAY_IN_SECONDS;
+		}
+
+		// Add the anomaly.
+		$spike_date                                 = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+		$usage['test_tool']['daily'][ $spike_date ] = 1000;
 
 		update_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $usage );
 
@@ -299,9 +306,9 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 		$this->assertIsArray( $anomalies );
 		$this->assertNotEmpty( $anomalies );
 
-		// Should detect the anomaly on 2025-01-05.
+		// Should detect the spike.
 		$anomaly_dates = array_column( $anomalies, 'date' );
-		$this->assertContains( '2025-01-05', $anomaly_dates );
+		$this->assertContains( $spike_date, $anomaly_dates );
 
 		// Check anomaly structure.
 		$anomaly = $anomalies[0];
@@ -318,19 +325,20 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 	public function test_anomaly_severity_classification() {
 		$user_id = $this->test_users[0];
 
-		// Create data with different severity anomalies.
+		// Create data with different severity anomalies. Use recent dates so
+		// the engine's rolling 30-day window includes them.
 		$base_usage = array_fill( 0, 20, 100 );
 		$usage      = array();
 
-		$date = strtotime( '2025-01-01' );
+		$date = strtotime( '-20 days' );
 		foreach ( $base_usage as $tokens ) {
 			$date_key                                 = gmdate( 'Y-m-d', $date );
 			$usage['test_tool']['daily'][ $date_key ] = $tokens;
 			$date                                    += DAY_IN_SECONDS;
 		}
 
-		// Add critical anomaly (6+ std dev).
-		$usage['test_tool']['daily']['2025-01-21'] = 1000;
+		// Add critical anomaly (6+ std dev) today.
+		$usage['test_tool']['daily'][ gmdate( 'Y-m-d' ) ] = 1000;
 
 		update_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $usage );
 
@@ -342,7 +350,7 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 		$critical = array_filter(
 			$anomalies,
 			function ( $a ) {
-				return $a['date'] === '2025-01-21';
+				return gmdate( 'Y-m-d' ) === $a['date'];
 			}
 		);
 
@@ -355,15 +363,22 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 	public function test_get_user_trends() {
 		$user_id = $this->test_users[0];
 
+		// The engine analyzes a rolling 30-day window, so use recent dates
+		// with a slope above the 100/day significance threshold.
+		$days = array();
+		for ( $i = 4; $i >= 0; $i-- ) {
+			$days[] = gmdate( 'Y-m-d', strtotime( "-{$i} days" ) );
+		}
+
 		// Create usage data with clear trend.
 		$usage = array(
 			'test_tool' => array(
 				'daily'  => array(
-					'2025-01-01' => 100,
-					'2025-01-02' => 120,
-					'2025-01-03' => 140,
-					'2025-01-04' => 160,
-					'2025-01-05' => 180,
+					$days[0] => 100,
+					$days[1] => 250,
+					$days[2] => 400,
+					$days[3] => 550,
+					$days[4] => 700,
 				),
 				'hourly' => array(
 					'2025-01-01-09' => 50,
@@ -463,7 +478,14 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 	 * usage data from multiple users.
 	 */
 	public function test_get_site_wide_trends() {
-		// Create usage data for multiple users.
+		// The engine analyzes a rolling 30-day window, so use recent dates.
+		$days = array();
+		for ( $i = 4; $i >= 0; $i-- ) {
+			$days[] = gmdate( 'Y-m-d', strtotime( "-{$i} days" ) );
+		}
+
+		// Create usage data for multiple users with a combined slope above the
+		// 100/day significance threshold (60/day per user, 120/day site-wide).
 		foreach ( $this->test_users as $index => $user_id ) {
 			$base_tokens = ( $index + 1 ) * 100;
 			$usage       = array(
@@ -471,11 +493,11 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 					'total_tokens' => $base_tokens * 5,
 					'requests'     => 5,
 					'daily'        => array(
-						'2025-01-01' => $base_tokens,
-						'2025-01-02' => $base_tokens + 20,
-						'2025-01-03' => $base_tokens + 40,
-						'2025-01-04' => $base_tokens + 60,
-						'2025-01-05' => $base_tokens + 80,
+						$days[0] => $base_tokens,
+						$days[1] => $base_tokens + 60,
+						$days[2] => $base_tokens + 120,
+						$days[3] => $base_tokens + 180,
+						$days[4] => $base_tokens + 240,
 					),
 				),
 			);
