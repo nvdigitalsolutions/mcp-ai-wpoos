@@ -245,7 +245,12 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 		$message = array(
 			'kind'  => 'message',
 			'role'  => 'user',
-			'parts' => array( array( 'kind' => 'text', 'text' => 'test' ) ),
+			'parts' => array(
+				array(
+					'kind' => 'text',
+					'text' => 'test',
+				),
+			),
 		);
 
 		$task = WP_MCP_AI_A2A_Task_Manager::create_task( $message, 'custom-context-123' );
@@ -335,7 +340,12 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 		$agent_message = array(
 			'kind'  => 'message',
 			'role'  => 'agent',
-			'parts' => array( array( 'kind' => 'text', 'text' => 'Hello back!' ) ),
+			'parts' => array(
+				array(
+					'kind' => 'text',
+					'text' => 'Hello back!',
+				),
+			),
 		);
 
 		$updated = WP_MCP_AI_A2A_Task_Manager::add_message( $task['id'], $agent_message );
@@ -354,7 +364,12 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 		$artifact = array(
 			'artifactId' => 'art-001',
 			'name'       => 'report.txt',
-			'parts'      => array( array( 'kind' => 'text', 'text' => 'Report content' ) ),
+			'parts'      => array(
+				array(
+					'kind' => 'text',
+					'text' => 'Report content',
+				),
+			),
 		);
 
 		$updated = WP_MCP_AI_A2A_Task_Manager::add_artifact( $task['id'], $artifact );
@@ -610,7 +625,12 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 		$agent_request = array(
 			'message' => array(
 				'role'  => 'agent',
-				'parts' => array( array( 'kind' => 'text', 'text' => 'test' ) ),
+				'parts' => array(
+					array(
+						'kind' => 'text',
+						'text' => 'test',
+					),
+				),
 			),
 		);
 
@@ -789,8 +809,8 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Agent URL', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'Agent URL', $result->get_error_message() );
 	}
 
 	/**
@@ -804,8 +824,8 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'Task description', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'Task description', $result->get_error_message() );
 	}
 
 	// ========================================
