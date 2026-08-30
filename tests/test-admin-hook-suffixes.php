@@ -25,6 +25,26 @@ class Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
 		// Set up an admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );
+
+		// Wire the admin-page classes deterministically. Production loads
+		// these under is_admin() during bootstrap, which is false under
+		// WP_UnitTestCase, and hooks registered mid-run by other suites
+		// are reset between test classes — so require + init here.
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-provider-diagnostics.php';
+		WP_MCP_AI_MCP_Server_Diagnostic::init();
+		WP_MCP_AI_Provider_Diagnostics::init();
+
+		// The Pro Dashboard singleton registers its enqueue hooks only on
+		// first construction; re-invoke init_hooks() so they exist in this
+		// test (wp-phpunit resets hooks between tests).
+		if ( class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
+			$dashboard            = WP_MCP_AI_Pro_Dashboard::get_instance();
+			$dashboard_reflection = new ReflectionClass( $dashboard );
+			$init_hooks_method    = $dashboard_reflection->getMethod( 'init_hooks' );
+			$init_hooks_method->setAccessible( true );
+			$init_hooks_method->invoke( $dashboard );
+		}
 	}
 
 	/**
@@ -215,20 +235,20 @@ class Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
 
 		// Verify the script is enqueued.
 		$this->assertTrue(
-			isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline'] ),
-			'MCP Diagnostic inline script should be enqueued'
+			isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic'] ),
+			'MCP Diagnostic script should be enqueued'
 		);
 
 		// Verify localized data is present.
 		$this->assertNotEmpty(
-			$wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline']->extra,
+			$wp_scripts->registered['wp-mcp-ai-mcp-diagnostic']->extra,
 			'Localized script data should be present'
 		);
 
 		// Get the localized data.
 		$localized_data = null;
-		if ( isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline']->extra['data'] ) ) {
-			$localized_data = $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline']->extra['data'];
+		if ( isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic']->extra['data'] ) ) {
+			$localized_data = $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic']->extra['data'];
 		}
 
 		$this->assertNotNull( $localized_data, 'Localized data should exist' );
