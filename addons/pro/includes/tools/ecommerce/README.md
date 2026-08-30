@@ -2,6 +2,9 @@
 
 This directory contains all tools for the E-commerce Pro Toolkit.
 
+- `init.php` — toolkit bootstrap; loads admin pages and optimization only when the toolkit is enabled.
+- `class-wp-mcp-ai-ecommerce-helpers.php` — side-effect-free helpers (e.g. `wp_mcp_ai_is_ecommerce_toolkit_enabled()`).
+
 ## Tool Categories
 
 ### Product Management (5 tools)
