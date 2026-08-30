@@ -99,6 +99,8 @@ class WP_MCP_AI_Memory_Capture_Service {
 	 * Required envelope fields: `agent_id`, `wing`, `room`, `content` (or
 	 * `data` / `text`). Other fields default per MemPalace / Letta / Zep / mem0
 	 * conventions.
+	/**
+	 * Store a memory capture.
 	 *
 	 * @param array $envelope Capture envelope.
 	 * @return array {
@@ -107,6 +109,7 @@ class WP_MCP_AI_Memory_Capture_Service {
 	 *   'tier'       => string,
 	 *   'wing'       => string,
 	 *   'room'       => string,
+	 *   'code'       => string (failure envelope only),
 	 *   'message'    => string,
 	 * }
 	 */
@@ -114,7 +117,14 @@ class WP_MCP_AI_Memory_Capture_Service {
 		$normalised = $this->normalise_envelope( $envelope );
 
 		if ( is_wp_error( $normalised ) ) {
-			return new WP_Error( 'wp_mcp_ai_error', $normalised->get_error_message(), $normalised->get_error_code() );
+			// The capture service keeps the canonical envelope contract on
+			// validation failures: consumers (Pro capture tool, auto-capture
+			// service) read 'success' / 'code' / 'context_id' as array keys.
+			return array(
+				'success' => false,
+				'message' => $normalised->get_error_message(),
+				'code'    => $normalised->get_error_code(),
+			);
 		}
 
 		// Apply redaction / pre-store transform filter exactly once. Verbatim
