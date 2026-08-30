@@ -117,7 +117,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array
+	 * @return array|\WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$action     = $arguments['action'];
@@ -145,9 +145,9 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 				break;
 
 			default:
-				$result = array(
-					'success' => false,
-					'error'   => sprintf( 'Unknown action: %s', $action ),
+				$result = new \WP_Error(
+					'tool_error',
+					sprintf( 'Unknown action: %s', $action )
 				);
 				break;
 		}
@@ -626,18 +626,27 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	/**
 	 * Log tool execution to the execution history CCT.
 	 *
-	 * @param array $arguments  Tool arguments.
-	 * @param array $result     Execution result.
-	 * @param float $start_time Microtime when execution began.
+	 * @param array           $arguments  Tool arguments.
+	 * @param array|\WP_Error $result     Execution result.
+	 * @param float           $start_time Microtime when execution began.
 	 */
-	private function log_execution( array $arguments, array $result, $start_time ) {
+	private function log_execution( array $arguments, $result, $start_time ) {
 		if ( ! class_exists( 'WP_MCP_AI_Execution_Logger' ) ) {
 			return;
 		}
 
 		$session_id = ! empty( $arguments['session_id'] ) ? $arguments['session_id'] : '';
-		$success    = ! empty( $result['success'] );
 		$duration   = (int) round( ( microtime( true ) - $start_time ) * 1000 );
+
+		if ( is_wp_error( $result ) ) {
+			$success = false;
+			$message = '';
+			$error   = $result->get_error_message();
+		} else {
+			$success = ! empty( $result['success'] );
+			$message = ! empty( $result['message'] ) ? $result['message'] : '';
+			$error   = ! $success && ! empty( $result['error'] ) ? $result['error'] : '';
+		}
 
 		WP_MCP_AI_Execution_Logger::log_tool_call(
 			array(
@@ -647,8 +656,8 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 				'success'        => $success,
 				'duration_ms'    => $duration,
 				'input_summary'  => ! empty( $arguments['action'] ) ? 'Action: ' . sanitize_text_field( $arguments['action'] ) : '',
-				'output_summary' => ! empty( $result['message'] ) ? sanitize_text_field( $result['message'] ) : '',
-				'error_message'  => ! $success && ! empty( $result['error'] ) ? sanitize_text_field( $result['error'] ) : '',
+				'output_summary' => sanitize_text_field( $message ),
+				'error_message'  => sanitize_text_field( $error ),
 			)
 		);
 	}
