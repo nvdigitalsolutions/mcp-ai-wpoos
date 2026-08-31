@@ -30,13 +30,6 @@ class WP_MCP_AI_Toolkit_Registry {
 	protected static $instance = null;
 
 	/**
-	 * Tool registry instance.
-	 *
-	 * @var WP_MCP_AI_Tool_Registry
-	 */
-	protected $tool_registry;
-
-	/**
 	 * Toolkit definitions.
 	 *
 	 * @var array
@@ -60,8 +53,22 @@ class WP_MCP_AI_Toolkit_Registry {
 	 * Prevent direct construction.
 	 */
 	protected function __construct() {
-		$this->tool_registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$this->define_toolkits();
+	}
+
+	/**
+	 * Resolve the live tool registry singleton.
+	 *
+	 * The toolkit registry deliberately does not cache the tool registry
+	 * instance: test suites (and future code paths) may swap the singleton,
+	 * and a cached reference would silently observe stale tool state.
+	 *
+	 * @since 1.11.0
+	 *
+	 * @return WP_MCP_AI_Tool_Registry Tool registry instance.
+	 */
+	private function tool_registry() {
+		return WP_MCP_AI_Tool_Registry::get_instance();
 	}
 
 	/**
@@ -202,7 +209,7 @@ class WP_MCP_AI_Toolkit_Registry {
 		$tools = array();
 
 		// Get all registered tools.
-		$all_tools = $this->tool_registry->list_tools();
+		$all_tools = $this->tool_registry()->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			// Get tool metadata.
@@ -256,7 +263,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 * @return array Tool metadata.
 	 */
 	public function get_tool_metadata( $tool_slug ) {
-		$tool = $this->tool_registry->get_tool( $tool_slug );
+		$tool = $this->tool_registry()->get_tool( $tool_slug );
 
 		if ( ! $tool ) {
 			return array();
@@ -302,7 +309,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function get_tools_by_pattern( $pattern_slug ) {
 		$tools     = array();
-		$all_tools = $this->tool_registry->list_tools();
+		$all_tools = $this->tool_registry()->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
@@ -326,7 +333,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function get_tools_by_profession( $profession_slug ) {
 		$tools     = array();
-		$all_tools = $this->tool_registry->list_tools();
+		$all_tools = $this->tool_registry()->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
@@ -350,7 +357,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function get_tools_by_risk_level( $risk_level ) {
 		$tools     = array();
-		$all_tools = $this->tool_registry->list_tools();
+		$all_tools = $this->tool_registry()->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
@@ -373,7 +380,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function search_tools( $search_term ) {
 		$results   = array();
-		$all_tools = $this->tool_registry->list_tools();
+		$all_tools = $this->tool_registry()->list_tools();
 		$search    = strtolower( $search_term );
 
 		foreach ( $all_tools as $tool ) {
@@ -403,7 +410,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 */
 	public function get_unmapped_tools() {
 		$unmapped  = array();
-		$all_tools = $this->tool_registry->list_tools();
+		$all_tools = $this->tool_registry()->list_tools();
 
 		foreach ( $all_tools as $tool ) {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
@@ -424,7 +431,7 @@ class WP_MCP_AI_Toolkit_Registry {
 	 * @return array Coverage statistics.
 	 */
 	public function get_coverage_report() {
-		$all_tools        = $this->tool_registry->list_tools();
+		$all_tools        = $this->tool_registry()->list_tools();
 		$total_tools      = count( $all_tools );
 		$mapped_tools     = 0;
 		$toolkit_coverage = array();
