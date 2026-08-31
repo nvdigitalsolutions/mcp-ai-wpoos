@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.65"
-  plugin-version-tested: "1.1.65"
-  last-updated: "2026-08-28"
+  plugin-version: "1.1.66"
+  plugin-version-tested: "1.1.66"
+  last-updated: "2026-08-31"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -419,6 +419,36 @@ bundle not found: skill-knowledge").
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Test-Suite Campaign, REST Hardening & Content Graph AI (v1.1.66+)
+
+- **PHPUnit repair campaign (Aug 28–31, ~100 PRs)** — the single-process
+  suite was repaired cluster-by-cluster; the recurring root causes and the
+  cluster-PR workflow are catalogued in the sibling
+  `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` skill, with the
+  standing tracker `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`.
+  Coding-time agent skills: 53.
+- **Assistant-access caching** — `validate_assistant_access()` caches
+  `WP_Error` results like successes; the cache-disable path is the
+  `wp_mcp_ai_assistant_access_cache_enabled` filter (never a persisted
+  `WP_MCP_AI_DISABLE_CACHE` define from a test).
+- **REST/auth hardening** — attachment-segment validation errors return
+  explicit HTTP 400s; token-tier endpoint + tier-change audit logging
+  fixed; REST permission-callback allowlist refreshed; bearer-auth context
+  synced across Simple JWT + assistant-access paths; guest tokens are
+  origin-bound.
+- **Job queue & notifier** — closure serialization fixed in legacy option
+  storage; custom-table queries guard against missing schema (Graphify DB,
+  job store, tenant DB); `update_status()` restored with dot-preserving
+  job IDs and owner-scoped REST routes; progress events promote cached
+  status to running.
+- **Tool contract fixes** — Media Toolkit tools return canonical `WP_Error`
+  envelopes; Remove Background gained a path guard; memory-capture failure
+  envelope restored; web-search result building fixed for Exa/Perplexity;
+  auto-categorize router/client fixed.
+- **Content Graph AI 1.0.3** — `nvoos-content-graph-ai` standalone plugin
+  bumped to 1.0.3 with a tool permission-check fix; `nvoos-content-graph`
+  stays 1.0.3, Media Worker stays v3.2.0.
 
 ## Google Calendar Connection & Composio Hardening (v1.1.64+)
 

@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: August 28, 2026 (v1.1.65).
+> Last reviewed: August 31, 2026 (v1.1.66).
 
 ---
 
@@ -15,6 +15,8 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
 **Total tools:** ~1,559 (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.66:** No tools added or removed — the Aug 28–31 test-suite repair campaign carried several tool-contract fixes. (1) Media Toolkit tools (`apply_collection_template`, `apply_media_template`, `list_media_templates`) now return the canonical `WP_Error` envelope for failures instead of `array( 'success' => false, ... )`. (2) The Pro `remove_background` tool gained a path guard + source resolution fix (shared `WP_MCP_AI_Tool_Image_Base`). (3) `auto_categorize_content` router + client API fixed. (4) `web_search` result building restored for the Exa and Perplexity providers. (5) The ecommerce toolkit enablement check was extracted into a shared helper (`class-wp-mcp-ai-ecommerce-helpers.php`) reused by the opt-in paths. (6) Validated-tool suites were swept onto the canonical error codes (test-only). (7) A2A webhook logging + delegate tool errors fixed; `manage_autonomous_session` tool error logging fixed.
 
 **New in v1.1.65:** No tools added or removed — four tool-adjacent fixes. (1) Graphify `sync_remote_source` returns the canonical `WP_Error` envelope (never `array( 'success' => false, ... )`) and the remote-source crypto treats provider-prefixed `*_key` fields as sensitive. (2) `paper_store_import`/`paper_store_export` guard a missing `collection` argument (`isset()` before `sanitize_key()`). (3) `remote_wp_connection` error messages instruct callers to run `list_connections` first when a connection ID is missing/invalid. (4) `WP_MCP_AI_Token_Budget_Manager` falls back to the bundled model catalog (longest-prefix match for date-versioned IDs) when the rate-limits CCT has no entry — TPM limits work without JetEngine. Also: `research_model` checks the provider `WP_Error` before reading the model.
 

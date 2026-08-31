@@ -1,5 +1,42 @@
 # oOS – Changelog
 
+## [1.1.66] - 2026-08-31
+
+### Added — NVOOS Checkout API & Content Graph Paid Checkout (PR #6063)
+
+- **New `addons/checkout-api/` addon (v0.1.0)** — the vendor-side checkout service for NV oOS premium addons, running on the vendor's own server (never distributed to customers or WordPress.org). Stripe `POST /session` + `POST /verify` endpoints under `/wp-json/nvoos-checkout/v1/` (PaymentIntent creation + server-side verification and license issuance), a license store in a custom table (idempotent per payment intent, active/revoked lifecycle), signed expiring HMAC-SHA256 download URLs serving cached addon ZIPs (capped at 10 downloads/link), a Stripe webhook receiver (signature-verified, idempotent; refunds/disputes revoke the matching license — `payment_intent.succeeded` also issues the license server-side so an interrupted browser flow still delivers it), per-IP rate limiting on the public endpoints, and a storefront admin (Stripe keys, price, currency, test mode, addon version, ZIP source, recent-license table with revoke). Stripe secret + webhook secret are encrypted at rest (AES-256-CBC keyed from `AUTH_KEY` + `SECURE_AUTH_KEY`); only the publishable key leaves the server. PHP 8.1+.
+- **Content Graph paid-checkout client (`plugins/nvoos-content-graph`)** — the "Get NV oOS Content Graph — AI" upsell now opens a Stripe Payment Element modal, verifies the payment via the vendor checkout API, records a local license key, and installs + activates the addon from the signed download URL in one flow. No Stripe keys ship in the plugin; new admin-only `POST /payments/session` + `POST /payments/verify` REST endpoints (cookie + nonce), four `nvoos_content_graph/payments/*` filters, per-user session-creation throttling, and standard `download_url()` + `Plugin_Upgrader` filesystem checks. Contract documented in `plugins/nvoos-content-graph/docs/commerce-vendor-api.md`.
+
+### Added — PHPUnit Test-Suite Repair Skill (PR #6108)
+
+- New coding-time agent skill `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` captures the cluster-by-cluster PHPUnit repair workflow distilled from this release's campaign: Docker test commands (WP 6.9/7.1), CI log-zip triage, 16 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, nonce/user binding, WP 6.9 queue memoization, anonymous-class visibility), the production-fix-vs-test-fix decision, and the branch/commit/validation conventions for cluster PRs. The plugin operational skill was updated with current integration contracts, both inventories were registered (`AGENTS.md` + `.github/copilot-instructions.md`), and the standing tracker `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md` was added. Coding-time agent skills: 52 → 53.
+
+### Changed — PHPUnit Suite Repair Campaign (PRs #6008, #6009, #6012–#6107, #6109)
+
+A ~100-PR campaign (Aug 28–31) brought the single-process PHPUnit suite green cluster-by-cluster — REST endpoint clusters, AJAX handlers, provider/client suites, admin pages, chat/channel integrations, CRM, professions/teams, multi-agent orchestration, cron/notifier, federation, healthcare interop, security, logger, and transcript suites. Most PRs are test-only; the production-side fixes they carried are grouped below.
+
+- **REST, auth & permissions** — assistant-access caching: a new `wp_mcp_ai_assistant_access_cache_enabled` filter replaces the define-time cache-disable constant and `validate_assistant_access()` caches `WP_Error` results like successful lookups (#6008); attachment-segment validation errors return an explicit HTTP 400 instead of defaulting to 500 (#6009); token-tier endpoint + tier-change audit logging (#6018); REST permission-callback allowlist refresh (#6019); bearer-auth context sync in the Simple JWT and assistant-access paths (#6014, #6016); REST analytics endpoints (#6015).
+- **Job queue, cron & notifier** — job-queue closure serialization in legacy option storage (#6020); `TIER_META_KEY` constant for chart data (#6021); custom-table query guards against missing schema — Graphify DB/memory bridge, job store, tenant DB (#6022); cron-status family: restored `WP_MCP_AI_Job_Notifier::update_status()` (async-executor cancel/retry stopped throwing undefined-method errors), dot-preserving job IDs, source scoping + collector-provided job types (#6036); job-notifier REST routes for dot-IDs + owner auth (#6037); Little's-law metrics (#6038); job status promoted to running on progress updates without resurrecting terminal states (#6039).
+- **Provider & client fixes** — web-search tool result building restored for Exa and Perplexity (#6042); Veo polling-status test alignment (#6040); auto-categorize tool router + client API (#6064); Cloudways analytics adapter auth check (#6062); core proxy utils (#6027).
+- **Tool contract & envelope fixes** — Media Toolkit tools normalized to `WP_Error` failures (#6057); Remove Background path guard + source resolution (#6072); memory-capture failure envelope contract restored (#6049) + WPCS violations in the memory-capture files (#6052); ecommerce toolkit enablement helper extracted (#6051); quiz list tool (#6024); autonomous-session tool error logging (#6058); A2A webhook logging + delegate tool errors (#6055); Shopify Sync CCT manager validates the variant ID before the JetEngine availability check so invalid rows fail deterministically (#6109, merged upstream after the main pass).
+- **Admin, render & output** — output-buffer leaks fixed across render and AJAX paths (performance section, admin AJAX handlers, provider diagnostics, privacy exporters) (#6045); Graphic Editor Plus image resource access on WP 6.9+ (#6069); workflow-editor AJAX handlers for WP_Error/hook drift (#6070); quiz admin pages wired (#6089); document-template admin pages + OCR sanitization (#6090); NPM integration notice determinism (#6097).
+- **Professions & teams** — profession CPT meta clamping + primary-role flow (#6043); team CPT sanitization (#6105); profession service + aggregate-agent-results (#6096).
+- **Federation & container** — federation mesh-sync init (#6044); container settings repository service ID (#6050); abilities API bridge (#6035).
+- **Graphify** — admin classes now load defensively on `plugins_loaded`, so the Project Management submenu can no longer fatal when Graphify is absent (#6106).
+- **Healthcare interop examples** — refreshed example payloads (general clinic, personal health tracker, radiology review, veterinary practice) (#6032).
+
+### Changed — Content Graph AI 1.0.3 (PR #6056)
+
+- The `nvoos-content-graph-ai` standalone plugin bumps to **1.0.3** with a tool permission-check fix; its distribution ZIP v1.0.3 ships in `build/`.
+
+### Housekeeping
+
+- Stale 1.1.65 build ZIPs and `.sha256` files removed from `build/` (root, `optional-components/`, `toolkit-addons/`), matching the 1.1.63/1.1.64 cleanup convention (PR #6011).
+
+### Versioning
+
+- Bumped to 1.1.66 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.66. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: 1.0.3 (unchanged; paid-checkout client merged, version bump pending). nvoos-content-graph-ai: **1.0.3** (bumped in this window). Checkout API addon: **v0.1.0** (new). Tool count: ~303 base + ~1,256 Pro (~1,559 total; live registry authoritative). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: 53.
+
 ## [1.1.65] - 2026-08-28
 
 ### Changed — Media Worker Full-Crawl4AI Proxy (031 Phase 3) & Strict-Path TEMP_ROOT (PR #5983)

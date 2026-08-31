@@ -1,7 +1,7 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-08-28 (v1.1.65 pass)
+> **Last reviewed:** 2026-08-31 (v1.1.66 pass)
 > **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.65-docs-catch-up.md`](v1.1.65-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
@@ -13,7 +13,7 @@
 
 - **Status:** 🔒 Parked by user decision. **Do not touch tags in a catch-up pass.**
 - **Issue:** [#5968 — Reconcile parked `@since` docblock tags](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5968)
-- **What:** four anomaly groups whose `@since` version does not match the release that shipped the code (verified on `alpha-working` 2026-08-26):
+- **What:** four anomaly groups whose `@since` version does not match the release that shipped the code (verified on `alpha-working` 2026-08-26; one new instance noted by the v1.1.66 pass):
 
 | Group | Tag | Location | Shipped in | First noted in |
 |---|---|---|---|---|
@@ -21,6 +21,7 @@
 | 2 | `@since 1.2.0` | `includes/class-wp-mcp-ai-tool-registry.php` (8×) + `mcp-ai-wpoos.php` export-provider block (2×) + `includes/class-wp-mcp-ai-rabbitmq-client.php` → `refresh_config()` (1×, PR #6007) | 1.1.x (implies a planned 1.2.0) | v1.1.59 plan |
 | 3 | `@since 1.9.0` | `includes/harness/class-wp-mcp-ai-artifact-*.php` (19 files) + ~50 more base/Pro files (PR #5923) | 1.1.63 | v1.1.63 plan |
 | 4 | `@since 1.0.0` | `includes/google/*` — 7 files (PR #5959) | 1.1.64 | v1.1.64 plan |
+| 5 | `@since 1.1.65` | `includes/class-wp-mcp-ai-job-notifier.php` — 1 instance (PRs #6036–#6039, merged after the 1.1.65 catch-up) | 1.1.66 | v1.1.66 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.

@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** August 28, 2026
-**Plugin Version:** 1.1.65
+**Last Updated:** August 31, 2026
+**Plugin Version:** 1.1.66
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -9,6 +9,8 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
 
 
+> **AUGUST 31, 2026 UPDATE (v1.1.66):** TEST-SUITE & STABILITY. A ~100-PR CAMPAIGN (AUG 28–31) REPAIRED THE SINGLE-PROCESS PHPUNIT SUITE CLUSTER-BY-CLUSTER — REST ENDPOINTS, AJAX HANDLERS, PROVIDER/CLIENT SUITES, ADMIN PAGES, CHAT/CHANNEL INTEGRATIONS, CRM, PROFESSIONS/TEAMS, MULTI-AGENT ORCHESTRATION, CRON/NOTIFIER, FEDERATION, HEALTHCARE INTEROP, SECURITY, LOGGER, TRANSCRIPTS. NEW CODING-TIME SKILL `mcp-ai-wpoos-test-suite` (53 SKILLS NOW) PLUS THE `TEST-SUITE-REMAINING-FIXES-PLAN.md` TRACKER. PRODUCTION FIXES CARRIED BY THE CAMPAIGN: ASSISTANT-ACCESS CACHING (`wp_mcp_ai_assistant_access_cache_enabled` FILTER + WP_ERROR CACHING), EXPLICIT 400S FOR ATTACHMENT-SEGMENT VALIDATION ERRORS, TOKEN-TIER AUDIT LOGGING, REST PERMISSION-ALLOWLIST REFRESH, BEARER-AUTH CONTEXT SYNC, JOB-QUEUE CLOSURE SERIALIZATION, CUSTOM-TABLE QUERY GUARDS AGAINST MISSING SCHEMA, RESTORED JOB-NOTIFIER `update_status()` WITH DOT-PRESERVING JOB IDS, JOB STATUS PROMOTED TO RUNNING ON PROGRESS, WEB-SEARCH RESULT BUILDING RESTORED FOR EXA/PERPLEXITY, MEDIA TOOLKIT WP_ERROR NORMALIZATION, REMOVE BACKGROUND PATH GUARD, MEMORY-CAPTURE ENVELOPE RESTORATION, OUTPUT-BUFFER LEAK FIXES, GRAPHIC EDITOR PLUS ON WP 6.9+, PROFESSION META CLAMPING + TEAM CPT SANITIZATION, FEDERATION MESH-SYNC INIT, DEFENSIVE GRAPHIFY ADMIN LOADING. CONTENT GRAPH AI BUMPED TO 1.0.3 WITH A PERMISSION-CHECK FIX; NEW CHECKOUT API ADDON (V0.1.0, VENDOR-SERVER ONLY — STRIPE SESSION/VERIFY, LICENSE STORE, SIGNED DOWNLOADS, WEBHOOKS) PLUS THE PAID-CHECKOUT CLIENT IN THE FREE `nvoos-content-graph` PLUGIN; STALE 1.1.65 BUILD ZIPS REMOVED. TOOL COUNT UNCHANGED: ~303 BASE + ~1,256 PRO (~1,559 TOTAL). UPDATED DOCS: THIS PLAN, TEST-SUITE TRACKER, NEW SKILL, CHECKOUT API README/CHANGELOG + COMMERCE VENDOR API, README/CHANGELOG/readme.txt/QUICK_REFERENCE.
+>
 > **AUGUST 28, 2026 UPDATE (v1.1.65):** HARDENING & STABILITY. OPENAI REASONING MODELS (O-SERIES/GPT-5) NO LONGER RECEIVE `max_tokens`/`temperature` — `OpenAiCompatibleClient` STRIPS UNSUPPORTED PARAMETERS AND RETRIES 400 REJECTIONS WITH CORRECTED PAYLOADS; CONTENT GRAPH AI EMBEDDINGS STOP 500ING (PROVIDER/MODEL RESOLUTION, EXCEPTION GUARDS) AND GRAPH CONTEXT FALLS BACK TO KEYWORD SEARCH WITHOUT AN INDEX. MEDIA WORKER SHIPS THE OPTIONAL FULL-CRAWL4AI PROXY (`/api/crawl/full`, ENV-GATED `CRAWL4AI_FULL_URL`, SSRF-VALIDATED) + STRICT-PATH `TEMP_ROOT` ALLOWLIST. SECURITY-POSTURE FINDINGS CLOSED (ISSUE #5972): ALGORAVE TONE.JS EVAL CONFIRMATION GATE, TMA SOURCE-MAP REMOVAL, WEBHOOK `__return_true` JUSTIFICATIONS. CHAT/REST HARDENING: LEGACY ATTACHMENT PARAMETERS TOLERATED, CUSTOM MESSAGE ROLES WORK AGAIN, ORPHANED TOOL MESSAGES SILENTLY DISCARDED, SIGN-PRESERVING TRANSCRIPT PAGINATION, GOOGLE CHAT `verification_token` WEBHOOK AUTH. TOOL COUNT UNCHANGED: ~303 BASE + ~1,256 PRO (~1,559 TOTAL). UPDATED DOCS: SECURITY POSTURE, PROPOSALS 028/031, TOOL REFERENCE, THIS PLAN.
 >
 > **AUGUST 26, 2026 UPDATE (v1.1.64):** GOOGLE CALENDAR CONNECTION & SHARED GOOGLE SERVICES — A NEW SHARED FOUNDATION IN `includes/google/` (OAUTH SERVICE, CALENDAR API V3 CLIENT, SCOPE REGISTRY, CREDENTIAL RESOLVER, SYNC + PUSH) REPLACES FOUR DRIFTED GOOGLE OAUTH COPIES, WITH A `google_calendar` CONNECTION TYPE ON BOTH CONNECTION SURFACES AND SIX NEW PRO GOOGLE-WORKSPACE TOOLS. COMPOSIO CONNECT GAINS A VERIFIED ACCOUNT-HEALTH ENGINE + `composio_manage_accounts` LIFECYCLE TOOL PLUS HARDENING ACROSS AUTH CONFIG, LISTINGS, APP REMOVAL, AND PROXIED PROVIDER FAILURES. LOG HYGIENE: TOOL-DECLARED NON-LOGGABLE RESULT FIELDS, SECRET URL QUERY-PARAM REDACTION, AND ROLLING LOG-BUFFER COMPACTION. FIXED: VALIDATED-TOOL VALIDATION RESTORED ON SYMFONY 5.4, MCP JSON-RPC ERROR ENVELOPES + DIAGNOSTICS PAGE, PRO SPA v2 CONVERSATION SYNC, VISION-TIME TOUTS. TOOL COUNT: ~303 BASE + ~1,256 PRO (~1,559 TOTAL). UPDATED DOCS: GOOGLE CALENDAR ARCHITECTURE + API REFERENCE + IMPLEMENTATION PLAN, TOOL REFERENCE.
@@ -625,7 +627,20 @@ n#### New Audit & Compliance Docs
 
 ---
 
-## 🆕 August 2026 — v1.1.55–v1.1.65: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API, Artifact Evolution, Chat Web Workers, Addons Installer, Google Calendar Connection, Composio Account Health, Log Hygiene & Non-Loggable Fields, Vision Timeouts, Full-Crawl4AI Proxy, Reasoning-Model Fixes, Security-Posture Closure, Chat/REST Hardening
+## 🆕 August 2026 — v1.1.55–v1.1.66: MCP Agent Compatibility, Fleet Operator, Media Worker v2.2.0→v3.2.0, Connection Pooling, Updater Rework, OOS Consolidation, Composio, Worker Crawling, Research Tools, Restricted Users, Conversation Import, Agent Identity Bridging, OKF Bundle Generator, OKF Bundle Management, Vector Store Responses API, Artifact Evolution, Chat Web Workers, Addons Installer, Google Calendar Connection, Composio Account Health, Log Hygiene & Non-Loggable Fields, Vision Timeouts, Full-Crawl4AI Proxy, Reasoning-Model Fixes, Security-Posture Closure, Chat/REST Hardening, PHPUnit Suite Repair Campaign, Test-Suite Repair Skill, Checkout API & Content Graph Paid Checkout
+
+### New and updated documents (August 31, 2026, v1.1.66)
+
+- **[docs/project/plans/v1.1.66-docs-catch-up.md](project/plans/v1.1.66-docs-catch-up.md)** ⭐ **NEW** — v1.1.66 docs & release catch-up plan (PRs #6008, #6009, #6011–#6108, incl. #6063). (August 31, 2026)
+- **[.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md](../.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md)** ⭐ **NEW** — PHPUnit test-suite repair & triage skill: Docker commands, CI-log triage, 16 recurring root-cause patterns, cluster-by-cluster PR workflow. (August 31, 2026)
+- **[docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md](developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md)** ⭐ **NEW** — standing tracker for the remaining PHPUnit suite fixes. (August 31, 2026)
+- **[addons/checkout-api/README.md](../addons/checkout-api/README.md)** + **[addons/checkout-api/CHANGELOG.md](../addons/checkout-api/CHANGELOG.md)** ⭐ **NEW** — Checkout API addon v0.1.0 (vendor-side Stripe checkout/licensing service). (August 31, 2026)
+- **[plugins/nvoos-content-graph/docs/commerce-vendor-api.md](../plugins/nvoos-content-graph/docs/commerce-vendor-api.md)** ⭐ **NEW** — vendor-API contract for the Content Graph paid-checkout client. (August 31, 2026)
+- **[docs/QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ⭐ **UPDATED** — v1.1.66 entry. (August 31, 2026)
+- **[README.md](../README.md)** ⭐ **UPDATED** — v1.1.66 highlights + latest updates (suite repair campaign, new skill, Content Graph AI 1.0.3, Checkout API). (August 31, 2026)
+- **[CHANGELOG.md](../CHANGELOG.md)** ⭐ **UPDATED** — new [1.1.66] section with PR-level detail. (August 31, 2026)
+- **[readme.txt](../readme.txt)** ⭐ **UPDATED** — Stable tag 1.1.66 + changelog entry. (August 31, 2026)
+- **[docs/project/ADDON_INVENTORY.md](project/ADDON_INVENTORY.md)** ⭐ **UPDATED** — Checkout API addon row (addon count 27). (August 31, 2026)
 
 ### New and updated documents (August 28, 2026, v1.1.65)
 
