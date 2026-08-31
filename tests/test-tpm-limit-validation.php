@@ -406,7 +406,8 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 	 */
 	public function test_get_high_capacity_fallback_model_default() {
 		// Clear settings to test default behavior.
-		delete_option( 'wp_mcp_ai_settings' );
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Selector' );
 		$method     = $reflection->getMethod( 'get_high_capacity_fallback_model' );
@@ -415,9 +416,9 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$result = $method->invoke( null );
 
 		$this->assertEquals(
-			'gemini-2.0-flash-exp',
+			'gemini-2.5-flash',
 			$result,
-			'Should return default high-capacity fallback model (gemini-2.0-flash-exp).'
+			'Should return default high-capacity fallback model (gemini-2.5-flash).'
 		);
 	}
 }
