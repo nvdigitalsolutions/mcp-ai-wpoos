@@ -23,6 +23,7 @@ if ( ! class_exists( 'Test_Registry_Hook_Stub_Tool' ) ) {
 	 */
 	class Test_Registry_Hook_Stub_Tool implements WP_MCP_AI_Tool_Interface {
 		use WP_MCP_AI_Tool_Default_Capability;
+
 		/**
 		 * Return the tool slug.
 		 *
@@ -282,6 +283,10 @@ class Test_Hooks_Registry extends WP_UnitTestCase {
 	 * Test that wp_mcp_ai_default_tools filter passes the default tool array through.
 	 */
 	public function test_default_tools_filter_passes_through_by_default() {
+		// Isolate from the production side-loader: tools-init.php adds default
+		// tools through this filter, which would pollute the pass-through check.
+		remove_all_filters( 'wp_mcp_ai_default_tools' );
+
 		// Arrange.
 		$original = array(
 			'WP_MCP_AI_Tool_Fake_A' => '/path/to/a.php',
@@ -299,6 +304,10 @@ class Test_Hooks_Registry extends WP_UnitTestCase {
 	 * Test that wp_mcp_ai_default_tools filter can add a tool to the list.
 	 */
 	public function test_default_tools_filter_can_add_tool() {
+		// Isolate from the production side-loader: tools-init.php adds default
+		// tools through this filter, which would break the count assertion.
+		remove_all_filters( 'wp_mcp_ai_default_tools' );
+
 		// Arrange.
 		$original = array(
 			'WP_MCP_AI_Tool_Fake_A' => '/path/to/a.php',
