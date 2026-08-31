@@ -205,6 +205,16 @@ class NV_oOS_Graphify {
 
 		// Admin settings class.
 		if ( is_admin() ) {
+			// The admin class files are required in the plugin main file under
+			// an is_admin() check; if the plugin loaded in a non-admin context
+			// and is_admin() only became true later, load them defensively.
+			if ( ! class_exists( 'NV_oOS_Graphify_Settings' ) ) {
+				require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nv-oos-graphify-settings.php';
+			}
+			if ( ! class_exists( 'NV_oOS_Graphify_Remote_Admin' ) ) {
+				require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nvoos-graphify-remote-admin.php';
+			}
+
 			NV_oOS_Graphify_Settings::init();
 			NV_oOS_Graphify_Remote_Admin::init();
 		}
