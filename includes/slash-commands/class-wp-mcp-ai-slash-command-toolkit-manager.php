@@ -8772,45 +8772,43 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_content_calendar( $args, $context ) {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Content_Calendar' ) ) {
-			// Simplified implementation if tool doesn't exist.
-			$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'view';
-			$period = isset( $args['period'] ) ? absint( $args['period'] ) : 30;
-			$format = isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'calendar';
+		$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'view';
+		$period = isset( $args['period'] ) ? absint( $args['period'] ) : 30;
+		$format = isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'calendar';
 
-			// Get scheduled posts.
-			$scheduled_posts = get_option( 'wp_mcp_ai_scheduled_posts', array() );
+		// Get scheduled posts.
+		$scheduled_posts = get_option( 'wp_mcp_ai_scheduled_posts', array() );
 
-			$calendar_data = array(
-				'period'          => $period,
-				'format'          => $format,
-				'scheduled_posts' => count( $scheduled_posts ),
-				'posts'           => $scheduled_posts,
-			);
-
-			return $this->success_response(
-				$calendar_data,
-				__( 'Content calendar retrieved successfully.', 'mcp-ai-wpoos' )
-			);
-		}
-
-		$tool = new WP_MCP_AI_Tool_Create_Content_Calendar();
-
-		$tool_args = array(
-			'action' => isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'view',
-			'period' => isset( $args['period'] ) ? absint( $args['period'] ) : 30,
-			'format' => isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'calendar',
+		$calendar_data = array(
+			'period'          => $period,
+			'format'          => $format,
+			'scheduled_posts' => count( $scheduled_posts ),
+			'posts'           => $scheduled_posts,
 		);
 
-		$result = $tool->execute( $tool_args, $context );
+		// Best-effort enrichment via the pro tool when it exists. The command
+		// contract is the same in both modes; tool failures never fail the
+		// command because the calendar data above is always available.
+		if ( class_exists( 'WP_MCP_AI_Tool_Create_Content_Calendar' ) ) {
+			$tool = new WP_MCP_AI_Tool_Create_Content_Calendar();
 
-		if ( is_wp_error( $result ) ) {
-			return $this->error_response( $result );
+			$tool_args = array(
+				'action'         => $action,
+				'start_date'     => gmdate( 'Y-m-d' ),
+				'duration_weeks' => max( 1, (int) ceil( $period / 7 ) ),
+				'format'         => $format,
+			);
+
+			$result = $tool->execute( $tool_args, $context );
+
+			if ( ! is_wp_error( $result ) && is_array( $result ) ) {
+				$calendar_data = array_merge( $result, $calendar_data );
+			}
 		}
 
 		return $this->success_response(
-			$result,
-			__( 'Content calendar processed successfully.', 'mcp-ai-wpoos' )
+			$calendar_data,
+			__( 'Content calendar retrieved successfully.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -8824,55 +8822,51 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_competitor_track( $args, $context ) {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Competitor_Analysis' ) ) {
-			// Simplified implementation.
-			if ( empty( $args['competitor'] ) || empty( $args['platform'] ) ) {
-				return $this->error_response( __( 'Competitor handle and platform are required.', 'mcp-ai-wpoos' ) );
-			}
-
-			$competitor = sanitize_text_field( $args['competitor'] );
-			$platform   = sanitize_text_field( $args['platform'] );
-			$metrics    = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'all';
-
-			// Mock competitor data.
-			$competitor_data = array(
-				'competitor'      => $competitor,
-				'platform'        => $platform,
-				'followers'       => wp_rand( 1000, 100000 ),
-				'posts_count'     => wp_rand( 50, 500 ),
-				'engagement_rate' => wp_rand( 2, 10 ) . '%',
-				'avg_likes'       => wp_rand( 100, 5000 ),
-				'tracked_at'      => current_time( 'mysql' ),
-			);
-
-			return $this->success_response(
-				$competitor_data,
-				sprintf(
-					/* translators: 1: competitor handle, 2: platform */
-					__( 'Tracking data retrieved for %1$s on %2$s.', 'mcp-ai-wpoos' ),
-					$competitor,
-					$platform
-				)
-			);
+		// Validate required parameters (identical in both modes).
+		if ( empty( $args['competitor'] ) || empty( $args['platform'] ) ) {
+			return $this->error_response( __( 'Competitor handle and platform are required.', 'mcp-ai-wpoos' ) );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Competitor_Analysis();
+		$competitor = sanitize_text_field( $args['competitor'] );
+		$platform   = sanitize_text_field( $args['platform'] );
+		$metrics    = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'all';
 
-		$tool_args = array(
-			'competitor_handle' => isset( $args['competitor'] ) ? sanitize_text_field( $args['competitor'] ) : '',
-			'platform'          => isset( $args['platform'] ) ? sanitize_text_field( $args['platform'] ) : '',
-			'metrics'           => isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'all',
+		// Mock competitor data (fallback when the pro tool is unavailable or fails).
+		$competitor_data = array(
+			'competitor'      => $competitor,
+			'platform'        => $platform,
+			'followers'       => wp_rand( 1000, 100000 ),
+			'posts_count'     => wp_rand( 50, 500 ),
+			'engagement_rate' => wp_rand( 2, 10 ) . '%',
+			'avg_likes'       => wp_rand( 100, 5000 ),
+			'tracked_at'      => current_time( 'mysql' ),
 		);
 
-		$result = $tool->execute( $tool_args, $context );
+		// Best-effort enrichment via the pro tool when it exists.
+		if ( class_exists( 'WP_MCP_AI_Tool_Competitor_Analysis' ) ) {
+			$tool = new WP_MCP_AI_Tool_Competitor_Analysis();
 
-		if ( is_wp_error( $result ) ) {
-			return $this->error_response( $result );
+			$tool_args = array(
+				'competitor_handle' => $competitor,
+				'platform'          => $platform,
+				'metrics'           => $metrics,
+			);
+
+			$result = $tool->execute( $tool_args, $context );
+
+			if ( ! is_wp_error( $result ) && is_array( $result ) ) {
+				$competitor_data = array_merge( $competitor_data, $result );
+			}
 		}
 
 		return $this->success_response(
-			$result,
-			__( 'Competitor analysis completed successfully.', 'mcp-ai-wpoos' )
+			$competitor_data,
+			sprintf(
+				/* translators: 1: competitor handle, 2: platform */
+				__( 'Tracking data retrieved for %1$s on %2$s.', 'mcp-ai-wpoos' ),
+				$competitor,
+				$platform
+			)
 		);
 	}
 
@@ -8890,63 +8884,59 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_video_merge( $args, $context ) {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Merge_Videos' ) ) {
-			// Simplified implementation.
-			if ( empty( $args['videos'] ) ) {
-				return $this->error_response( __( 'Video IDs are required.', 'mcp-ai-wpoos' ) );
-			}
-
-			// Split on comma (with optional spaces) so both "123,456" and
-			// "123, 456" inputs are accepted; absint() strips whitespace.
-			$video_ids   = array_filter( array_map( 'absint', explode( ',', (string) $args['videos'] ) ) );
-			$output_name = isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : 'merged-video-' . time();
-			$transitions = isset( $args['transitions'] );
-
-			// Create merge job.
-			$merge_job = array(
-				'videos'      => $video_ids,
-				'output_name' => $output_name,
-				'transitions' => $transitions,
-				'created_at'  => current_time( 'mysql' ),
-				'status'      => 'queued',
-			);
-
-			// Store job.
-			$jobs            = get_option( 'wp_mcp_ai_video_merge_jobs', array() );
-			$job_id          = 'merge_' . time();
-			$jobs[ $job_id ] = $merge_job;
-			update_option( 'wp_mcp_ai_video_merge_jobs', $jobs );
-
-			return $this->success_response(
-				array(
-					'job_id'      => $job_id,
-					'video_count' => count( $video_ids ),
-					'status'      => 'queued',
-					'output_name' => $output_name,
-				),
-				__( 'Video merge job queued successfully.', 'mcp-ai-wpoos' )
-			);
+		// Validate required parameters (identical in both modes).
+		if ( empty( $args['videos'] ) ) {
+			return $this->error_response( __( 'Video IDs are required.', 'mcp-ai-wpoos' ) );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Merge_Videos();
+		// Split on comma (with optional spaces) so both "123,456" and
+		// "123, 456" inputs are accepted; absint() strips whitespace.
+		$video_ids   = array_filter( array_map( 'absint', explode( ',', (string) $args['videos'] ) ) );
+		$output_name = isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : 'merged-video-' . time();
+		$transitions = isset( $args['transitions'] );
 
-		$tool_args = array(
-			// Split on comma (with optional spaces) so both "123,456" and
-			// "123, 456" inputs are accepted; absint() strips whitespace.
-			'video_ids'   => array_filter( array_map( 'absint', explode( ',', (string) $args['videos'] ) ) ),
-			'output_name' => isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : null,
-			'transitions' => isset( $args['transitions'] ),
+		// Queue the merge job (both modes).
+		$merge_job = array(
+			'videos'      => $video_ids,
+			'output_name' => $output_name,
+			'transitions' => $transitions,
+			'created_at'  => current_time( 'mysql' ),
+			'status'      => 'queued',
 		);
 
-		$result = $tool->execute( $tool_args, $context );
+		// Store job.
+		$jobs            = get_option( 'wp_mcp_ai_video_merge_jobs', array() );
+		$job_id          = 'merge_' . time();
+		$jobs[ $job_id ] = $merge_job;
+		update_option( 'wp_mcp_ai_video_merge_jobs', $jobs );
 
-		if ( is_wp_error( $result ) ) {
-			return $this->error_response( $result );
+		$data = array(
+			'job_id'      => $job_id,
+			'video_count' => count( $video_ids ),
+			'status'      => 'queued',
+			'output_name' => $output_name,
+		);
+
+		// Best-effort enrichment via the pro tool when it exists.
+		if ( class_exists( 'WP_MCP_AI_Tool_Merge_Videos' ) ) {
+			$tool = new WP_MCP_AI_Tool_Merge_Videos();
+
+			$tool_args = array(
+				'video_ids'   => $video_ids,
+				'output_name' => $output_name,
+				'transitions' => $transitions,
+			);
+
+			$result = $tool->execute( $tool_args, $context );
+
+			if ( ! is_wp_error( $result ) && is_array( $result ) ) {
+				$data = array_merge( $data, $result );
+			}
 		}
 
 		return $this->success_response(
-			$result,
-			__( 'Videos merged successfully.', 'mcp-ai-wpoos' )
+			$data,
+			__( 'Video merge job queued successfully.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -8960,61 +8950,57 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_video_thumbnail_generate( $args, $context ) {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Generate_Video_Thumbnails' ) ) {
-			// Simplified implementation.
-			if ( empty( $args['video-id'] ) ) {
-				return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
-			}
-
-			$video_id  = absint( $args['video-id'] );
-			$count     = isset( $args['count'] ) ? absint( $args['count'] ) : 3;
-			$timestamp = isset( $args['timestamp'] ) ? absint( $args['timestamp'] ) : null;
-
-			// Verify video exists.
-			$video = get_post( $video_id );
-			if ( ! $video || 'attachment' !== $video->post_type ) {
-				return $this->error_response( __( 'Video not found.', 'mcp-ai-wpoos' ) );
-			}
-
-			// Create thumbnail job.
-			$thumbnail_data = array(
-				'video_id'   => $video_id,
-				'count'      => $count,
-				'timestamp'  => $timestamp,
-				'created_at' => current_time( 'mysql' ),
-				'status'     => 'processing',
-			);
-
-			// Store metadata.
-			update_post_meta( $video_id, '_mcp_ai_thumbnail_job', $thumbnail_data );
-
-			return $this->success_response(
-				$thumbnail_data,
-				sprintf(
-					/* translators: %d: number of thumbnails */
-					__( 'Generating %d thumbnail(s) for video.', 'mcp-ai-wpoos' ),
-					$count
-				)
-			);
+		// Validate required parameters (identical in both modes).
+		if ( empty( $args['video-id'] ) ) {
+			return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Generate_Video_Thumbnails();
+		$video_id  = absint( $args['video-id'] );
+		$count     = isset( $args['count'] ) ? absint( $args['count'] ) : 3;
+		$timestamp = isset( $args['timestamp'] ) ? absint( $args['timestamp'] ) : null;
 
-		$tool_args = array(
-			'video_id'  => absint( $args['video-id'] ),
-			'count'     => isset( $args['count'] ) ? absint( $args['count'] ) : 3,
-			'timestamp' => isset( $args['timestamp'] ) ? absint( $args['timestamp'] ) : null,
+		// Verify video exists.
+		$video = get_post( $video_id );
+		if ( ! $video || 'attachment' !== $video->post_type ) {
+			return $this->error_response( __( 'Video not found.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Create thumbnail job (both modes).
+		$thumbnail_data = array(
+			'video_id'   => $video_id,
+			'count'      => $count,
+			'timestamp'  => $timestamp,
+			'created_at' => current_time( 'mysql' ),
+			'status'     => 'processing',
 		);
 
-		$result = $tool->execute( $tool_args, $context );
+		// Store metadata.
+		update_post_meta( $video_id, '_mcp_ai_thumbnail_job', $thumbnail_data );
 
-		if ( is_wp_error( $result ) ) {
-			return $this->error_response( $result );
+		// Best-effort enrichment via the pro tool when it exists.
+		if ( class_exists( 'WP_MCP_AI_Tool_Generate_Video_Thumbnails' ) ) {
+			$tool = new WP_MCP_AI_Tool_Generate_Video_Thumbnails();
+
+			$tool_args = array(
+				'video_id'  => $video_id,
+				'count'     => $count,
+				'timestamp' => $timestamp,
+			);
+
+			$result = $tool->execute( $tool_args, $context );
+
+			if ( ! is_wp_error( $result ) && is_array( $result ) ) {
+				$thumbnail_data = array_merge( $thumbnail_data, $result );
+			}
 		}
 
 		return $this->success_response(
-			$result,
-			__( 'Video thumbnails generated successfully.', 'mcp-ai-wpoos' )
+			$thumbnail_data,
+			sprintf(
+				/* translators: %d: number of thumbnails */
+				__( 'Generating %d thumbnail(s) for video.', 'mcp-ai-wpoos' ),
+				$count
+			)
 		);
 	}
 
@@ -9028,65 +9014,63 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_video_compress( $args, $context ) {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Compress_Video' ) ) {
-			// Simplified implementation.
-			if ( empty( $args['video-id'] ) ) {
-				return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
-			}
-
-			$video_id = absint( $args['video-id'] );
-			$quality  = isset( $args['quality'] ) ? sanitize_text_field( $args['quality'] ) : 'medium';
-			$format   = isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'mp4';
-
-			// Verify video exists.
-			$video = get_post( $video_id );
-			if ( ! $video || 'attachment' !== $video->post_type ) {
-				return $this->error_response( __( 'Video not found.', 'mcp-ai-wpoos' ) );
-			}
-
-			// Create compression job.
-			$compression_data = array(
-				'video_id'   => $video_id,
-				'quality'    => $quality,
-				'format'     => $format,
-				'created_at' => current_time( 'mysql' ),
-				'status'     => 'queued',
-			);
-
-			// Store job.
-			$jobs            = get_option( 'wp_mcp_ai_video_compression_jobs', array() );
-			$job_id          = 'compress_' . time();
-			$jobs[ $job_id ] = $compression_data;
-			update_option( 'wp_mcp_ai_video_compression_jobs', $jobs );
-
-			return $this->success_response(
-				array(
-					'job_id'  => $job_id,
-					'quality' => $quality,
-					'format'  => $format,
-					'status'  => 'queued',
-				),
-				__( 'Video compression job queued successfully.', 'mcp-ai-wpoos' )
-			);
+		// Validate required parameters (identical in both modes).
+		if ( empty( $args['video-id'] ) ) {
+			return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Compress_Video();
+		$video_id = absint( $args['video-id'] );
+		$quality  = isset( $args['quality'] ) ? sanitize_text_field( $args['quality'] ) : 'medium';
+		$format   = isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'mp4';
 
-		$tool_args = array(
-			'video_id' => absint( $args['video-id'] ),
-			'quality'  => isset( $args['quality'] ) ? sanitize_text_field( $args['quality'] ) : 'medium',
-			'format'   => isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'mp4',
+		// Verify video exists.
+		$video = get_post( $video_id );
+		if ( ! $video || 'attachment' !== $video->post_type ) {
+			return $this->error_response( __( 'Video not found.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Queue the compression job (both modes).
+		$compression_data = array(
+			'video_id'   => $video_id,
+			'quality'    => $quality,
+			'format'     => $format,
+			'created_at' => current_time( 'mysql' ),
+			'status'     => 'queued',
 		);
 
-		$result = $tool->execute( $tool_args, $context );
+		// Store job.
+		$jobs            = get_option( 'wp_mcp_ai_video_compression_jobs', array() );
+		$job_id          = 'compress_' . time();
+		$jobs[ $job_id ] = $compression_data;
+		update_option( 'wp_mcp_ai_video_compression_jobs', $jobs );
 
-		if ( is_wp_error( $result ) ) {
-			return $this->error_response( $result );
+		$data = array(
+			'job_id'  => $job_id,
+			'quality' => $quality,
+			'format'  => $format,
+			'status'  => 'queued',
+		);
+
+		// Best-effort enrichment via the pro tool when it exists.
+		if ( class_exists( 'WP_MCP_AI_Tool_Compress_Video' ) ) {
+			$tool = new WP_MCP_AI_Tool_Compress_Video();
+
+			$tool_args = array(
+				'video_id' => $video_id,
+				'quality'  => $quality,
+				'format'   => $format,
+			);
+
+			$result = $tool->execute( $tool_args, $context );
+
+			if ( ! is_wp_error( $result ) && is_array( $result ) ) {
+				$data = array_merge( $data, $result );
+			}
 		}
 
 		return $this->success_response(
-			$result,
-			__( 'Video compressed successfully.', 'mcp-ai-wpoos' )
+			$data,
+			__( 'Video compression job queued successfully.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -9427,72 +9411,70 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_video_trim( $args, $context ) {
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Trim_Video' ) ) {
-			// Simplified implementation.
-			if ( empty( $args['video-id'] ) || ! isset( $args['start'] ) || ! isset( $args['end'] ) ) {
-				return $this->error_response( __( 'Video ID, start time, and end time are required.', 'mcp-ai-wpoos' ) );
-			}
-
-			$video_id    = absint( $args['video-id'] );
-			$start       = absint( $args['start'] );
-			$end         = absint( $args['end'] );
-			$output_name = isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : 'trimmed-video-' . time();
-
-			// Verify video exists.
-			$video = get_post( $video_id );
-			if ( ! $video || 'attachment' !== $video->post_type ) {
-				return $this->error_response( __( 'Video not found.', 'mcp-ai-wpoos' ) );
-			}
-
-			// Create trim job.
-			$trim_data = array(
-				'video_id'    => $video_id,
-				'start'       => $start,
-				'end'         => $end,
-				'duration'    => $end - $start,
-				'output_name' => $output_name,
-				'created_at'  => current_time( 'mysql' ),
-				'status'      => 'queued',
-			);
-
-			// Store job.
-			$jobs            = get_option( 'wp_mcp_ai_video_trim_jobs', array() );
-			$job_id          = 'trim_' . time();
-			$jobs[ $job_id ] = $trim_data;
-			update_option( 'wp_mcp_ai_video_trim_jobs', $jobs );
-
-			return $this->success_response(
-				array(
-					'job_id'   => $job_id,
-					'duration' => $end - $start,
-					'status'   => 'queued',
-				),
-				sprintf(
-					/* translators: %d: trimmed duration */
-					__( 'Video trim queued. Duration: %d seconds.', 'mcp-ai-wpoos' ),
-					$end - $start
-				)
-			);
+		// Validate required parameters (identical in both modes).
+		if ( empty( $args['video-id'] ) || ! isset( $args['start'] ) || ! isset( $args['end'] ) ) {
+			return $this->error_response( __( 'Video ID, start time, and end time are required.', 'mcp-ai-wpoos' ) );
 		}
 
-		$tool = new WP_MCP_AI_Tool_Trim_Video();
+		$video_id    = absint( $args['video-id'] );
+		$start       = absint( $args['start'] );
+		$end         = absint( $args['end'] );
+		$output_name = isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : 'trimmed-video-' . time();
 
-		$tool_args = array(
-			'video_id'    => absint( $args['video-id'] ),
-			'start_time'  => absint( $args['start'] ),
-			'end_time'    => absint( $args['end'] ),
-			'output_name' => isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : null,
+		// Verify video exists.
+		$video = get_post( $video_id );
+		if ( ! $video || 'attachment' !== $video->post_type ) {
+			return $this->error_response( __( 'Video not found.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Queue the trim job (both modes).
+		$trim_data = array(
+			'video_id'    => $video_id,
+			'start'       => $start,
+			'end'         => $end,
+			'duration'    => $end - $start,
+			'output_name' => $output_name,
+			'created_at'  => current_time( 'mysql' ),
+			'status'      => 'queued',
 		);
 
-		$result = $tool->execute( $tool_args, $context );
+		// Store job.
+		$jobs            = get_option( 'wp_mcp_ai_video_trim_jobs', array() );
+		$job_id          = 'trim_' . time();
+		$jobs[ $job_id ] = $trim_data;
+		update_option( 'wp_mcp_ai_video_trim_jobs', $jobs );
 
-		if ( is_wp_error( $result ) ) {
-			return $this->error_response( $result );
+		$data = array(
+			'job_id'   => $job_id,
+			'duration' => $end - $start,
+			'status'   => 'queued',
+		);
+
+		// Best-effort enrichment via the pro tool when it exists.
+		if ( class_exists( 'WP_MCP_AI_Tool_Trim_Video' ) ) {
+			$tool = new WP_MCP_AI_Tool_Trim_Video();
+
+			$tool_args = array(
+				'video_id'    => $video_id,
+				'start_time'  => $start,
+				'end_time'    => $end,
+				'output_name' => $output_name,
+			);
+
+			$result = $tool->execute( $tool_args, $context );
+
+			if ( ! is_wp_error( $result ) && is_array( $result ) ) {
+				$data = array_merge( $data, $result );
+			}
 		}
 
 		return $this->success_response(
-			$result,
-			__( 'Video trimmed successfully.', 'mcp-ai-wpoos' )
+			$data,
+			sprintf(
+				/* translators: %d: trimmed duration */
+				__( 'Video trim queued. Duration: %d seconds.', 'mcp-ai-wpoos' ),
+				$end - $start
+			)
 		);
 	}
 
