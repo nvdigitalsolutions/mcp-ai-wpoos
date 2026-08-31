@@ -1071,6 +1071,15 @@ function wp_mcp_ai_check_vendor_packages() {
 		'qrcode'        => 'assets/vendor/qrcode/lib/index.js',
 	);
 
+	/**
+	 * Filter the vendor package path map before availability checks.
+	 *
+	 * Allows tests and integrations to remap or inject package locations.
+	 *
+	 * @param array $packages Package name => relative path pairs.
+	 */
+	$packages = apply_filters( 'wp_mcp_ai_vendor_package_paths', $packages );
+
 	$missing = array();
 	foreach ( $packages as $name => $path ) {
 		// Skip CDN packages - they're loaded from CDN, not vendor directory.

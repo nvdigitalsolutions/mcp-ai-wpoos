@@ -28,10 +28,25 @@ class Test_NPM_Integration_Notice extends WP_UnitTestCase {
 	 * Clean up after each test.
 	 */
 	public function tearDown(): void {
+		remove_all_filters( 'wp_mcp_ai_vendor_package_paths' );
+
 		// Clean up any settings.
 		delete_option( 'wp_mcp_ai_settings' );
 
 		parent::tearDown();
+	}
+
+	/**
+	 * Force the vendor package checker to report a missing package.
+	 */
+	private function force_missing_package() {
+		add_filter(
+			'wp_mcp_ai_vendor_package_paths',
+			static function ( $packages ) {
+				$packages['test-missing-package'] = 'assets/vendor/test-missing-package/never-exists.js';
+				return $packages;
+			}
+		);
 	}
 
 	/**
@@ -63,16 +78,17 @@ class Test_NPM_Integration_Notice extends WP_UnitTestCase {
 	 * Test that check_vendor_packages reports missing packages correctly.
 	 */
 	public function test_check_vendor_packages_reports_missing() {
+		$this->force_missing_package();
+
 		$result = wp_mcp_ai_check_vendor_packages();
 
-		// If packages are missing, should have entries in 'missing' array.
-		if ( ! $result['available'] ) {
-			$this->assertNotEmpty( $result['missing'] );
+		// The injected package path never exists, so it must be reported.
+		$this->assertFalse( $result['available'] );
+		$this->assertContains( 'test-missing-package', $result['missing'] );
 
-			// Each missing package should be a string.
-			foreach ( $result['missing'] as $package ) {
-				$this->assertIsString( $package );
-			}
+		// Each missing package should be a string.
+		foreach ( $result['missing'] as $package ) {
+			$this->assertIsString( $package );
 		}
 	}
 
@@ -140,47 +156,47 @@ class Test_NPM_Integration_Notice extends WP_UnitTestCase {
 	 * Test that notice contains expected content when shown.
 	 */
 	public function test_notice_contains_expected_content() {
-		// Enable a feature to trigger potential notice.
+		// Enable a feature and force a missing package so the notice renders.
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
 				'enable_media_toolkit' => true,
 			)
 		);
+		$this->force_missing_package();
 
 		// Capture output.
 		ob_start();
 		wp_mcp_ai_npm_integration_admin_notice();
 		$output = ob_get_clean();
 
-		// If notice is shown, it should contain certain elements.
-		if ( ! empty( $output ) ) {
-			// Should have notice wrapper.
-			$this->assertStringContainsString( 'notice notice-warning', $output );
+		$this->assertNotEmpty( $output );
 
-			// Should mention Node.js or NPM packages.
-			$this->assertThat(
-				$output,
-				$this->logicalOr(
-					$this->stringContains( 'Node.js' ),
-					$this->stringContains( 'NPM packages' ),
-					$this->stringContains( 'vendor directory' )
-				)
-			);
+		// Should have notice wrapper.
+		$this->assertStringContainsString( 'notice notice-warning', $output );
 
-			// Should list features requiring Node.js.
-			$this->assertStringContainsString( 'Features requiring Node.js:', $output );
+		// Should mention Node.js or NPM packages.
+		$this->assertThat(
+			$output,
+			$this->logicalOr(
+				$this->stringContains( 'Node.js' ),
+				$this->stringContains( 'NPM packages' ),
+				$this->stringContains( 'vendor directory' )
+			)
+		);
 
-			// Should mention specific tools.
-			$this->assertThat(
-				$output,
-				$this->logicalOr(
-					$this->stringContains( 'format_code_prettier' ),
-					$this->stringContains( 'optimize_image_sharp' ),
-					$this->stringContains( 'render_math_equation' )
-				)
-			);
-		}
+		// Should list features requiring Node.js.
+		$this->assertStringContainsString( 'Features requiring Node.js:', $output );
+
+		// Should mention specific tools.
+		$this->assertThat(
+			$output,
+			$this->logicalOr(
+				$this->stringContains( 'format_code_prettier' ),
+				$this->stringContains( 'optimize_image_sharp' ),
+				$this->stringContains( 'render_math_equation' )
+			)
+		);
 	}
 
 	/**
@@ -208,91 +224,73 @@ class Test_NPM_Integration_Notice extends WP_UnitTestCase {
 	 * Test that notice mentions vendor directory when packages are missing.
 	 */
 	public function test_notice_mentions_vendor_directory() {
-		// Enable a feature.
+		// Enable a feature and force a missing package so the notice renders.
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
 				'enable_media_toolkit' => true,
 			)
 		);
+		$this->force_missing_package();
 
 		// Capture output.
 		ob_start();
 		wp_mcp_ai_npm_integration_admin_notice();
 		$output = ob_get_clean();
 
-		// If notice is shown and packages are missing, should mention vendor directory.
-		if ( ! empty( $output ) ) {
-			$package_check = wp_mcp_ai_check_vendor_packages();
-			if ( ! $package_check['available'] ) {
-				$this->assertStringContainsString( 'vendor directory', $output );
-			}
-		}
+		$this->assertStringContainsString( 'vendor directory', $output );
 	}
 
 	/**
 	 * Test that notice shows list of missing packages when available.
 	 */
 	public function test_notice_lists_missing_packages() {
-		// Enable a feature.
+		// Enable a feature and force a missing package so the notice renders.
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
 				'enable_media_toolkit' => true,
 			)
 		);
+		$this->force_missing_package();
 
 		// Capture output.
 		ob_start();
 		wp_mcp_ai_npm_integration_admin_notice();
 		$output = ob_get_clean();
 
-		// Check if packages are actually missing.
 		$package_check = wp_mcp_ai_check_vendor_packages();
+		$this->assertFalse( $package_check['available'] );
 
-		if ( ! empty( $output ) && ! $package_check['available'] && ! empty( $package_check['missing'] ) ) {
-			// Should show "Missing packages:" header.
-			$this->assertStringContainsString( 'Missing packages:', $output );
+		// Should show "Missing packages:" header.
+		$this->assertStringContainsString( 'Missing packages:', $output );
 
-			// Should list at least one package name from the missing array.
-			$found_package = false;
-			foreach ( $package_check['missing'] as $package ) {
-				if ( strpos( $output, $package ) !== false ) {
-					$found_package = true;
-					break;
-				}
-			}
-			$this->assertTrue( $found_package, 'Notice should list at least one missing package' );
-		}
+		// Should list the injected missing package name.
+		$this->assertStringContainsString( 'test-missing-package', $output );
 	}
 
 	/**
 	 * Test that notice HTML is properly escaped.
 	 */
 	public function test_notice_html_is_escaped() {
-		// Enable a feature.
+		// Enable a feature and force a missing package so the notice renders.
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
 				'enable_media_toolkit' => true,
 			)
 		);
+		$this->force_missing_package();
 
 		// Capture output.
 		ob_start();
 		wp_mcp_ai_npm_integration_admin_notice();
 		$output = ob_get_clean();
 
-		// If notice is shown, verify proper HTML structure.
-		if ( ! empty( $output ) ) {
-			// Should have proper opening and closing tags.
-			$this->assertStringContainsString( '<div class="notice notice-warning', $output );
-			$this->assertStringContainsString( '</div>', $output );
+		$this->assertNotEmpty( $output );
 
-			// Should have proper link structure (if Node.js link is present).
-			if ( strpos( $output, 'nodejs.org' ) !== false ) {
-				$this->assertStringContainsString( '<a href="https://nodejs.org/"', $output );
-			}
-		}
+		// Should have proper opening and closing tags.
+		$this->assertStringContainsString( '<div class="notice notice-warning', $output );
+		$this->assertStringContainsString( '</div>', $output );
 	}
 }
