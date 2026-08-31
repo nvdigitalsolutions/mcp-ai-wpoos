@@ -28,7 +28,7 @@
 | Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
 | Professions + Teams + KB | `includes/professions/`, `includes/teams/`, `includes/knowledge-base/` | `src/Professions/`, `src/Teams/`, `src/KnowledgeBase/` | 🟡 Bridged |
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
-| Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` | 🟡 Bridged — server surface (WellKnown, PeerVerifier, RateLimiter) extracted; directory REST, mesh, peer CPT remain |
+| Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` | 🟡 Bridged — well-known, peer CPT, directory REST, bootstrap, verifier, rate limiter extracted; mesh networking + settings admin UI remain |
 | Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🔴 Greenfield |
 
 ## Wave A extraction notes (2026-08-31)
@@ -52,11 +52,11 @@
 
 Base plugin `includes/` copies remain for the transition; deletion happens at cutover (plan Phase 5). No `class_alias` shims during the transition — platform owns wiring only in standalone mode, which avoids double registration entirely.
 
-### Federation 🟡 Bridged — server surface extracted
+### Federation 🟡 Bridged — server surface + directory extracted
 
-- Ported classes in `src/Federation/`: `WellKnown` (registry-agnostic — accepts base or Content Graph core registries, null-safe), `PeerVerifier` (declares the same `_wp_mcp_ai_peer_*` meta keys as the base peer CPT so both implementations interoperate), `RateLimiter` (fleet-management capability check falls back to `manage_options` in standalone mode).
-- `FederationService` owns the well-known wiring in standalone mode when `enable_federation` / `enable_federation_directory` is set in `wp_mcp_ai_settings`.
-- **Remaining in base plugin (follow-up PRs):** `WP_MCP_AI_AI_Peer_CPT` (peer post type + JetEngine CCT sync, 739 lines), `WP_MCP_AI_Federation_Directory_REST` (869 lines), mesh networking (`mesh-router` 1,379 lines, `mesh-peer-sync`, `mesh-peer-tester`, `mesh-peer-test-rest`), and `WP_MCP_AI_Federation_Settings` admin UI.
+- Ported classes in `src/Federation/`: `Federation` (bootstrap — well-known, peer CPT, directory REST, cron, A2A well-known, activation hooks on the platform plugin file), `Settings` (reads the same `wp_mcp_ai_settings` option; admin UI stays in the base plugin), `WellKnown` (registry-agnostic — accepts base or Content Graph core registries, null-safe), `PeerCpt` (same `ai_peer` post type + byte-identical meta keys; JetEngine CCT sync no-ops in standalone mode), `DirectoryRest` (`ai-dir/v1` — register/list/get/search/reverify/report with rate limiting), `PeerVerifier`, `RateLimiter` (fleet-management capability check falls back to `manage_options` in standalone mode).
+- `FederationService` boots `Federation` in standalone mode only — monolith mode keeps the base plugin's own federation wiring (no double registration).
+- **Remaining in base plugin (follow-up PRs):** mesh networking (`mesh-router` 1,379 lines, `mesh-peer-sync`, `mesh-peer-tester`, `mesh-peer-test-rest`) and `WP_MCP_AI_Federation_Settings` admin settings UI. Mesh stays unavailable in standalone mode until ported — `RuntimeMode` keeps reporting the Federation subsystem as bridged for that reason.
 
 ## Runtime degradation guard
 

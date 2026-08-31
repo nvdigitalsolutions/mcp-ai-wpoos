@@ -18,9 +18,13 @@ Federation subsystem — AI peer discovery via `/.well-known/ai-peer` and `/.wel
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraphAiPlatform\Federation\FederationService` | `FederationService.php` | `Plugin::register()` |
-| `NvoosContentGraphAiPlatform\Federation\WellKnown` | `WellKnown.php` | `FederationService` (standalone mode) |
-| `NvoosContentGraphAiPlatform\Federation\PeerVerifier` | `PeerVerifier.php` | Cron, REST (follow-up) |
-| `NvoosContentGraphAiPlatform\Federation\RateLimiter` | `RateLimiter.php` | REST (follow-up) |
+| `NvoosContentGraphAiPlatform\Federation\Federation` | `Federation.php` | `FederationService` (standalone mode) |
+| `NvoosContentGraphAiPlatform\Federation\Settings` | `Settings.php` | `Federation`, admin |
+| `NvoosContentGraphAiPlatform\Federation\WellKnown` | `WellKnown.php` | `Federation` |
+| `NvoosContentGraphAiPlatform\Federation\PeerCpt` | `PeerCpt.php` | `Federation`, `DirectoryRest`, `PeerVerifier` |
+| `NvoosContentGraphAiPlatform\Federation\DirectoryRest` | `DirectoryRest.php` | `Federation` |
+| `NvoosContentGraphAiPlatform\Federation\PeerVerifier` | `PeerVerifier.php` | Cron, `DirectoryRest` |
+| `NvoosContentGraphAiPlatform\Federation\RateLimiter` | `RateLimiter.php` | `DirectoryRest` |
 
 ## Inputs / Outputs / Neighbors
 
@@ -38,12 +42,10 @@ Federation subsystem — AI peer discovery via `/.well-known/ai-peer` and `/.wel
 
 ## Extraction status (partial)
 
-The federation **server surface** is ported. The following remain in the base plugin during the transition (tracked in `MIGRATION-GAPS.md`):
+The federation **server surface and directory service** are ported. The following remain in the base plugin during the transition (tracked in `MIGRATION-GAPS.md`):
 
-- `WP_MCP_AI_AI_Peer_CPT` (peer post type + JetEngine CCT sync) — `PeerVerifier` declares the same meta keys so both implementations interoperate.
-- `WP_MCP_AI_Federation_Directory_REST` (directory registration/discovery API).
-- Mesh networking (`mesh-router`, `mesh-peer-sync`, `mesh-peer-tester`, `mesh-peer-test-rest`).
-- `WP_MCP_AI_Federation_Settings` admin UI (registers into the base settings page).
+- Mesh networking (`mesh-router`, `mesh-peer-sync`, `mesh-peer-tester`, `mesh-peer-test-rest`) — unavailable in standalone mode until ported.
+- `WP_MCP_AI_Federation_Settings` admin settings UI (registers into the base settings page); the Platform addon's `FederationAdmin` provides its own dashboard surface, and `Settings` reads the same `wp_mcp_ai_settings` option.
 
 ## Tests
 

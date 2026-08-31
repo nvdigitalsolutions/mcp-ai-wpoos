@@ -22,21 +22,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Handles peer verification and health checks.
  *
- * The peer CPT itself (`ai_peer` post type + its JetEngine CCT sync) remains
- * in the base plugin during the transition (tracked in MIGRATION-GAPS.md);
- * the meta keys are declared here with the same values so verification works
- * against peer posts created by either implementation.
+ * Peer meta keys come from {@see PeerCpt} — byte-identical to the base
+ * plugin's CPT so verification works against peer posts created by either
+ * implementation.
  */
 class PeerVerifier {
-
-	// Peer post meta keys — byte-identical to WP_MCP_AI_AI_Peer_CPT.
-	const META_HEALTH_STATUS = '_wp_mcp_ai_peer_health_status';
-	const META_LAST_ERROR    = '_wp_mcp_ai_peer_last_error';
-	const META_LAST_VERIFIED = '_wp_mcp_ai_peer_last_verified';
-	const META_LATENCY_P50   = '_wp_mcp_ai_peer_latency_p50';
-	const META_CAPABILITIES  = '_wp_mcp_ai_peer_capabilities';
-	const META_WELLKNOWN_URL = '_wp_mcp_ai_peer_wellknown_url';
-	const POST_TYPE          = 'ai_peer';
 
 	/**
 	 * Verify a peer by fetching its well-known document and checking JWKS.
@@ -60,9 +50,9 @@ class PeerVerifier {
 		$latency = round( ( microtime( true ) - $start_time ) * 1000 );
 
 		if ( is_wp_error( $response ) ) {
-			update_post_meta( $peer_id, self::META_HEALTH_STATUS, 'down' );
-			update_post_meta( $peer_id, self::META_LAST_ERROR, $response->get_error_message() );
-			update_post_meta( $peer_id, self::META_LAST_VERIFIED, current_time( 'mysql', true ) );
+			update_post_meta( $peer_id, PeerCpt::META_HEALTH_STATUS, 'down' );
+			update_post_meta( $peer_id, PeerCpt::META_LAST_ERROR, $response->get_error_message() );
+			update_post_meta( $peer_id, PeerCpt::META_LAST_VERIFIED, current_time( 'mysql', true ) );
 
 			return new \WP_Error(
 				'verification_failed',
@@ -72,9 +62,9 @@ class PeerVerifier {
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status_code ) {
-			update_post_meta( $peer_id, self::META_HEALTH_STATUS, 'down' );
-			update_post_meta( $peer_id, self::META_LAST_ERROR, "HTTP $status_code" );
-			update_post_meta( $peer_id, self::META_LAST_VERIFIED, current_time( 'mysql', true ) );
+			update_post_meta( $peer_id, PeerCpt::META_HEALTH_STATUS, 'down' );
+			update_post_meta( $peer_id, PeerCpt::META_LAST_ERROR, "HTTP $status_code" );
+			update_post_meta( $peer_id, PeerCpt::META_LAST_VERIFIED, current_time( 'mysql', true ) );
 
 			return new \WP_Error(
 				'verification_failed',
@@ -86,9 +76,9 @@ class PeerVerifier {
 		$data = json_decode( $body, true );
 
 		if ( ! is_array( $data ) ) {
-			update_post_meta( $peer_id, self::META_HEALTH_STATUS, 'down' );
-			update_post_meta( $peer_id, self::META_LAST_ERROR, 'Invalid JSON response' );
-			update_post_meta( $peer_id, self::META_LAST_VERIFIED, current_time( 'mysql', true ) );
+			update_post_meta( $peer_id, PeerCpt::META_HEALTH_STATUS, 'down' );
+			update_post_meta( $peer_id, PeerCpt::META_LAST_ERROR, 'Invalid JSON response' );
+			update_post_meta( $peer_id, PeerCpt::META_LAST_VERIFIED, current_time( 'mysql', true ) );
 
 			return new \WP_Error(
 				'verification_failed',
@@ -119,19 +109,19 @@ class PeerVerifier {
 		}
 
 		// Update peer metadata.
-		update_post_meta( $peer_id, self::META_HEALTH_STATUS, $health_status );
-		update_post_meta( $peer_id, self::META_LATENCY_P50, $latency );
-		update_post_meta( $peer_id, self::META_LAST_VERIFIED, current_time( 'mysql', true ) );
+		update_post_meta( $peer_id, PeerCpt::META_HEALTH_STATUS, $health_status );
+		update_post_meta( $peer_id, PeerCpt::META_LATENCY_P50, $latency );
+		update_post_meta( $peer_id, PeerCpt::META_LAST_VERIFIED, current_time( 'mysql', true ) );
 
 		if ( ! $jwks_reachable ) {
-			update_post_meta( $peer_id, self::META_LAST_ERROR, 'JWKS endpoint not reachable' );
+			update_post_meta( $peer_id, PeerCpt::META_LAST_ERROR, 'JWKS endpoint not reachable' );
 		} else {
-			delete_post_meta( $peer_id, self::META_LAST_ERROR );
+			delete_post_meta( $peer_id, PeerCpt::META_LAST_ERROR );
 		}
 
 		// Update capabilities if changed.
 		if ( isset( $data['capabilities'] ) ) {
-			update_post_meta( $peer_id, self::META_CAPABILITIES, wp_json_encode( $data['capabilities'] ) );
+			update_post_meta( $peer_id, PeerCpt::META_CAPABILITIES, wp_json_encode( $data['capabilities'] ) );
 		}
 
 		return array(
@@ -149,7 +139,7 @@ class PeerVerifier {
 	public static function verify_all_peers() {
 		$query = new \WP_Query(
 			array(
-				'post_type'              => self::POST_TYPE,
+				'post_type'              => PeerCpt::POST_TYPE,
 				'posts_per_page'         => -1,
 				'fields'                 => 'ids',
 				'no_found_rows'          => true,  // Performance: Skip counting.
@@ -161,7 +151,7 @@ class PeerVerifier {
 		$failed_count   = 0;
 
 		foreach ( $query->posts as $peer_id ) {
-			$wellknown_url = get_post_meta( $peer_id, self::META_WELLKNOWN_URL, true );
+			$wellknown_url = get_post_meta( $peer_id, PeerCpt::META_WELLKNOWN_URL, true );
 
 			if ( ! $wellknown_url ) {
 				continue;

@@ -13,8 +13,12 @@ declare(strict_types=1);
 
 namespace NvoosContentGraphAiPlatform\Tests;
 
+use NvoosContentGraphAiPlatform\Federation\DirectoryRest;
+use NvoosContentGraphAiPlatform\Federation\Federation;
+use NvoosContentGraphAiPlatform\Federation\PeerCpt;
 use NvoosContentGraphAiPlatform\Federation\PeerVerifier;
 use NvoosContentGraphAiPlatform\Federation\RateLimiter;
+use NvoosContentGraphAiPlatform\Federation\Settings;
 use NvoosContentGraphAiPlatform\Federation\WellKnown;
 
 /**
@@ -88,9 +92,9 @@ class Test_Platform_Federation extends \WP_UnitTestCase {
 
 	public function test_peer_meta_constants_match_base_cpt_values(): void {
 		// Data stability: meta keys must stay byte-identical to the base CPT.
-		$this->assertSame( '_wp_mcp_ai_peer_health_status', PeerVerifier::META_HEALTH_STATUS );
-		$this->assertSame( '_wp_mcp_ai_peer_wellknown_url', PeerVerifier::META_WELLKNOWN_URL );
-		$this->assertSame( 'ai_peer', PeerVerifier::POST_TYPE );
+		$this->assertSame( '_wp_mcp_ai_peer_health_status', PeerCpt::META_HEALTH_STATUS );
+		$this->assertSame( '_wp_mcp_ai_peer_wellknown_url', PeerCpt::META_WELLKNOWN_URL );
+		$this->assertSame( 'ai_peer', PeerCpt::POST_TYPE );
 	}
 
 	public function test_peer_verifier_handles_wp_error_response(): void {
@@ -105,9 +109,99 @@ class Test_Platform_Federation extends \WP_UnitTestCase {
 
 		$result = PeerVerifier::verify_peer( $peer_id, 'https://example.com/.well-known/ai-peer' );
 		$this->assertWPError( $result );
-		$this->assertSame( 'down', get_post_meta( $peer_id, PeerVerifier::META_HEALTH_STATUS, true ) );
+		$this->assertSame( 'down', get_post_meta( $peer_id, PeerCpt::META_HEALTH_STATUS, true ) );
 
 		remove_all_filters( 'pre_http_request' );
+	}
+
+	public function test_peer_cpt_registers_post_type(): void {
+		new PeerCpt();
+		PeerCpt::register_post_type();
+
+		$this->assertTrue( post_type_exists( PeerCpt::POST_TYPE ) );
+	}
+
+	public function test_directory_rest_registers_routes(): void {
+		// DirectoryRest hooks rest_api_init in its constructor; routes must be
+		// registered on that action (WP 5.1+ requirement).
+		new DirectoryRest();
+		do_action( 'rest_api_init' );
+
+		$routes = rest_get_server()->get_routes( 'ai-dir/v1' );
+		$this->assertArrayHasKey( '/ai-dir/v1/peers', $routes );
+		$this->assertArrayHasKey( '/ai-dir/v1/peers/register', $routes );
+		$this->assertArrayHasKey( '/ai-dir/v1/search', $routes );
+		$this->assertArrayHasKey( '/ai-dir/v1/reverify/(?P<id>\d+)', $routes );
+	}
+
+	public function test_directory_rest_register_peer_creates_peer_post(): void {
+		PeerCpt::register_post_type();
+
+		// Simulate a healthy remote peer's well-known document + JWKS.
+		add_filter(
+			'pre_http_request',
+			static function ( $preempt, $args, $url ) {
+				if ( false !== strpos( $url, '.well-known/ai-peer' ) ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'site_name'    => 'Remote Peer',
+								'site_url'     => 'https://peer.example.com',
+								'mcp'          => array( 'url' => 'https://peer.example.com/wp-json/mcp-ai/v1' ),
+								'jwks_uri'     => 'https://peer.example.com/.well-known/jwks.json',
+								'capabilities' => array( 'post_create' ),
+							)
+						),
+					);
+				}
+				if ( false !== strpos( $url, '.well-known/jwks.json' ) ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode( array( 'keys' => array() ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$directory = new DirectoryRest();
+		$request   = new \WP_REST_Request( 'POST', '/ai-dir/v1/peers/register' );
+		$request->set_param( 'wellknown_url', 'https://peer.example.com/.well-known/ai-peer' );
+
+		$response = $directory->register_peer( $request );
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$this->assertSame( 201, $response->get_status() );
+
+		$data    = $response->get_data();
+		$peer_id = $data['peer_id'];
+		$this->assertSame( PeerCpt::POST_TYPE, get_post_type( $peer_id ) );
+		$this->assertSame( 'healthy', get_post_meta( $peer_id, PeerCpt::META_HEALTH_STATUS, true ) );
+		$this->assertSame( 'Remote Peer', get_post_meta( $peer_id, PeerCpt::META_SITE_NAME, true ) );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	public function test_federation_bootstrap_gates_on_settings(): void {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_federation'           => true,
+				'enable_federation_directory' => false,
+				'enable_mesh'                 => false,
+			)
+		);
+
+		$federation = new Federation( null );
+		$federation->maybe_load_federation_features();
+
+		$this->assertTrue( Federation::is_enabled() );
+		$this->assertFalse( Federation::is_directory_enabled() );
+		$this->assertTrue( Settings::is_federation_enabled() );
+		$this->assertFalse( Settings::is_directory_enabled() );
+		$this->assertFalse( Settings::is_mesh_enabled() );
 	}
 
 	/**
