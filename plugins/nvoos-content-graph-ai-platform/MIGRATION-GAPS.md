@@ -28,7 +28,7 @@
 | Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
 | Professions + Teams + KB | `includes/professions/`, `includes/teams/`, `includes/knowledge-base/` | `src/Professions/`, `src/Teams/`, `src/KnowledgeBase/` | 🟡 Bridged |
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
-| Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` | 🟡 Bridged (built since gap doc) |
+| Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` | 🟡 Bridged — server surface (WellKnown, PeerVerifier, RateLimiter) extracted; directory REST, mesh, peer CPT remain |
 | Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🔴 Greenfield |
 
 ## Wave A extraction notes (2026-08-31)
@@ -51,6 +51,12 @@
 ### Transition mechanism
 
 Base plugin `includes/` copies remain for the transition; deletion happens at cutover (plan Phase 5). No `class_alias` shims during the transition — platform owns wiring only in standalone mode, which avoids double registration entirely.
+
+### Federation 🟡 Bridged — server surface extracted
+
+- Ported classes in `src/Federation/`: `WellKnown` (registry-agnostic — accepts base or Content Graph core registries, null-safe), `PeerVerifier` (declares the same `_wp_mcp_ai_peer_*` meta keys as the base peer CPT so both implementations interoperate), `RateLimiter` (fleet-management capability check falls back to `manage_options` in standalone mode).
+- `FederationService` owns the well-known wiring in standalone mode when `enable_federation` / `enable_federation_directory` is set in `wp_mcp_ai_settings`.
+- **Remaining in base plugin (follow-up PRs):** `WP_MCP_AI_AI_Peer_CPT` (peer post type + JetEngine CCT sync, 739 lines), `WP_MCP_AI_Federation_Directory_REST` (869 lines), mesh networking (`mesh-router` 1,379 lines, `mesh-peer-sync`, `mesh-peer-tester`, `mesh-peer-test-rest`), and `WP_MCP_AI_Federation_Settings` admin UI.
 
 ## Runtime degradation guard
 
