@@ -15,13 +15,12 @@ class WP_MCP_AI_Provider_Subtab_Null_Gap_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that get_subtab_groups filters out null values.
+	 *
+	 * NOTE: this suite must NOT define the WP_MCP_AI_BASE_VERSION constant —
+	 * constants cannot be undefined and would flip every later suite into
+	 * base-version mode for the rest of the process.
 	 */
 	public function test_subtab_groups_filters_out_null_values() {
-		// Mock the base version scenario where embedded is null.
-		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
-			define( 'WP_MCP_AI_BASE_VERSION', true );
-		}
-
 		$section = new WP_MCP_AI_Section_Providers();
 
 		// Use reflection to access protected method.
@@ -37,10 +36,9 @@ class WP_MCP_AI_Provider_Subtab_Null_Gap_Test extends WP_UnitTestCase {
 			$this->assertIsArray( $subtab, "Subtab '$key' should be an array" );
 		}
 
-		// Verify embedded is not in the list when base version is enabled.
-		if ( WP_MCP_AI_BASE_VERSION ) {
-			$this->assertArrayNotHasKey( 'embedded', $subtabs, 'Embedded subtab should not be present in base version' );
-		}
+		// The embedded subtab is contributed by the Pro Providers section when
+		// that section has been loaded; the base section must never emit a
+		// null entry in its place (covered by the loop above).
 
 		// Verify expected subtabs are present.
 		$expected_subtabs = array( 'priority', 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio', 'huggingface', 'cloudflare', 'google_maps' );
@@ -53,10 +51,6 @@ class WP_MCP_AI_Provider_Subtab_Null_Gap_Test extends WP_UnitTestCase {
 	 * Test that lm_studio and huggingface are adjacent when embedded is null.
 	 */
 	public function test_lm_studio_and_huggingface_are_adjacent() {
-		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
-			define( 'WP_MCP_AI_BASE_VERSION', true );
-		}
-
 		$section = new WP_MCP_AI_Section_Providers();
 
 		// Use reflection to access protected method.
@@ -74,8 +68,9 @@ class WP_MCP_AI_Provider_Subtab_Null_Gap_Test extends WP_UnitTestCase {
 		$this->assertNotFalse( $lm_studio_pos, 'lm_studio should be in subtabs' );
 		$this->assertNotFalse( $huggingface_pos, 'huggingface should be in subtabs' );
 
-		// In base version, they should be adjacent (no gap from null embedded).
-		if ( WP_MCP_AI_BASE_VERSION ) {
+		// When the Pro providers section is not loaded the embedded subtab is
+		// absent, so lm_studio and huggingface must sit next to each other.
+		if ( ! isset( $subtabs['embedded'] ) ) {
 			$this->assertEquals(
 				$huggingface_pos,
 				$lm_studio_pos + 1,
@@ -88,10 +83,6 @@ class WP_MCP_AI_Provider_Subtab_Null_Gap_Test extends WP_UnitTestCase {
 	 * Test that array has no gaps (sequential array keys).
 	 */
 	public function test_subtab_array_has_no_gaps() {
-		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
-			define( 'WP_MCP_AI_BASE_VERSION', true );
-		}
-
 		$section = new WP_MCP_AI_Section_Providers();
 
 		// Use reflection to access protected method.
