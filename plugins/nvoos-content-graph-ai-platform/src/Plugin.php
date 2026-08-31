@@ -17,6 +17,10 @@ final class Plugin {
 	}
 
 	public function register(): void {
+		// Loud degradation notice when subsystems have no implementation
+		// (base plugin absent, or greenfield subsystems not yet built).
+		RuntimeMode::register();
+
 		// Post types register on init — must be hooked before admin_menu fires.
 		$this->registerPostTypes();
 
