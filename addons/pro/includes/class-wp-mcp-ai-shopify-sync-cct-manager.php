@@ -1234,16 +1234,18 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @return int|WP_Error CCT item ID or WP_Error.
 		 */
 		public function upsert( $shopify_row, &$operation = null ) {
-			$available = $this->is_cct_available();
-			if ( is_wp_error( $available ) ) {
-				return $available;
-			}
-
+			// Validate caller input before environment checks so invalid rows
+			// fail with a deterministic error regardless of JetEngine state.
 			if ( empty( $shopify_row['shopify_variant_id'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_missing_variant_id',
 					__( 'Shopify row is missing required shopify_variant_id.', 'mcp-ai-wpoos-pro' )
 				);
+			}
+
+			$available = $this->is_cct_available();
+			if ( is_wp_error( $available ) ) {
+				return $available;
 			}
 
 			$location_id = isset( $shopify_row['location_id'] ) ? $shopify_row['location_id'] : '';

@@ -30,13 +30,16 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 		}
 
 		// Set up toolkit settings with CCT slug.
-		update_option( 'wp_mcp_ai_shopify_sync_toolkit_settings', array(
-			'cct_slug'            => 'shopify_inventory_sync_test',
-			'sync_interval'       => 15,
-			'sync_direction'      => 'shopify_to_woo',
-			'low_stock_threshold' => 5,
-			'sync_connections'    => array( $this->connection_id ),
-		) );
+		update_option(
+			'wp_mcp_ai_shopify_sync_toolkit_settings',
+			array(
+				'cct_slug'            => 'shopify_inventory_sync_test',
+				'sync_interval'       => 15,
+				'sync_direction'      => 'shopify_to_woo',
+				'low_stock_threshold' => 5,
+				'sync_connections'    => array( $this->connection_id ),
+			)
+		);
 	}
 
 	/**
@@ -105,6 +108,8 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'shopify_variant_id', $columns );
 		$this->assertArrayHasKey( 'sync_hash', $columns );
 		$this->assertArrayHasKey( 'sync_status', $columns );
+		$this->assertArrayHasKey( 'tenant_type', $columns );
+		$this->assertArrayHasKey( 'tenant_id', $columns );
 		$this->assertEquals( 'text', $columns['sku'] );
 		$this->assertEquals( 'number', $columns['available_qty'] );
 	}
@@ -115,8 +120,8 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 	public function test_column_count() {
 		$manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager();
 		$columns = $manager->get_column_definitions();
-		// 27 columns in the schema.
-		$this->assertCount( 27, $columns );
+		// 29 columns in the schema (27 core + tenant_type + tenant_id).
+		$this->assertCount( 29, $columns );
 	}
 
 	// ------------------------------------------------------------------ //
@@ -221,15 +226,15 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 		$manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager( $this->connection_id );
 
 		$bulk_item = array(
-			'id'           => 'gid://shopify/Product/12345',
-			'title'        => 'Test Product',
-			'handle'       => 'test-product',
-			'status'       => 'ACTIVE',
-			'vendor'       => 'TestVendor',
-			'productType'  => 'TestType',
-			'tags'         => array( 'tag1', 'tag2' ),
-			'updatedAt'    => '2026-01-15T10:00:00Z',
-			'images'       => array(
+			'id'          => 'gid://shopify/Product/12345',
+			'title'       => 'Test Product',
+			'handle'      => 'test-product',
+			'status'      => 'ACTIVE',
+			'vendor'      => 'TestVendor',
+			'productType' => 'TestType',
+			'tags'        => array( 'tag1', 'tag2' ),
+			'updatedAt'   => '2026-01-15T10:00:00Z',
+			'images'      => array(
 				'edges' => array(
 					array(
 						'node' => array(
@@ -238,7 +243,7 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 					),
 				),
 			),
-			'variants'     => array(
+			'variants'    => array(
 				'edges' => array(
 					array(
 						'node' => array(
@@ -255,12 +260,24 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 									array(
 										'node' => array(
 											'quantities' => array(
-												array( 'name' => 'available', 'quantity' => 42 ),
-												array( 'name' => 'on_hand', 'quantity' => 50 ),
-												array( 'name' => 'incoming', 'quantity' => 10 ),
-												array( 'name' => 'reserved', 'quantity' => 3 ),
+												array(
+													'name' => 'available',
+													'quantity' => 42,
+												),
+												array(
+													'name' => 'on_hand',
+													'quantity' => 50,
+												),
+												array(
+													'name' => 'incoming',
+													'quantity' => 10,
+												),
+												array(
+													'name' => 'reserved',
+													'quantity' => 3,
+												),
 											),
-											'location' => array(
+											'location'   => array(
 												'id'   => 'gid://shopify/Location/111',
 												'name' => 'Main Warehouse',
 											),
@@ -313,16 +330,16 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 		$manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager( $this->connection_id );
 
 		$bulk_item = array(
-			'id'       => 'gid://shopify/Product/1',
-			'title'    => 'No Inventory Product',
-			'handle'   => 'no-inventory',
-			'status'   => 'DRAFT',
-			'vendor'   => '',
+			'id'          => 'gid://shopify/Product/1',
+			'title'       => 'No Inventory Product',
+			'handle'      => 'no-inventory',
+			'status'      => 'DRAFT',
+			'vendor'      => '',
 			'productType' => '',
-			'tags'     => array(),
-			'updatedAt' => '2026-01-01T00:00:00Z',
-			'images'   => array( 'edges' => array() ),
-			'variants' => array(
+			'tags'        => array(),
+			'updatedAt'   => '2026-01-01T00:00:00Z',
+			'images'      => array( 'edges' => array() ),
+			'variants'    => array(
 				'edges' => array(
 					array(
 						'node' => array(
@@ -362,7 +379,7 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 		// Verify the hash computation is deterministic.
 		$manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager( $this->connection_id );
 
-		$row_a = array(
+		$row_a              = array(
 			'shopify_variant_id' => 'gid://shopify/ProductVariant/1',
 			'sku'                => 'SKU1',
 			'product_title'      => 'Test',
@@ -380,13 +397,13 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 	 * Test that different data produces different hashes.
 	 */
 	public function test_hash_changes_with_data() {
-		$row_a = array(
+		$row_a  = array(
 			'shopify_variant_id' => 'gid://shopify/ProductVariant/1',
 			'available_qty'      => 10,
 		);
 		$hash_a = md5( wp_json_encode( $row_a ) );
 
-		$row_b = array(
+		$row_b  = array(
 			'shopify_variant_id' => 'gid://shopify/ProductVariant/1',
 			'available_qty'      => 11, // Changed quantity.
 		);
@@ -415,11 +432,13 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 	 */
 	public function test_upsert_fails_without_jetengine() {
 		$manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager( $this->connection_id );
-		$result  = $manager->upsert( array(
-			'shopify_variant_id' => 'gid://shopify/ProductVariant/1',
-			'sku'                => 'TEST',
-			'sync_hash'          => 'abc123',
-		) );
+		$result  = $manager->upsert(
+			array(
+				'shopify_variant_id' => 'gid://shopify/ProductVariant/1',
+				'sku'                => 'TEST',
+				'sync_hash'          => 'abc123',
+			)
+		);
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_shopify_sync_jetengine_missing', $result->get_error_code() );
