@@ -201,20 +201,20 @@ class WP_MCP_AI_Settings_Save_Key_Preservation_Tests extends WP_UnitTestCase {
 	public function test_reset_settings_cache() {
 		// Prime the cache.
 		$first = WP_MCP_AI_Admin_Settings_Base::get_settings();
+		$this->assertNotEmpty( $first );
 
-		// Change the underlying option without resetting cache.
+		// Changing the option fires the update_option_* hook, which resets the
+		// cache automatically — so the next read is already fresh.
 		update_option(
 			WP_MCP_AI_Admin_Settings_Base::OPTION_NAME,
 			array( 'default_model' => 'changed-model' )
 		);
-
-		// Without reset, should still return cached value.
-		$cached = WP_MCP_AI_Admin_Settings_Base::get_settings();
-		$this->assertEquals( 'gpt-4.1-mini', $cached['default_model'] );
-
-		// After reset, should return fresh value.
-		WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
 		$fresh = WP_MCP_AI_Admin_Settings_Base::get_settings();
 		$this->assertEquals( 'changed-model', $fresh['default_model'] );
+
+		// Manual reset keeps returning the fresh value.
+		WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
+		$after_reset = WP_MCP_AI_Admin_Settings_Base::get_settings();
+		$this->assertEquals( 'changed-model', $after_reset['default_model'] );
 	}
 }

@@ -619,6 +619,14 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	 * Test that accordion section headers have onclick handlers for expansion.
 	 */
 	public function test_accordion_section_headers_have_proper_attributes() {
+		// Force a full section re-registration: earlier suites share one
+		// process and may leave a partial $wp_settings_sections set for this
+		// page, which render_settings_page() would otherwise reuse (its
+		// register path is guarded by isset()).
+		global $wp_settings_sections, $wp_settings_fields;
+		unset( $wp_settings_sections[ WP_MCP_AI_Admin_Settings::PAGE_SLUG ] );
+		unset( $wp_settings_fields[ WP_MCP_AI_Admin_Settings::PAGE_SLUG ] );
+
 		$admin_settings = new WP_MCP_AI_Admin_Settings();
 
 		// Capture the output of the settings page.
