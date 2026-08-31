@@ -9,8 +9,8 @@ use NvoosContentGraph\Commerce\Payments;
 use NvoosContentGraph\Commerce\Vendor;
 use NvoosContentGraph\Rest\CommerceController;
 use NvoosContentGraph\Schema;
-use PHPUnit\Framework\TestCase;
 use WP_Error;
+use WP_UnitTestCase;
 
 /**
  * Unit tests for the addon purchase flow.
@@ -20,7 +20,7 @@ use WP_Error;
  *
  * @since 1.0.4
  */
-class CommerceTest extends TestCase {
+class CommerceTest extends WP_UnitTestCase {
 
 	/** @var int Admin user ID used across tests. */
 	private int $adminId;
@@ -271,7 +271,7 @@ class CommerceTest extends TestCase {
 						array(
 							'license_key'   => 'abc123',
 							'download_url'  => 'https://vendor.example/download/addon.zip',
-							'addon_version' => '1.0.3',
+							'addon_version' => '1.0.4',
 							'amount'        => 4900,
 							'currency'      => 'usd',
 						)
@@ -279,7 +279,10 @@ class CommerceTest extends TestCase {
 				),
 				// 2. Download of the signed URL → 404.
 				array(
-					'response' => array( 'code' => 404 ),
+					'response' => array(
+						'code'    => 404,
+						'message' => 'Not Found',
+					),
 					'body'     => 'not found',
 				),
 			)
@@ -310,7 +313,7 @@ class CommerceTest extends TestCase {
 					'body'     => wp_json_encode(
 						array(
 							'license_key'   => 'abc123',
-							'addon_version' => '1.0.3',
+							'addon_version' => '1.0.4',
 							'amount'        => 4900,
 							'currency'      => 'usd',
 						)
@@ -318,7 +321,10 @@ class CommerceTest extends TestCase {
 				),
 				// Fallback GitHub release URL → 404 (no release published yet).
 				array(
-					'response' => array( 'code' => 404 ),
+					'response' => array(
+						'code'    => 404,
+						'message' => 'Not Found',
+					),
 					'body'     => 'not found',
 				),
 			)
