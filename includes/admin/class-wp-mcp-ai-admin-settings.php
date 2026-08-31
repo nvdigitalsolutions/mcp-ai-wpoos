@@ -1302,6 +1302,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Delegate to the settings base class.
 			WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
 			self::$settings_cache = null;
+
+			// The credential resolver caches provider keys derived from these
+			// settings. Clear it so consumers (and tests that share one process)
+			// never observe a stale key after the settings change.
+			if ( class_exists( 'WP_MCP_AI_Credential_Resolver' ) ) {
+				WP_MCP_AI_Credential_Resolver::clear_cache();
+			}
 		}
 
 		/**
