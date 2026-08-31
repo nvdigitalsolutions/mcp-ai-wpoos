@@ -20,6 +20,11 @@
             <exclude>tests/wp-cli-smoke.php</exclude>
             <exclude>tests/wp-tests-config.php</exclude>
             <exclude>tests/helpers</exclude>
+            <exclude>tests/abilities/class-wp-mcp-ai-ability-bridge-mock-tool.php</exclude>
+            <exclude>tests/abilities/trait-wp-mcp-ai-ability-test-bootstrap.php</exclude>
+            <exclude>tests/graphify/bootstrap.php</exclude>
+            <exclude>tests/paper-store/trait-paper-store-test-helpers.php</exclude>
+            <exclude>addons/pro/tests/class-wp-mcp-ai-workflow-log-context-recorder-tool.php</exclude>
             <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
         </testsuite>
     </testsuites>
