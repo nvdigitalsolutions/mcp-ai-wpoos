@@ -15,10 +15,13 @@ declare(strict_types=1);
 namespace NvoosContentGraphAiPlatform\Tests;
 
 use NvoosContentGraphAiPlatform\Professions\DatasetMappings;
+use NvoosContentGraphAiPlatform\Professions\ProfessionBaseKnowledgeSeeder;
 use NvoosContentGraphAiPlatform\Professions\ProfessionCpt;
 use NvoosContentGraphAiPlatform\Professions\ProfessionKnowledgeBaseLoader;
 use NvoosContentGraphAiPlatform\Professions\ProfessionPlaybookLoader;
+use NvoosContentGraphAiPlatform\Professions\ProfessionPlaybookSeeder;
 use NvoosContentGraphAiPlatform\Professions\ProfessionRepository;
+use NvoosContentGraphAiPlatform\Professions\ProfessionSeeder;
 use NvoosContentGraphAiPlatform\Professions\ProfessionService;
 use NvoosContentGraphAiPlatform\Professions\ProfessionToolRecommender;
 
@@ -162,8 +165,11 @@ class Test_Platform_Professions extends \WP_UnitTestCase {
 	public function test_playbook_loader_degradation_and_type_check(): void {
 		$loader = new ProfessionPlaybookLoader( NVOOS_CONTENT_GRAPH_AI_PLATFORM_PATH . 'data/knowledge-base/profession-playbooks/' );
 
-		// Missing playbook files degrade to empty strings, never fatals.
-		$this->assertSame( '', $loader->get_global_text() );
+		// The bundled global playbook resolves to real content.
+		$this->assertNotEmpty( $loader->get_global_text() );
+
+		// Missing category/profession playbook files degrade to empty strings,
+		// never fatals.
 		$this->assertSame( '', $loader->get_category_text( 'no-such-category' ) );
 		$this->assertSame( '', $loader->get_profession_text( 'no-such-profession' ) );
 
@@ -274,6 +280,67 @@ class Test_Platform_Professions extends \WP_UnitTestCase {
 
 		$this->assertTrue( function_exists( 'wp_mcp_ai_get_profession_service' ) );
 		$this->assertInstanceOf( ProfessionService::class, wp_mcp_ai_get_profession_service() );
+	}
+
+	public function test_seeder_option_keys_match_base(): void {
+		// Data stability: seeding option keys must stay byte-identical to the
+		// base plugin's seeders.
+		$this->assertSame( 'wp_mcp_ai_professions_seeded', ProfessionSeeder::SEEDED_OPTION );
+		$this->assertSame( 'wp_mcp_ai_profession_base_knowledge_seeded', ProfessionBaseKnowledgeSeeder::SEEDED_OPTION );
+		$this->assertSame( 'wp_mcp_ai_playbooks_seeded', ProfessionPlaybookSeeder::SEEDED_OPTION );
+	}
+
+	public function test_seed_professions_from_bundled_data(): void {
+		ProfessionSeeder::seed_professions();
+
+		$this->assertTrue( (bool) get_option( ProfessionSeeder::SEEDED_OPTION, false ) );
+
+		$counts = wp_count_posts( ProfessionCpt::POST_TYPE );
+		$this->assertGreaterThan( 100, (int) ( $counts->publish ?? 0 ) );
+	}
+
+	public function test_seeders_bail_without_seeded_professions(): void {
+		// Base-knowledge and playbook seeders must no-op (not fatal) when
+		// profession seeding has not run yet.
+		ProfessionBaseKnowledgeSeeder::init();
+		ProfessionPlaybookSeeder::init();
+
+		$this->assertTrue( true );
+	}
+
+	public function test_cleanup_all_duplicates_with_no_professions(): void {
+		$result = ProfessionPlaybookSeeder::cleanup_all_duplicates();
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 0, $result['professions_processed'] );
+		$this->assertSame( 0, $result['duplicates_removed'] );
+	}
+
+	public function test_base_knowledge_document_loader_degradation(): void {
+		// Missing document files degrade to empty strings, never fatals.
+		$content = $this->invoke_protected_static( ProfessionBaseKnowledgeSeeder::class, 'load_knowledge_document_from_file', 'no-such-profession' );
+		$this->assertSame( '', $content );
+	}
+
+	public function test_playbook_cleanup_method_contract(): void {
+		// remove_duplicate_playbooks on a post with no memory files returns 0.
+		$post_id = self::factory()->post->create( array( 'post_type' => 'post' ) );
+		$removed = $this->invoke_protected_static( ProfessionPlaybookSeeder::class, 'remove_duplicate_playbooks', $post_id );
+		$this->assertSame( 0, $removed );
+	}
+
+	/**
+	 * Invoke a protected static method on a class for contract testing.
+	 *
+	 * @param string $class_name Class name.
+	 * @param string $method     Method name.
+	 * @param mixed  $arg        Optional single method argument.
+	 * @return mixed Method result.
+	 */
+	private function invoke_protected_static( $class_name, $method, $arg = null ) {
+		$reflection = new \ReflectionMethod( $class_name, $method );
+		$reflection->setAccessible( true );
+		return $reflection->invoke( null, $arg );
 	}
 
 	/**

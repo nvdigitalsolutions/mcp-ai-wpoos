@@ -75,6 +75,18 @@ final class ProfessionService {
 		// owns these functions in monolith mode and may define them lazily.
 		require_once __DIR__ . '/shim-functions.php';
 
+		// Seeders run once after profession seeding — mirroring the base
+		// professions-init.php wiring (init priority 5).
+		add_action(
+			'init',
+			static function (): void {
+				ProfessionSeeder::init();
+				ProfessionBaseKnowledgeSeeder::init();
+				ProfessionPlaybookSeeder::init();
+			},
+			5
+		);
+
 		add_action(
 			'init',
 			static function (): void {
