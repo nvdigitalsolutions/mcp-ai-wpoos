@@ -50,14 +50,18 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 	protected $transcript_handler;
 
 	/**
-	 * Captured transcript records
+	 * Captured transcript records.
+	 *
+	 * Public so the anonymous mock handler class can append to it.
 	 *
 	 * @var array
 	 */
-	protected $saved_records = array();
+	public $saved_records = array();
 
 	/**
-	 * Set up before class
+	 * Set up before class.
+	 *
+	 * @param WP_UnitTest_Factory $factory Test factory.
 	 */
 	public static function wpSetUpBeforeClass( $factory ) {
 		// Create test users.
@@ -115,12 +119,6 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 
 		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
-		do_action( 'init' );
-
-		// These tests save and retrieve via CCT, which requires JetEngine.
-		if ( ! function_exists( 'jet_engine' ) ) {
-			$this->markTestSkipped( 'Requires JetEngine for transcript storage' );
-		}
 	}
 
 	/**
@@ -142,20 +140,40 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		if ( ! $this->transcript_handler ) {
 			$test_instance            = $this;
 			$this->transcript_handler = new class( $test_instance ) {
+				/**
+				 * Test case instance reference.
+				 *
+				 * @var object
+				 */
 				private $test_instance;
+
 				/**
 				 * Constructor.
+				 *
+				 * @param object $test_instance Test case instance.
 				 */
 				public function __construct( $test_instance ) {
 					$this->test_instance = $test_instance;
 				}
 
+				/**
+				 * Capture a transcript record.
+				 *
+				 * @param array $record Transcript record.
+				 * @return bool True on success.
+				 */
 				public function update_item( $record ) {
 					// Store the record for later retrieval.
 					$this->test_instance->saved_records[] = $record;
 					return true;
 				}
 
+				/**
+				 * Return captured records filtered by the given args.
+				 *
+				 * @param array $args Filter arguments.
+				 * @return array Matching records.
+				 */
 				public function get_items( $args ) {
 					// Filter saved records by the args.
 					$results = array();
@@ -247,8 +265,8 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$this->assertIsArray( $saved_payload, 'Request payload should be array' );
 		$this->assertArrayHasKey( 'messages', $saved_payload, 'Payload should have messages' );
 		$this->assertCount( 2, $saved_payload['messages'], 'Should have 2 messages' );
-		$this->assertEquals( 'Hello, how are you?', $saved_payload['messages'][0]['content'], 'First message content should match' );
-		$this->assertEquals( 'I am doing well, thank you for asking!', $saved_payload['messages'][1]['content'], 'Second message content should match' );
+		$this->assertEquals( 'Hello, how are you?', $this->extract_text( $saved_payload['messages'][0]['content'] ), 'First message content should match' );
+		$this->assertEquals( 'I am doing well, thank you for asking!', $this->extract_text( $saved_payload['messages'][1]['content'] ), 'Second message content should match' );
 
 		// === PART 2: SIMULATE RETRIEVAL FROM CCT ===
 		// In a real scenario with JetEngine CCT, GET /chat-transcripts would:
@@ -274,8 +292,8 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 
 		// Verify retrieved messages match what was saved.
 		$this->assertCount( 2, $retrieved_messages, 'Retrieved should have 2 messages' );
-		$this->assertEquals( 'Hello, how are you?', $retrieved_messages[0]['content'], 'Retrieved first message should match' );
-		$this->assertEquals( 'I am doing well, thank you for asking!', $retrieved_messages[1]['content'], 'Retrieved second message should match' );
+		$this->assertEquals( 'Hello, how are you?', $this->extract_text( $retrieved_messages[0]['content'] ), 'Retrieved first message should match' );
+		$this->assertEquals( 'I am doing well, thank you for asking!', $this->extract_text( $retrieved_messages[1]['content'] ), 'Retrieved second message should match' );
 
 		// This confirms the complete cycle:
 		// ✓ POST saves data to CCT with correct structure.
@@ -541,8 +559,8 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$assistant_id = 42;
 		$expected_key = 'wp_mcp_ai_chat_' . $assistant_id;
 
-		// The JavaScript code uses: const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
-		// And: return STORAGE_KEY_PREFIX + assistantId;
+		// The JavaScript code uses: const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_'.
+		// And: return STORAGE_KEY_PREFIX + assistantId.
 
 		$this->assertEquals( 'wp_mcp_ai_chat_42', $expected_key, 'localStorage key should be prefixed with wp_mcp_ai_chat_ and assistant ID' );
 	}
@@ -609,18 +627,18 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$this->assertIsArray( $request_payload, 'Request payload must be valid JSON array' );
 		$this->assertArrayHasKey( 'messages', $request_payload, 'Request payload must contain messages array' );
 
-		// 5. Verify messages can be extracted (this is what extract_request_messages() does)
+		// 5. Verify messages can be extracted (this is what extract_request_messages() does).
 		$extracted_messages = $request_payload['messages'];
 		$this->assertCount( 2, $extracted_messages, 'Should extract 2 messages' );
 		$this->assertEquals( 'user', $extracted_messages[0]['role'], 'First message role should be extractable' );
-		$this->assertEquals( 'Test message for retrieval', $extracted_messages[0]['content'], 'First message content should be extractable' );
+		$this->assertEquals( 'Test message for retrieval', $this->extract_text( $extracted_messages[0]['content'] ), 'First message content should be extractable' );
 		$this->assertEquals( 'assistant', $extracted_messages[1]['role'], 'Second message role should be extractable' );
-		$this->assertEquals( 'Test response for retrieval', $extracted_messages[1]['content'], 'Second message content should be extractable' );
+		$this->assertEquals( 'Test response for retrieval', $this->extract_text( $extracted_messages[1]['content'] ), 'Second message content should be extractable' );
 
 		// SIMULATION OF RETRIEVAL PROCESS:
-		// This demonstrates what happens when GET /chat-transcripts?session_key=X&user_id=Y is called
+		// This demonstrates what happens when GET /chat-transcripts?session_key=X&user_id=Y is called.
 
-		// Step 1: Query finds records WHERE session_key = X AND user_id = Y
+		// Step 1: Query finds records WHERE session_key = X AND user_id = Y.
 		// (Our mock demonstrates this by filtering saved_records).
 		$retrieved_records = array_filter(
 			$this->saved_records,
@@ -632,14 +650,14 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$this->assertCount( 1, $retrieved_records, 'Retrieval query should find 1 record' );
 		$retrieved = array_values( $retrieved_records )[0];
 
-		// Step 2: extract_request_messages() decodes request_payload
+		// Step 2: extract_request_messages() decodes request_payload.
 		$retrieved_payload  = json_decode( $retrieved['request_payload'], true );
 		$retrieved_messages = $retrieved_payload['messages'];
 
-		// Step 3: Messages are reconstructed and returned to client
+		// Step 3: Messages are reconstructed and returned to client.
 		$this->assertCount( 2, $retrieved_messages, 'Retrieved messages count should match saved' );
-		$this->assertEquals( $messages[0]['content'], $retrieved_messages[0]['content'], 'Retrieved first message should match saved' );
-		$this->assertEquals( $messages[1]['content'], $retrieved_messages[1]['content'], 'Retrieved second message should match saved' );
+		$this->assertEquals( $messages[0]['content'], $this->extract_text( $retrieved_messages[0]['content'] ), 'Retrieved first message should match saved' );
+		$this->assertEquals( $messages[1]['content'], $this->extract_text( $retrieved_messages[1]['content'] ), 'Retrieved second message should match saved' );
 
 		// This verifies the COMPLETE SAVE → RETRIEVE cycle:
 		// ✓ Data saved with correct fields (user_id, session_key, assistant_id, request_payload).
@@ -649,10 +667,37 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Extract plain text from sanitized message content.
+	 *
+	 * The validator stores message content as an array of segments
+	 * (e.g. array( array( 'type' => 'text', 'text' => '...' ) ) ).
+	 *
+	 * @param mixed $content Sanitized message content.
+	 * @return string Concatenated text content.
+	 */
+	private function extract_text( $content ) {
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+
+		if ( ! is_array( $content ) ) {
+			return '';
+		}
+
+		$text = '';
+		foreach ( $content as $segment ) {
+			if ( is_array( $segment ) && isset( $segment['text'] ) ) {
+				$text .= $segment['text'];
+			}
+		}
+
+		return $text;
+	}
+
+	/**
 	 * Clean up after class
 	 */
 	public static function wpTearDownAfterClass() {
-		// Clean up test data.
 		if ( self::$user_id ) {
 			wp_delete_user( self::$user_id );
 		}
