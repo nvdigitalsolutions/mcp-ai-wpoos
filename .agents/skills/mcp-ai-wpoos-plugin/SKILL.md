@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.65"
   plugin-version-tested: "1.1.65"
-  last-updated: "2026-08-28"
+  last-updated: "2026-08-31"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -698,6 +698,27 @@ Additional Pro toolkits are addons under `addons/pro/`.
 | `includes/integrations/class-wp-mcp-ai-custom-tool-loader.php` | `wp_mkdir_p()` + `is_dir()` guards before writes |
 | `includes/paper-store/class-wp-mcp-ai-paper-store-manager.php` | `mkdir()` → `wp_mkdir_p()`, guards before writes |
 | `includes/bootstrap/activation.php` | `wp_mcp_ai_auto_detect_env_keys()` + activation hook |
+
+### Integration contracts (updated Aug 2026)
+
+Notable filter/API contract changes from the recent test-suite repair
+clusters — relevant when writing integrations against these seams:
+
+| Seam | Contract |
+|------|----------|
+| `wp_mcp_ai_vendor_package_paths` | Filter on the NPM vendor package-path map in `wp_mcp_ai_check_vendor_packages()`; lets integrations remap/inject package locations (PR #6097) |
+| `wp_mcp_ai_chat_transcript_handler` | Now invoked with **7 args** (`$handler, $assistant_id, $messages, $options, $response, $request, $context`) by `WP_MCP_AI_Chat_Transcript_Recorder::resolve_handler()` |
+| Chat message `content` shape | The REST validator stores message content as **segments**: `array( array( 'type' => 'text', 'text' => '…' ) )` — affects `/chat-transcripts` payloads and `extract_request_messages()` consumers |
+| `WP_MCP_AI_Profession_CPT::sanitize_memory_files()` | Negative IDs now **clamp to 0 and are dropped** (previously `absint()` coerced e.g. `-999` → `999`) — PR #6105 |
+| Graphify `on_plugins_loaded` | Admin classes (`NV_oOS_Graphify_Settings`, `NV_oOS_Graphify_Remote_Admin`) are now required defensively before `init()` when `is_admin()` — PR #6106 |
+
+## Development & Test Suite
+
+For the PHPUnit repair workflow — Docker test commands (WP 6.9 + 7.1),
+CI log triage, the recurring root-cause patterns, and the cluster-by-cluster
+PR conventions — see the dedicated skill
+[`mcp-ai-wpoos-test-suite`](../mcp-ai-wpoos-test-suite/SKILL.md) and
+`.context/testing.md` for test-writing patterns and the coverage policy.
 
 ---
 
