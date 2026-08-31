@@ -284,7 +284,10 @@ class AgentCard {
 	 * @return object|null Registry instance or null when unavailable.
 	 */
 	protected static function resolve_tool_registry() {
-		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+		// Gate the base registry behind the boot discriminator: the monorepo
+		// root autoloader can classmap base classes to disk even when the
+		// base plugin is inactive, and those files reference WP_MCP_AI_PATH.
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			return \WP_MCP_AI_Tool_Registry::get_instance();
 		}
 

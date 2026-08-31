@@ -28,6 +28,32 @@ class Test_Platform_A2A extends \WP_UnitTestCase {
 		delete_option( TaskManager::TASKS_OPTION );
 	}
 
+	public function test_registry_resolution_never_fatals_in_standalone_mode(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			$this->markTestSkipped( 'Standalone-only check: the base plugin owns its registry in monolith mode.' );
+		}
+
+		// The monorepo root autoloader can classmap WP_MCP_AI_Tool_Registry
+		// to disk even when the base plugin is inactive — resolving it must
+		// not touch the base files (they reference WP_MCP_AI_PATH).
+		$registry = $this->invoke_protected_static( AgentCard::class, 'resolve_tool_registry' );
+
+		$this->assertTrue( null === $registry || is_object( $registry ) );
+	}
+
+	/**
+	 * Invoke a protected static method on a class for contract testing.
+	 *
+	 * @param string $class_name Class name.
+	 * @param string $method     Method name.
+	 * @return mixed Method result.
+	 */
+	private function invoke_protected_static( $class_name, $method ) {
+		$reflection = new \ReflectionMethod( $class_name, $method );
+		$reflection->setAccessible( true );
+		return $reflection->invoke( null );
+	}
+
 	public function test_create_task_initializes_submitted_state(): void {
 		$task = TaskManager::create_task( array( 'kind' => 'message' ) );
 
