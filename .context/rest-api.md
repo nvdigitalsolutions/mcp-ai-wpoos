@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: August 28, 2026 (v1.1.65).
+> Last reviewed: August 31, 2026 (v1.1.66).
+>
+> **New in v1.1.66 (PRs #6008, #6009, #6014–#6019, #6036, #6037):** chat-endpoint validation tests reconciled with the current contract — role validation lives in `sanitize_messages()`, orphaned tool messages are discarded, and attachments are embedded message segments (never re-add the top-level `attachments` arg or the args-layer role/pairing enums); attachment-segment validation errors now carry an explicit `status => 400` instead of defaulting to 500. Assistant-access caching: the define-time `WP_MCP_AI_DISABLE_CACHE` pattern was replaced by a `wp_mcp_ai_assistant_access_cache_enabled` filter, and `validate_assistant_access()` caches `WP_Error` results like successful lookups. REST analytics endpoints, the token-tier endpoint + tier-change audit logging, the permission-callback allowlist, and bearer-auth context sync (Simple JWT + assistant-access paths) were fixed. Job-notifier REST routes resolve dot-IDs with owner-scoped auth.
 >
 > **New in v1.1.65 (PRs #5987, #5991, #5993, #5994):** the chat route no longer declares a top-level `attachments` arg — embedded content segments are authoritative and undeclared params are ignored, so legacy clients that still send `attachments` are tolerated instead of hard-400'd; attachment segment preparation errors now propagate to the client (`WP_Error` returned) instead of silently dropping the segment. Role enum validation moved from the REST args validator to the sanitize layer so the `wp_mcp_ai_allowed_message_roles` filter sees custom roles. Orphaned tool messages (missing/mismatched `tool_call_id`) are silently discarded by `WP_MCP_AI_REST::filter_tool_messages_without_matching_calls()` before dispatch. Transcript pagination uses a sign-preserving `sanitize_signed_page_number()` callback (absint() flipped negatives to positives, defeating the clamp-to-default). Legacy `input_text` content segments are normalized to `text` in the validator (documented compatibility behaviour).
 >

@@ -1,13 +1,15 @@
 # NV oOS Testing Patterns
 
 > **GSD Context File** — Load this when writing or reviewing PHPUnit tests.
-> Last reviewed: August 31, 2026 (v1.1.65).
+> Last reviewed: August 31, 2026 (v1.1.66).
 >
 > **Repair workflow:** when a suite is *failing* (rather than being written),
 > use the [`.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md`](../.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md)
 > skill — Docker test commands (WP 6.9/7.1), CI-log triage, recurring
 > root-cause patterns, and the cluster-by-cluster PR conventions live there.
 > This file stays focused on test-writing patterns and the coverage policy.
+>
+> **New in v1.1.66:** the Aug 28–31 repair campaign (~95 suite PRs, #6012–#6107) brought the single-process suite green cluster-by-cluster — REST endpoint clusters, AJAX handlers, provider/client suites, admin pages, chat/channel integrations, CRM, professions/teams, multi-agent orchestration, cron/notifier, federation, healthcare interop, security, logger, transcripts. The recurring root causes are catalogued in the new `mcp-ai-wpoos-test-suite` skill (16 patterns) and the standing work tracker is [`docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`](../developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md). Production seams the tests now depend on: `validate_assistant_access()` caches `WP_Error` results and the cache-disable path is a `wp_mcp_ai_assistant_access_cache_enabled` filter (never a persisted define in a test, #6008); attachment-segment validation errors carry `status => 400` (#6009); `WP_MCP_AI_Job_Notifier::update_status()` exists again and async job IDs preserve dots (#6036, #6037); progress events promote cached job status to running (#6039). Keep those seams when touching the corresponding production paths.
 >
 > **New in v1.1.65:** A cluster of suite-alignment PRs (mostly test-only): SSE streaming suites assert the explicit `stream` parameter contract (#5995); WP 7.1 icon-init replay is neutralised in the test bootstrap (#5996); transcript suite follow-ups handle CI environment differences (#5998); Phase 4 slash-command workflow tests run against the current handler API (#5999); SSE tool-result text-extraction tests use the REST constructor (#6001); the transcript retrieval roundtrip is skipped when the CCT table is missing (#6002). Production-side seams that tests depend on: assistant-builder + Pro toolkit blocks skip already-registered names so re-firing `init` doesn't raise notices (#5997); workflow-execution AJAX moved `wp_send_json_*` out of the try block so exceptions can't double-output (#6004). Keep those seams when touching block registration or the orchestration dashboard AJAX.
 >
