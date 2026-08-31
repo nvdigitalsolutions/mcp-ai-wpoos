@@ -92,7 +92,7 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 
 		$result = $tool->execute(
 			array(
-				'option_name'  => 'test_option_name',
+				'option_name'  => 'wp_mcp_ai_test_option_name',
 				'option_value' => 'test_value',
 			),
 			array( 'user_id' => $admin_id )
@@ -100,17 +100,27 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result, 'Result should be an array.' );
 		$this->assertTrue( $result['success'], 'Update should be successful.' );
-		$this->assertSame( 'test_option_name', $result['option_name'] );
-		$this->assertSame( 'test_value', $result['option_value'] );
+		$this->assertSame( 'wp_mcp_ai_test_option_name', $result['option_name'] );
+		// The tool intentionally omits option_value from the response to avoid
+		// leaking sensitive values to AI model context.
 
 		// Verify the option was actually updated.
-		$this->assertSame( 'test_value', get_option( 'test_option_name' ) );
+		$this->assertSame( 'test_value', get_option( 'wp_mcp_ai_test_option_name' ) );
 	}
 
 	/**
 	 * Test update_option permission check.
 	 */
 	public function test_update_option_permission_check() {
+		// Enable site creator features so the permission gate is reached.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'               => true,
+				'site_creator_allow_option_updates' => true,
+			)
+		);
+
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
@@ -204,6 +214,15 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 	 * Test site_creator permission check.
 	 */
 	public function test_site_creator_permission_check() {
+		// Enable site creator features so the permission gate is reached.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'               => true,
+				'site_creator_allow_option_updates' => true,
+			)
+		);
+
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
@@ -233,6 +252,15 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 	 * Test site_creator with invalid plan.
 	 */
 	public function test_site_creator_invalid_plan() {
+		// Enable site creator features so the plan validation gate is reached.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'               => true,
+				'site_creator_allow_option_updates' => true,
+			)
+		);
+
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
@@ -278,6 +306,20 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 				'role' => 'administrator',
 			)
 		);
+		wp_set_current_user( $admin_id );
+
+		// Elementor reacts to blogname/blogdescription updates via its Kit
+		// manager. The PHPUnit bootstrap deletes all posts after plugins load,
+		// which leaves the elementor_active_kit option pointing at a deleted
+		// kit post and makes Elementor throw "Invalid post" when the tool
+		// updates site options. Recreate the kit so the update can run.
+		if ( class_exists( '\Elementor\Plugin' ) && \Elementor\Plugin::$instance && \Elementor\Plugin::$instance->kits_manager ) {
+			$kits_manager = \Elementor\Plugin::$instance->kits_manager;
+			$active_id    = get_option( \Elementor\Core\Kits\Manager::OPTION_ACTIVE );
+			if ( ! $active_id || ! get_post( $active_id ) ) {
+				$kits_manager->create_new_kit( '', array(), true );
+			}
+		}
 
 		$result = $tool->execute(
 			array(
