@@ -235,6 +235,33 @@ Replace `plugins/nvoos-content-graph-ai-platform/MIGRATION-GAPS.md` with a track
 
 ---
 
+## 10b. Execution Status (updated 2026-09-01, branch `feature/platform-extraction`, PR #6123)
+
+| Phase | Status |
+|---|---|
+| 0 | ✅ Guard + tracker + CI matrix (`WP_MCP_AI_PLATFORM_STANDALONE=1`); platform tests run monolith AND standalone |
+| 1 (Wave A) | ✅ A2A, ACP, Federation + Mesh, Teams, Professions (core, seeders, metaboxes, orchestration, CLI) — `src/*/` with standalone-only wiring |
+| 2 (Wave B) | ✅ Skills (registry/parser/packs + bundled data) and Slash Commands (engine, 20 commands, toolkit manager, orchestrators, global-function shim) |
+| 3 (Wave C) | ✅ Harness (30 classes), Measurement (registries/observers/budgets + bootstrap shim), Agents role system (approval gate, audit trail, capability boundary, sandbox, harness bootstrap/evolver, roles, prompt resolver) |
+| 4 (Blueprints) | ✅ Greenfield build: `BlueprintRegistry` (reuses `TemplateCpt`), `BlueprintValidator`, `BlueprintExporter`/`Importer`, `BlueprintRestController` (`nvoos-content-graph/v1/platform/blueprints`) |
+| 5 (Cutover) | 🟡 Release-gated — see below |
+
+**Decision resolutions applied autonomously (per §10):**
+- #1 Assistant CPT stays in base (⏸️ tracked in MIGRATION-GAPS.md).
+- #2 Blueprints reuse the existing `TemplateCpt` (`ai_platform_template`) — no new slug.
+- #3–#5 remain open and block Phase 5 execution.
+
+**Phase 5 remaining work:**
+1. Delete base copies of extracted classes — gated on open decision #4 (1 vs 2 releases after 2.0.0 ships).
+2. Meta-plugin mode — gated on open decision #3 (opt-in `WP_MCP_AI_META_MODE` constant vs forced). NOTE: the platform services discriminate ownership via `defined('WP_MCP_AI_PATH')`; meta-mode requires introducing a shared ownership helper (`wp_mcp_ai_platform_owns($subsystem)` = base absent OR meta-mode) and adopting it across all services + `RuntimeMode` — a third CI matrix (meta mode) should accompany it.
+3. Version bumps: Platform addon → **2.0.0** (done); base plugin → 2.0.0 when meta-mode ships.
+4. Docs: roadmap §7 status, both readmes, migration guide, `AGENTS.md` inventory, folder READMEs.
+
+**Platform addon version:** 2.0.0 (extraction Waves A–C + Phase 4 complete).
+
+
+---
+
 ## 11. Estimated Timeline
 
 | Phase | Work | Est. |

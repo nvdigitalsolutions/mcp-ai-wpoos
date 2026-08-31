@@ -88,7 +88,12 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 
 ## Next extraction waves
 
-1. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
+1. **Phase 5 (release-gated)** — delete base copies (plan §10b, decision #4), meta-plugin mode (decision #3 — needs a shared ownership discriminator replacing `defined('WP_MCP_AI_PATH')` checks across services + a third CI matrix), base 2.0.0, docs sweep.
+
+## Phase 5 status (2026-09-01)
+
+- Platform addon version bumped to **2.0.0** — extraction Waves A–C + Phase 4 complete; the addon runs standalone (base absent) with every planned subsystem, or side-by-side with the base plugin (monolith) where the base copies own runtime wiring.
+- Base-copy deletion and meta-plugin mode remain release-gated on plan open decisions #3/#4 — see `docs/project/plans/content-graph-platform-extraction-plan.md` §10b.
 
 ## Phase 4 — Blueprints greenfield (2026-09-01)
 
