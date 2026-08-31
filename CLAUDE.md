@@ -91,8 +91,9 @@ addons/
 ├── media-worker/                        ← Media Worker sidecar (v3.0.0, multi-tenant + security-hardened)
 ├── librechat/                          ← LibreChat addon (code interpreter, speech)
 ├── funiq-bridge/                       ← Funiq Bridge addon (v1.0.0)
+├── checkout-api/                        ← Checkout API addon (v0.1.0, vendor-side Stripe checkout/licensing)
 ├── schedule-anything/                  ← Schedule Anything SaaS platform
-└── ...                                 ← 26 addons total
+└── ...                                 ← 27 addons total
 ```
 
 ## Security — Non-Negotiable

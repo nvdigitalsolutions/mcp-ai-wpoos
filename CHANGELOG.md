@@ -2,6 +2,11 @@
 
 ## [1.1.66] - 2026-08-31
 
+### Added — NVOOS Checkout API & Content Graph Paid Checkout (PR #6063)
+
+- **New `addons/checkout-api/` addon (v0.1.0)** — the vendor-side checkout service for NV oOS premium addons, running on the vendor's own server (never distributed to customers or WordPress.org). Stripe `POST /session` + `POST /verify` endpoints under `/wp-json/nvoos-checkout/v1/` (PaymentIntent creation + server-side verification and license issuance), a license store in a custom table (idempotent per payment intent, active/revoked lifecycle), signed expiring HMAC-SHA256 download URLs serving cached addon ZIPs (capped at 10 downloads/link), a Stripe webhook receiver (signature-verified, idempotent; refunds/disputes revoke the matching license — `payment_intent.succeeded` also issues the license server-side so an interrupted browser flow still delivers it), per-IP rate limiting on the public endpoints, and a storefront admin (Stripe keys, price, currency, test mode, addon version, ZIP source, recent-license table with revoke). Stripe secret + webhook secret are encrypted at rest (AES-256-CBC keyed from `AUTH_KEY` + `SECURE_AUTH_KEY`); only the publishable key leaves the server. PHP 8.1+.
+- **Content Graph paid-checkout client (`plugins/nvoos-content-graph`)** — the "Get NV oOS Content Graph — AI" upsell now opens a Stripe Payment Element modal, verifies the payment via the vendor checkout API, records a local license key, and installs + activates the addon from the signed download URL in one flow. No Stripe keys ship in the plugin; new admin-only `POST /payments/session` + `POST /payments/verify` REST endpoints (cookie + nonce), four `nvoos_content_graph/payments/*` filters, per-user session-creation throttling, and standard `download_url()` + `Plugin_Upgrader` filesystem checks. Contract documented in `plugins/nvoos-content-graph/docs/commerce-vendor-api.md`.
+
 ### Added — PHPUnit Test-Suite Repair Skill (PR #6108)
 
 - New coding-time agent skill `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` captures the cluster-by-cluster PHPUnit repair workflow distilled from this release's campaign: Docker test commands (WP 6.9/7.1), CI log-zip triage, 16 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, nonce/user binding, WP 6.9 queue memoization, anonymous-class visibility), the production-fix-vs-test-fix decision, and the branch/commit/validation conventions for cluster PRs. The plugin operational skill was updated with current integration contracts, both inventories were registered (`AGENTS.md` + `.github/copilot-instructions.md`), and the standing tracker `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md` was added. Coding-time agent skills: 52 → 53.
@@ -30,7 +35,7 @@ A ~100-PR campaign (Aug 28–31) brought the single-process PHPUnit suite green 
 
 ### Versioning
 
-- Bumped to 1.1.66 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.66. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: 1.0.3 (unchanged). nvoos-content-graph-ai: **1.0.3** (bumped in this window). Tool count: ~303 base + ~1,256 Pro (~1,559 total; live registry authoritative). Providers: 15. Addons: 26. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: 53.
+- Bumped to 1.1.66 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.66. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: 1.0.3 (unchanged; paid-checkout client merged, version bump pending). nvoos-content-graph-ai: **1.0.3** (bumped in this window). Checkout API addon: **v0.1.0** (new). Tool count: ~303 base + ~1,256 Pro (~1,559 total; live registry authoritative). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: 53.
 
 ## [1.1.65] - 2026-08-28
 

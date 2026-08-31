@@ -14,7 +14,7 @@ Architecturally, the project has undergone a major framework extraction: the AI 
 The repo is a **monorepo** containing:
 - The **base plugin** (GPLv3, ships to WordPress.org) — `mcp-ai-wpoos.php` + `includes/`
 - A **Pro addon** (commercial/proprietary) — `addons/pro/`
-- **25 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.2.0)
+- **26 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.2.0, Checkout API v0.1.0)
 - The **extracted AI engine** (framework-agnostic, Hexagonal Architecture) — `lib/core/`
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`

@@ -59,22 +59,23 @@
 | 19 | **Schedule Anything SPA** | `addons/schedule-anything-spa/` | 0.1.0 | ⚠️ Experimental | Proprietary | Schedule Anything Platform | React SPA frontend for the Schedule Anything SaaS booking platform. Vite + Tailwind + React frontend. |
 | 20 | **Crocoblock DS** | `addons/crocoblock-ds/` | 0.1.0 | ⚠️ Experimental | GPL-3.0 | None | Design token system for Crocoblock suite. 55+ CSS tokens, admin editor, DTCG export, a11y tokens. |
 | 21 | **Fleet Operator** | `addons/fleet-operator/` | 0.1.0 | ✅ Production | GPL-3.0 | Base plugin | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` operator credentials with audience binding, expiry, rate limits, and instant revocation; server-side MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI commands, Hermes config generator, 3-skill nvoos pack. |
+| 22 | **Checkout API** | `addons/checkout-api/` | 0.1.0 | ✅ Production | Proprietary | None (vendor server only) | Vendor-side checkout service for NV oOS premium addons. Stripe `POST /session` + `POST /verify` endpoints under `/wp-json/nvoos-checkout/v1/` (PaymentIntent creation, server-side verification + license issuance), license store in a custom table (idempotent per payment intent, active/revoked lifecycle), signed expiring HMAC-SHA256 download URLs (capped 10/link) serving cached addon ZIPs, signature-verified idempotent Stripe webhooks (refunds/disputes revoke; `payment_intent.succeeded` issues the license server-side so interrupted checkouts recover), per-IP rate limiting, storefront admin. Stripe secrets encrypted at rest (AES-256-CBC from `AUTH_KEY` + `SECURE_AUTH_KEY`). PHP 8.1+. Runs on the vendor's server only — never distributed to customers or WordPress.org. Client half lives in `plugins/nvoos-content-graph` (paid checkout for Content Graph AI, v1.1.66/PR #6063). |
 
 ### Blueprint-Generated SPAs
 
 | # | Addon | Directory | Version | Status | License | Requires | Description |
 |---|---|---|---|---|---|---|---|
-| 22 | **Canvas Toolkit** | `addons/canvas-toolkit/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Provides a canvas-based surface for the plugin. |
-| 23 | **Document Editor** | `addons/document-editor/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Document editing surface. |
-| 24 | **Media Studio** | `addons/media-studio/` | 0.1.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Media management surface with zoom/pan/drawing tools. |
-| 25 | **Toolkit Shell** | `addons/toolkit-shell/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Pro addon | Manifest-driven React SPA shell. One bundle drives multiple toolkit SPAs (CRM, calendar, financial, legal, ecommerce, etc.) via per-toolkit JSON manifests. |
+| 23 | **Canvas Toolkit** | `addons/canvas-toolkit/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Provides a canvas-based surface for the plugin. |
+| 24 | **Document Editor** | `addons/document-editor/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Document editing surface. |
+| 25 | **Media Studio** | `addons/media-studio/` | 0.1.0 | 🧪 Blueprint | GPL-3.0 | Base plugin | React SPA generated from the Toolkit SPA Blueprint. Media management surface with zoom/pan/drawing tools. |
+| 26 | **Toolkit Shell** | `addons/toolkit-shell/` | 0.2.0 | 🧪 Blueprint | GPL-3.0 | Pro addon | Manifest-driven React SPA shell. One bundle drives multiple toolkit SPAs (CRM, calendar, financial, legal, ecommerce, etc.) via per-toolkit JSON manifests. |
 
 ### Non-WordPress Components
 
 | # | Component | Directory | Status | Type | Description |
 |---|---|---|---|---|---|
-| 26 | **Cloud Worker** | `addons/cloud-worker/` | 🗂️ Reference | Cloudflare Worker | SaaS backend for NV oOS Cloud. Inference proxy, Stripe billing, D1 ledger. Deployed independently on Cloudflare — never runs inside WordPress. Shipped in monorepo for review/reference only. |
-| 27 | **Tenant Router** | `addons/tenant-router/` | 🗂️ Reference | Cloudflare Worker | Edge-level routing worker for Schedule Anything multi-tenant SaaS. Maps subdomain requests to correct WordPress Multisite tenant via Cloudflare KV with REST API fallback. |
+| 27 | **Cloud Worker** | `addons/cloud-worker/` | 🗂️ Reference | Cloudflare Worker | SaaS backend for NV oOS Cloud. Inference proxy, Stripe billing, D1 ledger. Deployed independently on Cloudflare — never runs inside WordPress. Shipped in monorepo for review/reference only. |
+| 28 | **Tenant Router** | `addons/tenant-router/` | 🗂️ Reference | Cloudflare Worker | Edge-level routing worker for Schedule Anything multi-tenant SaaS. Maps subdomain requests to correct WordPress Multisite tenant via Cloudflare KV with REST API fallback. |
 
 ---
 
