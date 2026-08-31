@@ -67,6 +67,12 @@ class WP_MCP_AI_Tool_Slug_Integrity_Tests extends WP_UnitTestCase {
 		'WP_MCP_AI_Tool_Generate_Auth0_Token'              => 'generate_auth0_token',
 		// Legacy tool whose slug is an acronym: "2FA" → "2fa".
 		'WP_MCP_AI_Tool_2FA_Setup_Assistant'               => '2fa_setup_assistant',
+		// Renamed slugs that no longer mirror the class name.
+		'WP_MCP_AI_Tool_Get_Woo_Orders'                    => 'get_woo_recent_orders',
+		'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms'          => 'get_jetformbuilder_forms',
+		'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions'    => 'get_jetformbuilder_submissions',
+		'WP_MCP_AI_Tool_Get_RankMath_SEO'                  => 'get_rankmath_seo',
+		'WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet'         => 'create_wpcode_snippet',
 	);
 
 	/**
