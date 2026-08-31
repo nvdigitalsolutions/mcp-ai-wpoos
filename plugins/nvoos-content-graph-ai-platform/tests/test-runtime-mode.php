@@ -49,10 +49,10 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 		$missing = RuntimeMode::unavailable_subsystems();
 
 		$this->assertNotContains( 'Agents', $missing );
-		$this->assertNotContains( 'Skills', $missing );
 		$this->assertNotContains( 'Slash Commands', $missing );
 		$this->assertNotContains( 'Harness', $missing );
 		$this->assertNotContains( 'Measurement', $missing );
+		$this->assertNotContains( 'Skills', $missing );
 	}
 
 	public function test_extracted_subsystems_never_reported_missing(): void {
@@ -60,6 +60,7 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 
 		$this->assertNotContains( 'Professions', $missing );
 		$this->assertNotContains( 'Teams', $missing );
+		$this->assertNotContains( 'Skills', $missing );
 		$this->assertNotContains( 'ACP', $missing );
 		$this->assertNotContains( 'Federation', $missing );
 	}
@@ -73,7 +74,6 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 
 		$expected = array(
 			'Agents',
-			'Skills',
 			'Slash Commands',
 			'Harness',
 			'Measurement',

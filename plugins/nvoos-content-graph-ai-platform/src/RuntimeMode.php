@@ -28,7 +28,6 @@ final class RuntimeMode {
 	 */
 	private const BRIDGED_SUBSYSTEMS = array(
 		'Agents'         => 'WP_MCP_AI_Assistant_CPT',
-		'Skills'         => 'WP_MCP_AI_Skill_Registry',
 		'Slash Commands' => 'wp_mcp_ai_execute_slash_command',
 		'Harness'        => 'WP_MCP_AI_Guardrails',
 		'Measurement'    => 'WP_MCP_AI_Measurement_Registry',
@@ -66,8 +65,8 @@ final class RuntimeMode {
 			$missing[] = $label;
 		}
 
-		// A2A, ACP, Federation, Teams, and Professions were ported in extraction
-		// Wave A (src/) — always available.
+		// A2A, ACP, Federation, Teams, Professions, and Skills were ported in
+		// extraction (src/) — always available.
 		// Blueprints is greenfield and not yet built anywhere.
 		if ( ! self::blueprints_implemented() ) {
 			$missing[] = 'Blueprints';

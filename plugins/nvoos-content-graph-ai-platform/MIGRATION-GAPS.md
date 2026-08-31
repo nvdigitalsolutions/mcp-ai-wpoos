@@ -22,7 +22,7 @@
 | A2A | `includes/a2a/` (7 classes) | `src/A2A/` (7 classes ported) | 🟢 Extracted (Wave A) |
 | Agents (role system) | `includes/agents/` (12 classes) | `src/Agents/` | 🟡 Bridged |
 | Assistant CPT | `includes/assistants/` + `includes/class-assistant-cpt.php` | (stays in base — plan §10 decision 1) | ⏸️ Deferred |
-| Skills | `includes/class-wp-mcp-ai-skill-registry.php`, `-skill-parser.php`, `-skill-pack-registry.php` | `src/Skills/` | 🟡 Bridged |
+| Skills | `includes/class-wp-mcp-ai-skill-registry.php`, `-skill-parser.php`, `-skill-pack-registry.php` | `src/Skills/` (registry, parser, pack registry; SkillBridge resolves ported-first) | 🟢 Extracted (Wave B) |
 | Slash Commands | `includes/slash-commands/` (7 classes + commands/) | `src/SlashCommands/` | 🟡 Bridged |
 | Harness | `includes/harness/` (16 classes) | `src/Harness/` | 🟡 Bridged |
 | Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
@@ -88,7 +88,18 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 
 ## Next extraction waves
 
-1. **Wave B** — Skills, Slash Commands (plan Phase 2)
+1. **Wave B remainder** — Slash Commands (plan Phase 2)
 2. **Wave C** — Harness, Measurement, Agents role system (plan Phase 3)
 3. **Greenfields** — Blueprints build (plan Phase 4)
 4. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
+
+## Wave B extraction notes (2026-08-31)
+
+### Skills 🟢 Extracted
+
+- Ported classes in `src/Skills/`: `SkillRegistry` (same `wp_mcp_ai_skill_index` option, uploads-dir storage, preserved `wp_mcp_ai_skill_registry_include_evolved` filter), `SkillParser`, `SkillPackRegistry` (preserved `wp_mcp_ai_skill_packs` filter + `wp_mcp_ai_skill_pack_installed` action).
+- Bundled skills (1.2 MB) bundled at `data/bundled-skills/`; `SkillRegistry` prefers the base plugin's `includes/bundled-skills` in monolith mode and the bundled copy in standalone mode.
+- `SkillBridge` now resolves the ported registries first (same storage, so monolith behaviour is unchanged), falling back to the base copies for packaging BC.
+- `SkillService::register()` owns the deferred bundled-skills install (transient `wp_mcp_ai_install_bundled_skills`, init priority 100) in standalone mode; the platform activation hook sets the transient standalone-only.
+- The evolved-skills probe (`WP_MCP_AI_Agent_Harness_Evolver`) is gated behind `defined('WP_MCP_AI_PATH')` — the Harness port (Wave C) will add the ported-class probe.
+- Remains in base by design: `tool-load-skill`, admin AJAX handlers, and the assistant CPT's skill metaboxes (assistant CPT stays in base per plan §10 decision 1).

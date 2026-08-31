@@ -59,6 +59,12 @@ register_activation_hook(
 			add_option( 'ai_platform_settings', $defaults, '', false );
 		}
 
+		// Standalone mode: schedule the deferred bundled-skills install — the
+		// base plugin owns this wiring in monolith mode (extraction Wave B).
+		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+			set_transient( 'wp_mcp_ai_install_bundled_skills', true, HOUR_IN_SECONDS );
+		}
+
 		// Flush rewrite rules so CPT permalinks are recognised.
 		flush_rewrite_rules();
 	}
