@@ -32,6 +32,46 @@ pre-existing assertion drift and is **out of scope** here.
 
 ---
 
+## Completed clusters (Aug 30–31, 2026)
+
+Follow-up remediation executed cluster-by-cluster against `alpha-working`
+(one PR per suite or closely-related suite group). The repair patterns
+behind these are captured in the
+[`.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md`](../../../.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md)
+skill.
+
+| PR | Cluster |
+|----|---------|
+| #6084 | `Test_CRM_Toolkit` |
+| #6085 | `Test_CRM_Data_Store_Isolation` |
+| #6086 | `WP_MCP_AI_Huggingface_*` |
+| #6087 | `WP_MCP_AI_Veo_REST_Service_Integration_Test` |
+| #6088 | `Test_Transcript_Mining_Job` |
+| #6089 | `Test_Quiz_Admin_Pages` |
+| #6090 | `Test_Document_Template_Admin_Pages` |
+| #6091 | `Test_Multi_Agent_AJAX_Orchestration` |
+| #6092 | `Test_Chart_JS_Enqueue` |
+| #6093 | `Test_Admin_Hook_Suffixes` |
+| #6094 | `Test_Orchestration_Modes_Display` |
+| #6095 | `Test_REST_Tools_Controller` |
+| #6096 | `Test_Multi_Agent_Orchestration_Integration` |
+| #6097 | `Test_NPM_Integration_Notice` (added `wp_mcp_ai_vendor_package_paths` filter) |
+| #6098 | `Test_Multi_Agent_Dashboard` |
+| #6099 | `Test_Slash_Command_Chat_Integration` + `Test_Slash_Command_URL_Construction` |
+| #6100 | `Test_Profession_Media_Vector_Storage` |
+| #6101 | `Test_Profession_Base_Knowledge_Seeder` |
+| #6102 | `Test_Pro_Dashboard_Diagnostic_Scripts` |
+| #6103 | `Test_Chat_Conversation_CCT_Integration` |
+| #6104 | `Test_Admin_Test_Model_Assets` |
+| #6105 | `WP_MCP_AI_Profession_Team_CPT_Sanitization_Test` + `WP_MCP_AI_Professional_Tools_Test` (production: negative memory-file IDs clamp to 0) |
+| #6106 | `Test_Project_Management_Submenu_Registration` (production: Graphify admin classes loaded defensively on `plugins_loaded`) |
+| #6107 | `WP_MCP_AI_Toolkit_Registry_Test` + `Test_Hooks_Registry` |
+
+Remaining candidates re-triage from the latest CI log; this table is updated
+as clusters land.
+
+---
+
 ## Phase 0 — Environment re-triage (cheap, do first)
 
 The sweep ran while the Docker host was I/O-saturated (the `oos-media-worker`

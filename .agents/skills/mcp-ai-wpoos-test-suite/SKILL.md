@@ -1,0 +1,239 @@
+---
+type: Skill
+name: mcp-ai-wpoos-test-suite
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment, CI log triage, 16 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, nonce/user binding, WP 6.9 queue memoization, anonymous-class visibility), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+license: Proprietary. See LICENSE.txt
+metadata:
+  plugin: mcp-ai-wpoos
+  last-updated: "2026-08-31"
+---
+
+# NV oOS Test Suite — Repair & Triage Guide
+
+Operational playbook for keeping the single-process PHPUnit suite green,
+one cluster (suite) at a time. Distilled from ~30 cluster PRs (#6084–#6107)
+against the `alpha-working` branch. Complements `.context/testing.md` (how to
+*write* tests) — this skill covers how to *fix* a failing suite and how the
+repair loop runs.
+
+## When to use this skill
+
+- A PHPUnit suite is failing in CI, locally, or both
+- Triaging a fresh CI log zip (`logs_*.zip`)
+- "Continue the test-suite cluster" / "fix the next cluster" requests
+- Deciding whether a failure is test drift or a production bug
+- Opening the cluster PR (branch/commit/validation conventions)
+
+## Test environment (Docker)
+
+The test suite runs inside the `oos-wp` container (plugin bind-mounted at
+`/var/www/html/wp-content/plugins/mcp-ai-wpoos`, DB in `oos-wp-db`). Run from
+the repo root on the Windows host with `MSYS_NO_PATHCONV=1`.
+
+**WP 6.9 (primary):**
+
+```bash
+MSYS_NO_PATHCONV=1 docker exec -e WP_CORE_DIR=/var/www/html -e WP_DB_HOST=db -e WP_DB_NAME=wordpress_test -e WP_DB_USER=wordpress -e WP_DB_PASSWORD=wordpress oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php -d memory_limit=1G vendor/bin/phpunit <paths> --no-coverage 2>&1'
+```
+
+**WP 7.1 (second validation):** swap `WP_CORE_DIR=/tmp/wp71` and
+`WP_DB_NAME=wordpress_test_wp71`.
+
+**phpcs (the CI gate counts ERRORS, not warnings):**
+
+```bash
+MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php vendor/bin/phpcs --standard=phpcs.xml.dist --error-severity=1 --warning-severity=1 --report=summary <paths> 2>&1'
+```
+
+Rules:
+
+- **Never run two `docker exec phpunit` concurrently** — they collide on the
+  shared `wordpress_test` DB.
+- Validate every cluster on **both** WP 6.9 and WP 7.1 before opening the PR.
+- The local bootstrap lacks JetEngine and Graphify; the CI bootstrap loads
+  them. A suite skipped locally can still fail in CI — and vice versa.
+- `phpcbf` can auto-fix (e.g. array alignment): run it inside the container,
+  it edits the bind-mounted file directly.
+
+## Cluster → PR workflow
+
+1. `git fetch origin alpha-working` (auto-gc may make this time out — verify
+   with `git --no-pager log -1 --oneline origin/alpha-working` and retry).
+2. Create a branch per cluster from `origin/alpha-working`:
+   `git switch -c fix/<cluster-slug> origin/alpha-working`. Never stack on a
+   previous branch — uncommitted worktree edits carry over on switch.
+3. Reproduce locally, fix, validate (both WP versions + phpcs).
+4. Stage explicit paths only (`git add <file>` — **never `git add -A`**, and
+   **never stage `vendor/`**; the worktree carries local vendor edits that
+   must not be committed).
+5. Commit with imperative subject ≤ 50 chars; PR base is `alpha-working`.
+6. The user merges manually; move to the next candidate regardless.
+
+## CI log triage (`logs_*.zip`)
+
+1. Extract to `logs_<id>/` and parse `0_test.txt`. Every line has a timestamp
+   prefix; failures are numbered blocks `NN) Suite::method` followed by the
+   assertion message.
+2. Group by suite:
+
+   ```bash
+   sed -n '<first-failure-line>,<last-failure-line>p' logs_<id>/0_test.txt \
+     | grep -oE "[0-9]+\) [A-Za-z_0-9]+::[A-Za-z_0-9]+" \
+     | sed 's/^[0-9]*) //' | awk -F'::' '{print $1}' | sort | uniq -c | sort -rn
+   ```
+
+3. Identify which code the run tested: grep `refs/remotes/pull/NNNN/merge` —
+   the run is the merge of PR NNNN into its base at checkout time.
+4. A suite with **zero occurrences** in the log passed.
+5. Standalone-pass-but-full-run-fail ⇒ order-dependent interference
+   (shared singletons, leaked filters) — see patterns below. Reproduce by
+   running the suspect suites in **one** phpunit invocation.
+
+## Recurring root-cause patterns (symptom → fix)
+
+1. **Hook-table restore between tests.** wp-phpunit restores `$wp_filter`
+   between tests, dropping hooks registered by other suites or by
+   `is_admin()`-gated bootstrap code. Symptom: `$submenu` null, enqueue hooks
+   dead, admin pages missing. Fix: re-register in `setUp()` — instantiate the
+   class, `require` the admin file, or re-invoke private init hooks via
+   `ReflectionClass` (see `Test_Admin_Hook_Suffixes` for the
+   `init_hooks()`-re-invoke pattern).
+2. **`do_action( 'init' )` in tests re-fires WooCommerce/block registrations**
+   → "…is already registered" incorrect-usage notices fail the test. Fix:
+   call the specific init function directly
+   (e.g. `wp_mcp_ai_init_slash_commands()`, `$shortcode->register_assets()`).
+3. **WP_Error vs array envelope drift.** Tools were swept from
+   `array('success'=>false, …)` to `WP_Error`. Tests assert
+   `assertWPError()` + `get_error_code()`. Coordination tools wrap results in
+   nested envelopes (`result['team']`, `result['delegation']`,
+   `result['aggregation']`) — check the tool's `execute()` return before
+   asserting. The REST server converts a controller `WP_Error` into a
+   **400 `WP_REST_Response`** (`error_to_response`): assert status +
+   `$data['code']`, not `is_wp_error( $response )`.
+4. **Nonces bind to the current user ID.** `wp_create_nonce()` must run
+   *after* `wp_set_current_user()`. Symptom: save/metabox tests silently bail
+   and meta stays empty.
+5. **WooCommerce `get_current_page()` doing-it-wrong** when
+   `admin_enqueue_scripts` fires before `current_screen`. Fix:
+   `set_current_screen( '...' )` then
+   `do_action( 'current_screen', get_current_screen() )` — pass the
+   `WP_Screen` object, not nothing.
+6. **Script/style queue leaks + WP 6.9 `all_queued_deps` memoization.**
+   `wp_script_is( $h, 'enqueued' )` falls back to a cached recursive dep set
+   that is NOT invalidated by direct array assignment. Reset via the public
+   API so the memo invalidates:
+
+   ```php
+   global $wp_scripts;
+   foreach ( (array) $wp_scripts->queue as $handle ) {
+       wp_dequeue_script( $handle );
+   }
+   foreach ( (array) wp_styles()->queue as $handle ) {
+       wp_dequeue_style( $handle );
+   }
+   ```
+
+7. **Shared singleton state.** `WP_MCP_AI_Tool_Registry` (and friends) persist
+   across tests; suites like `test-tool-registry.php` and
+   `test-hooks-registry.php` call `clear_tools()` in their teardown. A later
+   suite's `init()` then no-ops on a partially bootstrapped state. Fix in the
+   consuming suite's `setUp()`:
+
+   ```php
+   $registry = WP_MCP_AI_Tool_Registry::get_instance();
+   $registry->clear_tools();
+   $registry->init();
+   ```
+
+   Likewise, filters added at bootstrap (e.g. the `tools-init.php` side-loader
+   on `wp_mcp_ai_default_tools`) pollute filter-contract tests — isolate with
+   `remove_all_filters( $hook )` inside the test.
+8. **Anonymous classes cannot access `protected` members of the enclosing
+   class** (they do not inherit its scope). And production `catch ( Throwable )`
+   swallows the resulting `Error`, so the request returns 200 with **zero side
+   effects** — the failure shows up as "0 saved records", not an exception.
+   Fix: make the captured property `public` (test-only), or store records on
+   the mock itself (`public $records = array()`), like
+   `test-chat-transcript-cct-author-id.php`.
+9. **Message content is stored as segments.** The REST validator stores
+   message `content` as `array( array( 'type' => 'text', 'text' => '…' ) )`.
+   Tests asserting `$msg['content']` as a string must extract
+   `$msg['content'][0]['text']`.
+10. **Registered meta sanitization applies on `update_post_meta`.**
+    `wp_kses_post` HTML-escapes (`&` → `&amp;`);
+    `sanitize_text_field` strips `<script>` elements **together with their
+    content** (so `'<script>alert(1)</script>'` → `''`, not `'alert(1)'`).
+    Assert against the sanitized value.
+11. **`absint()` flips negatives to positives** (`absint(-999)` → `999`).
+    When the contract is "drop/clamp negatives", use
+    `max( 0, (int) $value )` — the codebase documents this exact anti-pattern
+    in `sanitize_associated_assistant_meta()`.
+12. **`wp-admin/menu.php` never runs in PHPUnit**, so `add_submenu_page()`
+    falls back to the generic `admin_page_*` hook suffix instead of the
+    production `{post_type}_page_{slug}` suffix. Register the parent CPT in
+    `setUp()` and, if needed, inject the production suffix via reflection on
+    the page object's `page_hook`.
+13. **Validated-tool auto-upgrade.** `WP_MCP_AI_Tool_Registry::get_tool(
+    'base_slug' )` resolves to the `_validated` variant when registered;
+    validation rejects out-of-range args with `validation_failed` before
+    execution. Expect that when asserting tool behavior.
+14. **Risky tests (zero assertions).** Environment-dependent `if` branches
+    skip all assertions when vendor packages/Node/JetEngine exist on the host.
+    Risky tests don't fail CI (`phpunit.xml.dist` has no `failOnRisky`) but
+    they mask dead tests. Fix by adding a production filter seam
+    (e.g. `wp_mcp_ai_vendor_package_paths`) and forcing deterministic state in
+    the test.
+15. **Obsolete skip gates hide failures.** A suite that mocks its
+    dependencies doesn't need the JetEngine skip gate — the gate only makes it
+    pass locally and fail in CI. Remove it when the mock makes the suite
+    self-contained.
+16. **Test drift.** Handles renamed (`mcp-ai-*` → `wp-mcp-ai-*`), POST field
+    names changed, per-metabox nonces added, REST response shapes changed.
+    Check `git --no-pager log -1 -- <test-file>` and align the test with the
+    *current* production contract — but verify the production behavior is
+    intentional (see "Production fix vs test fix" below).
+
+## Production fix vs test fix
+
+- **Fix production** when the test exposes a genuine bug: unsafe coercion
+  (pattern 11), a latent fatal on a real code path (Graphify admin classes
+  required only under bootstrap `is_admin()`, #6106), or a missing filter seam
+  that blocks deterministic testing (#6097). Keep production edits minimal and
+  behavior-compatible; document the contract change in the PR.
+- **Fix the test** when it documents an outdated contract or an environment
+  assumption. Never weaken a security assertion (nonce/capability) to make a
+  test pass; prefer structural fixes over `setExpectedIncorrectUsage()`
+  (ineffective on WP 7.1).
+
+## Debugging workflow
+
+Scratch test files under `tests/` with `fwrite( STDERR, … )` are the fastest
+instrument; `spl_object_hash( $this )` distinguishes instance identity when a
+mock seems to write to the "wrong" object. **Delete scratch files before
+committing.**
+
+```php
+fwrite( STDERR, 'STATE: ' . wp_json_encode( $data ) . PHP_EOL );
+```
+
+## Cluster state board
+
+Completed clusters (merged or open against `alpha-working`): #6084 CRM
+toolkit, #6085 CRM data store, #6086 Huggingface, #6087 Veo, #6088 transcript
+mining, #6089 quiz admin pages, #6090 document template pages, #6091
+multi-agent AJAX, #6092 chart JS enqueue, #6093 admin hook suffixes, #6094
+orchestration modes, #6095 REST tools controller, #6096 multi-agent
+orchestration, #6097 NPM notice, #6098 multi-agent dashboard, #6099 slash
+command integration, #6100 profession media vector, #6101 base knowledge
+seeder, #6102 pro dashboard diagnostic, #6103 chat conversation CCT, #6104
+admin test model, #6105 profession team CPT sanitization, #6106 Graphify admin
+classes, #6107 toolkit + hooks registry.
+
+Remaining candidates change quickly; re-triage from the latest CI log rather
+than trusting an old list.
+
+## References
+
+- Test-writing patterns & coverage policy: `.context/testing.md`
+- Remaining-fixes tracker: `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`
+- Plugin operational guide: `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md`
