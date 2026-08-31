@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.65
+Stable tag: 1.1.66
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.66 - August 31, 2026 =
+
+A test-suite and stability release. New coding-time skill mcp-ai-wpoos-test-suite captures the PHPUnit repair workflow (Docker commands, CI-log triage, 16 recurring root-cause patterns) plus a standing TEST-SUITE-REMAINING-FIXES-PLAN tracker; coding-time agent skills are now 53. A ~100-PR campaign (Aug 28–31) repaired the PHPUnit suite cluster-by-cluster — REST endpoints, AJAX handlers, provider/client suites, admin pages, chat/channel integrations, CRM, professions/teams, multi-agent orchestration, cron/notifier, federation, healthcare interop, security, logger, transcripts. Production fixes carried by the campaign: assistant-access caching via a new wp_mcp_ai_assistant_access_cache_enabled filter with WP_Error caching, attachment-segment validation errors now return explicit HTTP 400s, token-tier endpoint + tier-change audit logging, REST permission-callback allowlist refresh, bearer-auth context sync, job-queue closure serialization in legacy option storage, custom-table query guards against missing schema (Graphify DB, job store, tenant DB), restored job-notifier update_status() with dot-preserving job IDs and owner-scoped REST routes, job status promoted to running on progress updates, web-search result building restored for Exa/Perplexity, auto-categorize router/client fixes, Cloudways analytics adapter auth check, Media Toolkit WP_Error normalization, Remove Background path guard, memory-capture envelope contract restored, output-buffer leak fixes across render/AJAX paths, Graphic Editor Plus image access on WP 6.9+, profession meta clamping and team CPT sanitization, federation mesh-sync init, and defensive Graphify admin loading on the Project Management submenu. Content Graph AI standalone plugin bumped to 1.0.3 with a tool permission-check fix. Stale 1.1.65 build ZIPs removed. Tool count unchanged: ~303 base + ~1,256 Pro (~1,559 total; live registry authoritative).
 
 = 1.1.65 - August 28, 2026 =
 

@@ -11,12 +11,12 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.65
-**Release Date:** 2026-08-28
+**Version:** 1.1.66
+**Release Date:** 2026-08-31
 
 **See [§ Previous Releases](#-previous-releases) for all version history.**
 
-**🆕 v1.1.65 Highlights:** A hardening-and-stability release. OpenAI reasoning models (o-series, gpt-5) no longer fail on `max_tokens`/`temperature` — unsupported parameters are stripped and 400 rejections retried with corrected payloads, and Content Graph AI embeddings stop 500ing (provider/model resolution, exception guards, keyword-search graph context without an index). The Media Worker ships the optional full-Crawl4AI proxy (`/api/crawl/full`, env-gated `CRAWL4AI_FULL_URL`, SSRF-validated) plus a strict-path `TEMP_ROOT` allowlist. The April-audit security-posture findings close out: Algorave Tone.js raw eval gets a per-session confirmation gate, source maps are cleaned up, and webhook `__return_true` callbacks are justified. Chat/REST hardening: legacy attachment payloads tolerated, custom message roles work again, orphaned tool messages silently discarded, sign-preserving transcript pagination, and a Google Chat verification-token webhook auth option.
+**🆕 v1.1.66 Highlights:** A test-suite and stability release. The single-process PHPUnit suite was repaired cluster-by-cluster across ~100 PRs (REST endpoints, AJAX handlers, provider/client suites, admin pages, chat/channel integrations, CRM, professions/teams, multi-agent orchestration, cron/notifier, federation, healthcare interop, security, logger, transcripts) — the campaign ships a new `mcp-ai-wpoos-test-suite` coding-time skill (53 skills now) plus a standing `TEST-SUITE-REMAINING-FIXES-PLAN.md` tracker. Production fixes carried by the campaign: assistant-access caching (`wp_mcp_ai_assistant_access_cache_enabled` filter + WP_Error caching), explicit 400s for attachment-segment validation errors, token-tier audit logging, REST permission-allowlist refresh, bearer-auth context sync, job-queue closure serialization in legacy option storage, custom-table query guards against missing schema, restored job-notifier `update_status()` with dot-preserving job IDs, job status promoted to running on progress, web-search result building restored for Exa/Perplexity, Media Toolkit WP_Error normalization, Remove Background path guard, memory-capture envelope restoration, output-buffer leak fixes, Graphic Editor Plus on WP 6.9+, profession meta clamping + team CPT sanitization, federation mesh-sync init, and defensive Graphify admin loading. Content Graph AI bumps to 1.0.3 with a permission-check fix.
 
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
@@ -126,7 +126,7 @@
 | `lib/core/` | Framework-agnostic AI orchestration engine (nvoos/core): 32 domain contracts, 21 WordPress adapters, ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry — PHP 8.1+ |
 | `addons/` | 26 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Media Worker, Graphify, Comic Reader, Funiq Bridge, Fleet Operator, Algorave, Cornerstone3D, Crocoblock DS, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router, Page Agent) |
 | `assets/` | Frontend JS/CSS, images, CSV templates, examples |
-| `.agents/skills/` | 52 coding-time agent skills for Zed editor (20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide) |
+| `.agents/skills/` | 53 coding-time agent skills for Zed editor (20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide + mcp-ai-wpoos-test-suite repair guide) |
 | `.bmad/` | 6 BMAD workflow agent YAML definitions + team composition config |
 | `.context/` | Subsystem context files (10 topics + 5 templates) for agent session loading |
 | `plugins/` | Standalone plugins: NVOOS Content Graph, NVOOS Content Graph AI, NVOOS Content Graph AI Platform |
@@ -149,6 +149,16 @@
 ## 🧩 Overview
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with 15 language-model providers: OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi (Moonshot), Z.AI (GLM), DigitalOcean, NVIDIA NIM, Cloudflare Worker AI, Ollama, LM Studio, Hugging Face, and Flowhub.  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### ✨ What's New at a Glance (v1.1.66)
+
+- 🧪 **PHPUnit Suite Repair Campaign (~100 PRs).** The single-process suite was repaired cluster-by-cluster — REST endpoints, AJAX handlers, provider/client suites, admin pages, chat/channel integrations, CRM, professions/teams, multi-agent orchestration, cron/notifier, federation, healthcare interop, security, logger, transcripts. Most PRs are test-only; the production fixes they carried are grouped in the bullets below. (PRs #6008, #6009, #6012–#6107)
+- 🔐 **REST, Auth & Permissions.** Assistant-access caching — new `wp_mcp_ai_assistant_access_cache_enabled` filter plus WP_Error caching like successful lookups (#6008); attachment-segment validation errors return explicit 400s (#6009); token-tier endpoint + tier-change audit logging (#6018); permission-callback allowlist refresh (#6019); bearer-auth context sync (#6014, #6016); REST analytics endpoints (#6015).
+- ⏱️ **Job Queue, Cron & Notifier.** Closure serialization fixed for legacy option storage (#6020); custom-table query guards against missing schema (Graphify DB, job store, tenant DB) end the 1.5K-line CI error-log flood (#6022); restored notifier `update_status()` with dot-preserving job IDs + owner-scoped REST routes (#6036, #6037); job status promoted to running on progress updates (#6039); Little's-law metrics (#6038).
+- 🤖 **Provider, Tool & Envelope Fixes.** Web-search result building restored for Exa/Perplexity (#6042); auto-categorize router/client (#6064); Cloudways analytics adapter auth check (#6062); Media Toolkit tools normalized to `WP_Error` (#6057); Remove Background path guard + source resolution (#6072); memory-capture failure envelope restored (#6049); A2A webhook logging + delegate tool errors (#6055).
+- 🖥️ **Admin, Render & Output.** Output-buffer leaks fixed across render/AJAX paths (#6045); Graphic Editor Plus image access on WP 6.9+ (#6069); workflow-editor AJAX WP_Error/hook drift (#6070); quiz + document-template admin pages wired (#6089, #6090).
+- 👔 **Professions, Federation & Addons.** Profession meta clamping + primary-role flow, team CPT sanitization (#6043, #6105); federation mesh-sync init (#6044); defensive Graphify admin loading on the PM submenu (#6106); Content Graph AI bumped to 1.0.3 with a permission-check fix (#6056).
+- 📚 **New Coding-Time Skill.** `mcp-ai-wpoos-test-suite` — Docker commands, CI-log triage, 16 recurring root-cause patterns, and the cluster-PR conventions; coding-time skills now **53**. (PR #6108)
 
 ### ✨ What's New at a Glance (v1.1.65)
 
@@ -720,6 +730,16 @@ NV oOS Pro addon integrates the Symfony Process component for secure external co
 The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wrappers with WP_Error integration, making external process execution consistent with WordPress coding standards.【F:includes/services/class-wp-mcp-ai-process-service.php†L1-L220】【F:docs/history/2025/implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md†L1-L100】
 
 ---
+
+## 🆕 Latest Updates (v1.1.66 — August 2026)
+
+### August 28–31, 2026 — PHPUnit Suite Repair Campaign, Test-Suite Skill, Content Graph AI 1.0.3
+
+- ✅ **New Coding-Time Skill — PR #6108.** `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` distills the campaign into an operational repair playbook: Docker test commands (WP 6.9/7.1), CI log-zip triage, 16 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, nonce/user binding, WP 6.9 queue memoization, anonymous-class visibility), the production-fix-vs-test-fix decision, and cluster-PR branch/commit/validation conventions. Plugin skill updated with current contracts; `AGENTS.md` + copilot instructions registered; `TEST-SUITE-REMAINING-FIXES-PLAN.md` added. Coding-time skills: 52 → 53.
+- ✅ **PHPUnit Suite Repair Campaign — PRs #6008, #6009, #6012–#6107.** ~100 cluster PRs brought the suite green. Production fixes carried by the campaign: assistant-access caching (`wp_mcp_ai_assistant_access_cache_enabled` filter + WP_Error caching, #6008); attachment-segment validation errors return explicit 400s (#6009); token-tier endpoint + tier-change audit logging (#6018); REST permission-callback allowlist refresh (#6019); bearer-auth context sync (#6014, #6016); REST analytics endpoints (#6015); job-queue closure serialization in legacy option storage (#6020); `TIER_META_KEY` chart-data constant (#6021); custom-table query guards against missing schema — Graphify DB/memory bridge, job store, tenant DB (#6022); restored `WP_MCP_AI_Job_Notifier::update_status()`, dot-preserving job IDs, source scoping (#6036); job-notifier REST routes for dot-IDs + owner auth (#6037); Little's-law metrics (#6038); job status promoted to running on progress updates (#6039); web-search result building restored for Exa/Perplexity (#6042); profession CPT meta clamping + primary-role flow (#6043); federation mesh-sync init (#6044); output-buffer leaks across render/AJAX paths (#6045); memory-capture failure envelope restored (#6049) + WPCS violations (#6052); container settings repository service ID (#6050); ecommerce toolkit enablement helper (#6051); A2A webhook logging + delegate tool errors (#6055); Media Toolkit tools normalized to `WP_Error` (#6057); autonomous-session tool error logging (#6058); Cloudways analytics adapter auth check (#6062); auto-categorize router/client (#6064); Graphic Editor Plus image access on WP 6.9+ (#6069); workflow-editor AJAX WP_Error/hook drift (#6070); Remove Background path guard + source resolution (#6072); quiz + document-template admin pages (#6089, #6090); profession service + aggregate results (#6096); NPM integration notice determinism (#6097); profession team CPT sanitization (#6105); Graphify admin classes load defensively on `plugins_loaded` (#6106).
+- ✅ **Content Graph AI 1.0.3 — PR #6056.** Tool permission-check fix + addon bump; ZIP v1.0.3 ships in `build/`.
+- 🧹 **Housekeeping.** Stale 1.1.65 build ZIPs + `.sha256` removed from `build/` (root, `optional-components/`, `toolkit-addons/`), matching the 1.1.63/1.1.64 cleanup convention.
+- 📦 **Versioning** — bumped to **1.1.66** across all version-bearing files. Pro addon: 1.1.66. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: **1.0.3** (unchanged). nvoos-content-graph-ai: **1.0.3** (bumped this window). Tool count: ~303 base + ~1,256 Pro (~1,559 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative). Provider count: **15**. Addon count: **26**. Bundled skills: **74** base + **41** Pro. Coding-time agent skills: **53**.
 
 ## 🆕 Latest Updates (v1.1.65 — August 2026)
 
