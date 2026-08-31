@@ -54,7 +54,6 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 		$this->assertNotContains( 'Harness', $missing );
 		$this->assertNotContains( 'Measurement', $missing );
 		$this->assertNotContains( 'Professions', $missing );
-		$this->assertNotContains( 'ACP', $missing );
 		$this->assertNotContains( 'Federation', $missing );
 	}
 
@@ -72,7 +71,6 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 			'Harness',
 			'Measurement',
 			'Professions',
-			'ACP',
 			'Federation',
 			'Blueprints',
 		);

@@ -33,7 +33,6 @@ final class RuntimeMode {
 		'Harness'        => 'WP_MCP_AI_Guardrails',
 		'Measurement'    => 'WP_MCP_AI_Measurement_Registry',
 		'Professions'    => 'WP_MCP_AI_Profession_CPT',
-		'ACP'            => 'WP_MCP_AI_ACP_Server',
 		'Federation'     => 'WP_MCP_AI_Federation',
 	);
 
