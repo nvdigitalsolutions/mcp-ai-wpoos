@@ -20,6 +20,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! function_exists( 'wp_mcp_ai_log' ) ) {
+	/**
+	 * Diagnostic log helper (base plugin's global surface).
+	 *
+	 * Standalone mode: forwards to the base logger when present (unusual in
+	 * standalone, but keeps the contract uniform) and falls back to
+	 * error_log otherwise.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $message Log message.
+	 * @param string $level   Log level.
+	 */
+	function wp_mcp_ai_log( $message, $level = 'info' ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			\WP_MCP_AI_Logger::log_event( $level, $message );
+			return;
+		}
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Standalone fallback when the base logger is absent.
+		error_log( sprintf( '[nvoos-content-graph-ai-platform] %s: %s', $level, $message ) );
+	}
+}
+
 /**
  * Initialize slash commands system
  *

@@ -16,8 +16,11 @@ namespace NvoosContentGraphAiPlatform\Tests;
 use NvoosContentGraphAiPlatform\SlashCommands\Commands\SlashCommandHelp;
 use NvoosContentGraphAiPlatform\SlashCommands\SlashCommandHandler;
 use NvoosContentGraphAiPlatform\SlashCommands\SlashCommandParser;
+use NvoosContentGraphAiPlatform\SlashCommands\SlashCommandPerformanceOptimizer;
 use NvoosContentGraphAiPlatform\SlashCommands\SlashCommandService;
+use NvoosContentGraphAiPlatform\SlashCommands\SlashCommandToolkitManager;
 use NvoosContentGraphAiPlatform\SlashCommands\SlashCommandValidator;
+use NvoosContentGraphAiPlatform\SlashCommands\SlashCommandWorkflowOrchestrator;
 
 /**
  * @group slash-commands
@@ -146,6 +149,48 @@ class Test_Platform_SlashCommands extends \WP_UnitTestCase {
 
 	public function test_service_register_is_safe_in_both_modes(): void {
 		SlashCommandService::instance()->register();
+		$this->assertTrue( true );
+	}
+
+	public function test_toolkit_manager_singleton(): void {
+		$first  = SlashCommandToolkitManager::get_instance();
+		$second = SlashCommandToolkitManager::get_instance();
+
+		$this->assertInstanceOf( SlashCommandToolkitManager::class, $first );
+		$this->assertSame( $first, $second );
+		$this->assertIsArray( $first->get_all_commands_by_toolkit() );
+	}
+
+	public function test_performance_optimizer_timers(): void {
+		$optimizer = new SlashCommandPerformanceOptimizer();
+
+		$timer = $optimizer->start_timer( 'test-op' );
+		$this->assertNotEmpty( $timer );
+
+		$metrics = $optimizer->get_metrics();
+		$this->assertArrayHasKey( $timer, $metrics );
+		$this->assertSame( 'test-op', $metrics[ $timer ]['operation'] );
+
+		$optimizer->stop_timer( $timer );
+	}
+
+	public function test_workflow_orchestrator_null_handler_degrades(): void {
+		$orchestrator = new SlashCommandWorkflowOrchestrator( null );
+
+		$this->assertIsArray( $orchestrator->get_workflows() );
+		$this->assertNull( $orchestrator->get_workflow( 'no-such-workflow' ) );
+	}
+
+	public function test_wp_mcp_ai_log_shim_in_standalone_mode(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			$this->markTestSkipped( 'Monolith matrix: the base plugin defines wp_mcp_ai_log().' );
+		}
+
+		SlashCommandService::instance()->register();
+
+		$this->assertTrue( function_exists( 'wp_mcp_ai_log' ) );
+		// Must not fatal in standalone mode (no base logger).
+		wp_mcp_ai_log( 'Slash commands standalone log smoke test' );
 		$this->assertTrue( true );
 	}
 }

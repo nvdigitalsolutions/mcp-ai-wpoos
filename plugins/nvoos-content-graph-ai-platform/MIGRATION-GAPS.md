@@ -23,7 +23,7 @@
 | Agents (role system) | `includes/agents/` (12 classes) | `src/Agents/` | 🟡 Bridged |
 | Assistant CPT | `includes/assistants/` + `includes/class-assistant-cpt.php` | (stays in base — plan §10 decision 1) | ⏸️ Deferred |
 | Skills | `includes/class-wp-mcp-ai-skill-registry.php`, `-skill-parser.php`, `-skill-pack-registry.php` | `src/Skills/` (registry, parser, pack registry; SkillBridge resolves ported-first) | 🟢 Extracted (Wave B) |
-| Slash Commands | `includes/slash-commands/` (7 classes + commands/) | `src/SlashCommands/` + `src/SlashCommands/Commands/` | 🟡 Bridged — engine + commands + shims ported (S1); toolkit manager, workflow orchestrator, performance optimizer pending (S2) |
+| Slash Commands | `includes/slash-commands/` (7 classes + commands/) | `src/SlashCommands/` + `src/SlashCommands/Commands/` | 🟢 Extracted (Wave B, S1–S2) |
 | Harness | `includes/harness/` (16 classes) | `src/Harness/` | 🟡 Bridged |
 | Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
 | Professions + Knowledge-base | `includes/professions/`, `includes/knowledge-base/` | `src/Professions/` + `src/Professions/Metaboxes/` | 🟢 Extracted (Wave A, P1–P3) |
@@ -88,10 +88,9 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 
 ## Next extraction waves
 
-1. **Wave B remainder** — Slash Commands S2 (toolkit manager, workflow orchestrator, performance optimizer)
-2. **Wave C** — Harness, Measurement, Agents role system (plan Phase 3)
-3. **Greenfields** — Blueprints build (plan Phase 4)
-4. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
+1. **Wave C** — Harness, Measurement, Agents role system (plan Phase 3)
+2. **Greenfields** — Blueprints build (plan Phase 4)
+3. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
 
 ## Wave B extraction notes (2026-08-31)
 
@@ -104,10 +103,10 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 - The evolved-skills probe (`WP_MCP_AI_Agent_Harness_Evolver`) is gated behind `defined('WP_MCP_AI_PATH')` — the Harness port (Wave C) will add the ported-class probe.
 - Remains in base by design: `tool-load-skill`, admin AJAX handlers, and the assistant CPT's skill metaboxes (assistant CPT stays in base per plan §10 decision 1).
 
-### Slash Commands (S1) — in progress
+### Slash Commands (S1–S2) 🟢 Extracted
 
 - Ported engine classes in `src/SlashCommands/`: `SlashCommandParser`, `SlashCommandValidator`, `SlashCommandHandler`, `SlashCommandAudit`, plus all 20 command classes in `src/SlashCommands/Commands/`.
-- `src/SlashCommands/shim-functions.php` is a faithful port of `slash-commands-init.php`: the full `wp_mcp_ai_*` global function surface (`wp_mcp_ai_init_slash_commands`, `wp_mcp_ai_execute_slash_command`, `wp_mcp_ai_register_slash_command`, `wp_mcp_ai_slash_command_exists`, `wp_mcp_ai_get_slash_commands`, `wp_mcp_ai_register_slash_command_scripts`, `wp_mcp_ai_get_workflow_orchestrator`, `wp_mcp_ai_get_performance_optimizer`, `wp_mcp_ai_execute_workflow`, audit-table helpers) plus the `wp_mcp_ai_slash_command_handler` global and the init wiring (priority 20). Loaded standalone-only by `SlashCommandService::register()`.
-- All base-class probes in the port are gated behind `defined('WP_MCP_AI_PATH')` (the monorepo-autoloader trap). `wp_mcp_ai_register_slash_command_scripts()` degrades in standalone (base JS assets + REST classes absent).
+- `src/SlashCommands/shim-functions.php` is a faithful port of `slash-commands-init.php`: the full `wp_mcp_ai_*` global function surface (`wp_mcp_ai_init_slash_commands`, `wp_mcp_ai_execute_slash_command`, `wp_mcp_ai_register_slash_command`, `wp_mcp_ai_slash_command_exists`, `wp_mcp_ai_get_slash_commands`, `wp_mcp_ai_register_slash_command_scripts`, `wp_mcp_ai_get_workflow_orchestrator`, `wp_mcp_ai_get_performance_optimizer`, `wp_mcp_ai_execute_workflow`, audit-table helpers, `wp_mcp_ai_log`) plus the `wp_mcp_ai_slash_command_handler` global and the init wiring (priority 20). Loaded standalone-only by `SlashCommandService::register()`.
+- All base-class probes in the port are gated behind `defined('WP_MCP_AI_PATH')` (the monorepo-autoloader trap). `wp_mcp_ai_register_slash_command_scripts()` degrades in standalone (base JS assets + REST classes absent). The cache adapter is intentionally NOT shimmed — the optimizer's `function_exists` probe degrades cleanly.
 - **Port deviations (behaviour-identical):** `SlashCommandContext`'s known-limits map carried duplicate array keys in the base ('gpt-4.1' ×2, 'gemini-2.5-flash' ×3); deduped to the last-wins effective values.
-- **S2 pending:** `SlashCommandToolkitManager` (10.4K lines), `SlashCommandWorkflowOrchestrator`, `SlashCommandPerformanceOptimizer` — `wp_mcp_ai_load_toolkit_slash_commands()` degrades via `class_exists` until they land. Slash Commands stays 🟡 Bridged in RuntimeMode until then.
+- **S2:** `SlashCommandToolkitManager` (10.4K lines — toolkit + WooCommerce + media commands, ~86 contract-signature `phpcs:ignore`s for unused execute() params), `SlashCommandWorkflowOrchestrator`, `SlashCommandPerformanceOptimizer` ported; `wp_mcp_ai_load_toolkit_slash_commands()` initializes the ported manager standalone. `RuntimeMode` no longer lists Slash Commands as bridged.
