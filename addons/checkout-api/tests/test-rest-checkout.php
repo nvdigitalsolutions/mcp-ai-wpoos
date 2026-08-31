@@ -33,7 +33,7 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 				'price_cents'            => 4900,
 				'currency'               => 'usd',
 				'test_mode'              => 1,
-				'addon_version'          => '1.0.3',
+				'addon_version'          => '1.0.4',
 			)
 		);
 	}
@@ -78,7 +78,7 @@ class Test_Checkout_Api_Rest extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/nvoos-checkout/v1/session' );
 		$request->set_param( 'product', 'nvoos-content-graph-ai' );
 		$request->set_param( 'site_url', 'https://customer.example' );
-		$request->set_param( 'addon_version', '1.0.3' );
+		$request->set_param( 'addon_version', '1.0.4' );
 		return $request;
 	}
 

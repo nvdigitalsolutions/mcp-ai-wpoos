@@ -40,6 +40,15 @@ final class Plugin {
 
 		add_filter( 'nvoos_content_graph/default_settings', array( $this, 'addDefaultSettings' ) );
 
+		// Credential hardening — encrypted API key storage, masked
+		// rendering, settings-save strip filter, and one-time migration.
+		if ( class_exists( 'NvoosContentGraphAi\Security\CredentialStore' ) ) {
+			\NvoosContentGraphAi\Security\CredentialStore::register();
+		}
+
+		// WP-CLI surface (wp nvoos-cg-ai migrate-keys / key-status).
+		add_action( 'cli_init', array( \NvoosContentGraphAi\Cli::class, 'registerCommands' ) );
+
 		add_action(
 			'rest_api_init',
 			static function (): void {

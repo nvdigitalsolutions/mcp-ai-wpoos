@@ -36,7 +36,7 @@ class Test_Checkout_Api_License_Store extends WP_UnitTestCase {
 				'stripe_customer'       => 'cus_test_1',
 				'amount'                => 4900,
 				'currency'              => 'usd',
-				'addon_version'         => '1.0.3',
+				'addon_version'         => '1.0.4',
 			)
 		);
 

@@ -96,7 +96,7 @@ class BuildSection extends Section {
 			$fields['openai_api_key']      = array(
 				'type'        => 'password',
 				'label'       => __( 'OpenAI API Key (optional)', 'nvoos-content-graph' ),
-				'description' => __( 'Used as fallback when the oOS AI provider is not available. Leave blank to use the global oOS key.', 'nvoos-content-graph' ),
+				'description' => __( 'Legacy fallback when the oOS AI provider is not available. Prefer the AI Providers tab — keys stored there are encrypted at rest. Leave blank to use the global oOS key.', 'nvoos-content-graph' ),
 			);
 		}
 

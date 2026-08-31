@@ -29,7 +29,7 @@ final class Payments {
 	public const DEFAULT_PRICE_CENTS = 4900;
 
 	/** @var string Addon version pinned for the fallback download URL. */
-	public const DEFAULT_ADDON_VERSION = '1.0.3';
+	public const DEFAULT_ADDON_VERSION = '1.0.4';
 
 	/**
 	 * Base URL of the vendor checkout API.

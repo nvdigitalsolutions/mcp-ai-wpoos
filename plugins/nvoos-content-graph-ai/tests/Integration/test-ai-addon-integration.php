@@ -155,6 +155,23 @@ class Test_AiAddon_Integration extends \WP_UnitTestCase {
 	}
 
 	/**
+	 * Verify the credential-hardening hooks are registered.
+	 */
+	public function test_credential_store_hooks_registered(): void {
+		Plugin::instance()->register();
+
+		$this->assertNotFalse(
+			has_filter( 'pre_update_option_nvoos_content_graph_settings', array( \NvoosContentGraphAi\Security\CredentialStore::class, 'routeSecretsOnSettingsSave' ) ),
+			'Secret routing filter should be registered'
+		);
+
+		$this->assertNotFalse(
+			has_filter( 'nvoos_content_graph/section_field_value', array( \NvoosContentGraphAi\Security\CredentialStore::class, 'maskRenderedFieldValue' ) ),
+			'Render-mask filter should be registered'
+		);
+	}
+
+	/**
 	 * Verify the text domain is loaded.
 	 */
 	public function test_text_domain_loaded(): void {
