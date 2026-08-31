@@ -54,7 +54,6 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 		$this->assertNotContains( 'Harness', $missing );
 		$this->assertNotContains( 'Measurement', $missing );
 		$this->assertNotContains( 'Professions', $missing );
-		$this->assertNotContains( 'Federation', $missing );
 	}
 
 	public function test_bridged_subsystems_all_missing_in_standalone_mode(): void {
@@ -71,7 +70,6 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 			'Harness',
 			'Measurement',
 			'Professions',
-			'Federation',
 			'Blueprints',
 		);
 		foreach ( $expected as $subsystem ) {

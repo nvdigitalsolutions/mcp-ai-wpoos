@@ -28,7 +28,7 @@
 | Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
 | Professions + Teams + KB | `includes/professions/`, `includes/teams/`, `includes/knowledge-base/` | `src/Professions/`, `src/Teams/`, `src/KnowledgeBase/` | 🟡 Bridged |
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
-| Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` | 🟡 Bridged — well-known, peer CPT, directory REST, bootstrap, verifier, rate limiter extracted; mesh networking + settings admin UI remain |
+| Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` + `src/Mesh/` | 🟢 Extracted (Wave A) — settings admin UI stays in base by design (FederationAdmin covers the platform dashboard) |
 | Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🔴 Greenfield |
 
 ## Wave A extraction notes (2026-08-31)
@@ -52,11 +52,12 @@
 
 Base plugin `includes/` copies remain for the transition; deletion happens at cutover (plan Phase 5). No `class_alias` shims during the transition — platform owns wiring only in standalone mode, which avoids double registration entirely.
 
-### Federation 🟡 Bridged — server surface + directory extracted
+### Federation 🟢 Extracted (server surface, directory, mesh)
 
-- Ported classes in `src/Federation/`: `Federation` (bootstrap — well-known, peer CPT, directory REST, cron, A2A well-known, activation hooks on the platform plugin file), `Settings` (reads the same `wp_mcp_ai_settings` option; admin UI stays in the base plugin), `WellKnown` (registry-agnostic — accepts base or Content Graph core registries, null-safe), `PeerCpt` (same `ai_peer` post type + byte-identical meta keys; JetEngine CCT sync no-ops in standalone mode), `DirectoryRest` (`ai-dir/v1` — register/list/get/search/reverify/report with rate limiting), `PeerVerifier`, `RateLimiter` (fleet-management capability check falls back to `manage_options` in standalone mode).
+- Ported classes in `src/Federation/`: `Federation` (bootstrap — well-known, peer CPT, directory REST, mesh sync, cron, A2A well-known, activation hooks on the platform plugin file), `Settings` (reads the same `wp_mcp_ai_settings` option), `WellKnown` (registry-agnostic — accepts base or Content Graph core registries, null-safe), `PeerCpt` (same `ai_peer` post type + byte-identical meta keys; JetEngine CCT sync no-ops in standalone mode), `DirectoryRest` (`ai-dir/v1` — register/list/get/search/reverify/report with rate limiting), `PeerVerifier`, `RateLimiter` (fleet-management capability check falls back to `manage_options` in standalone mode).
+- Ported classes in `src/Mesh/`: `MeshRouter` (AI-optimized peer selection, circuit breakers, retry — logs via the base logger when present, error_log fallback), `MeshPeerSync` (settings → `ai_peer` CPT sync), `MeshPeerTester`, `MeshPeerTestRest` (`mcp-ai/v1/mesh/test-peer`).
 - `FederationService` boots `Federation` in standalone mode only — monolith mode keeps the base plugin's own federation wiring (no double registration).
-- **Remaining in base plugin (follow-up PRs):** mesh networking (`mesh-router` 1,379 lines, `mesh-peer-sync`, `mesh-peer-tester`, `mesh-peer-test-rest`) and `WP_MCP_AI_Federation_Settings` admin settings UI. Mesh stays unavailable in standalone mode until ported — `RuntimeMode` keeps reporting the Federation subsystem as bridged for that reason.
+- **Remains in base by design:** `WP_MCP_AI_Federation_Settings` admin settings UI (registers into the base settings page); the Platform addon's `FederationAdmin` provides its own dashboard surface.
 
 ## Runtime degradation guard
 
@@ -67,7 +68,8 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 
 ## Next extraction waves
 
-1. **Wave B** — Skills, Slash Commands (plan Phase 2)
-2. **Wave C** — Harness, Measurement, Agents role system (plan Phase 3)
-3. **Greenfields** — Federation port to `src/Federation/`, Blueprints build (plan Phase 4)
-4. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
+1. **Wave A remainder** — Professions, Teams, Knowledge-base
+2. **Wave B** — Skills, Slash Commands (plan Phase 2)
+3. **Wave C** — Harness, Measurement, Agents role system (plan Phase 3)
+4. **Greenfields** — Blueprints build (plan Phase 4)
+5. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)

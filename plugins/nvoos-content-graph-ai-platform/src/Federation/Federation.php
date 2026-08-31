@@ -57,6 +57,13 @@ class Federation {
 	protected $directory_rest_handler;
 
 	/**
+	 * Mesh peer synchronization handler.
+	 *
+	 * @var object|null
+	 */
+	protected $mesh_peer_sync;
+
+	/**
 	 * A2A well-known handler.
 	 *
 	 * @var \NvoosContentGraphAiPlatform\A2A\WellKnown|null
@@ -122,9 +129,16 @@ class Federation {
 			}
 		}
 
-		// Mesh networking: not yet ported (tracked in MIGRATION-GAPS.md).
-		// In standalone mode mesh stays unavailable until the mesh classes are
-		// extracted; RuntimeMode reports the subsystem accordingly.
+		// Mesh networking: peer sync + test endpoint when mesh is enabled.
+		// The router itself is static and needs no wiring.
+		if ( $is_mesh_enabled ) {
+			if ( class_exists( '\NvoosContentGraphAiPlatform\Mesh\MeshPeerSync' ) ) {
+				$this->mesh_peer_sync = new \NvoosContentGraphAiPlatform\Mesh\MeshPeerSync();
+			}
+			if ( class_exists( '\NvoosContentGraphAiPlatform\Mesh\MeshPeerTestRest' ) ) {
+				new \NvoosContentGraphAiPlatform\Mesh\MeshPeerTestRest();
+			}
+		}
 
 		// Check if we need to flush rewrite rules after CPT registration.
 		// This ensures the AI Peers menu appears immediately after enabling directory service.
