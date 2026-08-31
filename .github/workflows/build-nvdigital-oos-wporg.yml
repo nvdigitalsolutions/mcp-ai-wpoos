@@ -236,14 +236,14 @@ jobs:
 
             git config core.autocrlf false
             git pull --rebase --autostash origin ${{ github.ref_name }} || {
-              echo "⚠️ Rebase conflict detected. Resolving with ours strategy..."
+              echo "⚠️ Rebase conflict detected. Resolving with freshly built ZIPs (theirs strategy)..."
               for variant in "" "-pro" "-complete"; do
                 ZIP="build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip"
                 SHA="build/nvdigital-open-operator-system-oos${variant}-${VERSION}.zip.sha256"
-                [ -f "$ZIP" ] && git checkout --ours "$ZIP" && git add -f "$ZIP" || true
-                [ -f "$SHA" ] && git checkout --ours "$SHA" && git add -f "$SHA" || true
+                [ -f "$ZIP" ] && git checkout --theirs "$ZIP" && git add -f "$ZIP" || true
+                [ -f "$SHA" ] && git checkout --theirs "$SHA" && git add -f "$SHA" || true
               done
-              git rebase --continue || {
+              GIT_EDITOR=true git rebase --continue || {
                 echo "❌ Failed to resolve rebase conflicts"
                 git rebase --abort
                 exit 1
