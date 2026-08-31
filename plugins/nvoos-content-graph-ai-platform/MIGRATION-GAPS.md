@@ -27,18 +27,30 @@
 | Harness | `includes/harness/` (16 classes) | `src/Harness/` | 🟡 Bridged |
 | Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
 | Professions + Teams + KB | `includes/professions/`, `includes/teams/`, `includes/knowledge-base/` | `src/Professions/`, `src/Teams/`, `src/KnowledgeBase/` | 🟡 Bridged |
-| ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` | 🟡 Bridged |
+| ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
 | Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` | 🟡 Bridged (built since gap doc) |
 | Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🔴 Greenfield |
 
-## A2A extraction notes (Wave A, 2026-08-31)
+## Wave A extraction notes (2026-08-31)
+
+### A2A 🟢 Extracted
 
 - Ported classes live in `src/A2A/` under `NvoosContentGraphAiPlatform\A2A`: `AgentCard`, `TaskManager`, `Client`, `MessageTranslator`, `PushNotifications`, `WebhookHandler`, `WellKnown`.
 - Behaviour is 1:1 — same option keys (`wp_mcp_ai_a2a_tasks`, `wp_mcp_ai_a2a_push_configs`), same hooks (`wp_mcp_ai_a2a_*`), same A2A protocol version.
 - `AgentCard::resolve_tool_registry()` prefers `WP_MCP_AI_Tool_Registry` (monolith) and falls back to the Content Graph core registry (standalone).
-- `A2AService` wires `WellKnown` only when the base plugin's A2A classes are absent — no double hook registration in monolith mode.
+- `A2AService` wires `WellKnown` only when the base plugin has not booted (`! defined('WP_MCP_AI_PATH')`) — no double hook registration in monolith mode.
 - **Deferred (standalone parity gap):** the A2A REST receive routes (`includes/rest/class-wp-mcp-ai-rest-a2a-controller.php`) remain in the base plugin. Standalone mode serves the well-known agent card but cannot yet receive A2A messages. Tracked for a follow-up PR — port or re-implement the controller against platform auth.
-- Base plugin `includes/a2a/` copies remain for the transition; deletion happens at cutover (plan Phase 5). No `class_alias` shims during the transition — platform owns wiring only in standalone mode, which avoids double registration entirely.
+
+### ACP 🟢 Extracted
+
+- Ported classes live in `src/ACP/` under `NvoosContentGraphAiPlatform\ACP`: `Server`, `JsonRpcDispatcher`, `SessionManager`, `SessionBridge`, `TransportHttp`, plus a minimal local `AbstractRestController` (the base plugin's `WP_MCP_AI_REST_Controller_Base` is intentionally not ported — it depends on the monolith container/auth/security stack).
+- `ACPService` mounts the transport on `rest_api_init` only in standalone mode when `ai_platform_settings.acp_enabled` is set. Monolith mode: base REST layer owns ACP routing.
+- **Intentional deviation:** the base copy's transport permission callback is `return true` (TODO). The platform port enforces `is_user_logged_in() && current_user_can( 'edit_posts' )` — it only mounts in standalone mode where the base auth stack is absent.
+- Transient prefixes (`acp_sess_*`, `acp_updates_*`), user meta (`_acp_sessions`), JSON-RPC wire format, and route paths (`mcp-ai/v1/acp`, `/acp/sse`) are unchanged.
+
+### Transition mechanism
+
+Base plugin `includes/` copies remain for the transition; deletion happens at cutover (plan Phase 5). No `class_alias` shims during the transition — platform owns wiring only in standalone mode, which avoids double registration entirely.
 
 ## Runtime degradation guard
 
