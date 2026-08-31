@@ -53,7 +53,15 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 		$this->assertNotContains( 'Slash Commands', $missing );
 		$this->assertNotContains( 'Harness', $missing );
 		$this->assertNotContains( 'Measurement', $missing );
+	}
+
+	public function test_extracted_subsystems_never_reported_missing(): void {
+		$missing = RuntimeMode::unavailable_subsystems();
+
 		$this->assertNotContains( 'Professions', $missing );
+		$this->assertNotContains( 'Teams', $missing );
+		$this->assertNotContains( 'ACP', $missing );
+		$this->assertNotContains( 'Federation', $missing );
 	}
 
 	public function test_bridged_subsystems_all_missing_in_standalone_mode(): void {
@@ -69,7 +77,6 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 			'Slash Commands',
 			'Harness',
 			'Measurement',
-			'Professions',
 			'Blueprints',
 		);
 		foreach ( $expected as $subsystem ) {

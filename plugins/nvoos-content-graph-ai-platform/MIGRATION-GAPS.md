@@ -26,7 +26,7 @@
 | Slash Commands | `includes/slash-commands/` (7 classes + commands/) | `src/SlashCommands/` | 🟡 Bridged |
 | Harness | `includes/harness/` (16 classes) | `src/Harness/` | 🟡 Bridged |
 | Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
-| Professions + Knowledge-base | `includes/professions/`, `includes/knowledge-base/` (professions data) | `src/Professions/` | 🟡 Bridged — core extracted (P1); seeders, orchestration CLI, and metaboxes pending (P2–P3) |
+| Professions + Knowledge-base | `includes/professions/`, `includes/knowledge-base/` | `src/Professions/` + `src/Professions/Metaboxes/` | 🟢 Extracted (Wave A, P1–P3) |
 | Teams | `includes/teams/` + team repository/loader | `src/Teams/` (CPT, repository, KB loader, seeder, service) | 🟢 Extracted (Wave A) |
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
 | Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` + `src/Mesh/` | 🟢 Extracted (Wave A) — settings admin UI stays in base by design (FederationAdmin covers the platform dashboard) |
@@ -69,6 +69,7 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 - Tool registry resolution follows the `defined( 'WP_MCP_AI_PATH' )` boot discriminator — the monorepo root autoloader classmaps base registry files to disk even when the base plugin is inactive, and those files reference `WP_MCP_AI_PATH` (fatal on bare `class_exists` probes; fixed in `ProfessionPlaybookLoader::resolve_tool_registry()` and `ProfessionCpt`'s tools render).
 - **Custom metaboxes degrade in standalone mode** until P3 ports the 8 metabox classes (`ProfessionCpt::init_metaboxes()` probes the ported names). `ProfessionOrchestrationSeeder` + `ProfessionOrchestrationCli` follow in P3; Professions stays 🟡 Bridged in RuntimeMode until then.
 - **P2:** the three init-wired seeders are ported — `ProfessionSeeder` (311 bundled professions seeded), `ProfessionBaseKnowledgeSeeder` (191 bundled documents), `ProfessionPlaybookSeeder` (277 bundled playbook files) — with byte-identical seeding option keys and the same `admin_init` priorities. Seeder wiring added to `ProfessionService::register()` (standalone-only). Data bundled at `data/knowledge-base/profession-documents/` + `data/knowledge-base/profession-playbooks/`. Note: the base copies' `throw new \RuntimeException( sprintf( ... ) )` sites are flagged by WPCS `EscapeOutput.ExceptionNotEscaped`; the port restructured those messages to concatenation with `ExceptionNotEscaped` ignores (the base file itself has the same latent violations — 6 errors under the root ruleset).
+- **P3 (Professions complete):** `ProfessionOrchestrationSeeder` (on-demand; byte-identical `wp_mcp_ai_profession_orchestration_version` option), `ProfessionOrchestrationCli` (WP-CLI commands registered by `ProfessionService` in standalone mode), and all 8 metabox classes in `src/Professions/Metaboxes/` (`ProfessionMetaboxBase` + 7 concrete). `ProfessionCpt::init_metaboxes()` now wires the ported metaboxes in standalone mode. Standalone degradations: expertise picker assets (`WP_MCP_AI_URL`) skip enqueue; datasets integration reads base settings only when present; provider/model selects render empty without the base model service. `RuntimeMode` no longer lists Professions as bridged.
 - **Hardening TODO (pre-existing):** `A2A\AgentCard::resolve_tool_registry()` uses a bare `class_exists( 'WP_MCP_AI_Tool_Registry' )` probe with the same latent standalone fatal — follow-up one-line fix.
 
 ### Federation 🟢 Extracted (server surface, directory, mesh)
@@ -87,8 +88,7 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 
 ## Next extraction waves
 
-1. **Wave A remainder** — Professions, Knowledge-base
-2. **Wave B** — Skills, Slash Commands (plan Phase 2)
-3. **Wave C** — Harness, Measurement, Agents role system (plan Phase 3)
-4. **Greenfields** — Blueprints build (plan Phase 4)
-5. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
+1. **Wave B** — Skills, Slash Commands (plan Phase 2)
+2. **Wave C** — Harness, Measurement, Agents role system (plan Phase 3)
+3. **Greenfields** — Blueprints build (plan Phase 4)
+4. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)

@@ -32,7 +32,6 @@ final class RuntimeMode {
 		'Slash Commands' => 'wp_mcp_ai_execute_slash_command',
 		'Harness'        => 'WP_MCP_AI_Guardrails',
 		'Measurement'    => 'WP_MCP_AI_Measurement_Registry',
-		'Professions'    => 'WP_MCP_AI_Profession_CPT',
 	);
 
 	/**
@@ -67,7 +66,8 @@ final class RuntimeMode {
 			$missing[] = $label;
 		}
 
-		// A2A was ported in extraction Wave A (src/A2A/) — always available.
+		// A2A, ACP, Federation, Teams, and Professions were ported in extraction
+		// Wave A (src/) — always available.
 		// Blueprints is greenfield and not yet built anywhere.
 		if ( ! self::blueprints_implemented() ) {
 			$missing[] = 'Blueprints';

@@ -87,6 +87,13 @@ final class ProfessionService {
 			5
 		);
 
+		// WP-CLI surface parity: the base plugin registers these commands from
+		// its own CLI bootstrap; standalone mode registers the ported copies.
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			\WP_CLI::add_command( 'profession seed-orchestration', array( ProfessionOrchestrationCli::class, 'seed_orchestration' ) );
+			\WP_CLI::add_command( 'profession orchestration-stats', array( ProfessionOrchestrationCli::class, 'orchestration_stats' ) );
+		}
+
 		add_action(
 			'init',
 			static function (): void {

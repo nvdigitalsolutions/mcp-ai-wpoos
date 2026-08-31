@@ -18,12 +18,16 @@ use NvoosContentGraphAiPlatform\Professions\DatasetMappings;
 use NvoosContentGraphAiPlatform\Professions\ProfessionBaseKnowledgeSeeder;
 use NvoosContentGraphAiPlatform\Professions\ProfessionCpt;
 use NvoosContentGraphAiPlatform\Professions\ProfessionKnowledgeBaseLoader;
+use NvoosContentGraphAiPlatform\Professions\ProfessionOrchestrationCli;
+use NvoosContentGraphAiPlatform\Professions\ProfessionOrchestrationSeeder;
 use NvoosContentGraphAiPlatform\Professions\ProfessionPlaybookLoader;
 use NvoosContentGraphAiPlatform\Professions\ProfessionPlaybookSeeder;
 use NvoosContentGraphAiPlatform\Professions\ProfessionRepository;
 use NvoosContentGraphAiPlatform\Professions\ProfessionSeeder;
 use NvoosContentGraphAiPlatform\Professions\ProfessionService;
 use NvoosContentGraphAiPlatform\Professions\ProfessionToolRecommender;
+use NvoosContentGraphAiPlatform\Professions\Metaboxes\ProfessionMetaboxBase;
+use NvoosContentGraphAiPlatform\Professions\Metaboxes\ProfessionMetaboxDetails;
 
 /**
  * @group professions
@@ -327,6 +331,71 @@ class Test_Platform_Professions extends \WP_UnitTestCase {
 		$post_id = self::factory()->post->create( array( 'post_type' => 'post' ) );
 		$removed = $this->invoke_protected_static( ProfessionPlaybookSeeder::class, 'remove_duplicate_playbooks', $post_id );
 		$this->assertSame( 0, $removed );
+	}
+
+	public function test_metabox_classes_extend_base_and_have_ids(): void {
+		$classes = array(
+			'ProfessionMetaboxDetails',
+			'ProfessionMetaboxExpertise',
+			'ProfessionMetaboxBaseKnowledge',
+			'ProfessionMetaboxDefaults',
+			'ProfessionMetaboxDatasets',
+			'ProfessionMetaboxPlaybook',
+			'ProfessionMetaboxAgentOrchestration',
+		);
+
+		foreach ( $classes as $class ) {
+			$fqcn = 'NvoosContentGraphAiPlatform\\Professions\\Metaboxes\\' . $class;
+			$this->assertTrue( class_exists( $fqcn ), "$fqcn should exist" );
+
+			$metabox = new $fqcn();
+			$this->assertInstanceOf( ProfessionMetaboxBase::class, $metabox );
+			$this->assertNotEmpty( $metabox->get_id() );
+			$this->assertNotEmpty( $metabox->get_title() );
+		}
+	}
+
+	public function test_metabox_can_save_requires_nonce(): void {
+		$metabox = new ProfessionMetaboxDetails();
+		$post_id = self::factory()->post->create();
+
+		// No nonce present in $_POST — save must be rejected.
+		$this->assertFalse( $metabox->can_save( $post_id ) );
+	}
+
+	public function test_cpt_wires_ported_metaboxes_in_standalone_mode(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			$this->markTestSkipped( 'Standalone-only wiring check; monolith mode uses the base CPT.' );
+		}
+
+		$cpt = new ProfessionCpt();
+
+		$reflection = new \ReflectionProperty( ProfessionCpt::class, 'metaboxes' );
+		$reflection->setAccessible( true );
+		$metaboxes = $reflection->getValue( $cpt );
+
+		$this->assertCount( 7, $metaboxes );
+	}
+
+	public function test_orchestration_seeder_option_key_matches_base(): void {
+		// Data stability: the version option key must stay byte-identical.
+		$this->assertSame( 'wp_mcp_ai_profession_orchestration_version', ProfessionOrchestrationSeeder::VERSION_OPTION );
+	}
+
+	public function test_orchestration_seeder_runs_on_empty_database(): void {
+		$seeder = new ProfessionOrchestrationSeeder();
+		$result = $seeder->seed_all( true );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'agent_roles_assigned', $result );
+		$this->assertArrayHasKey( 'task_patterns_created', $result );
+	}
+
+	public function test_orchestration_cli_surface(): void {
+		$this->assertTrue( class_exists( ProfessionOrchestrationCli::class ) );
+		$this->assertTrue( method_exists( ProfessionOrchestrationCli::class, 'seed_orchestration' ) );
+		$this->assertTrue( method_exists( ProfessionOrchestrationCli::class, 'orchestration_stats' ) );
 	}
 
 	/**
