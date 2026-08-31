@@ -33,8 +33,12 @@ class WP_MCP_AI_Toolkit_Registry_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Initialize tool registry.
+		// Initialize tool registry. Earlier suites share this singleton and
+		// may clear tools or leave a partially bootstrapped state, which
+		// init() would then treat as already-initialised. Clear and rebuild
+		// so the base tools this suite asserts on are always present.
 		$this->tool_registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$this->tool_registry->clear_tools();
 		$this->tool_registry->init();
 
 		// Initialize toolkit registry.
