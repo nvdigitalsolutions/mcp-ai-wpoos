@@ -16,6 +16,7 @@ final class Schema {
 	// ─── Option keys ───────────────────────────────────────────
 	public const OPTION_SETTINGS   = 'nvoos_content_graph_settings';
 	public const OPTION_DB_VERSION = 'nvoos_content_graph_db_version';
+	public const OPTION_LICENSE    = 'nvoos_content_graph_license';
 
 	// ─── Custom tables ─────────────────────────────────────────
 	public const TABLE_NODES          = 'nvoos_content_graph_nodes';
@@ -37,6 +38,13 @@ final class Schema {
 	public const FILTER_ALLOW_PRIVATE_URLS = 'nvoos_content_graph/allow_private_urls';
 	public const FILTER_ENRICH_BUDGET      = 'nvoos_content_graph/enrich_budget';
 	public const FILTER_RAG_CANDIDATES     = 'nvoos_content_graph/rag_candidates';
+	public const FILTER_PRICE_CENTS        = 'nvoos_content_graph/payments/price_cents';
+	public const FILTER_ADDON_VERSION      = 'nvoos_content_graph/payments/addon_version';
+	public const FILTER_ADDON_ZIP_URL      = 'nvoos_content_graph/payments/addon_zip_url';
+	public const FILTER_VENDOR_API_URL     = 'nvoos_content_graph/payments/vendor_api_url';
+
+	// ─── Commerce ─────────────────────────────────────────────
+	public const PRODUCT_AI_ADDON = 'nvoos-content-graph-ai';
 
 	// ─── Cron hooks ────────────────────────────────────────────
 	public const CRON_BUILD  = 'nvoos_content_graph/cron_build';
