@@ -1,0 +1,61 @@
+{
+  "teams": [
+    {
+      "title": "Full-Stack Development Team",
+      "slug": "full_stack_development_team",
+      "description": "Complete software development team covering frontend, backend, and infrastructure.",
+      "members": [
+        "software_engineer",
+        "web_developer",
+        "mobile_app_developer",
+        "database_administrator",
+        "devops_engineer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "Cloud Infrastructure Team",
+      "slug": "cloud_infrastructure_team",
+      "description": "Cloud architecture and infrastructure management specialists.",
+      "members": [
+        "cloud_architect",
+        "devops_engineer",
+        "systems_administrator",
+        "network_administrator",
+        "cybersecurity_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Software Quality Assurance Team",
+      "slug": "software_qa_team",
+      "description": "Quality assurance and testing team for software projects.",
+      "members": [
+        "qa_engineer",
+        "software_developer",
+        "devops_engineer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "UI/UX Design & Development Team",
+      "slug": "ui_ux_design_dev_team",
+      "description": "User interface and experience design team with development support.",
+      "members": [
+        "ui_ux_designer",
+        "web_designer",
+        "graphic_designer",
+        "web_developer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.6
+    }
+  ]
+}

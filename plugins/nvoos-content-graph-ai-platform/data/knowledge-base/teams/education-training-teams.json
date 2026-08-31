@@ -1,0 +1,47 @@
+{
+  "teams": [
+    {
+      "title": "IGCSE Academic Support Team",
+      "slug": "igcse_academic_support_team",
+      "description": "Comprehensive IGCSE tutoring team covering all major subjects.",
+      "members": [
+        "igcse_mathematics_tutor",
+        "igcse_sciences_tutor",
+        "igcse_english_tutor",
+        "igcse_computer_science_tutor",
+        "igcse_business_studies_tutor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "K-12 Education Team",
+      "slug": "k12_education_team",
+      "description": "Teaching professionals for elementary through high school education.",
+      "members": [
+        "elementary_school_teacher",
+        "high_school_teacher",
+        "special_education_teacher",
+        "school_counselor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.5
+    },
+    {
+      "title": "Corporate Training & Development Team",
+      "slug": "corporate_training_development_team",
+      "description": "Corporate training and instructional design specialists.",
+      "members": [
+        "corporate_trainer",
+        "instructional_designer",
+        "educational_psychologist",
+        "hr_consultant"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.5
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "teams": [
+    {
+      "title": "Strategic Business Advisory Team",
+      "slug": "strategic_business_advisory_team",
+      "description": "Strategic business consultants and advisors for organizational development.",
+      "members": [
+        "business_consultant",
+        "entrepreneur",
+        "project_manager",
+        "hr_consultant"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.5
+    },
+    {
+      "title": "Financial Advisory Team",
+      "slug": "financial_advisory_team",
+      "description": "Financial planning and advisory professionals.",
+      "members": [
+        "financial_advisor",
+        "accountant",
+        "tax_advisor",
+        "economist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Supply Chain & Logistics Team",
+      "slug": "supply_chain_logistics_team",
+      "description": "Supply chain management and logistics coordination specialists.",
+      "members": [
+        "supply_chain_manager",
+        "logistics_coordinator",
+        "warehouse_manager",
+        "import_export_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Hospitality Management Team",
+      "slug": "hospitality_management_team",
+      "description": "Hospitality and restaurant management professionals.",
+      "members": [
+        "hotel_manager",
+        "restaurant_manager",
+        "restaurant_consultant",
+        "chef"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "Real Estate Services Team",
+      "slug": "real_estate_services_team",
+      "description": "Real estate professionals for property transactions and management.",
+      "members": [
+        "real_estate_agent",
+        "architect",
+        "interior_designer",
+        "landscape_architect"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    }
+  ]
+}

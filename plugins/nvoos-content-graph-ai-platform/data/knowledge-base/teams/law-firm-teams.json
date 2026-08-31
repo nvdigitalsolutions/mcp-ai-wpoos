@@ -1,0 +1,115 @@
+{
+	"teams": [
+		{
+			"title": "Litigation Practice Team",
+			"slug": "law_firm_litigation_team",
+			"description": "Full-service litigation team handling civil cases from intake through trial, with compliance oversight and billing support.",
+			"members": [
+				"law_firm_litigation_attorney",
+				"law_firm_compliance_officer",
+				"law_firm_paralegal"
+			],
+			"default_provider": "openai",
+			"default_model": "gpt-4.1",
+			"default_temperature": 0.2,
+			"orchestration_mode": "sequential",
+			"workflow": {
+				"description": "Sequential litigation workflow from case evaluation through trial preparation with compliance and administrative support",
+				"steps": [
+					{
+						"step": 1,
+						"agent": "law_firm_litigation_attorney",
+						"task": "Evaluate case merits, calculate statute of limitations, assess damages, develop litigation strategy, draft pleadings and motions, and manage discovery",
+						"dependencies": []
+					},
+					{
+						"step": 2,
+						"agent": "law_firm_compliance_officer",
+						"task": "Screen for conflicts of interest, verify ethics compliance, review AI usage disclosure requirements, and assess malpractice risk factors",
+						"dependencies": [1]
+					},
+					{
+						"step": 3,
+						"agent": "law_firm_paralegal",
+						"task": "Track court deadlines, organize evidence, log client communications, record time entries, and manage document filings",
+						"dependencies": [1, 2]
+					}
+				]
+			}
+		},
+		{
+			"title": "Corporate Practice Team",
+			"slug": "law_firm_corporate_team",
+			"description": "Transactional team handling corporate matters with full billing and compliance support.",
+			"members": [
+				"law_firm_corporate_attorney",
+				"law_firm_billing_manager",
+				"law_firm_compliance_officer"
+			],
+			"default_provider": "openai",
+			"default_model": "gpt-4.1",
+			"default_temperature": 0.2,
+			"orchestration_mode": "sequential",
+			"workflow": {
+				"description": "Sequential corporate workflow from contract preparation through billing with compliance oversight",
+				"steps": [
+					{
+						"step": 1,
+						"agent": "law_firm_corporate_attorney",
+						"task": "Draft and review contracts, manage clause libraries, prepare engagement letters, and track document versions through transaction closing",
+						"dependencies": []
+					},
+					{
+						"step": 2,
+						"agent": "law_firm_compliance_officer",
+						"task": "Screen conflicts, verify data privacy compliance, generate AI usage disclosures, and review ethics considerations",
+						"dependencies": [1]
+					},
+					{
+						"step": 3,
+						"agent": "law_firm_billing_manager",
+						"task": "Record time entries, generate invoices, manage trust account transactions, and analyze matter profitability",
+						"dependencies": [1, 2]
+					}
+				]
+			}
+		},
+		{
+			"title": "Firm Management Team",
+			"slug": "law_firm_management_team",
+			"description": "Executive team providing firm-wide operational oversight, financial management, and strategic planning.",
+			"members": [
+				"law_firm_managing_partner",
+				"law_firm_billing_manager",
+				"law_firm_compliance_officer"
+			],
+			"default_provider": "openai",
+			"default_model": "gpt-4.1",
+			"default_temperature": 0.2,
+			"orchestration_mode": "sequential",
+			"workflow": {
+				"description": "Sequential management workflow from performance analysis through financial review to compliance audit",
+				"steps": [
+					{
+						"step": 1,
+						"agent": "law_firm_managing_partner",
+						"task": "Review firm KPIs, analyze attorney utilization, forecast revenue, benchmark competitive positioning, and assess client satisfaction",
+						"dependencies": []
+					},
+					{
+						"step": 2,
+						"agent": "law_firm_billing_manager",
+						"task": "Generate billing reports, reconcile trust accounts, analyze accounts receivable aging, and review matter profitability",
+						"dependencies": [1]
+					},
+					{
+						"step": 3,
+						"agent": "law_firm_compliance_officer",
+						"task": "Audit bar compliance deadlines, review CLE status, check trust account compliance, and assess firm-wide malpractice risk",
+						"dependencies": [1, 2]
+					}
+				]
+			}
+		}
+	]
+}

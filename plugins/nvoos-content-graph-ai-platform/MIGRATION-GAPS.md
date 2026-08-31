@@ -26,7 +26,8 @@
 | Slash Commands | `includes/slash-commands/` (7 classes + commands/) | `src/SlashCommands/` | 🟡 Bridged |
 | Harness | `includes/harness/` (16 classes) | `src/Harness/` | 🟡 Bridged |
 | Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
-| Professions + Teams + KB | `includes/professions/`, `includes/teams/`, `includes/knowledge-base/` | `src/Professions/`, `src/Teams/`, `src/KnowledgeBase/` | 🟡 Bridged |
+| Professions + Knowledge-base | `includes/professions/`, `includes/knowledge-base/` (professions data) | `src/Professions/`, `src/KnowledgeBase/` | 🟡 Bridged |
+| Teams | `includes/teams/` + team repository/loader | `src/Teams/` (CPT, repository, KB loader, seeder, service) | 🟢 Extracted (Wave A) |
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
 | Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` + `src/Mesh/` | 🟢 Extracted (Wave A) — settings admin UI stays in base by design (FederationAdmin covers the platform dashboard) |
 | Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🔴 Greenfield |
@@ -52,6 +53,14 @@
 
 Base plugin `includes/` copies remain for the transition; deletion happens at cutover (plan Phase 5). No `class_alias` shims during the transition — platform owns wiring only in standalone mode, which avoids double registration entirely.
 
+### Teams 🟢 Extracted
+
+- Ported classes live in `src/Teams/` under `NvoosContentGraphAiPlatform\Teams`: `TeamCpt` (same `mcp_ai_team` post type + byte-identical `_wp_mcp_ai_team_*` meta keys), `TeamRepository`, `TeamKnowledgeBaseLoader`, `TeamSeeder`, plus `TeamsService` (composition root).
+- Knowledge base bundled at `data/knowledge-base/teams/` (26 JSON files, mirror of `includes/knowledge-base/teams/`); the loader prefers the base plugin's directory in monolith mode.
+- `TeamsService` wires the ported CPT + seeder on `init` (priority 5, mirroring the base `teams-init.php`) in standalone mode only — monolith mode keeps the base plugin's own wiring (no double registration). Shared option key `wp_mcp_ai_teams_seeded` keeps seeding idempotent across modes.
+- `src/Schema/Sanitize.php` mirrors `wp_mcp_ai_sanitize_recursive()` byte-for-byte (delegates to the base function when present) — used by `TeamCpt::save_post()` for workflow-template JSON; also needed by the pending Professions port.
+- **Graceful degradation (standalone):** the defaults metabox's provider/model selects probe `WP_MCP_AI_Admin_Settings` / `WP_MCP_AI_Model_Service` via `class_exists()` and render empty when absent (no model service in standalone mode).
+
 ### Federation 🟢 Extracted (server surface, directory, mesh)
 
 - Ported classes in `src/Federation/`: `Federation` (bootstrap — well-known, peer CPT, directory REST, mesh sync, cron, A2A well-known, activation hooks on the platform plugin file), `Settings` (reads the same `wp_mcp_ai_settings` option), `WellKnown` (registry-agnostic — accepts base or Content Graph core registries, null-safe), `PeerCpt` (same `ai_peer` post type + byte-identical meta keys; JetEngine CCT sync no-ops in standalone mode), `DirectoryRest` (`ai-dir/v1` — register/list/get/search/reverify/report with rate limiting), `PeerVerifier`, `RateLimiter` (fleet-management capability check falls back to `manage_options` in standalone mode).
@@ -68,7 +77,7 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 
 ## Next extraction waves
 
-1. **Wave A remainder** — Professions, Teams, Knowledge-base
+1. **Wave A remainder** — Professions, Knowledge-base
 2. **Wave B** — Skills, Slash Commands (plan Phase 2)
 3. **Wave C** — Harness, Measurement, Agents role system (plan Phase 3)
 4. **Greenfields** — Blueprints build (plan Phase 4)
