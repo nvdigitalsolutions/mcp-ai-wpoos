@@ -757,6 +757,31 @@ function wp_mcp_ai_setup_test_environment() {
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_setup_test_environment' );
 
 /**
+ * Rebuild in-memory role objects from the database.
+ *
+ * On WordPress 7.1+, WP_Roles::add_cap() mutates the internal roles array
+ * and persists to the `user_roles` option but does not update the cached
+ * WP_Role objects that WP_User::get_role_caps() reads. WooCommerce's
+ * WC_Install::create_roles() adds its capabilities via add_cap() during
+ * `init`, so on a fresh test database the first bootstrap leaves stale role
+ * objects (e.g. shop_manager without `edit_products`) and capability-gated
+ * tools fail. Re-instantiating wp_roles() rebuilds the objects from the
+ * authoritative option.
+ */
+function wp_mcp_ai_resync_test_roles() {
+	global $wp_version;
+
+	if ( version_compare( $wp_version, '7.1', '<' ) ) {
+		return;
+	}
+
+	unset( $GLOBALS['wp_roles'] );
+	wp_roles();
+}
+
+tests_add_filter( 'wp_loaded', 'wp_mcp_ai_resync_test_roles', 5 );
+
+/**
  * Initialize database tables for testing.
  */
 function wp_mcp_ai_init_test_database_tables() {
