@@ -16,6 +16,20 @@
 class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 
 	/**
+	 * Set up before each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// The 'init' action has already fired by the time tests run, so the
+		// CPT's init hooks never ran. Register the post type and meta keys
+		// directly (same pattern as the profession team CPT suite).
+		$profession_cpt = new WP_MCP_AI_Profession_CPT();
+		$profession_cpt->register_post_type();
+		$profession_cpt->register_meta();
+	}
+
+	/**
 	 * Test profession CPT constants exist.
 	 */
 	public function test_profession_meta_constants_exist() {
@@ -206,8 +220,10 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 		// Create metabox instance and save.
 		$metabox = new WP_MCP_AI_Profession_Metabox_Base_Knowledge();
 
-		// Mock current user as admin.
+		// Mock current user as admin. The nonce must be created AFTER the
+		// user is set: nonces are bound to the current user ID.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+		$_POST['wp_mcp_ai_profession_base_knowledge_nonce'] = wp_create_nonce( 'wp_mcp_ai_profession_base_knowledge_save' );
 
 		$metabox->save( $post_id, $post );
 
@@ -225,6 +241,7 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 		unset( $_POST['wp_mcp_ai_profession_memory_files'] );
 		unset( $_POST['wp_mcp_ai_profession_vector_store_id'] );
 		unset( $_POST['wp_mcp_ai_profession_mime_types'] );
+		unset( $_POST['wp_mcp_ai_profession_base_knowledge_nonce'] );
 	}
 
 	/**
@@ -245,8 +262,10 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 		// Create metabox instance and save.
 		$metabox = new WP_MCP_AI_Profession_Metabox_Base_Knowledge();
 
-		// Mock current user as admin.
+		// Mock current user as admin. The nonce must be created AFTER the
+		// user is set: nonces are bound to the current user ID.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+		$_POST['wp_mcp_ai_profession_base_knowledge_nonce'] = wp_create_nonce( 'wp_mcp_ai_profession_base_knowledge_save' );
 
 		$metabox->save( $post_id, $post );
 
@@ -257,6 +276,7 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 
 		// Clean up.
 		unset( $_POST['wp_mcp_ai_profession_memory_files'] );
+		unset( $_POST['wp_mcp_ai_profession_base_knowledge_nonce'] );
 	}
 
 	/**
@@ -275,11 +295,16 @@ class Test_Profession_Media_Vector_Storage extends WP_UnitTestCase {
 		update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, array( 123 ) );
 		update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_VECTOR_STORE_ID, 'vs_test' );
 
-		// Now save with empty POST data.
-		$_POST = array(); // No data submitted.
+		// Now save with empty POST data (only the nonce, as a real form
+		// submission would carry it even when fields are left empty).
+		$_POST = array();
 
 		$metabox = new WP_MCP_AI_Profession_Metabox_Base_Knowledge();
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+
+		// The nonce must be created AFTER the user is set: nonces are bound
+		// to the current user ID.
+		$_POST['wp_mcp_ai_profession_base_knowledge_nonce'] = wp_create_nonce( 'wp_mcp_ai_profession_base_knowledge_save' );
 
 		$metabox->save( $post_id, $post );
 
