@@ -26,7 +26,7 @@
 | Slash Commands | `includes/slash-commands/` (7 classes + commands/) | `src/SlashCommands/` | 🟡 Bridged |
 | Harness | `includes/harness/` (16 classes) | `src/Harness/` | 🟡 Bridged |
 | Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
-| Professions + Knowledge-base | `includes/professions/`, `includes/knowledge-base/` (professions data) | `src/Professions/`, `src/KnowledgeBase/` | 🟡 Bridged |
+| Professions + Knowledge-base | `includes/professions/`, `includes/knowledge-base/` (professions data) | `src/Professions/` | 🟡 Bridged — core extracted (P1); seeders, orchestration CLI, and metaboxes pending (P2–P3) |
 | Teams | `includes/teams/` + team repository/loader | `src/Teams/` (CPT, repository, KB loader, seeder, service) | 🟢 Extracted (Wave A) |
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
 | Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` + `src/Mesh/` | 🟢 Extracted (Wave A) — settings admin UI stays in base by design (FederationAdmin covers the platform dashboard) |
@@ -60,6 +60,15 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 - `TeamsService` wires the ported CPT + seeder on `init` (priority 5, mirroring the base `teams-init.php`) in standalone mode only — monolith mode keeps the base plugin's own wiring (no double registration). Shared option key `wp_mcp_ai_teams_seeded` keeps seeding idempotent across modes.
 - `src/Schema/Sanitize.php` mirrors `wp_mcp_ai_sanitize_recursive()` byte-for-byte (delegates to the base function when present) — used by `TeamCpt::save_post()` for workflow-template JSON; also needed by the pending Professions port.
 - **Graceful degradation (standalone):** the defaults metabox's provider/model selects probe `WP_MCP_AI_Admin_Settings` / `WP_MCP_AI_Model_Service` via `class_exists()` and render empty when absent (no model service in standalone mode).
+
+### Professions core (P1) — in progress
+
+- Ported classes in `src/Professions/`: `ProfessionCpt` (same `mcp_ai_profession` post type + byte-identical `_wp_mcp_ai_profession_*` meta keys), `ProfessionRepository`, `ProfessionKnowledgeBaseLoader`, `ProfessionPlaybookLoader`, `ProfessionToolRecommender`, `DatasetMappings` (function pair → static class), and `ProfessionService` (composition root + ported domain logic of `WP_MCP_AI_Profession_Service`).
+- Knowledge base `professions/` (18 JSON files) bundled at `data/knowledge-base/professions/`; loaders prefer the base plugin's directory in monolith mode.
+- `ProfessionService::register()` wires the ported CPT + cache-invalidation hooks in standalone mode only; monolith mode keeps the base `professions-init.php` wiring. `src/Professions/shim-functions.php` (standalone-only) restores the global function surface: `wp_mcp_ai_get_profession_service`, `wp_mcp_ai_get_profession_dataset_recommendations`, `wp_mcp_ai_get_all_profession_dataset_mappings`.
+- Tool registry resolution follows the `defined( 'WP_MCP_AI_PATH' )` boot discriminator — the monorepo root autoloader classmaps base registry files to disk even when the base plugin is inactive, and those files reference `WP_MCP_AI_PATH` (fatal on bare `class_exists` probes; fixed in `ProfessionPlaybookLoader::resolve_tool_registry()` and `ProfessionCpt`'s tools render).
+- **Custom metaboxes degrade in standalone mode** until P3 ports the 8 metabox classes (`ProfessionCpt::init_metaboxes()` probes the ported names). Seeders (profession, base-knowledge, playbook, orchestration) + `profession-documents/` + `profession-playbooks/` data + `ProfessionOrchestrationCli` follow in P2/P3; Professions stays 🟡 Bridged in RuntimeMode until then.
+- **Hardening TODO (pre-existing):** `A2A\AgentCard::resolve_tool_registry()` uses a bare `class_exists( 'WP_MCP_AI_Tool_Registry' )` probe with the same latent standalone fatal — follow-up one-line fix.
 
 ### Federation 🟢 Extracted (server surface, directory, mesh)
 
