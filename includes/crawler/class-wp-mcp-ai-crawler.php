@@ -89,12 +89,21 @@ class WP_MCP_AI_Crawler {
 	 * @return bool True when the job was queued.
 	 */
 	public static function register_remote_job( $task_id, array $job_args ) {
-		$task_id = sanitize_text_field( (string) $task_id );
+		$task_id = self::sanitize_task_id( $task_id );
 		if ( '' === $task_id ) {
 			return false;
 		}
 
-		$base_url = isset( $job_args['base_url'] ) ? esc_url_raw( (string) $job_args['base_url'] ) : '';
+		// Require a syntactically valid absolute URL before sanitising. On
+		// WordPress 6.6+ esc_url_raw() guesses an http:// scheme for bare
+		// strings, which would let garbage values like "not a valid url"
+		// through unchanged, so validate the raw input first.
+		$base_url = isset( $job_args['base_url'] ) ? trim( (string) $job_args['base_url'] ) : '';
+		if ( '' === $base_url || false === filter_var( $base_url, FILTER_VALIDATE_URL ) ) {
+			return false;
+		}
+
+		$base_url = esc_url_raw( $base_url );
 		if ( '' === $base_url ) {
 			return false;
 		}
@@ -181,7 +190,7 @@ class WP_MCP_AI_Crawler {
 	 * @return bool True when the job was registered.
 	 */
 	public static function register_completed_job( $task_id, array $job_args ) {
-		$task_id = sanitize_text_field( (string) $task_id );
+		$task_id = self::sanitize_task_id( $task_id );
 		if ( '' === $task_id ) {
 			return false;
 		}
@@ -252,11 +261,14 @@ class WP_MCP_AI_Crawler {
 
 		$exposed = array(
 			'task_id'       => $job['task_id'],
+			'base_url'      => isset( $job['base_url'] ) ? (string) $job['base_url'] : '',
 			'status'        => isset( $job['status'] ) ? $job['status'] : 'pending',
 			'created_at'    => isset( $job['created_at'] ) ? (int) $job['created_at'] : 0,
 			'updated_at'    => isset( $job['updated_at'] ) ? (int) $job['updated_at'] : 0,
 			'poll_interval' => isset( $job['poll_interval'] ) ? (int) $job['poll_interval'] : self::DEFAULT_POLL_INTERVAL,
 			'max_runtime'   => isset( $job['max_runtime'] ) ? (int) $job['max_runtime'] : self::DEFAULT_MAX_RUNTIME,
+			'arguments'     => isset( $job['arguments'] ) && is_array( $job['arguments'] ) ? $job['arguments'] : array(),
+			'context'       => isset( $job['context'] ) && is_array( $job['context'] ) ? $job['context'] : array(),
 		);
 
 		return $exposed;
@@ -273,7 +285,7 @@ class WP_MCP_AI_Crawler {
 	 * @param string $task_id Task identifier.
 	 */
 	public static function handle_poll_event( $task_id ) {
-		$task_id = sanitize_text_field( (string) $task_id );
+		$task_id = self::sanitize_task_id( $task_id );
 		if ( '' === $task_id ) {
 			return;
 		}
@@ -554,7 +566,8 @@ class WP_MCP_AI_Crawler {
 	 * @return array|null
 	 */
 	protected static function get_job( $task_id ) {
-		$key = self::get_storage_key( $task_id );
+		$task_id = self::sanitize_task_id( $task_id );
+		$key     = self::get_storage_key( $task_id );
 
 		if ( is_multisite() ) {
 			$job = get_site_transient( $key );
@@ -591,7 +604,8 @@ class WP_MCP_AI_Crawler {
 	 * @param string $task_id Task identifier.
 	 */
 	protected static function delete_job( $task_id ) {
-		$key = self::get_storage_key( $task_id );
+		$task_id = self::sanitize_task_id( $task_id );
+		$key     = self::get_storage_key( $task_id );
 
 		if ( is_multisite() ) {
 			delete_site_transient( $key );
@@ -639,6 +653,20 @@ class WP_MCP_AI_Crawler {
 			// and during crawl job polling, there may be no user activity.
 			spawn_cron();
 		}
+	}
+
+	/**
+	 * Normalise a task identifier for storage and lookup.
+	 *
+	 * Registering and querying a job must sanitise identically so that a
+	 * caller can pass the original, unmodified task id to get_job_status()
+	 * and still resolve the job stored under the sanitised value.
+	 *
+	 * @param string $task_id Task identifier.
+	 * @return string
+	 */
+	protected static function sanitize_task_id( $task_id ) {
+		return sanitize_text_field( (string) $task_id );
 	}
 
 	/**

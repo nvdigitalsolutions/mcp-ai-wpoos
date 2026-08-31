@@ -283,7 +283,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test task_id is sanitized.
+	 * Test task_id is sanitized on registration and lookup.
 	 */
 	public function test_task_id_sanitization() {
 		$task_id  = 'test<script>alert("xss")</script>task';
@@ -293,8 +293,11 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 
 		WP_MCP_AI_Crawler::register_remote_job( $task_id, $job_args );
 
-		// Task ID should be sanitized.
-		$job = WP_MCP_AI_Crawler::get_job_status( 'testscriptalert(xss)/scripttask' );
+		// Task IDs are stripped of tags and the job must be retrievable via
+		// the original id, which is sanitised identically on lookup.
+		$job = WP_MCP_AI_Crawler::get_job_status( $task_id );
 		$this->assertIsArray( $job );
+		$this->assertSame( sanitize_text_field( $task_id ), $job['task_id'] );
+		$this->assertStringNotContainsString( '<script>', $job['task_id'] );
 	}
 }
