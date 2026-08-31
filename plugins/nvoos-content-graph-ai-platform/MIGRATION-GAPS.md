@@ -30,7 +30,7 @@
 | Teams | `includes/teams/` + team repository/loader | `src/Teams/` (CPT, repository, KB loader, seeder, service) | 🟢 Extracted (Wave A) |
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
 | Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` + `src/Mesh/` | 🟢 Extracted (Wave A) — settings admin UI stays in base by design (FederationAdmin covers the platform dashboard) |
-| Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🔴 Greenfield |
+| Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🟢 Built (Phase 4 greenfield) |
 
 ## Wave A extraction notes (2026-08-31)
 
@@ -88,8 +88,17 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 
 ## Next extraction waves
 
-1. **Greenfields** — Blueprints build (plan Phase 4)
-2. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
+1. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
+
+## Phase 4 — Blueprints greenfield (2026-09-01)
+
+- `BlueprintRegistry` — CRUD over the existing `TemplateCpt` (`ai_platform_template`) — plan open decision 2 resolved: REUSE (no new slug). Meta keys: `_nvoos_platform_blueprint_definition` (JSON), `_nvoos_platform_blueprint_version`, `_nvoos_platform_blueprint_kind`; schema version 1.0.
+- `BlueprintValidator` — required envelope keys (`blueprint_version`, `kind`), kind whitelist (agent, workflow, prompt_pack), version guard (newer schema rejected with `blueprint_version_too_new`), kind-specific payload checks, and an irreversible/credential-field guard (`api_key`, `secret`, `token`, … never exported/imported).
+- `BlueprintExporter` — agent config array → versioned definition (works on config arrays; the assistant CPT stays in base by plan decision). `BlueprintImporter` — validated definition → normalized agent config.
+- `BlueprintRestController` — `nvoos-content-graph/v1/platform/blueprints` CRUD: reads `edit_posts`, writes `manage_options`, schema-validated args, 400/404 error mapping.
+- `BlueprintService::register()` wires the REST surface in every runtime mode (greenfield — no base counterpart to double-register).
+- Exit-gate tests: full lifecycle (export → validate → store → import → update → delete), validator safety guards, REST surface + permission callbacks (fail-closed).
+- `RuntimeMode` now reports NO missing subsystems in either matrix (the notice is effectively dormant until a future subsystem ships).
 
 ## Wave C extraction notes (2026-09-01)
 

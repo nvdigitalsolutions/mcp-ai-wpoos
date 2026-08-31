@@ -27,10 +27,13 @@ use NvoosContentGraphAiPlatform\RuntimeMode;
  */
 class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 
-	public function test_unavailable_subsystems_lists_blueprints_until_built(): void {
+	public function test_unavailable_subsystems_empty_once_blueprints_lands(): void {
+		// Phase 4 landed the greenfield Blueprints subsystem — with every
+		// planned subsystem implemented, the notice list is empty in both
+		// matrices.
 		$missing = RuntimeMode::unavailable_subsystems();
 
-		$this->assertContains( 'Blueprints', $missing );
+		$this->assertSame( array(), $missing );
 	}
 
 	public function test_extracted_subsystems_never_reported_missing(): void {
@@ -49,22 +52,10 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 	}
 
 	public function test_only_blueprints_reported_in_standalone_mode(): void {
-		if ( defined( 'WP_MCP_AI_PATH' ) ) {
-			$this->markTestSkipped( 'Monolith-only complement of the standalone check below.' );
-		}
-
-		$missing = RuntimeMode::unavailable_subsystems();
-
-		$this->assertSame( array( 'Blueprints' ), $missing );
+		$this->markTestSkipped( 'Blueprints landed in Phase 4 — no subsystem is reported missing in any matrix.' );
 	}
 
 	public function test_only_blueprints_reported_in_monolith_mode(): void {
-		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
-			$this->markTestSkipped( 'Standalone-only complement of the monolith check below.' );
-		}
-
-		$missing = RuntimeMode::unavailable_subsystems();
-
-		$this->assertSame( array( 'Blueprints' ), $missing );
+		$this->markTestSkipped( 'Blueprints landed in Phase 4 — no subsystem is reported missing in any matrix.' );
 	}
 }
