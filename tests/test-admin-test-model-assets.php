@@ -42,12 +42,26 @@ class Test_Admin_Test_Model_Assets extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-professional-selector-shortcode.php';
 		}
 
-		// Initialize the shortcodes to register assets.
-		new WP_MCP_AI_Shortcode();
-		new WP_MCP_AI_Professional_Selector_Shortcode();
+		// Initialize the shortcodes and register their assets directly.
+		// Firing the full 'init' action re-runs WooCommerce and block
+		// registrations and produces incorrect-usage notices.
+		$shortcode = new WP_MCP_AI_Shortcode();
+		$shortcode->register_assets();
+		$selector = new WP_MCP_AI_Professional_Selector_Shortcode();
+		$selector->register_assets();
 
-		// Trigger asset registration.
-		do_action( 'init' );
+		// Set current user as admin BEFORE admin_menu fires: add_submenu_page
+		// bails out for users missing the manage_options capability.
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_user );
+
+		// Register the profession post type so its parent menu exists and
+		// add_submenu_page computes the correct page hook suffix.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+		}
+		$profession_cpt = new WP_MCP_AI_Profession_CPT();
+		$profession_cpt->register_post_type();
 
 		// Set up test model instance.
 		$this->test_model = new WP_MCP_AI_Admin_Test_Model();
@@ -55,9 +69,26 @@ class Test_Admin_Test_Model_Assets extends WP_UnitTestCase {
 		// Register the admin page.
 		do_action( 'admin_menu' );
 
-		// Set current user as admin.
-		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_user );
+		// add_submenu_page() derives the hook suffix from the admin menu
+		// structure built by wp-admin/menu.php, which never runs in unit
+		// tests, so it falls back to the generic 'admin_page_' prefix.
+		// Inject the suffix production would compute for a submenu under
+		// the profession CPT menu.
+		$reflection = new ReflectionClass( $this->test_model );
+		$property   = $reflection->getProperty( 'page_hook' );
+		$property->setAccessible( true );
+		$property->setValue( $this->test_model, 'mcp_ai_profession_page_wp-mcp-ai-test-model' );
+
+		// Reset script and style queues so enqueue assertions are not
+		// affected by leftovers from previous tests. Dequeueing via the
+		// public API also invalidates the internal dependency memo.
+		global $wp_scripts;
+		foreach ( (array) $wp_scripts->queue as $handle ) {
+			wp_dequeue_script( $handle );
+		}
+		foreach ( (array) wp_styles()->queue as $handle ) {
+			wp_dequeue_style( $handle );
+		}
 	}
 
 	/**
