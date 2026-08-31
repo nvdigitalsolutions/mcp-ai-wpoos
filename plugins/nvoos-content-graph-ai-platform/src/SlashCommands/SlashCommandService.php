@@ -20,6 +20,18 @@ final class SlashCommandService {
 		if ( is_admin() ) {
 			$this->registerAdmin();
 		}
+
+		// Standalone mode only: the base plugin owns the slash-command wiring
+		// and global function surface in monolith mode — never wire twice.
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		// Global function surface shims (wp_mcp_ai_init_slash_commands,
+		// wp_mcp_ai_execute_slash_command, wp_mcp_ai_register_slash_command,
+		// wp_mcp_ai_get_slash_commands, …) — the full port of the base
+		// slash-commands-init.php, including its init wiring.
+		require_once __DIR__ . '/shim-functions.php';
 	}
 
 	private function registerAdmin(): void {
