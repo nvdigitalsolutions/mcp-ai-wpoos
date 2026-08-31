@@ -63,7 +63,10 @@ class Test_Transcript_Recorder_Base_JetEngine extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, '_wp_mcp_ai_provider', 'openai' );
 
 		rest_get_server();
-		do_action( 'init' );
+		// NOTE: do not re-fire the 'init' action here — the WordPress test
+		// bootstrap has already fired it, and a second firing re-registers
+		// WooCommerce/Elementor assets, raising "already registered"
+		// doing-it-wrong notices that fail the test.
 
 		// Set up mock handler.
 		$this->setup_mock_handler();
