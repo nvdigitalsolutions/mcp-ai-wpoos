@@ -604,8 +604,14 @@ class WP_MCP_AI_Profession_CPT {
 			return array();
 		}
 
-		// Ensure all values are positive integers (attachment IDs).
-		$sanitized = array_map( 'absint', $value );
+		// Clamp negatives to zero rather than absint(): absint( -999 ) would
+		// coerce a negative value into an unrelated positive attachment ID.
+		$sanitized = array_map(
+			static function ( $id ) {
+				return max( 0, (int) $id );
+			},
+			$value
+		);
 
 		// Remove any zero values (invalid IDs).
 		$sanitized = array_filter( $sanitized );

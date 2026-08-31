@@ -58,7 +58,9 @@ class WP_MCP_AI_Professional_Tools_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $sanitized );
 		$this->assertCount( 3, $sanitized );
 		$this->assertSame( 'valid-value', $sanitized[0] );
-		$this->assertSame( 'alert("xss")', $sanitized[1] ); // Script tags removed.
+		// sanitize_text_field() strips the script element together with its
+		// content, so the whole XSS payload is removed.
+		$this->assertSame( '', $sanitized[1] );
 		$this->assertSame( 'another-valid-value', $sanitized[2] );
 	}
 
@@ -133,8 +135,10 @@ class WP_MCP_AI_Professional_Tools_Test extends WP_UnitTestCase {
 			$this->profession_cpt->sanitize_vector_store_id( 'vs_1234567890' )
 		);
 
+		// sanitize_text_field() strips the script element together with its
+		// content, leaving an empty string.
 		$this->assertSame(
-			'alert("xss")',
+			'',
 			$this->profession_cpt->sanitize_vector_store_id( '<script>alert("xss")</script>' )
 		);
 	}
@@ -167,12 +171,17 @@ class WP_MCP_AI_Professional_Tools_Test extends WP_UnitTestCase {
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
-		// Set up POST data.
-		$_POST['wp_mcp_ai_profession_nonce'] = wp_create_nonce( 'wp_mcp_ai_save_profession' );
-		$_POST['profession_category']        = 'technical';
-		$_POST['profession_expertise']       = array( 'PHP', 'WordPress', 'JavaScript' );
-		$_POST['profession_memory_files']    = array( '123', 'invalid', '456' );
-		$_POST['profession_vector_store_id'] = 'vs_test_123';
+		// Set up POST data. Nonces are created after the user is set because
+		// WordPress nonces are bound to the current user ID, and each
+		// profession metabox verifies its own nonce.
+		$_POST['wp_mcp_ai_profession_nonce']                = wp_create_nonce( 'wp_mcp_ai_save_profession' );
+		$_POST['wp_mcp_ai_profession_details_nonce']        = wp_create_nonce( 'wp_mcp_ai_profession_details_save' );
+		$_POST['wp_mcp_ai_profession_expertise_nonce']      = wp_create_nonce( 'wp_mcp_ai_profession_expertise_save' );
+		$_POST['wp_mcp_ai_profession_base_knowledge_nonce'] = wp_create_nonce( 'wp_mcp_ai_profession_base_knowledge_save' );
+		$_POST['profession_category']                       = 'technical';
+		$_POST['profession_expertise']                      = array( 'PHP', 'WordPress', 'JavaScript' );
+		$_POST['wp_mcp_ai_profession_memory_files']         = array( '123', 'invalid', '456' );
+		$_POST['wp_mcp_ai_profession_vector_store_id']      = 'vs_test_123';
 
 		$this->profession_cpt->save_post( $profession_id, get_post( $profession_id ) );
 
