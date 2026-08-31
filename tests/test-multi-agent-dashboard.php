@@ -14,6 +14,22 @@
 class Test_Multi_Agent_Dashboard extends WP_UnitTestCase {
 
 	/**
+	 * Set up before each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Re-register the dashboard hooks for this test run. The hook table
+		// is restored between tests, which can drop the admin_menu
+		// registration made when the class file first loaded.
+		new WP_MCP_AI_Admin_Multi_Agent_Dashboard();
+
+		// Menu registration requires the manage_options capability.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+	}
+
+	/**
 	 * Test that dashboard class exists.
 	 */
 	public function test_dashboard_class_exists() {
