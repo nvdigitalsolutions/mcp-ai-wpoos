@@ -244,13 +244,18 @@ class Test_API_Caching extends WP_UnitTestCase {
 	 * Test OpenAI embeddings caching settings exist.
 	 */
 	public function test_openai_embeddings_cache_setting_exists() {
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		// The settings UI (Providers section) is the canonical source for
+		// these fields; they only enter the merged settings array after save.
+		$section = new WP_MCP_AI_Section_Providers();
+		$fields  = $section->get_fields();
 
 		// Should use same enable flag as models.
-		$this->assertTrue( ! empty( $settings['enable_openai_api_caching'] ), 'OpenAI caching should be enabled' );
+		$this->assertArrayHasKey( 'enable_openai_api_caching', $fields, 'OpenAI caching setting should exist' );
+		$this->assertTrue( ! empty( $fields['enable_openai_api_caching']['default'] ), 'OpenAI caching should be enabled by default' );
 
 		// Should have separate TTL for embeddings.
-		$this->assertArrayHasKey( 'openai_embedding_cache_ttl', $settings, 'Embeddings cache TTL setting should exist' );
+		$this->assertArrayHasKey( 'openai_embedding_cache_ttl', $fields, 'Embeddings cache TTL setting should exist' );
+		$this->assertGreaterThan( 0, (int) $fields['openai_embedding_cache_ttl']['default'], 'Embeddings cache TTL should have a positive default' );
 	}
 
 	/**
