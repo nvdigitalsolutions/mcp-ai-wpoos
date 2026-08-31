@@ -754,7 +754,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Handle categories (only for post types that support 'category' taxonomy).
-		if ( $has_explicit_categories ) {
+		if ( isset( $arguments['categories'] ) && is_array( $arguments['categories'] ) ) {
 			if ( is_object_in_taxonomy( $post_type, 'category' ) ) {
 				$category_ids = $this->resolve_taxonomy_terms( $arguments['categories'], 'category' );
 				if ( ! empty( $category_ids ) ) {
@@ -764,7 +764,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Handle tags (only for post types that support 'post_tag' taxonomy).
-		if ( $has_explicit_tags ) {
+		if ( isset( $arguments['tags'] ) && is_array( $arguments['tags'] ) ) {
 			if ( is_object_in_taxonomy( $post_type, 'post_tag' ) ) {
 				$tag_ids = $this->resolve_taxonomy_terms( $arguments['tags'], 'post_tag' );
 				if ( ! empty( $tag_ids ) ) {
