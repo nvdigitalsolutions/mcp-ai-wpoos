@@ -45,6 +45,14 @@ Visual knowledge graph for WordPress — maps your content into an interactive, 
 - Tools implement `NvoosContentGraph\Contracts\Tool`; remote drivers implement `NvoosContentGraph\Contracts\RemoteSource`.
 - The `nvoos_content_graph_settings` option is a single grouped option — no per-setting rows in wp_options.
 
+## Commerce (addon purchase flow)
+
+- `src/Commerce/` — vendor checkout client, payments config, license record, installer
+- `src/Rest/CommerceController.php` — `POST /payments/session` + `POST /payments/verify` (admin-only)
+- `assets/js/content-graph-commerce.js` — Stripe Payment Element modal wired to the upsell buttons
+- **No Stripe keys live in this plugin.** The vendor checkout API (hosted by NV Digital Solutions) creates and verifies payments and issues signed download URLs — see [`docs/commerce-vendor-api.md`](docs/commerce-vendor-api.md)
+- Filters: `nvoos_content_graph/payments/vendor_api_url`, `nvoos_content_graph/payments/price_cents`, `nvoos_content_graph/payments/addon_version`, `nvoos_content_graph/payments/addon_zip_url`
+
 ## Tests
 
 ```bash
@@ -54,6 +62,7 @@ vendor/bin/phpunit tests/
 ## Also Load
 
 - [`readme.txt`](readme.txt) — WordPress.org plugin readme
+- [`docs/commerce-vendor-api.md`](docs/commerce-vendor-api.md) — vendor checkout API contract
 
 ## See Also
 

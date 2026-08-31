@@ -1,5 +1,21 @@
 # NV oOS Content Graph — Changelog
 
+## 1.0.4 — Unreleased
+
+### New
+
+- **Checkout for the AI addon** — the "Get NV oOS Content Graph — AI" upsell buttons now open a Stripe Payment Element modal, verify the payment via the vendor checkout API, record a local license key, and install + activate the addon from a signed download URL in one flow
+- **No Stripe keys in the plugin** — PaymentIntent creation, the Stripe secret key, server-side verification, and signed download URLs are delegated to the vendor checkout API (see `docs/commerce-vendor-api.md`); customers simply pay with their card
+- New REST endpoints: `POST /payments/session` and `POST /payments/verify` (admin-only, cookie + nonce auth)
+- Filters: `nvoos_content_graph/payments/vendor_api_url`, `nvoos_content_graph/payments/price_cents`, `nvoos_content_graph/payments/addon_version`, `nvoos_content_graph/payments/addon_zip_url`
+
+### Security
+
+- The browser never sees a secret key; the publishable key is returned per-session by the vendor
+- Verification (status, amount, product, site binding) happens on the vendor's server; the plugin re-checks only the HTTPS scheme of the returned download URL
+- Checkout-session creation is throttled per user (max 5 per 10 minutes)
+- Install ZIP downloads go through `download_url()` + `Plugin_Upgrader` with the same filesystem checks as wp-admin installs
+
 ## 1.0.3 — 2026-08-20
 
 ### Security

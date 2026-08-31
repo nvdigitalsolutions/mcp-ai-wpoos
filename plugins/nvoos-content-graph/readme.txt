@@ -122,6 +122,16 @@ The optional "Resolve External Entity" tool and the Wikidata remote-source drive
 
 When you configure a remote source driver (REST API, RSS/Sitemap feed, SPARQL endpoint, webhook receiver, etc.) in Settings, the plugin sends HTTP requests to the URLs you provide. What is sent depends entirely on the endpoint you configure. These requests happen only when you manually trigger a sync, schedule one, or receive a webhook. Remote source credentials (API keys, tokens, passwords) are stored in the database encrypted with AES-256-GCM via the OpenSSL PHP extension.
 
+**Stripe payments (opt-in only)**
+
+The "Get NV oOS Content Graph — AI" buttons on the plugin's settings page open an optional checkout for the companion addon. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. The checkout is created and verified by the vendor's own server (NV Digital Solutions); this plugin only sends the product name, your site URL, and the Stripe payment ID to that service. A local purchase record (license key, payment ID, price paid) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
+
+- **Service provider:** Stripe, Inc. — Privacy Policy: https://stripe.com/privacy
+
+**GitHub download (opt-in only)**
+
+After a successful purchase, the plugin downloads the addon ZIP from a URL provided by the vendor's checkout service (which serves the package from the project's GitHub release page, `github.com`). No data is sent to GitHub.
+
 == Third-Party Libraries ==
 
 This plugin bundles the following open-source libraries:

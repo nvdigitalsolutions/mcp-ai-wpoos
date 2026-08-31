@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<ruleset name="NV oOS Checkout API">
+<description>PHP_CodeSniffer ruleset for the NV oOS Checkout API addon</description>
+
+<rule ref="WordPress">
+	<exclude name="PSR12.Functions.ReturnTypeDeclaration"/>
+</rule>
+
+<arg value="p"/>
+<arg name="extensions" value="php"/>
+
+<exclude-pattern>*/vendor/*</exclude-pattern>
+<exclude-pattern>*/tests/*</exclude-pattern>
+
+<!--
+    The license store talks exclusively to its own custom table. Every
+    query is prepared; table names cannot be parameterized, so the
+    prepared-SQL interpolation and direct-query sniffs are excluded for
+    this file only (mirrors the base repo's Graph engine exemption).
+-->
+<rule ref="WordPress.DB.PreparedSQL">
+	<exclude-pattern>**/class-nvoos-checkout-api-license-store.php</exclude-pattern>
+</rule>
+<rule ref="WordPress.DB.DirectDatabaseQuery">
+	<exclude-pattern>**/class-nvoos-checkout-api-license-store.php</exclude-pattern>
+</rule>
+
+<rule ref="WordPress.WP.I18n">
+	<properties>
+		<property name="text_domain" type="array">
+			<element value="nvoos-checkout-api"/>
+		</property>
+	</properties>
+</rule>
+
+<file>.</file>
+</ruleset>
