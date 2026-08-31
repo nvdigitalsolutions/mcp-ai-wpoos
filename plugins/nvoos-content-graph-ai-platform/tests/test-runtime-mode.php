@@ -2,13 +2,11 @@
 /**
  * RuntimeMode degradation-notice contract tests.
  *
- * The assertions adapt to the loaded matrix:
- *  - Monolith mode (base plugin booted — WP_MCP_AI_PATH defined): all
- *    bridged probes resolve, so only the greenfield Blueprints subsystem is
- *    reported missing.
- *  - Standalone mode (base plugin absent): all bridged subsystems are
- *    reported missing. Run the suite with WP_MCP_AI_PLATFORM_STANDALONE=1
- *    to exercise this matrix (extraction plan Phase 0, CI matrix).
+ * With extraction Waves A–C complete, every planned subsystem is ported
+ * into the Platform addon (src/) — the bridged-subsystem list is empty in
+ * BOTH matrices, and only the greenfield Blueprints subsystem is reported
+ * missing. The assistant CPT stays in the base plugin by plan decision
+ * (⏸️ Deferred) and is intentionally not reported here.
  *
  * Note: the matrix discriminator is defined('WP_MCP_AI_PATH'), not
  * class_exists() — the monorepo root autoloader can map base-plugin classes
@@ -35,52 +33,38 @@ class Test_Platform_RuntimeMode extends \WP_UnitTestCase {
 		$this->assertContains( 'Blueprints', $missing );
 	}
 
-	public function test_a2a_is_never_reported_missing_after_extraction(): void {
-		$missing = RuntimeMode::unavailable_subsystems();
-
-		$this->assertNotContains( 'A2A', $missing );
-	}
-
-	public function test_bridged_subsystems_resolve_when_base_plugin_is_loaded(): void {
-		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
-			$this->markTestSkipped( 'Base plugin not loaded — standalone matrix.' );
-		}
-
-		$missing = RuntimeMode::unavailable_subsystems();
-
-		$this->assertNotContains( 'Agents', $missing );
-		$this->assertNotContains( 'Harness', $missing );
-		$this->assertNotContains( 'Measurement', $missing );
-		$this->assertNotContains( 'Skills', $missing );
-		$this->assertNotContains( 'Slash Commands', $missing );
-	}
-
 	public function test_extracted_subsystems_never_reported_missing(): void {
 		$missing = RuntimeMode::unavailable_subsystems();
 
-		$this->assertNotContains( 'Professions', $missing );
-		$this->assertNotContains( 'Teams', $missing );
-		$this->assertNotContains( 'Skills', $missing );
-		$this->assertNotContains( 'Slash Commands', $missing );
+		$this->assertNotContains( 'A2A', $missing );
 		$this->assertNotContains( 'ACP', $missing );
 		$this->assertNotContains( 'Federation', $missing );
+		$this->assertNotContains( 'Teams', $missing );
+		$this->assertNotContains( 'Professions', $missing );
+		$this->assertNotContains( 'Skills', $missing );
+		$this->assertNotContains( 'Slash Commands', $missing );
+		$this->assertNotContains( 'Harness', $missing );
+		$this->assertNotContains( 'Measurement', $missing );
+		$this->assertNotContains( 'Agents', $missing );
 	}
 
-	public function test_bridged_subsystems_all_missing_in_standalone_mode(): void {
+	public function test_only_blueprints_reported_in_standalone_mode(): void {
 		if ( defined( 'WP_MCP_AI_PATH' ) ) {
-			$this->markTestSkipped( 'Base plugin loaded — monolith matrix.' );
+			$this->markTestSkipped( 'Monolith-only complement of the standalone check below.' );
 		}
 
 		$missing = RuntimeMode::unavailable_subsystems();
 
-		$expected = array(
-			'Agents',
-			'Harness',
-			'Measurement',
-			'Blueprints',
-		);
-		foreach ( $expected as $subsystem ) {
-			$this->assertContains( $subsystem, $missing );
+		$this->assertSame( array( 'Blueprints' ), $missing );
+	}
+
+	public function test_only_blueprints_reported_in_monolith_mode(): void {
+		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+			$this->markTestSkipped( 'Standalone-only complement of the monolith check below.' );
 		}
+
+		$missing = RuntimeMode::unavailable_subsystems();
+
+		$this->assertSame( array( 'Blueprints' ), $missing );
 	}
 }

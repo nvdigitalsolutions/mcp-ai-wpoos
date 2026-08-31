@@ -2,11 +2,16 @@
 /**
  * Runtime mode detection and degradation notices.
  *
- * During the extraction transition the Platform addon's business logic is
+ * During the extraction transition the Platform addon's business logic was
  * split between this addon (ported subsystems) and the base plugin
- * (bridged subsystems). This class detects which runtime mode we are in
- * and produces a loud admin notice when a subsystem has no implementation
- * available — replacing the old silent class_exists()-skip failure mode.
+ * (bridged subsystems). With extraction Waves A–C complete, every planned
+ * subsystem has been ported into src/ — the only remaining gap is the
+ * greenfield Blueprints subsystem (extraction Phase 4) and the
+ * plan-deferred assistant CPT (stays in base, §10 decision 1).
+ *
+ * This class detects which runtime mode we are in and produces a loud
+ * admin notice when a subsystem has no implementation available —
+ * replacing the old silent class_exists()-skip failure mode.
  *
  * @package NvoosContentGraphAiPlatform
  * @since 2.0.0
@@ -24,13 +29,15 @@ final class RuntimeMode {
 	 * Map of subsystem label => base-plugin probe. The probe is a class name
 	 * or function name that exists when the base plugin provides the logic.
 	 *
+	 * Empty after extraction Waves A–C: A2A, ACP, Federation, Teams,
+	 * Professions, Skills, Slash Commands, Measurement, Harness, and the
+	 * Agents role system are all ported (src/). The assistant CPT stays in
+	 * the base plugin by plan decision (§10 decision 1) and is tracked as
+	 * ⏸️ Deferred in MIGRATION-GAPS.md rather than reported here.
+	 *
 	 * @var array<string,string>
 	 */
-	private const BRIDGED_SUBSYSTEMS = array(
-		'Agents'      => 'WP_MCP_AI_Assistant_CPT',
-		'Harness'     => 'WP_MCP_AI_Guardrails',
-		'Measurement' => 'WP_MCP_AI_Measurement_Registry',
-	);
+	private const BRIDGED_SUBSYSTEMS = array();
 
 	/**
 	 * Register the admin notice hook.
@@ -64,8 +71,6 @@ final class RuntimeMode {
 			$missing[] = $label;
 		}
 
-		// A2A, ACP, Federation, Teams, Professions, Skills, and Slash Commands
-		// were ported in extraction (src/) — always available.
 		// Blueprints is greenfield and not yet built anywhere.
 		if ( ! self::blueprints_implemented() ) {
 			$missing[] = 'Blueprints';

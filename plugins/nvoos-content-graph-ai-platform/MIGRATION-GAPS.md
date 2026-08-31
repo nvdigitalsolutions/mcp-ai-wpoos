@@ -20,12 +20,12 @@
 | Subsystem | Base source | Platform target | Status |
 |---|---|---|---|
 | A2A | `includes/a2a/` (7 classes) | `src/A2A/` (7 classes ported) | 🟢 Extracted (Wave A) |
-| Agents (role system) | `includes/agents/` (12 classes) | `src/Agents/` | 🟡 Bridged |
+| Agents (role system) | `includes/agents/` (12 classes) | `src/Agents/` | 🟢 Extracted (Wave C) |
 | Assistant CPT | `includes/assistants/` + `includes/class-assistant-cpt.php` | (stays in base — plan §10 decision 1) | ⏸️ Deferred |
 | Skills | `includes/class-wp-mcp-ai-skill-registry.php`, `-skill-parser.php`, `-skill-pack-registry.php` | `src/Skills/` (registry, parser, pack registry; SkillBridge resolves ported-first) | 🟢 Extracted (Wave B) |
 | Slash Commands | `includes/slash-commands/` (7 classes + commands/) | `src/SlashCommands/` + `src/SlashCommands/Commands/` | 🟢 Extracted (Wave B, S1–S2) |
-| Harness | `includes/harness/` (16 classes) | `src/Harness/` | 🟡 Bridged |
-| Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟡 Bridged |
+| Harness | `includes/harness/` (30 classes) | `src/Harness/` | 🟢 Extracted (Wave C) |
+| Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟢 Extracted (Wave C) |
 | Professions + Knowledge-base | `includes/professions/`, `includes/knowledge-base/` | `src/Professions/` + `src/Professions/Metaboxes/` | 🟢 Extracted (Wave A, P1–P3) |
 | Teams | `includes/teams/` + team repository/loader | `src/Teams/` (CPT, repository, KB loader, seeder, service) | 🟢 Extracted (Wave A) |
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
@@ -88,9 +88,34 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 
 ## Next extraction waves
 
-1. **Wave C** — Harness, Measurement, Agents role system (plan Phase 3)
-2. **Greenfields** — Blueprints build (plan Phase 4)
-3. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
+1. **Greenfields** — Blueprints build (plan Phase 4)
+2. **Cutover** — delete base copies, meta-plugin mode, v2.0.0 (plan Phase 5)
+
+## Wave C extraction notes (2026-09-01)
+
+### Harness 🟢 Extracted
+
+- All 30 harness classes ported to `src/Harness/` (artifact pipeline, guardrails, citation verifier, evolution governor, eval scheduler, prompt injector, trace capture, necessity gate, PII filter, retrieval harness, self-refine loop, tool router, …) plus a platform copy of `InlineAsyncTickTrait` (class-declaration-level `use`; hook names preserved).
+- `HarnessService::register()` wires the ported subscribers (evolution settings bridge, prompt injector, guardrails, necessity gate, output guardrail, citation verifier, eval scheduler, trace capture) in standalone mode only.
+- **Port fix (behaviour-preserving):** 25 sibling `class_exists('X')` probes rewritten to `class_exists( __NAMESPACE__ . '\X' )` — PHP does not namespace-resolve string probes, and the unqualified probes would have silently degraded every layer in standalone mode.
+- Standalone degradations: eval-suite runs return `wp_mcp_ai_harness_eval_unavailable`; necessity gate passes through without the base tool pipeline; failure-replay falls back to the literal verifier slug; drift detection short-circuits to a non-actionable report.
+
+### Measurement 🟢 Extracted
+
+- All measurement classes ported to `src/Measurement/` (registries, collector, event store, persister, retention, chat-turn metrics/observer, SSE metrics, session-log observer, reward functions, verifiers, budgets).
+- `MeasurementService::register()` requires the standalone `shim-functions.php` — a faithful port of `wp_mcp_ai_measurement_bootstrap()` and its companions (plugins_loaded priority 50, admin_init capability seeding, reference verifier/reward registration hooks).
+- Standalone degradations: base-only eval suites, tool-execution/SSE/stock-metrics observers, reference verifiers/rewards, and the base admin dashboard are gated off.
+
+### Agents (role system) 🟢 Extracted
+
+- Role-system classes ported to `src/Agents/` (approval gate, audit trail, capability boundary + hooks, code sandbox, harness bootstrap, harness evolver + role adapter, role base/planner/executor/critic, evolved prompt resolver; `AgentRoleInterface` ported from `includes/interfaces/` as a namespaced dependency).
+- `Agents::register()` extended with a standalone branch; `AgentHarnessBootstrap` resolves the ported role classes when the base `wp_mcp_ai_get_agent_role()` accessor is absent.
+- Standalone degradations: executor tool registry gated (fails fast with `wp_mcp_ai_no_tool_registry`); evolver enhancement paths (artifacts, governor, provider client) skip; provider fallback returns `wp_mcp_ai_evolver_provider_class_missing`.
+- Assistant CPT remains in base (⏸️ Deferred, plan §10 decision 1) — the platform admin UI degrades via `CptBridge` in standalone.
+
+## Runtime degradation guard (Wave C update)
+
+`BRIDGED_SUBSYSTEMS` is now EMPTY in both matrices — only the greenfield `Blueprints` subsystem is reported (Phase 4). The assistant-CPT deferral is tracked in the matrix above rather than in the runtime notice.
 
 ## Wave B extraction notes (2026-08-31)
 
