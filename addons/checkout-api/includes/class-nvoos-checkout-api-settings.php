@@ -28,7 +28,7 @@ class NVOOS_Checkout_API_Settings {
 	public const OPTION = 'nvoos_checkout_settings';
 
 	public const DEFAULT_PRICE_CENTS   = 4900;
-	public const DEFAULT_ADDON_VERSION = '1.0.3';
+	public const DEFAULT_ADDON_VERSION = '1.0.4';
 
 	/**
 	 * Default ZIP source pattern.
