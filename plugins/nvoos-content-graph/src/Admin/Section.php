@@ -163,10 +163,24 @@ abstract class Section {
 		$option_name = \NvoosContentGraph\Schema::OPTION_SETTINGS;
 		$settings    = \NvoosContentGraph\Settings::all();
 		$value       = $settings[ $key ] ?? ( $field['default'] ?? '' );
-		$name        = \esc_attr( $option_name . '[' . $key . ']' );
-		$label       = $field['label'] ?? '';
-		$desc        = $field['description'] ?? '';
-		$type        = $field['type'] ?? 'text';
+
+		/**
+		 * Filter a field's value before it is rendered.
+		 *
+		 * Lets addons mask sensitive values (e.g. the AI addon masks
+		 * stored API keys so they are never echoed back into the form).
+		 *
+		 * @since 1.0.4
+		 *
+		 * @param mixed  $value Current value.
+		 * @param string $key   Setting key.
+		 * @param array  $field Field definition.
+		 */
+		$value = \apply_filters( 'nvoos_content_graph/section_field_value', $value, $key, $field );
+		$name  = \esc_attr( $option_name . '[' . $key . ']' );
+		$label = $field['label'] ?? '';
+		$desc  = $field['description'] ?? '';
+		$type  = $field['type'] ?? 'text';
 
 		echo '<tr><th scope="row">' . \esc_html( $label ) . '</th><td>';
 

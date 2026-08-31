@@ -44,7 +44,7 @@ Request JSON:
 {
   "product": "nvoos-content-graph-ai",
   "site_url": "https://customer-site.example",
-  "addon_version": "1.0.3"
+  "addon_version": "1.0.4"
 }
 ```
 
@@ -89,7 +89,7 @@ Response `200`:
 {
   "license_key": "hex-or-opaque-key",
   "download_url": "https://your-server.example/download/ai-addon?token=…&expires=…",
-  "addon_version": "1.0.3",
+  "addon_version": "1.0.4",
   "amount": 4900,
   "currency": "usd"
 }

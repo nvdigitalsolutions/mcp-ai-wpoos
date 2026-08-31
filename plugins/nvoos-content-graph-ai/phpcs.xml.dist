@@ -17,6 +17,21 @@
     <!-- Require strict types. -->
     <rule ref="Generic.PHP.RequireStrictTypes"/>
 
+    <!--
+        Forward-slash hook names are intentional (matches the parent
+        plugin's Schema constants, e.g. nvoos_content_graph/default_settings).
+    -->
+    <rule ref="WordPress.NamingConventions.ValidHookName">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        Reserved keyword parameter names ($default, $class) are idiomatic in PHP 8.1+.
+    -->
+    <rule ref="Universal.NamingConventions.NoReservedKeywordParameterNames">
+        <severity>0</severity>
+    </rule>
+
     <!-- Scan only src/ and the bootstrap. -->
     <file>./nvoos-content-graph-ai.php</file>
     <file>./src/</file>

@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace NvoosContentGraphAi\Adapter;
 
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use NvoosContentGraphAi\Security\CredentialStore;
 
 class ContentGraphSettingsStore implements SettingsStoreInterface {
 
@@ -84,16 +85,37 @@ class ContentGraphSettingsStore implements SettingsStoreInterface {
 			$settings = array();
 		}
 
+		// Secrets live in the encrypted CredentialStore — never surface
+		// them through the generic settings map. Consumers must use
+		// getApiKey() / hasCredentials() instead.
+		foreach ( array_keys( $settings ) as $key ) {
+			if ( self::isSecretSettingKey( $key ) ) {
+				unset( $settings[ $key ] );
+			}
+		}
+
 		return \array_merge( self::DEFAULTS, $settings );
 	}
 
 	public function set( string $key, mixed $value ): void {
+		if ( self::isSecretSettingKey( $key ) ) {
+			if ( is_string( $value ) ) {
+				CredentialStore::set( self::suffixForKey( $key ), $value );
+			}
+			return;
+		}
+
 		$settings         = $this->all();
 		$settings[ $key ] = $value;
 		\update_option( self::OPTION_KEY, $settings, false );
 	}
 
 	public function delete( string $key ): void {
+		if ( self::isSecretSettingKey( $key ) ) {
+			CredentialStore::delete( self::suffixForKey( $key ) );
+			return;
+		}
+
 		$settings = $this->all();
 		unset( $settings[ $key ] );
 		\update_option( self::OPTION_KEY, $settings, false );
@@ -170,6 +192,27 @@ class ContentGraphSettingsStore implements SettingsStoreInterface {
 	public function getRequestTimeout(): int {
 		// Content Graph doesn't expose a configurable timeout — use a generous default.
 		return 120;
+	}
+
+	/**
+	 * Whether a settings key holds a secret that belongs in the
+	 * encrypted CredentialStore.
+	 *
+	 * @param string $key Settings key.
+	 * @return bool
+	 */
+	private static function isSecretSettingKey( string $key ): bool {
+		return 0 === strpos( $key, 'ai_api_key_' ) || 'openai_api_key' === $key;
+	}
+
+	/**
+	 * Convert a secret settings key to a provider settings suffix.
+	 *
+	 * @param string $key Settings key.
+	 * @return string
+	 */
+	private static function suffixForKey( string $key ): string {
+		return 'openai_api_key' === $key ? 'openai' : substr( $key, strlen( 'ai_api_key_' ) );
 	}
 
 	public function isEnabled( string $feature ): bool {

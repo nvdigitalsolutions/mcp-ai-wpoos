@@ -1,5 +1,28 @@
 # NV oOS Content Graph — AI · Changelog
 
+## 1.0.4 — 2026-08-31
+
+### Security
+
+- **Encrypted credential storage** — all 13 provider API keys now live in a separate non-autoload option (`nvoos_content_graph_ai_credentials`), encrypted at rest with AES-256-GCM via the parent plugin's `Remote\Crypto`. They are never written into the general `nvoos_content_graph_settings` option, never rendered back into admin forms (a masked placeholder is shown instead), and never included in settings exports. Mirrors the base+pro plugin's `wp_mcp_ai_credentials` architecture.
+- **Settings-save hardening** — a `pre_update_option_nvoos_content_graph_settings` filter routes any secret field arriving in a save (including the legacy General → Build `openai_api_key` field) into the encrypted store and strips it from the settings option, so saves from unrelated tabs can never wipe or re-expose keys.
+- **Legacy plaintext migration** — plaintext keys saved by versions ≤ 1.0.3 are migrated to the encrypted store automatically on activation/first admin load and on first read; the plaintext copies are removed from the settings option.
+
+### Added
+
+- **WP-CLI** — `wp nvoos-cg-ai migrate-keys` (on-demand migration) and `wp nvoos-cg-ai key-status` (per-provider stored/source table).
+- **Credential Status table** — the AI Providers tab now shows, per provider, whether an encrypted key is stored and which source supplies the active key (store, NV oOS plugin, environment variable, PHP constant).
+- **OpenSSL warning** — an admin notice appears on the settings page when the OpenSSL extension is missing and keys fall back to a weaker encoding.
+- **Uninstall cleanup** — `uninstall.php` removes only the addon's credential options.
+
+### Fixed
+
+- **LM Studio key resolution** — the `lm_studio` router slug now resolves the `ai_api_key_lmstudio` settings suffix (previously the stored LM Studio key was never read).
+
+### Tests
+
+- New `Test_CredentialStore` suite covering roundtrips, tamper detection, legacy migration, the save-route filter, render masking, resolver priority, and the ApiKeys sanitize semantics.
+
 ## 1.0.3 — 2026-08-30
 
 ### Fixes

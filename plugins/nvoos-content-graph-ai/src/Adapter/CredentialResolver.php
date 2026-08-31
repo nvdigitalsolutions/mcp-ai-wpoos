@@ -3,12 +3,13 @@
  * Credential Resolver — content-graph-aware API key resolution.
  *
  * Mirrors the base plugin's WP_MCP_AI_Credential_Resolver but reads
- * from nvoos_content_graph_settings first, then falls back through the
+ * from the encrypted CredentialStore first, then falls back through the
  * base plugin's resolver, environment variables, and PHP constants.
  *
  * When the base plugin (mcp-ai-wpoos) is not active, the WP 7.0
  * Connector DB and base-plugin settings fallbacks are skipped
- * gracefully — the resolver still works with env vars and constants.
+ * gracefully — the resolver still works with the credential store,
+ * env vars, and constants.
  *
  * @package NvoosContentGraphAi
  * @since   1.0.0
@@ -22,9 +23,9 @@ namespace NvoosContentGraphAi\Adapter;
  * Resolves provider API keys for the content-graph ecosystem.
  *
  * Priority chain:
- *  1. nvoos_content_graph_settings → ai_api_key_{provider} (primary)
- *  1b. nvoos_content_graph_settings → openai_api_key (bare, legacy fallback
- *      from the core General → Build section)
+ *  1. CredentialStore (nvoos_content_graph_ai_credentials — encrypted;
+ *     transparently migrates the legacy plaintext ai_api_key_{provider}
+ *     and bare openai_api_key fields from nvoos_content_graph_settings)
  *  2. wp_mcp_ai_settings (via base plugin's Credential_Resolver)
  *  3. WP 7.0 Connector DB (via base plugin's Credential_Resolver)
  *  4. {PROVIDER}_API_KEY environment variable
@@ -54,6 +55,7 @@ final class CredentialResolver {
 	private const SLUG_ALIASES = array(
 		'gemini'     => 'google',
 		'nvidia_nim' => 'nvidia',
+		'lm_studio'  => 'lmstudio',
 	);
 
 	/**
@@ -94,8 +96,8 @@ final class CredentialResolver {
 	 * @return string|null
 	 */
 	private static function resolve( string $provider ): ?string {
-		// Priority 1 — Content Graph own settings.
-		$key = self::fromContentGraphSettings( $provider );
+		// Priority 1 — encrypted CredentialStore (migrates legacy plaintext).
+		$key = self::fromCredentialStore( $provider );
 		if ( null !== $key ) {
 			return $key;
 		}
@@ -120,42 +122,32 @@ final class CredentialResolver {
 	// ─── Source readers ────────────────────────────────────────────
 
 	/**
-	 * Read API key from nvoos_content_graph_settings.
+	 * Read API key from the encrypted CredentialStore.
+	 *
+	 * The store transparently migrates the legacy plaintext
+	 * ai_api_key_{provider} fields (and the bare openai_api_key from the
+	 * core General → Build section) out of nvoos_content_graph_settings.
 	 *
 	 * @param string $provider Provider slug.
 	 * @return string|null
 	 */
-	private static function fromContentGraphSettings( string $provider ): ?string {
-		if ( ! function_exists( 'get_option' ) ) {
+	private static function fromCredentialStore( string $provider ): ?string {
+		if ( ! class_exists( '\NvoosContentGraphAi\Security\CredentialStore' ) ) {
 			return null;
 		}
 
-		$settings = get_option( 'nvoos_content_graph_settings', array() );
-		if ( ! is_array( $settings ) ) {
-			return null;
-		}
-
-		// Content Graph stores keys with ai_api_key_ prefix (primary).
-		$keys_to_try = array( $provider );
+		// The store speaks settings suffixes; the provider slug itself is
+		// tried first, then its alias (e.g., nvidia_nim → nvidia,
+		// lm_studio → lmstudio).
+		$slugs_to_try = array( $provider );
 		if ( isset( self::SLUG_ALIASES[ $provider ] ) ) {
-			$keys_to_try[] = self::SLUG_ALIASES[ $provider ];
+			$slugs_to_try[] = self::SLUG_ALIASES[ $provider ];
 		}
 
-		foreach ( $keys_to_try as $slug ) {
-			$key = $settings[ "ai_api_key_{$slug}" ] ?? '';
-			if ( is_string( $key ) && '' !== $key ) {
+		foreach ( $slugs_to_try as $slug ) {
+			$key = \NvoosContentGraphAi\Security\CredentialStore::get( $slug );
+			if ( null !== $key ) {
 				return $key;
-			}
-		}
-
-		// Legacy fallback: core Content Graph stores a bare 'openai_api_key'
-		// in the General → Build section (no ai_ prefix). This is the
-		// "optional fallback" key described as "Leave blank to use the
-		// global oOS key." Check it after the prefixed key.
-		if ( 'openai' === $provider ) {
-			$bare_key = $settings['openai_api_key'] ?? '';
-			if ( is_string( $bare_key ) && '' !== $bare_key ) {
-				return $bare_key;
 			}
 		}
 
@@ -274,13 +266,13 @@ final class CredentialResolver {
 	 * the active key. Useful for admin UI indicators and debugging.
 	 *
 	 * @param string $provider Provider slug.
-	 * @return string One of: 'content-graph_settings', 'base_plugin', 'env_var', 'constant', 'none'.
+	 * @return string One of: 'credential_store', 'base_plugin', 'env_var', 'constant', 'none'.
 	 */
 	public static function getKeySource( string $provider ): string {
 		// Check each source in priority order.
-		$key = self::fromContentGraphSettings( $provider );
+		$key = self::fromCredentialStore( $provider );
 		if ( null !== $key ) {
-			return 'content-graph_settings';
+			return 'credential_store';
 		}
 
 		$key = self::fromBasePluginResolver( $provider );
