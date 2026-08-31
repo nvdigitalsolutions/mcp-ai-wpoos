@@ -14,10 +14,24 @@
 class WP_MCP_AI_Crawl4AI_JSON_Extraction_Test extends WP_UnitTestCase {
 
 	/**
+	 * Reset settings state between tests.
+	 *
+	 * The settings layer caches per request; clear it so option deletions in
+	 * individual tests take effect regardless of test order.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+	}
+
+	/**
 	 * Reset the current user between tests.
 	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		parent::tearDown();
 	}
 
