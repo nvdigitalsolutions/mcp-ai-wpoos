@@ -637,7 +637,20 @@ class WP_MCP_AI_Crawler {
 			// Trigger WordPress cron to ensure continued polling.
 			// This is necessary because WordPress cron only runs on page loads,.
 			// and during crawl job polling, there may be no user activity.
-			spawn_cron();
+			/**
+			 * Filters whether to kick WP-Cron immediately after scheduling.
+			 *
+			 * Hosts that run a real system cron — and test environments that
+			 * mock HTTP — can return false to suppress the loopback request.
+			 *
+			 * @since 1.2.0
+			 *
+			 * @param bool   $spawn   Whether to spawn the cron loopback.
+			 * @param string $task_id Task identifier.
+			 */
+			if ( apply_filters( 'wp_mcp_ai_crawl4ai_auto_spawn_cron', true, $task_id ) ) {
+				spawn_cron();
+			}
 		}
 	}
 

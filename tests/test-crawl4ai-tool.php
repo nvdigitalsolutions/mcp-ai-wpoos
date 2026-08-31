@@ -9,9 +9,27 @@
 class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
 
 	/**
+	 * Reset settings state and suppress the cron loopback between tests.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// The settings layer caches per request; clear it so option deletions
+		// in individual tests take effect regardless of test order.
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+		// Suppress the WP-Cron loopback kicked by the crawler's poll
+		// scheduling; tests mock all HTTP via pre_http_request.
+		add_filter( 'wp_mcp_ai_crawl4ai_auto_spawn_cron', '__return_false' );
+	}
+
+	/**
 	 * Reset the current user between tests.
 	 */
 	public function tearDown(): void {
+		remove_filter( 'wp_mcp_ai_crawl4ai_auto_spawn_cron', '__return_false' );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
@@ -531,6 +549,9 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
 		$settings['request_timeout']   = 5;
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Clear the per-request settings cache so the new values are read.
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 	}
 
 	/**
