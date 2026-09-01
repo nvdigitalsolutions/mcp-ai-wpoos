@@ -34,13 +34,6 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 	protected $transcript_handler;
 
 	/**
-	 * Mock client that returns a test response.
-	 *
-	 * @var object
-	 */
-	protected $mock_client;
-
-	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -66,13 +59,76 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_api_key', 'test-api-key' );
 
+		// Warm the REST server. NOTE: do NOT re-fire init here — the bootstrap
+		// already registered the assistant CPT, and re-firing re-runs WooCommerce
+		// block/payment registrations, which fail the test with
+		// "already registered" incorrect-usage notices.
 		rest_get_server();
-		do_action( 'init' );
+	}
 
-		// Mock the AI client to avoid actual API calls.
-		$this->mock_client = new class() {
-			public function create_chat_completion( $messages, $options ) {
-				return array(
+	/**
+	 * Tear down test environment.
+	 */
+	public function tearDown(): void {
+		remove_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
+		wp_set_current_user( 0 );
+		$this->transcript_handler = null;
+		parent::tearDown();
+	}
+
+	/**
+	 * Provide a mock handler that captures transcript records without requiring JetEngine.
+	 *
+	 * @return object Mock handler instance.
+	 */
+	public function provide_transcript_handler() {
+		if ( ! $this->transcript_handler ) {
+			$this->transcript_handler = new class() {
+				/**
+				 * Records captured by the mock handler.
+				 *
+				 * @var array
+				 */
+				public $records = array();
+
+				/**
+				 * Capture a transcript record.
+				 *
+				 * @param array $record Transcript record payload.
+				 * @return bool Always true.
+				 */
+				public function update_item( $record ) {
+					$this->records[] = $record;
+					return true;
+				}
+			};
+		}
+
+		return $this->transcript_handler;
+	}
+
+	/**
+	 * Bootstrap the REST controller with a mocked language model router.
+	 *
+	 * The chat endpoint resolves its model client through the router injected
+	 * into WP_MCP_AI_REST; the legacy wp_mcp_ai_client filter is no longer
+	 * consulted. Must run before dispatching so the /chat route re-registers
+	 * against this controller.
+	 */
+	protected function bootstrap_rest_controller() {
+		if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
+			remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
+		}
+
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->onlyMethods( array( 'create_chat_completion' ) )
+			->getMock();
+
+		$mock_client
+			->method( 'create_chat_completion' )
+			->willReturn(
+				array(
 					'model'   => 'gpt-4',
 					'choices' => array(
 						array(
@@ -87,50 +143,14 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 						'completion_tokens' => 8,
 						'total_tokens'      => 18,
 					),
-				);
-			}
-		};
-	}
+				)
+			);
 
-	/**
-	 * Tear down test environment.
-	 */
-	public function tearDown(): void {
-		remove_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
-		remove_filter( 'wp_mcp_ai_client', array( $this, 'provide_mock_client' ), 10 );
-		wp_set_current_user( 0 );
-		$this->transcript_handler = null;
-		$this->mock_client        = null;
-		parent::tearDown();
-	}
+		$registry                             = WP_MCP_AI_Tool_Registry::get_instance();
+		$GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $mock_client );
 
-	/**
-	 * Provide a mock handler that captures transcript records without requiring JetEngine.
-	 *
-	 * @return object Mock handler instance.
-	 */
-	public function provide_transcript_handler() {
-		if ( ! $this->transcript_handler ) {
-			$this->transcript_handler = new class() {
-				public $records = array();
-
-				public function update_item( $record ) {
-					$this->records[] = $record;
-					return true;
-				}
-			};
-		}
-
-		return $this->transcript_handler;
-	}
-
-	/**
-	 * Provide mock client for testing.
-	 *
-	 * @return object Mock client instance.
-	 */
-	public function provide_mock_client() {
-		return $this->mock_client;
+		rest_get_server();
+		do_action( 'rest_api_init' );
 	}
 
 	/**
@@ -138,7 +158,7 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 	 */
 	public function test_chat_response_includes_session_key() {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
-		add_filter( 'wp_mcp_ai_client', array( $this, 'provide_mock_client' ), 10 );
+		$this->bootstrap_rest_controller();
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
@@ -151,6 +171,7 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 				),
 			)
 		);
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		// Don't provide a session_key in the request - let the server generate one.
 		$response = rest_get_server()->dispatch( $request );
@@ -173,7 +194,7 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 	 */
 	public function test_chat_response_preserves_client_session_key() {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
-		add_filter( 'wp_mcp_ai_client', array( $this, 'provide_mock_client' ), 10 );
+		$this->bootstrap_rest_controller();
 
 		$client_session_key = 'client-provided-session-12345';
 
@@ -189,6 +210,7 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 				),
 			)
 		);
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_get_server()->dispatch( $request );
 		$data     = $response->get_data();
@@ -210,7 +232,7 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 	 */
 	public function test_generated_session_key_format() {
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
-		add_filter( 'wp_mcp_ai_client', array( $this, 'provide_mock_client' ), 10 );
+		$this->bootstrap_rest_controller();
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
@@ -223,6 +245,7 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 				),
 			)
 		);
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_get_server()->dispatch( $request );
 		$data     = $response->get_data();
@@ -252,7 +275,7 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 	 */
 	public function test_no_session_key_when_transcript_disabled() {
 		// Don't add transcript handler filter - no handler means no transcript saving.
-		add_filter( 'wp_mcp_ai_client', array( $this, 'provide_mock_client' ), 10 );
+		$this->bootstrap_rest_controller();
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
@@ -266,6 +289,7 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 				),
 			)
 		);
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_get_server()->dispatch( $request );
 		$data     = $response->get_data();
