@@ -16,6 +16,13 @@
 class Test_PM_Assistant_Validation_Fix extends WP_UnitTestCase {
 
 	/**
+	 * Administrator user ID for the metabox capability check.
+	 *
+	 * @var int
+	 */
+	protected $admin_id;
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -25,6 +32,28 @@ class Test_PM_Assistant_Validation_Fix extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php' ) ) {
 			require_once WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php';
 		}
+
+		// The metabox render checks edit_post against the current user.
+		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $this->admin_id );
+
+		// Register the project CPT so the edit_post capability check maps
+		// correctly — CPT registration on init never runs under PHPUnit.
+		$project_cpt_file = WP_MCP_AI_PATH . 'addons/pro/includes/class-wp-mcp-ai-project-cpt.php';
+		if ( file_exists( $project_cpt_file ) ) {
+			require_once $project_cpt_file;
+		}
+		if ( class_exists( 'WP_MCP_AI_Project_CPT' ) && ! post_type_exists( 'mcp_ai_project' ) ) {
+			WP_MCP_AI_Project_CPT::register_post_type();
+		}
+	}
+
+	/**
+	 * Tear down test environment.
+	 */
+	public function tearDown(): void {
+		wp_set_current_user( 0 );
+		parent::tearDown();
 	}
 
 	/**

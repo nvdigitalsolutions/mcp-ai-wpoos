@@ -273,21 +273,65 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 
 		// Check permissions.
 		if ( ! current_user_can( 'edit_post', $post->ID ) ) {
-			echo '<p>' . esc_html__( 'You do not have permission to use this feature.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			?>
+			<div class="wp-mcp-ai-pm-assistant-wrapper">
+				<div class="notice notice-error inline">
+					<p><?php esc_html_e( 'You do not have permission to use this feature.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+			</div>
+			<!-- Still render modal structure for consistency. -->
+			<?php
+			$this->render_ai_modal( $post, $context_type );
 			return;
 		}
 
 		// Check if project management is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_project_management'] ) ) {
-			echo '<p>' . esc_html__( 'Project Management features are not enabled.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			?>
+			<div class="wp-mcp-ai-pm-assistant-wrapper">
+				<div class="notice notice-warning inline">
+					<p>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: Settings page URL */
+								__( 'Project Management features are not enabled. <a href="%s">Enable them in Settings</a>.', 'mcp-ai-wpoos-pro' ),
+								esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) )
+							)
+						);
+						?>
+					</p>
+				</div>
+			</div>
+			<!-- Still render modal structure for consistency. -->
+			<?php
+			$this->render_ai_modal( $post, $context_type );
 			return;
 		}
 
 		// Get available assistants.
 		$assistants = $this->get_available_assistants();
 		if ( empty( $assistants ) ) {
-			echo '<p>' . esc_html__( 'No AI assistants available. Please create an assistant first.', 'mcp-ai-wpoos-pro' ) . '</p>';
+			?>
+			<div class="wp-mcp-ai-pm-assistant-wrapper">
+				<div class="notice notice-warning inline">
+					<p>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: Assistants page URL */
+								__( 'No AI assistants available. <a href="%s">Create an assistant first</a>.', 'mcp-ai-wpoos-pro' ),
+								esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant' ) )
+							)
+						);
+						?>
+					</p>
+				</div>
+			</div>
+			<!-- Still render modal structure for consistency. -->
+			<?php
+			$this->render_ai_modal( $post, $context_type );
 			return;
 		}
 
