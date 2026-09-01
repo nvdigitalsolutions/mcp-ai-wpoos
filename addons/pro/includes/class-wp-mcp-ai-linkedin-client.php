@@ -249,7 +249,11 @@ if ( ! class_exists( 'WP_MCP_AI_LinkedIn_Client' ) ) {
 
 			if ( 'GET' === strtoupper( $method ) ) {
 				if ( ! empty( $params ) ) {
-					$url = add_query_arg( $params, $url );
+					// add_query_arg() does not URL-encode values (build_query()
+					// passes $urlencode=false); job-search keyword params contain
+					// spaces, so encode explicitly with RFC 1738.
+					$query_string = http_build_query( $params, '', '&', PHP_QUERY_RFC1738 );
+					$url          = $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . $query_string;
 				}
 				$response = wp_remote_get( $url, $args );
 			} else {
