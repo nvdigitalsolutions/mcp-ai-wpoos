@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Frontend-facing surfaces of the AI addon. Currently the `[nvoos_content_graph_chat]` chat widget (Wave D-UI-1b): a lean, framework-free chat widget speaking the same REST + SSE contract as the admin Chat Tester and the Pro SPA-v2, with guest-token support via `Chat\GuestToken`.
+Public-facing frontend surface of the AI addon: the `[nvoos_content_graph_chat]` chat widget (`ChatShortcode`), which renders a lean, framework-free chat UI speaking the same REST + SSE contract as the admin Chat Tester and the Pro SPA-v2. Per `CHAT-SHORTCODE-PLAN.md` this is the ecosystem's aligned implementation — the base plugin's `[mcp_ai_chat]` widget (`assets/js/chat.js` bundle) stays with the base hub in monolith installs.
 
 ## Tier
 
@@ -11,29 +11,30 @@ Frontend-facing surfaces of the AI addon. Currently the `[nvoos_content_graph_ch
 | **Distribution** | Addon plugin (`nvoos-content-graph-ai`) — proprietary |
 | **PHP target** | 8.1+ |
 | **License** | Proprietary (commercial license required) |
-| **Loaded by** | `NvoosContentGraphAi\Plugin::register()` (shortcode registration) |
+| **Loaded by** | `NvoosContentGraphAi\Plugin::register()` (both install modes) |
+| **Optional dependencies** | None (JetEngine assistant posts optional for guest-token scope) |
 
 ## Public Surface
 
 | Symbol | File | Used by |
 |---|---|---|
-| `NvoosContentGraphAi\Frontend\ChatShortcode` | `ChatShortcode.php` | `Plugin::register()` — `[nvoos_content_graph_chat]` shortcode |
+| `NvoosContentGraphAi\Frontend\ChatShortcode` | `ChatShortcode.php` | `Plugin::register()` — registers `[nvoos_content_graph_chat]` |
 
 ## Inputs / Outputs / Neighbors
 
-- **Reads from:** shortcode attributes, assistant posts (`mcp_ai_assistant`), `GuestToken` (guest-token issuance)
-- **Writes to:** shortcode markup, enqueued assets (`content-graph-ai-chat.css`, `content-graph-ai-sse.js`, `content-graph-ai-chat-frontend.js`), inline frontend config (`window.NvoosContentGraphChat`)
-- **Upstream callers:** WordPress shortcode engine (page/post content)
-- **Downstream collaborators:** `assets/js/content-graph-ai-chat-frontend.js`, `src/Rest/ChatController` (`/ai/chat`), `src/Chat/GuestToken.php`
+- **Reads from:** shortcode attributes (`assistant`, `allow_guests`, `provider`, `model`, `height`, `show_cost`, `placeholder`), assistant posts (`mcp_ai_assistant`)
+- **Writes to:** widget markup, enqueued assets (`content-graph-ai-chat.css`, `content-graph-ai-sse.js`, `content-graph-ai-chat-frontend.js`), inline config (`window.NvoosContentGraphChat`), guest token transients (via `Chat\GuestToken`)
+- **Upstream callers:** WordPress shortcode API (post content, widgets, Elementor text widgets)
+- **Downstream collaborators:** `src/Chat/GuestToken.php`, `src/Rest/ChatController.php` (chat route), `assets/js/content-graph-ai-sse.js` (SSE parser + markdown)
 - **Events fired:** none
 - **Events listened to:** none
 
 ## Conventions
 
-- The shortcode tag is ecosystem-specific (`nvoos_content_graph_chat`) and never collides with the base plugin's `[mcp_ai_chat]` — registered in both install modes.
-- Frontend config is injected via `wp_add_inline_script(…, 'before')` into a `window.NvoosContentGraphChat` array (one entry per widget instance, unique container IDs).
-- Guest tokens are issued only when `allow_guests="true"` AND the `assistant` attribute resolves to a published assistant post; the widget echoes the token back via the `X-WP-MCP-AI-Guest` header.
-- All widget-rendered text flows through the shared escape + markdown pipeline in `content-graph-ai-sse.js` — no raw content into innerHTML.
+- Registered in both install modes — the tag is ecosystem-specific and never collides with the base's `[mcp_ai_chat]`.
+- All widget config leaves PHP as JSON via `wp_add_inline_script`; the frontend JS renders all text through the shared escape + markdown pipeline (no raw insertion).
+- Guest tokens are only issued when `allow_guests="true"` AND `assistant` resolves to an assistant post.
+- Transcript persistence is sessionStorage-only per widget (server transcripts need the transcript storage wave).
 
 ## Also Load
 
@@ -43,6 +44,6 @@ Frontend-facing surfaces of the AI addon. Currently the `[nvoos_content_graph_ch
 ## See Also
 
 - Parent: [`../`](../) — src root
-- Assets: [`../../assets/js/content-graph-ai-chat-frontend.js`](../../assets/js/content-graph-ai-chat-frontend.js), [`../../assets/js/content-graph-ai-sse.js`](../../assets/js/content-graph-ai-sse.js)
+- Widget assets: [`../../assets/js/content-graph-ai-chat-frontend.js`](../../assets/js/content-graph-ai-chat-frontend.js), [`../../assets/js/content-graph-ai-sse.js`](../../assets/js/content-graph-ai-sse.js), [`../../assets/css/content-graph-ai-chat.css`](../../assets/css/content-graph-ai-chat.css)
+- Plan: [`../../CHAT-SHORTCODE-PLAN.md`](../../CHAT-SHORTCODE-PLAN.md)
 - Guest tokens: [`../Chat/GuestToken.php`](../Chat/GuestToken.php)
-- Chat route: [`../Rest/ChatController.php`](../Rest/ChatController.php)
