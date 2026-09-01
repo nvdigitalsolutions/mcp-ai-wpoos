@@ -96,24 +96,11 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 			'workflow-migration-guide.md',
 		);
 
-		$docs_dir = dirname( __DIR__ ) . '/docs';
-
 		foreach ( $user_docs as $doc_file ) {
-			// Check both root docs and nested locations.
-			$found          = false;
-			$possible_paths = array(
-				$docs_dir . '/' . $doc_file,
-				dirname( __DIR__ ) . '/' . $doc_file,
+			$this->assertNotNull(
+				$this->find_doc( $doc_file ),
+				"User documentation file {$doc_file} should exist"
 			);
-
-			foreach ( $possible_paths as $path ) {
-				if ( file_exists( $path ) ) {
-					$found = true;
-					break;
-				}
-			}
-
-			$this->assertTrue( $found, "User documentation file {$doc_file} should exist" );
 		}
 	}
 
@@ -129,23 +116,11 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 			'workflow-builder-architecture.md',
 		);
 
-		$docs_dir = dirname( __DIR__ ) . '/docs';
-
 		foreach ( $dev_docs as $doc_file ) {
-			$found          = false;
-			$possible_paths = array(
-				$docs_dir . '/' . $doc_file,
-				dirname( __DIR__ ) . '/' . $doc_file,
+			$this->assertNotNull(
+				$this->find_doc( $doc_file ),
+				"Developer documentation file {$doc_file} should exist"
 			);
-
-			foreach ( $possible_paths as $path ) {
-				if ( file_exists( $path ) ) {
-					$found = true;
-					break;
-				}
-			}
-
-			$this->assertTrue( $found, "Developer documentation file {$doc_file} should exist" );
 		}
 	}
 
@@ -169,23 +144,10 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group migration-guide
 	 */
 	public function test_migration_guide_exists() {
-		$migration_doc = 'workflow-migration-guide.md';
-		$docs_dir      = dirname( __DIR__ ) . '/docs';
-
-		$found          = false;
-		$possible_paths = array(
-			$docs_dir . '/' . $migration_doc,
-			dirname( __DIR__ ) . '/' . $migration_doc,
+		$this->assertNotNull(
+			$this->find_doc( 'workflow-migration-guide.md' ),
+			'Migration guide should exist'
 		);
-
-		foreach ( $possible_paths as $path ) {
-			if ( file_exists( $path ) ) {
-				$found = true;
-				break;
-			}
-		}
-
-		$this->assertTrue( $found, 'Migration guide should exist' );
 	}
 
 	/**
@@ -235,30 +197,53 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 			'PRO_TOOLKIT_SLASH_COMMANDS_USER_GUIDE.md',
 		);
 
-		$docs_dir = dirname( __DIR__ ) . '/docs';
-
 		foreach ( $key_docs as $doc_file ) {
-			$possible_paths = array(
-				$docs_dir . '/' . $doc_file,
-				dirname( __DIR__ ) . '/' . $doc_file,
-			);
+			$file_path = $this->find_doc( $doc_file );
 
-			$found     = false;
-			$file_path = '';
+			$this->assertNotNull( $file_path, "Documentation file {$doc_file} should exist" );
+			$this->assertGreaterThan( 100, filesize( $file_path ), "Documentation file {$doc_file} should not be empty" );
+		}
+	}
 
-			foreach ( $possible_paths as $path ) {
-				if ( file_exists( $path ) ) {
-					$found     = true;
-					$file_path = $path;
-					break;
+	/**
+	 * Locate a documentation file by basename.
+	 *
+	 * Documentation files moved several times during the docs reorganization,
+	 * so resolve by basename under docs/ (plus the repo root) instead of
+	 * asserting a single fixed path.
+	 *
+	 * @param string $filename Documentation file basename.
+	 * @return string|null Absolute path if found, null otherwise.
+	 */
+	private function find_doc( $filename ) {
+		static $index = null;
+
+		if ( null === $index ) {
+			$index = array();
+			$root  = dirname( __DIR__ );
+			$docs  = $root . '/docs';
+
+			// Repo root, non-recursive.
+			foreach ( glob( $root . '/*' ) as $path ) {
+				if ( is_file( $path ) ) {
+					$index[ basename( $path ) ] = $path;
 				}
 			}
 
-			if ( $found ) {
-				$file_size = filesize( $file_path );
-				$this->assertGreaterThan( 100, $file_size, "Documentation file {$doc_file} should not be empty" );
+			// Docs tree, recursive.
+			if ( is_dir( $docs ) ) {
+				$iterator = new RecursiveIteratorIterator(
+					new RecursiveDirectoryIterator( $docs, FilesystemIterator::SKIP_DOTS )
+				);
+				foreach ( $iterator as $file ) {
+					if ( $file->isFile() ) {
+						$index[ $file->getFilename() ] = $file->getPathname();
+					}
+				}
 			}
 		}
+
+		return isset( $index[ $filename ] ) ? $index[ $filename ] : null;
 	}
 
 	/**
