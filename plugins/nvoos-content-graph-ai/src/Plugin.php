@@ -78,6 +78,11 @@ final class Plugin {
 			// The base plugin owns the same cron hook and REST route in
 			// monolith installs — double registration would double-sweep.
 			\NvoosContentGraphAi\Chat\TranscriptRetention::init();
+
+			// ChatKit integration. The base plugin owns the same ChatKit
+			// hooks in monolith installs — registering here too would
+			// publish two competing addons.
+			\NvoosContentGraphAi\Chat\ChatKitIntegration::init();
 		}
 
 		// Register the async chat continuation hook.
