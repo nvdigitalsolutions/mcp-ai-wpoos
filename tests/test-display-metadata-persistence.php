@@ -61,8 +61,11 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_model', 'gpt-4' );
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_provider', 'openai' );
 
+		// Warm the REST server. NOTE: do NOT re-fire init here — the bootstrap
+		// already registered the assistant CPT, and re-firing re-runs WooCommerce
+		// block/payment registrations, which fail the test with
+		// "already registered" incorrect-usage notices.
 		rest_get_server();
-		do_action( 'init' );
 	}
 
 	/**
@@ -83,8 +86,19 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 	public function provide_transcript_handler() {
 		if ( ! $this->transcript_handler ) {
 			$this->transcript_handler = new class() {
+				/**
+				 * Records captured by the mock handler, keyed by session and user.
+				 *
+				 * @var array
+				 */
 				public $records = array();
 
+				/**
+				 * Capture a transcript record.
+				 *
+				 * @param array $record Transcript record payload.
+				 * @return true|WP_Error True on success, WP_Error for invalid records.
+				 */
 				public function update_item( $record ) {
 					$session_key = isset( $record['session_key'] ) ? $record['session_key'] : '';
 					$user_id     = isset( $record['cct_author_id'] ) ? $record['cct_author_id'] : 0;
@@ -99,6 +113,13 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 					return true;
 				}
 
+				/**
+				 * Retrieve records captured for a session and user.
+				 *
+				 * @param string $session_key Session key.
+				 * @param int    $user_id     User ID.
+				 * @return array Captured records.
+				 */
 				public function get_records( $session_key, $user_id ) {
 					$key = $session_key . '_' . $user_id;
 					if ( isset( $this->records[ $key ] ) ) {
@@ -136,6 +157,7 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 
 		$save_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$save_request->set_header( 'Content-Type', 'application/json' );
+		$save_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$save_request->set_body(
 			wp_json_encode(
 				array(
@@ -195,6 +217,7 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 
 		$save_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$save_request->set_header( 'Content-Type', 'application/json' );
+		$save_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$save_request->set_body(
 			wp_json_encode(
 				array(
@@ -263,6 +286,7 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 
 		$save_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$save_request->set_header( 'Content-Type', 'application/json' );
+		$save_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$save_request->set_body(
 			wp_json_encode(
 				array(
@@ -332,6 +356,7 @@ class Test_Display_Metadata_Persistence extends WP_UnitTestCase {
 
 		$save_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$save_request->set_header( 'Content-Type', 'application/json' );
+		$save_request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$save_request->set_body(
 			wp_json_encode(
 				array(
