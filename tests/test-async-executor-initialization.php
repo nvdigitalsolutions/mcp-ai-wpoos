@@ -71,16 +71,9 @@ class WP_MCP_AI_Async_Executor_Initialization_Test extends WP_UnitTestCase {
 		// Create a mock tool for testing.
 		$mock_tool = $this->create_mock_tool();
 
-		// Register the mock tool.
-		$registry = new WP_MCP_AI_Tool_Registry();
-		add_filter(
-			'wp_mcp_ai_register_tools',
-			function ( $tools ) use ( $mock_tool ) {
-				$tools[] = $mock_tool;
-				return $tools;
-			}
-		);
-		$registry->init();
+		// Register the mock tool on the shared registry singleton.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->register_tool( $mock_tool );
 
 		// Create and initialize executor.
 		$executor = new WP_MCP_AI_Tool_Async_Executor();
@@ -115,6 +108,8 @@ class WP_MCP_AI_Async_Executor_Initialization_Test extends WP_UnitTestCase {
 			$this->assertSame( 'test_mock_tool executed successfully', $tool_result['message'] );
 			$this->assertSame( 'test_value', $tool_result['received_param'] );
 		}
+
+		$registry->unregister_tool( 'test_mock_tool' );
 	}
 
 	/**
