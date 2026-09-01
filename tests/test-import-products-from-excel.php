@@ -232,12 +232,9 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel_Tests extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Tool class not available' );
 		}
 
-		// Create a temporary text file.
-		$test_file = tempnam( sys_get_temp_dir(), 'test' ) . '.txt';
-		// Using file_put_contents here is acceptable for creating test files.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-		file_put_contents( $test_file, 'test content' );
-		$this->test_file_path = $test_file;
+		// Create a temporary text file inside the uploads directory, which is
+		// the only location the tool's security scope check accepts.
+		$test_file = $this->create_uploads_fixture( 'excel_import_', 'txt', 'test content' );
 
 		$result = $this->tool->execute(
 			array(
@@ -383,13 +380,42 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel_Tests extends WP_UnitTestCase {
 		$sheet->setCellValue( 'D3', 'Available' );
 		$sheet->setCellValue( 'E3', 'COS/12346' );
 
-		// Write to temporary file.
-		$temp_file = tempnam( sys_get_temp_dir(), 'test_excel_' ) . '.xlsx';
+		// Write to a fixture file inside the uploads directory, which is the
+		// only location the tool's security scope check accepts.
+		$temp_file = $this->create_uploads_fixture( 'test_excel_', 'xlsx' );
 		$writer    = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx( $spreadsheet );
 		$writer->save( $temp_file );
 
-		$this->test_file_path = $temp_file;
 		return $temp_file;
+	}
+
+	/**
+	 * Create a fixture file inside the WordPress uploads directory.
+	 *
+	 * The import tool restricts file access to the uploads directory for
+	 * security, so fixtures must live there to exercise the import path.
+	 *
+	 * @param string $prefix    Filename prefix.
+	 * @param string $extension File extension without the leading dot.
+	 * @param string $contents  Initial file contents.
+	 * @return string Path to the created file.
+	 */
+	private function create_uploads_fixture( $prefix, $extension, $contents = '' ) {
+		$uploads = wp_upload_dir();
+		$dir     = $uploads['path'];
+
+		if ( ! is_dir( $dir ) ) {
+			wp_mkdir_p( $dir );
+		}
+
+		$file = $dir . '/' . $prefix . wp_generate_password( 8, false, false ) . '.' . $extension;
+
+		// Using file_put_contents here is acceptable for creating test files.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $file, $contents );
+
+		$this->test_file_path = $file;
+		return $file;
 	}
 
 	/**
