@@ -403,57 +403,70 @@ class Test_Platform_Measurement extends \WP_UnitTestCase {
 	}
 
 	public function test_metric_event_store_roundtrip(): void {
-		$store = MetricEventStore::get_instance();
-		$store->drop();
+		// The WP test framework rewrites every CREATE TABLE / DROP TABLE
+		// issued through $wpdb to TEMPORARY variants (see
+		// suspend_temporary_table_rewrite()). Suspend it so this test
+		// exercises the real schema contract install() implements.
+		$this->suspend_temporary_table_rewrite();
 
-		$this->assertTrue( $store->install() );
-		$this->assertTrue( $store->table_exists() );
-		$this->assertSame(
-			MetricEventStore::SCHEMA_VERSION,
-			(int) get_option( MetricEventStore::SCHEMA_OPTION )
-		);
+		try {
+			$store = MetricEventStore::get_instance();
+			$store->drop();
 
-		$now    = time();
-		$events = array(
-			array(
-				'id'        => 'platform.test.count',
-				'value'     => 2,
-				'type'      => MeasurementRegistry::TYPE_COUNTER,
-				'unit'      => 'count',
-				'privacy'   => MeasurementRegistry::PRIVACY_INTERNAL,
-				'timestamp' => $now - 100,
-				'context'   => array( 'tool' => 'get_posts' ),
-			),
-			// Restricted tier must never be persisted (defensive barrier).
-			array(
-				'id'        => 'platform.test.count',
-				'value'     => 1,
-				'type'      => MeasurementRegistry::TYPE_COUNTER,
-				'unit'      => 'count',
-				'privacy'   => MeasurementRegistry::PRIVACY_RESTRICTED,
-				'timestamp' => $now,
-				'context'   => array(),
-			),
-		);
+			$this->assertTrue( $store->install() );
+			$this->assertTrue( $store->table_exists() );
+			$this->assertSame(
+				MetricEventStore::SCHEMA_VERSION,
+				(int) get_option( MetricEventStore::SCHEMA_OPTION )
+			);
 
-		$this->assertSame( 1, $store->insert_batch( $events ) );
+			$now    = time();
+			$events = array(
+				array(
+					'id'        => 'platform.test.count',
+					'value'     => 2,
+					'type'      => MeasurementRegistry::TYPE_COUNTER,
+					'unit'      => 'count',
+					'privacy'   => MeasurementRegistry::PRIVACY_INTERNAL,
+					'timestamp' => $now - 100,
+					'context'   => array( 'tool' => 'get_posts' ),
+				),
+				// Restricted tier must never be persisted (defensive barrier).
+				array(
+					'id'        => 'platform.test.count',
+					'value'     => 1,
+					'type'      => MeasurementRegistry::TYPE_COUNTER,
+					'unit'      => 'count',
+					'privacy'   => MeasurementRegistry::PRIVACY_RESTRICTED,
+					'timestamp' => $now,
+					'context'   => array(),
+				),
+			);
 
-		$rows = $store->query_by_metric( 'platform.test.count', $now - 3600, $now + 3600, 100 );
-		$this->assertCount( 1, $rows );
-		$this->assertSame( 2.0, $rows[0]['metric_value'] );
-		$this->assertSame( array( 'tool' => 'get_posts' ), $rows[0]['context'] );
+			$this->assertSame( 1, $store->insert_batch( $events ) );
 
-		$this->assertSame(
-			array( MeasurementRegistry::PRIVACY_INTERNAL => 1 ),
-			$store->count_by_privacy()
-		);
+			$rows = $store->query_by_metric( 'platform.test.count', $now - 3600, $now + 3600, 100 );
+			$this->assertCount( 1, $rows );
+			$this->assertSame( 2.0, $rows[0]['metric_value'] );
+			$this->assertSame( array( 'tool' => 'get_posts' ), $rows[0]['context'] );
 
-		// Retention purge removes old rows per tier.
-		$this->assertSame(
-			1,
-			$store->purge_older_than( MeasurementRegistry::PRIVACY_INTERNAL, $now + 10 )
-		);
-		$this->assertSame( 0, $store->total_count() );
+			$this->assertSame(
+				array( MeasurementRegistry::PRIVACY_INTERNAL => 1 ),
+				$store->count_by_privacy()
+			);
+
+			// Retention purge removes old rows per tier.
+			$this->assertSame(
+				1,
+				$store->purge_older_than( MeasurementRegistry::PRIVACY_INTERNAL, $now + 10 )
+			);
+			$this->assertSame( 0, $store->total_count() );
+		} finally {
+			// Drop the real table before re-arming the rewrite so cleanup
+			// is not redirected to a TEMPORARY table.
+			MetricEventStore::get_instance()->drop();
+			$this->restore_temporary_table_rewrite();
+		}
 	}
 
 	public function test_retention_default_ttls(): void {
@@ -550,23 +563,35 @@ class Test_Platform_Measurement extends \WP_UnitTestCase {
 
 		// WP_UnitTestCase resets hook globals between tests, so plugins_loaded
 		// never re-fires in this process — invoke the bootstrap directly.
-		wp_mcp_ai_measurement_bootstrap();
+		// Suspend the framework's CREATE TABLE → TEMPORARY rewrite first:
+		// the bootstrap installs the metric-events table, and temporary
+		// tables are invisible to the table_exists() assertion below.
+		$this->suspend_temporary_table_rewrite();
 
-		// Chat-turn + SSE stock definitions land through the shim's own
-		// wp_mcp_ai_register_metrics wiring (priority 20).
-		$registry = MeasurementRegistry::get_instance();
-		$this->assertTrue( $registry->has( ChatTurnMetrics::CHAT_TURN_COUNT ) );
-		$this->assertTrue( $registry->has( SseMetrics::STREAM_COUNT ) );
+		try {
+			wp_mcp_ai_measurement_bootstrap();
 
-		// The metric-events table is installed as a bootstrap side effect.
-		$this->assertTrue( MetricEventStore::get_instance()->table_exists() );
+			// Chat-turn + SSE stock definitions land through the shim's own
+			// wp_mcp_ai_register_metrics wiring (priority 20).
+			$registry = MeasurementRegistry::get_instance();
+			$this->assertTrue( $registry->has( ChatTurnMetrics::CHAT_TURN_COUNT ) );
+			$this->assertTrue( $registry->has( SseMetrics::STREAM_COUNT ) );
 
-		// Base-only reference verifiers and rewards are intentionally absent.
-		$this->assertNull( VerifierRegistry::get_instance()->get( 'rule_verifier' ) );
-		$this->assertSame( array(), RewardFunctionRegistry::get_instance()->all() );
+			// The metric-events table is installed as a bootstrap side effect.
+			$this->assertTrue( MetricEventStore::get_instance()->table_exists() );
 
-		// The ported budget registry boots too (budgets/ is part of the port).
-		$this->assertNotNull( BudgetRegistry::get_instance() );
+			// Base-only reference verifiers and rewards are intentionally absent.
+			$this->assertNull( VerifierRegistry::get_instance()->get( 'rule_verifier' ) );
+			$this->assertSame( array(), RewardFunctionRegistry::get_instance()->all() );
+
+			// The ported budget registry boots too (budgets/ is part of the port).
+			$this->assertNotNull( BudgetRegistry::get_instance() );
+		} finally {
+			// Drop the real table before re-arming the rewrite so cleanup
+			// is not redirected to a TEMPORARY table.
+			MetricEventStore::get_instance()->drop();
+			$this->restore_temporary_table_rewrite();
+		}
 	}
 
 	public function test_service_register_is_safe_in_both_modes(): void {
@@ -590,5 +615,42 @@ class Test_Platform_Measurement extends \WP_UnitTestCase {
 		$reflection = new \ReflectionMethod( $instance, $method );
 		$reflection->setAccessible( true );
 		return $reflection->invoke( $instance, $arg );
+	}
+
+	/**
+	 * Suspend the WP test framework's CREATE/DROP TABLE → TEMPORARY rewrite.
+	 *
+	 * WP_UnitTestCase::start_transaction() rewrites every `CREATE TABLE` and
+	 * `DROP TABLE` issued through $wpdb->query() to operate on TEMPORARY
+	 * tables so tests cannot touch the real database. Temporary tables are
+	 * invisible to `SHOW TABLES`, so MetricEventStore::table_exists() can
+	 * never observe them. The event-store tests in this file exercise the
+	 * real schema contract, so they opt out for their duration and clean up
+	 * in a finally block.
+	 *
+	 * Also drops any TEMPORARY shadow table left on this connection: MySQL
+	 * prefers the temporary table over a real one of the same name, which
+	 * would silently divert the subsequent real CREATE TABLE.
+	 *
+	 * @return void
+	 */
+	private function suspend_temporary_table_rewrite(): void {
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+
+		global $wpdb;
+		$table_name = MetricEventStore::get_instance()->table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-harness shadow cleanup on a plugin-owned table; the name comes from a class constant.
+		$wpdb->query( "DROP TEMPORARY TABLE IF EXISTS {$table_name}" );
+	}
+
+	/**
+	 * Re-arm the framework's TEMPORARY-table rewrite for subsequent tests.
+	 *
+	 * @return void
+	 */
+	private function restore_temporary_table_rewrite(): void {
+		add_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 	}
 }
