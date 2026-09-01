@@ -203,6 +203,31 @@ class NV_oOS_Graphify_HTTP_Client {
 				continue;
 			}
 
+			// Not-Modified (304): the cached copy is still valid. Serve it
+			// instead of the empty 304 body — drivers would otherwise ingest
+			// nothing, and the empty body would overwrite the cache entry.
+			if ( 304 === $status && 'GET' === $method && null !== $cache_key ) {
+				$cached_body = get_transient( $cache_key );
+				if ( false !== $cached_body && '' !== $cached_body ) {
+					$this->record_success( $host );
+
+					$response_headers = wp_remote_retrieve_headers( $raw );
+					$headers_array    = array();
+					if ( is_object( $response_headers ) && method_exists( $response_headers, 'getAll' ) ) {
+						$headers_array = $response_headers->getAll();
+					} elseif ( is_array( $response_headers ) ) {
+						$headers_array = $response_headers;
+					}
+
+					return array(
+						'body'    => $cached_body,
+						'headers' => $headers_array,
+						'status'  => 200,
+						'cached'  => true,
+					);
+				}
+			}
+
 			// Success — reset failure count.
 			$this->record_success( $host );
 
@@ -445,6 +470,12 @@ class NV_oOS_Graphify_HTTP_Client {
 	 * @return void
 	 */
 	private function store_cache( $cache_key, array $result, array $response_headers ) {
+		// Never cache an empty body — a 304 (or a zero-length 200) must not
+		// overwrite a previously cached response body.
+		if ( '' === $result['body'] ) {
+			return;
+		}
+
 		// Determine TTL from Cache-Control / Expires.
 		$ttl = self::DEFAULT_CACHE_TTL;
 
