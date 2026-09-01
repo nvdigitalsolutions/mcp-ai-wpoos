@@ -11,6 +11,10 @@ Search, create, and report across Google Workspace. Each tool gates on its respe
 | Tool class | Slug | Domain |
 |---|---|---|
 | `WP_MCP_AI_Pro_Tool_Search_Gmail` | `search_gmail` | Gmail message search |
+| `WP_MCP_AI_Pro_Tool_Get_Gmail_Message` | `get_gmail_message` | Read one message (full body) |
+| `WP_MCP_AI_Pro_Tool_Get_Gmail_Thread` | `get_gmail_thread` | Read a thread (all messages, newest first) |
+| `WP_MCP_AI_Pro_Tool_List_Gmail_Connections` | `list_gmail_connections` | Discover connection IDs (redacted) |
+| `WP_MCP_AI_Pro_Tool_Modify_Gmail_Message` | `modify_gmail_message` | Label-only message updates (gated) |
 | `WP_MCP_AI_Pro_Tool_Search_Drive` | `search_drive` | Google Drive file search |
 | `WP_MCP_AI_Pro_Tool_Get_Drive_File` | `get_drive_file` | Read one file (Docs export, folder children) |
 | `WP_MCP_AI_Pro_Tool_List_Drive_Connections` | `list_drive_connections` | Discover connection IDs (redacted) |
@@ -37,6 +41,8 @@ Search, create, and report across Google Workspace. Each tool gates on its respe
 - Two-gate sanitisation rule applies.
 - Every tool implements `WP_MCP_AI_Tool_Interface`.
 - Drive tools share `WP_MCP_AI_Pro_Google_Drive_Client` (credentials, token refresh, text export, folder listing).
+- Gmail tools share `WP_MCP_AI_Pro_Gmail_Client` (credentials, token refresh, body decoding).
+- `modify_gmail_message` is label-only (no delete) and flagged `state-changing`, so `WP_MCP_AI_Destructive_Ops_Gate` requires `confirm_destructive=true` when destructive-op confirmation is enabled.
 - Google service-account helper (`WP_MCP_AI_Pro_Google_Service_Account`) is shared with [`tools/chat-channels/`](../chat-channels/) tools.
 
 ## See Also

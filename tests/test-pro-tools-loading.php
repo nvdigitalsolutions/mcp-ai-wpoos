@@ -23,7 +23,7 @@ class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 		);
 
 		// Pro addon file should exist.
-		$pro_file = WP_MCP_AI_PATH . 'addons/pro/wp-mcp-ai-pro.php';
+		$pro_file = WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php';
 		$this->assertFileExists( $pro_file, 'Pro addon file should exist' );
 	}
 
@@ -248,17 +248,35 @@ class Test_Pro_Tools_Loading extends WP_UnitTestCase {
 	public function test_extended_tools_loaded() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-		// Extended tools from the base plugin (not pro).
-		$extended_tools = array(
-			'get_woo_recent_orders',
-			'get_elementor_templates',
-			'search_gmail',
+		// Extended tools from the base plugin (not pro). search_gmail registers
+		// unconditionally in full version mode.
+		$this->assertTrue(
+			$registry->is_tool_registered( 'search_gmail' ),
+			"Extended tool 'search_gmail' should be registered in full version mode"
 		);
 
-		foreach ( $extended_tools as $tool_slug ) {
-			$this->assertTrue(
+		// Dependency-gated extended tools only register when their own
+		// is_available() check passes — registration must match it exactly,
+		// regardless of which optional plugins are active in the test env.
+		$gated_tools = array(
+			'get_woo_recent_orders'   => 'WP_MCP_AI_Tool_Get_Woo_Orders',
+			'get_elementor_templates' => 'WP_MCP_AI_Tool_Get_Elementor_Templates',
+		);
+
+		foreach ( $gated_tools as $tool_slug => $tool_class ) {
+			if ( ! class_exists( $tool_class ) ) {
+				$this->assertFalse(
+					$registry->is_tool_registered( $tool_slug ),
+					"Extended tool '{$tool_slug}' should not register when its class is unavailable"
+				);
+				continue;
+			}
+
+			$available = call_user_func( array( $tool_class, 'is_available' ) );
+			$this->assertSame(
+				$available,
 				$registry->is_tool_registered( $tool_slug ),
-				"Extended tool '{$tool_slug}' should be registered in full version mode"
+				"Extended tool '{$tool_slug}' registration should match its is_available() result"
 			);
 		}
 	}

@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-gmail-client.php';
 
 /**
  * Provides an assistant tool for searching Gmail messages via the Gmail REST API.
@@ -40,7 +41,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Searches the configured Gmail inbox and returns recent matches, including sender, subject, and snippets.', 'mcp-ai-wpoos-pro' );
+		return __( 'Searches the configured Gmail inbox and returns recent matches with sender, subject, timestamps, snippets, and attachment names. Results are sorted newest-first and can be collapsed per thread (thread_group), reduced to bare IDs (ids_only), or have snippets trimmed or omitted (snippet_length). Use get_gmail_message or get_gmail_thread to read full bodies.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -50,31 +51,48 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'connection_id' => array(
+				'connection_id'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional Gmail connection ID from Remote Sites. If not provided, uses settings-based credentials.', 'mcp-ai-wpoos-pro' ),
 				),
-				'query'         => array(
+				'query'          => array(
 					'type'        => 'string',
 					'description' => __( 'Gmail search query string. Supports the same syntax as the Gmail web interface.', 'mcp-ai-wpoos-pro' ),
 				),
-				'max_results'   => array(
+				'max_results'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of messages to return (1-50).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 5,
 				),
-				'label_ids'     => array(
+				'label_ids'      => array(
 					'type'        => 'array',
 					'description' => __( 'Optional Gmail label IDs to filter the results (for example INBOX or CATEGORY_PROMOTIONS).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'page_token'    => array(
+				'page_token'     => array(
 					'type'        => 'string',
 					'description' => __( 'Page token returned by a previous Gmail search response to fetch the next page of results.', 'mcp-ai-wpoos-pro' ),
+				),
+				'ids_only'       => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, returns only message IDs and thread IDs without fetching details — cheap for large result sets. Hydrate individual messages afterwards with get_gmail_message.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
+				'snippet_length' => array(
+					'type'        => 'integer',
+					'description' => __( 'Maximum snippet length in characters. Gmail snippets are at most ~150 characters server-side, so larger values only prevent truncation. Use 0 to omit snippets entirely.', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0,
+					'maximum'     => 1000,
+					'default'     => 150,
+				),
+				'thread_group'   => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, collapses results to one row per email thread: the newest message summary plus a message_count for the fetched page. Ignored when ids_only is true.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
 				),
 			),
 			'required'             => array( 'query' ),
@@ -212,6 +230,13 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$page_token = isset( $arguments['page_token'] ) ? trim( (string) $arguments['page_token'] ) : '';
 
+		$ids_only       = ! empty( $arguments['ids_only'] );
+		$thread_group   = ! $ids_only && ! empty( $arguments['thread_group'] );
+		$snippet_length = array_key_exists( 'snippet_length', $arguments ) ? absint( $arguments['snippet_length'] ) : 150;
+		if ( $snippet_length > 1000 ) {
+			$snippet_length = 1000;
+		}
+
 		$access_token = $this->request_access_token( $client_id, $client_secret, $refresh_token, $timeout );
 		if ( is_wp_error( $access_token ) ) {
 			return $access_token;
@@ -271,6 +296,15 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 					continue;
 				}
 
+				if ( $ids_only ) {
+					// Mirrors Gmail format=minimal: no per-message detail requests.
+					$messages[] = array(
+						'id'        => (string) $message_ref['id'],
+						'thread_id' => isset( $message_ref['threadId'] ) ? (string) $message_ref['threadId'] : '',
+					);
+					continue;
+				}
+
 				$message_details = $this->fetch_message_details( $gmail_user, $message_ref['id'], $access_token, $timeout );
 				if ( is_wp_error( $message_details ) ) {
 					return $message_details;
@@ -282,11 +316,100 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 			}
 		}
 
+		if ( ! $ids_only ) {
+			// Apply the snippet length preference.
+			if ( 0 === $snippet_length ) {
+				foreach ( $messages as $key => $message ) {
+					unset( $messages[ $key ]['snippet'] );
+				}
+			} elseif ( $snippet_length < 150 ) {
+				foreach ( $messages as $key => $message ) {
+					$messages[ $key ]['snippet'] = WP_MCP_AI_Pro_Gmail_Client::truncate_snippet(
+						isset( $message['snippet'] ) ? $message['snippet'] : '',
+						$snippet_length
+					);
+				}
+			}
+
+			// The Gmail list endpoint does not guarantee ordering — sort newest first.
+			usort( $messages, array( $this, 'sort_by_timestamp_desc' ) );
+
+			if ( $thread_group ) {
+				$messages = $this->group_by_thread( $messages );
+			}
+		}
+
 		return array(
 			'messages'             => $messages,
 			'result_size_estimate' => isset( $list_payload['resultSizeEstimate'] ) ? absint( $list_payload['resultSizeEstimate'] ) : count( $messages ),
 			'next_page_token'      => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
+			'has_more'             => ! empty( $list_payload['nextPageToken'] ),
 		);
+	}
+
+	/**
+	 * Sort message rows newest-first by epoch timestamp.
+	 *
+	 * Rows without a timestamp sort last (stable for equal keys).
+	 *
+	 * @param array $a First message row.
+	 * @param array $b Second message row.
+	 * @return int Comparison result.
+	 */
+	protected function sort_by_timestamp_desc( $a, $b ) {
+		$ta = isset( $a['timestamp'] ) ? (int) $a['timestamp'] : 0;
+		$tb = isset( $b['timestamp'] ) ? (int) $b['timestamp'] : 0;
+
+		if ( $ta === $tb ) {
+			return 0;
+		}
+
+		return ( $ta > $tb ) ? -1 : 1;
+	}
+
+	/**
+	 * Collapse message rows into one row per thread.
+	 *
+	 * The representative row is the newest message in the thread; a
+	 * message_count records how many fetched-page messages were collapsed.
+	 * Note the count only covers the current page of results.
+	 *
+	 * @param array $messages Message rows.
+	 * @return array Grouped rows, newest thread first.
+	 */
+	protected function group_by_thread( $messages ) {
+		$threads = array();
+
+		foreach ( $messages as $message ) {
+			$thread_id = ! empty( $message['thread_id'] ) ? (string) $message['thread_id'] : ( isset( $message['id'] ) ? (string) $message['id'] : '' );
+
+			if ( ! isset( $threads[ $thread_id ] ) ) {
+				$threads[ $thread_id ] = array(
+					'latest' => $message,
+					'count'  => 0,
+				);
+			}
+
+			++$threads[ $thread_id ]['count'];
+
+			$current   = isset( $threads[ $thread_id ]['latest']['timestamp'] ) ? (int) $threads[ $thread_id ]['latest']['timestamp'] : 0;
+			$candidate = isset( $message['timestamp'] ) ? (int) $message['timestamp'] : 0;
+			if ( $candidate >= $current ) {
+				$threads[ $thread_id ]['latest'] = $message;
+			}
+		}
+
+		$grouped = array();
+		foreach ( $threads as $thread_id => $thread ) {
+			$row                  = $thread['latest'];
+			$row['thread_id']     = $thread_id;
+			$row['message_count'] = $thread['count'];
+			$grouped[]            = $row;
+		}
+
+		usort( $grouped, array( $this, 'sort_by_timestamp_desc' ) );
+
+		return $grouped;
 	}
 
 	/**
@@ -363,7 +486,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 			array(
 				'format'          => 'metadata',
 				'metadataHeaders' => array( 'Subject', 'From', 'To', 'Date' ),
-				'fields'          => 'id,threadId,labelIds,snippet,internalDate,payload/headers',
+				'fields'          => 'id,threadId,labelIds,snippet,internalDate,payload(headers,filename,parts(filename))',
 			)
 		);
 
@@ -436,22 +559,23 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		$to      = $this->find_header_value( $headers, 'To' );
 		$date    = $this->find_header_value( $headers, 'Date' );
 
-		$timestamp = null;
-		if ( isset( $payload['internalDate'] ) ) {
-			$timestamp = (int) floor( absint( $payload['internalDate'] ) / 1000 );
-		}
+		$attachment_names = WP_MCP_AI_Pro_Gmail_Client::get_attachment_names( $payload );
+
+		$timestamp = WP_MCP_AI_Pro_Gmail_Client::get_timestamp( $payload );
 
 		return array(
-			'id'        => isset( $payload['id'] ) ? (string) $payload['id'] : $message_id,
-			'thread_id' => isset( $payload['threadId'] ) ? (string) $payload['threadId'] : '',
-			'labels'    => isset( $payload['labelIds'] ) && is_array( $payload['labelIds'] ) ? array_values( array_map( 'strval', $payload['labelIds'] ) ) : array(),
-			'subject'   => (string) $subject,
-			'from'      => (string) $from,
-			'to'        => (string) $to,
-			'date'      => (string) $date,
-			'timestamp' => $timestamp,
-			'snippet'   => isset( $payload['snippet'] ) ? (string) $payload['snippet'] : '',
-			'permalink' => sprintf( 'https://mail.google.com/mail/u/0/#all/%s', rawurlencode( isset( $payload['id'] ) ? $payload['id'] : $message_id ) ),
+			'id'               => isset( $payload['id'] ) ? (string) $payload['id'] : $message_id,
+			'thread_id'        => isset( $payload['threadId'] ) ? (string) $payload['threadId'] : '',
+			'labels'           => isset( $payload['labelIds'] ) && is_array( $payload['labelIds'] ) ? array_values( array_map( 'strval', $payload['labelIds'] ) ) : array(),
+			'subject'          => (string) $subject,
+			'from'             => (string) $from,
+			'to'               => (string) $to,
+			'date'             => (string) $date,
+			'timestamp'        => $timestamp,
+			'snippet'          => isset( $payload['snippet'] ) ? (string) $payload['snippet'] : '',
+			'has_attachments'  => count( $attachment_names ) > 0,
+			'attachment_names' => $attachment_names,
+			'permalink'        => sprintf( 'https://mail.google.com/mail/u/0/#all/%s', rawurlencode( isset( $payload['id'] ) ? $payload['id'] : $message_id ) ),
 		);
 	}
 

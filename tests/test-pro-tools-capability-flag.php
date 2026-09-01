@@ -69,16 +69,21 @@ class Test_Pro_Tools_Capability_Flag extends WP_UnitTestCase {
 	 */
 	public function test_all_pro_tools_have_pro_flag() {
 		$pro_tools = $this->get_pro_tool_slugs();
-		$all_tools = $this->registry->get_tools();
+		$checked   = 0;
 
 		foreach ( $pro_tools as $tool_slug ) {
-			// Check if tool is registered.
-			if ( ! isset( $all_tools[ $tool_slug ] ) ) {
-				// Tool might not be available if dependencies aren't met (e.g., WooCommerce not active).
+			// Tools gated on missing dependencies (WooCommerce, JetEngine, etc.)
+			// are not registered in this environment — skip them.
+			if ( ! $this->registry->is_tool_registered( $tool_slug ) ) {
 				continue;
 			}
 
-			$tool = $all_tools[ $tool_slug ];
+			$tool = $this->registry->get_tool( $tool_slug );
+			if ( null === $tool ) {
+				continue;
+			}
+
+			++$checked;
 
 			// Check if tool implements capability flags interface.
 			$this->assertInstanceOf(
@@ -105,6 +110,14 @@ class Test_Pro_Tools_Capability_Flag extends WP_UnitTestCase {
 				sprintf( 'Pro tool "%s" should have "pro" as the first capability flag', $tool_slug )
 			);
 		}
+
+		// Guard against silently-empty runs: at least one dependency-free Pro
+		// tool must be registered and checked in full version mode.
+		$this->assertGreaterThan(
+			0,
+			$checked,
+			'At least one Pro tool should be registered and checked for the "pro" capability flag'
+		);
 	}
 
 	/**

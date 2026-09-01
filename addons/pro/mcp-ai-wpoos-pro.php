@@ -657,6 +657,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/tools/chat-channels/class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php',
 			// Email and communication tools.
 			'WP_MCP_AI_Pro_Tool_Search_Gmail'              => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-search-gmail.php',
+			'WP_MCP_AI_Pro_Tool_Get_Gmail_Message'         => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-gmail-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Gmail_Thread'          => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-gmail-thread.php',
+			'WP_MCP_AI_Pro_Tool_List_Gmail_Connections'    => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-list-gmail-connections.php',
+			'WP_MCP_AI_Pro_Tool_Modify_Gmail_Message'      => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-modify-gmail-message.php',
 			'WP_MCP_AI_Pro_Tool_Search_Drive'              => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-search-drive.php',
 			'WP_MCP_AI_Pro_Tool_Get_Drive_File'            => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-drive-file.php',
 			'WP_MCP_AI_Pro_Tool_List_Drive_Connections'    => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-list-drive-connections.php',
@@ -2114,6 +2118,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'unified_channel_broadcast'          => 'external-tools',
 			// Email and communication tools - Require external API credentials.
 			'search_gmail'                       => 'external-tools',
+			'get_gmail_message'                  => 'external-tools',
+			'get_gmail_thread'                   => 'external-tools',
+			'list_gmail_connections'             => 'external-tools',
+			'modify_gmail_message'               => 'external-tools',
 			'send_mailjet_email'                 => 'external-tools',
 			// Brevo email marketing and CRM tools - Require Brevo API key.
 			'send_brevo_email'                   => 'external-tools',

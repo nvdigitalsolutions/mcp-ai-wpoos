@@ -20,7 +20,8 @@ class WP_MCP_AI_Pro_Tools_Group_Map_Test extends WP_UnitTestCase {
 	 * to the wp_mcp_ai_tool_group_map filter.
 	 */
 	public function test_pro_tool_group_map_filter_registered() {
-		$this->assertTrue(
+		// has_filter() returns the hook priority (20) when registered, false otherwise.
+		$this->assertNotFalse(
 			has_filter( 'wp_mcp_ai_tool_group_map', 'wp_mcp_ai_pro_tool_group_map' ),
 			'Pro tool group map filter should be registered'
 		);
