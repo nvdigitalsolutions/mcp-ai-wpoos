@@ -177,6 +177,25 @@ class WP_MCP_AI_Cache_Helper {
 		$option_pattern  = '_transient_' . $escaped_prefix . $pattern;
 		$timeout_pattern = '_transient_timeout_' . $escaped_prefix . $pattern;
 
+		// Raw option-table deletes bypass WordPress' options object cache,
+		// so stale values would survive for the rest of the request (or,
+		// with an external object cache, until TTL expiry). Collect the
+		// matching option names first and evict each from the cache.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
+		$option_names = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+				$option_pattern,
+				$timeout_pattern
+			)
+		);
+
+		if ( ! empty( $option_names ) ) {
+			foreach ( $option_names as $option_name ) {
+				wp_cache_delete( $option_name, 'options' );
+			}
+		}
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
