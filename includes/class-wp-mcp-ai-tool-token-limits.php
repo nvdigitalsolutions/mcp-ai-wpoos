@@ -370,7 +370,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 	 * @param string $tool_slug Tool identifier.
 	 * @return float Multiplier.
 	 */
-	protected static function get_tool_multiplier( $tool_slug ) {
+	public static function get_tool_multiplier( $tool_slug ) {
 		$tool_slug = sanitize_key( $tool_slug );
 
 		// Check persisted custom multipliers first.
