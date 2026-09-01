@@ -43,8 +43,8 @@ class Test_Profession_Playbook_Loader extends WP_UnitTestCase {
 		$text   = $loader->get_global_text();
 
 		$this->assertNotEmpty( $text, 'Global text should not be empty' );
-		$this->assertStringContainsString( 'Global Professional Assistant Guidelines', $text, 'Should contain expected header' );
-		$this->assertStringContainsString( 'Professional Conduct', $text, 'Should contain professional conduct section' );
+		$this->assertStringContainsString( 'WP MCP AI — Global Profession Playbook', $text, 'Should contain expected header' );
+		$this->assertStringContainsString( 'Be outcome-oriented', $text, 'Should contain core operating principles' );
 	}
 
 	/**
@@ -55,7 +55,7 @@ class Test_Profession_Playbook_Loader extends WP_UnitTestCase {
 		$text   = $loader->get_category_text( 'technical' );
 
 		$this->assertNotEmpty( $text, 'Technical category text should not be empty' );
-		$this->assertStringContainsString( 'Technical Category Guidelines', $text, 'Should contain category header' );
+		$this->assertStringContainsString( 'Category Playbook — Technical', $text, 'Should contain category header' );
 	}
 
 	/**
@@ -76,7 +76,7 @@ class Test_Profession_Playbook_Loader extends WP_UnitTestCase {
 		$text   = $loader->get_profession_text( 'accountant' );
 
 		$this->assertNotEmpty( $text, 'Accountant profession text should not be empty' );
-		$this->assertStringContainsString( 'Profession-Specific Guidelines', $text, 'Should contain profession header' );
+		$this->assertStringContainsString( 'Profession Playbook — Accountant', $text, 'Should contain profession header' );
 	}
 
 	/**
