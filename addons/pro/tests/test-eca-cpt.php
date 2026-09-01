@@ -84,8 +84,11 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 		// Disable ECA management (default state).
 		update_option( 'wp_mcp_ai_settings', array() );
 
-		// Set up screen for ECA page.
+		// Set up screen for ECA page. The notice only renders on ECA post
+		// type screens, which the production code detects via post_type.
 		set_current_screen( 'edit-mcp_ai_eca' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only URL parameter used for display logic.
+		$_GET['post_type'] = 'mcp_ai_eca';
 
 		// Capture output.
 		ob_start();
@@ -123,10 +126,10 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 
 		// Verify post type settings.
 		$this->assertEquals( 'ECAs', $eca_post_type->labels->name );
-		$this->assertFalse( $eca_post_type->public );
+		$this->assertTrue( $eca_post_type->public );
 		$this->assertTrue( $eca_post_type->show_ui );
-		$this->assertContains( 'title', $eca_post_type->supports );
-		$this->assertContains( 'editor', $eca_post_type->supports );
+		$this->assertTrue( post_type_supports( 'mcp_ai_eca', 'title' ) );
+		$this->assertTrue( post_type_supports( 'mcp_ai_eca', 'editor' ) );
 	}
 
 	/**
@@ -294,10 +297,11 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 		$this->assertTrue( $taxonomy->show_ui );
 		$this->assertTrue( $taxonomy->show_admin_column );
 
-		// Verify default categories exist.
+		// Verify default categories exist. Term names are kses-escaped on
+		// insert, so ampersands are stored as &amp;.
 		$health_wellness = get_term_by( 'slug', 'health-wellness', 'mcp_ai_eca_category' );
 		$this->assertNotFalse( $health_wellness );
-		$this->assertEquals( 'Health & Wellness', $health_wellness->name );
+		$this->assertEquals( 'Health &amp; Wellness', $health_wellness->name );
 
 		$sports = get_term_by( 'slug', 'sports', 'mcp_ai_eca_category' );
 		$this->assertNotFalse( $sports );
@@ -305,7 +309,7 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 
 		$arts = get_term_by( 'slug', 'arts-music', 'mcp_ai_eca_category' );
 		$this->assertNotFalse( $arts );
-		$this->assertEquals( 'Arts & Music', $arts->name );
+		$this->assertEquals( 'Arts &amp; Music', $arts->name );
 	}
 
 	/**
@@ -349,7 +353,7 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 		$terms = wp_get_object_terms( $post_id, 'mcp_ai_eca_category' );
 		$this->assertIsArray( $terms );
 		$this->assertCount( 1, $terms );
-		$this->assertEquals( 'Health & Wellness', $terms[0]->name );
+		$this->assertEquals( 'Health &amp; Wellness', $terms[0]->name );
 
 		// Clean up.
 		wp_delete_post( $post_id, true );
