@@ -89,19 +89,38 @@ if ( ! class_exists( 'WP_MCP_AI_Destructive_Ops_Gate' ) ) {
 		/**
 		 * Check if the destructive ops confirmation setting is enabled.
 		 *
+		 * Reads the canonical combined settings array persisted by the
+		 * Settings Dashboard, falls back to the individual settings-repository
+		 * option for backwards compatibility, and defaults to enabled
+		 * (fail-safe) when neither is available.
+		 *
 		 * @since 1.2.0
 		 * @return bool
 		 */
 		private static function is_enabled() {
-			$settings = function_exists( 'wp_mcp_ai_get_settings_repository' )
-				? wp_mcp_ai_get_settings_repository()
-				: null;
+			$value = null;
 
-			if ( null === $settings ) {
+			// Canonical source: the combined settings array (written by the admin UI).
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
+				$settings = WP_MCP_AI_Admin_Settings_Base::get_settings();
+				if ( is_array( $settings ) && array_key_exists( 'require_confirm_destructive_ops', $settings ) ) {
+					$value = $settings['require_confirm_destructive_ops'];
+				}
+			}
+
+			// Backwards-compatible fallback: individual settings-repository option.
+			if ( null === $value && function_exists( 'wp_mcp_ai_get_settings_repository' ) ) {
+				$repository = wp_mcp_ai_get_settings_repository();
+				if ( null !== $repository ) {
+					$value = $repository->get( 'require_confirm_destructive_ops', null );
+				}
+			}
+
+			if ( null === $value ) {
 				return true; // Default: enabled (fail-safe).
 			}
 
-			return (bool) $settings->get( 'require_confirm_destructive_ops', true );
+			return (bool) $value;
 		}
 
 		/**

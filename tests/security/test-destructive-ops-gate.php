@@ -110,9 +110,12 @@ class WP_MCP_AI_Destructive_Ops_Gate_Tests extends WP_UnitTestCase {
 	public function test_destructive_flags_are_filterable() {
 		$custom_flags = array( 'custom-dangerous-flag' );
 
-		add_filter( 'wp_mcp_ai_destructive_confirmation_flags', function() use ( $custom_flags ) {
-			return $custom_flags;
-		} );
+		add_filter(
+			'wp_mcp_ai_destructive_confirmation_flags',
+			function () use ( $custom_flags ) {
+				return $custom_flags;
+			}
+		);
 
 		$reflector = new ReflectionClass( 'WP_MCP_AI_Destructive_Ops_Gate' );
 		$method    = $reflector->getMethod( 'is_tool_destructive' );
@@ -133,23 +136,34 @@ class WP_MCP_AI_Destructive_Ops_Gate_Tests extends WP_UnitTestCase {
 
 	/**
 	 * Test that is_enabled reads the admin setting correctly.
+	 *
+	 * The Settings Dashboard persists this toggle inside the combined
+	 * wp_mcp_ai_settings option array — never as an individual option — so
+	 * the test writes through the same path production uses.
 	 */
 	public function test_is_enabled_respects_setting() {
-		// Set the setting to false.
-		if ( function_exists( 'wp_mcp_ai_get_settings_repository' ) ) {
-			wp_mcp_ai_get_settings_repository()->update( 'require_confirm_destructive_ops', false );
-		}
-
 		$reflector = new ReflectionClass( 'WP_MCP_AI_Destructive_Ops_Gate' );
 		$method    = $reflector->getMethod( 'is_enabled' );
 		$method->setAccessible( true );
 
-		$result = $method->invoke( null );
-		$this->assertFalse( $result, 'Gate should be disabled when setting is false.' );
+		// Disable the setting the way the admin UI does.
+		$settings                                    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$settings['require_confirm_destructive_ops'] = false;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+		WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
 
-		// Reset.
-		if ( function_exists( 'wp_mcp_ai_get_settings_repository' ) ) {
-			wp_mcp_ai_get_settings_repository()->update( 'require_confirm_destructive_ops', true );
-		}
+		$result = $method->invoke( null );
+		$this->assertFalse( $result, 'Gate should be disabled when the setting is false.' );
+
+		// Re-enable and confirm the gate follows.
+		$settings['require_confirm_destructive_ops'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+		WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
+
+		$this->assertTrue( $method->invoke( null ), 'Gate should be enabled when the setting is true.' );
+
+		// Restore pristine defaults so later tests observe the enabled default.
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+		WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
 	}
 }

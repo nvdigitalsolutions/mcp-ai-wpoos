@@ -230,25 +230,32 @@ class WP_MCP_AI_Search_Gmail_Tool_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'messages', $result );
 		$this->assertCount( 2, $result['messages'] );
 		$this->assertSame( 'next-token', $result['next_page_token'] );
+		$this->assertTrue( $result['has_more'], 'has_more should be true when a next page token exists.' );
 		$this->assertSame( 2, $result['result_size_estimate'] );
 
+		// Results are sorted newest-first by internalDate.
 		$first = $result['messages'][0];
-		$this->assertSame( 'abc123', $first['id'] );
-		$this->assertSame( 'thread-1', $first['thread_id'] );
-		$this->assertSame( 'First Subject', $first['subject'] );
-		$this->assertSame( 'Example Sender <sender@example.com>', $first['from'] );
-		$this->assertSame( 'recipient@example.com', $first['to'] );
-		$this->assertSame( 'First snippet', $first['snippet'] );
-		$this->assertSame( 1700000000, $first['timestamp'] );
-		$this->assertStringContainsString( 'abc123', $first['permalink'] );
-		$this->assertSame( array( 'INBOX', 'IMPORTANT' ), $first['labels'] );
+		$this->assertSame( 'def456', $first['id'] );
+		$this->assertSame( 'thread-2', $first['thread_id'] );
+		$this->assertSame( 'Second Subject', $first['subject'] );
+		$this->assertSame( 'Another Sender <other@example.com>', $first['from'] );
+		$this->assertSame( 'Second snippet', $first['snippet'] );
+		$this->assertSame( 1700003600, $first['timestamp'] );
+		$this->assertFalse( $first['has_attachments'] );
+		$this->assertSame( array(), $first['attachment_names'] );
 
 		$second = $result['messages'][1];
-		$this->assertSame( 'def456', $second['id'] );
-		$this->assertSame( 'Second Subject', $second['subject'] );
-		$this->assertSame( 'Another Sender <other@example.com>', $second['from'] );
-		$this->assertSame( 'Second snippet', $second['snippet'] );
-		$this->assertSame( 1700003600, $second['timestamp'] );
+		$this->assertSame( 'abc123', $second['id'] );
+		$this->assertSame( 'thread-1', $second['thread_id'] );
+		$this->assertSame( 'First Subject', $second['subject'] );
+		$this->assertSame( 'Example Sender <sender@example.com>', $second['from'] );
+		$this->assertSame( 'recipient@example.com', $second['to'] );
+		$this->assertSame( 'First snippet', $second['snippet'] );
+		$this->assertSame( 1700000000, $second['timestamp'] );
+		$this->assertStringContainsString( 'abc123', $second['permalink'] );
+		$this->assertSame( array( 'INBOX', 'IMPORTANT' ), $second['labels'] );
+		$this->assertFalse( $second['has_attachments'] );
+		$this->assertSame( array(), $second['attachment_names'] );
 
 		$this->assertNotEmpty( $http_requests );
 		$list_request = $http_requests[1];
