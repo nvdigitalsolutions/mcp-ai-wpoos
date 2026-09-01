@@ -235,10 +235,13 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 				'broken_schema_tool',
 				'invalid_schema_tool',
 				'working_tool',
-				'get_current_date_time', // Include a real tool as well.
+				'get_update_status', // Include a real tool as well.
 			),
 		);
-		update_post_meta( $this->assistant_id, 'wp_mcp_ai_assistant_config', $config );
+
+		// Tools live in their own meta key; the legacy aggregate key is no
+		// longer read by get_assistant_configuration().
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, $config['tools'] );
 	}
 
 	/**
@@ -303,7 +306,7 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 
 		// Working tool should be included.
 		$this->assertContains( 'working_tool', $tool_names, 'Working tool should be in the list' );
-		$this->assertContains( 'get_current_date_time', $tool_names, 'Real tool should be in the list' );
+		$this->assertContains( 'get_update_status', $tool_names, 'Real tool should be in the list' );
 
 		// Broken tools should be excluded.
 		$this->assertNotContains( 'broken_schema_tool', $tool_names, 'Broken schema tool should be excluded' );
@@ -325,6 +328,7 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'X-WP-MCP-AI-Internal-Diagnostic', '1' );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -366,8 +370,8 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		// Mock the chat method to avoid actual API calls.
-		$mock_client->method( 'chat' )
+		// Mock the completion method to avoid actual API calls.
+		$mock_client->method( 'create_chat_completion' )
 			->willReturn(
 				array(
 					'choices' => array(
@@ -412,7 +416,10 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status(), 'Chat should succeed even with broken tools' );
 
 		$data = $response->get_data();
-		$this->assertArrayHasKey( 'choices', $data, 'Chat response should include choices' );
+
+		// The chat endpoint wraps the LLM response in a data envelope.
+		$this->assertArrayHasKey( 'data', $data, 'Chat response should include data envelope' );
+		$this->assertArrayHasKey( 'choices', $data['data'], 'Chat response should include choices' );
 	}
 
 	/**
