@@ -47,6 +47,10 @@ class Test_Cross_Tenant_Isolation extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// The activation hook that creates the tenant tables never runs under
+		// PHPUnit, so ensure the schema exists before inserting rows.
+		WP_MCP_AI_Tenant_Database::create_tables();
+
 		// Create test tenants.
 		global $wpdb;
 		$table = $wpdb->prefix . 'mcp_ai_tenants';
