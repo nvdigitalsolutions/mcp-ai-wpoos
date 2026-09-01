@@ -2251,6 +2251,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $base_check;
 			}
 
+			// Requests without a title are connectivity checks that return the
+			// directory listing instead of creating an assistant. Let them
+			// through the standard authentication gate; handle_assistant_create()
+			// re-checks the creation setting before performing any real work.
+			$title = $request->get_param( 'title' );
+			if ( empty( $title ) ) {
+				return true;
+			}
+
 			// Then check if REST assistant creation is enabled.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
