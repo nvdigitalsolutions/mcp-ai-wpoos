@@ -1259,7 +1259,11 @@ query GetLocations($first: Int!) {
 
 			$url = self::CATALOG_BASE_URL . '/' . ltrim( $path, '/' );
 			if ( ! empty( $query_args ) ) {
-				$url = add_query_arg( $query_args, $url );
+				// add_query_arg() does not URL-encode values (build_query()
+				// passes $urlencode=false); catalog search queries contain
+				// spaces, so encode explicitly with RFC 1738.
+				$query_string = http_build_query( $query_args, '', '&', PHP_QUERY_RFC1738 );
+				$url          = $url . ( false === strpos( $url, '?' ) ? '?' : '&' ) . $query_string;
 			}
 
 			$raw_response = wp_safe_remote_get(

@@ -84,6 +84,23 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
+	 * Build a search API URL with RFC 1738-encoded query parameters.
+	 *
+	 * add_query_arg() does not URL-encode values (build_query() passes
+	 * $urlencode=false), which would leave raw spaces in the search query
+	 * sent to DuckDuckGo or Brave.
+	 *
+	 * @param string $base       Search API endpoint URL.
+	 * @param array  $query_args Query parameters.
+	 * @return string Encoded URL.
+	 */
+	protected function build_search_url( $base, array $query_args ) {
+		$query_string = http_build_query( $query_args, '', '&', PHP_QUERY_RFC1738 );
+
+		return $base . ( false === strpos( $base, '?' ) ? '?' : '&' ) . $query_string;
+	}
+
+	/**
 	 * Maximum number of results to include in LLM payload.
 	 *
 	 * Chat client receives all results, but LLM only gets this many to reduce token usage.
@@ -516,7 +533,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$query_args['kl'] = strtolower( $options['language'] );
 		}
 
-		$request_url = add_query_arg( $query_args, 'https://api.duckduckgo.com/' );
+		$request_url = $this->build_search_url( 'https://api.duckduckgo.com/', $query_args );
 
 		$response = $this->perform_search_with_retry(
 			$request_url,
@@ -710,7 +727,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$query_args['freshness'] = $options['freshness'];
 		}
 
-		$request_url = add_query_arg( $query_args, 'https://api.search.brave.com/res/v1/web/search' );
+		$request_url = $this->build_search_url( 'https://api.search.brave.com/res/v1/web/search', $query_args );
 
 		$response = $this->perform_search_with_retry(
 			$request_url,
