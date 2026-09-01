@@ -66,6 +66,9 @@ final class Plugin {
 					if ( class_exists( 'NvoosContentGraphAi\Rest\ToolsController' ) ) {
 						( new \NvoosContentGraphAi\Rest\ToolsController() )->registerRoutes();
 					}
+					if ( class_exists( 'NvoosContentGraphAi\Rest\McpController' ) ) {
+						( new \NvoosContentGraphAi\Rest\McpController() )->registerRoutes();
+					}
 				}
 			}
 		);
