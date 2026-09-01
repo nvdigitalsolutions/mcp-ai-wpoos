@@ -59,7 +59,9 @@ Locked constraints: **D-NOBASE** (zero changes to `mcp-ai-wpoos`), **D-NOCORE** 
 | D4j | CSP headers | ✅ | `src/Security/CspHeaders.php` (directive set/filters/header names byte-identical); `is_admin_context()`/`send_header()` protected seams for testability; `register()` standalone-only; 3 characterization tests |
 | D4k | Load guard | ✅ | `src/Security/LoadGuard.php` (counter key/429 envelope/filter byte-identical); max-concurrency + job-queue aggregation monolith-only (standalone counts the transient counter until Resource Manager ports — tracked); `register()` standalone-only; 5 characterization tests |
 | D4 | Security stack (10 classes + circuit breaker) | ✅ | D4a–D4k done (95 new ecosystem tests); suite now 365 tests / ~1585 assertions green in both monolith + standalone matrices, PHPCS-clean |
-| D5 | REST surface (mcp-ai/v1 chat/tools/assistants/MCP methods) | 🔴 | |
+| D5a | Assistant directory REST controller | ✅ | `src/Rest/AssistantController.php` (routes `mcp-ai/v1/assistants` GET/POST/DELETE, directory contract: summary fields/rest links/capabilities/implementation/X-WP-Total headers, search/include/pagination/_fields, create/delete with meta persistence — byte-identical); auth = CG-AI caps; settings/config/cache/access-validation seams per mode; token scope deferred to D-UI; `registerRoutes()` standalone-only; 17 characterization tests |
+| D5b | Tools listing REST controller | ✅ | `src/Rest/ToolsController.php` (route `mcp-ai/v1/tools` GET, `tools` contract name/description/inputSchema, assistant scoping, `_fields` filtering, cache — byte-identical); registry seam: base `WP_MCP_AI_Tool_Registry` monolith / nvoos-core registry via `CoreBridge` standalone (camelCase→snake_case wrapper); `registerRoutes()` standalone-only; 8 characterization tests |
+| D5 | REST surface (mcp-ai/v1 chat/tools/assistants/MCP methods) | 🟡 | D5a–D5b done (25 new ecosystem tests); remaining: MCP JSON-RPC controller (`/mcp` tools/list + tools/call + initialize), chat compat route, file-download/cron-status endpoints — tracked in the plan's D5 scope |
 | D6 | WP-CLI surface (20+ commands) | 🔴 | |
 | D7 | Agent memory CCT bridge/migrator/reader | 🔴 | |
 

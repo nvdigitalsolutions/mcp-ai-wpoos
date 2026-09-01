@@ -153,8 +153,19 @@ class Test_Assistant_Controller extends \WP_UnitTestCase {
 			return;
 		}
 
+		// The ecosystem bootstrap requires the plugin after plugins_loaded
+		// has fired, so Plugin::register() never runs here — register via
+		// a rest_api_init firing to stay on the action (WP 6.9 flags
+		// off-action registration as incorrect usage).
 		$server = \rest_get_server();
-		$this->controller->registerRoutes();
+		$controller = $this->controller;
+		\add_action(
+			'rest_api_init',
+			static function () use ( $controller ): void {
+				$controller->registerRoutes();
+			}
+		);
+		\do_action( 'rest_api_init', $server );
 
 		$routes = $server->get_routes( 'mcp-ai/v1' );
 		$this->assertArrayHasKey( '/mcp-ai/v1/assistants', $routes );

@@ -2,7 +2,9 @@
 
 ## Purpose
 
-Exposes AI chat capabilities via WordPress REST API under the core's `nvoos-content-graph/v1` namespace — chat endpoint (with SSE streaming support) and provider listing endpoint.
+Exposes AI capabilities via the WordPress REST API across two surfaces:
+- Core namespace `nvoos-content-graph/v1` — chat endpoint (with SSE streaming) and provider listing (`ChatController`, pre-extraction).
+- MCP-compatible `mcp-ai/v1` — assistant directory and tools listing (`AssistantController`, `ToolsController`; Wave D5), registered standalone-only with CG-AI's auth.
 
 ## Tier
 
@@ -19,28 +21,37 @@ Exposes AI chat capabilities via WordPress REST API under the core's `nvoos-cont
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraphAi\Rest\ChatController` | `ChatController.php` | `Plugin::register()` (REST route registration) |
+| `NvoosContentGraphAi\Rest\AssistantController` | `AssistantController.php` | `Plugin::register()` (standalone-only `mcp-ai/v1/assistants` routes) |
+| `NvoosContentGraphAi\Rest\ToolsController` | `ToolsController.php` | `Plugin::register()` (standalone-only `mcp-ai/v1/tools` route) |
 
 ## Inputs / Outputs / Neighbors
 
-- **Reads from:** REST request params (`messages`, `provider`, `stream`), `NvoosContentGraphAi\ProviderRegistry`
-- **Writes to:** `WP_REST_Response` / `WP_Error`, SSE stream output
-- **Upstream callers:** WordPress REST API
-- **Downstream collaborators:** `src/Chat/ChatService` (chat processing), `nvoos-content-graph` core `ToolRegistry`
+- **Reads from:** REST request params, `NvoosContentGraphAi\ProviderRegistry` (chat), the assistant CPT (`mcp_ai_assistant` posts + `_wp_mcp_ai_*` meta), the active tool registry (base `WP_MCP_AI_Tool_Registry` monolith / nvoos-core registry via `CoreBridge` standalone)
+- **Writes to:** `WP_REST_Response` / `WP_Error`, SSE stream output, assistant posts (create/delete), REST caches
+- **Upstream callers:** WordPress REST API (SPA v2, MCP clients)
+- **Downstream collaborators:** `src/Chat/ChatService` (chat processing), `nvoos-content-graph` core `ToolRegistry`, `CoreBridge`
 - **Events fired:** None (REST handlers return responses directly)
 - **Events listened to:** `rest_api_init`
 
 ### REST Endpoints
 
-Base path: `/wp-json/nvoos-content-graph/v1`
+Base paths: `/wp-json/nvoos-content-graph/v1` (chat) and `/wp-json/mcp-ai/v1` (MCP surface, standalone-only — the base plugin owns the same routes in monolith installs)
 
 | Method | Path | Description | Auth |
 |---|---|---|---|
 | `POST` | `/ai/chat` | Send chat messages (supports SSE streaming via `?stream=1`) | `edit_posts` |
 | `GET` | `/ai/providers` | List available AI provider slugs | `edit_posts` |
+| `GET` | `/mcp-ai/v1/assistants` | Assistant directory (search/include/per_page/_fields) | `edit_posts` |
+| `POST` | `/mcp-ai/v1/assistants` | Create an assistant (title/description/provider/model/temperature/tools/status) | `manage_options` |
+| `DELETE` | `/mcp-ai/v1/assistants/{id}` | Delete an assistant | `manage_options` |
+| `GET` | `/mcp-ai/v1/tools` | List tools (optionally scoped to an assistant) | `edit_posts` |
 
 ## Conventions
 
-- Routes are registered under the core's `nvoos-content-graph/v1` namespace (not a separate namespace).
+- Routes are registered under the core's `nvoos-content-graph/v1` namespace (chat) and the base-compatible `mcp-ai/v1` namespace (assistants/tools).
+- `mcp-ai/v1` route registration is standalone-only; the base plugin owns the same routes in monolith installs.
+- Auth is CG-AI's own capability model (`edit_posts` / `manage_options`); token scoping stays with the base hub until CG-AI guest tokens land.
+- Response contracts, error codes, cache key structures, and filters are byte-identical to the base (documented per-class seams for settings/config/registry/cache reads).
 - SSE streaming endpoint sets appropriate headers (`text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`) and flushes output buffering.
 - Messages are sanitized via `sanitizeMessages()` — role via `sanitize_text_field`, content via `wp_kses_post`.
 - Provider list returns only slugs (not full configuration) to avoid leaking API keys.
