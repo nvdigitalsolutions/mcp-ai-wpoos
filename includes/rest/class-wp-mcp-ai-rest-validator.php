@@ -488,7 +488,129 @@ class WP_MCP_AI_REST_Validator {
 			$metadata['name'] = sanitize_text_field( $message['name'] );
 		}
 
+		if ( isset( $message['display'] ) && is_array( $message['display'] ) ) {
+			$display = $this->sanitize_display_metadata( $message['display'] );
+			if ( ! empty( $display ) ) {
+				$metadata['display'] = $display;
+			}
+		}
+
 		return $metadata;
+	}
+
+	/**
+	 * Sanitize client display metadata attached to a message.
+	 *
+	 * Display metadata drives client-side rendering (bubble type, chart
+	 * output, badge data) and is persisted with transcripts so conversations
+	 * render identically when reloaded. Only known keys are retained and each
+	 * value is sanitized for its type; scripts and event-handler attributes
+	 * are stripped from chart HTML.
+	 *
+	 * @param array $display Raw display metadata.
+	 * @return array Sanitized display metadata.
+	 */
+	public function sanitize_display_metadata( array $display ) {
+		$clean = array();
+
+		if ( isset( $display['bubbleType'] ) ) {
+			$clean['bubbleType'] = sanitize_key( $display['bubbleType'] );
+		}
+
+		if ( isset( $display['text'] ) ) {
+			$clean['text'] = wp_kses_post( (string) $display['text'] );
+		}
+
+		if ( isset( $display['message'] ) ) {
+			$clean['message'] = wp_kses_post( (string) $display['message'] );
+		}
+
+		if ( isset( $display['chartHtml'] ) ) {
+			$chart_html = wp_check_invalid_utf8( (string) $display['chartHtml'], true );
+			$chart_html = preg_replace( '/<script\b[^>]*>.*?<\/script>/is', '', $chart_html );
+			$chart_html = preg_replace( '/\son[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $chart_html );
+			if ( '' !== $chart_html ) {
+				$clean['chartHtml'] = $chart_html;
+			}
+		}
+
+		if ( isset( $display['chartWidth'] ) ) {
+			$clean['chartWidth'] = absint( $display['chartWidth'] );
+		}
+
+		if ( isset( $display['chartHeight'] ) ) {
+			$clean['chartHeight'] = absint( $display['chartHeight'] );
+		}
+
+		if ( isset( $display['tool_calls'] ) && is_array( $display['tool_calls'] ) ) {
+			$tool_calls = array();
+			foreach ( $display['tool_calls'] as $tool_call ) {
+				if ( ! is_array( $tool_call ) ) {
+					continue;
+				}
+
+				$call = array();
+				if ( isset( $tool_call['id'] ) ) {
+					$call['id'] = sanitize_text_field( $tool_call['id'] );
+				}
+				if ( isset( $tool_call['type'] ) ) {
+					$call['type'] = sanitize_text_field( $tool_call['type'] );
+				}
+				if ( isset( $tool_call['function'] ) && is_array( $tool_call['function'] ) ) {
+					$function = array();
+					if ( isset( $tool_call['function']['name'] ) ) {
+						$function['name'] = sanitize_text_field( $tool_call['function']['name'] );
+					}
+					if ( isset( $tool_call['function']['arguments'] ) ) {
+						$function['arguments'] = wp_check_invalid_utf8( (string) $tool_call['function']['arguments'], true );
+					}
+					if ( ! empty( $function ) ) {
+						$call['function'] = $function;
+					}
+				}
+				if ( ! empty( $call ) ) {
+					$tool_calls[] = $call;
+				}
+			}
+			if ( ! empty( $tool_calls ) ) {
+				$clean['tool_calls'] = $tool_calls;
+			}
+		}
+
+		if ( isset( $display['usage'] ) && is_array( $display['usage'] ) ) {
+			$usage = array();
+			foreach ( $display['usage'] as $key => $value ) {
+				$usage[ sanitize_key( $key ) ] = absint( $value );
+			}
+			if ( ! empty( $usage ) ) {
+				$clean['usage'] = $usage;
+			}
+		}
+
+		if ( isset( $display['cost'] ) && is_array( $display['cost'] ) ) {
+			$cost = array();
+			foreach ( $display['cost'] as $key => $value ) {
+				$cost[ sanitize_key( $key ) ] = (float) $value;
+			}
+			if ( ! empty( $cost ) ) {
+				$clean['cost'] = $cost;
+			}
+		}
+
+		if ( isset( $display['capabilityFlags'] ) && is_array( $display['capabilityFlags'] ) ) {
+			$flags = array_values(
+				array_filter(
+					array_unique(
+						array_map( 'sanitize_key', array_map( 'strval', $display['capabilityFlags'] ) )
+					)
+				)
+			);
+			if ( ! empty( $flags ) ) {
+				$clean['capabilityFlags'] = $flags;
+			}
+		}
+
+		return $clean;
 	}
 
 	/**
