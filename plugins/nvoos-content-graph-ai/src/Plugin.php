@@ -94,6 +94,10 @@ final class Plugin {
 			// installs; registering here too would double-provision.
 			\NvoosContentGraphAi\Model\ModelRateLimitsCct::bootstrap();
 			\NvoosContentGraphAi\Model\ModelPricingChecker::bootstrap();
+
+			// Usage tracker user-deletion hooks — the base plugin owns the
+			// same hooks in monolith installs.
+			\NvoosContentGraphAi\Analytics\UsageTracker::init();
 		}
 
 		// Register the async chat continuation hook.

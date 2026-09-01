@@ -19,6 +19,7 @@ Analytics and usage analysis for the content-graph AI addon (Wave D3): linear-re
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraphAi\Analytics\AnalyticsEngine` | `AnalyticsEngine.php` | Static utility (analytics consumers land with D3d/D3f) |
+| `NvoosContentGraphAi\Analytics\UsageTracker` | `UsageTracker.php` | `Plugin::register()` (standalone-only user-deletion hooks); chat flow records usage |
 
 ## Inputs / Outputs / Neighbors
 
