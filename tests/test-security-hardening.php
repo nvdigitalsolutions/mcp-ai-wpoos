@@ -17,6 +17,14 @@ class Test_Security_Hardening extends WP_UnitTestCase {
 	 * Test that ai_peer CPT requires manage_options capability.
 	 */
 	public function test_ai_peer_cpt_requires_manage_options() {
+		// Ensure the CPT is registered even when this suite runs in isolation.
+		if ( null === get_post_type_object( 'ai_peer' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_AI_Peer_CPT' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ai-peer-cpt.php';
+			}
+			WP_MCP_AI_AI_Peer_CPT::register_post_type();
+		}
+
 		$post_type_object = get_post_type_object( 'ai_peer' );
 
 		$this->assertNotNull( $post_type_object, 'ai_peer post type should be registered' );
@@ -107,13 +115,19 @@ class Test_Security_Hardening extends WP_UnitTestCase {
 		// Set up a fake admin_post request without a valid nonce.
 		$_REQUEST['_wpnonce'] = 'invalid_nonce';
 
-		// Verify that check_admin_referer would fail.
-		$result = check_admin_referer( 'wp_mcp_ai_save_settings', '_wpnonce', false );
-
-		$this->assertFalse( $result, 'Invalid admin nonce should fail verification' );
+		// WP 6.9 removed the $die parameter from check_admin_referer(), so an
+		// invalid nonce now always terminates the request via wp_die().
+		$failed = false;
+		try {
+			check_admin_referer( 'wp_mcp_ai_save_settings', '_wpnonce' );
+		} catch ( WPDieException $e ) {
+			$failed = true;
+		}
 
 		// Clean up.
 		unset( $_REQUEST['_wpnonce'] );
+
+		$this->assertTrue( $failed, 'Invalid admin nonce should fail verification' );
 	}
 
 	/**
@@ -208,6 +222,12 @@ class Test_Security_Hardening extends WP_UnitTestCase {
 
 				// Each route should have handlers with permission_callback.
 				foreach ( $handlers as $handler ) {
+					// WordPress auto-registers a namespace index route without a
+					// permission callback; it only lists available routes.
+					if ( isset( $handler['callback'][1] ) && 'get_namespace_index' === $handler['callback'][1] ) {
+						continue;
+					}
+
 					$this->assertArrayHasKey(
 						'permission_callback',
 						$handler,
