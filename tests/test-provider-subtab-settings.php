@@ -21,6 +21,20 @@
 class WP_MCP_AI_Provider_Subtab_Settings_Test extends WP_UnitTestCase {
 
 	/**
+	 * Mark a providers subtab as the active one for the sanitize call.
+	 *
+	 * The providers section is sub-tabbed; without an active subtab the
+	 * sanitizer falls back to import mode and applies checkbox defaults to
+	 * every field, which wipes the providers this test is not submitting.
+	 *
+	 * @param string $subtab Subtab slug (e.g. 'openai', 'gemini', 'ollama').
+	 */
+	protected function set_active_subtab( $subtab ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only routing parameter for the section sanitizer.
+		$_POST['subtab_providers'] = $subtab;
+	}
+
+	/**
 	 * Test that saving OpenAI subtab preserves Gemini settings.
 	 */
 	public function test_saving_openai_preserves_gemini_settings() {
@@ -44,8 +58,10 @@ class WP_MCP_AI_Provider_Subtab_Settings_Test extends WP_UnitTestCase {
 			// Note: Gemini settings are NOT in this submission (different subtab).
 		);
 
-		// Sanitize with providers tab context.
+		// Sanitize with providers tab context and the OpenAI subtab active.
+		$this->set_active_subtab( 'openai' );
 		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'providers' );
+		unset( $_POST['subtab_providers'] );
 
 		// Merge with existing settings as the dashboard does.
 		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -104,8 +120,10 @@ class WP_MCP_AI_Provider_Subtab_Settings_Test extends WP_UnitTestCase {
 			// Note: OpenAI settings are NOT in this submission (different subtab).
 		);
 
-		// Sanitize with providers tab context.
+		// Sanitize with providers tab context and the Gemini subtab active.
+		$this->set_active_subtab( 'gemini' );
 		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'providers' );
+		unset( $_POST['subtab_providers'] );
 
 		// Merge with existing settings as the dashboard does.
 		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -170,8 +188,10 @@ class WP_MCP_AI_Provider_Subtab_Settings_Test extends WP_UnitTestCase {
 			// Note: Other provider settings are NOT in this submission.
 		);
 
-		// Sanitize with providers tab context.
+		// Sanitize with providers tab context and the Ollama subtab active.
+		$this->set_active_subtab( 'ollama' );
 		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'providers' );
+		unset( $_POST['subtab_providers'] );
 
 		// Merge with existing settings as the dashboard does.
 		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -215,8 +235,10 @@ class WP_MCP_AI_Provider_Subtab_Settings_Test extends WP_UnitTestCase {
 			'openai_api_key' => 'sk-test-openai-key',
 		);
 
-		// Sanitize with providers tab context.
+		// Sanitize with providers tab context and the OpenAI subtab active.
+		$this->set_active_subtab( 'openai' );
 		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'providers' );
+		unset( $_POST['subtab_providers'] );
 
 		// Merge with existing settings as the dashboard does.
 		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -251,8 +273,10 @@ class WP_MCP_AI_Provider_Subtab_Settings_Test extends WP_UnitTestCase {
 			// Note: provider_priority_list is NOT in this submission (different subtab).
 		);
 
-		// Sanitize with providers tab context.
+		// Sanitize with providers tab context and the OpenAI subtab active.
+		$this->set_active_subtab( 'openai' );
 		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'providers' );
+		unset( $_POST['subtab_providers'] );
 
 		// Merge with existing settings as the dashboard does.
 		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
