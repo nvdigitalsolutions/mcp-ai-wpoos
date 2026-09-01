@@ -4,7 +4,7 @@
 
 Exposes AI capabilities via the WordPress REST API across two surfaces:
 - Core namespace `nvoos-content-graph/v1` — chat endpoint (with SSE streaming) and provider listing (`ChatController`, pre-extraction).
-- MCP-compatible `mcp-ai/v1` — assistant directory, tools listing, and the MCP JSON-RPC 2.0 protocol (`AssistantController`, `ToolsController`, `McpController`; Wave D5), registered standalone-only with CG-AI's auth.
+- MCP-compatible `mcp-ai/v1` — assistant directory, tools listing, the MCP JSON-RPC 2.0 protocol, and the base-compatible chat route (`AssistantController`, `ToolsController`, `McpController`, `ChatCompatController`; Wave D5), registered standalone-only with CG-AI's auth.
 
 ## Tier
 
@@ -24,6 +24,7 @@ Exposes AI capabilities via the WordPress REST API across two surfaces:
 | `NvoosContentGraphAi\Rest\AssistantController` | `AssistantController.php` | `Plugin::register()` (standalone-only `mcp-ai/v1/assistants` routes) |
 | `NvoosContentGraphAi\Rest\ToolsController` | `ToolsController.php` | `Plugin::register()` (standalone-only `mcp-ai/v1/tools` route) |
 | `NvoosContentGraphAi\Rest\McpController` | `McpController.php` | `Plugin::register()` (standalone-only `mcp-ai/v1/mcp`, `/no-sse`, `/sse` routes) |
+| `NvoosContentGraphAi\Rest\ChatCompatController` | `ChatCompatController.php` | `Plugin::register()` (standalone-only `mcp-ai/v1/chat` route) |
 
 ## Inputs / Outputs / Neighbors
 
@@ -51,6 +52,8 @@ Base paths: `/wp-json/nvoos-content-graph/v1` (chat) and `/wp-json/mcp-ai/v1` (M
 | `OPTIONS` | `/mcp-ai/v1/mcp` | CORS preflight | none |
 | `GET` | `/mcp-ai/v1/no-sse` | Assistant directory as JSON (non-SSE) | `edit_posts` |
 | `GET` | `/mcp-ai/v1/sse` | SSE endpoint placeholder — returns discovery JSON (SSE sessions deferred) | `edit_posts` |
+| `POST` | `/mcp-ai/v1/chat` | Base-compatible chat (messages + options envelope; delegates to the CG-AI chat path) | `edit_posts` |
+| `GET` | `/mcp-ai/v1/chat` | Base SSE chat handshake — deferred (`wp_mcp_ai_sse_chat_deferred` 501); streaming via POST `options.stream` | `edit_posts` |
 
 ## Conventions
 
@@ -59,6 +62,7 @@ Base paths: `/wp-json/nvoos-content-graph/v1` (chat) and `/wp-json/mcp-ai/v1` (M
 - Auth is CG-AI's own capability model (`edit_posts` / `manage_options`); token scoping stays with the base hub until CG-AI guest tokens land.
 - Response contracts, error codes, cache key structures, and filters are byte-identical to the base (documented per-class seams for settings/config/registry/cache reads).
 - **MCP controller deviations (documented in the class docblock):** SSE sessions deferred (`GET /mcp` always returns discovery; `/sse` returns discovery); `tools/call` answers the `wp_mcp_ai_mcp_unavailable` stub until tool execution ports (D-Tools); no OAuth scope enforcement; no default-assistant resolution.
+- **Chat compat deviations (documented in the class docblock):** `options` envelope translated to CG-AI chat params; `assistant_id` / `professional_prompt` / `options.response_format` accepted but not applied until the assistant/profession runtimes port; message content-part arrays JSON-encoded; `GET /chat` SSE handshake deferred.
 - SSE streaming endpoint sets appropriate headers (`text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`) and flushes output buffering.
 - Messages are sanitized via `sanitizeMessages()` — role via `sanitize_text_field`, content via `wp_kses_post`.
 - Provider list returns only slugs (not full configuration) to avoid leaking API keys.
