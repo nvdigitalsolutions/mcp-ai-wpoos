@@ -120,6 +120,12 @@ final class Plugin {
 			// hooks and SSE slot tracking in monolith installs; double
 			// registration would double-count SSE connections.
 			\NvoosContentGraphAi\Security\RequestGuard::register();
+
+			// Concurrency + cost tracker subscribers — the base plugin owns
+			// the same tool-execution hooks (and the shared slot table) in
+			// monolith installs; double registration would double-count.
+			\NvoosContentGraphAi\Security\ConcurrencyGuardSubscriber::register();
+			\NvoosContentGraphAi\Security\CostTrackerSubscriber::register();
 		}
 
 		// Register the async chat continuation hook.
