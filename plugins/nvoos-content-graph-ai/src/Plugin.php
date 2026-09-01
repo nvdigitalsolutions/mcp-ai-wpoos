@@ -105,6 +105,11 @@ final class Plugin {
 			\NvoosContentGraphAi\Analytics\TokenTrackingDatabase::init();
 			\NvoosContentGraphAi\Analytics\EnhancedTokenTracking::init();
 			\NvoosContentGraphAi\Analytics\TokenDbOptimizer::init();
+
+			// Tool token limits — the base plugin owns the same usage/tier
+			// hooks in monolith installs; double registration would
+			// double-record usage into the same meta key.
+			\NvoosContentGraphAi\Analytics\ToolTokenLimits::init();
 		}
 
 		// Register the async chat continuation hook.
