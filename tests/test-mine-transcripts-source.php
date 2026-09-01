@@ -41,6 +41,13 @@ class Test_Mine_Transcripts_Source extends WP_UnitTestCase {
 	private $mock_messages = array();
 
 	/**
+	 * Administrator user ID for the store permission check.
+	 *
+	 * @var int
+	 */
+	private $admin_id;
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -48,6 +55,12 @@ class Test_Mine_Transcripts_Source extends WP_UnitTestCase {
 		$this->registry      = WP_MCP_AI_Tool_Registry::get_instance();
 		$this->mock_sessions = array();
 		$this->mock_messages = array();
+
+		// store_agent_context requires a user with the read capability; when
+		// this suite runs after others in a single process the current user
+		// has been reset to 0, which rejects every mined record.
+		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $this->admin_id );
 
 		add_filter(
 			'wp_mcp_ai_mine_transcripts_sessions',
@@ -69,6 +82,7 @@ class Test_Mine_Transcripts_Source extends WP_UnitTestCase {
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_mine_transcripts_sessions', array( $this, 'inject_sessions' ), 10 );
 		remove_filter( 'wp_mcp_ai_mine_transcripts_session_messages', array( $this, 'inject_messages' ), 10 );
+		wp_set_current_user( 0 );
 
 		global $wpdb;
 		// Clean transient context store between tests.
@@ -200,8 +214,10 @@ class Test_Mine_Transcripts_Source extends WP_UnitTestCase {
 		$this->assertSame( 3, $ctx['metadata']['transcript_message_range']['end'] );
 
 		// Conversation rendering preserves both user and assistant turns.
-		$this->assertStringContainsString( 'USER: Hello turn 0', $ctx['data']['content'] );
-		$this->assertStringContainsString( 'ASSISTANT: Hi there from turn 0', $ctx['data']['content'] );
+		// retrieve_agent_memory exposes the body at the top-level content
+		// key (the legacy data.content nesting was removed).
+		$this->assertStringContainsString( 'USER: Hello turn 0', $ctx['content'] );
+		$this->assertStringContainsString( 'ASSISTANT: Hi there from turn 0', $ctx['content'] );
 	}
 
 	/**
