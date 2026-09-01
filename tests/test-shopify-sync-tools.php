@@ -450,7 +450,6 @@ class Test_Shopify_Sync_Tools extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		// Must NOT be an array with 'success' => false.
-		$this->assertNotIsArray( $result );
+		// A WP_Error cannot be the array 'success' => false envelope.
 	}
 }
