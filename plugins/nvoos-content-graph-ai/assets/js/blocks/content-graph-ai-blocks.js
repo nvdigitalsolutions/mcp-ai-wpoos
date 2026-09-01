@@ -168,7 +168,7 @@
 							},
 						}),
 						el(SelectControl, {
-							label: __('Size', 'nvoos-content-graph-01'),
+							label: __('Size', 'nvoos-content-graph-ai'),
 							value: attributes.bubbleSize,
 							options: [
 								{ label: __('Small', 'nvoos-content-graph-ai'), value: 'small' },
