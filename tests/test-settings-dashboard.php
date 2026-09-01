@@ -19,8 +19,8 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 	public function test_registry_registers_sections() {
 		// Create a mock section.
 		$section = $this->getMockBuilder( 'WP_MCP_AI_Settings_Section' )
-			->setMethods( array( 'get_id', 'get_title', 'get_tab', 'get_fields', 'render' ) )
-			->getMockForAbstractClass();
+			->onlyMethods( array( 'get_id', 'get_title', 'get_tab', 'get_fields', 'render' ) )
+			->getMock();
 
 		$section->method( 'get_id' )->willReturn( 'test_section' );
 		$section->method( 'get_tab' )->willReturn( 'test_tab' );
@@ -56,7 +56,7 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'providers', $tabs );
 		$this->assertArrayHasKey( 'authentication', $tabs );
 		$this->assertArrayHasKey( 'tools', $tabs );
-		$this->assertArrayHasKey( 'integrations', $tabs );
+		$this->assertArrayHasKey( 'orchestration', $tabs );
 		$this->assertArrayHasKey( 'token_manager', $tabs );
 		$this->assertArrayHasKey( 'security', $tabs );
 		$this->assertArrayHasKey( 'advanced', $tabs );
@@ -231,6 +231,11 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 	public function test_section_sanitizes_unchecked_checkboxes() {
 		$section = new WP_MCP_AI_Section_Authentication();
 
+		// The Authentication section is sub-tabbed; checkbox defaults only
+		// apply to the subtab being submitted, so mark the GitHub Bridge
+		// subtab as the active one for both submissions.
+		$_POST['subtab_authentication'] = 'auth0_github'; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by the AJAX save handler in production.
+
 		// Simulate form submission where checkbox is checked.
 		$input_checked = array(
 			'enable_auth0_github_bridge' => '1',
@@ -241,6 +246,7 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		// Simulate form submission where checkbox is unchecked (not in POST data).
 		$input_unchecked = array();
 		$sanitized       = $section->sanitize( $input_unchecked );
+		unset( $_POST['subtab_authentication'] );
 		$this->assertFalse( $sanitized['enable_auth0_github_bridge'] );
 	}
 
@@ -353,44 +359,27 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		// Create dashboard instance.
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 
-		// Hook into wp_enqueue_scripts to capture enqueued assets.
-		$enqueued_scripts = array();
-		$enqueued_styles  = array();
-
-		add_filter(
-			'script_loader_src',
-			function ( $src, $handle ) use ( &$enqueued_scripts ) {
-				$enqueued_scripts[ $handle ] = $src;
-				return $src;
-			},
-			10,
-			2
-		);
-
-		add_filter(
-			'style_loader_src',
-			function ( $src, $handle ) use ( &$enqueued_styles ) {
-				$enqueued_styles[ $handle ] = $src;
-				return $src;
-			},
-			10,
-			2
-		);
-
 		// Call enqueue_assets method.
 		$dashboard->enqueue_assets( 'toplevel_page_wp-mcp-ai-dashboard' );
 
-		// Verify that scripts are enqueued with URLs from WP_MCP_AI_URL constant.
-		$this->assertArrayHasKey( 'wp-mcp-ai-ajax-error-service', $enqueued_scripts, 'AJAX error service script should be enqueued' );
-		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $enqueued_scripts, 'Dashboard script should be enqueued' );
+		// Verify that scripts are enqueued.
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-ajax-error-service', 'enqueued' ), 'AJAX error service script should be enqueued' );
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-dashboard', 'enqueued' ), 'Dashboard script should be enqueued' );
 
 		// Verify that style is enqueued.
-		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $enqueued_styles, 'Dashboard style should be enqueued' );
+		$this->assertTrue( wp_style_is( 'wp-mcp-ai-dashboard', 'enqueued' ), 'Dashboard style should be enqueued' );
 
-		// Verify URLs contain the WP_MCP_AI_URL constant value.
-		$this->assertStringContainsString( WP_MCP_AI_URL . 'assets/js/ajax-error-service.js', $enqueued_scripts['wp-mcp-ai-ajax-error-service'], 'Script should use WP_MCP_AI_URL constant' );
-		$this->assertStringContainsString( WP_MCP_AI_URL . 'assets/js/settings-dashboard.js', $enqueued_scripts['wp-mcp-ai-dashboard'], 'Script should use WP_MCP_AI_URL constant' );
-		$this->assertStringContainsString( WP_MCP_AI_URL . 'assets/css/settings-dashboard.css', $enqueued_styles['wp-mcp-ai-dashboard'], 'Style should use WP_MCP_AI_URL constant' );
+		// Verify registered sources use the WP_MCP_AI_URL constant.
+		$error_src      = wp_scripts()->registered['wp-mcp-ai-ajax-error-service']->src;
+		$dash_src       = wp_scripts()->registered['wp-mcp-ai-dashboard']->src;
+		$dash_style_src = wp_styles()->registered['wp-mcp-ai-dashboard']->src;
+
+		$this->assertStringStartsWith( WP_MCP_AI_URL, $error_src, 'Script should use WP_MCP_AI_URL constant' );
+		$this->assertStringContainsString( 'assets/js/ajax-error-service', $error_src, 'Script should point at the AJAX error service asset' );
+		$this->assertStringStartsWith( WP_MCP_AI_URL, $dash_src, 'Dashboard script should use WP_MCP_AI_URL constant' );
+		$this->assertStringContainsString( 'assets/js/settings-dashboard', $dash_src, 'Dashboard script should point at the dashboard asset' );
+		$this->assertStringStartsWith( WP_MCP_AI_URL, $dash_style_src, 'Dashboard style should use WP_MCP_AI_URL constant' );
+		$this->assertStringContainsString( 'assets/css/settings-dashboard', $dash_style_src, 'Dashboard style should point at the dashboard asset' );
 
 		// Verify that asset files exist at the WP_MCP_AI_PATH location.
 		$this->assertFileExists( WP_MCP_AI_PATH . 'assets/css/settings-dashboard.css', 'Dashboard CSS file should exist' );
