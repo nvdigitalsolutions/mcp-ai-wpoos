@@ -68,6 +68,11 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Pro addon not active' );
 		}
 
+		// The Pro dashboard is normally constructed by the module registry's
+		// admin-context gate, which never runs under PHPUnit (is_admin() is
+		// false). Instantiate it directly, mirroring the module factory.
+		new WP_MCP_AI_Orchestration_Dashboard();
+
 		global $submenu;
 
 		// Trigger the admin_menu action to register menus.
@@ -108,6 +113,11 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Orchestration_Dashboard' ) ) {
 			$this->markTestSkipped( 'Pro addon not active' );
 		}
+
+		// The Pro dashboard is normally constructed by the module registry's
+		// admin-context gate, which never runs under PHPUnit (is_admin() is
+		// false). Instantiate it directly, mirroring the module factory.
+		new WP_MCP_AI_Orchestration_Dashboard();
 
 		global $submenu;
 
