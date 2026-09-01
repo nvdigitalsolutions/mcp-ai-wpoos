@@ -5,10 +5,8 @@
  *
  * In monolith installs (base plugin present) the bridge delegates to the
  * base plugin's `WP_MCP_AI_OpenAI_Client` so behaviour is byte-identical.
- * In standalone installs the OpenAI client is not yet ported (Wave D2),
- * so each operation returns a descriptive WP_Error; callers already
- * degrade gracefully (delete logs nothing, resolve maps to the
- * unknown-reference error).
+ * In standalone installs the bridge delegates to the ported
+ * `OpenAiFileService` (Wave D2f) for delete/retrieve/download.
  *
  * @package NvoosContentGraphAi\Chat
  * @since   1.1.0
@@ -49,11 +47,7 @@ class FileClientBridge {
 			return ( new \WP_MCP_AI_OpenAI_Client() )->retrieve_file( $file_id );
 		}
 
-		return new \WP_Error(
-			'wp_mcp_ai_file_api_unavailable',
-			__( 'The provider file API is not available in this install.', 'nvoos-content-graph-ai' ),
-			array( 'status' => 501 )
-		);
+		return ( new OpenAiFileService() )->retrieve_file( $file_id );
 	}
 
 	/**
@@ -67,11 +61,7 @@ class FileClientBridge {
 			return ( new \WP_MCP_AI_OpenAI_Client() )->delete_file( $file_id );
 		}
 
-		return new \WP_Error(
-			'wp_mcp_ai_file_api_unavailable',
-			__( 'The provider file API is not available in this install.', 'nvoos-content-graph-ai' ),
-			array( 'status' => 501 )
-		);
+		return ( new OpenAiFileService() )->delete_file( $file_id );
 	}
 
 	/**
@@ -86,10 +76,6 @@ class FileClientBridge {
 			return ( new \WP_MCP_AI_OpenAI_Client() )->download_file( $file_id );
 		}
 
-		return new \WP_Error(
-			'wp_mcp_ai_file_api_unavailable',
-			__( 'The provider file API is not available in this install.', 'nvoos-content-graph-ai' ),
-			array( 'status' => 501 )
-		);
+		return ( new OpenAiFileService() )->download_file( $file_id );
 	}
 }

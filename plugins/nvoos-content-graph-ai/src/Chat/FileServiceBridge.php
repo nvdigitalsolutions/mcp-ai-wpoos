@@ -5,12 +5,9 @@
  *
  * In monolith installs (base plugin present) the bridge delegates to the
  * base plugin's `WP_MCP_AI_File_Service_Factory` so behaviour is
- * byte-identical. In standalone installs the remote file APIs are not yet
- * ported (Wave D2 — provider clients), so the bridge reports
- * `provider_supports_files() === false`, which routes every attachment
- * through the pipeline's `local-` reference path (the same path the base
- * uses for providers without a File API) and returns a descriptive
- * WP_Error from `upload_file()`.
+ * byte-identical. In standalone installs the bridge delegates to the
+ * ported `FileServiceFactory` (Wave D2f), which routes through the
+ * CG-AI OpenAI/Gemini file services.
  *
  * @package NvoosContentGraphAi\Chat
  * @since   1.1.0
@@ -42,7 +39,7 @@ class FileServiceBridge {
 			return \WP_MCP_AI_File_Service_Factory::detect_provider_from_model( $model );
 		}
 
-		return 'unknown';
+		return FileServiceFactory::detect_provider_from_model( $model );
 	}
 
 	/**
@@ -56,9 +53,7 @@ class FileServiceBridge {
 			return \WP_MCP_AI_File_Service_Factory::provider_supports_files( $provider );
 		}
 
-		// Standalone: provider file clients are not ported yet (Wave D2).
-		// Returning false routes attachments through the local-reference path.
-		return false;
+		return FileServiceFactory::provider_supports_files( $provider );
 	}
 
 	/**
@@ -75,10 +70,6 @@ class FileServiceBridge {
 			return \WP_MCP_AI_File_Service_Factory::upload_file( $file_path, $mime_type, $provider, $options );
 		}
 
-		return new \WP_Error(
-			'wp_mcp_ai_file_api_unavailable',
-			__( 'Remote file uploads are unavailable: the provider file API is not available in this install.', 'nvoos-content-graph-ai' ),
-			array( 'status' => 501 )
-		);
+		return FileServiceFactory::upload_file( $file_path, $mime_type, $provider, $options );
 	}
 }
