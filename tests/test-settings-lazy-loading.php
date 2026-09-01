@@ -58,7 +58,7 @@ class WP_MCP_AI_Settings_Lazy_Loading_Test extends WP_UnitTestCase {
 			$section = $container->get( $section_id );
 			$this->assertNotNull( $section, "Section $section_id should be instantiable" );
 			$this->assertInstanceOf(
-				'WP_MCP_AI_Settings_Section_Abstract',
+				'WP_MCP_AI_Settings_Section',
 				$section,
 				"Section $section_id should extend abstract base class"
 			);
@@ -123,8 +123,8 @@ class WP_MCP_AI_Settings_Lazy_Loading_Test extends WP_UnitTestCase {
 		$integration_classes = array(
 			'WP_MCP_AI_Admin_JetEngine_Integration',
 			'WP_MCP_AI_Admin_WooCommerce_Integration',
-			'WP_MCP_AI_Admin_Elementor',
-			'WP_MCP_AI_Admin_Gmail_Crawl',
+			'WP_MCP_AI_Admin_Elementor_Integration',
+			'WP_MCP_AI_Admin_Gmail_Crawl_Integration',
 		);
 
 		foreach ( $integration_classes as $class_name ) {
@@ -140,7 +140,7 @@ class WP_MCP_AI_Settings_Lazy_Loading_Test extends WP_UnitTestCase {
 	 */
 	public function test_abstract_base_class_is_loaded() {
 		$this->assertTrue(
-			class_exists( 'WP_MCP_AI_Settings_Section_Abstract' ),
+			class_exists( 'WP_MCP_AI_Settings_Section' ),
 			'Abstract base class should be loaded eagerly'
 		);
 	}

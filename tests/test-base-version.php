@@ -152,8 +152,11 @@ class WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
 			}
 		}
 
-		// JetEngine tools are gated on JetEngine being active.
-		$jetengine_active = function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' );
+		// JetEngine tools are gated on JetEngine being active. Use the version
+		// constant as the marker: other suites define file-scope jet_engine()
+		// / Jet_Engine stubs that leak process-wide and would otherwise make
+		// this branch run without the real plugin (and its tools) present.
+		$jetengine_active = defined( 'JET_ENGINE_VERSION' );
 		$jetengine_tool   = $registry->get_tool( 'get_jetengine_items' );
 		if ( $jetengine_active ) {
 			$this->assertNotNull( $jetengine_tool, 'JetEngine tool should be registered when JetEngine is active.' );

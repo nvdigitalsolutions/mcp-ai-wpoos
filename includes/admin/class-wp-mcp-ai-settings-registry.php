@@ -90,6 +90,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 		}
 
 		/**
+		 * Unregister a settings section by ID.
+		 *
+		 * @param string $section_id Section ID.
+		 */
+		public static function unregister_section( $section_id ) {
+			unset( self::$sections[ $section_id ] );
+		}
+
+		/**
 		 * Get all registered sections for a specific tab.
 		 *
 		 * @param string $tab Tab ID.

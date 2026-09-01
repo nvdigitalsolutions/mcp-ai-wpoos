@@ -31,6 +31,11 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		// Verify it was registered.
 		$sections = WP_MCP_AI_Settings_Registry::get_sections();
 		$this->assertArrayHasKey( 'test_section', $sections );
+
+		// Clean up: the registry is static, and PHPUnit clears mock stubs after
+		// each test, so an unregistered leftover mock would pollute every later
+		// suite that iterates get_sections().
+		WP_MCP_AI_Settings_Registry::unregister_section( 'test_section' );
 	}
 
 	/**
