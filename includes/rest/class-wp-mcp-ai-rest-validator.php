@@ -1135,13 +1135,24 @@ class WP_MCP_AI_REST_Validator {
 	 * @return array Sanitized metadata.
 	 */
 	public function sanitize_metadata_for_llm( array $metadata ) {
+		// Remove verbose fields that add token cost without LLM value.
+		$fields_to_remove = array( 'headers', 'raw', 'response', 'request', 'retrieved_at', 'fetched_at', 'user_agent' );
+
+		foreach ( $fields_to_remove as $key ) {
+			unset( $metadata[ $key ] );
+		}
+
 		$sanitized = array();
 
 		foreach ( $metadata as $key => $value ) {
 			$sanitized_key = sanitize_key( $key );
 
 			if ( is_array( $value ) || is_object( $value ) ) {
-				$sanitized[ $sanitized_key ] = $this->sanitize_complex_data_for_llm( $value );
+				// Recursively clean nested metadata.
+				$nested = $this->sanitize_metadata_for_llm( is_object( $value ) ? (array) $value : $value );
+				if ( ! empty( $nested ) ) {
+					$sanitized[ $sanitized_key ] = $nested;
+				}
 			} else {
 				$sanitized[ $sanitized_key ] = $this->sanitize_scalar_for_llm( $value );
 			}

@@ -12315,7 +12315,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Strip verbose metadata.
 			if ( isset( $sanitized['metadata'] ) && is_array( $sanitized['metadata'] ) ) {
-				$sanitized['metadata'] = $this->sanitize_metadata_for_llm( $sanitized['metadata'] );
+				$sanitized['metadata'] = $this->validator->sanitize_metadata_for_llm( $sanitized['metadata'] );
 				if ( empty( $sanitized['metadata'] ) ) {
 					unset( $sanitized['metadata'] );
 				}
@@ -12323,7 +12323,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Strip base64 content from image generation tools.
 			if ( isset( $sanitized['content'] ) && is_array( $sanitized['content'] ) ) {
-				$sanitized['content'] = $this->sanitize_content_for_llm( $sanitized['content'] );
+				$sanitized['content'] = $this->validator->sanitize_content_for_llm( $sanitized['content'] );
 				if ( empty( $sanitized['content'] ) ) {
 					unset( $sanitized['content'] );
 				}
