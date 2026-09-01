@@ -11852,7 +11852,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Auto-enable essential read-only tools for chat-client endpoint.
 			// These tools are needed to maintain agentic workflows in chat context.
 			// Only read-only, safe tools are auto-enabled; write operations require explicit config.
-			$endpoint = $request->get_route();
+			$endpoint = $request ? $request->get_route() : '';
 			if ( false !== strpos( $endpoint, '/chat-client' ) ) {
 				// Define read-only tools essential for agentic workflow.
 				$auto_enable_tools = array(
@@ -11910,8 +11910,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'agentic_loop'          => true,
 				'iteration'             => $iteration,
 				'max_iterations'        => $max_iterations,
-				'endpoint'              => $request->get_route(),
-				'allow_sensitive_tools' => $request->get_param( 'allow_sensitive_tools' ) === true,
+				'endpoint'              => $endpoint,
+				'allow_sensitive_tools' => $request && $request->get_param( 'allow_sensitive_tools' ) === true,
 			);
 
 			// Add tool_call_id to context if available.

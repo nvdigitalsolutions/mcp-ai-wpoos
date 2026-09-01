@@ -25,10 +25,14 @@ class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->rest_controller = $this->getMockBuilder( WP_MCP_AI_REST::class )
+
+		// The REST controller needs a client, but no real API calls are made
+		// for the paths under test.
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
 			->disableOriginalConstructor()
-			->onlyMethods( array() )
 			->getMock();
+
+		$this->rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
 	}
 
 	/**
@@ -44,9 +48,9 @@ class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 		);
 
 		// Configure assistant with rotate_image tool.
-		update_post_meta( $assistant_id, 'mcp_ai_tools', array( 'rotate_image' ) );
-		update_post_meta( $assistant_id, 'mcp_ai_provider', 'openai' );
-		update_post_meta( $assistant_id, 'mcp_ai_model', 'gpt-4o-mini' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'rotate_image' ) );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, 'openai' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_MODEL, 'gpt-4o-mini' );
 
 		// Simulate a tool call from the LLM requesting rotate_image.
 		$tool_call = array(
@@ -86,30 +90,31 @@ class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 			5 // max_iterations.
 		);
 
-		// The result should be a WP_Error (not normalized yet by execute_tool_call_internal).
-		$this->assertWPError( $result, 'Tool should return WP_Error for unauthenticated user' );
-		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+		// In the agentic loop, tool WP_Errors are converted into a message
+		// string so the LLM can react instead of receiving a broken flow.
+		$this->assertIsString( $result, 'Tool failure should surface as a message string in the agentic loop' );
+		$this->assertStringContainsString( 'rotate_image', $result );
+		$this->assertStringContainsString( 'authenticated', $result );
 
-		// Now test normalization.
+		// Now test normalization: only WP_Error instances are transformed;
+		// string results pass through unchanged.
 		$normalize_method = $reflection->getMethod( 'normalize_tool_result' );
 		$normalize_method->setAccessible( true );
 
 		$normalized = $normalize_method->invoke( $this->rest_controller, $result );
 
-		// After normalization, should be an array.
-		$this->assertIsArray( $normalized, 'Normalized result should be an array' );
-		$this->assertTrue( $normalized['error'], 'Error flag should be true' );
-		$this->assertEquals( 'wp_mcp_ai_forbidden', $normalized['code'] );
-		$this->assertStringContainsString( 'authenticated', $normalized['message'] );
+		// After normalization, the string should be unchanged.
+		$this->assertIsString( $normalized, 'Normalized string should remain a string' );
+		$this->assertSame( $result, $normalized, 'String results should pass through normalization unchanged' );
 
 		// Verify it can be JSON-encoded.
 		$json = wp_json_encode( $normalized );
 		$this->assertNotFalse( $json, 'Normalized error should be JSON-encodable' );
-		$this->assertStringContainsString( 'wp_mcp_ai_forbidden', $json );
+		$this->assertStringContainsString( 'authenticated', $json );
 
-		// Verify the JSON is valid.
+		// Verify the JSON is valid and round-trips the message string.
 		$decoded = json_decode( $json, true );
-		$this->assertIsArray( $decoded, 'JSON should decode back to array' );
+		$this->assertIsString( $decoded, 'JSON should decode back to the message string' );
 		$this->assertEquals( $normalized, $decoded, 'Round-trip should preserve data' );
 	}
 
