@@ -19,6 +19,7 @@ AI provider clients for the content-graph AI addon. Each client implements the n
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraphAi\Provider\ZaiClient` | `ZaiClient.php` | `CoreBridge::registerBuiltinProviders()` |
+| `NvoosContentGraphAi\Provider\GoogleMapsClient` | `GoogleMapsClient.php` | Tools wave (geocode/search-places port); dormant until then |
 
 ## Inputs / Outputs / Neighbors
 
