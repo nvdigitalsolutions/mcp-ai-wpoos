@@ -82,6 +82,11 @@ register_activation_hook(
 			\NvoosContentGraphAi\Security\CredentialStore::migrateAll();
 			update_option( \NvoosContentGraphAi\Security\CredentialStore::MIGRATION_FLAG, true, false );
 		}
+
+		// Thread storage schema (idempotent dbDelta) — Wave D1d.
+		if ( class_exists( 'NvoosContentGraphAi\Chat\ThreadManager' ) ) {
+			\NvoosContentGraphAi\Chat\ThreadManager::create_tables();
+		}
 	}
 );
 
