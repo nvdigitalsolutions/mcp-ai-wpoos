@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace NvoosContentGraphAi\Rest;
 
 use NvoosContentGraphAi\Chat\ChatResponseCache;
+use NvoosContentGraphAi\Chat\ChatTranscriptRecorder;
 use NvoosContentGraphAi\Chat\PromptOptimizer;
 use NvoosContentGraphAi\Chat\SseRateLimiter;
 use NvoosContentGraphAi\CoreBridge;
@@ -278,7 +279,8 @@ class ChatController {
 		}
 
 		// Non-streaming chat.
-		$result = $bridge->chat->handleChat(
+		$requestStart = \microtime( true );
+		$result       = $bridge->chat->handleChat(
 			$messages,
 			$assistantConfig,
 			$userId,
@@ -296,6 +298,22 @@ class ChatController {
 				array( 'status' => $normalized['data']['status'] ?? 500 )
 			);
 		}
+
+		// Record the chat transcript when storage is available (the base
+		// plugin's JetEngine CCT handler in monolith installs; a graceful
+		// no-op in standalone installs until transcript storage lands).
+		ChatTranscriptRecorder::record(
+			$assistantId,
+			$messages,
+			$options,
+			is_array( $response ) ? $response : array(),
+			$request,
+			$userId,
+			array(
+				'request_started_at'    => $requestStart,
+				'response_completed_at' => \microtime( true ),
+			)
+		);
 
 		// Store the result when the request is cache-eligible (no-op
 		// otherwise; `cache_metadata` is only attached on a store).

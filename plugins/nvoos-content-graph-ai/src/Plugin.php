@@ -73,6 +73,11 @@ final class Plugin {
 		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
 			\NvoosContentGraphAi\Chat\MessageAttachments::init();
 			\NvoosContentGraphAi\Chat\ResponseAttachments::init();
+
+			// Transcript retention sweep (cron + GDPR deletion endpoint).
+			// The base plugin owns the same cron hook and REST route in
+			// monolith installs — double registration would double-sweep.
+			\NvoosContentGraphAi\Chat\TranscriptRetention::init();
 		}
 
 		// Register the async chat continuation hook.
@@ -138,6 +143,10 @@ final class Plugin {
 				'ai_api_key_kimi'          => '',
 				'ai_api_key_baseten'       => '',
 				'ai_system_prompt'         => 'You are a helpful assistant for the NV oOS Content Graph on this WordPress site. Answer questions about the site content and its knowledge graph accurately and concisely. When tools for querying the graph are provided, use them to ground your answers in real data instead of guessing. Cite nodes, posts, or relationships when relevant. If you do not know something or the data is unavailable, say so plainly. Format answers with Markdown.',
+				'transcript_retention_days'       => 90,
+				'transcript_retention_enabled'    => true,
+				'transcript_guest_retention_days' => 7,
+				'transcript_per_user_max'         => 500,
 			)
 		);
 	}
