@@ -244,64 +244,10 @@ if ( ! function_exists( 'wp_mcp_ai_measurement_ensure_capabilities' ) ) {
 	}
 }
 
-// Wire bootstrap into WordPress lifecycle. `plugins_loaded` at a late priority
-// ensures that other plugins (and the Pro addon) have had a chance to register
-// their own measurement hooks before the registries freeze.
-if ( function_exists( 'add_action' ) ) {
-	add_action( 'plugins_loaded', 'wp_mcp_ai_measurement_bootstrap', 50 );
-	add_action( 'admin_init', 'wp_mcp_ai_measurement_ensure_capabilities', 5 );
-	add_action( 'wp_mcp_ai_register_verifiers', 'wp_mcp_ai_register_reference_verifiers', 20 );
-	add_action( 'wp_mcp_ai_register_reward_functions', 'wp_mcp_ai_register_reference_rewards', 20 );
-
-	// Register stock metric definitions at priority 20 so site
-	// overrides (priority 10) can pre-empt by id. The stock metric
-	// registrar is NOT ported — the hook is skipped in standalone mode.
-	if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Stock_Metrics' ) ) {
-		add_action(
-			'wp_mcp_ai_register_metrics',
-			array( 'WP_MCP_AI_Stock_Metrics', 'register' ),
-			20
-		);
-	}
-
-	// Register chat-turn stock metric definitions at priority 20 as well.
-	add_action(
-		'wp_mcp_ai_register_metrics',
-		array( 'NvoosContentGraphAiPlatform\Measurement\ChatTurnMetrics', 'register' ),
-		20
-	);
-
-	// Register SSE stock metric definitions at priority 20 as well.
-	add_action(
-		'wp_mcp_ai_register_metrics',
-		array( 'NvoosContentGraphAiPlatform\Measurement\SseMetrics', 'register' ),
-		20
-	);
-
-	// Mount the read-only measurement dashboard admin page. The dashboard
-	// class is NOT ported — base reference, skipped in standalone mode
-	// (the platform's own MeasurementAdmin covers admin surfaces there).
-	if ( is_admin() && defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Admin_Measurement_Dashboard' ) ) {
-		add_action(
-			'plugins_loaded',
-			static function () {
-				new \WP_MCP_AI_Admin_Measurement_Dashboard();
-			},
-			55
-		);
-	}
-
-	// Belt-and-braces retention-cron scheduling. The primary
-	// scheduling path is the activation hook in
-	// `includes/bootstrap/activation.php`, but upgrades via
-	// `wp plugin update` or `composer update` skip the activation
-	// hook. Running this on `init` at a late priority ensures the
-	// cron is scheduled without requiring a reactivation.
-	add_action(
-		'init',
-		static function () {
-			\NvoosContentGraphAiPlatform\Measurement\MetricRetention::schedule();
-		},
-		50
-	);
-}
+// Runtime wiring lives in MeasurementService::register()'s standalone
+// branch (mirroring the base bootstrap file's lifecycle hooks). Keeping the
+// wiring there — instead of at file scope — means the service re-registers
+// the hooks on every register() call, which stays idempotent in production
+// (add_action dedupes by tuple) and robust under test-framework hook-global
+// resets. The function surface above is loaded by the same service via
+// require_once before the hooks are added.

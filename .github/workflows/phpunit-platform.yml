@@ -30,6 +30,11 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Each matrix job gets its own database. Without this, the parallel
+    # monolith and standalone jobs share wordpress_test and their
+    # per-test table/option resets interfere (flaky failures in the
+    # DB-stateful measurement tests).
+    timeout-minutes: 30
 
     strategy:
       fail-fast: false
@@ -53,7 +58,7 @@ jobs:
           --health-retries=5
 
     env:
-      WP_DB_NAME: wordpress_test
+      WP_DB_NAME: wordpress_test_${{ matrix.mode }}
       WP_DB_USER: wordpress
       WP_DB_PASSWORD: wordpress
       WP_DB_HOST: 127.0.0.1
@@ -76,6 +81,9 @@ jobs:
           php-version: '8.2'
           extensions: mbstring, mysqli
           tools: composer
+
+      - name: Create test database (per matrix)
+        run: docker exec ${{ job.services.mysql.id }} mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS wordpress_test_${{ matrix.mode }}"
 
       - name: Get Composer cache directory
         id: composer-cache
