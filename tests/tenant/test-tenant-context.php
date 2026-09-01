@@ -46,7 +46,11 @@ class Test_Tenant_Context extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Invalid header format should return error.
+	 * Invalid header format should fail closed.
+	 *
+	 * The resolve() method falls through all resolution sources before
+	 * failing closed, so the surfaced error code is tenant_not_resolved
+	 * rather than the intermediate header-source code.
 	 */
 	public function test_resolve_from_invalid_header_returns_error() {
 		$_SERVER['HTTP_X_WP_MCP_AI_TENANT'] = 'invalid-format';
@@ -56,7 +60,7 @@ class Test_Tenant_Context extends WP_UnitTestCase {
 		unset( $_SERVER['HTTP_X_WP_MCP_AI_TENANT'] );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'tenant_invalid_header', $result->get_error_code() );
+		$this->assertEquals( 'tenant_not_resolved', $result->get_error_code() );
 	}
 
 	/**
