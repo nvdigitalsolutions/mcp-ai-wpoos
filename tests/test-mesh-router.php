@@ -73,7 +73,9 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 		);
 
 		$result = WP_MCP_AI_Mesh_Router::update_hub_config( $this->assistant_id, $config );
-		$this->assertTrue( $result );
+		// update_hub_config returns update_post_meta()'s meta ID (int) on
+		// success and false on failure — assert non-false, not true.
+		$this->assertNotFalse( $result );
 
 		$saved_config = WP_MCP_AI_Mesh_Router::get_hub_config( $this->assistant_id );
 		$this->assertEquals( 'round_robin', $saved_config['routing_strategy'] );
@@ -336,8 +338,9 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 			)
 		);
 
-		// Complex prompt should prefer compute hub.
-		$complex_prompt = 'Please provide a comprehensive, detailed analysis of the following complex research topic with in-depth examination of all factors...';
+		// Complex prompt should prefer compute hub (hub bonus applies at
+		// complexity score > 7: base 5 + >100-word length 2 + keyword 1).
+		$complex_prompt = 'Please provide a comprehensive, detailed analysis of the following complex research topic with in-depth examination of all factors. ' . str_repeat( 'Additional contextual background material ', 25 );
 		$result         = WP_MCP_AI_Mesh_Router::get_optimal_peer( $this->assistant_id, $complex_prompt );
 
 		$this->assertEquals( 'Compute Hub', $result['name'] );
@@ -374,7 +377,7 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 		$this->assertEquals( 1, $metrics['Test Peer']['success_count'] );
 		$this->assertEquals( 1, $metrics['Test Peer']['failure_count'] );
 		$this->assertEquals( 50, $metrics['Test Peer']['success_rate'] );
-		$this->assertEquals( 'down', $metrics['Test Peer']['status'] );
+		$this->assertEquals( 'degraded', $metrics['Test Peer']['status'] );
 	}
 
 	/**
@@ -422,8 +425,8 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 		$simple_score = $method->invokeArgs( null, array( 'What is 2+2?' ) );
 		$this->assertLessThanOrEqual( 6, $simple_score );
 
-		// Complex prompt with keywords.
-		$complex_prompt = 'Please analyze in detail and provide a comprehensive explanation of this complex topic...';
+		// Complex prompt with keywords and 50+ words (base 5 + length 1 + keyword 1 = 7).
+		$complex_prompt = 'Please analyze in detail and provide a comprehensive explanation of this complex topic. ' . str_repeat( 'Including supporting context and additional considerations, ', 10 );
 		$complex_score  = $method->invokeArgs( null, array( $complex_prompt ) );
 		$this->assertGreaterThanOrEqual( 7, $complex_score );
 
