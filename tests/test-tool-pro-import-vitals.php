@@ -1,14 +1,14 @@
 <?php
-/**
- * Tests for WP_MCP_AI_Tool_Import_Vitals.
- *
- * import_vitals is HIPAA-relevant.  Unlike most tools, on validation failure
- * it returns a plain PHP array (not WP_Error) with 'success' => false.
- * Tests cover: missing member_id, member_id not found (wrong post type),
- * missing data field, and a dry-run happy path with CSV format.
- *
- * @package WP_MCP_AI
- */
+	/**
+	 * Tests for WP_MCP_AI_Tool_Import_Vitals.
+	 *
+	 * The import_vitals tool is HIPAA-relevant. Validation failures return the
+	 * canonical WP_Error envelope per the tool return-format rules.
+	 * Tests cover: missing member_id, member_id not found (wrong post type),
+	 * missing data field, and a dry-run happy path with CSV format.
+	 *
+	 * @package WP_MCP_AI
+	 */
 
 /**
  * Test case for the import_vitals pro tool.
@@ -44,7 +44,7 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 		}
 		WP_MCP_AI_Health_Wellness_CPT::register_post_types();
 
-		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/class-wp-mcp-ai-tool-import-vitals.php';
+		$tool_file = dirname( __DIR__ ) . '/addons/pro/includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-import-vitals.php';
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Import_Vitals' ) && file_exists( $tool_file ) ) {
 			require_once $tool_file;
 		}
@@ -82,9 +82,9 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that member_id=0 returns failure array (not WP_Error).
+	 * Test that member_id=0 returns a canonical WP_Error.
 	 */
-	public function test_missing_member_id_returns_failure_array() {
+	public function test_missing_member_id_returns_wp_error() {
 		$result = $this->tool->execute(
 			array(
 				'member_id' => 0,
@@ -93,9 +93,9 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertStringContainsString( 'member_id', $result['error'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_import_vitals_missing_member', $result->get_error_code() );
+		$this->assertStringContainsString( 'member_id', $result->get_error_message() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -103,9 +103,9 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that a member_id that does not exist returns a failure array.
+	 * Test that a member_id that does not exist returns a canonical WP_Error.
 	 */
-	public function test_member_not_found_returns_failure_array() {
+	public function test_member_not_found_returns_wp_error() {
 		$result = $this->tool->execute(
 			array(
 				'member_id' => 999999,
@@ -114,8 +114,8 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_import_vitals_member_not_found', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -123,9 +123,9 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that a post ID of the wrong type returns a failure array.
+	 * Test that a post ID of the wrong type returns a canonical WP_Error.
 	 */
-	public function test_wrong_post_type_returns_failure_array() {
+	public function test_wrong_post_type_returns_wp_error() {
 		$post_id = $this->factory->post->create( array( 'post_type' => 'post' ) );
 
 		$result = $this->tool->execute(
@@ -136,8 +136,8 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_import_vitals_member_not_found', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------
@@ -145,9 +145,9 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Test that an empty data field returns a failure array.
+	 * Test that an empty data field returns a canonical WP_Error.
 	 */
-	public function test_missing_data_field_returns_failure_array() {
+	public function test_missing_data_field_returns_wp_error() {
 		$member_id = $this->factory->post->create( array( 'post_type' => 'mcp_ai_member' ) );
 
 		$result = $this->tool->execute(
@@ -158,8 +158,8 @@ class Test_Tool_Pro_Import_Vitals extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_import_vitals_empty_data', $result->get_error_code() );
 	}
 
 	// -----------------------------------------------------------------------
