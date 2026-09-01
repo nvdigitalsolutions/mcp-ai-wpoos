@@ -2278,8 +2278,16 @@ class WP_MCP_AI_Tool_Token_Limits {
 			return 0;
 		}
 
+		// Drop invalid entries BEFORE coercion — absint() flips negatives to
+		// positives (absint(-1) === 1), which would phantom-cache a tier
+		// for a nonexistent user ID.
+		$user_ids = array_filter(
+			$user_ids,
+			static function ( $id ) {
+				return is_numeric( $id ) && (int) $id > 0;
+			}
+		);
 		$user_ids = array_map( 'absint', $user_ids );
-		$user_ids = array_filter( $user_ids );
 
 		if ( empty( $user_ids ) ) {
 			return 0;

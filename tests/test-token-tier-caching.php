@@ -263,9 +263,10 @@ class WP_MCP_AI_Token_Tier_Caching_Test extends WP_UnitTestCase {
 	public function test_filters_work_with_caching() {
 		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
-		// Add filter to override tier.
+		// Add filter to override tier. Subscribers hit the role-based path,
+		// so the role-tier filter is the seam that applies.
 		add_filter(
-			'wp_mcp_ai_default_user_tier',
+			'wp_mcp_ai_user_tier_by_role',
 			function ( $tier, $uid ) use ( $user_id ) {
 				if ( $uid === $user_id ) {
 					return 'enterprise';
@@ -289,6 +290,10 @@ class WP_MCP_AI_Token_Tier_Caching_Test extends WP_UnitTestCase {
 	 * Test bulk tier update invalidates cache for all users.
 	 */
 	public function test_bulk_update_invalidates_cache() {
+		// bulk_set_user_tiers requires manage_options.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
 		// Create users and cache their tiers.
 		$user1_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$user2_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
