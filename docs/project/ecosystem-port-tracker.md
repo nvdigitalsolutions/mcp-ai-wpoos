@@ -27,7 +27,8 @@ Locked constraints: **D-NOBASE** (zero changes to `mcp-ai-wpoos`), **D-NOCORE** 
 |---|---|---|---|
 | D1a | Prompt optimizer (cache-hit ordering, cache key, prompt split) | ✅ | `src/Chat/PromptOptimizer.php`; wired into `Rest\ChatController` via `cache_system_prompt` request arg; 10 characterization tests |
 | D1b | Chat response cache + SSE rate limiter + semantic cache | ✅ | `src/Chat/{ChatResponseCache,SseRateLimiter,SemanticCache}.php`; wired into `Rest\ChatController` (cache lookup/store on the non-streaming path, 429 + register/release on the streaming path); 20 characterization tests; SemanticCache ships dormant (matches base — no call sites) |
-| D1 | Chat runtime core (clients, router, selector, caches, summarizer, RAG bridge, threads, transcripts, SSE, attachments, quick actions) | 🟡 | D1a/D1b done; remaining classes next |
+| D1c | Conversation summarizer (BME context strategy) | ✅ | `src/Chat/ConversationSummarizer.php` (decoupled client contract) + `src/Chat/OrchestratorCompletionClient.php` (nvoos/core adapter); 12 characterization tests; wiring into the chat flow follows with the full BME strategy port |
+| D1 | Chat runtime core (clients, router, selector, caches, summarizer, RAG bridge, threads, transcripts, SSE, attachments, quick actions) | 🟡 | D1a–D1c done; remaining classes next |
 | D2 | Providers beyond the 13 (Zai, Google Maps, RabbitMQ, Stdio, Realtime ×3) | 🔴 | SaaS drivers → Pro (gap §4.2/8.3) |
 | D3 | Model management + analytics/token tracking | 🔴 | |
 | D4 | Security stack (10 classes + circuit breaker) | 🔴 | |
