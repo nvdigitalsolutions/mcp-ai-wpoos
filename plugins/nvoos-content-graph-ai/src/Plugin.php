@@ -181,6 +181,13 @@ final class Plugin {
 				}
 			}
 		);
+
+		// Frontend chat widget (Wave D-UI-1b) — registered in both install
+		// modes; the tag ([nvoos_content_graph_chat]) is ecosystem-specific
+		// and never collides with the base's [mcp_ai_chat].
+		if ( class_exists( 'NvoosContentGraphAi\Frontend\ChatShortcode' ) ) {
+			( new \NvoosContentGraphAi\Frontend\ChatShortcode() )->register();
+		}
 	}
 
 	/**
