@@ -35,12 +35,13 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that system_prompt in options is added as a system field in payload.
+	 * Test that system_prompt in options is prepended as a system role message.
 	 *
-	 * Cloudflare Workers AI uses a separate 'system' field for system prompts
-	 * rather than system role messages (similar to Ollama).
+	 * Cloudflare Workers AI follows the OpenAI chat completions format: the
+	 * system prompt is a system-role entry in the messages array, not a
+	 * separate "system" field (that is the Ollama format).
 	 */
-	public function test_system_prompt_added_as_system_field() {
+	public function test_system_prompt_added_as_system_message() {
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -76,30 +77,26 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 		// Now call build_payload with the updated messages.
 		$payload = $method->invoke( $this->client, $messages, $options );
 
-		// Verify the payload has a 'system' field with the system_prompt content.
-		$this->assertArrayHasKey( 'system', $payload );
-		$this->assertStringContainsString( 'disaster relief assistant', $payload['system'] );
+		// No separate "system" field in the OpenAI-compatible format.
+		$this->assertArrayNotHasKey( 'system', $payload );
 
-		// Verify messages array only contains non-system messages.
+		// The system prompt is the first message, with role system.
 		$this->assertArrayHasKey( 'messages', $payload );
 		$this->assertIsArray( $payload['messages'] );
-		$this->assertCount( 1, $payload['messages'] );
-		$this->assertEquals( 'user', $payload['messages'][0]['role'] );
-		$this->assertEquals( 'Hello, what can you do?', $payload['messages'][0]['content'] );
-
-		// Verify no system role messages in the messages array.
-		foreach ( $payload['messages'] as $msg ) {
-			$this->assertNotEquals( 'system', $msg['role'], 'Messages array should not contain system role messages' );
-		}
+		$this->assertCount( 2, $payload['messages'] );
+		$this->assertEquals( 'system', $payload['messages'][0]['role'] );
+		$this->assertStringContainsString( 'disaster relief assistant', $payload['messages'][0]['content'] );
+		$this->assertEquals( 'user', $payload['messages'][1]['role'] );
+		$this->assertEquals( 'Hello, what can you do?', $payload['messages'][1]['content'] );
 	}
 
 	/**
-	 * Test that system messages are extracted and converted to system field.
+	 * Test that system role messages are preserved in the messages array.
 	 *
-	 * Verifies that system role messages are extracted from the messages array
-	 * and placed in the 'system' field of the payload.
+	 * Verifies system messages stay as system-role entries rather than being
+	 * extracted into a separate field.
 	 */
-	public function test_system_messages_extracted_to_system_field() {
+	public function test_system_messages_preserved_in_messages_array() {
 		$messages = array(
 			array(
 				'role'    => 'system',
@@ -118,16 +115,14 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 
 		$payload = $method->invoke( $this->client, $messages, array() );
 
-		// Verify system field is present with system message content.
-		$this->assertArrayHasKey( 'system', $payload );
-		$this->assertStringContainsString( 'YAAD-RELIEF', $payload['system'] );
-		$this->assertStringContainsString( 'disaster relief', $payload['system'] );
-
-		// Verify messages array only contains non-system messages.
+		// No separate system field — the system message stays in the array.
+		$this->assertArrayNotHasKey( 'system', $payload );
 		$this->assertArrayHasKey( 'messages', $payload );
-		$this->assertCount( 1, $payload['messages'] );
-		$this->assertEquals( 'user', $payload['messages'][0]['role'] );
-		$this->assertStringContainsString( 'hurricane', $payload['messages'][0]['content'] );
+		$this->assertCount( 2, $payload['messages'] );
+		$this->assertEquals( 'system', $payload['messages'][0]['role'] );
+		$this->assertStringContainsString( 'YAAD-RELIEF', $payload['messages'][0]['content'] );
+		$this->assertEquals( 'user', $payload['messages'][1]['role'] );
+		$this->assertStringContainsString( 'hurricane', $payload['messages'][1]['content'] );
 	}
 
 	/**
@@ -197,12 +192,13 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that multiple system messages are combined into a single system field.
+	 * Test that multiple system messages are preserved in order.
 	 *
-	 * This handles cases where professional layer prompts are added as additional
-	 * system messages, ensuring they're all combined correctly.
+	 * This handles cases where professional layer prompts are added as
+	 * additional system messages, ensuring they all remain in the messages
+	 * array ahead of the user turn.
 	 */
-	public function test_multiple_system_messages_combined() {
+	public function test_multiple_system_messages_preserved() {
 		$messages = array(
 			array(
 				'role'    => 'system',
@@ -225,23 +221,23 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 
 		$payload = $method->invoke( $this->client, $messages, array() );
 
-		// Verify system field contains both system messages combined.
-		$this->assertArrayHasKey( 'system', $payload );
-		$this->assertStringContainsString( 'YAAD-RELIEF', $payload['system'] );
-		$this->assertStringContainsString( 'Professional Role', $payload['system'] );
-		$this->assertStringContainsString( 'hurricane preparedness', $payload['system'] );
-
-		// Verify messages array only contains the user message.
+		// Both system messages stay in the array, in order, before the user.
+		$this->assertArrayNotHasKey( 'system', $payload );
 		$this->assertArrayHasKey( 'messages', $payload );
-		$this->assertCount( 1, $payload['messages'] );
-		$this->assertEquals( 'user', $payload['messages'][0]['role'] );
+		$this->assertCount( 3, $payload['messages'] );
+		$this->assertEquals( 'system', $payload['messages'][0]['role'] );
+		$this->assertStringContainsString( 'YAAD-RELIEF', $payload['messages'][0]['content'] );
+		$this->assertEquals( 'system', $payload['messages'][1]['role'] );
+		$this->assertStringContainsString( 'Professional Role', $payload['messages'][1]['content'] );
+		$this->assertStringContainsString( 'hurricane preparedness', $payload['messages'][1]['content'] );
+		$this->assertEquals( 'user', $payload['messages'][2]['role'] );
 	}
 
 	/**
-	 * Test that payload fields are ordered correctly: system, messages, tools.
+	 * Test that payload leads with messages and system entries come first.
 	 *
-	 * Cloudflare Workers AI processes fields in order, so system must come first
-	 * to ensure the system instructions are applied before messages and tools.
+	 * Cloudflare Workers AI follows the OpenAI format, so the messages field
+	 * is the first payload key and system-role messages lead the array.
 	 */
 	public function test_payload_field_ordering() {
 		$messages = array(
@@ -284,20 +280,17 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 		// Get the keys in the order they appear in the payload.
 		$keys = array_keys( $payload );
 
-		// Verify system comes BEFORE messages.
-		$system_index   = array_search( 'system', $keys, true );
-		$messages_index = array_search( 'messages', $keys, true );
-		$this->assertLessThan( $messages_index, $system_index, 'System field should come before messages field' );
+		// The messages field must be the first payload key.
+		$this->assertEquals( 'messages', $keys[0], 'First field should be messages' );
 
-		// If tools are present, verify they come AFTER system and messages.
+		// The system message must lead the messages array.
+		$this->assertEquals( 'system', $payload['messages'][0]['role'] );
+		$this->assertEquals( 'user', $payload['messages'][1]['role'] );
+
+		// If tools are present, verify they come after messages.
 		if ( isset( $payload['tools'] ) ) {
 			$tools_index = array_search( 'tools', $keys, true );
-			$this->assertGreaterThan( $system_index, $tools_index, 'Tools field should come after system field' );
-			$this->assertGreaterThan( $messages_index, $tools_index, 'Tools field should come after messages field' );
+			$this->assertGreaterThan( 0, $tools_index, 'Tools field should come after messages' );
 		}
-
-		// Verify the expected order: system, messages, then optionally temperature, tools.
-		$this->assertEquals( 'system', $keys[0], 'First field should be system' );
-		$this->assertEquals( 'messages', $keys[1], 'Second field should be messages' );
 	}
 }
