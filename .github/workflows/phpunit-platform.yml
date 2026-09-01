@@ -83,7 +83,10 @@ jobs:
           tools: composer
 
       - name: Create test database (per matrix)
-        run: docker exec ${{ job.services.mysql.id }} mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS wordpress_test_${{ matrix.mode }}"
+        # The mysql image only grants the wordpress user privileges on its
+        # MYSQL_DATABASE (wordpress_test) — grant them explicitly for the
+        # per-mode database.
+        run: docker exec ${{ job.services.mysql.id }} mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS wordpress_test_${{ matrix.mode }}; GRANT ALL PRIVILEGES ON wordpress_test_${{ matrix.mode }}.* TO 'wordpress'@'%'; FLUSH PRIVILEGES;"
 
       - name: Get Composer cache directory
         id: composer-cache
