@@ -16,6 +16,30 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-heal
  */
 class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 	/**
+	 * Enable logging so the tool's log events flow through the
+	 * wp_mcp_ai_log_entry filter this suite observes.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'enable_logging' => true,
+			)
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+	}
+
+	/**
+	 * Reset settings state between tests.
+	 */
+	public function tearDown(): void {
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+		parent::tearDown();
+	}
+
+	/**
 	 * Ensure the tool enforces the Site Health capability requirement.
 	 */
 	public function test_execute_requires_site_health_capability() {
