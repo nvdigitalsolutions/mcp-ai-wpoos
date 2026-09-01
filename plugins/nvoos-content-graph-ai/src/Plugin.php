@@ -188,6 +188,12 @@ final class Plugin {
 		if ( class_exists( 'NvoosContentGraphAi\Frontend\ChatShortcode' ) ) {
 			( new \NvoosContentGraphAi\Frontend\ChatShortcode() )->register();
 		}
+
+		// Chat-family blocks (Wave D-UI-2) — ecosystem block names never
+		// collide with the base's mcp-ai-wpoos/* blocks.
+		if ( class_exists( 'NvoosContentGraphAi\Blocks\Blocks' ) ) {
+			( new \NvoosContentGraphAi\Blocks\Blocks() )->register();
+		}
 	}
 
 	/**
