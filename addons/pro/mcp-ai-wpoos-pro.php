@@ -662,6 +662,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_List_Gmail_Connections'    => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-list-gmail-connections.php',
 			'WP_MCP_AI_Pro_Tool_Modify_Gmail_Message'      => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-modify-gmail-message.php',
 			'WP_MCP_AI_Pro_Tool_Search_Drive'              => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-search-drive.php',
+			'WP_MCP_AI_Pro_Tool_Get_Drive_File'            => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-drive-file.php',
+			'WP_MCP_AI_Pro_Tool_List_Drive_Connections'    => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-list-drive-connections.php',
 			'WP_MCP_AI_Pro_Tool_Send_Mailjet_Email'        => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-mailjet-email.php',
 			'WP_MCP_AI_Pro_Tool_Send_Brevo_Email'          => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-brevo-email.php',
 			'WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts'     => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-manage-brevo-contacts.php',
@@ -2136,6 +2138,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'check_google_calendar_availability' => 'external-tools',
 			'quick_add_google_calendar_event'    => 'external-tools',
 			'search_drive'                       => 'external-tools',
+			'get_drive_file'                     => 'external-tools',
+			'list_drive_connections'             => 'external-tools',
 			'google_analytics_report'            => 'external-tools',
 			// Business and accounting tools - Require external API credentials.
 			'quickbooks_report'                  => 'external-tools',
