@@ -83,6 +83,11 @@ final class Plugin {
 			// hooks in monolith installs — registering here too would
 			// publish two competing addons.
 			\NvoosContentGraphAi\Chat\ChatKitIntegration::init();
+
+			// Model catalog migration — the base plugin owns the same init
+			// routine in monolith installs; double-running would double-write
+			// the bookkeeping option.
+			\add_action( 'init', array( \NvoosContentGraphAi\Model\ModelCatalogMigration::class, 'run_from_catalog' ), 20 );
 		}
 
 		// Register the async chat continuation hook.
