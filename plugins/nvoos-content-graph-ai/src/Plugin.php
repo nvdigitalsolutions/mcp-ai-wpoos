@@ -56,11 +56,16 @@ final class Plugin {
 					( new \NvoosContentGraphAi\Rest\ChatController() )->registerRoutes();
 				}
 
-				// Assistant directory (mcp-ai/v1) — the base plugin owns the
-				// same routes in monolith installs; double registration
-				// would conflict.
-				if ( ! defined( 'WP_MCP_AI_PATH' ) && class_exists( 'NvoosContentGraphAi\Rest\AssistantController' ) ) {
-					( new \NvoosContentGraphAi\Rest\AssistantController() )->registerRoutes();
+				// Assistant directory + tools listing (mcp-ai/v1) — the base
+				// plugin owns the same routes in monolith installs; double
+				// registration would conflict.
+				if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+					if ( class_exists( 'NvoosContentGraphAi\Rest\AssistantController' ) ) {
+						( new \NvoosContentGraphAi\Rest\AssistantController() )->registerRoutes();
+					}
+					if ( class_exists( 'NvoosContentGraphAi\Rest\ToolsController' ) ) {
+						( new \NvoosContentGraphAi\Rest\ToolsController() )->registerRoutes();
+					}
 				}
 			}
 		);
