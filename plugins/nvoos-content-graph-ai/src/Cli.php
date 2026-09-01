@@ -33,6 +33,16 @@ final class Cli {
 
 		\WP_CLI::add_command( 'nvoos-cg-ai migrate-keys', array( self::class, 'cmdMigrateKeys' ) );
 		\WP_CLI::add_command( 'nvoos-cg-ai key-status', array( self::class, 'cmdKeyStatus' ) );
+
+		// Ecosystem surface (Wave D6): status / tools / providers / settings
+		// / graph — data logic lives in the command classes; these wrappers
+		// only register the callables.
+		\WP_CLI::add_command( 'nvoos-cg-ai status', array( \NvoosContentGraphAi\Cli\StatusCommand::class, 'run' ) );
+		\WP_CLI::add_command( 'nvoos-cg-ai tools list', array( \NvoosContentGraphAi\Cli\ToolsCommand::class, 'run' ) );
+		\WP_CLI::add_command( 'nvoos-cg-ai providers list', array( \NvoosContentGraphAi\Cli\ProvidersCommand::class, 'run' ) );
+		\WP_CLI::add_command( 'nvoos-cg-ai settings list', array( \NvoosContentGraphAi\Cli\SettingsCommand::class, 'run_list' ) );
+		\WP_CLI::add_command( 'nvoos-cg-ai settings get', array( \NvoosContentGraphAi\Cli\SettingsCommand::class, 'run_get' ) );
+		\WP_CLI::add_command( 'nvoos-cg-ai graph stats', array( \NvoosContentGraphAi\Cli\GraphCommand::class, 'run' ) );
 	}
 
 	/**
