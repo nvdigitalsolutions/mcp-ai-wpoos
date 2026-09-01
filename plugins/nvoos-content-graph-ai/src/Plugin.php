@@ -67,6 +67,14 @@ final class Plugin {
 
 		$bridge->memory->register();
 
+		// Attachment lifecycle cleanup + assistant response-file persistence.
+		// Standalone only — the base plugin owns these hooks in monolith
+		// installs; registering here too would double-process file deletions.
+		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+			\NvoosContentGraphAi\Chat\MessageAttachments::init();
+			\NvoosContentGraphAi\Chat\ResponseAttachments::init();
+		}
+
 		// Register the async chat continuation hook.
 		add_action(
 			'nvoos_content_graph_ai/continue_chat',
