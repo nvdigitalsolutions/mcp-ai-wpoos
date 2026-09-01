@@ -25,6 +25,11 @@ class Test_Usage_Tracker extends \WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// In monolith runs the base plugin's EnhancedTokenTracking also hooks
+		// this action and writes to its DB table (which this suite never
+		// creates) — detach it so recordings stay deterministic.
+		\remove_all_actions( 'wp_mcp_ai_after_usage_recorded' );
+
 		\delete_option( 'nvoos_content_graph_settings' );
 		\delete_option( 'wp_mcp_ai_settings' );
 	}

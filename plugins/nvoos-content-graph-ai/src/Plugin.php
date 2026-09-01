@@ -98,6 +98,13 @@ final class Plugin {
 			// Usage tracker user-deletion hooks — the base plugin owns the
 			// same hooks in monolith installs.
 			\NvoosContentGraphAi\Analytics\UsageTracker::init();
+
+			// Token tracking database + enhanced tracking + optimizer — the
+			// base plugin owns the same hooks/schema in monolith installs;
+			// double registration would double-record.
+			\NvoosContentGraphAi\Analytics\TokenTrackingDatabase::init();
+			\NvoosContentGraphAi\Analytics\EnhancedTokenTracking::init();
+			\NvoosContentGraphAi\Analytics\TokenDbOptimizer::init();
 		}
 
 		// Register the async chat continuation hook.
