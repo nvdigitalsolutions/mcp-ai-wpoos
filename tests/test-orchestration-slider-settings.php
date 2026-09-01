@@ -41,8 +41,11 @@ class WP_MCP_AI_Orchestration_Slider_Settings_Test extends WP_UnitTestCase {
 			'prediction_safety_buffer'        => '15',
 		);
 
-		// Sanitize the input.
-		$sanitized = $section->sanitize( $input );
+		// Sanitize the input for the thresholds view, which owns the sliders.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Hidden form field routing the section sanitizer.
+		$_POST['view'] = 'thresholds';
+		$sanitized      = $section->sanitize( $input );
+		unset( $_POST['view'] );
 
 		// Verify all slider values are present and correctly converted to integers.
 		$this->assertArrayHasKey( 'memory_warning_threshold', $sanitized );
@@ -66,19 +69,22 @@ class WP_MCP_AI_Orchestration_Slider_Settings_Test extends WP_UnitTestCase {
 
 		// Try to submit values outside the allowed range.
 		$input = array(
-			'memory_warning_threshold'  => '200', // Max is 95.
-			'memory_critical_threshold' => '10',  // Min is 75.
-			'low_tier_max_tokens'       => '100', // Min is 500.
-			'high_tier_max_tokens'      => '50000', // Max is 32000.
+			'memory_warning_threshold'  => '200',   // Max is 95.
+			'memory_critical_threshold' => '10',    // Min is 75.
+			'low_tier_max_tokens'       => '100',   // Min is 500.
+			'high_tier_max_tokens'      => '200000', // Max is 128000.
 		);
 
-		$sanitized = $section->sanitize( $input );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Hidden form field routing the section sanitizer.
+		$_POST['view'] = 'thresholds';
+		$sanitized      = $section->sanitize( $input );
+		unset( $_POST['view'] );
 
 		// Values should be clamped to min/max.
 		$this->assertSame( 95, $sanitized['memory_warning_threshold'], 'Value should be clamped to max' );
 		$this->assertSame( 75, $sanitized['memory_critical_threshold'], 'Value should be clamped to min' );
 		$this->assertSame( 500, $sanitized['low_tier_max_tokens'], 'Value should be clamped to min' );
-		$this->assertSame( 32000, $sanitized['high_tier_max_tokens'], 'Value should be clamped to max' );
+		$this->assertSame( 128000, $sanitized['high_tier_max_tokens'], 'Value should be clamped to max' );
 	}
 
 	/**
@@ -127,15 +133,22 @@ class WP_MCP_AI_Orchestration_Slider_Settings_Test extends WP_UnitTestCase {
 			'high_priority_budget'           => '95', // Slider.
 		);
 
-		$sanitized = $section->sanitize( $input );
+		// Sanitize the checkboxes via the settings view and the sliders via
+		// the thresholds view, mirroring how each form view submits.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Hidden form field routing the section sanitizer.
+		$_POST['view'] = 'settings';
+		$settings      = $section->sanitize( $input );
+		$_POST['view'] = 'thresholds';
+		$thresholds    = $section->sanitize( $input );
+		unset( $_POST['view'] );
 
 		// Checkboxes should be boolean.
-		$this->assertTrue( $sanitized['enable_budget_management'] );
-		$this->assertFalse( $sanitized['enable_predictive_optimization'] );
+		$this->assertTrue( $settings['enable_budget_management'] );
+		$this->assertFalse( $settings['enable_predictive_optimization'] );
 
 		// Sliders should be integers.
-		$this->assertSame( 75, $sanitized['memory_warning_threshold'] );
-		$this->assertSame( 95, $sanitized['high_priority_budget'] );
+		$this->assertSame( 75, $thresholds['memory_warning_threshold'] );
+		$this->assertSame( 95, $thresholds['high_priority_budget'] );
 	}
 
 	/**
@@ -150,9 +163,10 @@ class WP_MCP_AI_Orchestration_Slider_Settings_Test extends WP_UnitTestCase {
 			// HTML fields are not submitted in forms, they're display-only.
 		);
 
-		$sanitized = $section->sanitize( $input );
-
-		// HTML fields should not appear in sanitized output.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Hidden form field routing the section sanitizer.
+		$_POST['view'] = 'thresholds';
+		$sanitized      = $section->sanitize( $input );
+		unset( $_POST['view'] );
 		$this->assertArrayNotHasKey( 'orchestration_intro', $sanitized );
 		$this->assertArrayNotHasKey( 'health_status', $sanitized );
 		$this->assertArrayNotHasKey( 'configuration_presets', $sanitized );
