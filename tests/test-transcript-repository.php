@@ -43,13 +43,21 @@ class Test_Transcript_Repository extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that get_table_name returns empty string when JetEngine CCT is not available.
+	 * Test that get_table_name returns the constructed JetEngine CCT table
+	 * name whenever the CCT wrapper class is loaded.
+	 *
+	 * The wrapper ships with the plugin, so the name is always
+	 * constructible; actual database presence is gated by table_exists().
 	 */
 	public function test_get_table_name_without_jetengine() {
+		global $wpdb;
+
 		$table_name = $this->repository->get_table_name();
 
-		// Without JetEngine CCT class, should return empty string.
-		$this->assertEquals( '', $table_name );
+		// Without the JetEngine plugin the table is never created, but the
+		// wrapper class is still loaded so the name can be computed.
+		$this->assertEquals( $wpdb->prefix . 'jet_cct_ai_chat_transcripts', $table_name );
+		$this->assertFalse( $this->repository->table_exists() );
 	}
 
 	/**
