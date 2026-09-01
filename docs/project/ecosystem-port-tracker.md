@@ -72,7 +72,8 @@ Locked constraints: **D-NOBASE** (zero changes to `mcp-ai-wpoos`), **D-NOCORE** 
 
 | # | Subsystem | Status | Notes |
 |---|---|---|---|
-| D-UI-1 | Chat widget (chat.js) + guest token flow | 🔴 | |
+| D-UI-1a | Guest token flow | ✅ | `src/Chat/GuestToken.php` (constants/TTL caps/transient prefix, issuance with origin binding + `wp_mcp_ai_guest_token_issuance_origin`, validation with absolute-max lifetime, assistant scoping, `wp_mcp_ai_guest_token_allowed_origins` allowlist, sliding TTL, header/param extraction — byte-identical); TTL setting seam per mode (`guest_token_lifetime`); REST integration additive: `ChatCompatController::permissions_check` + the core `/ai/chat` permission accept valid assistant-scoped guest tokens; 12 characterization tests |
+| D-UI-1 | Chat widget (chat.js) + guest token flow | 🟡 | D-UI-1a done; remaining: the `[nvoos_content_graph_chat]` frontend widget (per `CHAT-SHORTCODE-PLAN.md` — lean vanilla JS speaking the same REST/SSE contract as SPA-v2) |
 | D-UI-2 | Chat bubble + blocks + shortcodes | 🔴 | |
 | D-UI-3 | Elementor chat-family widgets | 🔴 | |
 | D-UI-4 | Assistant builder/test/add pages | 🔴 | |

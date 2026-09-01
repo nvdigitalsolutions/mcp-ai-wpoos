@@ -187,11 +187,24 @@ class ChatCompatController {
 	/**
 	 * Permission check for the chat compat routes.
 	 *
+	 * Guest tokens (X-WP-MCP-AI-Guest) are honoured first — a valid token
+	 * scoped to the request's assistant grants access to public chat
+	 * surfaces (base permissions_check semantics). Otherwise the standard
+	 * `edit_posts` capability applies.
+	 *
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return bool|WP_Error
 	 */
 	public function permissions_check( \WP_REST_Request $request ) {
-		unset( $request );
+		// Guest token access (scoped to the request's assistant when given).
+		$guest_assistant = \NvoosContentGraphAi\Chat\GuestToken::validate_request_guest_access(
+			$request,
+			absint( $request->get_param( 'assistant_id' ) )
+		);
+
+		if ( false !== $guest_assistant ) {
+			return true;
+		}
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new \WP_Error(

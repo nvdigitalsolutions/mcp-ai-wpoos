@@ -42,7 +42,14 @@ class ChatController {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handleChat' ),
-				'permission_callback' => function (): bool {
+				// Guest tokens (X-WP-MCP-AI-Guest) grant access to the
+				// public chat widget; logged-in users keep edit_posts
+				// (D-UI-1a — additive).
+				'permission_callback' => function ( \WP_REST_Request $request ): bool {
+					if ( false !== \NvoosContentGraphAi\Chat\GuestToken::validate_request_guest_access( $request ) ) {
+						return true;
+					}
+
 					return current_user_can( 'edit_posts' );
 				},
 				'args'                => array(
