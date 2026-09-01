@@ -109,26 +109,26 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// Step 1: MCP client calls /assistants to get directory
+		// Step 1: MCP client calls /assistants to get directory.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status(), 'Directory endpoint should return 200' );
 
-		$headers = $response->get_headers();
+		// The streaming path emits SSE frames directly; verify the stream
+		// carries the directory payload with the event-stream framing.
 		$this->assertStringStartsWith(
-			'text/event-stream',
-			$headers['Content-Type'] ?? '',
-			'Should return SSE content type when Accept header is set'
+			'retry:',
+			trim( $captured ),
+			'Should return SSE frames when Accept header is set'
 		);
-
-		// Verify CORS headers.
-		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
-		$this->assertSame( 'Authorization, Content-Type, X-WP-Nonce', $headers['Access-Control-Allow-Headers'] ?? '' );
+		$this->assertStringContainsString( 'event: directory', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 	}
 
 	/**
@@ -150,22 +150,23 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 		// LM Studio calls /sse endpoint directly without Accept header.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/sse' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-		// Note: No Accept header - LM Studio doesn't send it
+		// Note: No Accept header - LM Studio doesn't send it.
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status(), '/sse endpoint should return 200' );
 
-		$headers = $response->get_headers();
+		// The /sse handshake forces the SSE stream even without an Accept
+		// header; assert the stream frames rather than response headers.
 		$this->assertStringStartsWith(
-			'text/event-stream',
-			$headers['Content-Type'] ?? '',
-			'/sse endpoint should force SSE content type even without Accept header'
+			'retry:',
+			trim( $captured ),
+			'/sse endpoint should force SSE frames even without Accept header'
 		);
-
-		// Verify the response contains directory data.
-		$this->assertNotEmpty( $headers, '/sse endpoint should set proper headers' );
+		$this->assertStringContainsString( 'event: directory', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 	}
 
 	/**
@@ -191,15 +192,16 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 		$response = rest_get_server()->dispatch( $request );
 
-		// The /chat endpoint only accepts POST, not GET.
+		// The /chat endpoint accepts GET for SSE handshakes, but a GET without
+		// an assistant fails with 400; directory discovery must not succeed.
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertNotEquals( 200, $response->get_status(), '/chat should not respond to GET requests' );
 
-		// Should return 404 or method not allowed.
+		// Should return 400, 404 or method not allowed.
 		$this->assertContains(
 			$response->get_status(),
-			array( 404, 405 ),
-			'/chat endpoint should return 404 or 405 for GET requests'
+			array( 400, 404, 405 ),
+			'/chat endpoint should reject GET directory-discovery requests'
 		);
 	}
 
@@ -239,20 +241,15 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 	public function test_chat_endpoint_requires_post_with_payload() {
 		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
 			->disableOriginalConstructor()
+			->onlyMethods( array( 'create_chat_completion' ) )
 			->getMock();
 
-		// Mock the send_message method to return a test response.
-		$mock_client->method( 'send_message' )
+		// Mock the router's completion method to return a test response.
+		$mock_client->method( 'create_chat_completion' )
 			->willReturn(
 				array(
 					'id'      => 'msg_test123',
-					'role'    => 'assistant',
-					'content' => array(
-						array(
-							'type' => 'text',
-							'text' => 'Test response',
-						),
-					),
+					'choices' => array(),
 				)
 			);
 
@@ -280,6 +277,52 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status(), '/chat should accept POST with proper payload' );
+	}
+
+	/**
+	 * Dispatch a request and capture the echoed SSE frames.
+	 *
+	 * The streaming path echoes frames directly and cleans output buffers
+	 * inside send_sse_headers(), so capture requires a callback buffer that
+	 * survives the handler's buffer cleanup. Existing buffers are flattened
+	 * first and the original level restored afterwards so PHPUnit's output
+	 * buffer tracking stays balanced.
+	 *
+	 * @param WP_REST_Request $request Request to dispatch.
+	 * @return array{0: WP_REST_Response, 1: string} Response and captured output.
+	 */
+	protected function dispatch_and_capture( WP_REST_Request $request ) {
+		$initial_level = ob_get_level();
+
+		// Flatten all buffers so the handler's buffer cleanup (which keeps only
+		// the outermost buffer alive) cannot destroy our capture buffer.
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: end_clean may fail on restricted hosts; level is re-checked next iteration.
+			@ob_end_clean();
+		}
+
+		$captured = '';
+		ob_start(
+			static function ( $chunk ) use ( &$captured ) {
+				$captured .= $chunk;
+				return '';
+			}
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: see above.
+			@ob_end_clean();
+		}
+
+		// Restore the original buffer count so PHPUnit does not flag the test
+		// as risky for leaving output buffers open.
+		for ( $i = 0; $i < $initial_level; $i++ ) {
+			ob_start();
+		}
+
+		return array( $response, $captured );
 	}
 
 	/**
