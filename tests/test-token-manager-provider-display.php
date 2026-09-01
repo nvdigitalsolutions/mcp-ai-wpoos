@@ -71,8 +71,8 @@ class WP_MCP_AI_Token_Manager_Provider_Display_Test extends WP_UnitTestCase {
 
 		// Test with invalid characters that should be sanitized.
 		$result = $method->invoke( $token_manager, 'provider!@#$%' );
-		$this->assertNotContains( '!', $result, 'Special characters should be removed' );
-		$this->assertNotContains( '@', $result, 'Special characters should be removed' );
+		$this->assertStringNotContainsString( '!', $result, 'Special characters should be removed' );
+		$this->assertStringNotContainsString( '@', $result, 'Special characters should be removed' );
 
 		// Test empty string.
 		$result = $method->invoke( $token_manager, '' );
