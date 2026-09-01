@@ -179,7 +179,7 @@ class ChatWidget extends \Elementor\Widget_Base {
 				'label'        => __( 'Show Cost', 'nvoos-content-graph-ai' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
 				'label_on'     => __( 'Yes', 'nvoos-content-graph-ai' ),
-				'label_off'    => __( 'No', 'nvoos-content-graph-01' ),
+				'label_off'    => __( 'No', 'nvoos-content-graph-ai' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
