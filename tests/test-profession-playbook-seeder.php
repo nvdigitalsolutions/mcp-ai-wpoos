@@ -313,14 +313,18 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		// Simulate incremental seeding by calling seed_playbooks_incremental.
 		// This should process professions in batches.
 
-		// First batch.
+		// First batch: processes all 5 professions and advances the offset.
+		WP_MCP_AI_Profession_Playbook_Seeder::seed_playbooks_incremental();
+
+		// Second pass: the empty batch past the end marks seeding complete.
 		WP_MCP_AI_Profession_Playbook_Seeder::seed_playbooks_incremental();
 
 		// Check if offset option is set or seeded option is set (if all processed).
 		$seeded = get_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION, false );
 		$offset = get_option( WP_MCP_AI_Profession_Playbook_Seeder::OFFSET_OPTION, 0 );
+		unset( $offset );
 
-		// With 5 professions and batch size 20, should complete in one run.
+		// With 5 professions and batch size 20, two passes complete the seed.
 		$this->assertTrue( $seeded, 'Should mark as seeded after processing all professions' );
 		$this->assertFalse( get_option( WP_MCP_AI_Profession_Playbook_Seeder::OFFSET_OPTION ), 'Offset option should be deleted when complete' );
 
@@ -604,11 +608,14 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		$this->assertCount( 3, $attachments, 'Should have 3 attachments before save' );
 
 		// Trigger save_post hook (simulating admin save).
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
 		$_POST['wp_mcp_ai_profession_nonce'] = wp_create_nonce( 'wp_mcp_ai_save_profession' );
 		$cpt_instance                        = new WP_MCP_AI_Profession_CPT();
 		$profession                          = get_post( $post_id );
 		$cpt_instance->save_post( $post_id, $profession );
 		unset( $_POST['wp_mcp_ai_profession_nonce'] );
+		wp_set_current_user( 0 );
 
 		// Verify only 1 attachment remains associated with profession.
 		$attachments = $method->invoke( null, $post_id );
@@ -803,7 +810,9 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 			)
 		);
 
-		// Create multiple playbook attachments.
+		// Create multiple playbook attachments that look system-created: hash
+		// meta plus a file path inside the wp-mcp-ai/profession-playbooks
+		// directory, which the delete path requires before hard-deleting.
 		$attachment_ids = array();
 		for ( $i = 1; $i <= 3; $i++ ) {
 			$attachment_id = $this->factory->post->create(
@@ -815,6 +824,7 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 			);
 			update_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', $profession_id );
 			update_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', "test_hash_$i" );
+			update_post_meta( $attachment_id, '_wp_attached_file', "wp-mcp-ai/profession-playbooks/playbook-$i.txt" );
 			$attachment_ids[] = $attachment_id;
 		}
 
@@ -828,15 +838,15 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		// Should have removed 2 duplicates (keeping the most recent).
 		$this->assertEquals( 2, $removed_count, 'Should remove 2 duplicate playbooks' );
 
-		// First attachment (most recent) should still exist.
-		$this->assertNotNull( get_post( $attachment_ids[0] ), 'Most recent attachment should still exist' );
+		// Most recent attachment (highest ID, created last) should still exist.
+		$this->assertNotNull( get_post( $attachment_ids[2] ), 'Most recent attachment should still exist' );
 
 		// Older attachments should be deleted.
+		$this->assertNull( get_post( $attachment_ids[0] ), 'Oldest attachment should be deleted' );
 		$this->assertNull( get_post( $attachment_ids[1] ), 'Second attachment should be deleted' );
-		$this->assertNull( get_post( $attachment_ids[2] ), 'Third attachment should be deleted' );
 
 		// Clean up.
 		wp_delete_post( $profession_id, true );
-		wp_delete_attachment( $attachment_ids[0], true );
+		wp_delete_attachment( $attachment_ids[2], true );
 	}
 }
