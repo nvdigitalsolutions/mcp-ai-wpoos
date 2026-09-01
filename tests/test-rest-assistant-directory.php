@@ -38,6 +38,15 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 	 * Ensure the directory returns published assistants and marks the default.
 	 */
 	public function test_directory_returns_accessible_assistants_with_metadata() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		// Bootstrap before creating fixtures: the rest_api_init re-fire runs
+		// third-party temp-table DDL that implicitly commits the open
+		// per-test transaction, leaking anything written beforehand.
+		$this->bootstrap_rest_controller( $mock_client );
+
 		$first_assistant  = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -56,12 +65,6 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 		$settings                      = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['default_assistant'] = $first_assistant;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
-
-		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$this->bootstrap_rest_controller( $mock_client );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
@@ -103,6 +106,13 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 	 * Ensure the directory can stream results when clients request Server-Sent Events.
 	 */
 	public function test_directory_streams_response_when_accept_header_requests_event_stream() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		// Bootstrap before creating fixtures: see the metadata test.
+		$this->bootstrap_rest_controller( $mock_client );
+
 		$assistant_id = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -111,72 +121,21 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$this->bootstrap_rest_controller( $mock_client );
-
-		$existing_keys = array();
-		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
-		}
-
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$headers = $response->get_headers();
 
-		$this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
-		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
-		$this->assertSame( 'Authorization, Content-Type, X-WP-Nonce', $headers['Access-Control-Allow-Headers'] ?? '' );
-		$this->assertSame( 'GET, POST, OPTIONS', $headers['Access-Control-Allow-Methods'] ?? '' );
-		$this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
+		$this->assertStringContainsString( 'retry:', $captured );
+		$this->assertStringContainsString( 'event: directory', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		$this->assertInstanceOf( WP_Hook::class, $hook );
-
-		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-		$added_keys   = array_diff( $current_keys, $existing_keys );
-
-		$this->assertNotEmpty( $added_keys );
-
-		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
-
-		$output = $this->extract_event_stream_frames( $closure );
-		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
-
-		$this->assertTrue( $served );
-		$this->assertStringContainsString( 'event: directory', $output );
-		$this->assertStringContainsString( 'data: {', $output );
-		$this->assertStringContainsString( 'data: [DONE]', $output );
-
-		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
-			unset( $hook->callbacks[999][ $closure_key ] );
-		}
-
-		$payload_lines = array();
-		foreach ( explode( "\n", $output ) as $line ) {
-			if ( 0 === strpos( $line, 'data: ' ) ) {
-				$payload_lines[] = substr( $line, 6 );
-			}
-
-			if ( '' === trim( $line ) && ! empty( $payload_lines ) ) {
-				break;
-			}
-		}
-
-		$payload_json = implode( "\n", $payload_lines );
-		$decoded      = json_decode( $payload_json, true );
+		$decoded = json_decode( $this->extract_first_data_payload( $captured ), true );
 
 		$this->assertIsArray( $decoded );
 		$this->assertArrayHasKey( 'assistants', $decoded );
@@ -187,6 +146,13 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 	 * Ensure mixed Accept headers continue to stream the directory payload.
 	 */
 	public function test_directory_streams_with_mixed_accept_header_values() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		// Bootstrap before creating fixtures: see the metadata test.
+		$this->bootstrap_rest_controller( $mock_client );
+
 		$assistant_id = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -195,33 +161,38 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$this->bootstrap_rest_controller( $mock_client );
-
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/html;q=0.1, text/event-stream, application/json' );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
-		$headers = $response->get_headers();
 
-		$this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
-		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
-		$this->assertSame( 'Authorization, Content-Type, X-WP-Nonce', $headers['Access-Control-Allow-Headers'] ?? '' );
-		$this->assertSame( 'GET, POST, OPTIONS', $headers['Access-Control-Allow-Methods'] ?? '' );
-		$this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
+		$this->assertStringContainsString( 'retry:', $captured );
+		$this->assertStringContainsString( 'event: directory', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
+
+		$decoded = json_decode( $this->extract_first_data_payload( $captured ), true );
+
+		$this->assertIsArray( $decoded );
+		$this->assertArrayHasKey( 'assistants', $decoded );
+		$this->assertSame( array( $assistant_id ), wp_list_pluck( $decoded['assistants'], 'id' ) );
 	}
 
 	/**
 	 * Ensure the dedicated /sse endpoint streams the directory even without Accept headers.
 	 */
 	public function test_sse_endpoint_streams_directory_without_accept_header() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		// Bootstrap before creating fixtures: see the metadata test.
+		$this->bootstrap_rest_controller( $mock_client );
+
 		$assistant_id = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -230,65 +201,20 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$this->bootstrap_rest_controller( $mock_client );
-
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/sse' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
-		$response = rest_get_server()->dispatch( $request );
+		list( $response, $captured ) = $this->dispatch_and_capture( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status() );
 
-		$headers = $response->get_headers();
+		$this->assertStringContainsString( 'retry:', $captured );
+		$this->assertStringContainsString( 'event: directory', $captured );
+		$this->assertStringContainsString( 'data: {', $captured );
+		$this->assertStringContainsString( 'data: [DONE]', $captured );
 
-		$this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
-		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
-		$this->assertSame( 'Authorization, Content-Type, X-WP-Nonce', $headers['Access-Control-Allow-Headers'] ?? '' );
-		$this->assertSame( 'GET, POST, OPTIONS', $headers['Access-Control-Allow-Methods'] ?? '' );
-		$this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
-
-		$hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
-			? $GLOBALS['wp_filter']['rest_pre_serve_request']
-			: null;
-
-		$this->assertInstanceOf( WP_Hook::class, $hook );
-
-		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
-		$this->assertNotEmpty( $current_keys );
-
-		$closure_key = array_pop( $current_keys );
-		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
-
-		$output = $this->extract_event_stream_frames( $closure );
-		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
-
-		$this->assertTrue( $served );
-		$this->assertStringContainsString( 'event: directory', $output );
-		$this->assertStringContainsString( 'data: {', $output );
-		$this->assertStringContainsString( 'data: [DONE]', $output );
-
-		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
-			unset( $hook->callbacks[999][ $closure_key ] );
-		}
-
-		$payload_lines = array();
-		foreach ( explode( "\n", $output ) as $line ) {
-			if ( 0 === strpos( $line, 'data: ' ) ) {
-				$payload_lines[] = substr( $line, 6 );
-			}
-
-			if ( '' === trim( $line ) && ! empty( $payload_lines ) ) {
-				break;
-			}
-		}
-
-		$payload_json = implode( "\n", $payload_lines );
-		$decoded      = json_decode( $payload_json, true );
+		$decoded = json_decode( $this->extract_first_data_payload( $captured ), true );
 
 		$this->assertIsArray( $decoded );
 		$this->assertArrayHasKey( 'assistants', $decoded );
@@ -299,6 +225,13 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 	 * Ensure assistant-issued credentials scope the directory to a single assistant.
 	 */
 	public function test_directory_scopes_results_for_local_token() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		// Bootstrap before creating fixtures: see the metadata test.
+		$this->bootstrap_rest_controller( $mock_client );
+
 		$assistant_id = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -312,12 +245,6 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 		$issued = WP_MCP_AI_Credentials::issue_credential( $assistant_id, $issuer_id );
 
 		wp_set_current_user( 0 );
-
-		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$this->bootstrap_rest_controller( $mock_client );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
 		$request->set_header( 'Authorization', 'Bearer ' . $issued['token'] );
@@ -344,6 +271,13 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 	 * Ensure the directory endpoint accepts POST requests for connectivity checks.
 	 */
 	public function test_directory_accepts_post_requests() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		// Bootstrap before creating fixtures: see the metadata test.
+		$this->bootstrap_rest_controller( $mock_client );
+
 		$assistant_id = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -351,12 +285,6 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 				'post_title'  => 'POST Directory Assistant',
 			)
 		);
-
-		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$this->bootstrap_rest_controller( $mock_client );
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/assistants' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
@@ -380,21 +308,6 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 	 * Ensure public capability overrides still respect publication status.
 	 */
 	public function test_directory_respects_public_capability_and_omits_unpublished() {
-		$published = wp_insert_post(
-			array(
-				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status' => 'publish',
-				'post_title'  => 'Public Directory Assistant',
-			)
-		);
-		wp_insert_post(
-			array(
-				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status' => 'draft',
-				'post_title'  => 'Hidden Directory Assistant',
-			)
-		);
-
 		$public_filter = function ( $capability, $assistant_id, $context ) {
 			if ( 'rest' === $context ) {
 				return 'public';
@@ -409,7 +322,23 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
+		// Bootstrap before creating fixtures: see the metadata test.
 		$this->bootstrap_rest_controller( $mock_client );
+
+		$published = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Public Directory Assistant',
+			)
+		);
+		wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'draft',
+				'post_title'  => 'Hidden Directory Assistant',
+			)
+		);
 
 		wp_set_current_user( 0 );
 
@@ -427,36 +356,74 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Extract the raw Server-Sent Events frames from a rest_pre_serve_request callback.
+	 * Dispatch a directory request and capture the echoed SSE frames.
 	 *
-	 * @param callable $callback Stream callback registered with rest_pre_serve_request.
-	 * @return string
+	 * The streaming path echoes frames directly and cleans output buffers
+	 * inside send_sse_headers(), so capture requires a callback buffer that
+	 * survives the handler's buffer cleanup. Existing buffers are flattened
+	 * first and the original level restored afterwards so PHPUnit's output
+	 * buffer tracking stays balanced.
+	 *
+	 * @param WP_REST_Request $request Request to dispatch.
+	 * @return array{0: WP_REST_Response, 1: string} Response and captured output.
 	 */
-	protected function extract_event_stream_frames( $callback ) {
-		if ( ! $callback instanceof \Closure ) {
-			return '';
+	protected function dispatch_and_capture( WP_REST_Request $request ) {
+		$initial_level = ob_get_level();
+
+		// Flatten all buffers so the handler's buffer cleanup (which keeps only
+		// the outermost buffer alive) cannot destroy our capture buffer.
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: end_clean may fail on restricted hosts; level is re-checked next iteration.
+			@ob_end_clean();
 		}
 
-		$reflection = new ReflectionFunction( $callback );
-		$statics    = $reflection->getStaticVariables();
+		$captured = '';
+		ob_start(
+			static function ( $chunk ) use ( &$captured ) {
+				$captured .= $chunk;
+				return '';
+			}
+		);
 
-		return isset( $statics['frames'] ) ? (string) $statics['frames'] : '';
+		$response = rest_get_server()->dispatch( $request );
+
+		while ( ob_get_level() > 0 ) {
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Deliberate: see above.
+			@ob_end_clean();
+		}
+
+		// Restore the original buffer count so PHPUnit does not flag the test
+		// as risky for leaving output buffers open.
+		for ( $i = 0; $i < $initial_level; $i++ ) {
+			ob_start();
+		}
+
+		return array( $response, $captured );
 	}
 
 	/**
-	 * Invoke the stream callback without flushing PHPUnit's output buffers.
+	 * Extract the first SSE data payload from a captured event stream.
 	 *
-	 * @param callable         $callback Stream callback registered with rest_pre_serve_request.
-	 * @param WP_REST_Response $response REST response instance.
-	 * @param WP_REST_Request  $request  REST request instance.
-	 * @return bool
+	 * Collects consecutive `data: ` lines until the first blank line, which
+	 * delimits the end of the frame per the SSE specification.
+	 *
+	 * @param string $stream Captured SSE stream.
+	 * @return string Concatenated data payload.
 	 */
-	protected function safely_invoke_event_stream_callback( $callback, WP_REST_Response $response, WP_REST_Request $request ) {
-		if ( ! $callback instanceof \Closure ) {
-			return false;
+	protected function extract_first_data_payload( $stream ) {
+		$payload_lines = array();
+
+		foreach ( explode( "\n", $stream ) as $line ) {
+			if ( 0 === strpos( $line, 'data: ' ) ) {
+				$payload_lines[] = substr( $line, 6 );
+			}
+
+			if ( '' === trim( $line ) && ! empty( $payload_lines ) ) {
+				break;
+			}
 		}
 
-		return (bool) call_user_func( $callback, true, $response, $request, rest_get_server() );
+		return implode( "\n", $payload_lines );
 	}
 
 	/**
@@ -473,6 +440,12 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 		$GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $client );
 
 		rest_get_server();
+
+		// WP 6.9+ requires routes to be registered on rest_api_init.
+		// NOTE: tests must call this helper BEFORE creating any fixtures -
+		// third-party plugins (e.g. Elementor) hook temporary-table DDL onto
+		// this action, and ALTER/CREATE INDEX on temporary tables implicitly
+		// commits the open per-test transaction, leaking earlier writes.
 		do_action( 'rest_api_init' );
 	}
 }
