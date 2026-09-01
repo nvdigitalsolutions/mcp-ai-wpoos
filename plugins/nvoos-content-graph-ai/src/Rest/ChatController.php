@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace NvoosContentGraphAi\Rest;
 
+use NvoosContentGraphAi\Chat\PromptOptimizer;
 use NvoosContentGraphAi\CoreBridge;
 
 /**
@@ -96,6 +97,11 @@ class ChatController {
 						'type'     => 'boolean',
 						'default'  => false,
 					),
+					'cache_system_prompt' => array(
+						'required' => false,
+						'type'     => 'boolean',
+						'default'  => false,
+					),
 				),
 			)
 		);
@@ -168,13 +174,29 @@ class ChatController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function handleChat( \WP_REST_Request $request ) {
-		$bridge   = CoreBridge::instance();
-		$messages = $this->buildMessages(
+		$bridge         = CoreBridge::instance();
+		$includeContext = (bool) $request->get_param( 'include_context' );
+		$messages       = $this->buildMessages(
 			$request->get_param( 'messages' ),
 			(bool) $request->get_param( 'system_prompt' ),
-			(bool) $request->get_param( 'include_context' )
+			$includeContext
 		);
-		$stream   = (bool) $request->get_param( 'stream' );
+
+		// Prefix-cache optimisation (parity with the base plugin's
+		// `cache_system_prompt` request option): reorder so the stable
+		// system prompt leads and dynamic turns follow. Skipped when graph
+		// context is merged into the system message — merged context is
+		// dynamic content and must stay attached to its turn.
+		if ( $request->get_param( 'cache_system_prompt' ) && ! $includeContext ) {
+			$messages = PromptOptimizer::order_for_cache_hit(
+				$messages,
+				array(
+					'system_prompt' => (string) $bridge->settings->get( 'ai_system_prompt', '' ),
+				)
+			);
+		}
+
+		$stream = (bool) $request->get_param( 'stream' );
 
 		$options = $this->buildOptions( $request );
 
