@@ -26,6 +26,11 @@ class Test_Remote_Sites_Menu_Registration extends WP_UnitTestCase {
 		// Set up admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
+		// Ensure the Remote Sites admin class has registered its admin_menu hook.
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin' ) ) {
+			new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		}
+
 		// Trigger admin_menu action to register menus.
 		do_action( 'admin_menu' );
 
@@ -85,6 +90,10 @@ class Test_Remote_Sites_Menu_Registration extends WP_UnitTestCase {
 		$found_priority = null;
 		foreach ( $wp_filter['admin_menu']->callbacks as $priority => $callbacks ) {
 			foreach ( $callbacks as $callback ) {
+				// Closures registered by other plugins cannot be inspected here.
+				if ( ! is_array( $callback ) || ! isset( $callback['function'] ) || ! is_array( $callback['function'] ) ) {
+					continue;
+				}
 				if ( isset( $callback['function'][0] ) &&
 					$callback['function'][0] instanceof WP_MCP_AI_Pro_Remote_Sites_Admin &&
 					$callback['function'][1] === 'add_admin_menu' ) {
