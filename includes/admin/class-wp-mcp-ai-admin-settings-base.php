@@ -475,6 +475,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'enable_wordpress_gravatar_bridge'      => false,
 				'wordpress_gravatar_userinfo_endpoint'  => '',
 				'enable_simple_jwt_login'               => false,
+				'require_confirm_destructive_ops'       => true,
 				'delete_on_uninstall'                   => false,
 				'crawl4ai_base_url'                     => '',
 				'crawl4ai_api_key'                      => '',
