@@ -169,10 +169,15 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 	 * bridge handler is absent — matching the intent of this test.
 	 */
 	public function test_store_succeeds_when_no_listener_registered() {
-		$this->assertFalse(
-			has_action( 'wp_mcp_ai_memory_stored', array( 'NV_oOS_Graphify_Memory_Bridge', 'on_memory_stored' ) ),
-			'Test pre-condition: the Graphify listener should not be attached when the addon is inactive.'
-		);
+		// The Graphify addon may already be loaded by other suites in the same
+		// process (e.g. tests/graphify/*), in which case its bridge listener is
+		// attached. Detach it so this test deterministically exercises the
+		// no-listener path, then restore it afterwards.
+		$listener = array( 'NV_oOS_Graphify_Memory_Bridge', 'on_memory_stored' );
+		$priority = has_action( 'wp_mcp_ai_memory_stored', $listener );
+		if ( false !== $priority ) {
+			remove_action( 'wp_mcp_ai_memory_stored', $listener, $priority );
+		}
 
 		$store  = $this->registry->get_tool( 'store_agent_context' );
 		$result = $store->execute(
@@ -186,6 +191,10 @@ class Test_MemPalace_Phase4a_Graphify_Bridge extends WP_UnitTestCase {
 			),
 			array()
 		);
+
+		if ( false !== $priority ) {
+			add_action( 'wp_mcp_ai_memory_stored', $listener, $priority, 1 );
+		}
 
 		$this->assertTrue( $result['success'] );
 		$this->assertNotEmpty( $result['context_id'] );
