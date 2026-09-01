@@ -1,17 +1,17 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment, CI log triage, 16 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, nonce/user binding, WP 6.9 queue memoization, anonymous-class visibility), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment, CI log triage, 26 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-08-31"
+  last-updated: "2026-09-01"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
 
 Operational playbook for keeping the single-process PHPUnit suite green,
-one cluster (suite) at a time. Distilled from ~30 cluster PRs (#6084–#6107)
+one cluster (suite) at a time. Distilled from ~70 cluster PRs (#6084–#6153)
 against the `alpha-working` branch. Complements `.context/testing.md` (how to
 *write* tests) — this skill covers how to *fix* a failing suite and how the
 repair loop runs.
@@ -192,6 +192,56 @@ Rules:
     Check `git --no-pager log -1 -- <test-file>` and align the test with the
     *current* production contract — but verify the production behavior is
     intentional (see "Production fix vs test fix" below).
+17. **Zombie mocks — PHPUnit clears mock stubs after each test.** A mock
+    stored in a static/global registry (`WP_MCP_AI_Settings_Registry`
+    sections) survives into later suites with its stubs wiped, so stubbed
+    methods return null. Symptom: "Section should have an ID" / "Failed
+    asserting that null is not null" while *iterating a later suite's*
+    sections. Fix: add an `unregister_*()` API to production and have the
+    registering test clean up after itself (#6139, #6144).
+18. **`has_action()` / `has_filter()` return the priority (int), not bool.**
+    Assert `assertSame( 10, has_action( ... ) )`. Reverse failure: a
+    lazily-loaded self-instantiating class registers its hooks *after* the
+    process-wide hook-table backup, so wp-phpunit's per-test restore wipes
+    them — re-register in `setUp()` when the load happened out of order
+    (#6143).
+19. **Sub-tabbed / view-routed settings sanitizers return `array()` when the
+    routing POST field is absent** (so nothing is saved). Set
+    `$_POST['subtab_<section_id>']` for sub-tabbed pages (#6147) or
+    `$_POST['view']` for orchestration views (#6148) before calling
+    `sanitize()` (#6139).
+20. **SSE blocking-emitter contract.** Streaming paths echo SSE frames
+    directly during dispatch and return a response with no `Content-Type`/
+    CORS headers. Assert emitted frames (`retry:`, `event: …`, `data: {`,
+    `data: [DONE]`) via an output-capture helper — never response headers
+    (#6141, #6149).
+21. **`rest_api_init` re-fire triggers third-party temp-table DDL**
+    (Elementor `e_events`), and DDL implicitly commits the per-test
+    transaction, leaking fixtures across tests. Bootstrap the REST controller
+    *before* creating fixtures. Probe DDL with a temp-table create/drop; the
+    DDL fires during `rest_api_init`, not during dispatch (#6141).
+22. **`wp_next_scheduled()` defaults to empty `$args`**, so args-carrying
+    jobs (`wp_schedule_single_event( $hook, $job_args )`) are invisible to it.
+    Scan `_get_cron_array()` by hook name instead (#6153).
+23. **Pro autoload gap.** CI runs `composer install` in `addons/pro/` so it
+    executes Pro-dependent suites that local runs silently skip (the committed
+    classmap does not map `includes/`). Close with a bootstrap fallback
+    autoloader (slug → `class-wp-mcp-ai-<slug>.php` glob). Note the slug
+    offset: `strlen( 'WP_MCP_AI_' )` is **10**, not 11 — an 11-char cut drops
+    the first slug char (`ro-agent-command-center`) (#6143).
+24. **`get_post_meta()` returns strings** — registered `integer` meta
+    sanitizes on *write*, not read. Production itself `absint()`s on read;
+    assert via `absint( get_post_meta( ... ) )` (#6150).
+25. **Settings feature-flag splits.** `enable_federation` no longer implies
+    `enable_federation_directory`; enable the specific flag and call the
+    feature loader directly (`maybe_load_federation_features()`) because
+    `init` already fired (#6150). After `update_option()` on
+    `WP_MCP_AI_Admin_Settings::OPTION_NAME`, call `reset_settings_cache()` to
+    drop the static settings cache (#6146).
+26. **Addon custom tables never get installed under PHPUnit** — activation
+    hooks don't run. Per-addon suite bootstraps (`tests/*/bootstrap.php`)
+    must call the schema installer directly
+    (`NV_oOS_Graphify_DB::install()`) so CI tables exist (#6145).
 
 ## Production fix vs test fix
 
@@ -227,7 +277,25 @@ orchestration, #6097 NPM notice, #6098 multi-agent dashboard, #6099 slash
 command integration, #6100 profession media vector, #6101 base knowledge
 seeder, #6102 pro dashboard diagnostic, #6103 chat conversation CCT, #6104
 admin test model, #6105 profession team CPT sanitization, #6106 Graphify admin
-classes, #6107 toolkit + hooks registry.
+classes, #6107 toolkit + hooks registry, #6108 test-suite skill, #6109 Shopify
+sync CCT manager, #6110 semantic compressor, #6111 usage tracker pricing
+drift, #6112 docs catch-up, #6113 Content Graph AI credential encryption,
+#6114 WP 7.1 Woo role resync, #6115 create post taxonomy application, #6116
+site creator tools drift, #6117 toolkit registry singleton drift, #6118
+PHPUnit loader excludes, #6119 credential resolver cache invalidation, #6120
+capability flags model drift, #6121 settings suite test drift, #6122 slash
+command tool mode contract, #6124 crawler job contract, #6125 Crawl4AI tool
+failures, #6126 transcript mining job cluster, #6127 save post content drift,
+#6128 tool slug integrity drift, #6129 tool coverage manifest, #6130 bulk
+auto dispatch inline, #6131 TPM fallback model drift, #6132 async registry
+construct errors, #6133 base version polluters, #6134 cache helper cluster,
+#6135 transcript recorder repository, #6136 translation loading timing,
+#6137 profession playbook seeder, #6138 site health tool, #6139 settings
+dashboard, #6140 slash command sync docs, #6141 REST assistant directory,
+#6143 Pro test autoload, #6144 new regressions, #6145 Graphify connectors,
+#6146 rate limit backoff, #6147 provider subtab settings, #6148 orchestration
+slider settings, #6149 MCP client configuration, #6150 federation test,
+#6153 Google Chat fields (open).
 
 Remaining candidates change quickly; re-triage from the latest CI log rather
 than trusting an old list.
