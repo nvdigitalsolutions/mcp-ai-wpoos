@@ -12,6 +12,8 @@ Search, create, and report across Google Workspace. Each tool gates on its respe
 |---|---|---|
 | `WP_MCP_AI_Pro_Tool_Search_Gmail` | `search_gmail` | Gmail message search |
 | `WP_MCP_AI_Pro_Tool_Search_Drive` | `search_drive` | Google Drive file search |
+| `WP_MCP_AI_Pro_Tool_Get_Drive_File` | `get_drive_file` | Read one file (Docs export, folder children) |
+| `WP_MCP_AI_Pro_Tool_List_Drive_Connections` | `list_drive_connections` | Discover connection IDs (redacted) |
 | `WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event` | `create_google_calendar_event` | Calendar event creation |
 | `WP_MCP_AI_Pro_Tool_List_Google_Calendars` | `list_google_calendars` | Calendar discovery |
 | `WP_MCP_AI_Pro_Tool_List_Google_Calendar_Events` | `list_google_calendar_events` | Calendar event listing (paginated) |
@@ -34,6 +36,7 @@ Search, create, and report across Google Workspace. Each tool gates on its respe
 - Canonical return envelope enforced.
 - Two-gate sanitisation rule applies.
 - Every tool implements `WP_MCP_AI_Tool_Interface`.
+- Drive tools share `WP_MCP_AI_Pro_Google_Drive_Client` (credentials, token refresh, text export, folder listing).
 - Google service-account helper (`WP_MCP_AI_Pro_Google_Service_Account`) is shared with [`tools/chat-channels/`](../chat-channels/) tools.
 
 ## See Also

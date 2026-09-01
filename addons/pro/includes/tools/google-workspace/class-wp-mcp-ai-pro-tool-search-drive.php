@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-google-drive-client.php';
 
 /**
  * Provides an assistant tool for searching Google Drive files via the Drive REST API.
@@ -40,7 +41,7 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Searches Google Drive and returns matching files and folders with names, types, and metadata. Supports simple text queries (e.g., "report") or advanced Drive query syntax (e.g., "name contains \'invoice\'" or "mimeType = \'application/pdf\'"). Automatically excludes trashed items. Can include shared files and folders, and sort by creation or modification time.', 'mcp-ai-wpoos-pro' );
+		return __( 'Searches Google Drive and returns matching files and folders with names, types, sizes, and metadata. Supports simple text queries (e.g., "report") or advanced Drive query syntax (e.g., "name contains \'invoice\'" or "mimeType = \'application/pdf\'"). Automatically excludes trashed items. Can include shared files and folders, sort by creation or modification time, and return bare IDs (ids_only). Use get_drive_file to read a file\'s contents or list a folder.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -74,6 +75,11 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 				'page_token'     => array(
 					'type'        => 'string',
 					'description' => __( 'Page token returned by a previous Drive search response to fetch the next page of results.', 'mcp-ai-wpoos-pro' ),
+				),
+				'ids_only'       => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, returns only file IDs and names — cheap for large result sets. Hydrate individual files afterwards with get_drive_file.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
 				),
 				'folder_id'      => array(
 					'type'        => 'string',
@@ -221,6 +227,8 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$page_token = isset( $arguments['page_token'] ) ? trim( (string) $arguments['page_token'] ) : '';
 
+		$ids_only = ! empty( $arguments['ids_only'] );
+
 		// Check if folder_id is provided in arguments (overrides connection setting).
 		if ( isset( $arguments['folder_id'] ) && '' !== trim( (string) $arguments['folder_id'] ) ) {
 			$folder_id = trim( (string) $arguments['folder_id'] );
@@ -328,6 +336,14 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 					continue;
 				}
 
+				if ( $ids_only ) {
+					$files[] = array(
+						'id'   => (string) $file['id'],
+						'name' => isset( $file['name'] ) ? (string) $file['name'] : '',
+					);
+					continue;
+				}
+
 				$file_info = $this->format_file_info( $file );
 				if ( ! empty( $file_info ) ) {
 					$files[] = $file_info;
@@ -338,6 +354,7 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'files'           => $files,
 			'next_page_token' => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
+			'has_more'        => ! empty( $list_payload['nextPageToken'] ),
 			'connection'      => $configured_user ? $configured_user : __( 'Connected', 'mcp-ai-wpoos-pro' ),
 		);
 	}
@@ -410,20 +427,21 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 		$file_id   = isset( $file['id'] ) ? (string) $file['id'] : '';
 		$file_name = isset( $file['name'] ) ? (string) $file['name'] : '';
 		$mime_type = isset( $file['mimeType'] ) ? (string) $file['mimeType'] : '';
+		$size      = isset( $file['size'] ) ? absint( $file['size'] ) : 0;
 
 		return array(
 			'id'             => $file_id,
 			'name'           => $file_name,
 			'mimeType'       => $mime_type,
+			'type_label'     => WP_MCP_AI_Pro_Google_Drive_Client::get_type_label( $mime_type ),
 			'createdTime'    => isset( $file['createdTime'] ) ? (string) $file['createdTime'] : '',
 			'modifiedTime'   => isset( $file['modifiedTime'] ) ? (string) $file['modifiedTime'] : '',
-			'size'           => isset( $file['size'] ) ? (int) $file['size'] : 0,
+			'size'           => $size,
+			'size_formatted' => WP_MCP_AI_Pro_Google_Drive_Client::format_size( $size ),
 			'webViewLink'    => isset( $file['webViewLink'] ) ? (string) $file['webViewLink'] : '',
 			'webContentLink' => isset( $file['webContentLink'] ) ? (string) $file['webContentLink'] : '',
 			'iconLink'       => isset( $file['iconLink'] ) ? (string) $file['iconLink'] : '',
 			'thumbnailLink'  => isset( $file['thumbnailLink'] ) ? (string) $file['thumbnailLink'] : '',
-			'owners'         => isset( $file['owners'] ) ? $file['owners'] : array(),
-			'permissions'    => isset( $file['permissions'] ) ? $file['permissions'] : array(),
 			'shared'         => isset( $file['shared'] ) ? (bool) $file['shared'] : false,
 			'description'    => isset( $file['description'] ) ? (string) $file['description'] : '',
 		);
@@ -519,7 +537,7 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 		$params = array(
 			'q'        => $query,
 			'pageSize' => $max_results,
-			'fields'   => 'nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, size, webViewLink, webContentLink, iconLink, thumbnailLink, owners, permissions, shared, description)',
+			'fields'   => 'nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, size, webViewLink, webContentLink, iconLink, thumbnailLink, shared, description)',
 			'orderBy'  => $order_by,
 		);
 
