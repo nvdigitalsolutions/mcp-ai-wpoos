@@ -150,6 +150,17 @@ final class Plugin {
 			\NvoosContentGraphAi\Security\DestructiveOpsGate::register();
 			\NvoosContentGraphAi\Security\CspHeaders::register();
 			\NvoosContentGraphAi\Security\LoadGuard::register();
+
+			// Agent memory CCT trio (Wave D7) — the base plugin registers
+			// the same CCT, lifecycle listeners, migrator, and recall filter
+			// in monolith installs; double registration would double-mirror
+			// writes and double-merge recall candidates. Dormant standalone
+			// until the memory/tools wave emits wp_mcp_ai_memory_stored
+			// (tracked gap).
+			\NvoosContentGraphAi\Memory\AgentMemoriesCct::bootstrap();
+			\NvoosContentGraphAi\Memory\AgentMemoryCctBridge::bootstrap();
+			\NvoosContentGraphAi\Memory\AgentMemoryCctMigrator::bootstrap();
+			\NvoosContentGraphAi\Memory\AgentMemoryCctReader::bootstrap();
 		}
 
 		// Register the async chat continuation hook.
