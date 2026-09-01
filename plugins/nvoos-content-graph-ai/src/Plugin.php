@@ -126,6 +126,12 @@ final class Plugin {
 			// monolith installs; double registration would double-count.
 			\NvoosContentGraphAi\Security\ConcurrencyGuardSubscriber::register();
 			\NvoosContentGraphAi\Security\CostTrackerSubscriber::register();
+
+			// Destructive ops gate, CSP headers, and load guard — the base
+			// plugin owns the same hooks in monolith installs.
+			\NvoosContentGraphAi\Security\DestructiveOpsGate::register();
+			\NvoosContentGraphAi\Security\CspHeaders::register();
+			\NvoosContentGraphAi\Security\LoadGuard::register();
 		}
 
 		// Register the async chat continuation hook.
