@@ -37,23 +37,29 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 		// Initialize settings dashboard.
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 
-		// Simulate POST data from simple settings page with fields from both General and Providers tabs.
+		// Simulate POST data from the simple settings page. Each section routes
+		// through its own subtab field, so post the subtab selectors too.
 		$_POST = array(
 			'_wpnonce'           => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
 			'action'             => 'wp_mcp_ai_save_settings',
 			'active_tab'         => 'general',
 			'save_all_tabs'      => '1',
 			'redirect_page'      => 'wp-mcp-ai-simple-settings',
+			'subtab_general'     => 'logs',
+			'subtab_providers'   => 'openai',
 			'wp_mcp_ai_settings' => array(
-				// General tab fields.
-				'enable_logging'      => '1',
-				'default_provider'    => 'openai',
-				// Providers tab fields.
-				'openai_api_key'      => 'sk-test123',
-				'gemini_api_key'      => 'test-gemini-key',
-				'ollama_endpoint_url' => 'http://localhost:11434',
+				// General tab (logs subtab) fields.
+				'enable_logging' => '1',
+				// Providers tab (openai subtab) fields.
+				'openai_api_key' => 'sk-test123',
+				'enable_openai'  => '1',
 			),
 		);
+
+		// check_admin_referer reads $_REQUEST, which does not merge POST data
+		// under the test bootstrap — mirror the nonce there explicitly.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test fixture for the save handler's nonce check.
+		$_REQUEST['_wpnonce'] = $_POST['_wpnonce'];
 
 		// Set SERVER variables needed for nonce verification.
 		$_SERVER['REQUEST_METHOD'] = 'POST';
@@ -66,19 +72,20 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 			$dashboard->handle_save_settings();
 		} catch ( Exception $e ) {
 			// Expected to throw exception due to exit/die, ignore it.
+			unset( $e );
 		}
 
-		// Get saved settings.
-		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		// Get saved settings. API keys are stored in the separate credentials
+		// option; non-sensitive settings stay in the main option.
+		$settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
 
 		// Verify General tab fields were saved.
 		$this->assertTrue( $settings['enable_logging'], 'General tab field should be saved' );
-		$this->assertEquals( 'openai', $settings['default_provider'], 'General tab select should be saved' );
 
 		// Verify Providers tab fields were saved.
-		$this->assertEquals( 'sk-test123', $settings['openai_api_key'], 'Providers tab API key should be saved' );
-		$this->assertEquals( 'test-gemini-key', $settings['gemini_api_key'], 'Gemini API key should be saved' );
-		$this->assertEquals( 'http://localhost:11434', $settings['ollama_endpoint_url'], 'Ollama URL should be saved' );
+		$this->assertEquals( 'sk-test123', $credentials['openai_api_key'], 'Providers tab API key should be saved' );
+		$this->assertTrue( $settings['enable_openai'], 'Providers tab checkbox should be saved' );
 	}
 
 	/**
@@ -88,17 +95,24 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 		// Initialize settings dashboard.
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 
-		// Simulate POST data from main dashboard with only General tab.
+		// Simulate POST data from the main dashboard with only the General tab.
 		$_POST = array(
 			'_wpnonce'           => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
 			'action'             => 'wp_mcp_ai_save_settings',
 			'active_tab'         => 'general',
+			'subtab_general'     => 'logs',
 			'wp_mcp_ai_settings' => array(
-				// General tab fields.
-				'enable_logging'   => '1',
-				'default_provider' => 'gemini',
+				// General tab (logs subtab) fields.
+				'enable_logging' => '1',
+				// A Providers tab field that must NOT be saved.
+				'openai_api_key' => 'sk-should-not-save',
 			),
 		);
+
+		// check_admin_referer reads $_REQUEST, which does not merge POST data
+		// under the test bootstrap — mirror the nonce there explicitly.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test fixture for the save handler's nonce check.
+		$_REQUEST['_wpnonce'] = $_POST['_wpnonce'];
 
 		// Set SERVER variables needed for nonce verification.
 		$_SERVER['REQUEST_METHOD'] = 'POST';
@@ -111,23 +125,28 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 			$dashboard->handle_save_settings();
 		} catch ( Exception $e ) {
 			// Expected to throw exception due to exit/die, ignore it.
+			unset( $e );
 		}
 
 		// Get saved settings.
-		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
 
 		// Verify General tab fields were saved.
 		$this->assertTrue( $settings['enable_logging'], 'General tab field should be saved' );
-		$this->assertEquals( 'gemini', $settings['default_provider'], 'General tab select should be saved' );
+
+		// Verify the Providers tab field was NOT saved (inactive tab).
+		$this->assertArrayNotHasKey( 'openai_api_key', $credentials, 'Inactive Providers tab field should not be saved' );
 	}
 
 	/**
 	 * Test that empty password fields don't overwrite existing values.
 	 */
 	public function test_empty_password_fields_preserve_existing_values() {
-		// Set initial API keys.
+		// Set initial API keys in the credentials option (where production
+		// stores sensitive keys after the settings split).
 		update_option(
-			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME,
 			array(
 				'openai_api_key' => 'sk-existing-key',
 				'gemini_api_key' => 'existing-gemini-key',
@@ -142,12 +161,17 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 			'_wpnonce'           => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
 			'action'             => 'wp_mcp_ai_save_settings',
 			'active_tab'         => 'providers',
+			'subtab_providers'   => 'openai',
 			'wp_mcp_ai_settings' => array(
 				'openai_api_key' => '', // Empty - should preserve existing.
-				'gemini_api_key' => '', // Empty - should preserve existing.
 				'enable_openai'  => '1',
 			),
 		);
+
+		// check_admin_referer reads $_REQUEST, which does not merge POST data
+		// under the test bootstrap — mirror the nonce there explicitly.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test fixture for the save handler's nonce check.
+		$_REQUEST['_wpnonce'] = $_POST['_wpnonce'];
 
 		// Set SERVER variables.
 		$_SERVER['REQUEST_METHOD'] = 'POST';
@@ -160,14 +184,16 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 			$dashboard->handle_save_settings();
 		} catch ( Exception $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		// Get saved settings.
-		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$settings    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$credentials = get_option( WP_MCP_AI_Admin_Settings_Base::CREDENTIALS_OPTION_NAME, array() );
 
 		// Verify existing keys were preserved.
-		$this->assertEquals( 'sk-existing-key', $settings['openai_api_key'], 'Existing OpenAI key should be preserved' );
-		$this->assertEquals( 'existing-gemini-key', $settings['gemini_api_key'], 'Existing Gemini key should be preserved' );
+		$this->assertEquals( 'sk-existing-key', $credentials['openai_api_key'], 'Existing OpenAI key should be preserved' );
+		$this->assertEquals( 'existing-gemini-key', $credentials['gemini_api_key'], 'Existing Gemini key should be preserved' );
 		$this->assertTrue( $settings['enable_openai'], 'New checkbox should be saved' );
 	}
 }
