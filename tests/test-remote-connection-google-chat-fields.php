@@ -1038,8 +1038,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 
 		$this->assertNotNull( $response, 'handle_webhook must return a response for DM messages' );
 
-		$scheduled = wp_next_scheduled( 'wp_mcp_ai_google_chat_send_ai_reply' );
-		$this->assertNotFalse( $scheduled, 'A cron reply job must be scheduled for DM messages' );
+		$this->assertTrue( $this->gc_reply_cron_scheduled(), 'A cron reply job must be scheduled for DM messages' );
 
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
 	}
@@ -1108,8 +1107,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 
 		$this->assertNotNull( $response );
 
-		$scheduled = wp_next_scheduled( 'wp_mcp_ai_google_chat_send_ai_reply' );
-		$this->assertNotFalse( $scheduled, 'A cron reply job must be scheduled for space @mention messages' );
+		$this->assertTrue( $this->gc_reply_cron_scheduled(), 'A cron reply job must be scheduled for space @mention messages' );
 
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
 	}
@@ -1232,8 +1230,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		$this->assertNotNull( $response, 'handle_webhook must return a response for APP_COMMAND events' );
 
 		// A cron event must have been scheduled.
-		$scheduled = wp_next_scheduled( 'wp_mcp_ai_google_chat_send_ai_reply' );
-		$this->assertNotFalse( $scheduled, 'A cron reply job must be scheduled for APP_COMMAND events' );
+		$this->assertTrue( $this->gc_reply_cron_scheduled(), 'A cron reply job must be scheduled for APP_COMMAND events' );
 
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
 	}
@@ -1454,8 +1451,7 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 		$controller->handle_webhook( $request );
 
-		$scheduled = wp_next_scheduled( 'wp_mcp_ai_google_chat_send_ai_reply' );
-		$this->assertNotFalse( $scheduled, 'Cron job should be scheduled even when only a reply_webhook_url is configured' );
+		$this->assertTrue( $this->gc_reply_cron_scheduled(), 'Cron job should be scheduled even when only a reply_webhook_url is configured' );
 
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
 		wp_delete_post( $assistant_id, true );
@@ -1564,5 +1560,23 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 			$this->assertNotNull( $saved, 'Saved connection should be retrievable for method: ' . $method );
 			$this->assertSame( $method, $saved['connection_method'], 'connection_method should persist as "' . $method . '"' );
 		}
+	}
+
+	/**
+	 * Whether any cron event exists for the Google Chat reply hook.
+	 *
+	 * The webhook controller schedules its reply job with a job-args payload,
+	 * so wp_next_scheduled() with its default empty args never matches.
+	 * Scan the cron array by hook name instead.
+	 *
+	 * @return bool
+	 */
+	protected function gc_reply_cron_scheduled() {
+		foreach ( _get_cron_array() as $events ) {
+			if ( isset( $events['wp_mcp_ai_google_chat_send_ai_reply'] ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
