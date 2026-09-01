@@ -19,6 +19,13 @@ if ( ! defined( 'NVOOS_GRAPHIFY_VERSION' ) ) {
 	}
 }
 
+// Activation never runs under PHPUnit, so create the custom tables the
+// DB-backed connector tests need. dbDelta DDL persists for the whole run
+// while per-test row writes stay inside the rollback transaction.
+if ( class_exists( 'NV_oOS_Graphify_DB' ) && ! NV_oOS_Graphify_DB::tables_installed() ) {
+	NV_oOS_Graphify_DB::install();
+}
+
 // The addon entry file does not require the tool classes (they are
 // discovered by the tool registry from their filenames); the tests below
 // instantiate them directly, so load them here.
