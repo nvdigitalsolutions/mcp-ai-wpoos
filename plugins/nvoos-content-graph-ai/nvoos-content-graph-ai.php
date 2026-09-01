@@ -87,6 +87,13 @@ register_activation_hook(
 		if ( class_exists( 'NvoosContentGraphAi\Chat\ThreadManager' ) ) {
 			\NvoosContentGraphAi\Chat\ThreadManager::create_tables();
 		}
+
+		// Security audit table + purge cron — Wave D4c. The base plugin
+		// owns the same table/cron in monolith installs (activation there
+		// runs the base lifecycle).
+		if ( ! defined( 'WP_MCP_AI_PATH' ) && class_exists( 'NvoosContentGraphAi\Security\SecurityAuditLogger' ) ) {
+			\NvoosContentGraphAi\Security\SecurityAuditLogger::on_activation();
+		}
 	}
 );
 

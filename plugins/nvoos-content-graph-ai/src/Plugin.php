@@ -110,6 +110,11 @@ final class Plugin {
 			// hooks in monolith installs; double registration would
 			// double-record usage into the same meta key.
 			\NvoosContentGraphAi\Analytics\ToolTokenLimits::init();
+
+			// Security audit logger — the base plugin owns the same REST
+			// route (`mcp-ai/v1/security/events`) and purge cron in monolith
+			// installs; double registration would conflict.
+			\NvoosContentGraphAi\Security\SecurityAuditLogger::register();
 		}
 
 		// Register the async chat continuation hook.
