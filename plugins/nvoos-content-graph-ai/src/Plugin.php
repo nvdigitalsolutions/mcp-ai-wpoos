@@ -194,6 +194,13 @@ final class Plugin {
 		if ( class_exists( 'NvoosContentGraphAi\Blocks\Blocks' ) ) {
 			( new \NvoosContentGraphAi\Blocks\Blocks() )->register();
 		}
+
+		// Elementor chat-family widgets (Wave D-UI-3) — the hub no-ops
+		// when Elementor is inactive; widget names never collide with
+		// the base's wp_mcp_ai_* Elementor widgets.
+		if ( class_exists( 'NvoosContentGraphAi\Elementor\ElementorHub' ) ) {
+			( new \NvoosContentGraphAi\Elementor\ElementorHub() )->register();
+		}
 	}
 
 	/**
