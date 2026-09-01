@@ -115,6 +115,11 @@ final class Plugin {
 			// route (`mcp-ai/v1/security/events`) and purge cron in monolith
 			// installs; double registration would conflict.
 			\NvoosContentGraphAi\Security\SecurityAuditLogger::register();
+
+			// Request guard — the base plugin owns the same REST validation
+			// hooks and SSE slot tracking in monolith installs; double
+			// registration would double-count SSE connections.
+			\NvoosContentGraphAi\Security\RequestGuard::register();
 		}
 
 		// Register the async chat continuation hook.
