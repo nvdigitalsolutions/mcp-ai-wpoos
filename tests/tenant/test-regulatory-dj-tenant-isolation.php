@@ -34,6 +34,11 @@ class Test_Regulatory_DJ_Tenant_Isolation extends WP_UnitTestCase {
 	 */
 	public function set_up() {
 		parent::set_up();
+
+		// The activation hook that creates the tenant tables never runs under
+		// PHPUnit, so ensure the schema exists before inserting rows.
+		WP_MCP_AI_Tenant_Database::create_tables();
+
 		global $wpdb;
 		$table = $wpdb->prefix . 'mcp_ai_tenants';
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery
