@@ -1,0 +1,44 @@
+{
+  "teams": [
+    {
+      "title": "Dental & Oral Health Team",
+      "slug": "dental_oral_health_team",
+      "description": "Dental professionals for comprehensive oral healthcare.",
+      "members": [
+        "dentist",
+        "registered_nurse",
+        "massage_therapist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Pharmaceutical Safety Team",
+      "slug": "pharmaceutical_safety_team",
+      "description": "Pharmaceutical safety and toxicology specialists.",
+      "members": [
+        "drug_safety_specialist",
+        "toxicologist",
+        "pharmacist",
+        "medical_science_liaison"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Global Health & Wellness Team",
+      "slug": "global_health_wellness_team",
+      "description": "Global health specialists for international health initiatives.",
+      "members": [
+        "global_health_specialist",
+        "epidemiologist",
+        "public_health_advisor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    }
+  ]
+}

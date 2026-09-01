@@ -1,0 +1,44 @@
+{
+  "teams": [
+    {
+      "title": "Retail & Sales Team",
+      "slug": "retail_sales_team",
+      "description": "Retail management and sales professionals for store operations and customer engagement.",
+      "members": [
+        "retail_manager",
+        "sales_manager",
+        "customer_service_rep",
+        "bartender"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.5
+    },
+    {
+      "title": "Human Resources Team",
+      "slug": "human_resources_team",
+      "description": "Human resources professionals for recruitment, training, and employee management.",
+      "members": [
+        "hr_manager",
+        "corporate_trainer",
+        "educational_administrator"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "Events & Experience Team",
+      "slug": "events_experience_team",
+      "description": "Event planning and experience design professionals.",
+      "members": [
+        "event_planner",
+        "tour_guide",
+        "personal_trainer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.6
+    }
+  ]
+}

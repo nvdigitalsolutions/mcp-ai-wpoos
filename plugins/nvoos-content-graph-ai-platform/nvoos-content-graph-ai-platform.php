@@ -3,7 +3,7 @@
  * Plugin Name:  NV oOS Content Graph — Platform
  * Plugin URI:   https://github.com/nvdigitalsolutions/nvoos-content-graph-ai-platform
  * Description:  Platform layer for NV oOS Content Graph. Adds agents, skills, slash-commands, harness, measurement, professions, A2A, ACP, federation, and blueprints on top of the AI addon.
- * Version:      1.0.2
+ * Version:      2.0.0
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Requires Plugins: nvoos-content-graph, nvoos-content-graph-ai
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NVOOS_CONTENT_GRAPH_AI_PLATFORM_VERSION', '1.0.2' );
+define( 'NVOOS_CONTENT_GRAPH_AI_PLATFORM_VERSION', '2.0.0' );
 define( 'NVOOS_CONTENT_GRAPH_AI_PLATFORM_FILE', __FILE__ );
 define( 'NVOOS_CONTENT_GRAPH_AI_PLATFORM_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NVOOS_CONTENT_GRAPH_AI_PLATFORM_URL', plugin_dir_url( __FILE__ ) );
@@ -57,6 +57,12 @@ register_activation_hook(
 		if ( class_exists( 'NvoosContentGraphAiPlatform\Schema\Defaults' ) ) {
 			$defaults = \NvoosContentGraphAiPlatform\Schema\Defaults::platformSettings();
 			add_option( 'ai_platform_settings', $defaults, '', false );
+		}
+
+		// Standalone mode: schedule the deferred bundled-skills install — the
+		// base plugin owns this wiring in monolith mode (extraction Wave B).
+		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+			set_transient( 'wp_mcp_ai_install_bundled_skills', true, HOUR_IN_SECONDS );
 		}
 
 		// Flush rewrite rules so CPT permalinks are recognised.

@@ -17,6 +17,10 @@ final class Plugin {
 	}
 
 	public function register(): void {
+		// Loud degradation notice when subsystems have no implementation
+		// (base plugin absent, or greenfield subsystems not yet built).
+		RuntimeMode::register();
+
 		// Post types register on init — must be hooked before admin_menu fires.
 		$this->registerPostTypes();
 
@@ -30,6 +34,7 @@ final class Plugin {
 		$this->registerHarness();
 		$this->registerMeasurement();
 		$this->registerProfessions();
+		$this->registerTeams();
 		$this->registerA2A();
 		$this->registerACP();
 		$this->registerFederation();
@@ -134,6 +139,12 @@ final class Plugin {
 	private function registerProfessions(): void {
 		if ( class_exists( __NAMESPACE__ . '\Professions\ProfessionService' ) ) {
 			\NvoosContentGraphAiPlatform\Professions\ProfessionService::instance()->register();
+		}
+	}
+
+	private function registerTeams(): void {
+		if ( class_exists( __NAMESPACE__ . '\Teams\TeamsService' ) ) {
+			\NvoosContentGraphAiPlatform\Teams\TeamsService::instance()->register();
 		}
 	}
 

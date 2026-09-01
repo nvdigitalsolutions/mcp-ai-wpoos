@@ -1,336 +1,151 @@
-# NV oOS Content Graph Platform — Migration Gap Analysis
+# NV oOS Content Graph Platform — Migration Tracker
 
-**Date:** 2026-08-03
-**Scope:** End-to-end audit of what exists vs. what's planned across all 10 Platform subsystems.
-
----
-
-## Methodology
-
-For each subsystem, we checked three locations:
-
-| Layer | Location | What it contains |
-|---|---|---|
-| **Platform addon** | `plugins/nvoos-content-graph-ai-platform/src/{Subsystem}/` | PSR-4 admin UI + bridge classes |
-| **Base plugin** | `includes/{subsystem}/` or `includes/class-wp-mcp-ai-*.php` | Business logic (legacy procedural/OOP) |
-| **Old Content Graph addon** | `addons/content-graph/` | Pre-extraction Content Graph code (partially migrated to core) |
+**Last updated:** 2026-08-31
+**Plan:** [`docs/project/plans/content-graph-platform-extraction-plan.md`](../../../docs/project/plans/content-graph-platform-extraction-plan.md)
+**Replaces:** the 2026-08-03 gap analysis, which was stale: Federation business logic now exists in the base plugin (`includes/class-wp-mcp-ai-federation*.php` + mesh classes), `includes/agents/`, `includes/teams/`, and `includes/knowledge-base/` were built after it was written.
 
 ---
 
-## Subsystem-by-Subsystem Analysis
+## How to read this tracker
 
-### 1. Agents 🟡 Bridged
-
-**Platform addon (`src/Agents/`):**
-- `Agents.php` — Singleton service, registers admin hooks ✅
-- `CptBridge.php` — Delegates to `WP_MCP_AI_Assistant_CPT::get_assistant_configuration()` ✅
-- `MetaKeys.php` — Agent meta key constants ✅
-- `Admin/AgentsAdmin.php` — Registers tabs in Platform + Content Graph dashboards ✅
-- `Admin/AgentsDashboardSection.php` — Dashboard overview panel ✅
-- `Admin/AddAgentPage.php`, `BuildAgentPage.php`, `TestAgentPage.php` — Submenu pages ✅
-- `Admin/CreateAgentButton.php` — Quick-create button ✅
-
-**Base plugin (`includes/assistants/`):**
-- `class-wp-mcp-ai-assistant-cpt.php` — CPT registration, config management ✅
-- `metaboxes/` — Meta box rendering ✅
-
-**Gap:** None. Bridge is complete. Business logic extraction (Phase 2) would move CPT logic from `includes/assistants/` into `src/Agents/`.
-
----
-
-### 2. Skills 🟡 Bridged
-
-**Platform addon (`src/Skills/`):**
-- `SkillService.php` — Singleton, registers admin hooks ✅
-- `SkillBridge.php` — Delegates to `WP_MCP_AI_Skill_Registry`, `WP_MCP_AI_Skill_Pack_Registry` ✅
-- `Admin/SkillsAdmin.php` — Registers tabs in both dashboards ✅
-- `Admin/SkillsDashboardSection.php` — Dashboard overview panel ✅
-
-**Base plugin (`includes/`):**
-- `class-wp-mcp-ai-skill-registry.php` — Skill storage, retrieval, management ✅
-- `class-wp-mcp-ai-skill-parser.php` — Markdown → skill object parser ✅
-- `class-wp-mcp-ai-skill-pack-registry.php` — Pack management ✅
-- Loaded in `includes/bootstrap/loader.php` L226-232 ✅
-- Admins via `addons/pro/includes/skills-manager-init.php` (Pro addon)
-
-**Gap:** None. Bridge is complete. The Pro addon's skill manager admin pages (`skill-manager-admin-page.php`, `skill-research-admin-page.php`, `skill-settings-admin-page.php`) are NOT yet bridged — they still live in `addons/pro/`.
-
----
-
-### 3. Slash Commands 🟡 Bridged
-
-**Platform addon (`src/SlashCommands/`):**
-- `SlashCommandService.php` — Singleton, registers admin hooks ✅
-- `SlashCommandBridge.php` — Delegates to `wp_mcp_ai_execute_slash_command()`, `wp_mcp_ai_register_slash_command()`, etc. ✅
-- `Admin/SlashCommandsAdmin.php` — Registers tabs in both dashboards ✅
-- `Admin/SlashCommandsDashboardSection.php` — Dashboard overview panel ✅
-
-**Base plugin (`includes/slash-commands/`):**
-- `class-wp-mcp-ai-slash-command-handler.php` — Core command execution engine ✅
-- `class-wp-mcp-ai-slash-command-parser.php` — Input parsing ✅
-- `class-wp-mcp-ai-slash-command-validator.php` — Validation ✅
-- `class-wp-mcp-ai-slash-command-audit.php` — Audit logging ✅
-- `class-wp-mcp-ai-slash-command-toolkit-manager.php` — Toolkit management ✅
-- `class-wp-mcp-ai-slash-command-performance-optimizer.php` — Caching ✅
-- `class-wp-mcp-ai-slash-command-workflow-orchestrator.php` — Workflow chaining ✅
-- `slash-commands-init.php` — Bootstrap ✅
-- `commands/` — Built-in command implementations ✅
-
-**Gap:** None. Bridge is complete. This is the most mature subsystem — the base plugin implementation is 14.5K+ lines.
-
----
-
-### 4. Harness 🟡 Bridged
-
-**Platform addon (`src/Harness/`):**
-- `HarnessService.php` — Singleton, registers admin hooks (admin-only) ✅
-- `Admin/HarnessAdmin.php` — Registers tabs in both dashboards ✅
-- `Admin/HarnessDashboardSection.php` — Dashboard overview panel ✅
-
-**Base plugin (`includes/harness/`):**
-- `class-wp-mcp-ai-guardrails.php` ✅
-- `class-wp-mcp-ai-harness-auto-deploy.php` ✅
-- `class-wp-mcp-ai-harness-eval-scheduler.php` ✅
-- `class-wp-mcp-ai-harness-population.php` ✅
-- `class-wp-mcp-ai-harness-profile.php` ✅
-- `class-wp-mcp-ai-harness-prompt-injector.php` ✅
-- `class-wp-mcp-ai-harness-search-engine.php` ✅
-- `class-wp-mcp-ai-harness-trace-capture.php` ✅
-- `class-wp-mcp-ai-harness-trace-store.php` ✅
-- `class-wp-mcp-ai-necessity-gate.php` ✅
-- `class-wp-mcp-ai-pii-filter.php` ✅
-- `class-wp-mcp-ai-prompt-cue-library.php` ✅
-- `class-wp-mcp-ai-reasoning-trace.php` ✅
-- `class-wp-mcp-ai-retrieval-harness.php` ✅
-- `class-wp-mcp-ai-self-refine-loop.php` ✅
-- `class-wp-mcp-ai-tool-router-harness.php` ✅
-- `harness-init.php` — Bootstrap ✅
-
-**Gap:** No bridge class exists. `HarnessService::register()` only registers admin hooks — it doesn't call `class_exists()` guards or delegate to base plugin harness classes. The admin pages may reference harness functionality that the platform addon cannot directly call without a bridge.
-
-**Action:** Create `HarnessBridge.php` similar to `SkillBridge.php` and `SlashCommandBridge.php`.
-
----
-
-### 5. Measurement 🟡 Bridged
-
-**Platform addon (`src/Measurement/`):**
-- `MeasurementService.php` — Singleton, admin-only ✅
-- `Admin/MeasurementAdmin.php`, `Admin/MeasurementDashboardSection.php` ✅
-
-**Base plugin (`includes/measurement/`):**
-- `class-wp-mcp-ai-measurement-bootstrap.php` ✅
-- `class-wp-mcp-ai-measurement-registry.php` ✅
-- `class-wp-mcp-ai-metric-collector.php` ✅
-- `class-wp-mcp-ai-metric-event-store.php` ✅
-- `class-wp-mcp-ai-metric-persister.php` ✅
-- `class-wp-mcp-ai-metric-retention.php` ✅
-- `class-wp-mcp-ai-chat-turn-metrics.php` ✅
-- `class-wp-mcp-ai-chat-turn-observer.php` ✅
-- `class-wp-mcp-ai-tool-execution-observer.php` ✅
-- `class-wp-mcp-ai-tool-chain-acceptance-tracker.php` ✅
-- `class-wp-mcp-ai-sse-metrics.php` + `class-wp-mcp-ai-sse-observer.php` ✅
-- `class-wp-mcp-ai-reward-function-registry.php` ✅
-- `class-wp-mcp-ai-verifier-registry.php` + `class-wp-mcp-ai-verifier-base.php` + `interface-wp-mcp-ai-verifier.php` ✅
-- `class-wp-mcp-ai-stock-metrics.php` ✅
-- `budgets/`, `eval/`, `exporters/`, `rewards/`, `verifiers/` subdirectories ✅
-
-**Gap:** No bridge class. Same issue as Harness.
-
-**Action:** Create `MeasurementBridge.php`.
-
----
-
-### 6. Professions 🟡 Bridged
-
-**Platform addon (`src/Professions/`):**
-- `ProfessionService.php` — Singleton, admin-only ✅
-- `Admin/ProfessionAdmin.php`, `Admin/ProfessionsDashboardSection.php` ✅
-
-**Base plugin (`includes/professions/`):**
-- `class-wp-mcp-ai-profession-cpt.php` — CPT registration ✅
-- `class-wp-mcp-ai-profession-seeder.php` ✅
-- `class-wp-mcp-ai-profession-base-knowledge-seeder.php` ✅
-- `class-wp-mcp-ai-profession-orchestration-seeder.php` ✅
-- `class-wp-mcp-ai-profession-orchestration-cli.php` ✅
-- `class-wp-mcp-ai-profession-playbook-seeder.php` ✅
-- `metaboxes/` ✅
-- `profession-dataset-mappings.php` ✅
-- `professions-init.php` ✅
-
-**Gap:** No bridge class. Same as Harness/Measurement.
-
-**Action:** Create `ProfessionBridge.php`.
-
----
-
-### 7. A2A (Agent-to-Agent) 🟡 Bridged
-
-**Platform addon (`src/A2A/`):**
-- `A2AService.php` — Singleton, admin-only ✅
-- `Admin/A2AAdmin.php`, `Admin/A2ADashboardSection.php` ✅
-
-**Base plugin (`includes/a2a/`):**
-- `class-wp-mcp-ai-a2a-agent-card.php` ✅
-- `class-wp-mcp-ai-a2a-client.php` ✅
-- `class-wp-mcp-ai-a2a-message-translator.php` ✅
-- `class-wp-mcp-ai-a2a-push-notifications.php` ✅
-- `class-wp-mcp-ai-a2a-task-manager.php` ✅
-- `class-wp-mcp-ai-a2a-webhook-handler.php` ✅
-- `class-wp-mcp-ai-a2a-wellknown.php` ✅
-
-**Gap:** No bridge class. Same as above.
-
-**Action:** Create `A2ABridge.php`.
-
----
-
-### 8. ACP (Agent Communication Protocol) 🟡 Bridged
-
-**Platform addon (`src/ACP/`):**
-- `ACPService.php` — Singleton, admin-only ✅
-- `Admin/ACPAdmin.php`, `Admin/ACPDashboardSection.php` ✅
-
-**Base plugin (`includes/acp/`):**
-- `class-wp-mcp-ai-acp-jsonrpc-dispatcher.php` ✅
-- `class-wp-mcp-ai-acp-server.php` ✅
-- `class-wp-mcp-ai-acp-session-bridge.php` ✅
-- `class-wp-mcp-ai-acp-session-manager.php` ✅
-- `transport/` subdirectory ✅
-
-**Gap:** No bridge class. Same as above.
-
-**Action:** Create `ACPBridge.php`.
-
----
-
-### 9. Federation 🔴 Gap
-
-**Platform addon (`src/Federation/`):**
-- `FederationService.php` — Singleton (50-line stub, admin-only) ⚠️
-- `Admin/FederationAdmin.php`, `Admin/FederationDashboardSection.php` ✅
-
-**Base plugin (`includes/`):**
-- **❌ No `includes/federation/` directory exists**
-- **❌ No federation business logic classes exist**
-- **ℹ️** `addons/content-graph/includes/remote/drivers/class-nvoos-content-graph-remote-oos-federation.php` — This is a **graph-level** federation driver (imports nodes from another oOS site into the knowledge graph). It is NOT agent-level federation (agents discovering and communicating with agents on other instances).
-
-**What's missing:**
-1. `includes/federation/class-wp-mcp-ai-federation-registry.php` — Registry of federated instances
-2. `includes/federation/class-wp-mcp-ai-federation-handshake.php` — Trust establishment, capability exchange
-3. `includes/federation/class-wp-mcp-ai-federation-client.php` — Outbound agent task delegation
-4. `includes/federation/class-wp-mcp-ai-federation-server.php` — Inbound agent task reception
-5. `FederationBridge.php` in Platform addon
-6. REST endpoints for federation (well-known, agent card, task accept)
-
-**Action:** Greenfield development needed. This is a new subsystem.
-
----
-
-### 10. Blueprints 🔴 Gap
-
-**Platform addon (`src/Blueprints/`):**
-- `BlueprintService.php` — Singleton (20-line stub, admin-only) ⚠️
-- `Admin/BlueprintAdmin.php`, `Admin/BlueprintsDashboardSection.php` ✅
-
-**Base plugin (`includes/`):**
-- **❌ No `includes/blueprints/` directory exists**
-- **❌ No general-purpose blueprints system exists**
-- **ℹ️** `addons/pro/includes/admin/class-wp-mcp-ai-crm-blueprints-page.php` — CRM-specific blueprint browser for pre-built CRM assistant templates. NOT a general blueprint system.
-
-**What's missing:**
-1. `includes/blueprints/class-wp-mcp-ai-blueprint-registry.php` — CRUD for blueprint records
-2. `includes/blueprints/class-wp-mcp-ai-blueprint-exporter.php` — Export agent → blueprint JSON
-3. `includes/blueprints/class-wp-mcp-ai-blueprint-importer.php` — Import blueprint JSON → agent
-4. `includes/blueprints/class-wp-mcp-ai-blueprint-validator.php` — Schema validation
-5. `BlueprintBridge.php` in Platform addon
-6. Integration with agent creation flow (save-as-blueprint, create-from-blueprint)
-7. REST endpoints for blueprint CRUD
-
-**Action:** Greenfield development needed. This is a new subsystem.
-
----
-
-## Bridge Class Coverage Summary
-
-| Subsystem | Bridge Class | Status |
-|---|---|---|
-| Agents | `CptBridge.php` | ✅ Complete |
-| Skills | `SkillBridge.php` | ✅ Complete |
-| Slash Commands | `SlashCommandBridge.php` | ✅ Complete |
-| Harness | — | ❌ Missing |
-| Measurement | — | ❌ Missing |
-| Professions | — | ❌ Missing |
-| A2A | — | ❌ Missing |
-| ACP | — | ❌ Missing |
-| Federation | — | ❌ Missing (subsystem doesn't exist yet) |
-| Blueprints | — | ❌ Missing (subsystem doesn't exist yet) |
-
-**Priority order for bridge creation:**
-1. Harness, Measurement (most complex base plugin implementations)
-2. A2A, ACP (smaller, well-defined APIs)
-3. Professions (CPT-based, simpler to bridge)
-
----
-
-## Files That Need Creation
-
-### Immediate (Bridges — unblock admin pages referencing base plugin classes)
-
-| File | Lines (est.) | Complexity |
-|---|---|---|
-| `src/Harness/HarnessBridge.php` | ~80 | Low (delegation pattern) |
-| `src/Measurement/MeasurementBridge.php` | ~80 | Low |
-| `src/Professions/ProfessionBridge.php` | ~60 | Low |
-| `src/A2A/A2ABridge.php` | ~60 | Low |
-| `src/ACP/ACPBridge.php` | ~60 | Low |
-
-### Phase 2 (Greenfield — build new subsystems in base plugin)
-
-| File | Lines (est.) | Complexity |
-|---|---|---|
-| `includes/federation/class-wp-mcp-ai-federation-registry.php` | ~300 | High |
-| `includes/federation/class-wp-mcp-ai-federation-handshake.php` | ~200 | Medium |
-| `includes/federation/class-wp-mcp-ai-federation-client.php` | ~250 | Medium |
-| `includes/federation/class-wp-mcp-ai-federation-server.php` | ~250 | Medium |
-| `includes/blueprints/class-wp-mcp-ai-blueprint-registry.php` | ~200 | Medium |
-| `includes/blueprints/class-wp-mcp-ai-blueprint-exporter.php` | ~150 | Low |
-| `includes/blueprints/class-wp-mcp-ai-blueprint-importer.php` | ~200 | Medium |
-| `includes/blueprints/class-wp-mcp-ai-blueprint-validator.php` | ~100 | Low |
-
-### Phase 3 (Bridges once subsystems exist)
-
-| File | Lines (est.) |
+| Status | Meaning |
 |---|---|
-| `src/Federation/FederationBridge.php` | ~80 |
-| `src/Blueprints/BlueprintBridge.php` | ~60 |
+| 🟡 Bridged | Admin UI + bridge here; business logic still in base plugin `includes/` |
+| 🟢 Extracted | Business logic ported to this addon's `src/`; base copy is legacy |
+| 🔴 Gap | Planned but no implementation anywhere |
+| ⏸️ Deferred | Decision: stays in base plugin (see plan §10 open decisions) |
 
----
+## Subsystem matrix
 
-## AI Addon Practical Notes
+| Subsystem | Base source | Platform target | Status |
+|---|---|---|---|
+| A2A | `includes/a2a/` (7 classes) | `src/A2A/` (7 classes ported) | 🟢 Extracted (Wave A) |
+| Agents (role system) | `includes/agents/` (12 classes) | `src/Agents/` | 🟢 Extracted (Wave C) |
+| Assistant CPT | `includes/assistants/` + `includes/class-assistant-cpt.php` | (stays in base — plan §10 decision 1) | ⏸️ Deferred |
+| Skills | `includes/class-wp-mcp-ai-skill-registry.php`, `-skill-parser.php`, `-skill-pack-registry.php` | `src/Skills/` (registry, parser, pack registry; SkillBridge resolves ported-first) | 🟢 Extracted (Wave B) |
+| Slash Commands | `includes/slash-commands/` (7 classes + commands/) | `src/SlashCommands/` + `src/SlashCommands/Commands/` | 🟢 Extracted (Wave B, S1–S2) |
+| Harness | `includes/harness/` (30 classes) | `src/Harness/` | 🟢 Extracted (Wave C) |
+| Measurement | `includes/measurement/` (30+ files) | `src/Measurement/` | 🟢 Extracted (Wave C) |
+| Professions + Knowledge-base | `includes/professions/`, `includes/knowledge-base/` | `src/Professions/` + `src/Professions/Metaboxes/` | 🟢 Extracted (Wave A, P1–P3) |
+| Teams | `includes/teams/` + team repository/loader | `src/Teams/` (CPT, repository, KB loader, seeder, service) | 🟢 Extracted (Wave A) |
+| ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
+| Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` + `src/Mesh/` | 🟢 Extracted (Wave A) — settings admin UI stays in base by design (FederationAdmin covers the platform dashboard) |
+| Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🟢 Built (Phase 4 greenfield) |
 
-The AI addon is in a stronger position than the Platform addon:
+## Wave A extraction notes (2026-08-31)
 
-**What works:**
-- 13 AI providers registered via `CoreBridge` ✅
-- 13 AI tools registered in both nvoos/core ToolRegistry and Content Graph ToolRegistry ✅
-- Embeddings + RAG + AgentMemory wired ✅
-- REST ChatController with SSE streaming ✅
-- Settings injected into core's grouped option ✅
+### A2A 🟢 Extracted
 
-**Key storage note — not a gap, but worth understanding:**
+- Ported classes live in `src/A2A/` under `NvoosContentGraphAiPlatform\A2A`: `AgentCard`, `TaskManager`, `Client`, `MessageTranslator`, `PushNotifications`, `WebhookHandler`, `WellKnown`.
+- Behaviour is 1:1 — same option keys (`wp_mcp_ai_a2a_tasks`, `wp_mcp_ai_a2a_push_configs`), same hooks (`wp_mcp_ai_a2a_*`), same A2A protocol version.
+- `AgentCard::resolve_tool_registry()` prefers `WP_MCP_AI_Tool_Registry` (monolith) and falls back to the Content Graph core registry (standalone).
+- `A2AService` wires `WellKnown` only when the base plugin has not booted (`! defined('WP_MCP_AI_PATH')`) — no double hook registration in monolith mode.
+- **Deferred (standalone parity gap):** the A2A REST receive routes (`includes/rest/class-wp-mcp-ai-rest-a2a-controller.php`) remain in the base plugin. Standalone mode serves the well-known agent card but cannot yet receive A2A messages. Tracked for a follow-up PR — port or re-implement the controller against platform auth.
 
-The base plugin (`mcp-ai-wpoos`) has `WP_MCP_AI_Api_Key_Store` in `includes/security/class-wp-mcp-ai-api-key-store.php` — AES-256-GCM encryption with transparent plaintext migration for API keys stored in `wp_mcp_ai_settings`. This is production-grade and handles the migration path.
+### ACP 🟢 Extracted
 
-The Content Graph AI addon's `CredentialResolver` has a two-tier approach:
-1. **Priority 1** (L133): Reads keys from `nvoos_content_graph_settings` via raw `get_option()` — plaintext
-2. **Priority 2** (L104-108): Falls back to base plugin's `WP_MCP_AI_Credential_Resolver::get_api_key()` which uses the encrypted `Api_Key_Store`
+- Ported classes live in `src/ACP/` under `NvoosContentGraphAiPlatform\ACP`: `Server`, `JsonRpcDispatcher`, `SessionManager`, `SessionBridge`, `TransportHttp`, plus a minimal local `AbstractRestController` (the base plugin's `WP_MCP_AI_REST_Controller_Base` is intentionally not ported — it depends on the monolith container/auth/security stack).
+- `ACPService` mounts the transport on `rest_api_init` only in standalone mode when `ai_platform_settings.acp_enabled` is set. Monolith mode: base REST layer owns ACP routing.
+- **Intentional deviation:** the base copy's transport permission callback is `return true` (TODO). The platform port enforces `is_user_logged_in() && current_user_can( 'edit_posts' )` — it only mounts in standalone mode where the base auth stack is absent.
+- Transient prefixes (`acp_sess_*`, `acp_updates_*`), user meta (`_acp_sessions`), JSON-RPC wire format, and route paths (`mcp-ai/v1/acp`, `/acp/sse`) are unchanged.
 
-**Practical implication:** When the base plugin is active AND the user enters keys through the base plugin's admin, keys are encrypted. When the user enters keys through Content Graph's own AI settings page, they go to `nvoos_content_graph_settings` unencrypted. The resolver's fallback chain means it will find the encrypted key from the base plugin if both exist.
+### Transition mechanism
 
-**Recommendation:** Either (a) wrap Content Graph's `set()` calls to use `wp_mcp_ai_set_api_key()` when the base plugin is active, or (b) back the Content Graph settings store with its own encryption if the base plugin is absent. Not urgent since the base plugin provides encrypted fallback, but worth addressing before the AI addon ships standalone.
+Base plugin `includes/` copies remain for the transition; deletion happens at cutover (plan Phase 5). No `class_alias` shims during the transition — platform owns wiring only in standalone mode, which avoids double registration entirely.
 
-**Other practical concerns:**
-- 🟢 Chat UI — by design per next-steps plan: admin-only tester (`ChatInterface.php`), not a production widget. The base+pro plugin's SPA-v2 was never planned for Content Graph migration.
-- 🟡 `lib/` autoloader fallback fragile in production ZIPs
-- 🟡 No deactivation hook cleanup
+### Teams 🟢 Extracted
+
+- Ported classes live in `src/Teams/` under `NvoosContentGraphAiPlatform\Teams`: `TeamCpt` (same `mcp_ai_team` post type + byte-identical `_wp_mcp_ai_team_*` meta keys), `TeamRepository`, `TeamKnowledgeBaseLoader`, `TeamSeeder`, plus `TeamsService` (composition root).
+- Knowledge base bundled at `data/knowledge-base/teams/` (26 JSON files, mirror of `includes/knowledge-base/teams/`); the loader prefers the base plugin's directory in monolith mode.
+- `TeamsService` wires the ported CPT + seeder on `init` (priority 5, mirroring the base `teams-init.php`) in standalone mode only — monolith mode keeps the base plugin's own wiring (no double registration). Shared option key `wp_mcp_ai_teams_seeded` keeps seeding idempotent across modes.
+- `src/Schema/Sanitize.php` mirrors `wp_mcp_ai_sanitize_recursive()` byte-for-byte (delegates to the base function when present) — used by `TeamCpt::save_post()` for workflow-template JSON; also needed by the pending Professions port.
+- **Graceful degradation (standalone):** the defaults metabox's provider/model selects probe `WP_MCP_AI_Admin_Settings` / `WP_MCP_AI_Model_Service` via `class_exists()` and render empty when absent (no model service in standalone mode).
+
+### Professions core (P1) — in progress
+
+- Ported classes in `src/Professions/`: `ProfessionCpt` (same `mcp_ai_profession` post type + byte-identical `_wp_mcp_ai_profession_*` meta keys), `ProfessionRepository`, `ProfessionKnowledgeBaseLoader`, `ProfessionPlaybookLoader`, `ProfessionToolRecommender`, `DatasetMappings` (function pair → static class), and `ProfessionService` (composition root + ported domain logic of `WP_MCP_AI_Profession_Service`).
+- Knowledge base `professions/` (18 JSON files) bundled at `data/knowledge-base/professions/`; loaders prefer the base plugin's directory in monolith mode.
+- `ProfessionService::register()` wires the ported CPT + cache-invalidation hooks in standalone mode only; monolith mode keeps the base `professions-init.php` wiring. `src/Professions/shim-functions.php` (standalone-only) restores the global function surface: `wp_mcp_ai_get_profession_service`, `wp_mcp_ai_get_profession_dataset_recommendations`, `wp_mcp_ai_get_all_profession_dataset_mappings`.
+- Tool registry resolution follows the `defined( 'WP_MCP_AI_PATH' )` boot discriminator — the monorepo root autoloader classmaps base registry files to disk even when the base plugin is inactive, and those files reference `WP_MCP_AI_PATH` (fatal on bare `class_exists` probes; fixed in `ProfessionPlaybookLoader::resolve_tool_registry()` and `ProfessionCpt`'s tools render).
+- **Custom metaboxes degrade in standalone mode** until P3 ports the 8 metabox classes (`ProfessionCpt::init_metaboxes()` probes the ported names). `ProfessionOrchestrationSeeder` + `ProfessionOrchestrationCli` follow in P3; Professions stays 🟡 Bridged in RuntimeMode until then.
+- **P2:** the three init-wired seeders are ported — `ProfessionSeeder` (311 bundled professions seeded), `ProfessionBaseKnowledgeSeeder` (191 bundled documents), `ProfessionPlaybookSeeder` (277 bundled playbook files) — with byte-identical seeding option keys and the same `admin_init` priorities. Seeder wiring added to `ProfessionService::register()` (standalone-only). Data bundled at `data/knowledge-base/profession-documents/` + `data/knowledge-base/profession-playbooks/`. Note: the base copies' `throw new \RuntimeException( sprintf( ... ) )` sites are flagged by WPCS `EscapeOutput.ExceptionNotEscaped`; the port restructured those messages to concatenation with `ExceptionNotEscaped` ignores (the base file itself has the same latent violations — 6 errors under the root ruleset).
+- **P3 (Professions complete):** `ProfessionOrchestrationSeeder` (on-demand; byte-identical `wp_mcp_ai_profession_orchestration_version` option), `ProfessionOrchestrationCli` (WP-CLI commands registered by `ProfessionService` in standalone mode), and all 8 metabox classes in `src/Professions/Metaboxes/` (`ProfessionMetaboxBase` + 7 concrete). `ProfessionCpt::init_metaboxes()` now wires the ported metaboxes in standalone mode. Standalone degradations: expertise picker assets (`WP_MCP_AI_URL`) skip enqueue; datasets integration reads base settings only when present; provider/model selects render empty without the base model service. `RuntimeMode` no longer lists Professions as bridged.
+- **Hardening TODO (pre-existing):** `A2A\AgentCard::resolve_tool_registry()` uses a bare `class_exists( 'WP_MCP_AI_Tool_Registry' )` probe with the same latent standalone fatal — follow-up one-line fix.
+
+### Federation 🟢 Extracted (server surface, directory, mesh)
+
+- Ported classes in `src/Federation/`: `Federation` (bootstrap — well-known, peer CPT, directory REST, mesh sync, cron, A2A well-known, activation hooks on the platform plugin file), `Settings` (reads the same `wp_mcp_ai_settings` option), `WellKnown` (registry-agnostic — accepts base or Content Graph core registries, null-safe), `PeerCpt` (same `ai_peer` post type + byte-identical meta keys; JetEngine CCT sync no-ops in standalone mode), `DirectoryRest` (`ai-dir/v1` — register/list/get/search/reverify/report with rate limiting), `PeerVerifier`, `RateLimiter` (fleet-management capability check falls back to `manage_options` in standalone mode).
+- Ported classes in `src/Mesh/`: `MeshRouter` (AI-optimized peer selection, circuit breakers, retry — logs via the base logger when present, error_log fallback), `MeshPeerSync` (settings → `ai_peer` CPT sync), `MeshPeerTester`, `MeshPeerTestRest` (`mcp-ai/v1/mesh/test-peer`).
+- `FederationService` boots `Federation` in standalone mode only — monolith mode keeps the base plugin's own federation wiring (no double registration).
+- **Remains in base by design:** `WP_MCP_AI_Federation_Settings` admin settings UI (registers into the base settings page); the Platform addon's `FederationAdmin` provides its own dashboard surface.
+
+## Runtime degradation guard
+
+`src/RuntimeMode.php` replaces the old silent `class_exists()`-skip failure mode:
+
+- Monolith matrix: all bridged probes resolve; only `Blueprints` is reported (greenfield).
+- Standalone matrix: every non-extracted subsystem + `Blueprints` is reported via a dismissible `manage_options` admin notice.
+
+## Next extraction waves
+
+1. **Phase 5 (release-gated)** — delete base copies (plan §10b, decision #4), meta-plugin mode (decision #3 — needs a shared ownership discriminator replacing `defined('WP_MCP_AI_PATH')` checks across services + a third CI matrix), base 2.0.0, docs sweep.
+
+## Phase 5 status (2026-09-01)
+
+- Platform addon version bumped to **2.0.0** — extraction Waves A–C + Phase 4 complete; the addon runs standalone (base absent) with every planned subsystem, or side-by-side with the base plugin (monolith) where the base copies own runtime wiring.
+- Base-copy deletion and meta-plugin mode remain release-gated on plan open decisions #3/#4 — see `docs/project/plans/content-graph-platform-extraction-plan.md` §10b.
+
+## Phase 4 — Blueprints greenfield (2026-09-01)
+
+- `BlueprintRegistry` — CRUD over the existing `TemplateCpt` (`ai_platform_template`) — plan open decision 2 resolved: REUSE (no new slug). Meta keys: `_nvoos_platform_blueprint_definition` (JSON), `_nvoos_platform_blueprint_version`, `_nvoos_platform_blueprint_kind`; schema version 1.0.
+- `BlueprintValidator` — required envelope keys (`blueprint_version`, `kind`), kind whitelist (agent, workflow, prompt_pack), version guard (newer schema rejected with `blueprint_version_too_new`), kind-specific payload checks, and an irreversible/credential-field guard (`api_key`, `secret`, `token`, … never exported/imported).
+- `BlueprintExporter` — agent config array → versioned definition (works on config arrays; the assistant CPT stays in base by plan decision). `BlueprintImporter` — validated definition → normalized agent config.
+- `BlueprintRestController` — `nvoos-content-graph/v1/platform/blueprints` CRUD: reads `edit_posts`, writes `manage_options`, schema-validated args, 400/404 error mapping.
+- `BlueprintService::register()` wires the REST surface in every runtime mode (greenfield — no base counterpart to double-register).
+- Exit-gate tests: full lifecycle (export → validate → store → import → update → delete), validator safety guards, REST surface + permission callbacks (fail-closed).
+- `RuntimeMode` now reports NO missing subsystems in either matrix (the notice is effectively dormant until a future subsystem ships).
+
+## Wave C extraction notes (2026-09-01)
+
+### Harness 🟢 Extracted
+
+- All 30 harness classes ported to `src/Harness/` (artifact pipeline, guardrails, citation verifier, evolution governor, eval scheduler, prompt injector, trace capture, necessity gate, PII filter, retrieval harness, self-refine loop, tool router, …) plus a platform copy of `InlineAsyncTickTrait` (class-declaration-level `use`; hook names preserved).
+- `HarnessService::register()` wires the ported subscribers (evolution settings bridge, prompt injector, guardrails, necessity gate, output guardrail, citation verifier, eval scheduler, trace capture) in standalone mode only.
+- **Port fix (behaviour-preserving):** 25 sibling `class_exists('X')` probes rewritten to `class_exists( __NAMESPACE__ . '\X' )` — PHP does not namespace-resolve string probes, and the unqualified probes would have silently degraded every layer in standalone mode.
+- Standalone degradations: eval-suite runs return `wp_mcp_ai_harness_eval_unavailable`; necessity gate passes through without the base tool pipeline; failure-replay falls back to the literal verifier slug; drift detection short-circuits to a non-actionable report.
+
+### Measurement 🟢 Extracted
+
+- All measurement classes ported to `src/Measurement/` (registries, collector, event store, persister, retention, chat-turn metrics/observer, SSE metrics, session-log observer, reward functions, verifiers, budgets).
+- `MeasurementService::register()` requires the standalone `shim-functions.php` — a faithful port of `wp_mcp_ai_measurement_bootstrap()` and its companions (plugins_loaded priority 50, admin_init capability seeding, reference verifier/reward registration hooks).
+- Standalone degradations: base-only eval suites, tool-execution/SSE/stock-metrics observers, reference verifiers/rewards, and the base admin dashboard are gated off.
+
+### Agents (role system) 🟢 Extracted
+
+- Role-system classes ported to `src/Agents/` (approval gate, audit trail, capability boundary + hooks, code sandbox, harness bootstrap, harness evolver + role adapter, role base/planner/executor/critic, evolved prompt resolver; `AgentRoleInterface` ported from `includes/interfaces/` as a namespaced dependency).
+- `Agents::register()` extended with a standalone branch; `AgentHarnessBootstrap` resolves the ported role classes when the base `wp_mcp_ai_get_agent_role()` accessor is absent.
+- Standalone degradations: executor tool registry gated (fails fast with `wp_mcp_ai_no_tool_registry`); evolver enhancement paths (artifacts, governor, provider client) skip; provider fallback returns `wp_mcp_ai_evolver_provider_class_missing`.
+- Assistant CPT remains in base (⏸️ Deferred, plan §10 decision 1) — the platform admin UI degrades via `CptBridge` in standalone.
+
+## Runtime degradation guard (Wave C update)
+
+`BRIDGED_SUBSYSTEMS` is now EMPTY in both matrices — only the greenfield `Blueprints` subsystem is reported (Phase 4). The assistant-CPT deferral is tracked in the matrix above rather than in the runtime notice.
+
+## Wave B extraction notes (2026-08-31)
+
+### Skills 🟢 Extracted
+
+- Ported classes in `src/Skills/`: `SkillRegistry` (same `wp_mcp_ai_skill_index` option, uploads-dir storage, preserved `wp_mcp_ai_skill_registry_include_evolved` filter), `SkillParser`, `SkillPackRegistry` (preserved `wp_mcp_ai_skill_packs` filter + `wp_mcp_ai_skill_pack_installed` action).
+- Bundled skills (1.2 MB) bundled at `data/bundled-skills/`; `SkillRegistry` prefers the base plugin's `includes/bundled-skills` in monolith mode and the bundled copy in standalone mode.
+- `SkillBridge` now resolves the ported registries first (same storage, so monolith behaviour is unchanged), falling back to the base copies for packaging BC.
+- `SkillService::register()` owns the deferred bundled-skills install (transient `wp_mcp_ai_install_bundled_skills`, init priority 100) in standalone mode; the platform activation hook sets the transient standalone-only.
+- The evolved-skills probe (`WP_MCP_AI_Agent_Harness_Evolver`) is gated behind `defined('WP_MCP_AI_PATH')` — the Harness port (Wave C) will add the ported-class probe.
+- Remains in base by design: `tool-load-skill`, admin AJAX handlers, and the assistant CPT's skill metaboxes (assistant CPT stays in base per plan §10 decision 1).
+
+### Slash Commands (S1–S2) 🟢 Extracted
+
+- Ported engine classes in `src/SlashCommands/`: `SlashCommandParser`, `SlashCommandValidator`, `SlashCommandHandler`, `SlashCommandAudit`, plus all 20 command classes in `src/SlashCommands/Commands/`.
+- `src/SlashCommands/shim-functions.php` is a faithful port of `slash-commands-init.php`: the full `wp_mcp_ai_*` global function surface (`wp_mcp_ai_init_slash_commands`, `wp_mcp_ai_execute_slash_command`, `wp_mcp_ai_register_slash_command`, `wp_mcp_ai_slash_command_exists`, `wp_mcp_ai_get_slash_commands`, `wp_mcp_ai_register_slash_command_scripts`, `wp_mcp_ai_get_workflow_orchestrator`, `wp_mcp_ai_get_performance_optimizer`, `wp_mcp_ai_execute_workflow`, audit-table helpers, `wp_mcp_ai_log`) plus the `wp_mcp_ai_slash_command_handler` global and the init wiring (priority 20). Loaded standalone-only by `SlashCommandService::register()`.
+- All base-class probes in the port are gated behind `defined('WP_MCP_AI_PATH')` (the monorepo-autoloader trap). `wp_mcp_ai_register_slash_command_scripts()` degrades in standalone (base JS assets + REST classes absent). The cache adapter is intentionally NOT shimmed — the optimizer's `function_exists` probe degrades cleanly.
+- **Port deviations (behaviour-identical):** `SlashCommandContext`'s known-limits map carried duplicate array keys in the base ('gpt-4.1' ×2, 'gemini-2.5-flash' ×3); deduped to the last-wins effective values.
+- **S2:** `SlashCommandToolkitManager` (10.4K lines — toolkit + WooCommerce + media commands, ~86 contract-signature `phpcs:ignore`s for unused execute() params), `SlashCommandWorkflowOrchestrator`, `SlashCommandPerformanceOptimizer` ported; `wp_mcp_ai_load_toolkit_slash_commands()` initializes the ported manager standalone. `RuntimeMode` no longer lists Slash Commands as bridged.

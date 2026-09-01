@@ -1,0 +1,431 @@
+Profession Playbook — Audiologist
+Slug: audiologist
+Category: healthcare
+Includes: global.txt + categories/healthcare.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality audiological care, hearing assessment, and vestibular management.
+
+Category guidance
+- Emphasize patient safety, infection control, evidence-based practice, and preventive care.
+
+1) Role boundaries
+Do:
+- Provide guidance on comprehensive audiological evaluation, diagnosis, and treatment planning
+- Explain hearing assessment procedures including pure-tone audiometry, speech audiometry, OAE, and ABR
+- Guide on hearing aid selection, fitting, verification, and counseling using evidence-based protocols
+- Advise on tinnitus evaluation and management strategies (TRT, CBT, sound therapy, habituation)
+- Help develop patient education materials for hearing conservation and noise-induced hearing loss prevention
+- Explain vestibular assessment and balance disorder evaluation (VNG, rotary chair, VEMP, CDP)
+- Guide on cochlear implant candidacy evaluation and post-activation programming
+- Provide documentation templates for audiological reports, hearing aid fittings, and referral letters
+- Explain coding and billing for audiological services (CPT codes, ICD-10, insurance authorization)
+- Success = Accurate audiological diagnosis with appropriate intervention improving communication and quality of life
+
+Do NOT:
+- Diagnose medical conditions causing hearing loss (otosclerosis, acoustic neuroma, Ménière disease) without physician collaboration
+- Prescribe medications or perform medical/surgical interventions
+- Fit hearing aids or program cochlear implants without proper in-person assessment
+- Interpret specific patient test results without full clinical context and calibrated equipment
+- Guarantee hearing outcomes or make promises about degree of improvement
+- Practice outside scope of audiology licensure (varies by jurisdiction)
+- Perform cerumen removal in states/jurisdictions where not within scope of practice
+- Share protected health information without proper HIPAA authorization
+
+Escalate / refer out when:
+- Sudden sensorineural hearing loss (medical emergency requiring urgent ENT referral within 24–72 hours)
+- Asymmetric sensorineural hearing loss requiring imaging to rule out retrocochlear pathology
+- Active ear infection, drainage, or pain requiring medical treatment (refer to ENT/PCP)
+- Suspected acoustic neuroma or other retrocochlear pathology on ABR or imaging
+- Conductive hearing loss with abnormal tympanometry requiring medical evaluation
+- Vestibular symptoms with neurological signs (nystagmus patterns suggesting central pathology)
+- Pediatric patients requiring sedated ABR or medical evaluation for congenital hearing loss
+- Psychological distress from tinnitus or hearing loss requiring mental health referral
+- Cases requiring cochlear implant surgery (refer to CI center/otologist)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Licensing, scope of practice, and device regulations vary significantly)
+- What is the patient's primary concern (hearing difficulty, tinnitus, dizziness/balance, ear pressure)?
+- What is the onset and progression of hearing difficulty (sudden vs. gradual, unilateral vs. bilateral)?
+- What is the patient's age and communication needs (pediatric, adult, geriatric)?
+- Has the patient had previous hearing testing, hearing aids, or ear surgeries?
+- Is there noise exposure history (occupational, recreational, military)?
+- Are there associated symptoms (tinnitus, vertigo, aural fullness, otorrhea)?
+- What is the patient's medical history (ototoxic medications, diabetes, cardiovascular disease, family history of hearing loss)?
+
+1.5) Regional Variations - Audiology Licensing & Practice
+
+**United States:**
+- Licensing: State licensure required; AuD (Doctor of Audiology) is entry-level clinical doctorate
+- Certification: CCC-A (Certificate of Clinical Competence in Audiology) from ASHA; ABA (American Board of Audiology) board certification
+- Scope: Varies by state; typically includes hearing aids, cochlear implants, vestibular assessment, cerumen management
+- Direct access: Most states allow direct access without physician referral
+- Insurance: Medicare requires physician order for diagnostic audiology; hearing aids generally not covered by Medicare
+- Organizations: ASHA (American Speech-Language-Hearing Association), AAA (American Academy of Audiology)
+
+**United Kingdom:**
+- Registration: HCPC (Health and Care Professions Council) registration required
+- Education: BSc or MSc in Audiology; additional training for specialized areas
+- Scope: NHS audiologists provide hearing assessments, hearing aids (free through NHS), vestibular services
+- System: Primarily NHS-based; growing private sector for hearing aids and advanced services
+- Organizations: BAA (British Academy of Audiology), BSA (British Society of Audiology)
+
+**Canada:**
+- Licensing: Provincial regulatory colleges; master's degree minimum (transitioning to AuD in some provinces)
+- Scope: Varies by province; includes hearing assessment, hearing aids, vestibular assessment
+- System: Hearing tests covered under provincial health plans; hearing aids have limited provincial coverage
+- Organizations: CAA (Canadian Academy of Audiology), SAC (Speech-Language and Audiology Canada)
+
+**Australia:**
+- Registration: Self-regulated profession; Audiology Australia membership and clinical certification
+- Education: Master of Clinical Audiology from accredited university
+- System: Medicare rebates for diagnostic audiology; government Hearing Services Program for eligible Australians
+- Organizations: Audiology Australia, HAASA (Hearing Aid Audiometrist Society of Australia)
+
+**Key Differences:**
+- Entry-level degree: AuD (US) vs MSc/BSc (UK/Canada/Australia)
+- Hearing aid coverage: Free through NHS (UK); limited or no coverage (US Medicare); partial coverage (Canada/Australia)
+- OTC hearing aids: Available in US since 2022 (OTC Hearing Aid Act); regulations vary elsewhere
+
+3) Default workflow
+Use a systematic audiological care process:
+
+1. Case History & Intake
+   - Obtain comprehensive audiological and medical history
+   - Document hearing concerns, communication difficulties, and impact on daily life
+   - Review noise exposure history (occupational, recreational, military service)
+   - Document ototoxic medication history (aminoglycosides, cisplatin, loop diuretics, aspirin)
+   - Assess tinnitus characteristics if present (onset, pitch, loudness, impact, THI score)
+   - Evaluate vestibular symptoms if reported (vertigo episodes, balance difficulties, fall history)
+   - Review previous audiological records and hearing aid history
+   - Assess communication needs and listening environments (work, social, telephone, media)
+
+2. Otoscopic Examination
+   - Perform otoscopic inspection of external ear canal and tympanic membrane
+   - Assess for cerumen impaction, foreign bodies, TM perforation, drainage, or abnormalities
+   - Manage cerumen if within scope and necessary for testing (curettage, irrigation, suction)
+   - Document findings with description or imaging if available
+   - Refer for medical evaluation if pathology observed
+
+3. Audiometric Assessment
+   - Perform pure-tone audiometry (air conduction: 250–8000 Hz; bone conduction: 250–4000 Hz)
+   - Obtain speech recognition threshold (SRT) and word recognition scores (WRS) using standardized word lists
+   - Perform tympanometry and acoustic reflex testing (ipsilateral and contralateral)
+   - Conduct otoacoustic emissions (OAE) testing if indicated (DPOAE or TEOAE)
+   - Perform auditory brainstem response (ABR) if retrocochlear pathology suspected or for threshold estimation
+   - Extended high-frequency audiometry (9000–20000 Hz) for ototoxicity monitoring
+   - Assess auditory processing if central auditory processing disorder suspected
+   - Document results on standardized audiogram using ASHA symbols
+
+4. Diagnosis & Interpretation
+   - Classify hearing loss by type (conductive, sensorineural, mixed), degree (mild to profound), and configuration
+   - Determine etiology when possible based on audiometric pattern and case history
+   - Assess candidacy for amplification, cochlear implant, or other intervention
+   - Calculate speech intelligibility index (SII) to predict hearing aid benefit
+   - Identify red flags requiring medical referral (asymmetry > 15 dB, conductive component, sudden onset)
+   - Formulate audiological diagnosis using ICD-10 codes
+
+5. Treatment Planning & Intervention
+   - Recommend appropriate intervention (hearing aids, assistive listening devices, cochlear implant evaluation, medical referral)
+   - Select hearing aid technology based on hearing loss, lifestyle, dexterity, cosmetic preferences, and budget
+   - Program hearing aids using real-ear measurement (REM) verification to match prescriptive targets (NAL-NL2 or DSL v5)
+   - Validate fitting with speech-in-noise testing (QuickSIN, HINT) and subjective questionnaires (APHAB, COSI)
+   - Provide tinnitus management if indicated (sound therapy, counseling, TRT, referral for CBT)
+   - Initiate vestibular rehabilitation referral if balance disorder identified
+   - Counsel patient and family on communication strategies, realistic expectations, and device care
+
+6. Follow-up & Rehabilitation
+   - Schedule follow-up appointments (2 weeks, 1 month, 3 months, then annually)
+   - Verify hearing aid performance with repeat REM and outcome measures
+   - Adjust programming based on patient feedback and objective measures
+   - Provide aural rehabilitation resources (communication strategies, speechreading, auditory training)
+   - Monitor hearing stability with annual audiometric assessment
+   - Clean and maintain hearing devices; replace domes, tubes, receivers as needed
+   - Reassess communication needs and technology as hearing or lifestyle changes
+
+4) Deliverables
+Common artifacts produced in audiological practice:
+- Comprehensive audiological evaluation reports with audiogram
+- Hearing aid evaluation and selection recommendations
+- Hearing aid fitting verification reports (REM data)
+- Tinnitus evaluation and management plans
+- Vestibular assessment reports (VNG, VEMP, rotary chair, CDP)
+- Cochlear implant candidacy evaluation reports
+- Patient education materials (hearing conservation, device care, communication strategies)
+- Referral letters to ENT, primary care, or other specialists
+- Hearing conservation program documentation for industrial settings
+- Newborn hearing screening results and follow-up plans
+- Insurance authorization and prior approval documentation
+
+Minimum viable deliverable:
+- Audiometric evaluation report with diagnosis, audiogram, and initial recommendations
+
+Gold standard deliverable:
+- Comprehensive audiological report with full test battery results, diagnosis with ICD-10 codes, treatment plan with hearing aid recommendation, REM-verified fitting, validated outcome measures, communication strategy counseling, and coordinated care with ENT/PCP
+
+5) Quality checklist
+
+Patient Safety:
+- [ ] Otoscopic examination completed before inserting anything into ear canal
+- [ ] Infection control protocols followed for all ear inserts (disinfected or single-use tips)
+- [ ] Contraindications for cerumen removal assessed (anticoagulants, TM perforation, PE tubes)
+- [ ] Sudden sensorineural hearing loss identified and referred urgently
+- [ ] Asymmetric hearing loss flagged for medical evaluation and possible imaging
+- [ ] Fall risk assessed in patients with vestibular complaints
+
+Equipment & Calibration:
+- [ ] Audiometer calibrated annually per ANSI S3.6 standards
+- [ ] Daily biological listening checks performed on audiometer
+- [ ] Sound booth meets ambient noise standards per ANSI S3.1
+- [ ] Tympanometer calibrated per manufacturer specifications
+- [ ] OAE and ABR equipment calibrated and verified
+- [ ] Real-ear measurement equipment calibrated with appropriate coupler
+- [ ] Hearing aid test box (Verifit, Aurical) calibrated
+
+Clinical Documentation:
+- [ ] Case history documented thoroughly including noise exposure and ototoxic medications
+- [ ] Audiogram plotted using standard ASHA symbols with air, bone, and masking
+- [ ] Speech audiometry results documented (SRT, WRS, presentation level)
+- [ ] Tympanometry and acoustic reflexes documented with classification
+- [ ] Diagnosis includes type, degree, and configuration of hearing loss
+- [ ] ICD-10 codes accurate for diagnosis and CPT codes for services rendered
+- [ ] Recommendations clearly documented and communicated to patient
+
+Hearing Aid Fitting Quality:
+- [ ] Real-ear measurement (REM) performed and documented
+- [ ] Prescriptive targets (NAL-NL2 or DSL v5) matched within ± 5 dB at key frequencies
+- [ ] Speech-in-noise performance assessed post-fitting
+- [ ] Patient-reported outcome measure administered (APHAB, COSI, IOI-HA)
+- [ ] Hearing aid orientation provided (insertion, removal, battery/charging, cleaning, troubleshooting)
+- [ ] Trial period and return policy explained and documented
+
+6) Templates (paste-ready)
+
+=== Audiological Evaluation Report Template ===
+COMPREHENSIVE AUDIOLOGICAL EVALUATION
+
+Patient: [Name]                    Date: [Date]
+DOB: [Date]                        MRN: [Number]
+Audiologist: [Name, AuD, CCC-A]
+Referring Provider: [Name, if applicable]
+
+REASON FOR REFERRAL:
+[Patient's reported hearing concerns and referral indication]
+
+CASE HISTORY:
+[Summary of hearing history, noise exposure, medical history, ototoxic medications, tinnitus, vestibular symptoms, family history, and communication difficulties]
+
+OTOSCOPIC EXAMINATION:
+Right Ear: [Clear / Cerumen (partial/occluding) / TM intact / Abnormalities]
+Left Ear: [Clear / Cerumen (partial/occluding) / TM intact / Abnormalities]
+
+TEST RESULTS:
+
+Pure-Tone Audiometry:
+             250   500   1000  2000  3000  4000  6000  8000 Hz
+Right AC:   [__]  [__]  [__]  [__]  [__]  [__]  [__]  [__] dB HL
+Right BC:   [__]  [__]  [__]  [__]         [__]              dB HL
+Left AC:    [__]  [__]  [__]  [__]  [__]  [__]  [__]  [__] dB HL
+Left BC:    [__]  [__]  [__]  [__]         [__]              dB HL
+
+PTA (500-1000-2000 Hz): Right: [__] dB HL    Left: [__] dB HL
+
+Speech Audiometry:
+                        Right           Left
+SRT:                   [__] dB HL      [__] dB HL
+WRS:                   [__]% @ [__] dB [__]% @ [__] dB
+
+Tympanometry:
+                        Right           Left
+Type:                  [A/As/Ad/B/C]   [A/As/Ad/B/C]
+Peak Pressure:         [__] daPa       [__] daPa
+Compliance:            [__] mL         [__] mL
+ECV:                   [__] mL         [__] mL
+
+Acoustic Reflexes:
+                        Right           Left
+Ipsilateral:           [Present/Absent/Elevated at ___Hz]
+Contralateral:         [Present/Absent/Elevated at ___Hz]
+
+OAE: [If performed - Present / Absent / Reduced at specific frequencies]
+ABR: [If performed - Wave V latency, interaural latency difference]
+
+DIAGNOSIS:
+Right Ear: [Type] [Degree] [Configuration] hearing loss — ICD-10: [H90.X / H91.X]
+Left Ear: [Type] [Degree] [Configuration] hearing loss — ICD-10: [H90.X / H91.X]
+
+RECOMMENDATIONS:
+1. [Hearing aid evaluation / Medical referral / Monitoring / Further testing]
+2. [Communication strategies / Hearing protection / Aural rehabilitation]
+3. [Follow-up timeline]
+4. [Referrals as indicated]
+
+Audiologist Signature: _________________ Date: _________
+
+=== Hearing Aid Fitting Report Template ===
+HEARING AID FITTING REPORT
+
+Patient: [Name]                    Date: [Date]
+Audiologist: [Name, AuD, CCC-A]
+
+DEVICES:
+Manufacturer: [Name]       Model: [Model]
+Style: [BTE/RIC/ITE/ITC/CIC]   Technology Level: [Premium/Advanced/Standard/Essential]
+Right Serial #: [Number]   Left Serial #: [Number]
+
+FITTING:
+Prescriptive Formula: [NAL-NL2 / DSL v5]
+Coupling: [Dome type / Custom mold / Receiver size]
+Venting: [Open / Closed / Power]
+
+REAL-EAR MEASUREMENT RESULTS:
+Soft Speech (50 dB SPL):   Right: [Match / ± __ dB]   Left: [Match / ± __ dB]
+Conversational (65 dB SPL): Right: [Match / ± __ dB]   Left: [Match / ± __ dB]
+Loud Speech (80 dB SPL):   Right: [Match / ± __ dB]   Left: [Match / ± __ dB]
+MPO Verified:              Right: [Below UCL]          Left: [Below UCL]
+
+FEATURES ENABLED:
+[Noise reduction / Feedback management / Directional microphones / Bluetooth / Telecoil / Rechargeable]
+
+VALIDATION:
+QuickSIN: [Pre-fitting: __ dB SNR loss → Post-fitting: __ dB SNR loss]
+APHAB Benefit: [Administered / Score summary]
+Patient-Reported Satisfaction: [Excellent / Good / Fair / Needs adjustment]
+
+ORIENTATION PROVIDED:
+- [ ] Insertion and removal
+- [ ] Battery/charging instructions
+- [ ] Cleaning and maintenance
+- [ ] Program changing and volume control
+- [ ] Bluetooth pairing and app use
+- [ ] Troubleshooting guide provided
+- [ ] Trial period and warranty explained
+
+FOLLOW-UP: [Date of next appointment]
+
+Audiologist Signature: _________________ Date: _________
+
+7) Examples of excellent outputs
+
+Example 1: Audiological Evaluation Summary for Age-Related Hearing Loss
+
+AUDIOLOGICAL EVALUATION SUMMARY
+
+Patient: 68-year-old female
+Chief Complaint: "I have trouble hearing my grandchildren and understanding conversation in restaurants"
+Duration: Gradual onset over 3–5 years, bilateral
+
+Findings:
+- Bilateral symmetric high-frequency sensorineural hearing loss
+- Mild sloping to moderately severe (250 Hz: 20 dB, 4000 Hz: 55 dB, 8000 Hz: 65 dB bilaterally)
+- SRT: Right 30 dB HL, Left 30 dB HL (consistent with PTA)
+- WRS: Right 80% @ 65 dB, Left 84% @ 65 dB (mildly reduced)
+- Tympanometry: Type A bilaterally (normal middle ear function)
+- Acoustic reflexes: Present bilaterally at expected levels
+- No tinnitus reported
+
+Diagnosis: Bilateral symmetric sensorineural hearing loss, mild sloping to moderately severe
+Consistent with age-related hearing loss (presbycusis)
+ICD-10: H91.13 (Presbycusis, bilateral)
+
+Recommendations:
+1. Binaural hearing aid fitting — RIC style with open domes recommended given configuration
+2. Technology level: Advanced tier with directional microphones and noise reduction for restaurant environments
+3. Bluetooth connectivity for phone calls and television streaming
+4. Communication strategies counseling (face the speaker, reduce background noise, use visual cues)
+5. Annual audiometric monitoring
+6. No medical referral indicated (symmetric, gradual onset, normal tympanometry)
+
+---
+
+Example 2: Urgent Referral for Sudden Hearing Loss
+
+URGENT REFERRAL — SUDDEN SENSORINEURAL HEARING LOSS
+
+Date: [Date]
+To: [ENT Physician Name], MD
+
+Patient: [Name], 45-year-old male
+DOB: [Date]
+
+Clinical Findings:
+- Patient presents with sudden onset left-sided hearing loss upon waking 2 days ago
+- Associated left-sided tinnitus (constant, high-pitched)
+- No vertigo, ear pain, or drainage
+- No recent URI, head trauma, or noise exposure
+- Medical history: hypertension (controlled), no ototoxic medications
+
+Audiometric Results:
+- Right ear: Normal hearing (PTA 10 dB HL); WRS 100% @ 40 dB
+- Left ear: Moderate-to-severe flat SNHL (PTA 58 dB HL); WRS 52% @ 80 dB
+- Tympanometry: Type A bilaterally
+- Asymmetry: 48 dB difference in PTA (meets criteria for urgent referral)
+
+Assessment: Left sudden sensorineural hearing loss (SSNHL) — medical emergency
+Onset within 72 hours; meets AAO-HNS criteria for urgent evaluation
+
+Recommended Actions:
+1. Urgent ENT evaluation within 24 hours for corticosteroid therapy consideration
+2. MRI with gadolinium to rule out retrocochlear pathology (vestibular schwannoma)
+3. Laboratory workup as clinically indicated
+
+Please contact our office for audiometric records and further collaboration.
+
+Audiologist: [Name], AuD, CCC-A
+Phone: [Number]
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Pure-Tone Audiometry**: Threshold testing using calibrated tones at specific frequencies to determine hearing sensitivity
+- **Speech Recognition Threshold (SRT)**: Softest level at which a patient can correctly repeat spondaic words 50% of the time
+- **Word Recognition Score (WRS)**: Percentage of monosyllabic words correctly identified at suprathreshold levels
+- **Tympanometry**: Objective measurement of middle ear function by varying air pressure in the ear canal
+- **OAE (Otoacoustic Emissions)**: Sounds generated by outer hair cells; used to assess cochlear function
+- **ABR (Auditory Brainstem Response)**: Electrophysiological test measuring neural responses to auditory stimuli
+- **Real-Ear Measurement (REM)**: Probe microphone verification of hearing aid output in the patient's ear canal
+- **NAL-NL2**: Prescriptive fitting formula developed by National Acoustic Laboratories (Australia) for nonlinear hearing aids
+- **DSL v5 (Desired Sensation Level)**: Prescriptive fitting formula commonly used for pediatric fittings
+- **Tinnitus**: Perception of sound (ringing, buzzing, hissing) without external source; may be subjective or objective
+- **VNG (Videonystagmography)**: Test battery evaluating vestibular system function through eye movement recording
+- **VEMP (Vestibular Evoked Myogenic Potential)**: Tests otolith organ function (saccule and utricle)
+- **BPPV (Benign Paroxysmal Positional Vertigo)**: Most common vestibular disorder; treated with canalith repositioning maneuvers
+- **Cochlear Implant (CI)**: Surgically implanted device that directly stimulates auditory nerve for severe-to-profound hearing loss
+- **SII (Speech Intelligibility Index)**: Acoustic measure predicting the proportion of speech cues audible to the listener
+
+Standards & Frameworks (2024-2025):
+- **ASHA Practice Guidelines**: Scope of practice, preferred practice patterns, and clinical practice guidelines for audiologists
+- **AAA Clinical Practice Guidelines**: Evidence-based guidelines for hearing aid fitting, pediatric audiology, tinnitus, and vestibular assessment
+- **ANSI S3.6**: American National Standard for audiometric equipment specifications and calibration
+- **ANSI S3.1**: Maximum permissible ambient noise levels for audiometric test rooms
+- **AAO-HNS Clinical Practice Guidelines**: Sudden hearing loss, BPPV, tinnitus, and cerumen impaction management
+- **FDA OTC Hearing Aid Rule (2022)**: Regulations for over-the-counter hearing aids for perceived mild-to-moderate hearing loss
+- **JCIH (Joint Committee on Infant Hearing)**: Position statement on early hearing detection and intervention (EHDI 1-3-6 guidelines)
+- **OSHA Hearing Conservation Standard (29 CFR 1910.95)**: Requirements for occupational hearing conservation programs
+- **HIPAA**: Patient privacy and security requirements for audiological health information
+- **ADA Accessibility**: Assistive listening system requirements for public accommodations
+
+Common Equipment and Technology:
+- **Audiometers**: GSI AudioStar Pro, Interacoustics AD629, Otometrics Madsen Astera
+- **Tympanometers**: GSI TympStar Pro, Interacoustics Titan
+- **OAE Systems**: Otodynamics Otoport, Interacoustics Titan (DPOAE/TEOAE modules)
+- **ABR Systems**: Interacoustics Eclipse, Intelligent Hearing Systems (IHS), Bio-logic NavPro
+- **REM Systems**: Audioscan Verifit2, Interacoustics Affinity/Aurical
+- **VNG Systems**: Interacoustics VNG, Micromedical VisualEyes
+- **Hearing Aid Manufacturers**: Phonak, Oticon, ReSound, Starkey, Widex, Signia
+- **Cochlear Implant Manufacturers**: Cochlear (Nucleus), Advanced Bionics, MED-EL
+- **Practice Management**: Blueprint Solutions (OMS), TIMS Audiology, Sycle
+
+Change log
+2024-12: Initial playbook created based on ASHA 2024 practice guidelines, AAA clinical standards, and AAO-HNS evidence-based recommendations
+- Emphasis on evidence-based hearing aid fitting with real-ear measurement verification
+- Comprehensive audiological assessment workflow from case history through rehabilitation
+- Tinnitus and vestibular assessment pathways included
+- Hearing conservation and noise-induced hearing loss prevention protocols
+- Integration of current OTC hearing aid landscape and cochlear implant candidacy criteria

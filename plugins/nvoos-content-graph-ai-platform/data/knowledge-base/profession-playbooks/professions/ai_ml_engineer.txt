@@ -1,0 +1,596 @@
+Profession Playbook — AI/ML Engineer
+Slug: ai_ml_engineer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design, develop, and deploy machine learning models for classification, regression, NLP, computer vision, and generative AI tasks
+- Conduct exploratory data analysis (EDA) to understand data distributions, correlations, and quality issues
+- Preprocess and engineer features using domain knowledge and statistical techniques (normalization, encoding, imputation)
+- Select appropriate algorithms (linear models, tree-based, neural networks, transformers) based on problem type and data characteristics
+- Train, validate, and tune models using cross-validation, grid search, Bayesian optimization, or Optuna
+- Evaluate models with appropriate metrics (accuracy, precision, recall, F1, AUC-ROC, BLEU, perplexity, mAP)
+- Implement MLOps pipelines for automated training, evaluation, and deployment (MLflow, Kubeflow, SageMaker)
+- Version datasets, model artifacts, and experiments using DVC, MLflow, or Weights & Biases
+- Monitor model performance in production for data drift, concept drift, and degradation
+- Apply responsible AI principles: fairness, transparency, explainability (SHAP, LIME), and bias mitigation
+- Document model architecture, training procedures, hyperparameters, and evaluation results
+- Optimize inference performance (quantization, pruning, distillation, ONNX conversion, TensorRT)
+- Stay current with research papers, frameworks, and emerging techniques
+
+Do NOT:
+- Deploy models to production without thorough evaluation on held-out test sets and bias analysis
+- Use training data for evaluation (data leakage) or ignore train-test splitting best practices
+- Train on personally identifiable information (PII) without proper anonymization and consent
+- Ignore class imbalance, overfitting signals, or distribution shifts in data
+- Commit large model files or datasets directly to version control without LFS or DVC
+- Skip reproducibility measures (random seeds, environment pinning, experiment tracking)
+- Use black-box models in high-stakes domains without explainability methods
+- Deploy models without monitoring, alerting, and rollback capabilities
+- Overfit hyperparameters on the test set by repeated evaluation
+- Ignore licensing restrictions on pretrained models and datasets
+
+Escalate / refer out when:
+- Model predictions affect life-critical decisions (medical diagnosis, autonomous vehicles) — involve domain experts and safety reviewers
+- Significant bias is detected across protected groups — escalate to ethics review board
+- Data quality issues require upstream pipeline changes — escalate to data engineering team
+- Infrastructure needs exceed current GPU/TPU allocation — escalate to platform/DevOps team
+- Legal concerns arise regarding training data provenance or model outputs — escalate to legal/compliance
+- Model performance degrades significantly in production — escalate to on-call ML engineer and data team
+- Regulatory requirements (EU AI Act, FDA SaMD) apply — escalate to compliance and legal teams
+
+2) Quick intake questions
+Ask 5–8 questions that materially affect the solution:
+1. **Problem type**: What is the ML task? (classification, regression, NLP, computer vision, recommendation, generation, anomaly detection)
+2. **Data**: What data is available? How much? What format? Is it labeled? Are there quality issues or class imbalance?
+3. **Success criteria**: What metric defines success? What is the baseline to beat? What is the acceptable error rate?
+4. **Constraints**: Are there latency requirements for inference? Memory or compute budget? Edge vs. cloud deployment?
+5. **Region/compliance**: What region will this operate in? Are there data privacy requirements (GDPR, HIPAA, CCPA)?
+6. **Existing infrastructure**: What ML platform is in use? (SageMaker, Vertex AI, Databricks, custom Kubernetes)
+7. **Responsible AI**: Are there fairness requirements? Protected attributes to monitor? Explainability needs?
+8. **Timeline**: Is this a proof-of-concept, MVP, or production-ready system? What is the deadline?
+
+1.5) Regional Considerations
+
+AI/ML engineering practices vary significantly by region due to emerging AI regulation:
+
+**AI Regulation & Compliance:**
+- **European Union**: EU AI Act (risk-based classification: unacceptable, high, limited, minimal risk); GDPR applies to all training data with personal information; right to explanation for automated decisions (Article 22)
+- **United States**: Executive Order on AI Safety (2023); NIST AI Risk Management Framework; state-level AI laws (Colorado AI Act, NYC Local Law 144 for hiring algorithms); sector-specific rules (FDA for medical AI, NHTSA for autonomous vehicles)
+- **Canada**: Artificial Intelligence and Data Act (AIDA); PIPEDA for personal data in training sets
+- **China**: Interim Measures for Generative AI; algorithmic recommendation regulations; mandatory security assessments for public-facing AI
+- **United Kingdom**: Pro-innovation approach; sector-specific regulation; AI Safety Institute evaluations
+
+**Data Sovereignty & Privacy:**
+- Training data may not cross borders without adequate protections (EU-US Data Privacy Framework, SCCs)
+- Data localization requirements in China, Russia, India (proposed), and others
+- Right to erasure challenges for data already incorporated in trained models (machine unlearning)
+
+**Compute & Infrastructure:**
+- Export controls on advanced AI chips (US restrictions on GPU exports to certain countries)
+- Cloud provider availability and GPU/TPU region restrictions
+- On-premises requirements for sensitive government and defense applications
+
+**Ethical & Cultural Considerations:**
+- Bias in training data reflects cultural and regional biases — test across demographics
+- Language model behavior varies across languages and cultural contexts
+- Different regions have different tolerance for AI-generated content and deepfakes
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. **Problem formulation**: Define the ML problem clearly. Determine whether ML is the right approach. Establish success metrics, baselines, and constraints. Align with stakeholders on scope and expectations.
+2. **Data collection and analysis**: Gather and catalog training data. Perform EDA: distributions, correlations, missing values, outliers, class balance. Assess data quality, volume sufficiency, and representativeness. Document data lineage and licensing.
+3. **Data preprocessing and feature engineering**: Clean data (handle missing values, duplicates, outliers). Engineer features using domain knowledge. Apply transformations (normalization, encoding, tokenization). Split data into train/validation/test sets with proper stratification. Version the processed dataset.
+4. **Model selection and training**: Start with simple baselines (logistic regression, random forest, TF-IDF + SVM). Iterate to more complex models (gradient boosting, neural networks, transformers). Use cross-validation for robust evaluation. Track experiments with MLflow or Weights & Biases. Set random seeds for reproducibility.
+5. **Evaluation and analysis**: Evaluate on held-out test set with appropriate metrics. Analyze errors: confusion matrices, per-class metrics, failure cases. Run bias and fairness audits across protected attributes. Generate explainability reports (SHAP values, attention maps, feature importance). Compare against baselines and prior iterations.
+6. **Optimization**: Tune hyperparameters using Optuna, Ray Tune, or Bayesian optimization. Optimize model size (pruning, quantization, knowledge distillation). Profile inference latency and memory usage. Benchmark on target hardware.
+7. **Deployment**: Package model with serving framework (TorchServe, TF Serving, Triton, BentoML). Create inference API with input validation and error handling. Deploy with CI/CD pipeline (canary or blue-green). Set up A/B testing if applicable. Configure autoscaling based on traffic patterns.
+8. **Monitoring and maintenance**: Monitor data drift (Population Stability Index, KL divergence). Monitor model performance metrics in production. Set up alerts for performance degradation. Schedule periodic retraining with fresh data. Maintain model registry with version history.
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable**:
+- Trained model artifact with documented hyperparameters and training configuration
+- Evaluation report with key metrics on test set
+- Basic inference script or API endpoint
+- Data preprocessing pipeline (reproducible)
+- Experiment tracking logs (MLflow, W&B)
+
+**Gold standard deliverable**:
+- Production-ready model with optimized inference (quantized, ONNX-exported)
+- Comprehensive evaluation report with per-class metrics, confusion matrices, and error analysis
+- Fairness and bias audit report across protected attributes
+- Explainability report (SHAP values, feature importance, attention visualizations)
+- MLOps pipeline: automated retraining, evaluation, deployment, and rollback
+- Model card documenting intended use, limitations, ethical considerations, and performance
+- Monitoring dashboard with data drift detection and model performance alerts
+- Versioned dataset and model artifacts with full lineage
+- API documentation with input/output schemas, error codes, and rate limits
+- Load testing results and inference performance benchmarks
+- Runbook for incident response and model rollback procedures
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Data Quality**:
+- [ ] Data is properly split (train/validation/test) with no leakage
+- [ ] Class distribution is analyzed and addressed (oversampling, undersampling, class weights)
+- [ ] Missing values are handled with documented strategy
+- [ ] Outliers are identified and addressed appropriately
+- [ ] Data is versioned and lineage is documented
+- [ ] PII is anonymized or removed from training data
+
+**Model Quality**:
+- [ ] Baseline model established for comparison
+- [ ] Multiple model architectures evaluated
+- [ ] Cross-validation used during development (k-fold, stratified)
+- [ ] Hyperparameters tuned systematically (not manually guessed)
+- [ ] No data leakage between training and evaluation sets
+- [ ] Model complexity is justified (not unnecessarily complex)
+
+**Evaluation**:
+- [ ] Appropriate metrics selected for the problem type
+- [ ] Evaluation performed on truly held-out test set
+- [ ] Per-class and per-segment performance analyzed
+- [ ] Error analysis conducted on failure cases
+- [ ] Statistical significance of improvements verified
+- [ ] Performance compared against baselines and prior versions
+
+**Responsible AI**:
+- [ ] Bias audit completed across protected attributes (gender, race, age)
+- [ ] Fairness metrics computed (demographic parity, equalized odds)
+- [ ] Explainability methods applied (SHAP, LIME, attention maps)
+- [ ] Model card created documenting limitations and intended use
+- [ ] Privacy impact assessment completed
+- [ ] Compliance with applicable AI regulations verified
+
+**MLOps & Production**:
+- [ ] Model is versioned and reproducible (pinned dependencies, seeds)
+- [ ] Inference pipeline handles edge cases and invalid inputs
+- [ ] Latency and throughput meet SLA requirements
+- [ ] Monitoring and alerting configured for data drift and performance
+- [ ] Rollback procedure documented and tested
+- [ ] Automated retraining pipeline validated
+
+**Documentation**:
+- [ ] Experiment tracking logs are complete and organized
+- [ ] Model architecture and training procedure documented
+- [ ] API documentation is accurate with examples
+- [ ] Known limitations and failure modes documented
+- [ ] Deployment and operations runbook created
+
+6) Templates (paste-ready)
+
+**Template 1: Model Card**
+```markdown
+# Model Card: [Model Name]
+
+## Model Details
+- **Model type**: [e.g., BERT fine-tuned for sentiment classification]
+- **Framework**: [PyTorch/TensorFlow/JAX]
+- **Version**: [v1.0.0]
+- **Date trained**: [YYYY-MM-DD]
+- **Training data**: [Description, size, source]
+
+## Intended Use
+- **Primary use case**: [Describe intended application]
+- **Users**: [Who will use this model]
+- **Out-of-scope uses**: [Applications this model should NOT be used for]
+
+## Performance Metrics
+| Metric | Value | Baseline |
+|--------|-------|----------|
+| Accuracy | 0.XX | 0.XX |
+| Precision | 0.XX | 0.XX |
+| Recall | 0.XX | 0.XX |
+| F1 Score | 0.XX | 0.XX |
+| AUC-ROC | 0.XX | 0.XX |
+
+## Fairness Analysis
+| Group | Metric | Value |
+|-------|--------|-------|
+| Group A | Accuracy | 0.XX |
+| Group B | Accuracy | 0.XX |
+| Disparity | — | X.X% |
+
+## Limitations
+- [Limitation 1]
+- [Limitation 2]
+- [Known failure modes]
+
+## Ethical Considerations
+- [Potential risks and harms]
+- [Mitigation strategies applied]
+
+## Training Details
+- **Hyperparameters**: learning_rate=X, batch_size=X, epochs=X
+- **Hardware**: [GPU type, count, training time]
+- **Optimization**: [Adam, SGD, etc.]
+```
+
+**Template 2: Experiment Report**
+```markdown
+# Experiment Report: [Experiment Name]
+
+## Hypothesis
+[What we expected to happen and why]
+
+## Setup
+- **Dataset**: [Name, version, size, split ratios]
+- **Model**: [Architecture, pretrained weights if any]
+- **Hyperparameters**: [Key hyperparameters]
+- **Environment**: [GPU type, framework version, random seed]
+
+## Results
+| Experiment | Model | Accuracy | F1 | Latency (ms) |
+|-----------|-------|----------|-----|---------------|
+| Baseline | LogReg | 0.XX | 0.XX | XX |
+| V1 | XGBoost | 0.XX | 0.XX | XX |
+| V2 | BERT-base | 0.XX | 0.XX | XX |
+| V3 | BERT-base + features | 0.XX | 0.XX | XX |
+
+## Error Analysis
+- **Most common errors**: [Description]
+- **Failure patterns**: [Description]
+- **Confusion matrix highlights**: [Key misclassifications]
+
+## Conclusions
+[What we learned, what worked, what didn't]
+
+## Next Steps
+- [Planned follow-up experiment 1]
+- [Planned follow-up experiment 2]
+```
+
+**Template 3: ML Pipeline Configuration**
+```yaml
+# ml_pipeline.yaml
+pipeline:
+  name: "model-training-pipeline"
+  version: "1.0.0"
+
+data:
+  source: "s3://bucket/dataset/v2/"
+  split:
+    train: 0.7
+    validation: 0.15
+    test: 0.15
+  preprocessing:
+    - handle_missing: "median"
+    - encode_categorical: "one_hot"
+    - normalize: "standard_scaler"
+    - feature_selection: "top_50_by_mutual_info"
+
+training:
+  model: "xgboost"
+  hyperparameters:
+    max_depth: 6
+    learning_rate: 0.1
+    n_estimators: 500
+    min_child_weight: 3
+    subsample: 0.8
+  cross_validation:
+    strategy: "stratified_kfold"
+    n_splits: 5
+  early_stopping:
+    metric: "val_auc"
+    patience: 10
+
+evaluation:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1_score
+    - auc_roc
+  bias_audit:
+    protected_attributes: ["gender", "age_group", "ethnicity"]
+    fairness_metrics: ["demographic_parity", "equalized_odds"]
+  threshold_optimization: "f1"
+
+deployment:
+  serving: "triton"
+  format: "onnx"
+  autoscaling:
+    min_replicas: 2
+    max_replicas: 10
+    target_gpu_utilization: 70
+  monitoring:
+    drift_detection: "population_stability_index"
+    alert_threshold: 0.2
+```
+
+**Template 4: Data Drift Alert Runbook**
+```markdown
+# Data Drift Alert Runbook
+
+## Alert Triggered
+- **Metric**: [PSI, KL Divergence, JS Distance]
+- **Value**: [Current value vs. threshold]
+- **Feature(s) affected**: [Feature names]
+- **Time detected**: [Timestamp]
+
+## Immediate Actions
+1. Check if drift is caused by a data pipeline issue (upstream schema change, missing data)
+2. Verify monitoring system is not producing false positives
+3. Assess impact on model predictions (check prediction distribution shift)
+
+## Investigation Steps
+1. Compare current data distribution to training data distribution
+2. Identify root cause of drift (seasonal, population change, data pipeline bug)
+3. Evaluate model performance on recent data with ground truth labels
+4. Run bias audit on recent predictions
+
+## Resolution Options
+- **Option A**: Retrain model on recent data (if ground truth available)
+- **Option B**: Adjust feature preprocessing to account for drift
+- **Option C**: Roll back to previous model version if performance degraded
+- **Option D**: Update monitoring thresholds if drift is expected (e.g., seasonal)
+
+## Communication
+- Notify: [ML team lead, data engineering, product owner]
+- Update status in: [Incident management tool]
+- Post-mortem if significant impact
+```
+
+7) Examples of excellent outputs
+
+**Example 1: Model Training with Evaluation Pipeline**
+```python
+# train_classifier.py
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import StratifiedKFold, cross_validate
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report, roc_auc_score
+from xgboost import XGBClassifier
+import mlflow
+import mlflow.sklearn
+import shap
+
+def train_and_evaluate(data_path: str, target_col: str, experiment_name: str):
+    """
+    Train an XGBoost classifier with cross-validation,
+    evaluation, and explainability.
+    """
+    mlflow.set_experiment(experiment_name)
+
+    # Load and prepare data
+    df = pd.read_parquet(data_path)
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
+
+    # Preprocessing
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    # Model configuration
+    model = XGBClassifier(
+        max_depth=6,
+        learning_rate=0.1,
+        n_estimators=500,
+        min_child_weight=3,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        eval_metric="logloss",
+        random_state=42,
+        use_label_encoder=False,
+    )
+
+    # Cross-validation
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv_results = cross_validate(
+        model, X_scaled, y, cv=cv,
+        scoring=["accuracy", "precision_macro", "recall_macro", "f1_macro"],
+        return_train_score=True,
+    )
+
+    with mlflow.start_run():
+        # Log cross-validation metrics
+        for metric in ["accuracy", "precision_macro", "recall_macro", "f1_macro"]:
+            mean_val = cv_results[f"test_{metric}"].mean()
+            std_val = cv_results[f"test_{metric}"].std()
+            mlflow.log_metric(f"cv_{metric}_mean", mean_val)
+            mlflow.log_metric(f"cv_{metric}_std", std_val)
+
+        # Train final model on full data
+        model.fit(X_scaled, y)
+        mlflow.sklearn.log_model(model, "model")
+
+        # SHAP explainability
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X_scaled[:100])
+        shap.summary_plot(shap_values, X.iloc[:100], show=False)
+        mlflow.log_artifact("shap_summary.png")
+
+    return model, cv_results
+```
+
+**Example 2: Inference API with Validation**
+```python
+# serve_model.py
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, validator
+import numpy as np
+import onnxruntime as ort
+import logging
+
+logger = logging.getLogger(__name__)
+app = FastAPI(title="ML Prediction API", version="1.0.0")
+
+class PredictionRequest(BaseModel):
+    features: list[float]
+
+    @validator("features")
+    def validate_features(cls, v):
+        if len(v) != 50:
+            raise ValueError(f"Expected 50 features, got {len(v)}")
+        if any(np.isnan(x) or np.isinf(x) for x in v):
+            raise ValueError("Features must not contain NaN or Inf values")
+        return v
+
+class PredictionResponse(BaseModel):
+    prediction: int
+    probability: float
+    model_version: str
+
+# Load ONNX model at startup
+session = ort.InferenceSession("model.onnx")
+MODEL_VERSION = "1.0.0"
+
+@app.post("/predict", response_model=PredictionResponse)
+async def predict(request: PredictionRequest):
+    try:
+        input_array = np.array([request.features], dtype=np.float32)
+        outputs = session.run(None, {"input": input_array})
+        prediction = int(outputs[0][0])
+        probability = float(outputs[1][0][prediction])
+
+        logger.info(f"Prediction: {prediction}, Probability: {probability:.4f}")
+        return PredictionResponse(
+            prediction=prediction,
+            probability=round(probability, 4),
+            model_version=MODEL_VERSION,
+        )
+    except Exception as e:
+        logger.error(f"Prediction failed: {e}")
+        raise HTTPException(status_code=500, detail="Prediction failed")
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "model_version": MODEL_VERSION}
+```
+
+**Example 3: Data Drift Detection**
+```python
+# drift_monitor.py
+import numpy as np
+from scipy.stats import ks_2samp
+from typing import Dict, List
+
+class DriftDetector:
+    """Monitor feature distributions for data drift."""
+
+    def __init__(self, reference_data: np.ndarray, feature_names: List[str],
+                 psi_threshold: float = 0.2, ks_threshold: float = 0.05):
+        self.reference_data = reference_data
+        self.feature_names = feature_names
+        self.psi_threshold = psi_threshold
+        self.ks_threshold = ks_threshold
+
+    def compute_psi(self, expected: np.ndarray, actual: np.ndarray,
+                    bins: int = 10) -> float:
+        """Compute Population Stability Index between two distributions."""
+        breakpoints = np.linspace(
+            min(expected.min(), actual.min()),
+            max(expected.max(), actual.max()),
+            bins + 1,
+        )
+        expected_counts = np.histogram(expected, breakpoints)[0] / len(expected)
+        actual_counts = np.histogram(actual, breakpoints)[0] / len(actual)
+
+        # Avoid division by zero
+        expected_counts = np.clip(expected_counts, 1e-6, None)
+        actual_counts = np.clip(actual_counts, 1e-6, None)
+
+        psi = np.sum(
+            (actual_counts - expected_counts) * np.log(actual_counts / expected_counts)
+        )
+        return float(psi)
+
+    def check_drift(self, current_data: np.ndarray) -> Dict:
+        """Check all features for drift against reference distribution."""
+        results = {"drifted_features": [], "details": {}}
+
+        for i, feature in enumerate(self.feature_names):
+            psi = self.compute_psi(self.reference_data[:, i], current_data[:, i])
+            ks_stat, ks_pval = ks_2samp(
+                self.reference_data[:, i], current_data[:, i]
+            )
+            is_drifted = psi > self.psi_threshold or ks_pval < self.ks_threshold
+            results["details"][feature] = {
+                "psi": round(psi, 4),
+                "ks_statistic": round(ks_stat, 4),
+                "ks_pvalue": round(ks_pval, 4),
+                "drifted": is_drifted,
+            }
+            if is_drifted:
+                results["drifted_features"].append(feature)
+
+        results["overall_drift"] = len(results["drifted_features"]) > 0
+        return results
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **Supervised learning**: Learning from labeled data (classification, regression)
+- **Unsupervised learning**: Finding patterns in unlabeled data (clustering, dimensionality reduction)
+- **Transfer learning**: Reusing pretrained models for new tasks (fine-tuning BERT, ResNet)
+- **Overfitting**: Model memorizes training data, fails on new data
+- **Underfitting**: Model is too simple to capture patterns in data
+- **Hyperparameter tuning**: Optimizing model configuration (learning rate, depth, regularization)
+- **Feature engineering**: Creating informative input variables from raw data
+- **Data drift**: Change in input data distribution over time
+- **Concept drift**: Change in relationship between inputs and outputs over time
+- **Model card**: Documentation of model purpose, performance, limitations, and ethical considerations
+- **MLOps**: Practices for deploying and maintaining ML models in production
+- **Embeddings**: Dense vector representations of data (word embeddings, image embeddings)
+- **Attention mechanism**: Neural network component that weighs input importance (core of Transformers)
+- **RAG**: Retrieval-Augmented Generation — combining retrieval with generative models
+
+**Frameworks and Libraries**:
+- **PyTorch**: Dynamic computation graph, research-friendly, dominant in academia and increasingly industry
+- **TensorFlow/Keras**: Static and eager execution, TFLite for mobile, TF Serving for production
+- **JAX**: Google's high-performance numerical computing with automatic differentiation
+- **scikit-learn**: Classical ML algorithms, preprocessing, evaluation metrics
+- **XGBoost/LightGBM/CatBoost**: Gradient boosting libraries for tabular data
+- **Hugging Face Transformers**: Pretrained NLP and multimodal models
+- **LangChain/LlamaIndex**: LLM application frameworks for RAG and agents
+- **ONNX Runtime**: Cross-platform model inference optimization
+
+**MLOps Tools**:
+- **Experiment tracking**: MLflow, Weights & Biases, Neptune, Comet
+- **Pipeline orchestration**: Kubeflow Pipelines, Apache Airflow, Prefect, Metaflow
+- **Model serving**: TorchServe, TF Serving, Triton Inference Server, BentoML, Seldon Core
+- **Feature stores**: Feast, Tecton, Hopsworks
+- **Data versioning**: DVC, LakeFS, Delta Lake
+
+**Evaluation Metrics**:
+- **Classification**: accuracy, precision, recall, F1, AUC-ROC, AUC-PR, log loss, Cohen's kappa
+- **Regression**: MSE, RMSE, MAE, MAPE, R² score
+- **NLP**: BLEU, ROUGE, BERTScore, perplexity, METEOR
+- **Computer Vision**: mAP, IoU, FID (generative), SSIM
+- **Ranking**: NDCG, MRR, MAP
+
+**Responsible AI Standards**:
+- **NIST AI RMF**: Risk Management Framework for AI systems
+- **EU AI Act**: Risk-based regulation of AI systems in Europe
+- **IEEE 7000**: Standard for ethical design of autonomous and intelligent systems
+- **ISO/IEC 42001**: AI management system standard
+- **Google PAIR**: People + AI Research guidelines
+- **Microsoft Responsible AI Standard**: Fairness, reliability, safety, privacy, inclusiveness, transparency
+
+**Model Architectures (2024)**:
+- **Transformers**: GPT, BERT, T5, LLaMA, Mistral, Gemma (NLP and multimodal)
+- **Vision**: ViT, DINO, SAM, Stable Diffusion (image understanding and generation)
+- **Tabular**: XGBoost, LightGBM, TabNet, FT-Transformer
+- **Graph**: GNN, GAT, GraphSAGE (graph-structured data)
+- **Multimodal**: CLIP, Flamingo, GPT-4V, Gemini (text + image + audio)
+
+Change log
+- 2025-01-15: Initial AI/ML Engineer playbook created with 2024-2025 best practices including MLOps workflows, responsible AI principles, model evaluation standards, drift monitoring, and comprehensive templates. Covers deep learning, classical ML, LLM applications, and production deployment patterns.

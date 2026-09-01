@@ -1,0 +1,1103 @@
+<?php
+/**
+ * Profession Custom Post Type.
+ *
+ * Handles registration and management of the profession CPT.
+ * This class follows separation of concerns - it only handles
+ * WordPress registration, hooks, and admin UI integration.
+ * Business logic is delegated to the service layer.
+ *
+ * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
+
+declare(strict_types=1);
+
+namespace NvoosContentGraphAiPlatform\Professions;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Registers the profession custom post type and manages its WordPress integration.
+ */
+class ProfessionCpt {
+	/**
+	 * Log an event through the base plugin's logger when present
+	 * (monolith mode), falling back to error_log in standalone mode.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $level   Log level.
+	 * @param string $message Log message.
+	 */
+	private static function log_event( $level, $message ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			\WP_MCP_AI_Logger::log_event( $level, $message );
+			return;
+		}
+		error_log( sprintf( '[nvoos-content-graph-ai-platform] %s: %s', $level, $message ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Standalone fallback when the base logger is absent.
+	}
+	/**
+	 * Post type slug.
+	 */
+	const POST_TYPE = 'mcp_ai_profession';
+
+	/**
+	 * Meta key for profession category (advisory, creative, technical, etc.).
+	 */
+	const META_CATEGORY = '_wp_mcp_ai_profession_category';
+
+	/**
+	 * Meta key for expertise areas (array).
+	 */
+	const META_EXPERTISE = '_wp_mcp_ai_profession_expertise';
+
+	/**
+	 * Meta key for default tools (array of tool slugs).
+	 */
+	const META_DEFAULT_TOOLS = '_wp_mcp_ai_profession_default_tools';
+
+	/**
+	 * Meta key for role description.
+	 */
+	const META_ROLE_DESCRIPTION = '_wp_mcp_ai_profession_role_description';
+
+	/**
+	 * Meta key for warnings/disclaimers (array).
+	 */
+	const META_WARNINGS = '_wp_mcp_ai_profession_warnings';
+
+	/**
+	 * Meta key for knowledge base content.
+	 */
+	const META_KNOWLEDGE_BASE = '_wp_mcp_ai_profession_knowledge_base';
+
+	/**
+	 * Meta key for memory files (array of attachment IDs).
+	 */
+	const META_MEMORY_FILES = '_wp_mcp_ai_profession_memory_files';
+
+	/**
+	 * Meta key for vector store ID.
+	 */
+	const META_VECTOR_STORE_ID = '_wp_mcp_ai_profession_vector_store_id';
+
+	/**
+	 * Meta key for supported MIME types (array).
+	 */
+	const META_SUPPORTED_MIME_TYPES = '_wp_mcp_ai_profession_supported_mime_types';
+
+	/**
+	 * Meta key for associated assistant ID for testing.
+	 */
+	const META_ASSOCIATED_ASSISTANT = '_wp_mcp_ai_profession_associated_assistant';
+
+	/**
+	 * Meta key for primary region/jurisdiction.
+	 *
+	 * @since 1.7.0
+	 */
+	const META_REGION = '_wp_mcp_ai_profession_region';
+
+	/**
+	 * Meta key for preferred datasets.
+	 *
+	 * @since 1.8.0
+	 */
+	const META_PREFERRED_DATASETS = '_wp_mcp_ai_profession_preferred_datasets';
+
+	/**
+	 * Meta key for agent role (planner, executor, critic, specialist, generalist).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_AGENT_ROLE = '_wp_mcp_ai_profession_agent_role';
+
+	/**
+	 * Meta key for secondary agent roles (JSON array of additional roles).
+	 * Enables professions to have multiple role capabilities (e.g., QA Engineer = critic + planner).
+	 *
+	 * @since 1.9.1
+	 */
+	const META_AGENT_SECONDARY_ROLES = '_wp_mcp_ai_profession_secondary_roles';
+
+	/**
+	 * Meta key for task patterns (JSON: workflow templates).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_TASK_PATTERNS = '_wp_mcp_ai_profession_task_patterns';
+
+	/**
+	 * Meta key for decision criteria (JSON: condition→action mappings).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_DECISION_CRITERIA = '_wp_mcp_ai_profession_decision_criteria';
+
+	/**
+	 * Meta key for orchestration rules (JSON: coordination rules).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_ORCHESTRATION_RULES = '_wp_mcp_ai_profession_orchestration_rules';
+
+	/**
+	 * Meta key for quality metrics (JSON: success criteria).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_QUALITY_METRICS = '_wp_mcp_ai_profession_quality_metrics';
+
+	/**
+	 * Meta key for tool execution order (JSON: tool chains with dependencies).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_TOOL_EXECUTION_ORDER = '_wp_mcp_ai_profession_tool_execution_order';
+
+	/**
+	 * Meta key for confidence thresholds (JSON: escalation rules).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_CONFIDENCE_THRESHOLDS = '_wp_mcp_ai_profession_confidence_thresholds';
+
+	/**
+	 * Metabox instances.
+	 *
+	 * @var array<string, WP_MCP_AI_Metabox_Base>
+	 */
+	protected $metaboxes = array();
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		// Initialize metaboxes.
+		$this->init_metaboxes();
+
+		// Register hooks.
+		add_action( 'init', array( $this, 'register_post_type' ) );
+		add_action( 'init', array( $this, 'register_meta' ) );
+		add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
+		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_post' ), 10, 2 );
+		add_filter( 'use_block_editor_for_post_type', array( $this, 'disable_block_editor' ), 10, 2 );
+		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', array( $this, 'add_admin_columns' ) );
+		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( $this, 'render_admin_columns' ), 10, 2 );
+	}
+
+	/**
+	 * Initialize metabox instances.
+	 */
+	protected function init_metaboxes() {
+		// Custom metaboxes are wired when the ported metabox classes are
+		// available (extraction P3). Until then, standalone mode degrades to
+		// the stock WordPress editor UI. This addon's CPT only runs in
+		// standalone mode, so the base plugin's metabox classes are never
+		// instantiated here (monolith mode uses the base CPT's own wiring).
+		$this->metaboxes = array();
+
+		if ( class_exists( __NAMESPACE__ . '\Metaboxes\ProfessionMetaboxDetails' ) ) {
+			$this->metaboxes = array(
+				'details'             => new Metaboxes\ProfessionMetaboxDetails(),
+				'expertise'           => new Metaboxes\ProfessionMetaboxExpertise(),
+				'base-knowledge'      => new Metaboxes\ProfessionMetaboxBaseKnowledge(),
+				'defaults'            => new Metaboxes\ProfessionMetaboxDefaults(),
+				'datasets'            => new Metaboxes\ProfessionMetaboxDatasets(),
+				'playbook'            => new Metaboxes\ProfessionMetaboxPlaybook(),
+				'agent-orchestration' => new Metaboxes\ProfessionMetaboxAgentOrchestration(),
+			);
+		}
+	}
+
+	/**
+	 * Register the profession custom post type.
+	 */
+	public function register_post_type() {
+		$labels = array(
+			'name'                  => _x( 'Professions', 'Post type general name', 'nvoos-content-graph-ai-platform' ),
+			'singular_name'         => _x( 'Profession', 'Post type singular name', 'nvoos-content-graph-ai-platform' ),
+			'menu_name'             => _x( 'Professions', 'Admin Menu text', 'nvoos-content-graph-ai-platform' ),
+			'name_admin_bar'        => _x( 'Profession', 'Add New on Toolbar', 'nvoos-content-graph-ai-platform' ),
+			'add_new'               => __( 'Add New', 'nvoos-content-graph-ai-platform' ),
+			'add_new_item'          => __( 'Add New Profession', 'nvoos-content-graph-ai-platform' ),
+			'new_item'              => __( 'New Profession', 'nvoos-content-graph-ai-platform' ),
+			'edit_item'             => __( 'Edit Profession', 'nvoos-content-graph-ai-platform' ),
+			'view_item'             => __( 'View Profession', 'nvoos-content-graph-ai-platform' ),
+			'all_items'             => __( 'All Professions', 'nvoos-content-graph-ai-platform' ),
+			'search_items'          => __( 'Search Professions', 'nvoos-content-graph-ai-platform' ),
+			'parent_item_colon'     => __( 'Parent Professions:', 'nvoos-content-graph-ai-platform' ),
+			'not_found'             => __( 'No professions found.', 'nvoos-content-graph-ai-platform' ),
+			'not_found_in_trash'    => __( 'No professions found in Trash.', 'nvoos-content-graph-ai-platform' ),
+			'featured_image'        => _x( 'Profession Icon', 'Overrides the "Featured Image" phrase', 'nvoos-content-graph-ai-platform' ),
+			'set_featured_image'    => _x( 'Set profession icon', 'Overrides the "Set featured image" phrase', 'nvoos-content-graph-ai-platform' ),
+			'remove_featured_image' => _x( 'Remove profession icon', 'Overrides the "Remove featured image" phrase', 'nvoos-content-graph-ai-platform' ),
+			'use_featured_image'    => _x( 'Use as profession icon', 'Overrides the "Use as featured image" phrase', 'nvoos-content-graph-ai-platform' ),
+			'archives'              => _x( 'Profession archives', 'The post type archive label', 'nvoos-content-graph-ai-platform' ),
+			'insert_into_item'      => _x( 'Insert into profession', 'Overrides the "Insert into post" phrase', 'nvoos-content-graph-ai-platform' ),
+			'uploaded_to_this_item' => _x( 'Uploaded to this profession', 'Overrides the "Uploaded to this post" phrase', 'nvoos-content-graph-ai-platform' ),
+			'filter_items_list'     => _x( 'Filter professions list', 'Screen reader text for the filter links', 'nvoos-content-graph-ai-platform' ),
+			'items_list_navigation' => _x( 'Professions list navigation', 'Screen reader text for the pagination', 'nvoos-content-graph-ai-platform' ),
+			'items_list'            => _x( 'Professions list', 'Screen reader text for the items list', 'nvoos-content-graph-ai-platform' ),
+		);
+
+		$args = array(
+			'labels'             => $labels,
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => true,
+			'query_var'          => false,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'has_archive'        => false,
+			'hierarchical'       => false,
+			'menu_position'      => null,
+			'menu_icon'          => 'dashicons-businessperson',
+			'supports'           => array( 'title', 'editor', 'thumbnail' ),
+			'show_in_rest'       => false,
+		);
+
+		register_post_type( self::POST_TYPE, $args );
+	}
+
+	/**
+	 * Register meta fields for the profession post type.
+	 */
+	public function register_meta() {
+		// Category.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_CATEGORY,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Profession category (advisory, creative, technical, etc.)', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Expertise areas.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_EXPERTISE,
+			array(
+				'type'              => 'array',
+				'description'       => __( 'Expertise areas for this profession', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Default tools.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_DEFAULT_TOOLS,
+			array(
+				'type'              => 'array',
+				'description'       => __( 'Default tool slugs for this profession', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Role description.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_ROLE_DESCRIPTION,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Role description for AI instructions', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => 'wp_kses_post',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Warnings.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_WARNINGS,
+			array(
+				'type'              => 'array',
+				'description'       => __( 'Warnings and disclaimers', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Knowledge base.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_KNOWLEDGE_BASE,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Knowledge base content for this profession', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => 'wp_kses_post',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Memory files.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_MEMORY_FILES,
+			array(
+				'type'              => 'array',
+				'description'       => __( 'Memory files (attachment IDs) for this profession', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_memory_files' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Vector store ID.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_VECTOR_STORE_ID,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'External vector store identifier', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_vector_store_id' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Supported MIME types.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_SUPPORTED_MIME_TYPES,
+			array(
+				'type'              => 'array',
+				'description'       => __( 'Supported MIME types for file uploads', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Associated assistant for testing.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_ASSOCIATED_ASSISTANT,
+			array(
+				'type'              => 'integer',
+				'description'       => __( 'Associated assistant ID for testing this profession', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( __CLASS__, 'sanitize_associated_assistant_meta' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Primary region or jurisdiction.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_REGION,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Primary region or jurisdiction for this profession (e.g., "North America", "Europe", "Caribbean", "Global")', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '',
+			)
+		);
+
+		// Preferred datasets.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_PREFERRED_DATASETS,
+			array(
+				'type'              => 'array',
+				'description'       => __( 'Preferred HuggingFace datasets for this profession', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( __CLASS__, 'sanitize_preferred_datasets' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => array(),
+			)
+		);
+
+		// Agent role (orchestration).
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_AGENT_ROLE,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Primary agent role for multi-agent orchestration (planner, executor, critic, specialist, generalist)', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => 'generalist',
+			)
+		);
+
+		// Secondary agent roles (orchestration).
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_AGENT_SECONDARY_ROLES,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Secondary agent roles for multi-role professions (JSON array)', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '[]',
+			)
+		);
+
+		// Task patterns (orchestration).
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_TASK_PATTERNS,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Task patterns and workflow templates (JSON)', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
+
+		// Decision criteria (orchestration).
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_DECISION_CRITERIA,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Decision criteria for autonomous operation (JSON)', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
+
+		// Orchestration rules.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_ORCHESTRATION_RULES,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Orchestration and coordination rules (JSON)', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
+
+		// Quality metrics.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_QUALITY_METRICS,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Quality metrics and success criteria (JSON)', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
+
+		// Tool execution order.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_TOOL_EXECUTION_ORDER,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Tool execution order and dependencies (JSON)', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '[]',
+			)
+		);
+
+		// Confidence thresholds.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_CONFIDENCE_THRESHOLDS,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Confidence thresholds and escalation rules (JSON)', 'nvoos-content-graph-ai-platform' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
+	}
+
+	/**
+	 * Sanitize array fields.
+	 *
+	 * @param array $value Array to sanitize.
+	 * @return array Sanitized array.
+	 */
+	public function sanitize_array_field( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		return array_map( 'sanitize_text_field', $value );
+	}
+
+	/**
+	 * Sanitize preferred datasets meta.
+	 *
+	 * @param mixed $datasets Datasets array to sanitize.
+	 * @return array Sanitized datasets array.
+	 */
+	public static function sanitize_preferred_datasets( $datasets ) {
+		if ( ! is_array( $datasets ) ) {
+			return array();
+		}
+
+		$valid_categories = array( 'nlp', 'vision', 'audio', 'multimodal' );
+		$valid_priorities = array( 'critical', 'high', 'medium', 'low' );
+
+		$sanitized = array();
+		foreach ( $datasets as $dataset ) {
+			if ( is_array( $dataset ) ) {
+				$category = isset( $dataset['category'] ) ? sanitize_text_field( $dataset['category'] ) : '';
+				$priority = isset( $dataset['priority'] ) ? sanitize_text_field( $dataset['priority'] ) : 'medium';
+
+				// Validate category - skip if invalid.
+				if ( ! in_array( $category, $valid_categories, true ) ) {
+					continue;
+				}
+
+				// Validate priority - default to 'medium' if invalid.
+				if ( ! in_array( $priority, $valid_priorities, true ) ) {
+					$priority = 'medium';
+				}
+
+				$sanitized[] = array(
+					'dataset'  => isset( $dataset['dataset'] ) ? sanitize_text_field( $dataset['dataset'] ) : '',
+					'name'     => isset( $dataset['name'] ) ? sanitize_text_field( $dataset['name'] ) : '',
+					'category' => $category,
+					'priority' => $priority,
+				);
+			}
+		}
+
+		// Limit to 10 datasets.
+		return array_slice( $sanitized, 0, 10 );
+	}
+
+	/**
+	 * Sanitize memory files meta value.
+	 *
+	 * @param mixed $value Raw memory files value.
+	 * @return array Sanitized array of attachment IDs.
+	 */
+	public function sanitize_memory_files( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		// Clamp negatives to zero rather than absint(): absint( -999 ) would
+		// coerce a negative value into an unrelated positive attachment ID.
+		$sanitized = array_map(
+			static function ( $id ) {
+				return max( 0, (int) $id );
+			},
+			$value
+		);
+
+		// Remove any zero values (invalid IDs).
+		$sanitized = array_filter( $sanitized );
+
+		// Remove duplicates and reindex array.
+		return array_values( array_unique( $sanitized ) );
+	}
+
+	/**
+	 * Sanitize vector store ID meta value.
+	 *
+	 * @param mixed $value Raw vector store ID.
+	 * @return string Sanitized vector store ID.
+	 */
+	public function sanitize_vector_store_id( $value ) {
+		if ( ! is_string( $value ) ) {
+			return '';
+		}
+
+		return sanitize_text_field( $value );
+	}
+
+	/**
+	 * Sanitize the associated assistant meta value.
+	 *
+	 * Assistant IDs are positive integers; invalid strings and negative
+	 * numbers are meaningless and are clamped to 0 ("no associated
+	 * assistant") rather than being coerced by absint() into a possibly
+	 * unrelated positive ID.
+	 *
+	 * @param mixed $value Raw associated assistant value.
+	 * @return int Sanitized assistant ID (0 or positive integer).
+	 */
+	public static function sanitize_associated_assistant_meta( $value ) {
+		// Cast rather than absint(): absint( -5 ) would coerce a negative
+		// value into an unrelated positive ID (5); negatives must clamp to 0.
+		return max( 0, (int) $value );
+	}
+
+	/**
+	 * Sanitize JSON field meta value.
+	 *
+	 * Validates JSON format and returns valid JSON string or default empty object/array.
+	 *
+	 * @param mixed $value Raw JSON value.
+	 * @return string Sanitized JSON string.
+	 */
+	public function sanitize_json_field( $value ) {
+		if ( empty( $value ) ) {
+			return '{}';
+		}
+
+		if ( ! is_string( $value ) ) {
+			return '{}';
+		}
+
+		// Try to decode JSON to validate it.
+		$decoded = json_decode( $value, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			// Invalid JSON, return empty object.
+			return '{}';
+		}
+
+		// Re-encode to ensure consistent formatting.
+		return wp_json_encode( $decoded );
+	}
+
+	/**
+	 * Disable block editor for profession post type.
+	 *
+	 * @param bool   $use_block_editor Whether to use block editor.
+	 * @param string $post_type        Post type.
+	 * @return bool
+	 */
+	public function disable_block_editor( $use_block_editor, $post_type ) {
+		if ( self::POST_TYPE === $post_type ) {
+			return false;
+		}
+		return $use_block_editor;
+	}
+
+	/**
+	 * Register meta boxes for the profession post type.
+	 *
+	 * @param string $post_type Post type.
+	 */
+	public function register_meta_boxes( $post_type ) {
+		if ( self::POST_TYPE !== $post_type ) {
+			return;
+		}
+
+		foreach ( $this->metaboxes as $metabox ) {
+			add_meta_box(
+				$metabox->get_id(),
+				$metabox->get_title(),
+				array( $metabox, 'render' ),
+				self::POST_TYPE,
+				$metabox->get_context(),
+				$metabox->get_priority()
+			);
+		}
+	}
+
+	/**
+	 * Render profession details metabox.
+	 *
+	 * @param WP_Post $post Post object.
+	 */
+	public function render_details_metabox( $post ) {
+		wp_nonce_field( 'wp_mcp_ai_save_profession', 'wp_mcp_ai_profession_nonce' );
+
+		$category         = get_post_meta( $post->ID, self::META_CATEGORY, true );
+		$role_description = get_post_meta( $post->ID, self::META_ROLE_DESCRIPTION, true );
+		$warnings         = get_post_meta( $post->ID, self::META_WARNINGS, true );
+
+		if ( ! is_array( $warnings ) ) {
+			$warnings = array();
+		}
+
+		?>
+		<table class="form-table" role="presentation">
+			<tbody>
+				<tr>
+					<th scope="row">
+						<label for="profession_category">
+							<?php esc_html_e( 'Category', 'nvoos-content-graph-ai-platform' ); ?>
+						</label>
+					</th>
+					<td>
+						<select id="profession_category" name="profession_category" class="regular-text">
+							<option value=""><?php esc_html_e( 'Select Category', 'nvoos-content-graph-ai-platform' ); ?></option>
+							<option value="advisory" <?php selected( $category, 'advisory' ); ?>><?php esc_html_e( 'Advisory/Consulting', 'nvoos-content-graph-ai-platform' ); ?></option>
+							<option value="creative" <?php selected( $category, 'creative' ); ?>><?php esc_html_e( 'Creative Services', 'nvoos-content-graph-ai-platform' ); ?></option>
+							<option value="technical" <?php selected( $category, 'technical' ); ?>><?php esc_html_e( 'Technical', 'nvoos-content-graph-ai-platform' ); ?></option>
+							<option value="healthcare" <?php selected( $category, 'healthcare' ); ?>><?php esc_html_e( 'Healthcare', 'nvoos-content-graph-ai-platform' ); ?></option>
+			<option value="legal" <?php selected( $category, 'legal' ); ?>><?php esc_html_e( 'Legal', 'nvoos-content-graph-ai-platform' ); ?></option>
+							<option value="financial" <?php selected( $category, 'financial' ); ?>><?php esc_html_e( 'Financial', 'nvoos-content-graph-ai-platform' ); ?></option>
+							<option value="other" <?php selected( $category, 'other' ); ?>><?php esc_html_e( 'Other', 'nvoos-content-graph-ai-platform' ); ?></option>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Categorize this profession for easier filtering.', 'nvoos-content-graph-ai-platform' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="profession_role_description">
+							<?php esc_html_e( 'Role Description', 'nvoos-content-graph-ai-platform' ); ?>
+						</label>
+					</th>
+					<td>
+						<textarea id="profession_role_description" name="profession_role_description" rows="5" class="large-text"><?php echo esc_textarea( $role_description ); ?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Describe the primary role and responsibilities. This will be used in AI assistant instructions.', 'nvoos-content-graph-ai-platform' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="profession_warnings">
+							<?php esc_html_e( 'Warnings/Disclaimers', 'nvoos-content-graph-ai-platform' ); ?>
+						</label>
+					</th>
+					<td>
+						<div id="profession-warnings-list">
+							<?php foreach ( $warnings as $index => $warning ) : ?>
+								<div class="profession-warning-item" style="margin-bottom: 10px;">
+									<input type="text" name="profession_warnings[]" value="<?php echo esc_attr( $warning ); ?>" class="large-text" />
+									<button type="button" class="button button-small remove-warning"><?php esc_html_e( 'Remove', 'nvoos-content-graph-ai-platform' ); ?></button>
+								</div>
+							<?php endforeach; ?>
+						</div>
+						<button type="button" id="add-profession-warning" class="button button-secondary">
+							<?php esc_html_e( 'Add Warning', 'nvoos-content-graph-ai-platform' ); ?>
+						</button>
+						<p class="description">
+							<?php esc_html_e( 'Add important disclaimers that the AI should communicate (e.g., "Always recommend consulting a licensed professional").', 'nvoos-content-graph-ai-platform' ); ?>
+						</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<?php
+		$remove_label = esc_js( __( 'Remove', 'nvoos-content-graph-ai-platform' ) );
+
+		ob_start();
+		?>
+		jQuery(document).ready(function($) {
+			$('#add-profession-warning').on('click', function() {
+				var warningHtml = '<div class="profession-warning-item" style="margin-bottom: 10px;">' +
+					'<input type="text" name="profession_warnings[]" value="" class="large-text" />' +
+					'<button type="button" class="button button-small remove-warning"><?php echo esc_js( $remove_label ); ?></button>' +
+					'</div>';
+				$('#profession-warnings-list').append(warningHtml);
+			});
+
+			$(document).on('click', '.remove-warning', function() {
+				$(this).closest('.profession-warning-item').remove();
+			});
+		});
+		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+	}
+
+		/**
+		 * Render expertise metabox.
+		 *
+		 * @param WP_Post $post Post object.
+		 */
+	public function render_expertise_metabox( $post ) {
+		$expertise      = get_post_meta( $post->ID, self::META_EXPERTISE, true );
+		$default_tools  = get_post_meta( $post->ID, self::META_DEFAULT_TOOLS, true );
+		$knowledge_base = get_post_meta( $post->ID, self::META_KNOWLEDGE_BASE, true );
+
+		if ( ! is_array( $expertise ) ) {
+			$expertise = array();
+		}
+
+		if ( ! is_array( $default_tools ) ) {
+			$default_tools = array();
+		}
+
+		// Get available tools from registry (monolith mode only — the base
+		// registry's files reference WP_MCP_AI_PATH and the monorepo root
+		// autoloader can classmap them even when the base plugin is inactive).
+		$available_tools = array();
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$registry        = \WP_MCP_AI_Tool_Registry::get_instance();
+			$available_tools = $registry->get_tools();
+		}
+
+		?>
+		<table class="form-table" role="presentation">
+			<tbody>
+				<tr>
+					<th scope="row">
+						<label for="profession_expertise">
+							<?php esc_html_e( 'Expertise Areas', 'nvoos-content-graph-ai-platform' ); ?>
+						</label>
+					</th>
+					<td>
+						<div id="profession-expertise-list">
+							<?php foreach ( $expertise as $index => $area ) : ?>
+								<div class="profession-expertise-item" style="margin-bottom: 10px;">
+									<input type="text" name="profession_expertise[]" value="<?php echo esc_attr( $area ); ?>" class="large-text" />
+									<button type="button" class="button button-small remove-expertise"><?php esc_html_e( 'Remove', 'nvoos-content-graph-ai-platform' ); ?></button>
+								</div>
+							<?php endforeach; ?>
+						</div>
+						<button type="button" id="add-profession-expertise" class="button button-secondary">
+							<?php esc_html_e( 'Add Expertise Area', 'nvoos-content-graph-ai-platform' ); ?>
+						</button>
+						<p class="description">
+							<?php esc_html_e( 'List specific areas of expertise for this profession.', 'nvoos-content-graph-ai-platform' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="profession_default_tools">
+							<?php esc_html_e( 'Default Tools', 'nvoos-content-graph-ai-platform' ); ?>
+						</label>
+					</th>
+					<td>
+						<?php if ( ! empty( $available_tools ) ) : ?>
+							<div id="profession-default-tools-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
+								<?php foreach ( $available_tools as $tool ) : ?>
+									<?php
+									$tool_slug  = method_exists( $tool, 'get_slug' ) ? $tool->get_slug() : '';
+									$tool_name  = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $tool_slug;
+									$tool_desc  = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
+									$is_checked = in_array( $tool_slug, $default_tools, true );
+									?>
+									<div style="margin-bottom: 8px;">
+										<label style="display: inline-flex; align-items: flex-start; cursor: pointer;">
+											<input type="checkbox" name="profession_default_tools[]" value="<?php echo esc_attr( $tool_slug ); ?>" <?php checked( $is_checked ); ?> style="margin-right: 8px; margin-top: 2px;" />
+											<span>
+												<strong><?php echo esc_html( $tool_name ); ?></strong>
+												<?php if ( $tool_desc ) : ?>
+													<br><small style="color: #666;"><?php echo esc_html( wp_trim_words( $tool_desc, 15 ) ); ?></small>
+												<?php endif; ?>
+											</span>
+										</label>
+									</div>
+								<?php endforeach; ?>
+							</div>
+							<p class="description">
+								<?php esc_html_e( 'Select the default tools that should be pre-selected when creating assistants with this profession. Choose 4-8 essential tools that align with the profession\'s expertise.', 'nvoos-content-graph-ai-platform' ); ?>
+							</p>
+						<?php else : ?>
+							<p class="description">
+								<?php esc_html_e( 'No tools available. Tools will be loaded after the tool registry is initialized.', 'nvoos-content-graph-ai-platform' ); ?>
+							</p>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="profession_knowledge_base">
+							<?php esc_html_e( 'Knowledge Base Content', 'nvoos-content-graph-ai-platform' ); ?>
+						</label>
+					</th>
+					<td>
+						<?php
+						wp_editor(
+							$knowledge_base,
+							'profession_knowledge_base',
+							array(
+								'textarea_name' => 'profession_knowledge_base',
+								'textarea_rows' => 15,
+								'media_buttons' => false,
+								'teeny'         => false,
+								'quicktags'     => true,
+							)
+						);
+						?>
+						<p class="description">
+							<?php esc_html_e( 'Knowledge base content that will be included in AI assistant instructions. Use markdown formatting.', 'nvoos-content-graph-ai-platform' ); ?>
+						</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<?php
+		$remove_label = esc_js( __( 'Remove', 'nvoos-content-graph-ai-platform' ) );
+
+		ob_start();
+		?>
+		jQuery(document).ready(function($) {
+			$('#add-profession-expertise').on('click', function() {
+				var expertiseHtml = '<div class="profession-expertise-item" style="margin-bottom: 10px;">' +
+					'<input type="text" name="profession_expertise[]" value="" class="large-text" />' +
+					'<button type="button" class="button button-small remove-expertise"><?php echo esc_js( $remove_label ); ?></button>' +
+					'</div>';
+				$('#profession-expertise-list').append(expertiseHtml);
+			});
+
+			$(document).on('click', '.remove-expertise', function() {
+				$(this).closest('.profession-expertise-item').remove();
+			});
+		});
+		<?php
+		$js = ob_get_clean();
+		wp_print_inline_script_tag( $js );
+	}
+
+	/**
+	 * Save profession post meta.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	/**
+	 * Save profession post meta.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	public function save_post( $post_id, $post ) {
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_nonce'] ) ||
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_nonce'] ) ), 'wp_mcp_ai_save_profession' ) ) {
+			return;
+		}
+
+		// Check autosave.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		// Check permissions.
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		// Delegate to metaboxes.
+		foreach ( $this->metaboxes as $metabox ) {
+			if ( method_exists( $metabox, 'save' ) ) {
+				$metabox->save( $post_id, $post );
+			}
+		}
+
+		// Deduplicate playbook attachments after save.
+		// This ensures only one playbook per profession in memory files.
+		if ( class_exists( __NAMESPACE__ . '\ProfessionPlaybookSeeder' ) ) {
+			// Use reflection to call the protected method.
+			try {
+				$reflection = new \ReflectionClass( __NAMESPACE__ . '\ProfessionPlaybookSeeder' );
+				$method     = $reflection->getMethod( 'remove_duplicate_playbooks' );
+				$method->setAccessible( true );
+				$method->invoke( null, $post_id );
+			} catch ( \ReflectionException $e ) {
+				// Silently fail if method doesn't exist - backwards compatibility.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger; records a backwards-compatibility failure inside a try/catch.
+					error_log( 'WP_MCP_AI: Failed to deduplicate playbooks on save: ' . $e->getMessage() );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Add custom columns to profession list table.
+	 *
+	 * @param array $columns Existing columns.
+	 * @return array Modified columns.
+	 */
+	public function add_admin_columns( $columns ) {
+		$new_columns = array();
+
+		foreach ( $columns as $key => $value ) {
+			$new_columns[ $key ] = $value;
+
+			if ( 'title' === $key ) {
+				$new_columns['category']        = __( 'Category', 'nvoos-content-graph-ai-platform' );
+				$new_columns['expertise_count'] = __( 'Expertise Areas', 'nvoos-content-graph-ai-platform' );
+			}
+		}
+
+		return $new_columns;
+	}
+
+	/**
+	 * Render custom column content.
+	 *
+	 * @param string $column  Column name.
+	 * @param int    $post_id Post ID.
+	 */
+	public function render_admin_columns( $column, $post_id ) {
+		switch ( $column ) {
+			case 'category':
+				$category = get_post_meta( $post_id, self::META_CATEGORY, true );
+				if ( $category ) {
+					$categories = array(
+						'advisory'   => __( 'Advisory/Consulting', 'nvoos-content-graph-ai-platform' ),
+						'creative'   => __( 'Creative Services', 'nvoos-content-graph-ai-platform' ),
+						'technical'  => __( 'Technical', 'nvoos-content-graph-ai-platform' ),
+						'healthcare' => __( 'Healthcare', 'nvoos-content-graph-ai-platform' ),
+						'legal'      => __( 'Legal', 'nvoos-content-graph-ai-platform' ),
+						'financial'  => __( 'Financial', 'nvoos-content-graph-ai-platform' ),
+						'other'      => __( 'Other', 'nvoos-content-graph-ai-platform' ),
+					);
+					echo esc_html( isset( $categories[ $category ] ) ? $categories[ $category ] : $category );
+				} else {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static em dash character.
+					echo '—';
+				}
+				break;
+
+			case 'expertise_count':
+				$expertise = get_post_meta( $post_id, self::META_EXPERTISE, true );
+				if ( is_array( $expertise ) && ! empty( $expertise ) ) {
+					echo esc_html( absint( count( $expertise ) ) );
+				} else {
+					echo esc_html( '0' );
+				}
+				break;
+		}
+	}
+}

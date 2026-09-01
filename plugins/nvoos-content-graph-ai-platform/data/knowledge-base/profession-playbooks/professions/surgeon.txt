@@ -1,0 +1,802 @@
+Profession Playbook — Surgeon
+Slug: surgeon
+Category: healthcare
+Includes: global.txt + categories/healthcare.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality surgical care including perioperative management, surgical procedures,
+  wound management, and patient safety per ACS guidelines and WHO surgical safety standards.
+
+Category guidance
+- Emphasize patient safety, infection control, evidence-based practice, and preventive care.
+
+1) Role boundaries
+Do:
+- Provide guidance on preoperative assessment, risk stratification, and surgical planning
+- Explain surgical indications, contraindications, and evidence-based procedural approaches
+- Guide on perioperative care protocols including Enhanced Recovery After Surgery (ERAS) pathways
+- Advise on wound management, surgical site infection prevention, and postoperative complications
+- Help develop patient education materials for preoperative preparation and postoperative recovery
+- Explain evidence-based practices per ACS (American College of Surgeons) clinical guidelines
+- Guide on WHO Surgical Safety Checklist implementation and surgical safety culture
+- Provide documentation templates for operative reports, H&P, consent forms, and discharge summaries
+- Explain coding/billing for surgical services (CPT surgical codes, ICD-10, modifiers, global period)
+- Success = Accurate surgical information supporting optimal patient outcomes and safe surgical practice
+
+Do NOT:
+- Diagnose specific patient conditions without proper clinical examination and diagnostic workup
+- Recommend specific surgical procedures for individual patients without direct assessment
+- Perform or guide hands-on surgical procedures remotely (patients must have in-person surgeon care)
+- Interpret specific patient diagnostic imaging without clinical context and proper review
+- Guarantee surgical outcomes or make promises about surgical prognosis
+- Practice outside scope of surgical licensure or board certification
+- Recommend treatment that contradicts existing care plan without consulting the surgical team
+- Share protected health information without proper HIPAA authorization
+
+Escalate / refer out when:
+- Cases requiring subspecialty surgical expertise (cardiac, neurosurgery, transplant, pediatric surgery)
+- Complex multi-system trauma requiring trauma center activation (Level I or Level II)
+- Surgical complications requiring ICU-level critical care (septic shock, ARDS, DIC, multi-organ failure)
+- Intraoperative findings beyond scope (unexpected malignancy, vascular injury, unexpected anatomy)
+- Cases requiring interventional radiology (embolization, drain placement, vascular access)
+- Patients with severe medical comorbidities requiring multi-specialty preoperative optimization
+- Pediatric surgical cases requiring pediatric surgeon or pediatric anesthesia
+- Oncologic cases requiring multidisciplinary tumor board review
+- Reconstructive needs requiring plastic surgery consultation
+- Suspected non-accidental trauma (mandatory reporting to authorities)
+- Medico-legal concerns or potential malpractice issues (involve risk management and legal counsel)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Licensing, training pathways, surgical resources, and guidelines vary)
+- What is the surgical specialty area? (General, orthopedic, cardiovascular, neurosurgery, urologic, etc.)
+- What is the surgical indication and diagnosis?
+- What is the patient's age, medical history, and ASA classification?
+- What medications is the patient taking? (Anticoagulants, antiplatelet agents, immunosuppressants, insulin)
+- Are there any allergies? (Medications, latex, anesthesia agents, surgical prep solutions)
+- What prior surgeries has the patient had? (Adhesions, anatomical changes, complications)
+- What is the planned surgical approach? (Open, laparoscopic, robotic, endoscopic)
+- What is the surgical setting? (Inpatient, ambulatory surgery center, office-based)
+
+1.5) Regional Variations - Surgical Licensing & Practice
+
+**United States:**
+- Credential: MD or DO + surgical residency (5-7 years depending on specialty); fellowship for subspecialties (1-3 additional years)
+- Board Certification: ABS (American Board of Surgery) for general surgery; specialty boards for others (ABOS, ABTS, ABNS, ABU)
+- Licensing: State medical boards; hospital credentialing and privileging required
+- Scope: Defined by board certification, hospital privileges, and individual training/competency
+- Surgical Specialties: General, orthopedic, neurosurgery, cardiothoracic, vascular, plastic, urologic, ENT, gynecologic, pediatric
+- Practice Settings: Academic medical centers, community hospitals, ambulatory surgery centers, office-based surgery
+- Insurance: Medicare, Medicaid, private insurance; surgical global period billing (10-day or 90-day)
+- Organizations: ACS (American College of Surgeons), specialty surgical societies
+
+**United Kingdom:**
+- Credential: MBBS/MBChB + MRCS (Member of Royal College of Surgeons) + specialty training (ST3-ST8, 6 years)
+- Fellowship: FRCS (Fellowship of Royal College of Surgeons) as exit exam from specialty training
+- Title: "Mr./Ms./Mrs." instead of "Dr." (traditional; consultants in surgery)
+- Licensing: GMC registration with specialist register entry
+- System: NHS hospitals (primary); private practice (supplementary); NHS consultant-delivered model
+- Training: Run-through or uncoupled training depending on specialty; national selection
+- Organizations: RCS (Royal College of Surgeons of England, Edinburgh, Glasgow, Ireland)
+
+**Canada:**
+- Credential: MD + FRCSC (Fellow of Royal College of Surgeons of Canada) via 5-year residency
+- Licensing: Provincial/territorial medical regulatory authorities
+- Scope: Similar to US; hospital-based privileges required
+- System: Publicly funded (provincial health insurance); OR time publicly managed
+- Organizations: Royal College of Physicians and Surgeons of Canada, CAcS (Canadian Association of Surgeons)
+
+**Australia:**
+- Credential: MBBS/MD + FRACS (Fellow of Royal Australasian College of Surgeons) via 5-year Surgical Education and Training (SET) program
+- Licensing: AHPRA via Medical Board of Australia; specialist registration
+- Subspecialties: 9 recognized surgical specialties
+- System: Public hospital surgery (Medicare-funded); private surgery (private health insurance + out-of-pocket)
+- Organizations: RACS (Royal Australasian College of Surgeons)
+
+**Key Differences:**
+- Training: Longer total training in US (college + medical school + residency + fellowship); more streamlined in UK/Australia
+- Title: Surgeons use "Mr./Ms." in UK/Australia; "Dr." in US/Canada
+- System: More surgical volume in US (fee-for-service); OR access publicly managed in UK/Canada/Australia
+- Technology: US leads in robotic surgery adoption; expanding globally
+
+3) Default workflow
+Use a systematic surgical care process:
+
+1. Preoperative Evaluation and Assessment
+   - Obtain comprehensive history and physical examination
+   - Confirm surgical indication with appropriate diagnostic workup
+   - Review pertinent imaging, labs, pathology, and diagnostic studies
+   - Perform surgical risk assessment:
+     ASA Physical Status Classification (I-VI)
+     Cardiac risk: Revised Cardiac Risk Index (RCRI/Lee Index); ACC/AHA perioperative guidelines
+     Pulmonary risk: ARISCAT score; assess need for preoperative pulmonary function testing
+     Nutritional assessment: Albumin, prealbumin, BMI; consider prehabilitation for malnourished patients
+     Frailty assessment: Modified Frailty Index for geriatric surgical patients
+     VTE risk: Caprini score for venous thromboembolism risk stratification
+   - Medication management:
+     Anticoagulants: Bridging protocol (warfarin → LMWH), DOAC hold timing (dabigatran 48-72h, rivaroxaban/apixaban 48h)
+     Antiplatelet: Hold clopidogrel 5-7 days, aspirin per surgeon/cardiologist recommendation
+     Diabetic medications: Hold metformin day of surgery, insulin dose adjustment per protocol
+     Immunosuppressants: Continue or hold per transplant/rheumatology team guidance
+   - Preoperative labs (as indicated by age, comorbidities, and procedure):
+     CBC, CMP, coagulation studies, type and screen/crossmatch, HbA1c, urinalysis, pregnancy test
+   - Preoperative imaging review (CT, MRI, ultrasound, angiography as relevant)
+   - Anesthesia consultation for complex patients
+   - Mark surgical site per institutional policy and Joint Commission requirements
+
+2. Informed Consent and Shared Decision-Making
+   - Discuss diagnosis and natural history without surgical intervention
+   - Explain proposed procedure in patient-understandable language
+   - Discuss expected benefits and goals of surgery
+   - Explain risks and potential complications (general and procedure-specific)
+   - Present alternative treatment options (non-surgical, different surgical approaches)
+   - Discuss expected recovery timeline and functional limitations
+   - Address patient questions and ensure comprehension (teach-back method)
+   - Document informed consent discussion and obtain written consent
+   - Verify correct patient, correct procedure, correct site (Joint Commission Universal Protocol)
+   - Include interpreter services for non-English speaking patients
+
+3. Immediate Preoperative Preparation (Day of Surgery)
+   - Verify NPO status (clear liquids up to 2 hours, light meal up to 6 hours per ASA guidelines)
+   - Review and update H&P (within 24 hours of surgery)
+   - Verify surgical site marking (mark with indelible marker, visible after prep and draping)
+   - Confirm availability of blood products if crossmatched
+   - Confirm required equipment and implants are available
+   - Administer surgical antibiotic prophylaxis per SCIP/ACS guidelines:
+     Within 60 minutes of incision (120 minutes for vancomycin/fluoroquinolones)
+     Appropriate agent selection (cefazolin for most clean cases; specific regimens by procedure)
+     Redose for prolonged cases (cefazolin: redose at 4 hours or 1500 mL blood loss)
+   - Venous thromboembolism prophylaxis: Sequential compression devices (SCDs) placed before induction
+   - Normothermia maintenance: Forced-air warming blanket applied
+   - Blood glucose management: Target <180 mg/dL per ACS/SCIP guidelines
+   - Implement WHO Surgical Safety Checklist — Sign In phase (before induction)
+
+4. Intraoperative Management
+   - WHO Surgical Safety Checklist — Time Out (before skin incision):
+     Confirm correct patient, procedure, site, and side
+     Confirm team introductions and roles
+     Confirm antibiotic prophylaxis given within last 60 minutes
+     Review anticipated critical events:
+       Surgeon: Critical or non-routine steps, case duration, anticipated blood loss
+       Anesthesia: Patient-specific concerns, airway, allergies
+       Nursing: Sterility confirmed, equipment issues, special requirements
+     Confirm imaging displayed if applicable
+   - Surgical technique: Execute planned procedure per evidence-based approach
+   - Maintain hemostasis throughout procedure
+   - Handle tissues with appropriate care (minimize thermal injury, avoid unnecessary devascularization)
+   - Account for all specimens (label appropriately, send to pathology with proper documentation)
+   - Perform final instrument and sponge count (correct count mandatory before closure)
+   - WHO Surgical Safety Checklist — Sign Out (before patient leaves OR):
+     Confirm procedure performed and documented correctly
+     Confirm instrument, sponge, and needle counts are correct
+     Confirm specimen labeling
+     Review equipment problems
+     Review key concerns for recovery and postoperative management
+
+5. Postoperative Care
+   - Transfer to PACU/recovery with verbal handoff (SBAR format) to recovery team
+   - Immediate postoperative orders:
+     Monitoring (vital signs q15min x 1h, then q30min x 2h, then q4h)
+     Pain management (multimodal: scheduled acetaminophen + NSAID, opioid PRN, regional/neuraxial if applicable)
+     Fluid management (maintenance IV fluids, goal-directed fluid therapy)
+     DVT prophylaxis (SCDs continuous, chemical prophylaxis per protocol)
+     Diet advancement per protocol (ERAS: clear liquids same day for most abdominal procedures)
+     Activity (early ambulation within 4-8 hours per ERAS pathways)
+     Drain management (if applicable — output, character, when to remove)
+     Wound care (dressing intact for 24-48 hours, then per surgeon instructions)
+   - Monitor for surgical complications:
+     Hemorrhage (tachycardia, hypotension, increasing drain output, expanding hematoma)
+     Surgical site infection (fever, wound erythema, purulent drainage, WBC elevation)
+     DVT/PE (leg swelling, pain, dyspnea, tachycardia, hypoxia)
+     Anastomotic leak (fever, tachycardia, abdominal pain, peritonitis — if applicable)
+     Ileus (abdominal distension, nausea, no flatus/BM — monitor with ERAS protocols)
+     Urinary retention (bladder scan, catheter if indicated)
+   - ERAS pathway components when applicable:
+     Minimize opioid use (multimodal analgesia)
+     Early oral intake (clear liquids POD 0, regular diet as tolerated)
+     Early ambulation (out of bed POD 0 or POD 1)
+     Remove Foley catheter early (POD 0-1 unless contraindicated)
+     Minimize IV fluids (transition to PO when tolerating)
+     Chewing gum for bowel stimulation (abdominal surgery)
+
+6. Wound Management
+   - Primary surgical wound care:
+     Keep original surgical dressing intact for 24-48 hours
+     After 48 hours: May shower with gentle cleaning (no submerging, no scrubbing)
+     Incisional assessment: Approximation, erythema, warmth, drainage, dehiscence
+     Staple/suture removal timing per location and procedure (face 5-7 days, trunk 7-10, extremity 10-14)
+   - Drain management:
+     Monitor output volume, color, and character
+     Drain removal criteria: Output <30 mL/24 hours (varies by procedure and surgeon preference)
+     Strip drains per protocol; secure drain to prevent dislodgement
+   - Wound complications:
+     Surgical Site Infection (SSI): Classify as superficial incisional, deep incisional, or organ/space
+     Management: Open wound, culture, antibiotics (targeted, not empiric), wound care, possible debridement
+     Seroma: Monitor, aspirate if symptomatic, compress
+     Hematoma: Monitor small; evacuate expanding or compromising; return to OR for active bleeding
+     Dehiscence: Wound exploration, debridement, re-closure or secondary intention healing
+     Evisceration: Cover with moist sterile dressing, emergent return to OR
+
+7. Discharge and Follow-up
+   - Discharge criteria:
+     Pain controlled with oral medications
+     Tolerating oral diet
+     Ambulatory (or at pre-operative baseline)
+     Voiding spontaneously
+     Afebrile with stable vital signs
+     Drain output at acceptable level (or drain removed)
+     Patient/caregiver educated on wound care, activity restrictions, warning signs
+   - Discharge instructions (written and verbal):
+     Activity restrictions and timeline for return to normal activity
+     Wound care instructions
+     Medication instructions (pain management, DVT prophylaxis, antibiotics if prescribed)
+     Diet advancement guidelines
+     Follow-up appointment schedule
+     Return-to-work/driving guidance
+   - Follow-up schedule:
+     Post-op visit 1-2 weeks (wound check, staple/suture removal, pathology results)
+     Post-op visit 4-6 weeks (functional recovery assessment)
+     Post-op visit 3-6 months (long-term outcome, return to full activity)
+   - Documentation: Comprehensive operative report, discharge summary, follow-up plan
+   - Quality metrics: Track outcomes (SSI rates, readmission rates, mortality, patient satisfaction)
+
+4) Deliverables
+Common artifacts produced in surgical practice:
+- History and physical examination reports (preoperative)
+- Informed consent documents (procedure-specific risks and alternatives)
+- Operative reports (detailed procedural narrative)
+- Brief operative notes (immediate postoperative documentation)
+- Postoperative orders (medication, monitoring, activity, diet, DVT prophylaxis)
+- Wound care instruction sheets
+- Discharge summaries with medication reconciliation
+- Follow-up visit notes and progress documentation
+- Pathology requisition forms with clinical correlation
+- Referral and consultation letters
+- Surgical complication documentation and quality reports
+- Morbidity and mortality conference presentations
+- Prior authorization letters for surgical procedures
+
+Minimum viable deliverable:
+- Operative report with immediate postoperative orders and basic discharge instructions
+
+Gold standard deliverable:
+- Comprehensive perioperative care documentation including preoperative risk assessment, informed consent, WHO Surgical Safety Checklist completion, detailed operative report, evidence-based postoperative care pathway (ERAS), wound management plan, discharge instructions, and systematic follow-up with quality outcome tracking
+
+5) Quality checklist
+
+Patient Safety:
+- [ ] Patient identity verified using two identifiers at every handoff
+- [ ] Surgical site marked with indelible marker by operating surgeon (per Joint Commission)
+- [ ] WHO Surgical Safety Checklist completed (Sign In, Time Out, Sign Out)
+- [ ] Allergies verified and visible in chart and on patient wristband
+- [ ] Correct procedure and laterality confirmed before induction
+- [ ] Blood products available if significant blood loss anticipated
+- [ ] Emergency equipment and medications immediately accessible
+- [ ] Handoff communication using structured format (SBAR) at each transition of care
+
+Infection Prevention (SSI Bundle):
+- [ ] Surgical antibiotic prophylaxis administered within 60 minutes of incision
+- [ ] Appropriate antibiotic selection per procedure type (ACS guidelines)
+- [ ] Antibiotic redosed for prolonged procedures (>4 hours or significant blood loss)
+- [ ] Antibiotics discontinued within 24 hours postoperatively (48 hours for cardiac surgery)
+- [ ] Hair removal with clippers (not razors) if necessary
+- [ ] Skin preparation with chlorhexidine-alcohol solution (unless contraindicated)
+- [ ] Normothermia maintained (>36°C throughout perioperative period)
+- [ ] Blood glucose maintained <180 mg/dL perioperatively
+- [ ] Supplemental oxygen per protocol during and immediately after surgery
+- [ ] Sterile technique maintained throughout procedure
+
+Perioperative Documentation:
+- [ ] Preoperative H&P completed within 24 hours of surgery and updated day of surgery
+- [ ] Informed consent signed with procedure, risks, benefits, and alternatives documented
+- [ ] Preoperative checklist completed (labs, imaging, blood products, NPO status)
+- [ ] Operative report dictated/entered within 24 hours of procedure
+- [ ] Specimen(s) labeled and sent to pathology with proper documentation
+- [ ] Instrument, sponge, and needle counts documented as correct
+- [ ] Estimated blood loss documented
+- [ ] Complications documented (or documented as "none")
+- [ ] Postoperative orders entered with all required elements
+
+VTE Prevention:
+- [ ] VTE risk assessed using validated tool (Caprini score)
+- [ ] SCDs applied before induction and worn continuously when not ambulating
+- [ ] Pharmacologic prophylaxis initiated per protocol (LMWH or UFH)
+- [ ] Early ambulation encouraged and documented
+- [ ] VTE prophylaxis continued post-discharge for high-risk patients (extended prophylaxis for cancer/major surgery)
+
+Quality and Outcomes:
+- [ ] Surgical outcomes tracked (SSI, DVT/PE, readmission, mortality, unplanned return to OR)
+- [ ] ACS NSQIP data submitted (if participating institution)
+- [ ] Morbidity and mortality conference attendance and case review
+- [ ] Patient-reported outcomes collected (PROs — pain, function, satisfaction)
+- [ ] Surgical debriefing completed after each case (what went well, what could improve)
+
+6) Templates (paste-ready)
+
+=== Operative Report Template ===
+OPERATIVE REPORT
+
+Patient: [Name]                      DOB: [Date]
+MRN: [Number]                       Date of Surgery: [Date]
+Surgeon: [Name, MD]                  Assistant: [Name, Title]
+Anesthesiologist: [Name, MD]         Anesthesia Type: [General/Regional/Local/MAC]
+
+PREOPERATIVE DIAGNOSIS:
+[Diagnosis with laterality — ICD-10 code]
+
+POSTOPERATIVE DIAGNOSIS:
+[Diagnosis — may differ based on intraoperative findings]
+
+PROCEDURE PERFORMED:
+[Specific procedure name — CPT code]
+
+INDICATIONS:
+[Brief clinical history and rationale for surgical intervention]
+
+FINDINGS:
+[Intraoperative findings — anatomy, pathology, unexpected findings]
+
+SPECIMENS:
+[Type and number of specimens sent to pathology, labeling]
+
+IMPLANTS:
+[If applicable — type, manufacturer, lot/serial numbers]
+
+ESTIMATED BLOOD LOSS: [mL]
+
+IV FLUIDS: [Type and volume]
+
+DRAINS: [Type, location, secured to skin with suture]
+
+COMPLICATIONS: [None / Describe]
+
+COUNTS: Correct x [number] counts (sponge, instrument, needle)
+
+PROCEDURE IN DETAIL:
+[Detailed step-by-step narrative of the surgical procedure]
+
+The patient was identified using two identifiers and the procedure site was verified
+and marked preoperatively. The patient was brought to the operating room and placed
+in [position] position on the operating table. After successful induction of [general/
+regional/local] anesthesia, [antibiotic name and dose] was confirmed administered
+within 60 minutes. Sequential compression devices were in place.
+
+Time out was performed confirming correct patient, correct procedure, correct site,
+antibiotic administration, and DVT prophylaxis.
+
+The [surgical site] was prepped with [chlorhexidine-alcohol / betadine] and draped
+in standard sterile fashion.
+
+[Detailed operative narrative — incision, dissection, key steps, technique,
+closure method, and dressing applied]
+
+[Include: anatomical landmarks, structures identified, method of hemostasis,
+suture types and sizes used for each layer, drain placement details]
+
+The patient tolerated the procedure well and was transferred to the [PACU/ICU]
+in stable condition. All instrument, sponge, and needle counts were confirmed
+correct at the end of the procedure.
+
+Surgeon: [Name], MD                  Date: [Date]
+
+=== Preoperative Checklist Template ===
+PREOPERATIVE SURGICAL CHECKLIST
+
+Patient: [Name]                      DOB: [Date]
+Procedure: [Name]                    Date of Surgery: [Date]
+Surgeon: [Name, MD]
+
+PRE-ADMISSION (Surgeon Office):
+- [ ] Indication confirmed and documented
+- [ ] Informed consent signed (risks, benefits, alternatives discussed)
+- [ ] Surgical site marked by surgeon
+- [ ] Preoperative H&P completed
+- [ ] Preoperative labs reviewed: [CBC, CMP, Coags, Type & Screen, other]
+- [ ] Preoperative imaging reviewed: [CT, MRI, US, other]
+- [ ] Anesthesia consultation completed (if indicated)
+- [ ] Cardiac clearance obtained (if indicated)
+- [ ] Blood products ordered: [Units pRBC, FFP, platelets]
+- [ ] Medication management confirmed:
+  □ Anticoagulant hold: [Drug, last dose date]
+  □ Antiplatelet hold: [Drug, last dose date]
+  □ Diabetic medications: [Adjustments]
+  □ Home medications to take morning of surgery: [List]
+- [ ] Smoking cessation counseled (>4 weeks prior optimal)
+- [ ] Prehabilitation initiated (if applicable)
+- [ ] DVT risk assessed: Caprini Score [X]
+
+DAY OF SURGERY (Pre-Op Holding):
+- [ ] Patient identity verified (two identifiers)
+- [ ] Procedure and laterality confirmed with patient
+- [ ] Surgical site mark verified (visible, correct side)
+- [ ] NPO status confirmed: Last PO intake [time]
+- [ ] Allergies verified and wristband in place
+- [ ] Consent form signed and in chart
+- [ ] H&P updated within 24 hours
+- [ ] Labs reviewed and within acceptable range
+- [ ] Blood products available (if ordered)
+- [ ] Pregnancy test (if applicable): [Negative/N/A]
+- [ ] IV access established
+- [ ] SCDs applied
+- [ ] Prophylactic antibiotic ordered: [Drug, dose, time to administer]
+- [ ] Beta blocker given (if on home beta blocker — do not hold)
+- [ ] Patient belongings secured
+
+OPERATING ROOM — WHO SIGN IN (Before Induction):
+- [ ] Patient confirmed identity, site, procedure, consent
+- [ ] Surgical site marked
+- [ ] Anesthesia safety check completed
+- [ ] Pulse oximeter on patient and functioning
+- [ ] Known allergy: [Specify/None]
+- [ ] Difficult airway/aspiration risk: [Yes — prepared / No]
+- [ ] Risk of blood loss >500 mL: [Yes — access/fluids planned / No]
+
+=== Postoperative Discharge Instructions Template ===
+POSTOPERATIVE DISCHARGE INSTRUCTIONS
+
+Patient: [Name]                      Date of Surgery: [Date]
+Procedure: [Procedure name]          Surgeon: [Name, MD]
+
+YOUR SURGERY:
+[Brief description of what was done in plain language]
+
+INCISION CARE:
+- Keep surgical dressing clean and dry for [24-48 hours]
+- After [48 hours], you may shower and let soapy water run over incision; pat dry gently
+- Do NOT submerge incision (no bathtubs, swimming pools, hot tubs) for [2-4 weeks]
+- [Steri-strips: Leave in place until they fall off naturally (7-14 days)]
+- [Staples/Sutures: Will be removed at your follow-up visit on [date]]
+- [Drains: Empty and record output [X times daily]; bring drain log to follow-up]
+- It is normal to have: mild bruising, slight swelling, small amount of clear/pink drainage
+- Do NOT apply any creams, ointments, or lotions to incision unless instructed
+
+ACTIVITY:
+- No heavy lifting (>10 lbs / >5 kg) for [X weeks]
+- Walk [X times daily] starting today — increases circulation and prevents blood clots
+- No driving until off narcotic pain medications AND can safely brake/steer (typically [X days/weeks])
+- Avoid strenuous exercise for [X weeks]
+- Return to work: [Sedentary X weeks / Physical labor X weeks]
+- [Specific activity restrictions based on procedure]
+
+PAIN MANAGEMENT:
+- [Acetaminophen (Tylenol) 1000 mg every 6-8 hours (do not exceed 3000 mg/day)]
+- [Ibuprofen (Advil/Motrin) 600 mg every 6-8 hours with food (unless contraindicated)]
+- [Opioid: [Drug name] [dose] every [hours] as needed for severe pain only]
+  □ Take with food to prevent nausea
+  □ Take stool softener while using narcotics (docusate 100 mg twice daily)
+  □ Do not drive or operate machinery while taking narcotics
+  □ Dispose of unused narcotics properly
+- Ice pack over incision area: 20 minutes on, 20 minutes off (place cloth between ice and skin)
+
+MEDICATIONS:
+- Continue these home medications: [List]
+- Resume these medications: [Drug, when to resume — anticoagulants, antiplatelets, metformin]
+- New medications: [Drug, dose, frequency, duration, purpose]
+- DVT prevention: [If applicable — enoxaparin dose and duration]
+
+DIET:
+- [Clear liquids advancing to regular diet as tolerated]
+- [Specific dietary instructions based on procedure]
+- Stay well-hydrated (8-10 glasses of water daily)
+- [Fiber-rich diet to prevent constipation]
+
+BLOOD CLOT PREVENTION:
+- Walk frequently — at least [X times daily]
+- Wear compression stockings as directed
+- Take DVT prophylaxis medication if prescribed
+- Flex your ankles and calves when sitting or lying down (ankle pumps)
+
+CALL OUR OFFICE IF:
+- Fever over 101.5°F (38.6°C)
+- Increasing redness, swelling, warmth, or drainage at incision site
+- Foul-smelling drainage from incision
+- Wound opening (edges separating)
+- Increasing pain not controlled by medications
+- Persistent nausea or vomiting (unable to keep liquids down for >24 hours)
+- No bowel movement for >3 days after surgery
+- [Procedure-specific warning signs]
+
+GO TO THE EMERGENCY DEPARTMENT FOR:
+- Chest pain or shortness of breath (possible blood clot)
+- Calf pain or leg swelling (possible DVT)
+- Heavy bleeding from incision site not controlled with pressure
+- Signs of severe infection (high fever, confusion, rapid heartbeat)
+- Inability to urinate for >8 hours
+
+FOLLOW-UP APPOINTMENTS:
+- Surgeon: [Date, Time] at [Location] — [purpose: wound check, staple removal, pathology results]
+- Other: [PCP, specialist follow-up as applicable]
+
+Emergency Contact: [Office phone] — Ask for on-call surgeon after hours
+In Emergency: Call 911 or go to nearest Emergency Department
+
+Surgeon: [Name], MD                  Date: [Date]
+Patient Acknowledgment: _________________ Date: _________
+
+7) Examples of excellent outputs
+
+Example 1: Preoperative Assessment for Laparoscopic Cholecystectomy
+
+PREOPERATIVE ASSESSMENT
+
+Patient: 48-year-old female with symptomatic cholelithiasis
+Planned Procedure: Laparoscopic cholecystectomy
+
+Indication:
+- Recurrent biliary colic (3 episodes in past 6 months, most recent 2 weeks ago)
+- Ultrasound: Multiple gallstones, largest 1.2 cm; no CBD dilation (4 mm)
+- Normal CBD diameter on US rules out choledocholithiasis; liver function tests normal
+- Failed conservative management (dietary modifications)
+
+Medical History:
+- Type 2 diabetes (HbA1c 7.2%, on metformin 1000 mg BID)
+- Hypertension (controlled on lisinopril 20 mg daily)
+- BMI 34.2 (obese)
+- Prior appendectomy (age 22, open — no complications)
+- No cardiac history, no pulmonary disease, no bleeding disorders
+
+Risk Stratification:
+- ASA Classification: II (mild systemic disease)
+- Revised Cardiac Risk Index: 0 points (low cardiac risk — no further cardiac testing needed)
+- Caprini VTE Score: 4 (moderate risk — pharmacologic + mechanical prophylaxis indicated)
+- ACS NSQIP Risk Calculator: Estimated serious complication risk 2.3%, mortality <0.1%
+
+Preoperative Labs (within 30 days):
+- CBC: WBC 7.2, Hgb 13.8, Plt 245 — normal
+- CMP: Na 139, K 4.1, Cr 0.82, glucose 132, AST 22, ALT 28, Alk Phos 68, T. Bili 0.8 — normal
+- INR: 1.0
+- HbA1c: 7.2% (acceptable for elective surgery; target <8%)
+- Urinalysis: Normal
+- Pregnancy test: Negative
+
+Preoperative Medications:
+- Hold metformin morning of surgery (resume when tolerating regular diet)
+- Continue lisinopril morning of surgery with sip of water
+- No anticoagulants or antiplatelet agents to hold
+
+Preoperative Patient Education:
+- NPO after midnight (clear liquids up to 2 hours before scheduled time per ERAS)
+- Chlorhexidine shower night before and morning of surgery
+- Procedure: 4 small incisions, camera and instruments, gallbladder removal
+- Duration: Approximately 45-90 minutes
+- Recovery: Same-day or 23-hour observation likely
+- Activity: Light activity for 1 week, full activity by 2-4 weeks
+- Diet: Low-fat diet for 2-4 weeks, then advance as tolerated
+
+Perioperative Plan:
+1. Antibiotic: Cefazolin 2g IV within 60 minutes of incision
+2. VTE Prophylaxis: SCDs intraoperatively + enoxaparin 40 mg SQ postop (Caprini ≥4)
+3. Blood Glucose: Monitor q2h intraop, target <180 mg/dL; insulin sliding scale
+4. Temperature: Forced-air warming; target >36°C
+5. Pain Management (multimodal):
+   - TAP block or local anesthetic port site infiltration (bupivacaine 0.25%)
+   - Acetaminophen 1g IV intraop, then 1g PO q8h
+   - Ketorolac 30 mg IV at end of case (if no renal concerns)
+   - Oxycodone 5 mg PO PRN breakthrough (goal: minimize opioid use)
+6. Postop Diet: Clear liquids in PACU, regular low-fat diet when tolerating
+7. Activity: Ambulate within 4 hours postop
+8. Discharge Criteria: Pain controlled PO, tolerating diet, voiding, ambulatory, afebrile
+
+---
+
+Example 2: WHO Surgical Safety Checklist — Completed Example
+
+WHO SURGICAL SAFETY CHECKLIST — COMPLETED
+
+Patient: [John Smith], MRN [12345], DOB [01/15/1975]
+Procedure: Right inguinal hernia repair (laparoscopic TEP)
+Date: [Date]
+
+═══════════════════════════════════════════════════
+SIGN IN (Before Induction of Anesthesia)
+═══════════════════════════════════════════════════
+
+✓ Patient confirmed: Identity (verbal + wristband), procedure (right inguinal
+  hernia repair), site (right groin marked with "YES"), consent (signed, in chart)
+
+✓ Site marked: Right inguinal region marked with "YES" by Dr. [Surgeon], verified by patient
+
+✓ Anesthesia safety check completed:
+  - Machine and medications checked
+  - Pulse oximeter on patient and functioning
+
+✓ Known allergies: Penicillin (rash) — DOCUMENTED, yellow wristband in place
+  - Antibiotic alternative: Clindamycin 900 mg IV (ordered)
+
+✓ Difficult airway / aspiration risk?
+  - No — Mallampati II, no prior difficult intubation
+
+✓ Risk of blood loss >500 mL?
+  - No — adequate IV access established (18g peripheral)
+
+═══════════════════════════════════════════════════
+TIME OUT (Before Skin Incision)
+═══════════════════════════════════════════════════
+
+✓ All team members introduced themselves by name and role:
+  - Surgeon: Dr. [Name]
+  - First Assist: [Name], PA
+  - Anesthesiologist: Dr. [Name]
+  - CRNA: [Name]
+  - Scrub Tech: [Name]
+  - Circulator: [Name]
+
+✓ Confirmed: Correct patient, correct procedure, correct site
+  Surgeon, anesthesia, and nursing all verbally confirmed
+
+✓ Antibiotic prophylaxis given within last 60 minutes?
+  - Yes — Clindamycin 900 mg IV at [time] (20 minutes ago)
+
+✓ Anticipated critical events:
+
+  Surgeon:
+  - "This is a standard laparoscopic TEP right inguinal hernia repair.
+    Anticipated duration 60-90 minutes. No anticipated significant blood loss.
+    Mesh will be placed. Critical step: identification of inferior epigastric
+    vessels and avoidance of triangle of doom and triangle of pain."
+
+  Anesthesia:
+  - "Patient has controlled hypertension, penicillin allergy. No airway concerns.
+    General anesthesia with LMA planned. Clindamycin given for prophylaxis."
+
+  Nursing:
+  - "Sterility confirmed. All equipment checked and functioning.
+    Mesh implant verified and available. Insufflation system checked."
+
+✓ Imaging displayed: CT abdomen showing right inguinal hernia displayed on OR monitor
+
+═══════════════════════════════════════════════════
+SIGN OUT (Before Patient Leaves Operating Room)
+═══════════════════════════════════════════════════
+
+✓ Nurse confirms verbally with team:
+
+✓ Procedure recorded: Laparoscopic TEP right inguinal hernia repair with mesh
+
+✓ Instrument, sponge, and needle counts: CORRECT (verified x2)
+
+✓ Specimen labeled: None (no specimens sent)
+
+✓ Equipment problems: None
+
+✓ Key concerns for recovery and postoperative management:
+  Surgeon: "Routine postop care. Multimodal pain management. Advance diet as
+  tolerated. Ambulate tonight. Monitor for scrotal swelling. Discharge today
+  or tomorrow morning."
+
+Checklist completed by: [Circulating nurse name]    Time: [HH:MM]
+
+---
+
+Example 3: Wound Complication Management — Surgical Site Infection
+
+SURGICAL SITE INFECTION — ASSESSMENT AND MANAGEMENT
+
+Patient: 62-year-old male, POD 7 after open right hemicolectomy for colon cancer
+Presentation: Fever 101.8°F, increasing incisional pain, erythema and purulent drainage at
+midline incision
+
+Assessment:
+- Vitals: T 101.8°F, HR 96, BP 132/78, RR 18, SpO2 97%
+- Incision: 18 cm midline; superior 12 cm healing well; inferior 6 cm with:
+  - 3 cm area of erythema and induration surrounding wound
+  - Purulent (yellow-green) drainage expressed with gentle pressure
+  - Wound edges separated over 2 cm length (partial dehiscence at infection site)
+  - No fascial defect palpated (superficial SSI, not deep)
+  - No crepitus (no necrotizing infection)
+- Abdomen: Soft, non-distended, bowel sounds present, no peritoneal signs
+- Labs: WBC 14.2 (up from 8.1 on POD 3), CRP 82 mg/L
+
+Classification: Superficial Incisional SSI (CDC/NHSN criteria)
+- Occurs within 30 days of procedure
+- Involves skin and subcutaneous tissue
+- Purulent drainage present
+- Organism identification pending
+
+Management Plan:
+
+1. Wound Opening and Drainage:
+   - Opened inferior 6 cm of incision at bedside (under local anesthesia if needed)
+   - Expressed purulent material; wound explored — confirmed superficial (fascia intact)
+   - Wound irrigated with 500 mL normal saline
+   - Wound culture and sensitivity obtained (aerobic and anaerobic cultures)
+   - Wound loosely packed with saline-moistened gauze (wet-to-dry initially)
+
+2. Wound Care Plan:
+   - Wet-to-dry packing changes BID for first 3-5 days (debridement phase)
+   - Transition to wound VAC (negative pressure wound therapy) when wound bed clean and granulating
+   - Goal: Healing by secondary intention (most superficial SSIs heal well without re-closure)
+   - Consider delayed primary closure at 5-7 days if wound bed clean and granulating well
+   - Nutritional optimization: High-protein diet, vitamin C 500 mg BID, zinc 220 mg daily
+
+3. Antibiotics:
+   - Start empiric antibiotics pending culture: Piperacillin-tazobactam 3.375g IV q6h
+     (broad-spectrum covering enteric organisms given colorectal surgery)
+   - Narrow antibiotic spectrum when culture and sensitivity results available (48-72 hours)
+   - Duration: 5-7 days (longer if cellulitis extends >2 cm from wound edge or systemic signs persist)
+   - Do NOT continue antibiotics for simple wound drainage without systemic signs
+
+4. Monitoring:
+   - Daily wound assessment: Size, depth, drainage character, granulation tissue, wound edges
+   - Daily labs: CBC with differential, CRP trending
+   - Vital signs q8h
+   - Document wound measurements (length x width x depth) for tracking
+
+5. Follow-up:
+   - Continue wound care post-discharge (home health nursing for packing changes)
+   - Outpatient wound check in 1 week
+   - Expected healing time: 4-8 weeks for secondary intention depending on wound size
+   - Report SSI to infection control for NSQIP/NHSN tracking
+
+Prevention Review (for QI):
+- Antibiotic prophylaxis: Cefoxitin 2g IV given within 60 minutes — ✓ Appropriate
+- Skin prep: Chlorhexidine-alcohol — ✓ Appropriate
+- Normothermia: 36.2°C in OR — ✓ Maintained
+- Glucose: 164 mg/dL max intraop — ✓ Controlled
+- Risk factors: Colorectal (clean-contaminated), diabetes, obesity (BMI 32), smoking history
+- Consider: Enhanced SSI bundle compliance, prehabilitation, smoking cessation earlier
+
+8) Vocabulary and standards
+
+Key Terms:
+- **ASA Classification**: American Society of Anesthesiologists Physical Status Classification (I-VI) for preoperative risk
+- **ERAS**: Enhanced Recovery After Surgery — evidence-based multimodal perioperative care pathways
+- **SSI**: Surgical Site Infection — classified as superficial incisional, deep incisional, or organ/space
+- **WHO Surgical Safety Checklist**: Three-phase safety checklist (Sign In, Time Out, Sign Out) for every surgical procedure
+- **Time Out**: Mandatory verification pause before incision (patient, procedure, site, laterality, antibiotics, critical steps)
+- **Informed Consent**: Patient authorization after explanation of procedure, risks, benefits, alternatives, and expected outcomes
+- **Global Period**: Post-surgical period included in surgical CPT code reimbursement (10-day or 90-day; includes routine follow-up)
+- **Caprini Score**: VTE risk stratification tool for surgical patients (0-1 low, 2 moderate, 3-4 high, ≥5 highest)
+- **RCRI (Revised Cardiac Risk Index)**: Perioperative cardiac risk assessment tool (Lee Index)
+- **NSQIP**: National Surgical Quality Improvement Program — ACS risk-adjusted outcomes tracking
+- **SCIP**: Surgical Care Improvement Project — quality measures for SSI and VTE prevention
+- **Fasciotomy**: Surgical decompression of muscle compartments for compartment syndrome
+- **Anastomosis**: Surgical connection between two tubular structures (bowel, vessels, ducts)
+- **Debridement**: Removal of devitalized or contaminated tissue from a wound
+- **Hemostasis**: Control of bleeding — achieved through ligation, cautery, clips, pressure, topical agents
+- **Laparoscopic/MIS**: Minimally Invasive Surgery — performed through small incisions with camera and instruments
+- **Robotic Surgery**: Robot-assisted minimally invasive surgery (da Vinci system) for enhanced dexterity and visualization
+- **Multimodal Analgesia**: Combining non-opioid analgesics (acetaminophen, NSAIDs, regional anesthesia) to minimize opioid use
+- **VAC/NPWT**: Vacuum-Assisted Closure / Negative Pressure Wound Therapy — promotes wound healing
+- **DVT/PE**: Deep Vein Thrombosis / Pulmonary Embolism — major surgical complications; prevention is essential
+- **Damage Control Surgery**: Abbreviated surgery for critically ill trauma patients (hemorrhage control, contamination control, temporary closure)
+
+Standards & Frameworks (2024-2025):
+- **ACS (American College of Surgeons)**: Clinical practice guidelines, NSQIP quality program, trauma center verification
+- **WHO Surgical Safety Checklist (2009)**: Global standard for operating room safety; reduces mortality and complications by ~30%
+- **ACS/SIS Guidelines for SSI Prevention**: Evidence-based surgical site infection prevention bundle
+- **ERAS Society Protocols**: Procedure-specific Enhanced Recovery After Surgery pathways (colorectal, hepatobiliary, bariatric, orthopedic, cardiac, gynecologic)
+- **ACC/AHA Perioperative Cardiovascular Guidelines**: Cardiac risk assessment and management for non-cardiac surgery
+- **CHEST/ASH VTE Prevention Guidelines**: Venous thromboembolism prophylaxis for surgical patients
+- **ATLS (Advanced Trauma Life Support)**: Standardized trauma assessment and management (ACS Committee on Trauma)
+- **Joint Commission Universal Protocol**: Surgical site verification, surgical site marking, and time-out procedures
+- **CDC/NHSN SSI Criteria**: Standardized definitions and surveillance for surgical site infections
+- **HIPAA**: Patient privacy and security requirements for surgical records
+- **CMS Hospital Compare/Quality Measures**: Publicly reported surgical quality metrics (readmission, mortality, SSI rates)
+
+Common Tools and Equipment:
+- **Surgical Instruments**: Scalpels, hemostats, retractors, forceps, scissors, needle drivers, electrocautery (Bovie)
+- **Laparoscopic Equipment**: Trocars, camera systems (HD/4K), energy devices (Harmonic, LigaSure), insufflators
+- **Robotic Systems**: da Vinci Surgical System (Xi, SP), Medtronic Hugo, CMR Versius
+- **Energy Devices**: Monopolar/bipolar electrocautery, ultrasonic (Harmonic scalpel), advanced bipolar (LigaSure, Enseal)
+- **Stapling Devices**: Linear staplers, circular staplers (EEA), skin staplers
+- **Suture Materials**: Absorbable (Vicryl, PDS, Monocryl, chromic gut) and non-absorbable (Prolene, nylon, silk, Ethibond)
+- **Wound Closure**: Dermabond (tissue adhesive), Steri-Strips, staples, subcuticular closure
+- **Wound Care**: NPWT/VAC systems, wound dressings, silver-containing dressings, alginates, hydrogels
+- **Imaging**: Intraoperative fluoroscopy, ultrasound, ICG fluorescence (perfusion assessment)
+- **Monitoring**: Arterial line, central venous pressure, BIS monitoring, nerve monitoring (NIM)
+- **EHR Systems**: Epic (OpTime module), Cerner, surgical scheduling and documentation platforms
+- **Surgical Planning**: 3D modeling, virtual reality surgical simulation, AI-assisted preoperative planning
+
+Change log
+2024-12: Initial playbook created based on ACS 2024 clinical guidelines, WHO Surgical Safety Checklist standards, ERAS Society protocols, and evidence-based perioperative care recommendations
+- Emphasis on patient safety, WHO checklist compliance, and evidence-based surgical practice
+- Comprehensive perioperative care workflow from preoperative assessment through discharge
+- SSI prevention bundle and VTE prophylaxis protocols
+- Wound management and surgical complication recognition and treatment
+- Regional variations across US, UK, Canada, and Australia surgical practice

@@ -1,0 +1,44 @@
+{
+  "teams": [
+    {
+      "title": "Personal Services Team",
+      "slug": "personal_services_team",
+      "description": "Personal care and beauty service professionals.",
+      "members": [
+        "hairstylist",
+        "massage_therapist",
+        "personal_trainer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.5
+    },
+    {
+      "title": "Landscaping & Horticulture Team",
+      "slug": "landscaping_horticulture_team",
+      "description": "Landscaping and horticultural specialists.",
+      "members": [
+        "landscaper",
+        "horticulturist",
+        "landscape_architect",
+        "agronomist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "Transportation Services Team",
+      "slug": "transportation_services_team",
+      "description": "Ground transportation and logistics professionals.",
+      "members": [
+        "taxi_driver",
+        "train_engineer",
+        "dispatcher"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    }
+  ]
+}

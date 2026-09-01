@@ -597,7 +597,12 @@ function wp_mcp_ai_manually_load_plugin() {
 	}
 }
 
-tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
+// Allow the Platform addon's standalone test matrix (content-graph ecosystem
+// without the base plugin) to skip loading the monolith. Default behaviour is
+// unchanged: the base plugin loads unless WP_MCP_AI_SKIP_BASE_PLUGIN=1.
+if ( '1' !== getenv( 'WP_MCP_AI_SKIP_BASE_PLUGIN' ) ) {
+	tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
+}
 
 /**
  * Report whether a prefixed database table exists.

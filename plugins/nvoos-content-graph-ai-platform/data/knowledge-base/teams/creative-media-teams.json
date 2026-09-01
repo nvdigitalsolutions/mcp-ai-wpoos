@@ -1,0 +1,59 @@
+{
+  "teams": [
+    {
+      "title": "Digital Content Creation Team",
+      "slug": "digital_content_creation_team",
+      "description": "Digital content creators for social media, video, and online platforms.",
+      "members": [
+        "content_creator",
+        "social_media_manager",
+        "video_editor",
+        "photographer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.7
+    },
+    {
+      "title": "Graphic Design & Visual Arts Team",
+      "slug": "graphic_design_visual_arts_team",
+      "description": "Graphic design and visual arts professionals.",
+      "members": [
+        "graphic_designer",
+        "graphic_artist",
+        "animator",
+        "game_designer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.7
+    },
+    {
+      "title": "Publishing & Writing Team",
+      "slug": "publishing_writing_team",
+      "description": "Writing and publishing professionals for various content types.",
+      "members": [
+        "writer",
+        "journalist",
+        "medical_writer",
+        "screenwriter"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.7
+    },
+    {
+      "title": "Audio & Music Production Team",
+      "slug": "audio_music_production_team",
+      "description": "Audio production and music professionals.",
+      "members": [
+        "sound_designer",
+        "musician",
+        "film_editor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.7
+    }
+  ]
+}
