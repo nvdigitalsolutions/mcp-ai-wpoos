@@ -1266,6 +1266,14 @@ unset(
 // ---------------------------------------------------------------------------
 require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
 
+// Base orchestration dashboard — initialized unconditionally so its
+// admin_menu registration also exists in CLI/test contexts (mirrors
+// settings-dashboard-init above; the constructor only hooks admin actions).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
+}
+new WP_MCP_AI_Admin_Orchestration_Dashboard();
+
 // ---------------------------------------------------------------------------
 // Admin-only includes
 // ---------------------------------------------------------------------------
@@ -1302,9 +1310,6 @@ if ( is_admin() ) {
 	}
 	WP_MCP_AI_Security_Monitor_Admin::init();
 
-	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php' ) ) {
-		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
-	}
 	if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php';
 	}
