@@ -20,6 +20,8 @@ Model management for the content-graph AI addon (Wave D3): the one-time catalog 
 |---|---|---|
 | `NvoosContentGraphAi\Model\ModelCatalogMigration` | `ModelCatalogMigration.php` | `Plugin::register()` (standalone-only) |
 | `NvoosContentGraphAi\Model\ModelIntegrityVerifier` | `ModelIntegrityVerifier.php` | Static utility (model verification call sites land with D3b+) |
+| `NvoosContentGraphAi\Model\ModelRateLimitsCct` | `ModelRateLimitsCct.php` | `Plugin::register()` (standalone-only JetEngine provisioning + catalog source) |
+| `NvoosContentGraphAi\Model\ModelPricingChecker` | `ModelPricingChecker.php` | `Plugin::register()` (standalone-only monthly cron + admin notices) |
 
 ## Inputs / Outputs / Neighbors
 

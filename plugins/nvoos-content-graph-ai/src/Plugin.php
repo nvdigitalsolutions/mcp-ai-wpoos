@@ -88,6 +88,12 @@ final class Plugin {
 			// routine in monolith installs; double-running would double-write
 			// the bookkeeping option.
 			\add_action( 'init', array( \NvoosContentGraphAi\Model\ModelCatalogMigration::class, 'run_from_catalog' ), 20 );
+
+			// Model rate limits CCT + pricing checker — the base plugin owns
+			// the same JetEngine provisioning and cron hooks in monolith
+			// installs; registering here too would double-provision.
+			\NvoosContentGraphAi\Model\ModelRateLimitsCct::bootstrap();
+			\NvoosContentGraphAi\Model\ModelPricingChecker::bootstrap();
 		}
 
 		// Register the async chat continuation hook.
