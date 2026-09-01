@@ -552,7 +552,12 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 			$params['pageToken'] = $page_token;
 		}
 
-		return add_query_arg( $params, $base );
+		// add_query_arg() does not URL-encode values (build_query() passes
+		// $urlencode=false), which would leave raw spaces in the query string.
+		// Build the query explicitly with RFC 1738 encoding instead.
+		$query_string = http_build_query( $params, '', '&', PHP_QUERY_RFC1738 );
+
+		return $base . ( false === strpos( $base, '?' ) ? '?' : '&' ) . $query_string;
 	}
 
 	/**
