@@ -82,6 +82,22 @@ class Test_ACC_Research_PM_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		self::$has_pm       = class_exists( self::PM_CLASS );
 	}
 
+	/**
+	 * Re-register the ACC AJAX hooks before each test.
+	 *
+	 * WP_MCP_AI_Pro_Agent_Command_Center self-instantiates when its class file
+	 * is loaded, registering its wp_ajax_* handlers. When this suite is not the
+	 * first in the process, that load happens after the process-wide hook-table
+	 * backup, so the per-test hook restore removes the handlers again.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( self::$has_acc && false === has_action( 'wp_ajax_wp_mcp_ai_acc_get_dashboard_data' ) ) {
+			new WP_MCP_AI_Pro_Agent_Command_Center();
+		}
+	}
+
 	// ---
 	// ACC — wp_mcp_ai_acc_get_dashboard_data
 	// ---

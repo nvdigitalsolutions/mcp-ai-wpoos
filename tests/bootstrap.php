@@ -595,6 +595,68 @@ function wp_mcp_ai_manually_load_plugin() {
 			require_once $path;
 		}
 	}
+
+	wp_mcp_ai_register_pro_classmap_fallback_autoloader();
+}
+
+/**
+ * Register a fallback autoloader for Pro addon classes.
+ *
+ * CI generates a full classmap for addons/pro via `composer install` in
+ * that directory, so every WP_MCP_AI_* Pro class autoloads there. The
+ * classmap committed to addons/pro/vendor does not map includes/, which
+ * made local runs silently skip Pro-dependent suites that CI executes.
+ * This loader resolves those classes from the repository's
+ * addons/pro/includes tree using the class-wp-mcp-ai-<slug>.php
+ * convention, so local runs exercise the same code as CI.
+ *
+ * @return void
+ */
+function wp_mcp_ai_register_pro_classmap_fallback_autoloader() {
+	$pro_includes = dirname( __DIR__ ) . '/addons/pro/includes';
+	if ( ! is_dir( $pro_includes ) ) {
+		return;
+	}
+
+	static $resolved = array();
+	static $missing  = array();
+
+	spl_autoload_register(
+		static function ( $class ) use ( $pro_includes, &$resolved, &$missing ) {
+			if ( 0 !== strpos( $class, 'WP_MCP_AI_' ) ) {
+				return;
+			}
+
+			if ( isset( $resolved[ $class ] ) ) {
+				require_once $resolved[ $class ];
+				return;
+			}
+
+			if ( isset( $missing[ $class ] ) ) {
+				return;
+			}
+
+			$slug    = strtolower( str_replace( '_', '-', substr( $class, 10 ) ) ); // strlen( 'WP_MCP_AI_' ) = 10.
+			$matches = glob( $pro_includes . '/class-wp-mcp-ai-' . $slug . '.php' );
+			if ( empty( $matches ) ) {
+				$matches = glob( $pro_includes . '/*/class-wp-mcp-ai-' . $slug . '.php' );
+			}
+			if ( empty( $matches ) ) {
+				$matches = glob( $pro_includes . '/*/*/class-wp-mcp-ai-' . $slug . '.php' );
+			}
+			if ( empty( $matches ) ) {
+				$matches = glob( $pro_includes . '/*/*/*/class-wp-mcp-ai-' . $slug . '.php' );
+			}
+
+			if ( empty( $matches ) ) {
+				$missing[ $class ] = true;
+				return;
+			}
+
+			$resolved[ $class ] = $matches[0];
+			require_once $matches[0];
+		}
+	);
 }
 
 tests_add_filter( 'muplugins_loaded', 'wp_mcp_ai_manually_load_plugin' );
