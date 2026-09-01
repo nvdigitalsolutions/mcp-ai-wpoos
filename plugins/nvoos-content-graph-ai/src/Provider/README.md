@@ -20,6 +20,10 @@ AI provider clients for the content-graph AI addon. Each client implements the n
 |---|---|---|
 | `NvoosContentGraphAi\Provider\ZaiClient` | `ZaiClient.php` | `CoreBridge::registerBuiltinProviders()` |
 | `NvoosContentGraphAi\Provider\GoogleMapsClient` | `GoogleMapsClient.php` | Tools wave (geocode/search-places port); dormant until then |
+| `NvoosContentGraphAi\Provider\VoiceProviderInterface` | `VoiceProviderInterface.php` | Implemented by the realtime voice providers |
+| `NvoosContentGraphAi\Provider\OpenAiRealtimeClient` | `OpenAiRealtimeClient.php` | Voice surface (D-UI wave); dormant until then |
+| `NvoosContentGraphAi\Provider\OpenAiRealtimeTranslateClient` | `OpenAiRealtimeTranslateClient.php` | Voice surface (D-UI wave); dormant until then |
+| `NvoosContentGraphAi\Provider\OpenAiRealtimeWhisperClient` | `OpenAiRealtimeWhisperClient.php` | Voice surface (D-UI wave); dormant until then |
 
 ## Inputs / Outputs / Neighbors
 
