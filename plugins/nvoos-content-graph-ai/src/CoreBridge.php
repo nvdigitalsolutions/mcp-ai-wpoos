@@ -150,6 +150,7 @@ final class CoreBridge {
 			'digitalocean' => \Nvoos\Core\Infrastructure\Provider\DigitalOceanClient::class,
 			'kimi'         => \Nvoos\Core\Infrastructure\Provider\KimiClient::class,
 			'baseten'      => \Nvoos\Core\Infrastructure\Provider\BasetenClient::class,
+			'zai'          => \NvoosContentGraphAi\Provider\ZaiClient::class,
 		);
 
 		foreach ( $providerClasses as $slug => $class ) {

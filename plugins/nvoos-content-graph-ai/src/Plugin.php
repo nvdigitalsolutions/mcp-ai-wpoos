@@ -147,6 +147,8 @@ final class Plugin {
 				'ai_api_key_digitalocean'  => '',
 				'ai_api_key_kimi'          => '',
 				'ai_api_key_baseten'       => '',
+				'ai_api_key_zai'           => '',
+				'zai_base_url'             => 'https://api.z.ai/api/paas/v4',
 				'ai_system_prompt'         => 'You are a helpful assistant for the NV oOS Content Graph on this WordPress site. Answer questions about the site content and its knowledge graph accurately and concisely. When tools for querying the graph are provided, use them to ground your answers in real data instead of guessing. Cite nodes, posts, or relationships when relevant. If you do not know something or the data is unavailable, say so plainly. Format answers with Markdown.',
 				'transcript_retention_days'       => 90,
 				'transcript_retention_enabled'    => true,
