@@ -22,7 +22,7 @@ All controllers extend `WP_MCP_AI_REST_Controller_Base` and share its `REST_NAME
 | `WP_MCP_AI_REST_Controller_Base` (abstract) | `class-wp-mcp-ai-rest-controller-base.php` | Every controller in this folder + Pro REST controllers |
 | `WP_MCP_AI_REST_Authenticator` | `class-wp-mcp-ai-rest-authenticator.php` | All controllers — nonce / bearer credential / Auth0 / guest token / mesh API key |
 | `WP_MCP_AI_REST_Validator` | `class-wp-mcp-ai-rest-validator.php` | All controllers — request shape + schema enforcement |
-| `WP_MCP_AI_REST_Chat_Controller` | `class-wp-mcp-ai-rest-chat-controller.php` | `POST /chat`, `POST /chat/save`, related transcript routes |
+| `WP_MCP_AI_REST_Chat_Controller` | `class-wp-mcp-ai-rest-chat-controller.php` | `POST /chat`, `POST /chat/save`, related transcript routes, `GET /session/nonce` (fresh session-bound nonce for chat surfaces) |
 | `WP_MCP_AI_REST_Chat_Memory_Controller` | `class-wp-mcp-ai-rest-chat-memory-controller.php` | `/chat-memory/*` (long-term memory toggle, autosummarise) |
 | `WP_MCP_AI_REST_Chat_Session_Stream_Controller` | `class-wp-mcp-ai-rest-chat-session-stream-controller.php` | Per-session SSE stream |
 | `WP_MCP_AI_REST_MCP_Controller` | `class-wp-mcp-ai-rest-mcp-controller.php` | MCP protocol JSON-RPC methods |

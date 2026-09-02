@@ -42,6 +42,184 @@ import ky from 'ky';
 	const DEFAULT_TIMEOUT = 30000;
 
 	/**
+	 * In-flight nonce refresh promise (deduplicates concurrent refreshes).
+	 */
+	let nonceRefreshInFlight = null;
+
+	/**
+	 * Derive the session-nonce endpoint from the localised REST base URL.
+	 *
+	 * @return {string} Endpoint URL, or '' when the REST URL is unavailable.
+	 */
+	function getSessionNonceEndpoint() {
+		const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+		if (!restUrl) {
+			return '';
+		}
+		return restUrl.replace(/\/$/, '') + '/session/nonce';
+	}
+
+	/**
+	 * Determine whether an error is WordPress's rest_cookie_invalid_nonce
+	 * rejection (HTTP 403, "Cookie check failed").
+	 *
+	 * This is the signature of a request that carried a valid auth cookie but
+	 * a nonce that no longer verifies for the current user/session — typically
+	 * because the page HTML (and its embedded nonce) was served from a
+	 * full-page cache or the session token rotated while a long-lived SPA tab
+	 * stayed open.
+	 *
+	 * @param {Error} error Thrown ky HTTP error.
+	 * @return {Promise<boolean>} True when the failure is a stale nonce.
+	 */
+	async function isStaleNonceError(error) {
+		if (!error || !error.response || error.response.status !== 403) {
+			return false;
+		}
+
+		try {
+			const data = await error.response.clone().json();
+			return !!(data && data.code === 'rest_cookie_invalid_nonce');
+		} catch (parseError) {
+			return false;
+		}
+	}
+
+	/**
+	 * Fetch and store a fresh wp_rest nonce for the current session.
+	 *
+	 * The request is intentionally sent WITHOUT the X-WP-Nonce header so
+	 * WordPress treats it as an unauthenticated probe instead of rejecting it
+	 * with the very rest_cookie_invalid_nonce error we are recovering from.
+	 * The nonce is still minted from the auth cookie carried by the request
+	 * (wp_get_session_token), so it verifies for the logged-in user on
+	 * subsequent requests.
+	 *
+	 * @return {Promise<string>} Fresh nonce ('' when the refresh fails).
+	 */
+	async function fetchFreshNonce() {
+		const endpoint = getSessionNonceEndpoint();
+		if (!endpoint) {
+			throw new Error('Session nonce endpoint unavailable.');
+		}
+
+		const response = await fetch(endpoint, {
+			method: 'GET',
+			credentials: 'same-origin',
+			headers: { Accept: 'application/json' }
+		});
+
+		if (!response.ok) {
+			throw new Error('Session nonce endpoint returned HTTP ' + response.status);
+		}
+
+		const data = await response.json();
+		const nonce = (data && typeof data.nonce === 'string') ? data.nonce : '';
+		if (!nonce) {
+			throw new Error('Session nonce endpoint returned no nonce.');
+		}
+
+		// Update the global config so header builders that fall back to
+		// globalConfig.nonce (and the nonceRefreshed flag consumed by
+		// chat.js resolveNonce) pick up the fresh value.
+		if (window.wpMcpAiChat) {
+			window.wpMcpAiChat.nonce = nonce;
+			window.wpMcpAiChat.nonceRefreshed = true;
+		}
+
+		// Keep registered instance configs current for any chat re-initialised
+		// after the refresh (live instances consult the nonceRefreshed flag).
+		const instances = window.wpMcpAiChatInstances || {};
+		Object.keys(instances).forEach(function (id) {
+			if (instances[id] && typeof instances[id] === 'object') {
+				instances[id].restNonce = nonce;
+			}
+		});
+
+		return nonce;
+	}
+
+	/**
+	 * Refresh the REST nonce, deduplicating concurrent refresh attempts.
+	 *
+	 * @return {Promise<string>} Fresh nonce ('' when the refresh fails).
+	 */
+	function refreshRestNonce() {
+		if (nonceRefreshInFlight) {
+			return nonceRefreshInFlight;
+		}
+
+		nonceRefreshInFlight = fetchFreshNonce().then(
+			function (nonce) {
+				nonceRefreshInFlight = null;
+				return nonce;
+			},
+			function (error) {
+				nonceRefreshInFlight = null;
+				if (window.console && console.warn) {
+					console.warn('NV oOS: Failed to refresh REST nonce:', error);
+				}
+				return '';
+			}
+		);
+
+		return nonceRefreshInFlight;
+	}
+
+	/**
+	 * Replace a stale _wpnonce query parameter with a fresh nonce.
+	 *
+	 * Only touches URLs that already carry a _wpnonce parameter so endpoints
+	 * that rely on header-based authentication are left unchanged.
+	 *
+	 * @param {string} url   Request URL.
+	 * @param {string} nonce Fresh nonce.
+	 * @return {string} URL with the updated _wpnonce parameter.
+	 */
+	function applyNonceToUrl(url, nonce) {
+		if (!url || !nonce || url.indexOf('_wpnonce=') === -1) {
+			return url;
+		}
+
+		try {
+			const parsed = new URL(url, window.location.origin);
+			parsed.searchParams.set('_wpnonce', nonce);
+			return parsed.toString();
+		} catch (parseError) {
+			return url;
+		}
+	}
+
+	/**
+	 * Run a request, transparently retrying once with a freshly minted nonce
+	 * when WordPress rejects it with rest_cookie_invalid_nonce (403).
+	 *
+	 * @param {Function} requestFactory Factory producing the request promise.
+	 * @param {Function} onRefreshed     Optional callback invoked with the fresh nonce before the retry (used to patch headers/URL).
+	 * @return {Promise} Response of the first or retried attempt.
+	 */
+	async function withNonceHeal(requestFactory, onRefreshed) {
+		try {
+			return await requestFactory();
+		} catch (error) {
+			if (!(await isStaleNonceError(error))) {
+				throw error;
+			}
+
+			const nonce = await refreshRestNonce();
+			if (!nonce) {
+				throw error;
+			}
+
+			if (onRefreshed) {
+				onRefreshed(nonce);
+			}
+
+			return requestFactory();
+		}
+	}
+
+	/**
 	 * Create a configured ky instance with retry logic
 	 * 
 	 * @param {Object} options - Configuration options
@@ -140,7 +318,15 @@ import ky from 'ky';
 			requestOptions.signal = options.signal;
 		}
 
-		return client.post(url, requestOptions);
+		let targetUrl = url;
+		const requester = function () {
+			return client.post(targetUrl, requestOptions);
+		};
+
+		return withNonceHeal(requester, function (nonce) {
+			headers['X-WP-Nonce'] = nonce;
+			targetUrl = applyNonceToUrl(url, nonce);
+		});
 	}
 
 	/**
@@ -173,7 +359,15 @@ import ky from 'ky';
 			requestOptions.signal = options.signal;
 		}
 
-		return client.post(url, requestOptions);
+		let targetUrl = url;
+		const requester = function () {
+			return client.post(targetUrl, requestOptions);
+		};
+
+		return withNonceHeal(requester, function (nonce) {
+			headers['X-WP-Nonce'] = nonce;
+			targetUrl = applyNonceToUrl(url, nonce);
+		});
 	}
 
 	/**
@@ -204,7 +398,15 @@ import ky from 'ky';
 			requestOptions.signal = options.signal;
 		}
 
-		return client.get(url, requestOptions);
+		let targetUrl = url;
+		const requester = function () {
+			return client.get(targetUrl, requestOptions);
+		};
+
+		return withNonceHeal(requester, function (nonce) {
+			headers['X-WP-Nonce'] = nonce;
+			targetUrl = applyNonceToUrl(url, nonce);
+		});
 	}
 
 	/**
@@ -235,7 +437,15 @@ import ky from 'ky';
 			requestOptions.signal = options.signal;
 		}
 
-		return client.delete(url, requestOptions);
+		let targetUrl = url;
+		const requester = function () {
+			return client.delete(targetUrl, requestOptions);
+		};
+
+		return withNonceHeal(requester, function (nonce) {
+			headers['X-WP-Nonce'] = nonce;
+			targetUrl = applyNonceToUrl(url, nonce);
+		});
 	}
 
 	/**
@@ -278,6 +488,8 @@ import ky from 'ky';
 		get: get,
 		delete: del,
 		parseError: parseError,
+		refreshRestNonce: refreshRestNonce,
+		getSessionNonceEndpoint: getSessionNonceEndpoint,
 		DEFAULT_TIMEOUT: DEFAULT_TIMEOUT,
 		DEFAULT_RETRY_CONFIG: DEFAULT_RETRY_CONFIG
 	};

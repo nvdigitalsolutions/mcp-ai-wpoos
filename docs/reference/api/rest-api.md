@@ -165,6 +165,33 @@ Example `mcp.json` block for an LM Studio client:
 
 Replace `cred_xxxxx.SECRET` with either the Auth0 access token issued for your tenant or the assistant credential generated from the editor UI before saving the configuration.【F:docs/mcp-server-authentication.md†L11-L34】
 
+## GET `/session/nonce`
+
+Returns a fresh `wp_rest` nonce for the requesting session. The nonce is minted
+from the auth cookie carried by the request, so a logged-in user always
+receives a value that passes WordPress's cookie nonce check — even when the
+page HTML that embedded the original nonce was served from a full-page cache
+or the session token rotated while a long-lived SPA tab stayed open.
+
+The chat client uses this endpoint to self-heal `403
+rest_cookie_invalid_nonce` ("Cookie check failed") responses by retrying the
+failed request once with the fresh nonce.
+
+### Authorization
+
+None required. The endpoint is read-only and exposes only a value that is
+already embedded in every page of the site. It intentionally does not require
+a nonce header of its own. Responses are sent with `no-cache` headers so edge
+caches cannot hand one user's nonce to another.
+
+### Response
+
+```json
+{
+  "nonce": "9a4f2b7c1d"
+}
+```
+
 ## POST `/tools`
 
 Execute a registered tool without generating a full chat turn.
