@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.66
+Stable tag: 1.1.67
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.67 - September 2, 2026 =
+
+Ecosystem-extraction release. New standalone Content Graph AI Platform addon v2.0.0 (plugins/nvoos-content-graph-ai-platform) ships the platform extraction Waves A–C + Blueprints — namespace-bridged admin UI, skill/slash-command/agent bridges, platform dashboard, harness router, a 74-skill bundled-skills pack, knowledge base, and its own PHPUnit matrix — no longer requiring the base plugin for its own logic. The additive Base+Pro → Content Graph ecosystem port lands Wave D + D-UI in nvoos-content-graph-ai: the chat runtime core (prompt optimizer, response cache, SSE rate limiter, semantic cache, summarizer, thread manager, attachments, transcript recorder/retention, ChatKit), providers beyond the 13 (Zai, Google Maps, OpenAI Realtime voice/translate/whisper, RabbitMQ, STDIO MCP transport, file services), model management (catalog migration + integrity verifier, rate-limits CCT, pricing checker), analytics + token tracking (engine, usage tracker, token DB, tool token limits), security guards, and the assistant admin pages (Add/Build/Test) plus chat blocks, Elementor widgets, guest-token flow, agent-memory CCTs, WP-CLI, chat compat route, and MCP JSON-RPC controller — Content Graph AI bumps 1.0.3 → 1.0.4. Pro gains six Google Workspace read tools with two new clients: Gmail (get_gmail_message, get_gmail_thread, list_gmail_connections, modify_gmail_message — gated behind the destructive-ops confirmation) and Drive (get_drive_file, list_drive_connections), both resolving credentials through the shared Google foundation and Remote Sites. A second PHPUnit repair campaign wave (~95 PRs) carried grouped production fixes: assistant-directory REST guard, null-safe tool-error reporting, LLM sanitization delegated to the REST validator, display-metadata persistence, crawler job-contract hardening (task-ID sanitization, base_url validation) plus a wp_mcp_ai_crawl4ai_auto_spawn_cron filter, create-post taxonomy guards, toolkit-registry live-singleton resolution, external-API query-string encoding (LinkedIn/Shopify/Google Maps/ReliefWeb/web-search), Veo 5-second duration floor, token-tier caching guards, credential-resolver cache invalidation, cache-helper option-cache eviction, settings-registry unregister_section(), destructive-ops gate reading the canonical combined-settings array, WhatsApp webhook signature rejection without an app secret, and Graphify/Content Graph HTTP 304 cached-body re-serve. Test-suite skill refreshed (26 root-cause patterns). Stale 1.1.66 build ZIPs removed. Tool count: ~303 base + ~1,262 Pro (~1,565 total; live registry authoritative).
 
 = 1.1.66 - August 31, 2026 =
 
