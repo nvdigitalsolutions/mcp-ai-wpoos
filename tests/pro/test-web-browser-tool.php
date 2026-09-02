@@ -40,7 +40,7 @@ class Test_Web_Browser_Tool extends WP_UnitTestCase {
 
 		$this->assertEquals( 'web_browser', $tool->get_slug() );
 		$this->assertEquals( 'Web Browser Automation', $tool->get_name() );
-		$this->assertStringContainsString( 'browser automation', strtolower( $tool->get_description() ) );
+		$this->assertStringContainsString( 'automate web browsers', strtolower( $tool->get_description() ) );
 	}
 
 	/**
