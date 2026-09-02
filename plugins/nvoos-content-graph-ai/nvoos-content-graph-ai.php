@@ -82,6 +82,18 @@ register_activation_hook(
 			\NvoosContentGraphAi\Security\CredentialStore::migrateAll();
 			update_option( \NvoosContentGraphAi\Security\CredentialStore::MIGRATION_FLAG, true, false );
 		}
+
+		// Thread storage schema (idempotent dbDelta) — Wave D1d.
+		if ( class_exists( 'NvoosContentGraphAi\Chat\ThreadManager' ) ) {
+			\NvoosContentGraphAi\Chat\ThreadManager::create_tables();
+		}
+
+		// Security audit table + purge cron — Wave D4c. The base plugin
+		// owns the same table/cron in monolith installs (activation there
+		// runs the base lifecycle).
+		if ( ! defined( 'WP_MCP_AI_PATH' ) && class_exists( 'NvoosContentGraphAi\Security\SecurityAuditLogger' ) ) {
+			\NvoosContentGraphAi\Security\SecurityAuditLogger::on_activation();
+		}
 	}
 );
 

@@ -23,7 +23,7 @@ Root-level classes form the addon's backbone:
 | `NvoosContentGraphAi\Plugin` | `Plugin.php` | Bootstrap (singleton composition root) |
 | `NvoosContentGraphAi\CoreBridge` | `CoreBridge.php` | Plugin, REST, Tools — single source of truth for all `nvoos/core` services (providers, tools, chat, embeddings, RAG, memory) |
 | `NvoosContentGraphAi\Security\CredentialStore` | `Security/CredentialStore.php` | Encrypted API key storage, save-path routing, render masking, legacy-plaintext migration |
-| `NvoosContentGraphAi\Cli` | `Cli.php` | WP-CLI commands (`wp nvoos-cg-ai migrate-keys` / `key-status`) |
+| `NvoosContentGraphAi\Cli` | `Cli.php` | WP-CLI commands (`wp nvoos-cg-ai migrate-keys` / `key-status` / `status` / `tools list` / `providers list` / `settings list|get` / `graph stats`) |
 
 ## Inputs / Outputs / Neighbors
 

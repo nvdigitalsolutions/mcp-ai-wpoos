@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace NvoosContentGraphAi\Rest;
 
+use NvoosContentGraphAi\Chat\ChatResponseCache;
+use NvoosContentGraphAi\Chat\ChatTranscriptRecorder;
+use NvoosContentGraphAi\Chat\PromptOptimizer;
+use NvoosContentGraphAi\Chat\SseRateLimiter;
 use NvoosContentGraphAi\CoreBridge;
 
 /**
@@ -38,7 +42,14 @@ class ChatController {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handleChat' ),
-				'permission_callback' => function (): bool {
+				// Guest tokens (X-WP-MCP-AI-Guest) grant access to the
+				// public chat widget; logged-in users keep edit_posts
+				// (D-UI-1a — additive).
+				'permission_callback' => function ( \WP_REST_Request $request ): bool {
+					if ( false !== \NvoosContentGraphAi\Chat\GuestToken::validate_request_guest_access( $request ) ) {
+						return true;
+					}
+
 					return current_user_can( 'edit_posts' );
 				},
 				'args'                => array(
@@ -92,6 +103,11 @@ class ChatController {
 						'default'  => true,
 					),
 					'include_context' => array(
+						'required' => false,
+						'type'     => 'boolean',
+						'default'  => false,
+					),
+					'cache_system_prompt' => array(
 						'required' => false,
 						'type'     => 'boolean',
 						'default'  => false,
@@ -168,13 +184,29 @@ class ChatController {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function handleChat( \WP_REST_Request $request ) {
-		$bridge   = CoreBridge::instance();
-		$messages = $this->buildMessages(
+		$bridge         = CoreBridge::instance();
+		$includeContext = (bool) $request->get_param( 'include_context' );
+		$messages       = $this->buildMessages(
 			$request->get_param( 'messages' ),
 			(bool) $request->get_param( 'system_prompt' ),
-			(bool) $request->get_param( 'include_context' )
+			$includeContext
 		);
-		$stream   = (bool) $request->get_param( 'stream' );
+
+		// Prefix-cache optimisation (parity with the base plugin's
+		// `cache_system_prompt` request option): reorder so the stable
+		// system prompt leads and dynamic turns follow. Skipped when graph
+		// context is merged into the system message — merged context is
+		// dynamic content and must stay attached to its turn.
+		if ( $request->get_param( 'cache_system_prompt' ) && ! $includeContext ) {
+			$messages = PromptOptimizer::order_for_cache_hit(
+				$messages,
+				array(
+					'system_prompt' => (string) $bridge->settings->get( 'ai_system_prompt', '' ),
+				)
+			);
+		}
+
+		$stream = (bool) $request->get_param( 'stream' );
 
 		$options = $this->buildOptions( $request );
 
@@ -188,7 +220,38 @@ class ChatController {
 		$userId      = \get_current_user_id();
 		$assistantId = 0; // Not tied to a specific assistant post.
 
+		// Cache options mirror the base plugin's `cache_system_prompt`
+		// request option: caching only applies when the client opts in,
+		// the temperature is unset or 0 (deterministic), and the request
+		// is not streaming. The tool set is hashed in the cache key so
+		// different tool sets never share a cached response.
+		$toolSlugs = array();
+		foreach ( $tools as $slug ) {
+			$toolSlugs[] = array(
+				'function' => array( 'name' => $slug ),
+			);
+		}
+		$cacheOptions = array(
+			'cache_system_prompt' => (bool) $request->get_param( 'cache_system_prompt' ),
+			'assistant_id'        => $assistantId,
+			'stream'              => false,
+			'tools'               => $toolSlugs,
+		);
+		$temperature = $request->get_param( 'temperature' );
+		if ( null !== $temperature ) {
+			$cacheOptions['temperature'] = (float) $temperature;
+		}
+
 		if ( $stream ) {
+			// Enforce SSE rate limits before opening a streaming connection
+			// (parity with the base plugin's streaming entry point).
+			$sseLimiter      = new SseRateLimiter();
+			$rateLimitResult = $sseLimiter->check_connection_allowed();
+			if ( \is_wp_error( $rateLimitResult ) ) {
+				return $rateLimitResult; // WP_Error carries HTTP 429 data.
+			}
+			$sseToken = $sseLimiter->register_connection( $userId );
+
 			// Delegate all streaming to ChatOrchestrator which uses
 			// SseHandler for header setup, event dispatch, and DONE signal.
 			$bridge->chat->handleChatStreaming(
@@ -199,11 +262,32 @@ class ChatController {
 				$options,
 			);
 
+			$sseLimiter->release_connection( $sseToken );
+
 			exit;
 		}
 
+		// Check the response cache before making the LLM call
+		// (parity with the base plugin's non-streaming path).
+		$responseCache  = new ChatResponseCache();
+		$cachedResponse = $responseCache->get_cached_response( $messages, $cacheOptions );
+		if ( false !== $cachedResponse && is_array( $cachedResponse ) ) {
+			return new \WP_REST_Response(
+				array(
+					'success'        => true,
+					'data'           => $cachedResponse['response'] ?? array(),
+					'tool_results'   => $cachedResponse['tool_results'] ?? array(),
+					'iterations'     => $cachedResponse['iterations'] ?? 0,
+					'cost'           => $cachedResponse['cost'] ?? null,
+					'cache_metadata' => $cachedResponse['cache_metadata'] ?? null,
+				),
+				200
+			);
+		}
+
 		// Non-streaming chat.
-		$result = $bridge->chat->handleChat(
+		$requestStart = \microtime( true );
+		$result       = $bridge->chat->handleChat(
 			$messages,
 			$assistantConfig,
 			$userId,
@@ -222,13 +306,34 @@ class ChatController {
 			);
 		}
 
+		// Record the chat transcript when storage is available (the base
+		// plugin's JetEngine CCT handler in monolith installs; a graceful
+		// no-op in standalone installs until transcript storage lands).
+		ChatTranscriptRecorder::record(
+			$assistantId,
+			$messages,
+			$options,
+			is_array( $response ) ? $response : array(),
+			$request,
+			$userId,
+			array(
+				'request_started_at'    => $requestStart,
+				'response_completed_at' => \microtime( true ),
+			)
+		);
+
+		// Store the result when the request is cache-eligible (no-op
+		// otherwise; `cache_metadata` is only attached on a store).
+		$responseCache->set_cached_response( $messages, $cacheOptions, $result );
+
 		return new \WP_REST_Response(
 			array(
-				'success'      => true,
-				'data'         => $response,
-				'tool_results' => $result['tool_results'] ?? array(),
-				'iterations'   => $result['iterations'] ?? 0,
-				'cost'         => $result['cost'] ?? null,
+				'success'        => true,
+				'data'           => $response,
+				'tool_results'   => $result['tool_results'] ?? array(),
+				'iterations'     => $result['iterations'] ?? 0,
+				'cost'           => $result['cost'] ?? null,
+				'cache_metadata' => $result['cache_metadata'] ?? null,
 			),
 			200
 		);
