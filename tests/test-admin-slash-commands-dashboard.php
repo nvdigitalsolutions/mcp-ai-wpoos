@@ -35,6 +35,13 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 		}
 		wp_mcp_ai_init_slash_commands();
 
+		// The toolkit manager registers its commands on `init`, which has
+		// already fired under PHPUnit. Register them directly against the
+		// fresh handler so workflow availability filtering can see them.
+		if ( class_exists( 'WP_MCP_AI_Slash_Command_Toolkit_Manager' ) ) {
+			WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance()->register_toolkit_commands();
+		}
+
 		// Load admin dashboard class.
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php';
 		$this->dashboard = new WP_MCP_AI_Admin_Slash_Commands_Dashboard();
