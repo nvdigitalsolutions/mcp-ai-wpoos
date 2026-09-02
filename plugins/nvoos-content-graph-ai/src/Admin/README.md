@@ -1,6 +1,6 @@
 # Admin — AI addon admin surface
 
-**Waves D-UI-4 (this folder grows with D-UI-5).** The Content Graph AI
+**Wave D-UI-4 (this folder grows with D-UI-5).** The Content Graph AI
 addon's admin UI: the AI settings page/sections, the assistant custom
 post type, and the assistant builder pages. Everything here is additive
 and, where the base plugin owns the same surface in monolith installs,
@@ -14,7 +14,7 @@ wired standalone-only (`! defined('WP_MCP_AI_PATH')`).
 | `Sections/` | The settings-page sections (`ApiKeys`, `ChatInterface`, `ChatSettings`, `ProviderSelection`). |
 | `AssistantPostType.php` | Registers `mcp_ai_assistant` (byte-identical args to the base) + REST-visible meta + sanitizers. Standalone-only via `Plugin.php`. |
 | `AssistantPages.php` | Hub registering the assistant builder submenu pages + their AJAX create actions. Standalone-only via `Plugin.php`. |
-| `AssistantPages/` | The ported builder pages (see that folder's README). |
+| `AssistantPages/` | The ported builder pages — Build, Add (Create), and Test Assistant (see that folder's README). |
 
 ## Neighbours
 
