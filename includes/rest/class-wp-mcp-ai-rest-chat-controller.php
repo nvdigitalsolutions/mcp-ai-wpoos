@@ -130,6 +130,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * - GET /chat: SSE handshake for streaming chat responses
 	 * - POST /chat-client: Browser client chat with 15 iteration limit
 	 * - GET /chat-client: SSE handshake for browser chat streaming
+	 * - GET /session/nonce: Fresh session-bound wp_rest nonce for chat surfaces
 	 * - GET /chat-transcripts: List chat transcripts for authenticated user
 	 * - POST /chat-transcripts: Save a chat transcript to persistent storage
 	 * - GET /chat-transcripts/{session_key}: Retrieve specific transcript by session key
@@ -422,6 +423,26 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
+			)
+		);
+
+		// /session/nonce - Return a fresh wp_rest nonce for the current session.
+		//
+		// The chat surfaces embed a REST nonce in the page HTML.  That nonce is
+		// bound to the current user's session token, so it goes stale when the
+		// page is served from a full-page cache (minted for user 0) or when the
+		// session token rotates while a long-lived SPA page (e.g. the Docs Hub)
+		// stays open.  The chat client calls this endpoint — deliberately without
+		// sending a nonce — to mint a fresh nonce from the request's own auth
+		// cookie and retry the failed request instead of surfacing WordPress's
+		// opaque "Cookie check failed" (403 rest_cookie_invalid_nonce) error.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/session/nonce',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'permission_callback' => '__return_true',
+				'callback'            => array( $this, 'handle_session_nonce' ),
 			)
 		);
 	}
@@ -1776,6 +1797,40 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'message' => __( 'Usage tracked successfully.', 'mcp-ai-wpoos' ),
 			)
 		);
+	}
+
+	/**
+	 * Handle GET /session/nonce.
+	 *
+	 * Returns a fresh wp_rest nonce for the requesting session.  The nonce is
+	 * derived from the auth cookie carried by the request (wp_get_session_token),
+	 * so a logged-in user always receives a nonce that passes WordPress's
+	 * rest_cookie_check_errors — even when the page HTML that embedded the
+	 * original nonce was served from a full-page cache or the session token has
+	 * rotated while a long-lived SPA tab stayed open.
+	 *
+	 * The endpoint intentionally requires no nonce and no capability: the value
+	 * it returns is already embedded in every page of the site, so it exposes no
+	 * information that an unauthenticated visitor could not obtain elsewhere.
+	 *
+	 * @since 1.1.67
+	 *
+	 * @return WP_REST_Response Response containing the fresh nonce.
+	 */
+	public function handle_session_nonce() {
+		$response = rest_ensure_response(
+			array(
+				'nonce' => wp_create_nonce( 'wp_rest' ),
+			)
+		);
+
+		// Never cache the payload: it is session-bound and invalidates on
+		// session-token rotation.  Edge caches (Cloudflare, Varnish) would
+		// otherwise hand one user's nonce to another.
+		$response->header( 'Cache-Control', 'no-cache, no-store, must-revalidate' );
+		$response->header( 'Pragma', 'no-cache' );
+
+		return $response;
 	}
 
 	/**

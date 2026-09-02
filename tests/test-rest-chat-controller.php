@@ -133,6 +133,86 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the /session/nonce route is registered.
+	 */
+	public function test_session_nonce_route_registered() {
+		$routes = $this->get_routes_via_init();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/session/nonce',
+			$routes,
+			'Session nonce route should be registered'
+		);
+	}
+
+	/**
+	 * Test that the /session/nonce route only supports GET.
+	 */
+	public function test_session_nonce_route_methods() {
+		$routes      = $this->get_routes_via_init();
+		$nonce_route = $routes['/mcp-ai/v1/session/nonce'];
+
+		$methods = array();
+		foreach ( $nonce_route as $endpoint ) {
+			$methods = array_merge( $methods, array_keys( $endpoint['methods'] ) );
+		}
+
+		$this->assertContains( 'GET', $methods, 'Session nonce route should support GET' );
+	}
+
+	/**
+	 * Test that the session-nonce handler exists.
+	 */
+	public function test_session_nonce_handler_exists() {
+		$this->assertTrue( method_exists( $this->controller, 'handle_session_nonce' ) );
+	}
+
+	/**
+	 * Test that the handler returns a nonce that verifies for the current
+	 * (guest) session.
+	 */
+	public function test_session_nonce_returns_verifiable_guest_nonce() {
+		$response = $this->controller->handle_session_nonce();
+		$data     = $response->get_data();
+
+		$this->assertArrayHasKey( 'nonce', $data );
+		$this->assertNotSame( '', $data['nonce'] );
+		$this->assertNotFalse( wp_verify_nonce( $data['nonce'], 'wp_rest' ) );
+	}
+
+	/**
+	 * Test that the handler mints the nonce from the request's auth cookie, so
+	 * a logged-in user receives a nonce bound to their session token — the
+	 * recovery path for stale nonces served from cached pages or after
+	 * session-token rotation.
+	 */
+	public function test_session_nonce_is_bound_to_auth_cookie_session() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		// Simulate a cookie-authenticated request with a known session token.
+		$session_token = wp_generate_password( 43, false, false );
+		$auth_cookie   = wp_generate_auth_cookie( $user_id, time() + DAY_IN_SECONDS, 'logged_in', $session_token );
+
+		$_COOKIE[ LOGGED_IN_COOKIE ] = $auth_cookie;
+		wp_set_current_user( $user_id );
+
+		$response = $this->controller->handle_session_nonce();
+		$data     = $response->get_data();
+
+		$this->assertArrayHasKey( 'nonce', $data );
+
+		// The nonce must verify against the session token carried by the auth
+		// cookie — the same check WordPress's rest_cookie_check_errors performs
+		// for real REST requests.
+		$this->assertNotFalse( wp_verify_nonce( $data['nonce'], 'wp_rest' ) );
+		$this->assertSame( $session_token, wp_get_session_token() );
+
+		// Clean up cookie state so subsequent tests see a guest request.
+		unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
+		wp_set_current_user( 0 );
+	}
+
+	/**
 	 * Test that /chat route has correct methods.
 	 */
 	public function test_chat_route_methods() {
