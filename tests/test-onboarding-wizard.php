@@ -308,8 +308,8 @@ class WP_MCP_AI_Onboarding_Wizard_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 'gpt-4.1', $method->invoke( $this->wizard, array(), 'openai' ) );
 		$this->assertSame( 'claude-sonnet-4-6', $method->invoke( $this->wizard, array(), 'anthropic' ) );
-		$this->assertSame( 'gemini-2.5-flash', $method->invoke( $this->wizard, array(), 'gemini' ) );
-		$this->assertSame( 'llama3', $method->invoke( $this->wizard, array(), 'ollama' ) );
+		$this->assertSame( 'gemini-3.5-flash', $method->invoke( $this->wizard, array(), 'gemini' ) );
+		$this->assertSame( 'llama4', $method->invoke( $this->wizard, array(), 'ollama' ) );
 	}
 
 	/**
