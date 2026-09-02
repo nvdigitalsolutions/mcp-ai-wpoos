@@ -51,6 +51,12 @@ class Test_Harness_Eval_Scheduler extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Profile::save() gates on current_user_can( 'edit_post' ), so the
+		// suite must run as an authenticated administrator; without this the
+		// save silently fails and no profile meta is ever written.
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
 		$this->assistant_id = self::factory()->post->create(
 			array(
 				'post_type'   => 'mcp_ai_assistant',
@@ -74,6 +80,7 @@ class Test_Harness_Eval_Scheduler extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		remove_all_filters( 'wp_mcp_ai_harness_eval_generator' );
+		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
 
