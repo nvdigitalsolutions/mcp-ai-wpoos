@@ -188,7 +188,29 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		foreach ( $workflow['steps'] as $index => $step ) {
 			$step_num = $index + 1;
-			$output  .= sprintf(
+
+			// Parallel block (no 'task' key).
+			if ( isset( $step['parallel'] ) && is_array( $step['parallel'] ) ) {
+				$output .= sprintf( "%d. **%s**\n", $step_num, 'Parallel block' );
+				$output .= "\n";
+				continue;
+			}
+
+			// Conditional block (no 'task' key).
+			if ( isset( $step['condition'] ) ) {
+				$output .= sprintf( "%d. **%s** (%s)\n", $step_num, 'Conditional block', esc_html( $step['condition'] ) );
+				$output .= "\n";
+				continue;
+			}
+
+			// Loop block (no 'task' key).
+			if ( isset( $step['repeat_until'] ) || isset( $step['repeat'] ) ) {
+				$output .= sprintf( "%d. **%s**\n", $step_num, 'Loop block' );
+				$output .= "\n";
+				continue;
+			}
+
+			$output .= sprintf(
 				"%d. **%s**\n",
 				$step_num,
 				esc_html( $step['task'] )
@@ -811,15 +833,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		$missing_capabilities = array();
 
 		foreach ( $workflow['steps'] as $step ) {
-			if ( empty( $step['task'] ) ) {
-				continue;
-			}
-
-			$required_capability = $this->get_task_required_capability( $step['task'] );
-
-			if ( $required_capability && ! user_can( $user_id, $required_capability ) ) {
-				$missing_capabilities[ $step['task'] ] = $required_capability;
-			}
+			$this->collect_missing_step_capabilities( $step, $user_id, $missing_capabilities );
 		}
 
 		if ( ! empty( $missing_capabilities ) ) {
@@ -839,6 +853,57 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Collect capability violations for a step.
+	 *
+	 * Recurses into nested parallel blocks, conditional branches, and loop
+	 * step groups so privileged tasks nested inside a workflow cannot bypass
+	 * capability validation.
+	 *
+	 * @param array $step                 Step definition.
+	 * @param int   $user_id              User ID to check capabilities for.
+	 * @param array $missing_capabilities Accumulator keyed by task name.
+	 * @return void
+	 */
+	private function collect_missing_step_capabilities( $step, $user_id, &$missing_capabilities ) {
+		// Direct task.
+		if ( ! empty( $step['task'] ) ) {
+			$required_capability = $this->get_task_required_capability( $step['task'] );
+
+			// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability names come from the static task-to-capability map in get_task_required_capability().
+			if ( $required_capability && ! user_can( $user_id, $required_capability ) ) {
+				$missing_capabilities[ $step['task'] ] = $required_capability;
+			}
+		}
+
+		// Parallel execution blocks.
+		if ( isset( $step['parallel'] ) && is_array( $step['parallel'] ) ) {
+			foreach ( $step['parallel'] as $sub_step ) {
+				$this->collect_missing_step_capabilities( $sub_step, $user_id, $missing_capabilities );
+			}
+		}
+
+		// Conditional branches.
+		foreach ( array( 'then', 'else' ) as $branch_key ) {
+			if ( empty( $step[ $branch_key ] ) ) {
+				continue;
+			}
+			$branch_steps = is_array( $step[ $branch_key ] ) ? $step[ $branch_key ] : array( $step[ $branch_key ] );
+			foreach ( $branch_steps as $sub_step ) {
+				if ( is_array( $sub_step ) ) {
+					$this->collect_missing_step_capabilities( $sub_step, $user_id, $missing_capabilities );
+				}
+			}
+		}
+
+		// Loop step groups.
+		if ( isset( $step['steps'] ) && is_array( $step['steps'] ) ) {
+			foreach ( $step['steps'] as $sub_step ) {
+				$this->collect_missing_step_capabilities( $sub_step, $user_id, $missing_capabilities );
+			}
+		}
 	}
 
 	/**
@@ -1063,18 +1128,19 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				continue;
 			}
 
+			// Handle named steps with dependencies.
+			$step_name = isset( $step['name'] ) ? $step['name'] : null;
+
 			if ( $dry_run ) {
 				$results['step_results'][] = array(
 					'step'    => $step_num,
 					'task'    => isset( $step['task'] ) ? $step['task'] : 'unknown',
+					'name'    => $step_name,
 					'status'  => 'skipped',
 					'message' => __( 'Dry run - step not executed', 'mcp-ai-wpoos' ),
 				);
 				continue;
 			}
-
-			// Handle named steps with dependencies.
-			$step_name = isset( $step['name'] ) ? $step['name'] : null;
 
 			// Execute step.
 			$step_result = $this->execute_step( $step, $results['context'], $context );
@@ -1556,7 +1622,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				$loop_results['step_results'][] = array(
 					'step'    => sprintf( '%d.loop.%d.exit', $base_step_num, $iteration ),
 					'task'    => 'exit-condition',
-					'status'  => 'completed',
+					'status'  => $dry_run ? 'skipped' : 'completed',
 					'message' => sprintf(
 						/* translators: 1: exit condition, 2: iteration number */
 						__( 'Exit condition met: %1$s (after %2$d iterations)', 'mcp-ai-wpoos' ),
@@ -1572,7 +1638,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				$loop_results['step_results'][] = array(
 					'step'    => sprintf( '%d.loop.%d.limit', $base_step_num, $iteration ),
 					'task'    => 'iteration-limit',
-					'status'  => 'completed',
+					'status'  => $dry_run ? 'skipped' : 'completed',
 					'message' => sprintf(
 						/* translators: %d: max iterations */
 						__( 'Maximum iterations reached: %d', 'mcp-ai-wpoos' ),
@@ -1971,11 +2037,17 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 			$icon = isset( $status_icon[ $step_result['status'] ] ) ? $status_icon[ $step_result['status'] ] : '❓';
 
+			// Surface the step name when the workflow defines one (named steps
+			// are how dependency graphs reference each other).
+			$step_label = ( isset( $step_result['name'] ) && '' !== $step_result['name'] )
+				? sprintf( '%s (%s)', $step_result['name'], $step_result['task'] )
+				: $step_result['task'];
+
 			$output .= sprintf(
 				"%s **Step %s:** %s (%s)\n",
 				$icon,
 				$step_result['step'],
-				esc_html( $step_result['task'] ),
+				esc_html( $step_label ),
 				esc_html( $step_result['status'] )
 			);
 
@@ -2039,10 +2111,10 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	 * @return bool Whether condition evaluates to true.
 	 */
 	private function evaluate_condition( $condition, $context ) {
-		// Replace context variables.
-		$condition = $this->replace_context_vars( $condition, $context );
-
-		// Check for empty/not_empty special cases.
+		// Check for bare empty/not_empty keywords against the original condition.
+		// This must run before variable replacement: an empty variable collapses
+		// "{{value}} not_empty" to " not_empty", which still needs to reach the
+		// operator loop so the empty left operand is evaluated correctly.
 		if ( preg_match( '/^\s*empty\s*$/i', $condition ) ) {
 			return true; // Always true if literal "empty".
 		}
@@ -2050,7 +2122,12 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			return true; // Always true if literal "not_empty".
 		}
 
-		// Parse comparison operators.
+		// Replace context variables.
+		$condition = $this->replace_context_vars( $condition, $context );
+
+		// Parse comparison operators. Note: 'not_empty' must be checked before
+		// 'empty' because 'empty' is a substring of 'not_empty' and would match
+		// first, silently inverting the result.
 		$operators = array(
 			'>=',
 			'<=',
@@ -2059,8 +2136,8 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			'>',
 			'<',
 			'contains',
-			'empty',
 			'not_empty',
+			'empty',
 		);
 
 		foreach ( $operators as $operator ) {
