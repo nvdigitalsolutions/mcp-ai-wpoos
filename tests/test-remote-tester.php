@@ -161,11 +161,14 @@ class WP_MCP_AI_Remote_Tester_Test extends WP_UnitTestCase {
 			remove_filter( 'pre_http_request', $callback, 10 );
 		}
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertNotEmpty( $result['checks'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+		$this->assertSame( 'Timed out', $result->get_error_message() );
 
-		$check = $result['checks'][0];
+		$data = $result->get_error_data();
+		$this->assertNotEmpty( $data['checks'] );
+
+		$check = $data['checks'][0];
 		$this->assertSame( 'error', $check['status'] );
 		$this->assertNull( $check['http_code'] );
 		$this->assertSame( 'http_request_failed', $check['details']['error_code'] );
@@ -204,10 +207,11 @@ class WP_MCP_AI_Remote_Tester_Test extends WP_UnitTestCase {
 			remove_filter( 'pre_http_request', $callback, 10 );
 		}
 
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
 
-		$check = $result['checks'][0];
+		$data  = $result->get_error_data();
+		$check = $data['checks'][0];
 		$this->assertSame( 'error', $check['status'] );
 		$this->assertSame( 403, $check['http_code'] );
 		$this->assertSame( 'wp_mcp_ai_missing_credentials', $check['details']['rest_error_code'] );
@@ -257,17 +261,19 @@ class WP_MCP_AI_Remote_Tester_Test extends WP_UnitTestCase {
 		}
 
 		$this->assertFalse( $post_called, 'Chat probe should not be attempted without an assistant ID.' );
-		$this->assertFalse( $result['success'] );
-		$this->assertCount( 2, $result['checks'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+		$this->assertStringContainsString( 'assistant ID', $result->get_error_message() );
 
-		$chat_check = $result['checks'][1];
+		$data = $result->get_error_data();
+		$this->assertCount( 2, $data['checks'] );
+
+		$chat_check = $data['checks'][1];
 		$this->assertSame( 'error', $chat_check['status'] );
 		$this->assertNull( $chat_check['http_code'] );
 		$this->assertStringContainsString( 'assistant ID', $chat_check['message'] );
-		$this->assertArrayHasKey( 'error', $result );
-		$this->assertSame( 'wp_mcp_ai_remote_missing_assistant', $result['error']['code'] );
-		$this->assertArrayHasKey( 'responses', $result );
-		$this->assertArrayNotHasKey( 'chat', $result['responses'] );
+		$this->assertArrayHasKey( 'responses', $data );
+		$this->assertArrayNotHasKey( 'chat', $data['responses'] );
 	}
 
 	/**

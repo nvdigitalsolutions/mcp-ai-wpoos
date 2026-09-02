@@ -54,8 +54,12 @@ class WP_MCP_AI_Vision_Tools_Settings_Test extends WP_UnitTestCase {
 	public function test_anthropic_vision_fields_in_provider_tabs() {
 		$section = new WP_MCP_AI_Section_Providers();
 
-		// Get provider tabs.
-		$tabs = $section->get_provider_tabs();
+		// The provider tabs are sub-tab groups exposed via a protected
+		// accessor; read them through reflection.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
+		$method->setAccessible( true );
+		$tabs = $method->invoke( $section );
 
 		// Assert Anthropic tab exists.
 		$this->assertArrayHasKey( 'anthropic', $tabs, 'Anthropic tab should exist' );
@@ -143,8 +147,19 @@ class WP_MCP_AI_Vision_Tools_Settings_Test extends WP_UnitTestCase {
 			'anthropic_max_image_tokens' => '2048',
 		);
 
-		// Sanitize with providers tab context.
+		// Sanitize with providers tab context. The providers section is
+		// sub-tabbed; simulate a real form submission for the anthropic
+		// subtab so the sanitizer routes to it (without the routing POST
+		// field it treats the call as an import and clears checkboxes).
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test simulates a form submission; nonce verified by the real save handler.
+		$_POST['subtab_providers']      = 'anthropic';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test simulates a form submission; nonce verified by the real save handler.
+		$_POST['wp_mcp_ai_settings']    = $posted_settings;
+
 		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'providers' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Cleanup of test-only POST data.
+		unset( $_POST['subtab_providers'], $_POST['wp_mcp_ai_settings'] );
 
 		// Merge with existing settings as the dashboard does.
 		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );

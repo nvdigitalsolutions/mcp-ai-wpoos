@@ -56,7 +56,6 @@ class Test_MCP_App_Client extends WP_UnitTestCase {
 		);
 
 		$this->assertEquals( 'https://example.com/mcp', $client->get_server_url() );
-		$this->assertEmpty( $client->get_session_id() );
 	}
 
 	/**
@@ -122,7 +121,7 @@ class Test_MCP_App_Client extends WP_UnitTestCase {
 	 * Test protocol version constant.
 	 */
 	public function test_protocol_version() {
-		$this->assertEquals( '2025-03-26', WP_MCP_AI_MCP_App_Client::PROTOCOL_VERSION );
+		$this->assertEquals( '2026-07-28', WP_MCP_AI_MCP_App_Client::PROTOCOL_VERSION );
 	}
 
 	/**

@@ -335,8 +335,9 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 
 		$result = $method->invoke( $tool, 'this is not json' );
 
-		$this->assertFalse( $result['success'], 'parse_json_array() must fail for non-JSON input.' );
-		$this->assertArrayHasKey( 'error', $result );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_import_vitals_invalid_json', $result->get_error_code() );
+		$this->assertNull( $result->get_error_data() );
 	}
 
 	/**
