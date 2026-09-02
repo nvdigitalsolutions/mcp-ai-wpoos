@@ -158,6 +158,38 @@ class Test_Google_Calendar_Foundation extends WP_UnitTestCase {
 		$this->assertContains( WP_MCP_AI_Google_Calendar_Scopes::SCOPE_EVENTS, $parsed );
 	}
 
+	/**
+	 * Legacy saves hold %20-encoded separators: a past settings sanitizer ran
+	 * esc_url_raw() over the space-delimited grant. The parser must heal them
+	 * so the granted list renders per scope and has_scope() matches again.
+	 */
+	public function test_granted_scopes_parse_from_percent_encoded_string() {
+		$parsed = WP_MCP_AI_Google_Calendar_Scopes::parse_granted(
+			'https://www.googleapis.com/auth/calendar.events%20https://www.googleapis.com/auth/calendar.calendarlist.readonly'
+		);
+
+		$this->assertSame(
+			array(
+				WP_MCP_AI_Google_Calendar_Scopes::SCOPE_EVENTS,
+				WP_MCP_AI_Google_Calendar_Scopes::SCOPE_CALENDARLIST_READONLY,
+			),
+			$parsed
+		);
+	}
+
+	/**
+	 * Scope checks must treat %20-encoded separators like real spaces so a
+	 * corrupted legacy grant does not produce false "scope declined" warnings.
+	 */
+	public function test_has_scope_matches_percent_encoded_grant() {
+		$this->assertTrue(
+			WP_MCP_AI_Google_Calendar_Scopes::has_scope(
+				'https://www.googleapis.com/auth/calendar.events%20https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+				WP_MCP_AI_Google_Calendar_Scopes::SCOPE_EVENTS
+			)
+		);
+	}
+
 	// Sync parameter split.
 
 	/**
