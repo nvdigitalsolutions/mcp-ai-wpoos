@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.66"
-  plugin-version-tested: "1.1.66"
-  last-updated: "2026-08-31"
+  plugin-version: "1.1.67"
+  plugin-version-tested: "1.1.67"
+  last-updated: "2026-09-02"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -43,7 +43,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~303 base / ~1,559 full tools
+     │  Tool Registry     │  ~303 base / ~1,565 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -601,6 +601,25 @@ wp_mcp_ai_auto_detect_env_keys();
 Or set keys manually via admin UI → oOS → Providers.
 
 ---
+
+## Platform Extraction v2.0.0, Ecosystem Port Wave D + D-UI & Google Workspace Read Tools (v1.1.67+)
+
+- **Content Graph platform extraction (v2.0.0)** — this platform addon now
+  carries its own business logic (Waves A–C + Blueprints); see
+  `docs/project/plans/content-graph-platform-extraction-plan.md`.
+- **Base+Pro → Content Graph ecosystem port (Wave D + D-UI)** — the AI
+  runtime lands in `nvoos-content-graph-ai` (chat core, providers, model
+  management + analytics/token tracking, security guards, assistant admin
+  pages); **Content Graph AI bumps 1.0.3 → 1.0.4**. Tracker:
+  `docs/project/ecosystem-port-tracker.md`.
+- **Google Workspace Gmail + Drive read tools (Pro)** — six new Pro tools
+  (`get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`,
+  `modify_gmail_message` — destructive-ops gated — and `get_drive_file`,
+  `list_drive_connections`) with new Gmail/Drive clients on the shared
+  `includes/google/` foundation.
+- **PHPUnit repair campaign continuation (~95 PRs)** — the
+  `mcp-ai-wpoos-test-suite` skill now distills 26 root-cause patterns.
+  Tool count: ~303 base + ~1,262 Pro (~1,565 total).
 
 ## References
 
