@@ -125,10 +125,14 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Insert() must return false when the CCT table does not exist.
+	 * Insert() must fall back to the CPT store when the CCT table does not
+	 * exist (no JetEngine), so messages are never silently dropped.
 	 */
-	public function test_channel_messages_insert_returns_false_without_table() {
+	public function test_channel_messages_insert_falls_back_to_cpt_store() {
 		$this->load_pro_class( 'WP_MCP_AI_Channel_Messages_CCT', 'includes/class-wp-mcp-ai-channel-messages-cct.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Messages_CPT', 'includes/class-wp-mcp-ai-channel-messages-cpt.php' );
+		$this->assertFalse( WP_MCP_AI_Channel_Messages_CCT::table_exists() );
+
 		$result = WP_MCP_AI_Channel_Messages_CCT::insert(
 			array(
 				'channel'            => 'whatsapp',
@@ -137,7 +141,15 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 				'direction'          => 'inbound',
 			)
 		);
-		$this->assertFalse( $result );
+
+		$this->assertIsInt( $result );
+		$this->assertGreaterThan( 0, $result );
+
+		$post = get_post( $result );
+		$this->assertNotNull( $post );
+		$this->assertSame( WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, $post->post_type );
+		$this->assertSame( 'whatsapp', get_post_meta( $result, '_channel', true ) );
+		$this->assertSame( 'Hello', $post->post_content );
 	}
 
 	// =========================================================================
@@ -200,12 +212,26 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Find_or_create() returns false when the table does not exist.
+	 * Find_or_create() falls back to the CPT store when the table does not
+	 * exist and is idempotent for the same channel + contact.
 	 */
-	public function test_channel_contacts_find_or_create_returns_false_without_table() {
+	public function test_channel_contacts_find_or_create_falls_back_to_cpt_store() {
 		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CCT', 'includes/class-wp-mcp-ai-channel-contacts-cct.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+		$this->assertFalse( WP_MCP_AI_Channel_Contacts_CCT::table_exists() );
+
 		$result = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', '15551234567' );
-		$this->assertFalse( $result );
+
+		$this->assertIsInt( $result );
+		$this->assertGreaterThan( 0, $result );
+
+		$post = get_post( $result );
+		$this->assertNotNull( $post );
+		$this->assertSame( WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE, $post->post_type );
+
+		// Second lookup must return the same record.
+		$again = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', '15551234567' );
+		$this->assertSame( $result, $again );
 	}
 
 	/**
@@ -218,16 +244,41 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Find_or_create() returns false without table even when connection_id is provided.
+	 * Find_or_create() falls back to the CPT store with connection_id
+	 * scoping and stores the connection_id on the created record.
 	 */
-	public function test_channel_contacts_find_or_create_with_connection_id_returns_false_without_table() {
+	public function test_channel_contacts_find_or_create_with_connection_id_falls_back_to_cpt_store() {
 		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CCT', 'includes/class-wp-mcp-ai-channel-contacts-cct.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+		$this->assertFalse( WP_MCP_AI_Channel_Contacts_CCT::table_exists() );
+
 		$result = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 			'slack',
 			'U12345678',
 			array( 'connection_id' => 'conn_a' )
 		);
-		$this->assertFalse( $result );
+
+		$this->assertIsInt( $result );
+		$this->assertGreaterThan( 0, $result );
+		$this->assertSame( 'conn_a', get_post_meta( $result, '_connection_id', true ) );
+
+		// Same connection must resolve to the same record.
+		$again = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+			'slack',
+			'U12345678',
+			array( 'connection_id' => 'conn_a' )
+		);
+		$this->assertSame( $result, $again );
+
+		// A different connection is a distinct record.
+		$other = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+			'slack',
+			'U12345678',
+			array( 'connection_id' => 'conn_b' )
+		);
+		$this->assertIsInt( $other );
+		$this->assertGreaterThan( 0, $other );
+		$this->assertNotSame( $result, $other );
 	}
 
 	/**
