@@ -69,7 +69,6 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'o1-preview'                => 128000,
 		'o1-mini'                   => 128000,
 		// OpenAI legacy (still in use via OpenRouter / older configs).
-		'gpt-4.1'                   => 1000000,
 		'gpt-4.1-mini'              => 1000000,
 		'gpt-4.1-nano'              => 1000000,
 		'gpt-4.1'                   => 128000,
@@ -99,10 +98,8 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gemini-3-pro-preview'      => 1000000,
 		'gemini-3-flash-preview'    => 1000000,
 		'gemini-2.5-pro'            => 1048576,
-		'gemini-2.5-flash'          => 1048576,
 		'gemini-3.1-flash-image'    => 131072,
 		'gemini-2.5-flash-image'    => 1048576,
-		'gemini-2.5-flash'          => 1048576,
 		'gemini-2.0-flash-image'    => 1048576,
 		'gemini-2.5-flash'          => 2097152,
 		'gemini-1.5-flash'          => 1048576,
@@ -245,7 +242,6 @@ class WP_MCP_AI_Token_Budget_Manager {
 
 		$encoding_map = array(
 			'gpt-4.1'        => 'o200k_base',
-			'gpt-4.1'        => 'o200k_base',
 			'gpt-5'          => 'o200k_base',
 			'o1'             => 'o200k_base',
 			'o3'             => 'o200k_base',
@@ -344,44 +340,56 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 * @return int|null TPM limit or null if not configured.
 	 */
 	public static function get_model_tpm_limit( $model ) {
-		$model = sanitize_text_field( $model );
+		$model     = sanitize_text_field( $model );
+		$tpm_limit = null;
 
 		// Try to get TPM limit from CCT first (user-configured or auto-discovered).
 		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
 			$cct_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model );
 
 			if ( $cct_data && isset( $cct_data['tpm_limit'] ) && $cct_data['tpm_limit'] > 0 ) {
-				return absint( $cct_data['tpm_limit'] );
+				$tpm_limit = absint( $cct_data['tpm_limit'] );
 			}
 		}
 
 		// Fall back to the bundled model catalog when the CCT has no entry
 		// (e.g. JetEngine is inactive or the CCT has not been populated yet).
-		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+		if ( null === $tpm_limit && class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
 			$catalog_entry = self::find_catalog_model(
 				WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data(),
 				$model
 			);
 
 			if ( $catalog_entry && ! empty( $catalog_entry['tpm_limit'] ) ) {
-				return absint( $catalog_entry['tpm_limit'] );
+				$tpm_limit = absint( $catalog_entry['tpm_limit'] );
 			}
 		}
 
 		// Fall back to hardcoded TPM defaults (Anthropic Tier 1 defaults, etc.).
 		// Check exact match first, then try prefix matching for date-versioned model IDs
 		// (e.g. 'claude-opus-4-6-20260301' matches 'claude-opus-4-6').
-		if ( isset( self::$default_tpm_limits[ $model ] ) ) {
-			return self::$default_tpm_limits[ $model ];
-		}
-
-		foreach ( self::$default_tpm_limits as $key => $limit ) {
-			if ( 0 === strpos( $model, $key ) ) {
-				return $limit;
+		if ( null === $tpm_limit ) {
+			if ( isset( self::$default_tpm_limits[ $model ] ) ) {
+				$tpm_limit = self::$default_tpm_limits[ $model ];
+			} else {
+				foreach ( self::$default_tpm_limits as $key => $limit ) {
+					if ( 0 === strpos( $model, $key ) ) {
+						$tpm_limit = $limit;
+						break;
+					}
+				}
 			}
 		}
 
-		return null;
+		/**
+		 * Filter the TPM (Tokens Per Minute) rate limit for a model.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int|null $tpm_limit Resolved TPM limit, or null when unconfigured.
+		 * @param string   $model     Model identifier.
+		 */
+		return apply_filters( 'wp_mcp_ai_model_tpm_limit', $tpm_limit, $model );
 	}
 
 	/**
@@ -855,7 +863,6 @@ class WP_MCP_AI_Token_Budget_Manager {
 		if ( $is_openai ) {
 			// Suggest OpenAI models with higher limits.
 			$openai_alternatives = array(
-				'gpt-4.1'      => 30000,    // Tier 1.
 				'gpt-4.1-mini' => 400000,   // Future model.
 				'gpt-4.1'      => 300000,   // Future model.
 				'gpt-5-mini'   => 500000,   // Future model.
