@@ -161,6 +161,11 @@ final class Plugin {
 			\NvoosContentGraphAi\Memory\AgentMemoryCctBridge::bootstrap();
 			\NvoosContentGraphAi\Memory\AgentMemoryCctMigrator::bootstrap();
 			\NvoosContentGraphAi\Memory\AgentMemoryCctReader::bootstrap();
+
+			// Assistant CPT (Wave D-UI-4) — the base plugin owns the same
+			// CPT + meta in monolith installs; double registration would
+			// conflict.
+			\NvoosContentGraphAi\Admin\AssistantPostType::register();
 		}
 
 		// Register the async chat continuation hook.
@@ -212,6 +217,13 @@ final class Plugin {
 		if ( class_exists( 'NvoosContentGraphAi\Admin\AiSettingsPage' ) ) {
 			$aiSettings = new \NvoosContentGraphAi\Admin\AiSettingsPage();
 			$aiSettings->register();
+		}
+
+		// Assistant builder/add pages (Wave D-UI-4) — the base plugin owns
+		// the same admin pages in monolith installs; the ecosystem hub
+		// stands down so the menus are never duplicated.
+		if ( ! defined( 'WP_MCP_AI_PATH' ) && class_exists( 'NvoosContentGraphAi\Admin\AssistantPages' ) ) {
+			( new \NvoosContentGraphAi\Admin\AssistantPages() )->register();
 		}
 	}
 
