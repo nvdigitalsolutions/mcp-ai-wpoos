@@ -182,19 +182,24 @@ class Test_RabbitMq_Stdio extends \WP_UnitTestCase {
 			$stats
 		);
 
-		// Disabled.
+		// Disabled: the client reports its config faithfully, regardless
+		// of whether the amqp extension is present on the runner.
 		$health = $client->health_check();
 		$this->assertSame( 'disabled', $health['status'] );
-		$this->assertFalse( $health['extension'] );
+		$this->assertSame( \extension_loaded( 'amqp' ), $health['extension'] );
 		$this->assertFalse( $health['enabled'] );
 
-		// Enabled but extension missing.
-		$this->seed_settings( array( 'rabbitmq_enabled' => true ) );
-		$client->refresh_config();
-		$health = $client->health_check();
-		$this->assertSame( 'extension_missing', $health['status'] );
-		$this->assertSame( 'localhost', $health['connection']['host'] );
-		$this->assertSame( 5672, $health['connection']['port'] );
+		// Enabled but extension missing — only meaningful when the runner
+		// does not ship the amqp extension (mirrors the base plugin's own
+		// test, which skips this path when amqp is loaded).
+		if ( ! \extension_loaded( 'amqp' ) ) {
+			$this->seed_settings( array( 'rabbitmq_enabled' => true ) );
+			$client->refresh_config();
+			$health = $client->health_check();
+			$this->assertSame( 'extension_missing', $health['status'] );
+			$this->assertSame( 'localhost', $health['connection']['host'] );
+			$this->assertSame( 5672, $health['connection']['port'] );
+		}
 	}
 
 	public function test_rabbitmq_topology_constants(): void {

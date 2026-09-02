@@ -446,11 +446,13 @@ class Test_Elementor extends \WP_UnitTestCase {
 
 		// Invalid hex colours never reach the style attribute.
 		$this->assertStringNotContainsString( 'red;background', $html );
-		// Tags are stripped from the tooltip; markup is escaped in the title.
+		// Tags are stripped from the tooltip; tags are stripped from the
+		// panel title by sanitize_text_field() before esc_html() runs,
+		// so the title renders as plain text rather than escaped markup.
 		$this->assertStringNotContainsString( '<script>', $html );
 		$this->assertStringContainsString( 'Hello', $html );
-		$this->assertStringNotContainsString( '<b>Hi</b>', $html );
-		$this->assertStringContainsString( '&lt;b&gt;Hi&lt;/b&gt;', $html );
+		$this->assertStringNotContainsString( '<b>', $html );
+		$this->assertStringContainsString( 'nvoos-cg-bubble__panel-title">Hi</span>', $html );
 	}
 }
 }

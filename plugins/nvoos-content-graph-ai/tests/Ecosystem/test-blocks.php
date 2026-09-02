@@ -62,6 +62,13 @@ class Test_Blocks extends \WP_UnitTestCase {
 		$this->shortcode->register();
 
 		$this->blocks = new Blocks();
+
+		// Register the chat-family blocks and their bubble assets up
+		// front: the bubble render callback enqueues the bubble handles
+		// without a src, so wp_enqueue_script()/wp_enqueue_style() only
+		// take effect when the hub has registered them (the Elementor
+		// test setUp does the same).
+		$this->blocks->register_blocks();
 	}
 
 	public function tearDown(): void {
@@ -176,14 +183,18 @@ class Test_Blocks extends \WP_UnitTestCase {
 		$this->blocks->register();
 
 		$categories = \apply_filters( 'block_categories_all', array(), null );
-
-		$slugs = wp_list_pluck( $categories, 'slug' );
+		$slugs      = wp_list_pluck( $categories, 'slug' );
 		$this->assertContains( Blocks::CATEGORY, $slugs );
 
-		// Re-applying with the result must not duplicate the category.
-		$again   = \apply_filters( 'block_categories_all', $categories, null );
-		$slugs2  = wp_list_pluck( $again, 'slug' );
-		$this->assertSame( count( $slugs ), count( $slugs2 ) );
+		// The hub's filter is idempotent, so the category must appear
+		// exactly once per pass. Other plugins' category filters run on
+		// the same hook (monolith matrix) and may add or merge their own
+		// entries, so only the hub's own category is asserted.
+		$again  = \apply_filters( 'block_categories_all', $categories, null );
+		$slugs2 = wp_list_pluck( $again, 'slug' );
+
+		$this->assertSame( 1, count( array_keys( $slugs, Blocks::CATEGORY, true ) ) );
+		$this->assertSame( 1, count( array_keys( $slugs2, Blocks::CATEGORY, true ) ) );
 	}
 
 	// ─── Chat block ─────────────────────────────────────────────────
@@ -310,10 +321,12 @@ class Test_Blocks extends \WP_UnitTestCase {
 
 		// Invalid hex colours never reach the style attribute.
 		$this->assertStringNotContainsString( 'red;background', $html );
-		// Tags are stripped from the tooltip; markup is escaped in the title.
+		// Tags are stripped from the tooltip; tags are stripped from the
+		// panel title by sanitize_text_field() before esc_html() runs,
+		// so the title renders as plain text rather than escaped markup.
 		$this->assertStringNotContainsString( '<script>', $html );
 		$this->assertStringContainsString( 'Hello', $html );
-		$this->assertStringNotContainsString( '<b>Hi</b>', $html );
-		$this->assertStringContainsString( '&lt;b&gt;Hi&lt;/b&gt;', $html );
+		$this->assertStringNotContainsString( '<b>', $html );
+		$this->assertStringContainsString( 'nvoos-cg-bubble__panel-title">Hi</span>', $html );
 	}
 }
