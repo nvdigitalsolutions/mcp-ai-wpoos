@@ -2613,7 +2613,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, null, $tool_slug, $context )
 		);
 
-		// Complete parent async job if present.
+		// CRITICAL ORDER: Complete the parent async job only AFTER the veo job
+		// completion hook above has fired, preventing race conditions where
+		// both jobs complete simultaneously and the notification cache misses.
 		if ( isset( $metadata['parent_job_id'] ) && ! empty( $metadata['parent_job_id'] ) ) {
 			// Add 1-second delay before completing parent job.
 			sleep( 1 );
