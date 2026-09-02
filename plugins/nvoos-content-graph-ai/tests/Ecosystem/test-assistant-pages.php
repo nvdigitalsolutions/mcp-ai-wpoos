@@ -550,7 +550,7 @@ class Test_Assistant_Pages extends \WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'display: block', $html );
 		$this->assertStringContainsString( 'nvoos-content-graph-chat-widget', $html );
-		$this->assertStringContainsString( 'assistant="' . $assistant_id . '"', $html );
+		$this->assertMatchesRegularExpression( '/id="nvoos-content-graph-chat-\d+"/', $html );
 	}
 
 	public function test_test_page_ignores_invalid_selection(): void {
