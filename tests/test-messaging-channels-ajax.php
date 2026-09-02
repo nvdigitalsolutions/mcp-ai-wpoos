@@ -59,10 +59,32 @@ if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 	unset( $wp_mcp_ai_remote_sites_admin );
 }
 
+/**
+ * Messaging-channels AJAX cluster (Pro addon).
+ */
 class Test_Messaging_Channels_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 	/** Pro class required for this suite. */
 	const PRO_CLASS = 'WP_MCP_AI_Pro_Remote_Sites_Admin';
+
+	/**
+	 * Admin handler retained for the duration of each test.
+	 *
+	 * @var WP_MCP_AI_Pro_Remote_Sites_Admin
+	 */
+	private $admin_handler;
+
+	/**
+	 * Set up AJAX hooks for each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// wp-phpunit restores the hook table between tests. Re-instantiating the
+		// handler keeps every instance-bound messaging action registered even
+		// when this test file was loaded after the process-wide hook snapshot.
+		$this->admin_handler = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+	}
 
 	/** Sets up shared state before any test in the class. */
 	public static function setUpBeforeClass(): void {

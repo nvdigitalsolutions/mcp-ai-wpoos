@@ -88,6 +88,15 @@ class Test_WP_MCP_AI_Paper_Query extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Query with a negative tag filter.
+	 */
+	public function test_where_tag_not_equal_filter() {
+		$results = $this->repo->where( 'tags', '!=', 'perfume' )->get();
+		$this->assertCount( 1, $results );
+		$this->assertSame( 'draft-post', $results[0]['id'] );
+	}
+
+	/**
 	 * Query with where status filter.
 	 */
 	public function test_where_status_filter() {
