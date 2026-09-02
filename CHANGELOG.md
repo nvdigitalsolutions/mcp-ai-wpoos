@@ -1,5 +1,40 @@
 # oOS – Changelog
 
+## [1.1.67] - 2026-09-02
+
+### Added — Content Graph Platform Extraction, Waves A–C + Blueprints (PR #6123)
+
+- New standalone `plugins/nvoos-content-graph-ai-platform/` addon at **v2.0.0** (distribution ZIP ships in `build/`) — the extracted platform continues moving its own business logic out of the base plugin, per the roadmap's "either/or" principle. Waves A–C deliver the namespace-bridged admin UI and service surface (`NvoosContentGraphAiPlatform\` — Plugin bootstrap, SkillBridge, SlashCommandBridge, Agents CPT bridge, PlatformDashboard, PlatformSettingsRegistry, harness `ToolRouterHarness`), a 74-skill bundled-skills pack (`data/bundled-skills/`) with third-party notices, a knowledge base (`data/knowledge-base/`), and a dedicated PHPUnit matrix (`.github/workflows/phpunit-platform.yml`). See `docs/project/plans/content-graph-platform-extraction-plan.md` + `plugins/nvoos-content-graph-ai-platform/MIGRATION-GAPS.md`.
+
+### Added — Base+Pro → Content Graph Ecosystem Port, Wave D + D-UI (PR #6142)
+
+- The additive ecosystem port moved the AI runtime into `plugins/nvoos-content-graph-ai`: **Wave D** — chat runtime core (prompt optimizer, response cache + SSE rate limiter + semantic cache, conversation summarizer, thread manager, message/response attachments, transcript recorder + retention, ChatKit integration), providers beyond the 13 (Zai, Google Maps, OpenAI Realtime ×3, RabbitMQ, STDIO transport, file services), model management (catalog migration + integrity verifier, rate-limits CCT + pricing checker), analytics + token tracking (analytics engine, usage tracker, token DB + optimizer, tool token limits), and security guards (circuit breaker, request/URL guards, CSP, load guard, concurrency guard, cost tracker, security-posture scoring) — **D-UI** adds the assistant admin pages (Add/Build/Test Assistant, assistant CPT, hub wiring) plus the chat blocks, chat-bubble block, Elementor chat widgets, guest-token flow, agent-memory CCT trio, WP-CLI core commands, chat compat route, and MCP JSON-RPC controller. Tracked in `docs/project/ecosystem-port-tracker.md` (plan + gap analysis in `docs/project/plans/` / `docs/project/proposals/`); new `.github/workflows/phpunit-ai.yml` matrix. **Content Graph AI bumps 1.0.3 → 1.0.4.**
+
+### Added — Google Workspace Gmail & Drive Read Tools (Pro, PRs #6151–#6152)
+
+- Six new Pro tools in `addons/pro/includes/tools/google-workspace/` with two new clients: **Gmail** — `get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message` (modify is gated behind the destructive-ops gate) backed by `WP_MCP_AI_Pro_Gmail_Client`; **Drive** — `get_drive_file`, `list_drive_connections` backed by `WP_MCP_AI_Pro_Google_Drive_Client`. Both clients resolve credentials through the shared `includes/google/` foundation and the Pro Remote Sites connection registry; `search_gmail`/`search_drive` were updated to match. Pro tool count +6.
+
+### Changed — PHPUnit Suite Repair Campaign Continuation (PRs #6114–#6208, #6209–#6222)
+
+A second campaign wave (Aug 31 – Sep 2, ~100 PRs) kept the suite green through the extraction/port work and PHPUnit 11 / WP 7.1 environment drift. Most PRs are test-only; the production-side fixes they carried are grouped below. (PRs #6209–#6222 merged upstream after the main pass and are folded in with the base merge.)
+
+- **REST & validation** — assistant-directory REST empty-`title` guard (#6141); tool-error reporting null-safe on a missing request (#6186); LLM sanitization delegated to the REST validator with recursive metadata stripping (#6187); `display`-metadata persistence + sanitization for transcript messages (#6172); systemic PHPUnit 11 / WP 7.1 env-compat fixes across the conversation summarizer and Gemini/LM Studio clients (#6196).
+- **Crawler** — crawler job contract hardened (`sanitize_task_id()`, `base_url` URL validation, job arg-shape guards) (#6124); `wp_mcp_ai_crawl4ai_auto_spawn_cron` filter gates the auto-spawn (#6125).
+- **Tools & registries** — create-post taxonomy application guards (`categories`/`tags` must be arrays) (#6115); toolkit registry resolves the live tool-registry singleton per call instead of caching it (#6117); slash-command content-calendar handler no longer branches on a class-exists fallback (#6122); sync-docs slash command searches per keyword (#6140); external-API query strings URL-encoded via `http_build_query()` (LinkedIn, Shopify, Google Maps, ReliefWeb, web-search) (#6156); Veo duration floor raised to 5 seconds (#6180); tool-multiplier accessor made public (#6189); content-format helper exposes `wp_mcp_ai_detected_seo_plugin` + Elementor filter seams (#6203); CRM workflow presets normalized to the canonical node schema (`toolSlug`/`arguments`, edge IDs) (#6208); Pro invoice-PDF tool class renamed to `generate_woocommerce_order_invoice_pdf` to resolve Composer class ambiguities (#6198).
+- **Settings, cache & admin** — credential-resolver cache cleared on settings save (#6119); raw option-table deletes evict the options object cache (#6134); settings dashboard subtab routing + field guards (#6139); settings-registry `unregister_section()` API (#6144); orchestration-dashboard menu wiring (#6160); token-tier caching with numeric user-ID guards (#6178); PM assistant metabox renders its modal structure on permission/disabled notices (#6174); profession seeder rubric-verifier envelope (#6197).
+- **Security & webhooks** — destructive-ops gate now reads the canonical combined-settings array (falls back to the legacy repository option, fail-safe enabled) (#6151); WhatsApp webhook signature validation rejects when no app secret is configured (#6192); Graphify + Content Graph remote HTTP clients re-serve the cached body on 304 (#6161).
+- **Jobs & providers** — the Gemini video-generation service completes the parent async job only after the Veo job-completion hook fires, preventing a completion race that misses the notification cache (#6211).
+- **Admin, slash commands & sync** — orchestration renderer token-budget display fixes (`(int)` cast + style registration, #6213); slash-command workflow metrics guard (#6216) and parallel/conditional step-block rendering (#6218); Shopify Sync CCT manager exposes a `wp_mcp_ai_shopify_sync_client_available` filter seam around the client availability check (#6215); Paper Store array-field queries — `=`/`!=` filters now match array field values via `in_array()` (#6222).
+- **Test-suite skill refresh** — `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` distilled 26 recurring root-cause patterns (up from 16) from ~70 cluster PRs (#6154).
+
+### Housekeeping
+
+- Stale 1.1.66 build ZIPs and `.sha256` files removed from `build/` (root, `optional-components/`, `toolkit-addons/`), plus the 1.1.65 ZIPs a build commit had re-created after the previous pass removed them (PR #6011 convention).
+
+### Versioning
+
+- Bumped to 1.1.67 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.67. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: 1.0.3 (unchanged). nvoos-content-graph-ai: **1.0.4** (bumped in this window). nvoos-content-graph-ai-platform: **2.0.0** (new standalone). Tool count: ~303 base + ~1,262 Pro (~1,565 total; live registry authoritative). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: 53.
+
 ## [1.1.66] - 2026-08-31
 
 ### Added — NVOOS Checkout API & Content Graph Paid Checkout (PR #6063)

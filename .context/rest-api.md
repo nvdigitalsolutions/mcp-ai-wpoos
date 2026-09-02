@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: August 31, 2026 (v1.1.66).
+> Last reviewed: September 2, 2026 (v1.1.67).
+>
+> **New in v1.1.67 (PRs #6141, #6172, #6186, #6187):** the assistant-directory REST handler guards an empty `title` param (#6141); tool-error reporting is null-safe when the request object is absent (#6186); LLM payload sanitization is delegated to `WP_MCP_AI_REST_Validator` (`sanitize_metadata_for_llm()` recursion + transport-field stripping — `headers`/`raw`/`response`/`request`/`retrieved_at`/`fetched_at`/`user_agent`) instead of private REST helpers (#6187); transcript `display` metadata segments are sanitized (`sanitize_display_metadata()` — `bubbleType` via `sanitize_key()`) and persisted (#6172).
 >
 > **New in v1.1.66 (PRs #6008, #6009, #6014–#6019, #6036, #6037):** chat-endpoint validation tests reconciled with the current contract — role validation lives in `sanitize_messages()`, orphaned tool messages are discarded, and attachments are embedded message segments (never re-add the top-level `attachments` arg or the args-layer role/pairing enums); attachment-segment validation errors now carry an explicit `status => 400` instead of defaulting to 500. Assistant-access caching: the define-time `WP_MCP_AI_DISABLE_CACHE` pattern was replaced by a `wp_mcp_ai_assistant_access_cache_enabled` filter, and `validate_assistant_access()` caches `WP_Error` results like successful lookups. REST analytics endpoints, the token-tier endpoint + tier-change audit logging, the permission-callback allowlist, and bearer-auth context sync (Simple JWT + assistant-access paths) were fixed. Job-notifier REST routes resolve dot-IDs with owner-scoped auth.
 >

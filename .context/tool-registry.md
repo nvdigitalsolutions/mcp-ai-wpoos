@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: August 31, 2026 (v1.1.66).
+> Last reviewed: September 2, 2026 (v1.1.67).
 
 ---
 
@@ -14,7 +14,9 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,559 (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,565 (~303 base + ~1,262 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.67:** +6 Pro tools. (1) Four Gmail tools in `addons/pro/includes/tools/google-workspace/` — `get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message` (the modify tool is destructive-ops gated) — backed by the new `WP_MCP_AI_Pro_Gmail_Client` (PR #6151). (2) Two Drive tools — `get_drive_file`, `list_drive_connections` — backed by the new `WP_MCP_AI_Pro_Google_Drive_Client` (PR #6152). Both clients resolve credentials through the shared `includes/google/` foundation + Pro Remote Sites; `search_gmail`/`search_drive` were updated to match. Campaign-carried tool-contract fixes: `create_post` applies categories/tags only when explicitly passed as arrays (#6115); `generate_veo_video` duration floor raised to 5 seconds (#6180); `WP_MCP_AI_Tool_Token_Limits::get_tool_multiplier()` is now public (#6189); token-tier caching guards numeric user IDs (#6178); CRM workflow presets normalized to the canonical node schema (`toolSlug`/`arguments`, edge IDs, #6208); content-format helper exposes `wp_mcp_ai_detected_seo_plugin` + Elementor filter seams (#6203); Pro invoice-PDF tool class renamed to `generate_woocommerce_order_invoice_pdf` (Composer ambiguity, #6198); toolkit registry resolves the live tool-registry singleton per call (#6117).
 
 **New in v1.1.66:** No tools added or removed — the Aug 28–31 test-suite repair campaign carried several tool-contract fixes. (1) Media Toolkit tools (`apply_collection_template`, `apply_media_template`, `list_media_templates`) now return the canonical `WP_Error` envelope for failures instead of `array( 'success' => false, ... )`. (2) The Pro `remove_background` tool gained a path guard + source resolution fix (shared `WP_MCP_AI_Tool_Image_Base`). (3) `auto_categorize_content` router + client API fixed. (4) `web_search` result building restored for the Exa and Perplexity providers. (5) The ecommerce toolkit enablement check was extracted into a shared helper (`class-wp-mcp-ai-ecommerce-helpers.php`) reused by the opt-in paths. (6) Validated-tool suites were swept onto the canonical error codes (test-only). (7) A2A webhook logging + delegate tool errors fixed; `manage_autonomous_session` tool error logging fixed.
 
