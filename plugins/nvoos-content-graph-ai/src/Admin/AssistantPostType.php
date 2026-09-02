@@ -283,7 +283,10 @@ class AssistantPostType {
 
 		$tools = array();
 		foreach ( $value as $slug ) {
-			$slug = sanitize_key( (string) $slug );
+			if ( ! is_string( $slug ) ) {
+				continue; // Non-string entries (ints, arrays) are not tool slugs.
+			}
+			$slug = sanitize_key( $slug );
 			if ( '' !== $slug ) {
 				$tools[] = $slug;
 			}

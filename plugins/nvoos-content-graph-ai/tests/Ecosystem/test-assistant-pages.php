@@ -75,12 +75,28 @@ class Test_Assistant_Pages extends \WP_UnitTestCase {
 			\unregister_post_type( AssistantPostType::POST_TYPE );
 		}
 
+		$captured_args = null;
+		\add_filter(
+			'register_post_type_args',
+			static function ( $args, $post_type ) use ( &$captured_args ) {
+				if ( AssistantPostType::POST_TYPE === $post_type ) {
+					$captured_args = $args;
+				}
+				return $args;
+			},
+			10,
+			2
+		);
+
 		AssistantPostType::register_post_type();
 
 		$object = \get_post_type_object( AssistantPostType::POST_TYPE );
 		$this->assertNotNull( $object );
 		$this->assertSame( 'AI Assistants', $object->labels->name );
-		$this->assertSame( array( 'title', 'editor' ), $object->supports );
+		// WP 6.9+ unsets WP_Post_Type::$supports after registration, so the
+		// byte-identical args are asserted from the registration call itself.
+		$this->assertIsArray( $captured_args );
+		$this->assertSame( array( 'title', 'editor' ), $captured_args['supports'] );
 		$this->assertTrue( $object->show_in_rest );
 		$this->assertSame( 'mcp-ai-assistants', $object->rest_base );
 		$this->assertSame( 'dashicons-lightbulb', $object->menu_icon );
@@ -427,7 +443,10 @@ class Test_Assistant_Pages extends \WP_UnitTestCase {
 		\update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_provider', 'gemini' );
 		\update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_model', 'gemini-1.5-pro' );
 		\update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_temperature', '0.5' );
-		\update_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', array( 7 ) );
+		// A real attachment ID: the base plugin's registered memory-files
+		// sanitizer keeps only attachment IDs in monolith installs.
+		$attachment_id = self::factory()->attachment->create();
+		\update_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', array( $attachment_id ) );
 
 		$result = AddAssistantPage::create_from_professional( $profession_id, 'Perfume Broker', '' );
 
@@ -449,7 +468,7 @@ class Test_Assistant_Pages extends \WP_UnitTestCase {
 			array( $profession_id ),
 			\get_post_meta( $post->ID, '_wp_mcp_ai_primary_roles', true )
 		);
-		$this->assertSame( array( 7 ), \get_post_meta( $post->ID, '_wp_mcp_ai_memory_files', true ) );
+		$this->assertSame( array( $attachment_id ), \get_post_meta( $post->ID, '_wp_mcp_ai_memory_files', true ) );
 		$this->assertSame(
 			(string) $profession_id,
 			\get_post_meta( $post->ID, '_wp_mcp_ai_source_profession', true )
