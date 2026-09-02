@@ -717,7 +717,7 @@ class BuildAssistantPage {
 		}
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'nvoos-content-graph-ai' ) ), 403 );
 		}
 
 		$input = array(
