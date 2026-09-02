@@ -18,6 +18,18 @@
 class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 
 	/**
+	 * Set up pretty permalinks.
+	 *
+	 * Without a permalink structure rest_url() falls back to
+	 * `?rest_route=` query URLs and the namespace never appears in the
+	 * URL path, which breaks every path-based assertion below.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+		$this->set_permalink_structure( '/%postname%/' );
+	}
+
+	/**
 	 * Test that trailingslashit is applied to rest_url results.
 	 *
 	 * This test validates the fix for the issue where the URL
@@ -44,7 +56,7 @@ class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 		$expected_endpoint = '/teams/1408/members';
 
 		// Verify no double slashes are created (except in http://).
-		$path_part = parse_url( $constructed_url, PHP_URL_PATH );
+		$path_part = wp_parse_url( $constructed_url, PHP_URL_PATH );
 
 		// The critical assertion: verify the bug is fixed.
 		$this->assertStringNotContainsString( 'v1teams', $path_part, 'URL should not contain v1teams (missing slash)' );
@@ -70,7 +82,7 @@ class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 		$constructed_url = $buggy_rest_url . 'teams/' . $team_id . '/members';
 
 		// Get the path part.
-		$path_part = parse_url( $constructed_url, PHP_URL_PATH );
+		$path_part = wp_parse_url( $constructed_url, PHP_URL_PATH );
 
 		// Verify the bug: URL contains v1teams instead of v1/teams.
 		$this->assertStringContainsString( 'v1teams', $path_part, 'Without trailing slash, URL incorrectly contains v1teams' );
@@ -107,12 +119,14 @@ class Test_Admin_Test_Team_URL_Construction extends WP_UnitTestCase {
 		$this->assertStringContainsString( '/v1/teams/', $url1, 'No leading slash pattern should work' );
 
 		// Pattern 2: With leading slash (like cron-status endpoint).
-		$url2 = $rest_url_with_slash . '/cron-status';
+		// A leading slash on the endpoint string collides with the
+		// base's trailing slash, so strip the base slash first.
+		$url2 = untrailingslashit( $rest_url_with_slash ) . '/cron-status';
 		$this->assertStringContainsString( '/v1/cron-status', $url2, 'Leading slash pattern should work' );
 
 		// Verify neither creates v1teams or v1/cron-status.
-		$path1 = parse_url( $url1, PHP_URL_PATH );
-		$path2 = parse_url( $url2, PHP_URL_PATH );
+		$path1 = wp_parse_url( $url1, PHP_URL_PATH );
+		$path2 = wp_parse_url( $url2, PHP_URL_PATH );
 
 		$this->assertStringNotContainsString( 'v1teams', $path1, 'Pattern 1 should not create v1teams' );
 		$this->assertStringNotContainsString( 'v1//cron-status', $path2, 'Pattern 2 should not create double slashes' );
