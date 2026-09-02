@@ -18,6 +18,9 @@ class Test_Mesh_API_Key_Whitespace extends WP_UnitTestCase {
 
 	/**
 	 * Test that mesh_inbound_api_key is trimmed when saved.
+	 *
+	 * Sensitive settings are encrypted during sanitization, so the assertion
+	 * decrypts the stored value before comparing it to the trimmed plaintext.
 	 */
 	public function test_mesh_api_key_trimmed_on_save() {
 		$settings_class = new WP_MCP_AI_Admin_Settings();
@@ -36,7 +39,7 @@ class Test_Mesh_API_Key_Whitespace extends WP_UnitTestCase {
 		// Verify the key is trimmed.
 		$this->assertEquals(
 			'mesh_test123456789012345678901234567890',
-			$sanitized['mesh_inbound_api_key'],
+			WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $sanitized['mesh_inbound_api_key'] ),
 			'mesh_inbound_api_key should be trimmed of leading/trailing whitespace'
 		);
 	}
@@ -58,10 +61,10 @@ class Test_Mesh_API_Key_Whitespace extends WP_UnitTestCase {
 		// Sanitize settings.
 		$sanitized = $settings_class->sanitize_settings( $input );
 
-		// Verify the key is trimmed.
+		// Verify the key is trimmed (decrypt the encrypted stored value).
 		$this->assertEquals(
 			'mesh_test123456789012345678901234567890',
-			$sanitized['mesh_inbound_api_key'],
+			WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $sanitized['mesh_inbound_api_key'] ),
 			'mesh_inbound_api_key should be trimmed of tabs, newlines, and carriage returns'
 		);
 	}
@@ -156,9 +159,19 @@ class Test_Mesh_API_Key_Whitespace extends WP_UnitTestCase {
 		// Sanitize settings.
 		$sanitized = $settings_class->sanitize_settings( $input );
 
-		// All API keys should be trimmed consistently.
-		$this->assertEquals( 'sk-test123', $sanitized['openai_api_key'] );
-		$this->assertEquals( 'gemini-test123', $sanitized['gemini_api_key'] );
-		$this->assertEquals( 'mesh_test123', $sanitized['mesh_inbound_api_key'] );
+		// All API keys should be trimmed consistently. Sensitive settings are
+		// encrypted during sanitization, so decrypt before comparing.
+		$this->assertEquals(
+			'sk-test123',
+			WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $sanitized['openai_api_key'] )
+		);
+		$this->assertEquals(
+			'gemini-test123',
+			WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $sanitized['gemini_api_key'] )
+		);
+		$this->assertEquals(
+			'mesh_test123',
+			WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $sanitized['mesh_inbound_api_key'] )
+		);
 	}
 }
