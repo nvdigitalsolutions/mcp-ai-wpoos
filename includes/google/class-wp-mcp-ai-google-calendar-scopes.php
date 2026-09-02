@@ -316,6 +316,12 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Calendar_Scopes' ) ) {
 				return array();
 			}
 
+			// Legacy saves may hold URL-encoded separators: a past settings
+			// sanitizer ran esc_url_raw() over the space-delimited grant, which
+			// encoded every space as %20. Normalise those back to spaces so the
+			// string splits into real scope URLs instead of one giant blob.
+			$granted = str_replace( '%20', ' ', $granted );
+
 			$parts = preg_split( '/\s+/', trim( $granted ) );
 
 			if ( ! is_array( $parts ) ) {

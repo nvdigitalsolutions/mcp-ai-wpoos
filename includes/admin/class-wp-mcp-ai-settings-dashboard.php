@@ -354,8 +354,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				} elseif ( is_float( $value ) ) {
 					$sanitized[ $key ] = (float) $value;
 				} elseif ( is_string( $value ) ) {
-					// Use esc_url_raw for values that look like URLs.
-					if ( preg_match( '/^https?:\/\//i', $value ) ) {
+					// Use esc_url_raw only for single-URL values. Multi-token strings
+					// that merely start with a URL (e.g. space-delimited OAuth scope
+					// lists) must keep their separators intact — esc_url_raw() would
+					// encode every space as %20 and corrupt the value.
+					if ( preg_match( '/^https?:\/\/[^\s]+$/i', trim( $value ) ) ) {
 						$sanitized[ $key ] = esc_url_raw( $value );
 					} elseif ( $this->is_secret_field( $key ) ) {
 						// Secret fields: trim whitespace only; do not strip
