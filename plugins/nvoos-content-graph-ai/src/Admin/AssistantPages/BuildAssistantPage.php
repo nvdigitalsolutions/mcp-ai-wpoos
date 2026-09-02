@@ -165,7 +165,7 @@ class BuildAssistantPage {
 				'icon'  => 'dashicons-admin-settings',
 			),
 			'advanced'      => array(
-				'title' => __( 'Advanced', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ),
+				'title' => __( 'Advanced', 'nvoos-content-graph-ai' ),
 				'icon'  => 'dashicons-admin-generic',
 			),
 		);
@@ -236,7 +236,7 @@ class BuildAssistantPage {
 		<div class="nvoos-cg-tab-content nvoos-cg-manual-tab">
 			<div class="nvoos-cg-section">
 				<h2><?php esc_html_e( 'Create Assistant Manually', 'nvoos-content-graph-ai' ); ?></h2>
-				<p class="description"><?php esc_html_e( 'Fill in the form below to create a new AI assistant with custom settings.', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Fill in the form below to create a new AI assistant with custom settings.', 'nvoos-content-graph-ai' ); ?></p>
 
 				<form id="nvoos-cg-create-assistant-form" class="nvoos-cg-assistant-form">
 					<table class="form-table" role="presentation">
@@ -490,7 +490,7 @@ class BuildAssistantPage {
 		return array(
 			'tax_advisor'              => __( 'Tax Advisor', 'nvoos-content-graph-ai' ),
 			'accountant'               => __( 'Accountant', 'nvoos-content-graph-ai' ),
-			'bookkeeper'               => __( 'Bookkeeper', 'nvoos-content-graph-ai' ),
+			'bookkeeper'               => __( 'Bookkeeper', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ),
 			'lawyer'                   => __( 'Lawyer', 'nvoos-content-graph-ai' ),
 			'legal_advisor'            => __( 'Legal Advisor', 'nvoos-content-graph-ai' ),
 			'customs_broker'           => __( 'Customs Broker', 'nvoos-content-graph-ai' ),
@@ -605,7 +605,7 @@ class BuildAssistantPage {
 					<div class="nvoos-cg-config-card">
 						<span class="dashicons dashicons-admin-users"></span>
 						<h3><?php esc_html_e( 'Professional Templates', 'nvoos-content-graph-ai' ); ?></h3>
-						<p><?php esc_html_e( 'Manage professional templates that define roles, tools, and knowledge bases for assistants.', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ); ?></p>
+						<p><?php esc_html_e( 'Manage professional templates that define roles, tools, and knowledge bases for assistants.', 'nvoos-content-graph-ai' ); ?></p>
 						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ); ?>" class="button button-secondary">
 							<?php esc_html_e( 'Manage Templates', 'nvoos-content-graph-ai' ); ?>
 						</a>
