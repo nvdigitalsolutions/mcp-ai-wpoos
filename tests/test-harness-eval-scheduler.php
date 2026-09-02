@@ -13,12 +13,16 @@
  * @license   GPL-3.0-or-later
  */
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- Test-only verifier fixture shares this file with its suite.
 if ( ! class_exists( 'WP_MCP_AI_Test_Harness_Trivial_Verifier' ) ) {
 	/**
 	 * Always-passes verifier used purely to satisfy the eval-case
 	 * `verifier_slug` requirement in scheduler tests.
 	 */
 	class WP_MCP_AI_Test_Harness_Trivial_Verifier extends WP_MCP_AI_Verifier_Base {
+		/**
+		 * Constructor.
+		 */
 		public function __construct() {
 			$this->slug                 = 'wp_mcp_ai_test_harness_trivial';
 			$this->kind                 = 'rule';
@@ -30,6 +34,13 @@ if ( ! class_exists( 'WP_MCP_AI_Test_Harness_Trivial_Verifier' ) ) {
 				'allowed_domains'      => array(),
 			);
 		}
+		/**
+		 * Always pass.
+		 *
+		 * @param array $subject Verification subject.
+		 * @param array $context Verification context.
+		 * @return array Pass result.
+		 */
 		public function verify( array $subject, array $context = array() ) {
 			return $this->result_pass( 1.0, 1.0, array() );
 		}
@@ -48,6 +59,9 @@ class Test_Harness_Eval_Scheduler extends WP_UnitTestCase {
 	 */
 	private $assistant_id;
 
+	/**
+	 * Set up fixtures and registries for each test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -78,18 +92,27 @@ class Test_Harness_Eval_Scheduler extends WP_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_harness_eval_generator' );
 	}
 
+	/**
+	 * Tear down test state.
+	 */
 	public function tearDown(): void {
 		remove_all_filters( 'wp_mcp_ai_harness_eval_generator' );
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
 
+	/**
+	 * Running an unknown suite returns a WP_Error.
+	 */
 	public function test_unknown_suite_returns_wp_error() {
 		$result = WP_MCP_AI_Harness_Eval_Scheduler::run_suite_for_assistant( $this->assistant_id, 'no_such_suite' );
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertSame( 'wp_mcp_ai_harness_eval_unknown_suite', $result->get_error_code() );
 	}
 
+	/**
+	 * A registered suite without a generator returns a skip error.
+	 */
 	public function test_missing_generator_returns_skip_error() {
 		$this->register_minimal_suite( 'demo_suite' );
 
@@ -98,12 +121,15 @@ class Test_Harness_Eval_Scheduler extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_harness_eval_no_generator', $result->get_error_code() );
 	}
 
+	/**
+	 * A successful run records run summaries and per-assistant meta.
+	 */
 	public function test_success_path_records_run_and_last_run_meta() {
 		$this->register_minimal_suite( 'demo_suite' );
 
 		add_filter(
 			'wp_mcp_ai_harness_eval_generator',
-			static function ( $generator ) {
+			static function () {
 				return static function () {
 					return array( 'output' => 'hello world' );
 				};
@@ -126,12 +152,18 @@ class Test_Harness_Eval_Scheduler extends WP_UnitTestCase {
 		$this->assertCount( 1, $runs );
 	}
 
+	/**
+	 * Invalid arguments return a WP_Error.
+	 */
 	public function test_invalid_args_returns_wp_error() {
 		$result = WP_MCP_AI_Harness_Eval_Scheduler::run_suite_for_assistant( 0, 'demo_suite' );
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertSame( 'wp_mcp_ai_harness_eval_invalid_args', $result->get_error_code() );
 	}
 
+	/**
+	 * Tick skips assistants without an enabled profile.
+	 */
 	public function test_tick_skips_assistants_without_enabled_profile() {
 		$this->register_minimal_suite( 'demo_suite' );
 		// Profile is enabled=false but evals_enabled is populated — must skip.
@@ -157,6 +189,9 @@ class Test_Harness_Eval_Scheduler extends WP_UnitTestCase {
 		$this->assertSame( 0, $summary['errors'] );
 	}
 
+	/**
+	 * Tick processes enabled assistants that have a generator.
+	 */
 	public function test_tick_processes_enabled_assistants_with_generator() {
 		$this->register_minimal_suite( 'demo_suite' );
 		WP_MCP_AI_Harness_Profile::save(
@@ -182,6 +217,9 @@ class Test_Harness_Eval_Scheduler extends WP_UnitTestCase {
 		$this->assertSame( 0, $summary['errors'] );
 	}
 
+	/**
+	 * Tick counts a missing generator as skipped.
+	 */
 	public function test_tick_counts_missing_generator_as_skip() {
 		$this->register_minimal_suite( 'demo_suite' );
 		WP_MCP_AI_Harness_Profile::save(
@@ -200,6 +238,9 @@ class Test_Harness_Eval_Scheduler extends WP_UnitTestCase {
 		$this->assertSame( 0, $summary['errors'] );
 	}
 
+	/**
+	 * Metabox save persists evals_enabled from the form.
+	 */
 	public function test_metabox_save_persists_evals_enabled_from_form() {
 		$this->register_minimal_suite( 'demo_suite' );
 
