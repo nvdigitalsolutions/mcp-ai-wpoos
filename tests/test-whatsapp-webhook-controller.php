@@ -1027,8 +1027,11 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	 *
 	 * When App Secret is not set we skip HMAC validation rather than blocking
 	 * all incoming messages, while logging a security warning.
+	/**
+	 * Test that validate_webhook_signature rejects the request when no App
+	 * Secret is configured.
 	 */
-	public function test_validate_webhook_signature_allows_when_no_app_secret() {
+	public function test_validate_webhook_signature_rejects_when_no_app_secret() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$this->markTestSkipped( 'Pro addon not available' );
 			return;
@@ -1065,10 +1068,11 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$request->set_body( '{"object":"whatsapp_business_account","entry":[]}' );
 		$request->set_header( 'Content-Type', 'application/json' );
 
-		// Without App Secret the permission callback must return true so that
-		// incoming messages are processed rather than rejected.
+		// Without a configured App Secret the webhook cannot be authenticated
+		// and must be rejected instead of acting as an open relay.
 		$result = $controller->validate_webhook_signature( $request );
-		$this->assertTrue( $result, 'validate_webhook_signature should return true when App Secret is not configured' );
+		$this->assertInstanceOf( 'WP_Error', $result, 'validate_webhook_signature should reject when App Secret is not configured' );
+		$this->assertEquals( 'rest_forbidden', $result->get_error_code() );
 	}
 
 	/**
@@ -1668,13 +1672,13 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'dispatch_whatsapp_ai_reply' );
 		$method->setAccessible( true );
 
-		$scheduled_before = wp_next_scheduled( 'wp_mcp_ai_whatsapp_reply' );
+		$scheduled_before = wp_next_scheduled( 'wp_mcp_ai_whatsapp_send_ai_reply' );
 
 		$message_data = array(
-			'id'   => 'wamid.test123',
-			'from' => '+15550001234',
-			'type' => 'text',
-			'text' => array( 'body' => 'Hello group' ),
+			'id'      => 'wamid.test123',
+			'from'    => '+15550001234',
+			'type'    => 'text',
+			'content' => 'Hello group',
 		);
 
 		// Create a dummy assistant post so there is an assigned_assistant_ids array.
@@ -1692,8 +1696,8 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$cron_args = null;
 		$crons     = _get_cron_array();
 		foreach ( $crons as $timestamp => $hooks ) {
-			if ( isset( $hooks['wp_mcp_ai_whatsapp_reply'] ) ) {
-				foreach ( $hooks['wp_mcp_ai_whatsapp_reply'] as $cron_entry ) {
+			if ( isset( $hooks['wp_mcp_ai_whatsapp_send_ai_reply'] ) ) {
+				foreach ( $hooks['wp_mcp_ai_whatsapp_send_ai_reply'] as $cron_entry ) {
 					$cron_args = $cron_entry['args'][0];
 					break 2;
 				}
@@ -1752,10 +1756,10 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$message_data = array(
-			'id'   => 'wamid.individual456',
-			'from' => $sender_phone,
-			'type' => 'text',
-			'text' => array( 'body' => 'Hello there' ),
+			'id'      => 'wamid.individual456',
+			'from'    => $sender_phone,
+			'type'    => 'text',
+			'content' => 'Hello there',
 		);
 
 		$assistant_id = wp_insert_post(
@@ -1772,8 +1776,8 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$cron_args = null;
 		$crons     = _get_cron_array();
 		foreach ( $crons as $timestamp => $hooks ) {
-			if ( isset( $hooks['wp_mcp_ai_whatsapp_reply'] ) ) {
-				foreach ( $hooks['wp_mcp_ai_whatsapp_reply'] as $cron_entry ) {
+			if ( isset( $hooks['wp_mcp_ai_whatsapp_send_ai_reply'] ) ) {
+				foreach ( $hooks['wp_mcp_ai_whatsapp_send_ai_reply'] as $cron_entry ) {
 					$cron_args = $cron_entry['args'][0];
 					break 2;
 				}
@@ -1821,7 +1825,13 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 							'role'       => 'assistant',
 							'content'    => null,
 							'tool_calls' => array(
-								array( 'id' => 'call_1', 'function' => array( 'name' => 'web_search', 'arguments' => '{}' ) ),
+								array(
+									'id'       => 'call_1',
+									'function' => array(
+										'name'      => 'web_search',
+										'arguments' => '{}',
+									),
+								),
 							),
 						),
 						'finish_reason' => 'tool_calls',
@@ -1941,7 +1951,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 			}
 		}
 
-		$controller     = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$controller       = new WP_MCP_AI_WhatsApp_Webhook_Controller();
 		$assistant_config = array( 'max_agentic_iterations' => 3 );
 
 		$result = $controller->get_whatsapp_max_agentic_iterations( 1, $assistant_config );
@@ -2006,20 +2016,37 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 
 		[ $controller, $method ] = $pair;
 
-		$segments = array( array( 'type' => 'text', 'text' => 'Hello from Gemini!' ) );
+		$segments = array(
+			array(
+				'type' => 'text',
+				'text' => 'Hello from Gemini!',
+			),
+		);
 		$this->assertEquals( 'Hello from Gemini!', $method->invoke( $controller, $segments ) );
 
 		// Multiple text segments are joined with newline.
 		$multi = array(
-			array( 'type' => 'text', 'text' => 'Part A.' ),
-			array( 'type' => 'text', 'text' => 'Part B.' ),
+			array(
+				'type' => 'text',
+				'text' => 'Part A.',
+			),
+			array(
+				'type' => 'text',
+				'text' => 'Part B.',
+			),
 		);
 		$this->assertEquals( "Part A.\nPart B.", $method->invoke( $controller, $multi ) );
 
 		// Non-text segments are silently skipped.
 		$mixed = array(
-			array( 'type' => 'image_url', 'image_url' => array( 'url' => 'https://example.com/img.png' ) ),
-			array( 'type' => 'text', 'text' => 'Only text.' ),
+			array(
+				'type'      => 'image_url',
+				'image_url' => array( 'url' => 'https://example.com/img.png' ),
+			),
+			array(
+				'type' => 'text',
+				'text' => 'Only text.',
+			),
 		);
 		$this->assertEquals( 'Only text.', $method->invoke( $controller, $mixed ) );
 	}
@@ -2083,8 +2110,14 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		[ $controller, $method ] = $pair;
 
 		$history = array(
-			array( 'role' => 'user', 'content' => 'Hello!' ),
-			array( 'role' => 'assistant', 'content' => 'Hi there!' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello!',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'Hi there!',
+			),
 		);
 
 		$result = $method->invoke( $controller, $history );
@@ -2112,11 +2145,17 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		[ $controller, $method ] = $pair;
 
 		$history = array(
-			array( 'role' => 'user', 'content' => 'Search for flights.' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Search for flights.',
+			),
 			array(
 				'role'    => 'assistant',
 				'content' => array(
-					array( 'type' => 'text', 'text' => 'I found some flights.' ),
+					array(
+						'type' => 'text',
+						'text' => 'I found some flights.',
+					),
 				),
 			),
 		);
@@ -2140,10 +2179,22 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		[ $controller, $method ] = $pair;
 
 		$history = array(
-			array( 'role' => 'user', 'content' => 'Hello.' ),
-			array( 'role' => 'assistant', 'content' => null ),
-			array( 'role' => 'assistant', 'content' => array() ),
-			array( 'role' => 'assistant', 'content' => 'Valid reply.' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello.',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => null,
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => array(),
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'Valid reply.',
+			),
 		);
 
 		$result = $method->invoke( $controller, $history );
@@ -2181,7 +2232,10 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 						'message'       => array(
 							'role'    => 'assistant',
 							'content' => array(
-								array( 'type' => 'text', 'text' => 'Hello from Gemini via WhatsApp!' ),
+								array(
+									'type' => 'text',
+									'text' => 'Hello from Gemini via WhatsApp!',
+								),
 							),
 						),
 						'finish_reason' => 'stop',
@@ -2222,7 +2276,10 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 			'data'         => array(
 				'choices'               => array(
 					array(
-						'message'       => array( 'role' => 'assistant', 'content' => null ),
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => null,
+						),
 						'finish_reason' => 'tool_calls',
 					),
 				),
@@ -2230,7 +2287,10 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 					array(
 						'role'    => 'assistant',
 						'content' => array(
-							array( 'type' => 'text', 'text' => 'Tool result summary from Ollama.' ),
+							array(
+								'type' => 'text',
+								'text' => 'Tool result summary from Ollama.',
+							),
 						),
 					),
 				),
