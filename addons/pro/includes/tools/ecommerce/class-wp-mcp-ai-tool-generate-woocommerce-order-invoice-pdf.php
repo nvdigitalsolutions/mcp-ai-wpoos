@@ -1,6 +1,6 @@
 <?php
 /**
- * Generate Invoice PDF Tool
+ * Generate WooCommerce Order Invoice PDF Tool
  *
  * Creates professional PDF invoices for WooCommerce orders with
  * customizable branding and formatting.
@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_WooCommerce_Order_Invoice_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
 	 * {@inheritdoc}
