@@ -92,10 +92,9 @@ class Test_OpenAI_Phase_4_Tools extends WP_UnitTestCase {
 
 		$result = $tool->execute( array(), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+		$this->assertSame( 'The image_id parameter is required.', $result->get_error_message() );
 	}
 
 	/**
@@ -105,12 +104,19 @@ class Test_OpenAI_Phase_4_Tools extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$tool     = $registry->get_tool( 'edit_openai_image' );
 
-		$result = $tool->execute( array( 'image_id' => 123 ), array() );
+		// A valid image attachment is required so execution reaches the
+		// prompt validation (image validation fails earlier otherwise).
+		$attachment_id = self::factory()->attachment->create_object(
+			'image.jpg',
+			0,
+			array( 'post_mime_type' => 'image/jpeg' )
+		);
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
+		$result = $tool->execute( array( 'image_id' => $attachment_id ), array() );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+		$this->assertSame( 'The prompt parameter is required.', $result->get_error_message() );
 	}
 
 	/**
@@ -122,10 +128,9 @@ class Test_OpenAI_Phase_4_Tools extends WP_UnitTestCase {
 
 		$result = $tool->execute( array(), array() );
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+		$this->assertSame( 'The image_id parameter is required.', $result->get_error_message() );
 	}
 
 	/**
