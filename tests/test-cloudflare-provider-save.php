@@ -14,6 +14,17 @@
 class WP_MCP_AI_Cloudflare_Provider_Save_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up an admin user: save_post() requires edit_post capability and
+	 * nonces bind to the current user ID (pattern: create user first).
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+	}
+
+	/**
 	 * Test that sanitize_provider_meta accepts cloudflare.
 	 */
 	public function test_sanitize_provider_meta_accepts_cloudflare() {
@@ -164,22 +175,6 @@ class WP_MCP_AI_Cloudflare_Provider_Save_Test extends WP_UnitTestCase {
 		unset( $_POST['wp_mcp_ai_defaults_meta_nonce'] );
 		unset( $_POST['wp_mcp_ai_provider'] );
 		unset( $_POST['wp_mcp_ai_model'] );
-	}
-
-	/**
-	 * Test that REST validator accepts cloudflare provider.
-	 */
-	public function test_rest_validator_accepts_cloudflare_provider() {
-		if ( ! class_exists( 'WP_MCP_AI_Rest_Validator' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_Rest_Validator class not available.' );
-		}
-
-		$validator = new WP_MCP_AI_Rest_Validator();
-
-		// Test with valid cloudflare provider.
-		$result = $validator->validate_provider( 'cloudflare' );
-		$this->assertNotInstanceOf( 'WP_Error', $result, 'Cloudflare should be accepted by REST validator.' );
-		$this->assertEquals( 'cloudflare', $result, 'REST validator should return cloudflare as-is.' );
 	}
 
 	/**

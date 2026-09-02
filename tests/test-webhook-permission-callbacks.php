@@ -54,19 +54,19 @@ class Test_Webhook_Permission_Callbacks extends WP_UnitTestCase {
 	 * @group a2a
 	 */
 	public function test_agent_card_blocked_when_a2a_disabled() {
-		if ( ! class_exists( 'WP_MCP_AI_A2A_REST_Controller' ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_REST_A2A_Controller' ) ) {
 			$file = defined( 'WP_MCP_AI_PATH' )
 				? WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php'
 				: '';
 			if ( '' === $file || ! file_exists( $file ) ) {
-				$this->markTestSkipped( 'WP_MCP_AI_A2A_REST_Controller class not available.' );
+				$this->markTestSkipped( 'WP_MCP_AI_REST_A2A_Controller class not available.' );
 			}
 			require_once $file;
 		}
 
 		update_option( self::SETTINGS_OPTION, array( 'enable_a2a_server' => 0 ) );
 
-		$controller = new WP_MCP_AI_A2A_REST_Controller();
+		$controller = new WP_MCP_AI_REST_A2A_Controller( WP_MCP_AI_REST::get_instance() );
 		$request    = new WP_REST_Request( 'GET', '/mcp-ai/v1/a2a/agent-card' );
 		$result     = $controller->permissions_check_agent_card( $request );
 
@@ -81,13 +81,13 @@ class Test_Webhook_Permission_Callbacks extends WP_UnitTestCase {
 	 * @group a2a
 	 */
 	public function test_agent_card_allowed_when_a2a_enabled() {
-		if ( ! class_exists( 'WP_MCP_AI_A2A_REST_Controller' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_A2A_REST_Controller class not available.' );
+		if ( ! class_exists( 'WP_MCP_AI_REST_A2A_Controller' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_REST_A2A_Controller class not available.' );
 		}
 
 		update_option( self::SETTINGS_OPTION, array( 'enable_a2a_server' => 1 ) );
 
-		$controller = new WP_MCP_AI_A2A_REST_Controller();
+		$controller = new WP_MCP_AI_REST_A2A_Controller( WP_MCP_AI_REST::get_instance() );
 		$request    = new WP_REST_Request( 'GET', '/mcp-ai/v1/a2a/agent-card' );
 		$result     = $controller->permissions_check_agent_card( $request );
 

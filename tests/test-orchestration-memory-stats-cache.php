@@ -14,7 +14,7 @@
 /**
  * Test agent memory stats cache functionality.
  */
-class Test_Orchestration_Memory_Stats_Cache extends WP_UnitTestCase {
+class Test_Orchestration_Memory_Stats_Cache extends WP_Ajax_UnitTestCase {
 
 	/**
 	 * Instance of the dashboard class
@@ -217,8 +217,10 @@ class Test_Orchestration_Memory_Stats_Cache extends WP_UnitTestCase {
 				'agent_id'   => 789,
 				'context_id' => $context_id,
 				'action'     => 'update',
-				'updates'    => array(
-					'data.content' => 'Updated content',
+				'options'    => array(
+					'update_data' => array(
+						'content' => 'Updated content',
+					),
 				),
 			),
 			array()

@@ -97,25 +97,20 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	 * @group api-performance
 	 */
 	public function test_rest_api_response_time() {
-		// Register a test endpoint.
-		add_action(
-			'rest_api_init',
-			function () {
-				register_rest_route(
-					'mcp-ai-test/v1',
-					'/test',
-					array(
-						'methods'             => 'GET',
-						'callback'            => function () {
-							return array( 'status' => 'success' );
-						},
-						'permission_callback' => '__return_true',
-					)
-				);
-			}
+		// Register directly on the server without re-firing third-party REST hooks.
+		rest_get_server()->register_route(
+			'mcp-ai-test/v1',
+			'/test',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => function () {
+						return array( 'status' => 'success' );
+					},
+					'permission_callback' => '__return_true',
+				),
+			)
 		);
-
-		rest_get_server()->register_routes();
 
 		$start_time = microtime( true );
 

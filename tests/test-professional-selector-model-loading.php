@@ -59,6 +59,31 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
+	 * Render the selector and extract its signed policy token.
+	 *
+	 * @param string|int $assistant   Assistant identifier.
+	 * @param bool       $allow_guests Whether guest rendering is allowed.
+	 * @return string
+	 */
+	private function get_policy_token( $assistant, $allow_guests = false ) {
+		$output = $this->shortcode->render_shortcode(
+			array(
+				'assistant'    => (string) $assistant,
+				'allow_guests' => $allow_guests ? 'true' : 'false',
+			)
+		);
+
+		$matched = preg_match( '/<script[^>]+data-selector-config="[^"]+"[^>]*>\s*(.*?)\s*<\/script>/s', $output, $matches );
+		$this->assertSame( 1, $matched, 'Selector output should contain JSON configuration.' );
+
+		$config = json_decode( $matches[1], true );
+		$this->assertIsArray( $config );
+		$this->assertArrayHasKey( 'policyToken', $config );
+
+		return $config['policyToken'];
+	}
+
+	/**
 	 * Test that the wp_ajax hook is registered for logged-in users.
 	 */
 	public function test_ajax_hook_registered_for_logged_in_users() {
@@ -350,29 +375,20 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 	public function test_render_chat_rejects_invalid_nonce() {
 		wp_set_current_user( $this->user_id );
 
-		$_POST['nonce']          = 'invalid_nonce';
-		$_POST['shortcode_atts'] = 'assistant="profession_123"';
+		$_POST['nonce'] = 'invalid_nonce';
 
-		try {
-			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			// Expected.
-			unset( $e );
-		}
-
-		$response = json_decode( $this->_last_response, true );
-
-		$this->assertFalse( $response['success'], 'Request with invalid nonce should fail' );
+		$this->expectException( WPAjaxDieStopException::class );
+		$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
 	}
 
 	/**
-	 * Test that the render chat handler rejects requests without shortcode attributes.
+	 * Test that the render chat handler rejects requests without a policy token.
 	 */
-	public function test_render_chat_rejects_missing_shortcode_atts() {
+	public function test_render_chat_rejects_missing_policy_token() {
 		wp_set_current_user( $this->user_id );
 
 		$_POST['nonce'] = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
-		// Intentionally omit shortcode_atts parameter.
+		// Intentionally omit the signed policy token.
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
@@ -383,14 +399,10 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 
 		$response = json_decode( $this->_last_response, true );
 
-		$this->assertFalse( $response['success'], 'Request without shortcode_atts should fail' );
+		$this->assertFalse( $response['success'], 'Request without a policy token should fail' );
 		$this->assertArrayHasKey( 'data', $response );
 		$this->assertArrayHasKey( 'message', $response['data'] );
-		$this->assertStringContainsStringIgnoringCase(
-			'shortcode',
-			$response['data']['message'],
-			'Error message should mention invalid/missing shortcode attributes'
-		);
+		$this->assertSame( 'Missing policy token.', $response['data']['message'] );
 	}
 
 	/**
@@ -400,8 +412,8 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		// Ensure no user is logged in.
 		wp_set_current_user( 0 );
 
-		$_POST['nonce']          = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
-		$_POST['shortcode_atts'] = 'assistant="profession_123" allow_guests="true"';
+		$_POST['nonce']        = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
+		$_POST['policy_token'] = $this->get_policy_token( 'profession_123', true );
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
@@ -447,8 +459,8 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			)
 		);
 
-		$_POST['nonce']          = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
-		$_POST['shortcode_atts'] = 'assistant="' . $assistant_id . '"';
+		$_POST['nonce']        = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
+		$_POST['policy_token'] = $this->get_policy_token( $assistant_id );
 
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );

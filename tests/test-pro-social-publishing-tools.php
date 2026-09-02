@@ -135,7 +135,7 @@ class WP_MCP_AI_Social_Publishing_Tools_Test extends WP_UnitTestCase {
 
 		$tool = $registry->get_tool( 'post_google_business_update' );
 
-		$this->assertInstanceOf( WP_MCP_AI_Tool_Post_Google_Business_Update::class, $tool );
+		$this->assertInstanceOf( WP_MCP_AI_Pro_Tool_Post_Google_Business_Update::class, $tool );
 
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 

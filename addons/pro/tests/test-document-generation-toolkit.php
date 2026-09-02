@@ -540,8 +540,9 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 
 		$this->assertIsArray( $schema );
 		$this->assertArrayHasKey( 'properties', $schema );
-		$this->assertArrayHasKey( 'operation', $schema['properties'] );
+		$this->assertArrayHasKey( 'source', $schema['properties'] );
 		$this->assertArrayHasKey( 'required', $schema );
+		$this->assertContains( 'source', $schema['required'] );
 	}
 
 	/**
@@ -574,17 +575,11 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 				require_once $class_file;
 
 				if ( class_exists( $tool_class ) ) {
-					$tool       = new $tool_class();
-					$definition = $tool->get_definition();
+					$tool = new $tool_class();
 
-					$this->assertArrayHasKey(
-						'required_capability',
-						$definition,
-						"$tool_class should have required_capability defined"
-					);
 					$this->assertNotEmpty(
-						$definition['required_capability'],
-						"$tool_class should have a non-empty required_capability"
+						$tool->get_required_capability(),
+						"$tool_class should have a non-empty required capability"
 					);
 				}
 			}
