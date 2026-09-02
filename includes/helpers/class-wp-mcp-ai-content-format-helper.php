@@ -441,14 +441,26 @@ class WP_MCP_AI_Content_Format_Helper {
 		}
 
 		if ( defined( 'RANK_MATH_VERSION' ) ) {
-			self::$seo_plugin = self::SEO_RANK_MATH;
+			$detected = self::SEO_RANK_MATH;
 		} elseif ( defined( 'WPSEO_VERSION' ) ) {
-			self::$seo_plugin = self::SEO_YOAST;
+			$detected = self::SEO_YOAST;
 		} elseif ( defined( 'SEOPRESS_VERSION' ) ) {
-			self::$seo_plugin = self::SEO_SEOPRESS;
+			$detected = self::SEO_SEOPRESS;
 		} else {
-			self::$seo_plugin = self::SEO_NONE;
+			$detected = self::SEO_NONE;
 		}
+
+		/**
+		 * Filter the detected SEO plugin slug before it is cached.
+		 *
+		 * Lets hosts and tests override detection (e.g. to force "none" when
+		 * an SEO plugin's constants are defined but it should be ignored).
+		 *
+		 * @since 1.10.0
+		 *
+		 * @param string $detected One of the SEO_* constants.
+		 */
+		self::$seo_plugin = apply_filters( 'wp_mcp_ai_detected_seo_plugin', $detected );
 
 		return self::$seo_plugin;
 	}
@@ -530,7 +542,19 @@ class WP_MCP_AI_Content_Format_Helper {
 	 * @return bool
 	 */
 	public static function is_elementor_active() {
-		return defined( 'ELEMENTOR_VERSION' ) || class_exists( '\\Elementor\\Plugin', false );
+		$active = defined( 'ELEMENTOR_VERSION' ) || class_exists( '\\Elementor\\Plugin', false );
+
+		/**
+		 * Filter whether Elementor is treated as active.
+		 *
+		 * Lets hosts and tests override detection (e.g. to simulate a site
+		 * without Elementor even when its constants are defined).
+		 *
+		 * @since 1.10.0
+		 *
+		 * @param bool $active Whether Elementor is active.
+		 */
+		return (bool) apply_filters( 'wp_mcp_ai_elementor_active', $active );
 	}
 
 	/**
