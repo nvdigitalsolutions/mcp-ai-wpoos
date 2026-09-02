@@ -26,6 +26,14 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Chat requests require a configured provider key before dispatch.
+		// The mocked HTTP layer below intercepts the network call, so the
+		// value only needs to be non-empty.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'openai_api_key' => 'sk-test-stress-suite' )
+		);
+
 		// Create admin user with manage_options capability for REST API calls.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
@@ -127,8 +135,9 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 			)
 		);
 
-		update_post_meta( $assistant_id, 'provider', 'openai' );
-		update_post_meta( $assistant_id, 'model', 'gpt-3.5-turbo' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, 'openai' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_MODEL, 'gpt-4o-mini' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT, 'You are a helpful assistant.' );
 
 		$messages_sent = 0;
 
@@ -137,7 +146,15 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 			$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 			$request->set_param( 'assistant_id', $assistant_id );
-			$request->set_param( 'message', 'Test message ' . $i );
+			$request->set_param(
+				'messages',
+				array(
+					array(
+						'role'    => 'user',
+						'content' => 'Test message ' . $i,
+					),
+				)
+			);
 
 			// Mock the chat request (don't actually call external API).
 			add_filter(
@@ -345,12 +362,23 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 
 		$successful_executions = 0;
 
+		// The tools route scopes execution to an assistant's tool allowlist.
+		$assistant_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Tool Stress Assistant',
+			)
+		);
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'get_site_summary' ) );
+
 		// Simulate concurrent tool executions.
 		for ( $i = 0; $i < $tool_count; $i++ ) {
 			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
 			$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-			$request->set_param( 'tool', 'list_posts' );
-			$request->set_param( 'arguments', array( 'post_type' => 'post' ) );
+			$request->set_param( 'assistant_id', $assistant_id );
+			$request->set_param( 'tool', 'get_site_summary' );
+			$request->set_param( 'arguments', array() );
 
 			$response = rest_do_request( $request );
 

@@ -183,15 +183,16 @@ class WP_MCP_AI_Auth_Split_Brain_Test extends WP_UnitTestCase {
 	 * Test mesh API key authentication for /mcp endpoint.
 	 */
 	public function test_mcp_endpoint_accepts_mesh_api_key() {
-		// Enable mesh networking and set an inbound key.
+		// Enable mesh networking and set an inbound key. Production generates
+		// keys with the mesh_ prefix, which validate_mesh_key() requires.
 		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_mesh']          = true;
-		$settings['mesh_inbound_api_key'] = 'test-mesh-key-123456';
+		$settings['mesh_inbound_api_key'] = 'mesh_test-key-123456';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Attempt to access /mcp with mesh API key.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
-		$request->set_header( 'X-WP-MCP-AI-Mesh-Key', 'test-mesh-key-123456' );
+		$request->set_header( 'X-WP-MCP-AI-Mesh-Key', 'mesh_test-key-123456' );
 		$request->set_param( 'jsonrpc', '2.0' );
 		$request->set_param( 'id', 1 );
 		$request->set_param( 'method', 'initialize' );
