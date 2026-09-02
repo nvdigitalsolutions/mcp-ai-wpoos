@@ -52,7 +52,7 @@ class Test_Performance_Reporting_Service extends WP_UnitTestCase {
 	public function test_uses_settings_repository() {
 		// Create a mock settings repository.
 		$mock_repo = $this->getMockBuilder( 'WP_MCP_AI_Settings_Repository' )
-			->setMethods( array( 'get', 'update' ) )
+			->onlyMethods( array( 'get', 'update' ) )
 			->getMock();
 
 		// Expect get() to be called.
@@ -116,7 +116,7 @@ class Test_Performance_Reporting_Service extends WP_UnitTestCase {
 
 		// Create a mock settings repository.
 		$mock_repo = $this->getMockBuilder( 'WP_MCP_AI_Settings_Repository' )
-			->setMethods( array( 'update' ) )
+			->onlyMethods( array( 'update' ) )
 			->getMock();
 
 		// Expect update() to be called with baselines data.

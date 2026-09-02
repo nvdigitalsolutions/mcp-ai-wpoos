@@ -225,7 +225,7 @@ class Test_Necessity_Gate extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->register_tool( $this->create_mock_tool( array( 'read-only', 'cacheable' ), 'test_safe_tool' ) );
 
-		$result = WP_MCP_AI_Necessity_Gate::evaluate( null, 'test_safe_tool', array() );
+		$result = WP_MCP_AI_Necessity_Gate::evaluate( null, 'test_safe_tool', array(), array() );
 
 		// Should return null (allow) since the gate is disabled by default.
 		$this->assertNull( $result );
@@ -254,9 +254,11 @@ class Test_Necessity_Gate extends WP_UnitTestCase {
 	 * @return WP_MCP_AI_Tool_Interface
 	 */
 	private function create_mock_tool( array $flags = array(), $slug = 'test_tool' ) {
-		$tool = $this->getMockBuilder( 'stdClass' )
-			->addMethods( array( 'get_slug', 'get_name', 'get_description', 'get_parameters_schema', 'get_required_capability', 'execute', 'get_capability_flags' ) )
-			->getMock();
+		// The gate type-checks both interfaces, so the mock must genuinely
+		// implement them (a stdClass mock fails the instanceof checks).
+		$tool = $this->createMockForIntersectionOfInterfaces(
+			array( 'WP_MCP_AI_Tool_Interface', 'WP_MCP_AI_Tool_Capability_Flags_Interface' )
+		);
 
 		$tool->method( 'get_slug' )->willReturn( $slug );
 		$tool->method( 'get_capability_flags' )->willReturn( $flags );

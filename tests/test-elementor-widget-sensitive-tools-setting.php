@@ -98,8 +98,8 @@ class WP_MCP_AI_Elementor_Widget_Sensitive_Tools_Setting_Test extends WP_UnitTes
 		// Verify control properties.
 		$control = $controls['allow_sensitive_tools'];
 		$this->assertEquals( 'switcher', $control['type'], 'Control should be a switcher' );
-		$this->assertEquals( 'true', $control['return_value'], 'Return value should be "true"' );
-		$this->assertEquals( 'false', $control['default'], 'Default value should be "false"' );
+		$this->assertEquals( 'yes', $control['return_value'], 'Return value should be "yes"' );
+		$this->assertEquals( '', $control['default'], 'Default value should be empty' );
 	}
 
 	/**
@@ -174,37 +174,49 @@ class WP_MCP_AI_Elementor_Widget_Sensitive_Tools_Setting_Test extends WP_UnitTes
 			return;
 		}
 
-		// Mock widget settings with allow_sensitive_tools enabled.
+		// Widget settings with allow_sensitive_tools enabled. Elementor 4.x
+		// removed the Controls_Stack::$settings property, so drive the
+		// settings through a partial mock of get_settings_for_display().
 		$mock_settings = array(
 			'assistant'             => (string) $this->assistant_id,
 			'allow_guests'          => 'false',
 			'save_transcript'       => 'true',
 			'enable_streaming'      => 'false',
-			'allow_sensitive_tools' => 'true',
+			'allow_sensitive_tools' => 'yes',
 		);
 
-		// Use reflection to access protected render method.
-		$reflection = new ReflectionClass( $this->widget );
-		$method     = $reflection->getMethod( 'get_settings_for_display' );
-		$method->setAccessible( true );
+		$widget = $this->getMockBuilder( WP_MCP_AI_Elementor_Widget::class )
+			->onlyMethods( array( 'get_settings_for_display' ) )
+			->getMock();
+		$widget->method( 'get_settings_for_display' )->willReturn( $mock_settings );
 
-		// Mock the settings.
-		$settings_property = $reflection->getProperty( 'settings' );
-		$settings_property->setAccessible( true );
-		$settings_property->setValue( $this->widget, $mock_settings );
+		// render() is protected; invoke via reflection.
+		$reflection = new ReflectionClass( $widget );
+		$method     = $reflection->getMethod( 'render' );
+		$method->setAccessible( true );
 
 		// Start output buffering to capture render output.
 		ob_start();
-		$this->widget->render();
+		$method->invoke( $widget );
 		$output = ob_get_clean();
 
-		// Verify the output contains allow_sensitive_tools in the shortcode.
-		// Note: This assumes the render method generates a shortcode string.
-		// If allow_sensitive_tools is enabled, it should be in the attributes.
+		// The widget must render a chat surface.
+		$this->assertStringContainsString( 'wp-mcp-ai-chat', $output );
+
+		// The per-instance config is attached via wp_add_inline_script() on
+		// the chat script handle — assert the enabled flag made it into the
+		// inline config data.
+		global $wp_scripts;
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertTrue( wp_script_is( $handle, 'registered' ), 'Chat script should be registered' );
+
+		$inline = isset( $wp_scripts->registered[ $handle ]->extra['before'] )
+			? implode( "\n", (array) $wp_scripts->registered[ $handle ]->extra['before'] )
+			: '';
 		$this->assertStringContainsString(
-			'allow_sensitive_tools',
-			$output,
-			'Rendered output should include allow_sensitive_tools attribute when enabled'
+			'allowSensitiveTools',
+			$inline,
+			'Inline config should include allowSensitiveTools when enabled'
 		);
 	}
 }

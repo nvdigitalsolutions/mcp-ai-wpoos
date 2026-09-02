@@ -295,6 +295,6 @@ class Test_Error_Tracking_Service extends WP_UnitTestCase {
 
 		$errors = $this->service->get_recent_errors( 1 );
 
-		$this->assertNotContains( '<script>', $errors[0]['message'], 'Message should be sanitized' );
+		$this->assertStringNotContainsString( '<script>', $errors[0]['message'], 'Message should be sanitized' );
 	}
 }

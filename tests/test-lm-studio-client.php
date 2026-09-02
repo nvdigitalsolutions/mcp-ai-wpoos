@@ -32,6 +32,7 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		// Clear settings.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 	}
 
 	/**
@@ -39,6 +40,7 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		parent::tearDown();
 	}
 
@@ -608,8 +610,16 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 				'lm_studio_endpoint_url' => 'http://localhost:1234',
 			)
 		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		// resolve_model() falls back to the global default_model setting
+		// ('gpt-4.1'); disable the fallback so the missing-model path is
+		// exercised deterministically.
+		add_filter( 'wp_mcp_ai_lm_studio_fallback_model', '__return_empty_string' );
 
 		$result = $this->client->create_completion( 'test prompt' );
+
+		remove_filter( 'wp_mcp_ai_lm_studio_fallback_model', '__return_empty_string' );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_missing_lm_studio_model', $result->get_error_code() );
@@ -1829,6 +1839,10 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			)
 		);
 
+		// Force the buffered wp_remote_post path so pre_http_request can
+		// intercept the request payload deterministically.
+		add_filter( 'wp_mcp_ai_lm_studio_realtime_stream_enabled', '__return_false' );
+
 		$captured_payload  = null;
 		$callback_invoked  = 0;
 		$callback_chunks   = array();
@@ -1895,6 +1909,7 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		);
 
 		remove_all_filters( 'pre_http_request' );
+		remove_filter( 'wp_mcp_ai_lm_studio_realtime_stream_enabled', '__return_false' );
 
 		// Payload must have stream: true.
 		$this->assertNotNull( $captured_payload );
@@ -3018,7 +3033,7 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 						'code'    => 200,
 						'message' => 'OK',
 					),
-					'headers'  => new WP_HTTP_Headers( array( 'x-lm-studio-version' => '0.3.15' ) ),
+					'headers'  => new WpOrg\Requests\Utility\CaseInsensitiveDictionary( array( 'x-lm-studio-version' => '0.3.15' ) ),
 					'body'     => wp_json_encode( array( 'data' => array() ) ),
 				);
 			},

@@ -75,6 +75,16 @@ class Test_WP_MCP_AI_Measurement_Help_Tabs extends WP_UnitTestCase {
 			public function set_help_sidebar( $html ) {
 				$this->sidebar = (string) $html;
 			}
+
+			/**
+			 * WP 6.9+ is_admin() calls $GLOBALS['current_screen']->in_admin();
+			 * implement it so a leaked fake screen can never fatal later suites.
+			 *
+			 * @return bool Always false (front-end context).
+			 */
+			public function in_admin() {
+				return false;
+			}
 		};
 	}
 
