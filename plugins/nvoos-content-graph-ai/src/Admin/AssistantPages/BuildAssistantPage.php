@@ -75,7 +75,7 @@ class BuildAssistantPage {
 		$this->page_hook = add_submenu_page(
 			'edit.php?post_type=' . AssistantPostType::POST_TYPE,
 			__( 'Build Assistant', 'nvoos-content-graph-ai' ),
-			__( 'Build Assistant', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ),
+			__( 'Build Assistant', 'nvoos-content-graph-ai' ),
 			'edit_posts',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
@@ -118,7 +118,7 @@ class BuildAssistantPage {
 				'redirect' => admin_url( 'edit.php?post_type=' . AssistantPostType::POST_TYPE ),
 				'strings'  => array(
 					'creating' => __( 'Creating assistant...', 'nvoos-content-graph-ai' ),
-					'success'  => __( 'Assistant created successfully!', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ),
+					'success'  => __( 'Assistant created successfully!', 'nvoos-content-graph-ai' ),
 					'error'    => __( 'Error creating assistant. Please try again.', 'nvoos-content-graph-ai' ),
 					'required' => __( 'This field is required.', 'nvoos-content-graph-ai' ),
 				),
@@ -165,7 +165,7 @@ class BuildAssistantPage {
 				'icon'  => 'dashicons-admin-settings',
 			),
 			'advanced'      => array(
-				'title' => __( 'Advanced', 'nvoos-content-graph-ai' ),
+				'title' => __( 'Advanced', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ),
 				'icon'  => 'dashicons-admin-generic',
 			),
 		);
@@ -236,7 +236,7 @@ class BuildAssistantPage {
 		<div class="nvoos-cg-tab-content nvoos-cg-manual-tab">
 			<div class="nvoos-cg-section">
 				<h2><?php esc_html_e( 'Create Assistant Manually', 'nvoos-content-graph-ai' ); ?></h2>
-				<p class="description"><?php esc_html_e( 'Fill in the form below to create a new AI assistant with custom settings.', 'nvoos-content-graph-ai' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Fill in the form below to create a new AI assistant with custom settings.', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ); ?></p>
 
 				<form id="nvoos-cg-create-assistant-form" class="nvoos-cg-assistant-form">
 					<table class="form-table" role="presentation">
@@ -565,7 +565,7 @@ class BuildAssistantPage {
 						<h3><?php esc_html_e( 'Create Custom', 'nvoos-content-graph-ai' ); ?></h3>
 						<p><?php esc_html_e( 'Create a new custom assistant from scratch with your own configuration.', 'nvoos-content-graph-ai' ); ?></p>
 						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . AssistantPostType::POST_TYPE ) ); ?>" class="button button-secondary">
-							<?php esc_html_e( 'Add New', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ); ?>
+							<?php esc_html_e( 'Add New', 'nvoos-content-graph-ai' ); ?>
 						</a>
 					</div>
 
@@ -605,7 +605,7 @@ class BuildAssistantPage {
 					<div class="nvoos-cg-config-card">
 						<span class="dashicons dashicons-admin-users"></span>
 						<h3><?php esc_html_e( 'Professional Templates', 'nvoos-content-graph-ai' ); ?></h3>
-						<p><?php esc_html_e( 'Manage professional templates that define roles, tools, and knowledge bases for assistants.', 'nvoos-content-graph-ai' ); ?></p>
+						<p><?php esc_html_e( 'Manage professional templates that define roles, tools, and knowledge bases for assistants.', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ); ?></p>
 						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ); ?>" class="button button-secondary">
 							<?php esc_html_e( 'Manage Templates', 'nvoos-content-graph-ai' ); ?>
 						</a>
@@ -721,15 +721,15 @@ class BuildAssistantPage {
 		}
 
 		$input = array(
-			'title'         => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
-			'professions'   => isset( $_POST['professions'] ) ? (array) wp_unslash( $_POST['professions'] ) : array(),
-			'regions'       => isset( $_POST['regions'] ) ? (array) wp_unslash( $_POST['regions'] ) : array(),
-			'industry'      => isset( $_POST['industry_focus'] ) ? sanitize_text_field( wp_unslash( $_POST['industry_focus'] ) ) : '',
-			'provider'      => isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '',
-			'model'         => isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '',
-			'temperature'   => isset( $_POST['temperature'] ) ? (string) sanitize_text_field( wp_unslash( $_POST['temperature'] ) ) : '',
-			'async'         => ! empty( $_POST['async'] ),
-			'memory_files'  => isset( $_POST['memory_files'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['memory_files'] ) ) : array(),
+			'title'        => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '',
+			'professions'  => isset( $_POST['professions'] ) ? (array) wp_unslash( $_POST['professions'] ) : array(),
+			'regions'      => isset( $_POST['regions'] ) ? (array) wp_unslash( $_POST['regions'] ) : array(),
+			'industry'     => isset( $_POST['industry_focus'] ) ? sanitize_text_field( wp_unslash( $_POST['industry_focus'] ) ) : '',
+			'provider'     => isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '',
+			'model'        => isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '',
+			'temperature'  => isset( $_POST['temperature'] ) ? (string) sanitize_text_field( wp_unslash( $_POST['temperature'] ) ) : '',
+			'async'        => ! empty( wp_unslash( $_POST['async'] ) ),
+			'memory_files' => isset( $_POST['memory_files'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['memory_files'] ) ) : array(),
 		);
 
 		$result = self::create_from_form( $input );
@@ -837,8 +837,8 @@ class BuildAssistantPage {
 	 * @return string
 	 */
 	protected static function build_system_prompt( array $professions, array $regions, string $industry ): string {
-		$page       = new self();
-		$all_profs  = $page->get_professions();
+		$page        = new self();
+		$all_profs   = $page->get_professions();
 		$all_regions = $page->get_regions();
 
 		$prof_labels = array();
@@ -855,7 +855,7 @@ class BuildAssistantPage {
 			}
 		}
 
-		$lines = array();
+		$lines   = array();
 		$lines[] = __( 'You are a professional AI assistant.', 'nvoos-content-graph-ai' );
 
 		if ( ! empty( $prof_labels ) ) {
