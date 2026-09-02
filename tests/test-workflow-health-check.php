@@ -105,8 +105,6 @@ class Test_Workflow_Health_Check extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Enhanced Workflow Coordinator not available' );
 		}
 
-		$coordinator = new WP_MCP_AI_Enhanced_Workflow_Coordinator();
-
 		// Create multiple workflows with different states.
 		$workflows = array();
 
@@ -139,6 +137,10 @@ class Test_Workflow_Health_Check extends WP_UnitTestCase {
 			$transient_key = 'wp_mcp_ai_workflow_' . sanitize_key( $workflow['workflow_id'] );
 			set_transient( $transient_key, $workflow, DAY_IN_SECONDS );
 		}
+
+		// Construct the coordinator AFTER seeding so its constructor
+		// (load_active_workflows) picks up the workflow transients.
+		$coordinator = new WP_MCP_AI_Enhanced_Workflow_Coordinator();
 
 		// Check overall health.
 		$health = $coordinator->get_workflows_health();
