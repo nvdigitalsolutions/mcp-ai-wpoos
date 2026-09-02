@@ -3,10 +3,10 @@
  * Assistant admin pages hub for the Content Graph AI addon (Wave D-UI-4).
  *
  * Wires the ported assistant builder pages (Build Assistant, Create
- * Assistant) into the assistant CPT's admin menu and registers their
- * AJAX create actions. Registered standalone-only by `Plugin.php` —
- * the base plugin owns the same admin surface in monolith installs and
- * registering here too would duplicate the menus.
+ * Assistant, Test Assistant) into the assistant CPT's admin menu and
+ * registers their AJAX create actions. Registered standalone-only by
+ * `Plugin.php` — the base plugin owns the same admin surface in
+ * monolith installs and registering here too would duplicate the menus.
  *
  * @package NvoosContentGraphAi\Admin
  * @since   1.1.0
@@ -21,6 +21,7 @@ namespace NvoosContentGraphAi\Admin;
 
 use NvoosContentGraphAi\Admin\AssistantPages\AddAssistantPage;
 use NvoosContentGraphAi\Admin\AssistantPages\BuildAssistantPage;
+use NvoosContentGraphAi\Admin\AssistantPages\TestAssistantPage;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -48,6 +49,13 @@ class AssistantPages {
 	protected $add;
 
 	/**
+	 * Test Assistant page instance.
+	 *
+	 * @var TestAssistantPage|null
+	 */
+	protected $test;
+
+	/**
 	 * Register the pages and AJAX handlers.
 	 *
 	 * @return void
@@ -70,6 +78,9 @@ class AssistantPages {
 
 		$this->add = new AddAssistantPage();
 		$this->add->register_page();
+
+		$this->test = new TestAssistantPage();
+		$this->test->register_submenu_page();
 	}
 
 	/**
@@ -85,6 +96,10 @@ class AssistantPages {
 
 		if ( $this->add instanceof AddAssistantPage ) {
 			$this->add->enqueue_scripts( $hook );
+		}
+
+		if ( $this->test instanceof TestAssistantPage ) {
+			$this->test->enqueue_assets( $hook );
 		}
 	}
 
