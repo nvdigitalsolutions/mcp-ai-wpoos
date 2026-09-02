@@ -1940,8 +1940,10 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			$results['steps_failed']
 		);
 
-		// Add performance metrics if available.
-		if ( isset( $results['metrics'] ) && ! empty( $results['metrics']['total_duration'] ) ) {
+		// Add performance metrics. Metrics are always collected — including dry
+		// runs, where the duration can round to 0s — so render the section
+		// whenever the metrics array exists.
+		if ( isset( $results['metrics'] ) ) {
 			$metrics = $results['metrics'];
 			$output .= "**Performance Metrics:**\n";
 			$output .= sprintf( "- Total Duration: %ss\n", $metrics['total_duration'] );
