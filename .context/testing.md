@@ -1,13 +1,15 @@
 # NV oOS Testing Patterns
 
 > **GSD Context File** — Load this when writing or reviewing PHPUnit tests.
-> Last reviewed: August 31, 2026 (v1.1.66).
+> Last reviewed: September 2, 2026 (v1.1.67).
 >
 > **Repair workflow:** when a suite is *failing* (rather than being written),
 > use the [`.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md`](../.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md)
 > skill — Docker test commands (WP 6.9/7.1), CI-log triage, recurring
 > root-cause patterns, and the cluster-by-cluster PR conventions live there.
 > This file stays focused on test-writing patterns and the coverage policy.
+>
+> **New in v1.1.67:** the Sep 1–2 repair-campaign continuation (~70 suite PRs, #6143–#6208) kept the suite green through the Content Graph platform extraction and ecosystem-port work plus PHPUnit 11 / WP 7.1 environment drift; the `mcp-ai-wpoos-test-suite` skill was refreshed to **26** root-cause patterns distilled from ~70 cluster PRs (#6154). Two new CI matrices landed with the extraction/port features: `.github/workflows/phpunit-platform.yml` (platform addon) and `.github/workflows/phpunit-ai.yml` (Content Graph AI monolith + standalone). Production seams the tests now depend on: the settings registry exposes `unregister_section()` (#6144) and settings-section tests clean up after themselves; `WP_MCP_AI_Tool_Token_Limits::get_tool_multiplier()` is public (#6189); REST tool-error reporting tolerates a null request (#6186); the WhatsApp webhook signature validator rejects a missing app secret (#6192); assistant pages render their modal structure on permission/disabled notices (#6174). Keep those seams when touching the corresponding production paths.
 >
 > **New in v1.1.66:** the Aug 28–31 repair campaign (~95 suite PRs, #6012–#6107) brought the single-process suite green cluster-by-cluster — REST endpoint clusters, AJAX handlers, provider/client suites, admin pages, chat/channel integrations, CRM, professions/teams, multi-agent orchestration, cron/notifier, federation, healthcare interop, security, logger, transcripts. The recurring root causes are catalogued in the new `mcp-ai-wpoos-test-suite` skill (16 patterns) and the standing work tracker is [`docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`](../developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md). Production seams the tests now depend on: `validate_assistant_access()` caches `WP_Error` results and the cache-disable path is a `wp_mcp_ai_assistant_access_cache_enabled` filter (never a persisted define in a test, #6008); attachment-segment validation errors carry `status => 400` (#6009); `WP_MCP_AI_Job_Notifier::update_status()` exists again and async job IDs preserve dots (#6036, #6037); progress events promote cached job status to running (#6039). Keep those seams when touching the corresponding production paths.
 >

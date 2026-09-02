@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > This file is loaded every turn by Claude Code. Keep it focused and actionable.
-> Last reviewed: **August 31, 2026** · Version: **2.19**
+> Last reviewed: **September 2, 2026** · Version: **2.20**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,559 tools (~303 base + ~1,256 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,565 tools (~303 base + ~1,262 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), **33 per-toolkit MCP JSON-RPC servers** (including Phase 8: Pro Scheduler, FlowHub, Shopify Sync, EZuite), **OAuth 2.0 MCP authentication** (PKCE, hierarchical scopes, browser-based login), MCP protocol support, multi-provider AI (OpenAI, Gemini, Anthropic, Ollama, LM Studio, DeepSeek, OpenRouter, DigitalOcean Serverless Inference, HuggingFace, NVIDIA, Baseten, Kimi, Cloudflare), multi-provider voice/realtime (OpenAI Realtime, Gemini Live), ACP (Agent Client Protocol), Layer I jailbreak guardrails, Layer J Necessity Gate (irreversibility-weighted safety profiles), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,7 +50,7 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,559 tools total; live count is authoritative)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~1,565 tools total; live count is authoritative)
 ├── class-wp-mcp-ai-transcript-retention.php ← Chat transcript retention (base)
 ├── rest/                                ← REST controllers incl. class-wp-mcp-ai-sse-session-store.php (legacy MCP HTTP+SSE session store, v1.1.55)
 ├── security/                           ← Security infrastructure (7 classes: request guard, posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store)
@@ -186,7 +186,7 @@ The repo enforces the two highest-risk Gate-1 violations via the PHPCS sniff `WP
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~303 base tool classes) or `false` (~1,559 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~303 base tool classes) or `false` (~1,565 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -441,6 +441,10 @@ Seven security infrastructure classes in `includes/security/` that operate acros
 - **PHPUnit suite repair campaign** (v1.1.66, PRs #6008/#6009/#6012–#6107) — ~100 cluster PRs (Aug 28–31) repaired the single-process suite; the recurring root causes are catalogued in `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` (16 patterns: hook resets, singleton interference, WP_Error envelope drift, nonce/user binding, WP 6.9 queue memoization, anonymous-class visibility, …) with the standing tracker `docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`. Production seams the suites now depend on: `validate_assistant_access()` caches `WP_Error` results and the cache-disable path is the `wp_mcp_ai_assistant_access_cache_enabled` filter (never a persisted define, #6008); attachment-segment validation errors carry `status => 400` (#6009); `WP_MCP_AI_Job_Notifier::update_status()` exists and async job IDs preserve dots (#6036/#6037); progress events promote cached status to running (#6039).
 - **REST/auth hardening** (v1.1.66, PRs #6014–#6019) — token-tier endpoint + tier-change audit logging (#6018); REST permission-callback allowlist refresh (#6019); bearer-auth context sync across the Simple JWT and assistant-access paths (#6014/#6016); guest tokens are origin-bound (F-AUTHZ-04); REST analytics endpoints fixed (#6015).
 - **Content Graph AI 1.0.3** (v1.1.66, PR #6056) — the standalone `nvoos-content-graph-ai` plugin bumped to 1.0.3 with a tool permission-check fix; `nvoos-content-graph` stays 1.0.3 and Media Worker stays v3.2.0.
+- **Content Graph platform extraction v2.0.0** (v1.1.67, PR #6123) — the `nvoos-content-graph-ai-platform` addon now carries its own business logic (Waves A–C + Blueprints): namespace-bridged admin UI (`PlatformDashboard`, `PlatformSettingsRegistry`), skill/slash-command/agent bridges, harness `ToolRouterHarness`, a 74-skill bundled-skills pack, knowledge base, and `.github/workflows/phpunit-platform.yml`. Plan: `docs/project/plans/content-graph-platform-extraction-plan.md`; gaps: `plugins/nvoos-content-graph-ai-platform/MIGRATION-GAPS.md`.
+- **Base+Pro → Content Graph ecosystem port, Wave D + D-UI** (v1.1.67, PR #6142) — the AI runtime now lives in `nvoos-content-graph-ai` (chat core D1, providers D2, model management + analytics/token tracking D3, security guards D4, assistant admin pages + blocks/widgets/guest tokens/memory/CLI/MCP JSON-RPC D-UI) with `.github/workflows/phpunit-ai.yml`; **Content Graph AI bumps 1.0.3 → 1.0.4**. Tracker: `docs/project/ecosystem-port-tracker.md`.
+- **Google Workspace Gmail + Drive read tools** (v1.1.67, PRs #6151/#6152) — 6 new Pro tools in `addons/pro/includes/tools/google-workspace/` (`get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message` — destructive-ops gated — and `get_drive_file`, `list_drive_connections`) with new `WP_MCP_AI_Pro_Gmail_Client` / `WP_MCP_AI_Pro_Google_Drive_Client` clients on the shared `includes/google/` foundation. Pro count +6 → ~1,262.
+- **PHPUnit repair campaign continuation** (v1.1.67, PRs #6114–#6208) — ~95 cluster PRs (Aug 31 – Sep 2) kept the suite green through the extraction/port work and PHPUnit 11 / WP 7.1 drift; the test-suite skill was refreshed to 26 patterns (#6154). Production seams the suites now depend on: `WP_MCP_AI_Settings_Registry::unregister_section()` (#6144); `WP_MCP_AI_Tool_Token_Limits::get_tool_multiplier()` is public (#6189); REST tool-error reporting tolerates a null request (#6186); WhatsApp webhook signature validation rejects a missing app secret (#6192); the destructive-ops gate reads the canonical combined-settings array with a legacy-repository fallback (#6151); crawler `base_url` URL validation + `wp_mcp_ai_crawl4ai_auto_spawn_cron` filter (#6124/#6125).
 - **REST require_once guards** (v1.1.52) — all REST controller `require_once` calls in `class-wp-mcp-ai-rest.php` now guarded with `file_exists()` checks.
 - **Site Health integration** — WordPress Site Health checks for cron configuration and security posture.
 - **13 security unit tests** in `tests/security/` covering API key encryption, auth split-brain, break-glass, credentials expiry, destructive ops gate, rate limiting, SSE auth/CORS/rate limiting, SSRF protection, tool scope sanity, URL guard, and validated upload.
