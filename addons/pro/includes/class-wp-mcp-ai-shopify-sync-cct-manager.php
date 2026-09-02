@@ -1663,7 +1663,17 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @return array|WP_Error Sync result or WP_Error.
 		 */
 		public function sync_from_bulk_operation( $progress = null, $dry_run = false, $run_id = '' ) {
-			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			/**
+			 * Filter whether the Shopify client is available for bulk sync.
+			 *
+			 * @param bool $available Whether the Shopify client class is loaded.
+			 */
+			$client_available = (bool) apply_filters(
+				'wp_mcp_ai_shopify_sync_client_available',
+				class_exists( 'WP_MCP_AI_Shopify_Client' )
+			);
+
+			if ( ! $client_available ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_no_client',
 					__( 'Shopify Client is not available.', 'mcp-ai-wpoos-pro' )

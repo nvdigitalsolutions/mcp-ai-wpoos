@@ -11,6 +11,9 @@
  * @license   GPL-3.0-or-later
  */
 
+/**
+ * Test class for Pro Dashboard charts.
+ */
 class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 	/**
 	 * Test that get_chart_data returns proper structure.
@@ -226,6 +229,14 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 
 		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
+		// wp-phpunit restores the hook table between tests, dropping the
+		// admin_enqueue_scripts registration made when the singleton was
+		// constructed; re-register hooks so the enqueue callback fires.
+		$reflection = new ReflectionClass( $dashboard );
+		$init_hooks = $reflection->getMethod( 'init_hooks' );
+		$init_hooks->setAccessible( true );
+		$init_hooks->invoke( $dashboard );
+
 		// Trigger asset enqueuing.
 		do_action( 'admin_enqueue_scripts', 'toplevel_page_nvoos-pro-dashboard' );
 
@@ -387,6 +398,10 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
+		// The POST route gates on Pro Dashboard availability; enable it for
+		// the request (the route itself only requires manage_options + this).
+		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
+
 		// Make REST API request to update risk data.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/pro/chart-data/risks' );
 		$request->set_param( 'critical', 5 );
@@ -395,6 +410,8 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$request->set_param( 'low', 20 );
 
 		$response = rest_do_request( $request );
+
+		remove_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
 
 		$this->assertEquals( 200, $response->get_status() );
 
@@ -451,12 +468,18 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
+		// The POST route gates on Pro Dashboard availability; enable it for
+		// the request (the route itself only requires manage_options + this).
+		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
+
 		// Make REST API request to update metrics data.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/pro/chart-data/metrics' );
 		$request->set_param( 'incidents', array( 1, 2, 3, 4, 5, 6 ) );
 		$request->set_param( 'vulnerabilities_fixed', array( 10, 20, 30, 40, 50, 60 ) );
 
 		$response = rest_do_request( $request );
+
+		remove_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
 
 		$this->assertEquals( 200, $response->get_status() );
 

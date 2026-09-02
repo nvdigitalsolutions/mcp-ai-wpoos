@@ -14,9 +14,9 @@
 
 - Six new Pro tools in `addons/pro/includes/tools/google-workspace/` with two new clients: **Gmail** — `get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message` (modify is gated behind the destructive-ops gate) backed by `WP_MCP_AI_Pro_Gmail_Client`; **Drive** — `get_drive_file`, `list_drive_connections` backed by `WP_MCP_AI_Pro_Google_Drive_Client`. Both clients resolve credentials through the shared `includes/google/` foundation and the Pro Remote Sites connection registry; `search_gmail`/`search_drive` were updated to match. Pro tool count +6.
 
-### Changed — PHPUnit Suite Repair Campaign Continuation (PRs #6114–#6208, #6211–#6212)
+### Changed — PHPUnit Suite Repair Campaign Continuation (PRs #6114–#6208, #6209–#6216)
 
-A second campaign wave (Aug 31 – Sep 2, ~95 PRs) kept the suite green through the extraction/port work and PHPUnit 11 / WP 7.1 environment drift. Most PRs are test-only; the production-side fixes they carried are grouped below. (PRs #6211/#6212 merged upstream after the main pass and are folded in with the base merge.)
+A second campaign wave (Aug 31 – Sep 2, ~100 PRs) kept the suite green through the extraction/port work and PHPUnit 11 / WP 7.1 environment drift. Most PRs are test-only; the production-side fixes they carried are grouped below. (PRs #6209–#6216 merged upstream after the main pass and are folded in with the base merge.)
 
 - **REST & validation** — assistant-directory REST empty-`title` guard (#6141); tool-error reporting null-safe on a missing request (#6186); LLM sanitization delegated to the REST validator with recursive metadata stripping (#6187); `display`-metadata persistence + sanitization for transcript messages (#6172); systemic PHPUnit 11 / WP 7.1 env-compat fixes across the conversation summarizer and Gemini/LM Studio clients (#6196).
 - **Crawler** — crawler job contract hardened (`sanitize_task_id()`, `base_url` URL validation, job arg-shape guards) (#6124); `wp_mcp_ai_crawl4ai_auto_spawn_cron` filter gates the auto-spawn (#6125).
@@ -24,6 +24,7 @@ A second campaign wave (Aug 31 – Sep 2, ~95 PRs) kept the suite green through 
 - **Settings, cache & admin** — credential-resolver cache cleared on settings save (#6119); raw option-table deletes evict the options object cache (#6134); settings dashboard subtab routing + field guards (#6139); settings-registry `unregister_section()` API (#6144); orchestration-dashboard menu wiring (#6160); token-tier caching with numeric user-ID guards (#6178); PM assistant metabox renders its modal structure on permission/disabled notices (#6174); profession seeder rubric-verifier envelope (#6197).
 - **Security & webhooks** — destructive-ops gate now reads the canonical combined-settings array (falls back to the legacy repository option, fail-safe enabled) (#6151); WhatsApp webhook signature validation rejects when no app secret is configured (#6192); Graphify + Content Graph remote HTTP clients re-serve the cached body on 304 (#6161).
 - **Jobs & providers** — the Gemini video-generation service completes the parent async job only after the Veo job-completion hook fires, preventing a completion race that misses the notification cache (#6211).
+- **Admin, slash commands & sync** — orchestration renderer token-budget display fixes (`(int)` cast + style registration, #6213); slash-command workflow metrics guard (#6216); Shopify Sync CCT manager exposes a `wp_mcp_ai_shopify_sync_client_available` filter seam around the client availability check (#6215).
 - **Test-suite skill refresh** — `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` distilled 26 recurring root-cause patterns (up from 16) from ~70 cluster PRs (#6154).
 
 ### Housekeeping
