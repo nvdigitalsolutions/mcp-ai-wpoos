@@ -7,7 +7,6 @@
  *   - wp_mcp_ai_wizard_complete          (WP_MCP_AI_Onboarding_Wizard::ajax_complete_wizard)
  *   - wp_mcp_ai_dismiss_welcome_notice   (WP_MCP_AI_Onboarding_Wizard::ajax_dismiss_notice)
  *   - wp_mcp_ai_dismiss_optional_components (WP_MCP_AI_Optional_Components::ajax_dismiss_optional_components)
- *   - wp_mcp_ai_dismiss_directory_notice (global callback via hooks.php)
  *
  * @package WP_MCP_AI
  * @author    NV Digital Solutions
@@ -242,48 +241,7 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 	}
 
 	// ---
-	// wp_mcp_ai_dismiss_directory_notice
+	// wp_mcp_ai_dismiss_directory_notice — the handler for this action was
+	// removed from production; no tests remain for it.
 	// ---
-
-	/** Guards against a missing or invalid nonce. */
-	public function test_dismiss_directory_notice_rejects_missing_nonce() {
-		$this->as_admin();
-
-		$response = $this->dispatch( 'wp_mcp_ai_dismiss_directory_notice' );
-
-		$this->assertAjaxForbidden( $response );
-	}
-
-	/** Guards against insufficient capabilities. */
-	public function test_dismiss_directory_notice_rejects_subscriber() {
-		$this->as_subscriber();
-
-		$response = $this->dispatch(
-			'wp_mcp_ai_dismiss_directory_notice',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_dismiss_directory_notice' ) )
-		);
-
-		$this->assertAjaxError( $response, 'Insufficient permissions' );
-	}
-
-	/** Dismiss directory notice persists user meta. */
-	public function test_dismiss_directory_notice_persists_user_meta() {
-		$this->as_admin();
-
-		$user_id = get_current_user_id();
-		delete_user_meta( $user_id, 'wp_mcp_ai_dismissed_directory_notice' );
-
-		$response = $this->dispatch(
-			'wp_mcp_ai_dismiss_directory_notice',
-			array( 'nonce' => wp_create_nonce( 'wp_mcp_ai_dismiss_directory_notice' ) )
-		);
-
-		$this->assertAjaxSuccess( $response );
-		$this->assertTrue(
-			(bool) get_user_meta( $user_id, 'wp_mcp_ai_dismissed_directory_notice', true ),
-			'User meta should be set after dismissal.'
-		);
-
-		delete_user_meta( $user_id, 'wp_mcp_ai_dismissed_directory_notice' );
-	}
 }
