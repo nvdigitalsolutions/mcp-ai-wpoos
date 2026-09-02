@@ -53,7 +53,11 @@ class Test_System_Prompt_Propagation extends WP_UnitTestCase {
 
 		$options = array();
 
+		// sanitize_options() appends a date-context block to non-empty system
+		// prompts; disable it so the propagation assertion stays exact.
+		add_filter( 'wp_mcp_ai_current_date_context', '__return_empty_string' );
 		$result = $this->validator->sanitize_options( $options, $assistant_config );
+		remove_filter( 'wp_mcp_ai_current_date_context', '__return_empty_string' );
 
 		$this->assertArrayHasKey( 'system_prompt', $result, 'System prompt should be present in result' );
 		$this->assertEquals( 'You are a helpful assistant specialized in WordPress.', $result['system_prompt'] );
@@ -73,7 +77,10 @@ class Test_System_Prompt_Propagation extends WP_UnitTestCase {
 			'system_prompt' => 'Override instructions for this request.',
 		);
 
+		// Disable the date-context injection for an exact equality assertion.
+		add_filter( 'wp_mcp_ai_current_date_context', '__return_empty_string' );
 		$result = $this->validator->sanitize_options( $options, $assistant_config );
+		remove_filter( 'wp_mcp_ai_current_date_context', '__return_empty_string' );
 
 		$this->assertArrayHasKey( 'system_prompt', $result );
 		$this->assertEquals( 'Override instructions for this request.', $result['system_prompt'] );
@@ -93,7 +100,10 @@ class Test_System_Prompt_Propagation extends WP_UnitTestCase {
 			'system_prompt' => '',
 		);
 
+		// Disable the date-context injection for an exact equality assertion.
+		add_filter( 'wp_mcp_ai_current_date_context', '__return_empty_string' );
 		$result = $this->validator->sanitize_options( $options, $assistant_config );
+		remove_filter( 'wp_mcp_ai_current_date_context', '__return_empty_string' );
 
 		$this->assertArrayHasKey( 'system_prompt', $result );
 		$this->assertEquals( 'Assistant default instructions.', $result['system_prompt'] );
@@ -171,7 +181,7 @@ class Test_System_Prompt_Propagation extends WP_UnitTestCase {
 			'system_prompt' => 'You are a test assistant.',
 		);
 
-		// We can't actually call the API, but we can verify the client method exists
+		// We can't actually call the API, but we can verify the client method exists.
 		$this->assertTrue( method_exists( $client, 'create_chat_completion' ) );
 	}
 
