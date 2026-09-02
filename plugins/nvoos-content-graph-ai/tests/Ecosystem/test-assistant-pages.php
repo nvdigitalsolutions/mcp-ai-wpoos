@@ -6,10 +6,12 @@
  * the `mcp_ai_assistant` post type registration (`AssistantPostType`),
  * its REST-visible meta + sanitizers + capability gate, the
  * `AssistantPages` hub wiring, the Build Assistant page (tabs, option
- * lists, markup, form creation flow), and the Add Assistant page
- * (template grid, modal, create-from-profession flow). Assertions
- * mirror the base plugin's behaviour: byte-identical post-type args,
- * meta keys, and creation meta vocabulary.
+ * lists, markup, form creation flow), the Add Assistant page
+ * (template grid, modal, create-from-profession flow), and the Test
+ * Assistant page (assistant table, query-parameter selection, chat
+ * modal). Assertions mirror the base plugin's behaviour:
+ * byte-identical post-type args, meta keys, and creation meta
+ * vocabulary.
  *
  * Matrix note: the pages register standalone-only (the base plugin owns
  * the same menus in monolith installs), so the tests exercise the page
@@ -26,6 +28,8 @@ use NvoosContentGraphAi\Admin\AssistantPostType;
 use NvoosContentGraphAi\Admin\AssistantPages;
 use NvoosContentGraphAi\Admin\AssistantPages\AddAssistantPage;
 use NvoosContentGraphAi\Admin\AssistantPages\BuildAssistantPage;
+use NvoosContentGraphAi\Admin\AssistantPages\TestAssistantPage;
+use NvoosContentGraphAi\Frontend\ChatShortcode;
 
 /**
  * @group admin
@@ -198,6 +202,7 @@ class Test_Assistant_Pages extends \WP_UnitTestCase {
 
 		$this->assertContains( BuildAssistantPage::PAGE_SLUG, $slugs );
 		$this->assertContains( AddAssistantPage::PAGE_SLUG, $slugs );
+		$this->assertContains( TestAssistantPage::PAGE_SLUG, $slugs );
 	}
 
 	// ─── Build Assistant page ───────────────────────────────────────
@@ -471,5 +476,93 @@ class Test_Assistant_Pages extends \WP_UnitTestCase {
 			'anthropic',
 			\get_post_meta( $result['assistant_id'], '_wp_mcp_ai_provider', true )
 		);
+	}
+
+	// ─── Test Assistant page ─────────────────────────────────────────
+
+	public function test_test_page_constants(): void {
+		$this->assertSame( 'nvoos-cg-test-assistant', TestAssistantPage::PAGE_SLUG );
+		$this->assertSame( 'test_assistant', TestAssistantPage::TEST_PARAM );
+	}
+
+	public function test_test_page_render_without_assistants(): void {
+		\ob_start();
+		( new TestAssistantPage() )->render_page();
+		$html = \ob_get_clean();
+
+		$this->assertStringContainsString( 'No assistants found', $html );
+		$this->assertStringContainsString( 'nvoos-cg-test-modal', $html );
+		// No selection → modal hidden with the selection hint.
+		$this->assertStringContainsString( 'display: none', $html );
+		$this->assertStringContainsString( 'Select an assistant', $html );
+	}
+
+	public function test_test_page_render_with_assistant(): void {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Perfume Concierge',
+			)
+		);
+		\update_post_meta( $assistant_id, '_wp_mcp_ai_provider', 'gemini' );
+		\update_post_meta( $assistant_id, '_wp_mcp_ai_model', 'gemini-1.5-pro' );
+		\update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'get_post', 'create_post' ) );
+
+		$profession_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'post_title'  => 'Customs Broker',
+			)
+		);
+		\update_post_meta( $assistant_id, '_wp_mcp_ai_primary_roles', array( $profession_id ) );
+
+		\ob_start();
+		( new TestAssistantPage() )->render_page();
+		$html = \ob_get_clean();
+
+		$this->assertStringContainsString( 'Perfume Concierge', $html );
+		$this->assertStringContainsString( 'Gemini', $html );
+		$this->assertStringContainsString( 'gemini-1.5-pro', $html );
+		$this->assertStringContainsString( 'Customs Broker', $html );
+		$this->assertStringContainsString( '2 tools', $html );
+		$this->assertStringContainsString( 'test_assistant=' . $assistant_id, $html );
+	}
+
+	public function test_test_page_modal_for_selected_assistant(): void {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Chat Assistant',
+			)
+		);
+
+		// Register the chat shortcode so the modal embeds real widget markup.
+		( new ChatShortcode() )->register();
+
+		$_GET[ TestAssistantPage::TEST_PARAM ] = (string) $assistant_id;
+
+		\ob_start();
+		( new TestAssistantPage() )->render_page();
+		$html = \ob_get_clean();
+
+		$this->assertStringContainsString( 'display: block', $html );
+		$this->assertStringContainsString( 'nvoos-content-graph-chat-widget', $html );
+		$this->assertStringContainsString( 'assistant="' . $assistant_id . '"', $html );
+	}
+
+	public function test_test_page_ignores_invalid_selection(): void {
+		$page = new TestAssistantPage();
+
+		$_GET[ TestAssistantPage::TEST_PARAM ] = '999999';
+		$this->assertSame( 0, $page->get_active_test_assistant_id() );
+
+		$_GET[ TestAssistantPage::TEST_PARAM ] = '<script>evil</script>';
+		$this->assertSame( 0, $page->get_active_test_assistant_id() );
+
+		unset( $_GET[ TestAssistantPage::TEST_PARAM ] );
+		$this->assertSame( 0, $page->get_active_test_assistant_id() );
 	}
 }
