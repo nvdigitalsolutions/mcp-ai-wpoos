@@ -453,7 +453,12 @@ class Test_Shopify_Sync_CCT_Manager extends WP_UnitTestCase {
 	 */
 	public function test_sync_from_bulk_operation_requires_client() {
 		$manager = new WP_MCP_AI_Shopify_Sync_CCT_Manager( $this->connection_id );
-		$result  = $manager->sync_from_bulk_operation();
+
+		// The Pro bootstrap loads the Shopify client class, so force the
+		// unavailable state through the production filter seam.
+		add_filter( 'wp_mcp_ai_shopify_sync_client_available', '__return_false' );
+		$result = $manager->sync_from_bulk_operation();
+		remove_filter( 'wp_mcp_ai_shopify_sync_client_available', '__return_false' );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_shopify_sync_no_client', $result->get_error_code() );
