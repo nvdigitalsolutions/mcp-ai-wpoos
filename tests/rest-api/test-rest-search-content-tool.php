@@ -116,9 +116,9 @@ class WP_MCP_AI_REST_Search_Content_Tool_Test extends WP_Test_REST_TestCase {
 		$this->assertIsArray( $data );
 		$this->assertSame( 'search_content', $data['tool'] );
 		$this->assertIsArray( $data['result'] );
-		$this->assertCount( 1, $data['result']['items'] );
-		$this->assertSame( $included_post, $data['result']['items'][0]['ID'] );
-		$this->assertSame( 'post', $data['result']['items'][0]['post_type'] );
+		$this->assertCount( 1, $data['result']['results'] );
+		$this->assertSame( $included_post, $data['result']['results'][0]['ID'] );
+		$this->assertSame( 'post', $data['result']['results'][0]['post_type'] );
 	}
 
 	/**

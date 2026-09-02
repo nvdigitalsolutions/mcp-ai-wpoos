@@ -2877,7 +2877,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$client_ip     = isset( $_SERVER['REMOTE_ADDR'] )
 					? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
 					: 'unknown';
-				$transient_key = 'wp_mcp_ai_rate_limit_ip_' . md5( $client_ip . NONCE_SALT );
+				$transient_key = 'wp_mcp_ai_rate_limit_ip_' . md5( $client_ip . wp_salt( 'nonce' ) );
 			}
 			$current_count = get_transient( $transient_key );
 
@@ -3016,7 +3016,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$client_ip     = isset( $_SERVER['REMOTE_ADDR'] )
 					? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
 					: 'unknown';
-				$transient_key = 'wp_mcp_ai_tool_rl_ip_' . md5( $client_ip . NONCE_SALT );
+				$transient_key = 'wp_mcp_ai_tool_rl_ip_' . md5( $client_ip . wp_salt( 'nonce' ) );
 			}
 
 			$current_count = get_transient( $transient_key );

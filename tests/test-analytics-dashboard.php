@@ -26,6 +26,20 @@ class Test_Analytics_Dashboard extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// wp_add_dashboard_widget() lives in an admin include that PHPUnit
+		// never loads; the wp_dashboard_setup callbacks below require it.
+		require_once ABSPATH . 'wp-admin/includes/dashboard.php';
+
+		// Re-register the dashboard widgets hook: wp-phpunit restores the
+		// hook table between tests, dropping the registration made at
+		// class-file load time.
+		WP_MCP_AI_Analytics_Dashboard::init();
+
+		// Production fires wp_dashboard_setup from wp_dashboard() after
+		// setting the dashboard screen; without a current screen,
+		// add_meta_box() silently drops widget registrations.
+		set_current_screen( 'dashboard' );
+
 		// Initialize the database table.
 		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
 
@@ -49,7 +63,7 @@ class Test_Analytics_Dashboard extends WP_UnitTestCase {
 		// Clean up test data.
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->query( "TRUNCATE TABLE {$table_name}" );
+		$wpdb->query( "TRUNCATE TABLE {$table_name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- TRUNCATE accepts no placeholders.
 
 		parent::tearDown();
 	}
@@ -192,7 +206,7 @@ class Test_Analytics_Dashboard extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'total_cost', $data );
 		$this->assertArrayHasKey( 'by_provider', $data );
 		$this->assertArrayHasKey( 'by_model', $data );
-		$this->assertArrayHasKey( 'by_user', $data );
+		$this->assertArrayHasKey( 'by_tool', $data );
 		$this->assertArrayHasKey( 'period_start', $data );
 		$this->assertArrayHasKey( 'period_end', $data );
 

@@ -979,8 +979,8 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 				return absint( $sanitized );
 			}
 
-			// Otherwise return the sanitized string (defensive fallback).
-			return $sanitized;
+			// Otherwise keep only safe identifier characters (mirrors sanitize_job_id).
+			return preg_replace( '/[^a-zA-Z0-9_.\-]/', '', $sanitized );
 		}
 
 		// Fallback for unexpected types - try to convert to int.

@@ -70,19 +70,19 @@ class Test_Cron_Status_Job_ID_With_Dots extends WP_UnitTestCase {
 		// Test path traversal with dots.
 		$job_id    = '../../../etc/passwd';
 		$sanitized = $controller->sanitize_job_id( $job_id );
-		$this->assertNotContains( '..', $sanitized, 'Path traversal should be removed' );
-		$this->assertNotContains( '/', $sanitized, 'Slashes should be removed' );
+		$this->assertStringNotContainsString( '..', $sanitized, 'Path traversal should be removed' );
+		$this->assertStringNotContainsString( '/', $sanitized, 'Slashes should be removed' );
 
 		// Test consecutive dots.
 		$job_id    = 'test..double..dots';
 		$sanitized = $controller->sanitize_job_id( $job_id );
-		$this->assertNotContains( '..', $sanitized, 'Consecutive dots should be removed' );
+		$this->assertStringNotContainsString( '..', $sanitized, 'Consecutive dots should be removed' );
 
 		// Test with malicious characters.
 		$job_id    = 'test<script>alert(1)</script>';
 		$sanitized = $controller->sanitize_job_id( $job_id );
-		$this->assertNotContains( '<', $sanitized, 'HTML tags should be removed' );
-		$this->assertNotContains( '>', $sanitized, 'HTML tags should be removed' );
+		$this->assertStringNotContainsString( '<', $sanitized, 'HTML tags should be removed' );
+		$this->assertStringNotContainsString( '>', $sanitized, 'HTML tags should be removed' );
 		$this->assertEquals( 'testscriptalert1script', $sanitized );
 	}
 

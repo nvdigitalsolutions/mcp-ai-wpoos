@@ -221,6 +221,7 @@ class WP_MCP_AI_Necessity_Gate {
 	 *
 	 * @since 1.9.0
 	 *
+	 * @param int $assistant_id Optional assistant ID to check the profile for.
 	 * @return bool
 	 */
 	public static function is_enabled( $assistant_id = 0 ) {
@@ -230,7 +231,10 @@ class WP_MCP_AI_Necessity_Gate {
 		}
 
 		// Per-assistant harness profile check.
-		$assistant_id = (int) $assistant_id ?: self::get_current_assistant_id();
+		$assistant_id = (int) $assistant_id;
+		if ( 0 === $assistant_id ) {
+			$assistant_id = self::get_current_assistant_id();
+		}
 		if ( $assistant_id > 0 ) {
 			$profile = WP_MCP_AI_Harness_Profile::get( $assistant_id );
 			if ( ! empty( $profile['necessity_gate']['enabled'] ) ) {
@@ -409,14 +413,16 @@ class WP_MCP_AI_Necessity_Gate {
 			return $override;
 		}
 
+		// Check for known overeager patterns first: a destructive call
+		// without its target (e.g. delete_post with no ID) is UNNECESSARY,
+		// which is stricter than the generic empty-arguments OPTIONAL level.
+		if ( self::is_overeager_pattern( $tool_slug, $arguments ) ) {
+			return WP_MCP_AI_Action_Safety_Profile::NECESSITY_UNNECESSARY;
+		}
+
 		// Check for empty/redundant arguments.
 		if ( self::has_empty_arguments( $arguments, $tool_slug ) ) {
 			return WP_MCP_AI_Action_Safety_Profile::NECESSITY_OPTIONAL;
-		}
-
-		// Check for known overeager patterns.
-		if ( self::is_overeager_pattern( $tool_slug, $arguments ) ) {
-			return WP_MCP_AI_Action_Safety_Profile::NECESSITY_UNNECESSARY;
 		}
 
 		// Default: assume the call is at least helpful.

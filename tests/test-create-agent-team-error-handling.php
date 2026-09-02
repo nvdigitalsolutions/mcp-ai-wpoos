@@ -87,9 +87,9 @@ class Test_Create_Agent_Team_Error_Handling extends WP_UnitTestCase {
 		// Execute with missing task_type.
 		$result = $tool->execute( array(), array() );
 
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'message', $result );
-		$this->assertStringContainsString( 'required', strtolower( $result['message'] ) );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+		$this->assertStringContainsString( 'required', strtolower( $result->get_error_message() ) );
 	}
 
 	/**

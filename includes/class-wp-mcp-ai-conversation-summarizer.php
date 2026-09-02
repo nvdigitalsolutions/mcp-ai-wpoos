@@ -144,6 +144,16 @@ if ( ! class_exists( 'WP_MCP_AI_Conversation_Summarizer' ) ) {
 				return $result;
 			}
 
+			// Providers can return null (or another non-array shape) when a
+			// model returns no usable response; treat it as a failed summary
+			// instead of fatalling on the array type hint below.
+			if ( ! is_array( $result ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_summarization_empty',
+					__( 'Conversation summarization returned an empty response.', 'mcp-ai-wpoos' )
+				);
+			}
+
 			$summary = $this->extract_summary_from_result( $result );
 
 			WP_MCP_AI_Logger::log_event(

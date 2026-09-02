@@ -492,7 +492,16 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			// the complete download — not while the model is generating tokens.
 			// CURLOPT_WRITEFUNCTION fires for every incoming network chunk, forwarding
 			// each content/reasoning delta to the browser the moment it arrives.
-			if ( $is_streaming && function_exists( 'curl_init' ) ) {
+			/**
+			 * Filter whether real-time cURL streaming is enabled.
+			 *
+			 * @since 1.9.6
+			 *
+			 * @param bool $enabled Whether real-time cURL streaming is enabled.
+			 */
+			$realtime_stream_enabled = (bool) apply_filters( 'wp_mcp_ai_lm_studio_realtime_stream_enabled', function_exists( 'curl_init' ) );
+
+			if ( $is_streaming && $realtime_stream_enabled ) {
 				$realtime_cb = isset( $options['stream_callback'] ) && is_callable( $options['stream_callback'] ) ? $options['stream_callback'] : null;
 				if ( null !== $realtime_cb ) {
 					WP_MCP_AI_Logger::log_event(

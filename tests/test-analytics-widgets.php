@@ -137,6 +137,20 @@ class Test_Analytics_Widgets extends WP_UnitTestCase {
 	 * Test analytics dashboard widgets registration.
 	 */
 	public function test_analytics_dashboard_registers_widgets() {
+		// wp_add_dashboard_widget() lives in an admin include that PHPUnit
+		// never loads; require it before firing wp_dashboard_setup.
+		require_once ABSPATH . 'wp-admin/includes/dashboard.php';
+
+		// Re-register the dashboard widgets hook: wp-phpunit restores the
+		// hook table between tests, dropping the registration made at
+		// class-file load time.
+		WP_MCP_AI_Analytics_Dashboard::init();
+
+		// Production fires wp_dashboard_setup from wp_dashboard() after
+		// setting the dashboard screen; without a current screen,
+		// add_meta_box() silently drops widget registrations.
+		set_current_screen( 'dashboard' );
+
 		// Set up user with manage_options capability.
 		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_user );
