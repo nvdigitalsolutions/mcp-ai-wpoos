@@ -384,9 +384,15 @@ class WP_MCP_AI_Paper_Query {
 
 		switch ( $operator ) {
 			case '=':
+				if ( is_array( $record_value ) ) {
+					return in_array( $value, $record_value, true );
+				}
 				return $record_value == $value; // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison -- Intentional loose comparison for string/int flexibility.
 
 			case '!=':
+				if ( is_array( $record_value ) ) {
+					return ! in_array( $value, $record_value, true );
+				}
 				return $record_value != $value; // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison -- Intentional loose comparison.
 
 			case 'IN':
