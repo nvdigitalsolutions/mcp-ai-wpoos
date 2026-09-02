@@ -529,7 +529,9 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 */
 		public static function render_token_budget_explanation( $max_tokens ) {
 			try {
-				$max_tokens = absint( $max_tokens );
+				// Cast instead of absint(): absint() flips negatives to positives,
+				// which would silently treat an invalid -100 as a 100-token budget.
+				$max_tokens = (int) $max_tokens;
 
 				if ( $max_tokens <= 0 ) {
 					throw new Exception( 'Invalid max tokens value' );
