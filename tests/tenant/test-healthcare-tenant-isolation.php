@@ -30,6 +30,15 @@ class Test_Healthcare_Tenant_Isolation extends WP_UnitTestCase {
 	private $tenant_b_id;
 
 	/**
+	 * Install tenant tables before per-test transactions begin.
+	 *
+	 * @param WP_UnitTest_Factory $factory Test factory.
+	 */
+	public static function wpSetUpBeforeClass( $factory ) {
+		WP_MCP_AI_Tenant_Database::create_tables();
+	}
+
+	/**
 	 * Set up test tenants.
 	 */
 	public function set_up() {
