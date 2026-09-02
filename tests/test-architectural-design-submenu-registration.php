@@ -50,11 +50,6 @@ class Test_Architectural_Design_Submenu_Registration extends WP_UnitTestCase {
 	private function initialize_architectural_design_menu() {
 		global $submenu;
 
-		// Register post types first (normally happens on 'init').
-		if ( function_exists( 'wp_mcp_ai_register_architectural_project_cpt' ) ) {
-			wp_mcp_ai_register_architectural_project_cpt();
-		}
-
 		// Clear any existing submenus.
 		$submenu = array();
 
@@ -62,6 +57,23 @@ class Test_Architectural_Design_Submenu_Registration extends WP_UnitTestCase {
 		$init_file = WP_MCP_AI_PRO_PATH . 'includes/tools/architectural-design/init.php';
 		if ( file_exists( $init_file ) ) {
 			require_once $init_file;
+		}
+
+		// Re-register the admin_menu hooks. wp-phpunit restores the hook table
+		// between tests, and require_once cannot re-run the load-time
+		// registration, so tests after the first would otherwise see no
+		// submenu entries.
+		if ( class_exists( 'WP_MCP_AI_Architectural_Project_Research_Page' ) ) {
+			WP_MCP_AI_Architectural_Project_Research_Page::init();
+		}
+
+		// The settings page hooks admin_menu with an instance-bound callback;
+		// the original instance is wiped with the hook table. Priority 25 only
+		// carries the architectural settings pages in this suite, so clearing
+		// it before re-instantiating keeps registration duplicate-free.
+		remove_all_actions( 'admin_menu', 25 );
+		if ( class_exists( 'WP_MCP_AI_Architectural_Project_Settings_Page' ) ) {
+			new WP_MCP_AI_Architectural_Project_Settings_Page();
 		}
 
 		// Trigger menu registration.
@@ -106,14 +118,14 @@ class Test_Architectural_Design_Submenu_Registration extends WP_UnitTestCase {
 		// Check if Research & Add is in the submenu.
 		$found_research = false;
 		foreach ( $submenu[ $parent_slug ] as $item ) {
-			if ( 'Research & Add' === $item[0] ) {
+			if ( 'Research Projects' === $item[0] ) {
 				$found_research = true;
 				$this->assertEquals( 'architectural-project-research', $item[2], 'Research & Add should use correct page slug' );
 				break;
 			}
 		}
 
-		$this->assertTrue( $found_research, 'Research & Add submenu item should be registered under Design Projects' );
+		$this->assertTrue( $found_research, 'Research Projects submenu item should be registered under Design Projects' );
 	}
 
 	/**
@@ -178,7 +190,7 @@ class Test_Architectural_Design_Submenu_Registration extends WP_UnitTestCase {
 		$settings_position = null;
 
 		foreach ( $submenu[ $parent_slug ] as $position => $item ) {
-			if ( 'Research & Add' === $item[0] ) {
+			if ( 'Research Projects' === $item[0] ) {
 				$research_position = $position;
 			}
 			if ( 'Settings' === $item[0] ) {
@@ -191,7 +203,7 @@ class Test_Architectural_Design_Submenu_Registration extends WP_UnitTestCase {
 			$this->assertLessThan(
 				$settings_position,
 				$research_position,
-				'Research & Add should appear before Settings in the menu'
+				'Research Projects should appear before Settings in the menu'
 			);
 		}
 	}
