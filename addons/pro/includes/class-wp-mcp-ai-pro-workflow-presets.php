@@ -2873,8 +2873,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Classify Ticket', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'AI classifies the ticket category and suggests priority.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'classify_support_ticket',
-								'tool_args'   => array( 'apply_results' => true ),
+								'toolSlug'    => 'classify_support_ticket',
+								'arguments'   => array( 'apply_results' => true ),
 							),
 						),
 						array(
@@ -2887,8 +2887,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Update Status', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Move ticket to Triaged status.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'update_support_ticket',
-								'tool_args'   => array( 'status' => 'triaged' ),
+								'toolSlug'    => 'update_support_ticket',
+								'arguments'   => array( 'status' => 'triaged' ),
 							),
 						),
 						array(
@@ -2906,16 +2906,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 					),
 					'edges'       => array(
 						array(
-							'source' => 'node_1',
-							'target' => 'node_2',
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_2',
-							'target' => 'node_3',
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_3',
-							'target' => 'node_4',
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
 						),
 					),
 				),
@@ -2948,8 +2954,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Add Resolution Note', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Add internal resolution note to the ticket.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'update_support_ticket',
-								'tool_args'   => array( 'note' => 'Resolution note' ),
+								'toolSlug'    => 'update_support_ticket',
+								'arguments'   => array( 'note' => 'Resolution note' ),
 							),
 						),
 						array(
@@ -2962,8 +2968,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Resolve Ticket', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Mark the ticket as resolved.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'resolve_support_ticket',
-								'tool_args'   => array( 'resolution_type' => 'solved' ),
+								'toolSlug'    => 'resolve_support_ticket',
+								'arguments'   => array( 'resolution_type' => 'solved' ),
 							),
 						),
 						array(
@@ -2981,16 +2987,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 					),
 					'edges'       => array(
 						array(
-							'source' => 'node_1',
-							'target' => 'node_2',
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_2',
-							'target' => 'node_3',
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_3',
-							'target' => 'node_4',
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
 						),
 					),
 				),
@@ -3023,8 +3035,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Escalate Priority', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Bump the ticket priority level.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'escalate_support_ticket',
-								'tool_args'   => array(),
+								'toolSlug'    => 'escalate_support_ticket',
+								'arguments'   => array( 'new_priority' => 'high' ),
 							),
 						),
 						array(
@@ -3037,8 +3049,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Get SLA Report', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Generate updated SLA compliance report.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'get_ticket_sla_report',
-								'tool_args'   => array(),
+								'toolSlug'    => 'get_ticket_sla_report',
+								'arguments'   => array( 'group_by' => 'assignee' ),
 							),
 						),
 						array(
@@ -3056,16 +3068,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 					),
 					'edges'       => array(
 						array(
-							'source' => 'node_1',
-							'target' => 'node_2',
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_2',
-							'target' => 'node_3',
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_3',
-							'target' => 'node_4',
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
 						),
 					),
 				),
@@ -3100,8 +3118,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Qualify Lead (BANT)', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Run BANT qualification to validate lead readiness.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'qualify_lead_bant',
-								'tool_args'   => array(),
+								'toolSlug'    => 'qualify_lead_bant',
+								'arguments'   => array( 'lead_id' => '{{input.lead_id}}' ),
 							),
 						),
 						array(
@@ -3114,8 +3132,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Convert to Customer', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Create customer record with linked deal.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'convert_lead_to_customer',
-								'tool_args'   => array( 'create_deal' => true ),
+								'toolSlug'    => 'convert_lead_to_customer',
+								'arguments'   => array( 'create_deal' => true ),
 							),
 						),
 						array(
@@ -3133,16 +3151,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 					),
 					'edges'       => array(
 						array(
-							'source' => 'node_1',
-							'target' => 'node_2',
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_2',
-							'target' => 'node_3',
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_3',
-							'target' => 'node_4',
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
 						),
 					),
 				),
@@ -3175,8 +3199,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Get Customer Details', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Retrieve full customer record.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'get_customer',
-								'tool_args'   => array(),
+								'toolSlug'    => 'get_customer',
+								'arguments'   => array( 'customer_id' => '{{input.customer_id}}' ),
 							),
 						),
 						array(
@@ -3189,8 +3213,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Create Welcome Activity', 'mcp-ai-wpoos-pro' ),
 								'description' => __( 'Schedule a welcome call or onboarding meeting.', 'mcp-ai-wpoos-pro' ),
-								'tool_slug'   => 'create_crm_activity',
-								'tool_args'   => array(
+								'toolSlug'    => 'create_crm_activity',
+								'arguments'   => array(
 									'activity_type' => 'call',
 									'subject'       => 'Customer Welcome Call',
 								),
@@ -3211,16 +3235,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 					),
 					'edges'       => array(
 						array(
-							'source' => 'node_1',
-							'target' => 'node_2',
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_2',
-							'target' => 'node_3',
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
 						),
 						array(
-							'source' => 'node_3',
-							'target' => 'node_4',
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
 						),
 					),
 				),
