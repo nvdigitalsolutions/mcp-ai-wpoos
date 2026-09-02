@@ -31,7 +31,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 
 		// Clean up test data.
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql().
 		$wpdb->query( "TRUNCATE TABLE {$table_name}" );
 
 		parent::tearDown();
@@ -395,7 +395,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		WP_MCP_AI_Token_Tracking_Database::record_usage(
 			$user_id,
 			'analyze_comment_content',
-			'openai', // WRONG - could be gemini.
+			'openai', // Provider-agnostic tool — deliberately not migrated.
 			'gpt-4o-mini',
 			500,
 			250,
@@ -419,9 +419,9 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		$dry_results = WP_MCP_AI_Enhanced_Token_Tracking::migrate_provider_misattributions( true, 100 );
 
 		$this->assertTrue( $dry_results['dry_run'], 'Should be a dry run' );
-		$this->assertEquals( 3, $dry_results['total_checked'], 'Should check 3 Gemini tool records' );
-		$this->assertEquals( 3, $dry_results['records_updated'], 'Should plan to update 3 records' );
-		$this->assertCount( 3, $dry_results['updates'], 'Should have 3 update details' );
+		$this->assertEquals( 2, $dry_results['total_checked'], 'Should check 2 Gemini-only tool records' );
+		$this->assertEquals( 2, $dry_results['records_updated'], 'Should plan to update 2 records' );
+		$this->assertCount( 2, $dry_results['updates'], 'Should have 2 update details' );
 
 		// Verify updates are planned correctly.
 		foreach ( $dry_results['updates'] as $update ) {
@@ -434,7 +434,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		$results = WP_MCP_AI_Enhanced_Token_Tracking::migrate_provider_misattributions( false, 100 );
 
 		$this->assertFalse( $results['dry_run'], 'Should not be a dry run' );
-		$this->assertEquals( 3, $results['records_updated'], 'Should have updated 3 records' );
+		$this->assertEquals( 2, $results['records_updated'], 'Should have updated 2 records' );
 
 		// Verify database was updated.
 		global $wpdb;
@@ -443,19 +443,19 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$gemini_records = $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql().
 				"SELECT tool, provider, model, is_estimated FROM {$table_name} WHERE provider = %s ORDER BY tool",
 				'gemini'
 			),
 			ARRAY_A
 		);
 
-		$this->assertCount( 3, $gemini_records, 'Should have 3 Gemini records after migration' );
+		$this->assertCount( 2, $gemini_records, 'Should have 2 Gemini records after migration' );
 
 		// Verify specific tools were updated.
 		$tools_updated = array_column( $gemini_records, 'tool' );
 		$this->assertContains( 'generate_gemini_image', $tools_updated );
 		$this->assertContains( 'edit_gemini_image', $tools_updated );
-		$this->assertContains( 'analyze_comment_content', $tools_updated );
 
 		// Verify is_estimated was updated to 0 (actual).
 		foreach ( $gemini_records as $record ) {
@@ -466,13 +466,16 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$openai_records = $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql().
 				"SELECT tool FROM {$table_name} WHERE provider = %s",
 				'openai'
 			),
 			ARRAY_A
 		);
 
-		$this->assertCount( 1, $openai_records, 'Should still have 1 OpenAI record' );
-		$this->assertEquals( 'some_other_tool', $openai_records[0]['tool'], 'Correct tool should remain as OpenAI' );
+		$this->assertCount( 2, $openai_records, 'Should still have 2 OpenAI records' );
+		$openai_tools = array_column( $openai_records, 'tool' );
+		$this->assertContains( 'some_other_tool', $openai_tools, 'Correct tool should remain as OpenAI' );
+		$this->assertContains( 'analyze_comment_content', $openai_tools, 'Provider-agnostic tool should remain as OpenAI' );
 	}
 }
