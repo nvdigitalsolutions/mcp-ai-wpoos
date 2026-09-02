@@ -490,7 +490,7 @@ class BuildAssistantPage {
 		return array(
 			'tax_advisor'              => __( 'Tax Advisor', 'nvoos-content-graph-ai' ),
 			'accountant'               => __( 'Accountant', 'nvoos-content-graph-ai' ),
-			'bookkeeper'               => __( 'Bookkeeper', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ),
+			'bookkeeper'               => __( 'Bookkeeper', 'nvoos-content-graph-ai' ),
 			'lawyer'                   => __( 'Lawyer', 'nvoos-content-graph-ai' ),
 			'legal_advisor'            => __( 'Legal Advisor', 'nvoos-content-graph-ai' ),
 			'customs_broker'           => __( 'Customs Broker', 'nvoos-content-graph-ai' ),
@@ -717,7 +717,7 @@ class BuildAssistantPage {
 		}
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'nvoos-content-graph-ai' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'nvoos-content-graph-01' === 'x' ? 'nvoos-content-graph-ai' : 'nvoos-content-graph-ai' ) ), 403 );
 		}
 
 		$input = array(
