@@ -1,0 +1,22 @@
+# NV oOS Fleet site registry template.
+#
+# The live registry is created next to plugin_api.py as `sites.yaml` the
+# first time a site is added through the dashboard UI (or copy this file and
+# edit it, then restart the dashboard). The live file is chmod'd 0600 and
+# ignored by git — never commit real operator tokens.
+#
+# Operator tokens (op_xxxxx.SECRET) are issued by the Fleet Operator addon on
+# the WordPress side:  Settings → External Operators, or
+# `wp mcp-ai operator create --label "hermes-dashboard" --read-only`.
+
+version: 1
+sites:
+  # - id: site-3f9a2b1c4d
+  #   label: Victory Store
+  #   url: https://victory.nvdigital.solutions
+  #   token: op_xxxxx.SECRET
+  #   write: false            # required for control-plane write paths
+  #   allow_insecure: false   # true only for http:// or self-signed TLS
+  #   notes: ""
+  #   created_at: "2026-09-03T00:00:00+00:00"
+  #   updated_at: "2026-09-03T00:00:00+00:00"

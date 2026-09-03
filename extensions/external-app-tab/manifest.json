@@ -1,0 +1,34 @@
+{
+  "extensions": [
+    {
+      "id": "external-app-tab",
+      "name": "External App Tab",
+      "description": "Pin a compatible self-hosted web app as a tab inside Hermes WebUI via an iframe.",
+      "scripts": [
+        "assets/external-app-tab.js"
+      ],
+      "stylesheets": [
+        "assets/external-app-tab.css"
+      ],
+      "permissions": {
+        "storage": {
+          "owned": true
+        }
+      },
+      "settings_schema": [
+        {
+          "key": "url",
+          "type": "string",
+          "label": "App URL",
+          "default": ""
+        },
+        {
+          "key": "label",
+          "type": "string",
+          "label": "Rail label",
+          "default": "App"
+        }
+      ]
+    }
+  ]
+}
