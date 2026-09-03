@@ -12,6 +12,12 @@ export interface ChatFetchOptions {
 	nonce: string;
 	assistantId: number;
 	guest: boolean;
+	/**
+	 * Server-minted guest access token. When guest mode is on and a token is
+	 * provided it is sent as the X-WP-MCP-AI-Guest header value; otherwise the
+	 * legacy boolean convention ("1") is used.
+	 */
+	guestToken?: string;
 	/** Optional override — when provided, sent to server as options.provider / options.model. */
 	model?: string;
 	provider?: string;
@@ -463,7 +469,7 @@ export function createChatFetch( opts: ChatFetchOptions ): typeof globalThis.fet
 		headers.set( 'Content-Type', 'application/json' );
 		headers.set( 'Accept', 'text/event-stream' );
 		if ( opts.guest ) {
-			headers.set( 'X-WP-MCP-AI-Guest', '1' );
+			headers.set( 'X-WP-MCP-AI-Guest', opts.guestToken || '1' );
 		} else if ( opts.nonce ) {
 			headers.set( 'X-WP-Nonce', opts.nonce );
 		}

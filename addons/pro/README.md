@@ -17,6 +17,35 @@ The **Pro Add-on** is a premium commercial extension that transforms the base Op
 
 **This is NOT open-source software.** It is a commercial product available only through authorized channels with proper licensing.
 
+## Pro SPA v2 Shortcode
+
+The Pro SPA v2 (React chat surface) can be embedded on the front end with the
+`[nvoos_pro_spa]` shortcode — chat-first "embedded" mode: conversation view,
+transcripts sidebar, memory, skills (OKF), tool shortcuts, slash commands, and
+HITL approvals. No admin routes are exposed.
+
+```
+[nvoos_pro_spa assistant_id="12" theme="dark" height="720px" show_sidebar="1"]
+```
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `assistant_id` | server default | Assistant post ID to bind the chat to. |
+| `mode` | `embedded` | `embedded` (chat-first) or `admin` (full SPA — `manage_options` only). |
+| `theme` | `auto` | `auto`, `light`, or `dark`. |
+| `height` | `640px` | Optional CSS height for the instance. |
+| `guest` | `0` | `1` enables guest access (requires the global "Allow Guest Access" security setting and a valid `assistant_id`). |
+| `allow_sensitive_tools` | `0` | `1` forwards `allow_sensitive_tools` to the chat endpoint. |
+| `show_sidebar` | `1` | `0` hides the conversations sidebar. |
+
+Guests are authenticated with the base plugin's guest-token machinery
+(`X-WP-MCP-AI-Guest` header); transcripts/memory/threads endpoints are omitted
+for guests. One embedded instance per page is supported.
+
+A Gutenberg block (**NV oOS Pro SPA v2**, category *NV oOS Toolkits*) wraps the
+same attributes. Override rendering with the `nvoos_pro_spa_can_render` filter
+(`false` short-circuits to an empty string).
+
 ## Professional Toolkits
 
 The Pro Add-on includes **30 specialized professional toolkits** organized into the following categories.

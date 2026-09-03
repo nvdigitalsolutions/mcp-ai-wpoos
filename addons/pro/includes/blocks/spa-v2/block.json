@@ -1,0 +1,48 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "mcp-ai-toolkits/spa-v2",
+	"title": "NV oOS Pro SPA v2",
+	"category": "mcp-ai-toolkits",
+	"description": "Embed the NV oOS Pro SPA v2 chat surface (threads, memory, skills, tool shortcuts) on any page.",
+	"keywords": ["ai", "chat", "assistant", "spa", "mcp", "nvoos"],
+	"textdomain": "mcp-ai-wpoos-pro",
+	"attributes": {
+		"assistant_id": {
+			"type": "number",
+			"default": 0
+		},
+		"mode": {
+			"type": "string",
+			"default": "embedded"
+		},
+		"theme": {
+			"type": "string",
+			"default": "auto"
+		},
+		"height": {
+			"type": "string",
+			"default": ""
+		},
+		"guest": {
+			"type": "boolean",
+			"default": false
+		},
+		"allow_sensitive_tools": {
+			"type": "boolean",
+			"default": false
+		},
+		"show_sidebar": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"supports": {
+		"align": true,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}

@@ -11,6 +11,23 @@ export interface ProSpaPerInstanceConfig {
 	allowSensitiveTools?: boolean;
 	/** Vector store ID (mirrors legacy chat.js preloading). */
 	vectorStoreId?: number | string;
+	/**
+	 * Render mode.
+	 * - `admin`: full three-column layout with router (default).
+	 * - `embedded`: chat-first, router-free surface for the [nvoos_pro_spa]
+	 *   shortcode.
+	 */
+	mode?: 'admin' | 'embedded';
+	/** CSS height for embedded instances (e.g. "720px"). */
+	height?: string;
+	/** Guest mode — anonymous visitors authenticated via a guest token. */
+	guest?: boolean;
+	/** Server-minted guest access token sent via X-WP-MCP-AI-Guest. */
+	guestToken?: string;
+	/** Whether embedded mode renders the transcripts sidebar. */
+	showSidebar?: boolean;
+	/** Route allowlist for the instance (embedded mode: chat only). */
+	routes?: string[];
 }
 
 export interface ProSpaEndpoints {
@@ -67,6 +84,40 @@ export interface MentionType {
 }
 
 export type ProSpaConfig = ProSpaPerInstanceConfig;
+
+/**
+ * Overlay per-instance overrides (the shortcode's data-config JSON) onto the
+ * global runtime and store the result back on `window.NVOOS_PRO_SPA`.
+ *
+ * Every existing consumer (useBootstrap, Layout, ChatPage, useChatSpoke)
+ * reads the runtime through readProSpaConfig(), so writing the merged value
+ * back to the global makes per-instance config transparent to the whole app.
+ *
+ * NOTE: the global is shared — this intentionally supports a single embedded
+ * instance per page (documented shortcode constraint for v1).
+ */
+export function applyPerInstanceConfig( perInstance: unknown ): ProSpaRuntime | null {
+	if ( typeof window === 'undefined' ) {
+		return null;
+	}
+	const runtime = readProSpaConfig();
+	if ( ! runtime ) {
+		return null;
+	}
+	if ( ! perInstance || typeof perInstance !== 'object' || Array.isArray( perInstance ) ) {
+		return runtime;
+	}
+	const overrides = perInstance as Partial< ProSpaPerInstanceConfig >;
+	const next: ProSpaRuntime = {
+		...runtime,
+		config: {
+			...runtime.config,
+			...( overrides as ProSpaPerInstanceConfig ),
+		},
+	};
+	( window as unknown as { NVOOS_PRO_SPA?: ProSpaRuntime } ).NVOOS_PRO_SPA = next;
+	return next;
+}
 
 /**
  * Read the localized runtime config emitted by `wp_localize_script()`.

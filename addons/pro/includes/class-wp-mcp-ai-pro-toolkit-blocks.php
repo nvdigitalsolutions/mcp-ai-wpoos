@@ -94,6 +94,7 @@ class WP_MCP_AI_Pro_Toolkit_Blocks {
 			'media-templates',
 			'media-collections',
 			'vehicle-cleaning-estimator',
+			'spa-v2',
 		);
 
 		// Skip blocks that are already registered so re-firing `init` (as the
