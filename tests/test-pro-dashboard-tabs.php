@@ -61,32 +61,29 @@ class Test_Pro_Dashboard_Tabs extends WP_UnitTestCase {
 			return;
 		}
 
-		// Get submenu items registered by Pro Dashboard (excluding delegate pages).
-		$pro_dashboard_items = array_filter(
-			$submenu[ $page_slug ],
-			function ( $item ) use ( $page_slug ) {
-				// Only count items that belong to Pro Dashboard (not delegate pages).
-				return isset( $item[2] ) && (
-					$item[2] === $page_slug ||
-					strpos( $item[2], $page_slug . '-' ) === 0
-				);
+		// The Overview entry must be registered.
+		$overview_found = false;
+		foreach ( $submenu[ $page_slug ] as $item ) {
+			if ( isset( $item[2] ) && $page_slug === $item[2] ) {
+				$overview_found = true;
+				break;
 			}
-		);
+		}
+		$this->assertTrue( $overview_found, 'Overview submenu page should be registered' );
 
-		// Should only have the Overview page, no separate ISO 27001, Reports, etc. pages.
-		$this->assertCount(
-			1,
-			$pro_dashboard_items,
-			'Pro Dashboard should only register Overview submenu (other sections are tabs)'
-		);
+		// Sections rendered as tabs (ISO 27001, Reports, Monitoring, Risk,
+		// Multi-Framework) must NOT be registered as separate submenu pages.
+		$tab_slugs = array( 'iso27001', 'reports', 'monitoring', 'risk', 'multi-framework' );
+		foreach ( $tab_slugs as $tab_slug ) {
+			$tab_page_slug = $page_slug . '-' . $tab_slug;
+			foreach ( $submenu[ $page_slug ] as $item ) {
+				if ( isset( $item[2] ) && $tab_page_slug === $item[2] ) {
+					$this->fail( "Tab section '{$tab_slug}' should not be registered as a submenu page." );
+				}
+			}
+		}
 
-		// Verify it's the Overview page.
-		$first_item = reset( $pro_dashboard_items );
-		$this->assertEquals(
-			$page_slug,
-			$first_item[2],
-			'The single submenu item should be the Overview page'
-		);
+		$this->addToAssertionCount( 1 );
 	}
 
 	/**

@@ -23,11 +23,12 @@ class WP_MCP_AI_Assistant_Metabox_Crash_Fix_Test extends WP_UnitTestCase {
 		// Create assistant CPT instance.
 		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
 
-		// Simulate editing a regular post (not assistant).
-		global $current_screen;
-		$current_screen = (object) array(
-			'post_type' => 'post',
-		);
+		// Simulate editing a regular post (not assistant). Use a real
+		// WP_Screen: WP 7.1's get_current_screen() only returns WP_Screen
+		// instances.
+		$screen = WP_Screen::get( 'post' );
+		$screen->post_type = 'post';
+		set_current_screen( $screen );
 
 		// Count metaboxes before calling register_meta_boxes.
 		global $wp_meta_boxes;
@@ -43,7 +44,7 @@ class WP_MCP_AI_Assistant_Metabox_Crash_Fix_Test extends WP_UnitTestCase {
 		$this->assertEquals( $before_count, $after_count, 'Metaboxes should not be added for regular posts' );
 
 		// Now test with assistant post type.
-		$current_screen->post_type = 'mcp_ai_assistant';
+		get_current_screen()->post_type = 'mcp_ai_assistant';
 
 		// Count metaboxes before calling register_meta_boxes.
 		$before_count = isset( $wp_meta_boxes['mcp_ai_assistant'] ) ? count( $wp_meta_boxes['mcp_ai_assistant'], COUNT_RECURSIVE ) : 0;
@@ -58,7 +59,7 @@ class WP_MCP_AI_Assistant_Metabox_Crash_Fix_Test extends WP_UnitTestCase {
 		$this->assertGreaterThan( $before_count, $after_count, 'Metaboxes should be added for assistant posts' );
 
 		// Clean up.
-		$current_screen = null;
+		$GLOBALS['current_screen'] = null;
 	}
 
 	/**

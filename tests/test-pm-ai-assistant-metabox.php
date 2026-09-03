@@ -85,6 +85,17 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		$settings['enable_project_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
+		// The render path checks edit_post for the current user; run as an
+		// administrator so the assistant selector is rendered. The PM CPTs are
+		// only registered on `init` when the setting is enabled at bootstrap,
+		// so register the task CPT directly for the capability check to resolve.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+		if ( ! class_exists( 'WP_MCP_AI_Task_CPT' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-cpt.php';
+		}
+		WP_MCP_AI_Task_CPT::register_post_type();
+
 		// Create a test assistant.
 		$assistant_id = $this->factory->post->create(
 			array(

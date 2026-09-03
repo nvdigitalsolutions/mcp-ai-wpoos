@@ -308,11 +308,11 @@ class Test_Assistant_Primary_Roles extends WP_UnitTestCase {
 		// Create assistant CPT instance.
 		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
 
-		// Simulate editing an assistant post.
-		global $current_screen;
-		$current_screen = (object) array(
-			'post_type' => 'mcp_ai_assistant',
-		);
+		// Simulate editing an assistant post. Use a real WP_Screen: WP 7.1's
+		// get_current_screen() only returns WP_Screen instances.
+		$screen = WP_Screen::get( 'post' );
+		$screen->post_type = 'mcp_ai_assistant';
+		set_current_screen( $screen );
 
 		// Call register_meta_boxes.
 		$assistant_cpt->register_meta_boxes();
@@ -335,6 +335,6 @@ class Test_Assistant_Primary_Roles extends WP_UnitTestCase {
 		$this->assertTrue( $found, 'Primary Roles metabox should be registered' );
 
 		// Clean up.
-		$current_screen = null;
+		$GLOBALS['current_screen'] = null;
 	}
 }
