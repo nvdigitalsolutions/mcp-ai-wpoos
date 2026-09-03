@@ -4078,6 +4078,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						switch ( $event_type ) {
 							case 'file_change':
 							case 'file_integrity':
+							case 'file-integrity':
 								++$stats['file_integrity_events'];
 								break;
 							case 'login':
@@ -4088,14 +4089,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							case 'plugin_update':
 							case 'theme_update':
 							case 'core_update':
+							case 'plugin-updates':
 								++$stats['update_events'];
 								break;
 							case 'setting_change':
 							case 'config_change':
+							case 'configuration':
 								++$stats['config_events'];
 								break;
 							case 'security_alert':
 							case 'security':
+							case 'security-alerts':
 								++$stats['security_events'];
 								break;
 						}
