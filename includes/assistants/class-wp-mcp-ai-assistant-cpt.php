@@ -94,6 +94,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
 			add_filter( 'use_block_editor_for_post_type', array( __CLASS__, 'disable_block_editor_for_post_type' ), 10, 2 );
 			add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
+			// Styles for the tools metabox must enqueue during the admin
+			// enqueue phase (head print) — late-enqueued inline styles do not
+			// print reliably on newer WordPress versions.
+			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_tools_metabox_styles' ) );
 			add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_post' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_issue_credential', array( $this, 'handle_issue_credential' ) );
 			add_action( 'admin_post_wp_mcp_ai_revoke_credential', array( $this, 'handle_revoke_credential' ) );
@@ -2811,7 +2815,120 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
-		 * Render the tools meta box content.
+		 * Stylesheet source for the tools metabox (accordion grid).
+		 *
+		 * Kept as a string because the styles only apply on the assistant
+		 * edit screen; attaching them to a registered handle during the admin
+		 * enqueue phase means they print with the head styles instead of
+		 * relying on unreliable late printing.
+		 *
+		 * @return string CSS rules.
+		 */
+		private static function get_tools_metabox_css() {
+			return '.wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}'
+				. '.wp-mcp-ai-tools__group{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+				. '.wp-mcp-ai-tools__group summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+				. '.wp-mcp-ai-tools__group summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-tools__summary-title{flex:1 1 auto}'
+				. '.wp-mcp-ai-tools__summary-count{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+				. '.wp-mcp-ai-tools__group[open]{background:#fff}'
+				. '.wp-mcp-ai-tools__group[open] summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-tools__list{margin:0;padding:1rem;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}'
+				. '.wp-mcp-ai-tools__item{border:1px solid #dcdcde;border-radius:4px;background:#fff;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;transition:box-shadow 0.2s ease}'
+				. '.wp-mcp-ai-tools__item:focus-within{box-shadow:0 0 0 1px #2271b1}'
+				. '.wp-mcp-ai-tools__header{display:flex;align-items:flex-start;gap:0.75rem}'
+				. '.wp-mcp-ai-tools__checkbox{margin-top:0.2rem}'
+				. '.wp-mcp-ai-tools__name{display:block;font-weight:600;font-size:14px}'
+				. '.wp-mcp-ai-tools__description{margin:0;color:#50575e;font-size:13px}'
+				. '.wp-mcp-ai-tools__controls label{font-weight:600;font-size:13px;margin-bottom:0.25rem;display:block}'
+				. '.wp-mcp-ai-tools__role-select{width:100%}'
+				. '.wp-mcp-ai-tools__helper{margin:0;color:#646970;font-size:12px}'
+				. '.wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}'
+				. '.wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}'
+				. '.wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}'
+				. '.wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}'
+				. '.wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}'
+				. '.wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}'
+				. '.wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-title{flex:1 1 auto}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool[open]{background:#fff}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem;display:flex;flex-direction:column;gap:1rem;border-top:1px solid #dcdcde}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults p{margin:0;color:#50575e;font-size:13px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0 0;padding-left:1.25rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list li{margin-bottom:0.5rem;font-size:13px}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{display:block;color:#50575e;font-size:12px;margin-top:0.25rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#fff}'
+				. '.wp-mcp-ai-prebuilt-shortcuts__row hr{margin:1rem -1rem 0}'
+				. '.wp-mcp-ai-tool-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
+				. '.wp-mcp-ai-tool-shortcuts h3{margin:0;font-size:16px}'
+				. '.wp-mcp-ai-tool-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
+				. '.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
+				. '.wp-mcp-ai-tool-shortcuts__item[open]{background:#fff}'
+				. '.wp-mcp-ai-tool-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
+				. '.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}'
+				. '.wp-mcp-ai-tool-shortcuts__summary-title{flex:1 1 auto}'
+				. '.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
+				. '.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}'
+				. '.wp-mcp-ai-tool-shortcuts__row{margin:0;padding:1rem;display:flex;flex-direction:column;gap:1rem;background:#fff;border-top:1px solid #dcdcde;border-radius:0 0 4px 4px}'
+				. '.wp-mcp-ai-tool-shortcuts__row hr{display:none}'
+				. '@media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}';
+		}
+
+		/**
+		 * Register, enqueue, and attach the tools metabox stylesheet exactly
+		 * once per request.
+		 *
+		 * The primary call path is the admin enqueue phase so the inline CSS
+		 * prints with the head styles; the metabox render also calls this as
+		 * a guarded fallback, and the get_data() check prevents the CSS from
+		 * being attached twice.
+		 *
+		 * @return void
+		 */
+		private static function ensure_tools_metabox_styles() {
+			$handle = 'wp-mcp-ai-assistant-tools';
+
+			if ( ! wp_style_is( $handle, 'registered' ) ) {
+				wp_register_style( $handle, false, array(), WP_MCP_AI_VERSION );
+			}
+
+			wp_enqueue_style( $handle );
+
+			if ( ! wp_styles()->get_data( $handle, 'after' ) ) {
+				wp_add_inline_style( $handle, self::get_tools_metabox_css() );
+			}
+		}
+
+		/**
+		 * Enqueue the tools metabox stylesheet during the admin enqueue phase
+		 * so its inline CSS prints with the head styles.
+		 *
+		 * Late-enqueued styles (from metabox render callbacks) do not print
+		 * reliably on newer WordPress versions, which left the tools grid
+		 * unstyled on the assistant edit screen.
+		 *
+		 * @param string $hook Current admin page hook.
+		 */
+		public static function enqueue_tools_metabox_styles( $hook ) {
+			if ( ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
+				return;
+			}
+
+			self::ensure_tools_metabox_styles();
+		}
+
+		/**
+		 * Render the tools meta box.
 		 *
 		 * @param WP_Post $post Post object.
 		 */
@@ -3005,75 +3122,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				uasort( $role_options, 'strnatcasecmp' );
 			}
 
-			static $tools_styles_printed = false;
+			static $tools_styles_ensured = false;
 
-			if ( ! $tools_styles_printed ) {
-				$tools_styles_printed = true;
-
-				// Register a dummy style handle so wp_add_inline_style has a target.
-				wp_register_style( 'wp-mcp-ai-assistant-tools', false, array(), WP_MCP_AI_VERSION );
-				wp_enqueue_style( 'wp-mcp-ai-assistant-tools' );
-
-				wp_add_inline_style(
-					'wp-mcp-ai-assistant-tools',
-					'.wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}'
-					. '.wp-mcp-ai-tools__group{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
-					. '.wp-mcp-ai-tools__group summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
-					. '.wp-mcp-ai-tools__group summary::-webkit-details-marker{display:none}'
-					. '.wp-mcp-ai-tools__summary-title{flex:1 1 auto}'
-					. '.wp-mcp-ai-tools__summary-count{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
-					. '.wp-mcp-ai-tools__group[open]{background:#fff}'
-					. '.wp-mcp-ai-tools__group[open] summary{border-bottom:1px solid #dcdcde}'
-					. '.wp-mcp-ai-tools__list{margin:0;padding:1rem;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}'
-					. '.wp-mcp-ai-tools__item{border:1px solid #dcdcde;border-radius:4px;background:#fff;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;transition:box-shadow 0.2s ease}'
-					. '.wp-mcp-ai-tools__item:focus-within{box-shadow:0 0 0 1px #2271b1}'
-					. '.wp-mcp-ai-tools__header{display:flex;align-items:flex-start;gap:0.75rem}'
-					. '.wp-mcp-ai-tools__checkbox{margin-top:0.2rem}'
-					. '.wp-mcp-ai-tools__name{display:block;font-weight:600;font-size:14px}'
-					. '.wp-mcp-ai-tools__description{margin:0;color:#50575e;font-size:13px}'
-					. '.wp-mcp-ai-tools__controls label{font-weight:600;font-size:13px;margin-bottom:0.25rem;display:block}'
-					. '.wp-mcp-ai-tools__role-select{width:100%}'
-					. '.wp-mcp-ai-tools__helper{margin:0;color:#646970;font-size:12px}'
-					. '.wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}'
-					. '.wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}'
-					. '.wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}'
-					. '.wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}'
-					. '.wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}'
-					. '.wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}'
-					. '.wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
-					. '.wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__summary-title{flex:1 1 auto}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__tool[open]{background:#fff}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem;display:flex;flex-direction:column;gap:1rem;border-top:1px solid #dcdcde}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults p{margin:0;color:#50575e;font-size:13px}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0 0;padding-left:1.25rem}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-list li{margin-bottom:0.5rem;font-size:13px}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__defaults-summary{display:block;color:#50575e;font-size:12px;margin-top:0.25rem}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__row{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#fff}'
-					. '.wp-mcp-ai-prebuilt-shortcuts__row hr{margin:1rem -1rem 0}'
-					. '.wp-mcp-ai-tool-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}'
-					. '.wp-mcp-ai-tool-shortcuts h3{margin:0;font-size:16px}'
-					. '.wp-mcp-ai-tool-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}'
-					. '.wp-mcp-ai-tool-shortcuts__item{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}'
-					. '.wp-mcp-ai-tool-shortcuts__item[open]{background:#fff}'
-					. '.wp-mcp-ai-tool-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}'
-					. '.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker{display:none}'
-					. '.wp-mcp-ai-tool-shortcuts__summary-title{flex:1 1 auto}'
-					. '.wp-mcp-ai-tool-shortcuts__summary-tool{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}'
-					. '.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary{border-bottom:1px solid #dcdcde}'
-					. '.wp-mcp-ai-tool-shortcuts__row{margin:0;padding:1rem;display:flex;flex-direction:column;gap:1rem;background:#fff;border-top:1px solid #dcdcde;border-radius:0 0 4px 4px}'
-					. '.wp-mcp-ai-tool-shortcuts__row hr{display:none}'
-					. '@media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}'
-				);
+			if ( ! $tools_styles_ensured ) {
+				$tools_styles_ensured = true;
+				self::ensure_tools_metabox_styles();
 			}
 
 			static $tools_script_printed = false;
