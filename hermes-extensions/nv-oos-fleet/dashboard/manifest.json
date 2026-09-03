@@ -1,0 +1,15 @@
+{
+  "name": "nv-oos-fleet",
+  "label": "NV oOS Fleet",
+  "description": "Register and monitor NV oOS WordPress sites from the Hermes dashboard.",
+  "icon": "Globe",
+  "version": "0.1.0",
+  "tab": {
+    "path": "/nv-oos-fleet",
+    "position": "end"
+  },
+  "slots": ["header-right"],
+  "entry": "dist/index.js",
+  "css": "dist/style.css",
+  "api": "plugin_api.py"
+}

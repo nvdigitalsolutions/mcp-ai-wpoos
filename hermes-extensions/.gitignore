@@ -1,0 +1,13 @@
+# Hermes-side source is a git mirror of the runtime layout. Never commit the
+# live site registry — it holds real operator tokens. sites.yaml.example is
+# the documented template.
+**/sites.yaml
+!**/sites.yaml.example
+
+# Hermes runtime artefacts (should never appear here anyway).
+__pycache__/
+*.pyc
+
+# Local venv for the backend smoke test (tests/backend_smoke.py).
+.venv/
+.venv-test/

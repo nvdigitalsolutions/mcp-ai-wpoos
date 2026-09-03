@@ -1,0 +1,35 @@
+# NV oOS dashboard theme — deep navy canvas, signal-cyan midground,
+# subtle amber glow. System font stacks only (no external requests).
+name: nv-oos
+label: NV oOS
+description: NV oOS fleet console — deep navy with signal cyan and amber accents.
+
+palette:
+  background:
+    hex: "#081120"
+    alpha: 1.0
+  midground: "#9adcff"
+  foreground:
+    hex: "#ffffff"
+    alpha: 0.0
+  warmGlow: "rgba(56, 189, 248, 0.14)"
+  noiseOpacity: 0.6
+
+typography:
+  fontSans: 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif'
+  fontMono: '"JetBrains Mono", "Fira Code", ui-monospace, monospace'
+  baseSize: "15px"
+
+layout:
+  radius: "0.5rem"
+  density: comfortable
+
+layoutVariant: standard
+
+componentStyles:
+  card:
+    boxShadow: "inset 0 0 0 1px rgba(56, 189, 248, 0.14)"
+
+colorOverrides:
+  primary: "#0ea5e9"
+  ring: "#38bdf8"
