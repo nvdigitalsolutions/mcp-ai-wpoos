@@ -17,6 +17,30 @@
 class WP_MCP_AI_Section_Subtab_Sanitization_Test extends WP_UnitTestCase {
 
 	/**
+	 * Configure OpenAI so 'openai' is a valid default_provider option — the
+	 * provider dropdown is dynamically filtered to enabled+credentialed
+	 * providers.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_openai'  => true,
+				'openai_api_key' => 'sk-test-config',
+			)
+		);
+	}
+
+	/**
+	 * Tear down test.
+	 */
+	public function tearDown(): void {
+		delete_option( 'wp_mcp_ai_settings' );
+		parent::tearDown();
+	}
+
+	/**
 	 * Test that General section can sanitize with subtabs.
 	 */
 	public function test_general_section_sanitize_with_subtabs() {

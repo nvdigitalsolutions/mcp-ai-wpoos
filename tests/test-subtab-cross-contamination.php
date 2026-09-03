@@ -160,9 +160,14 @@ class WP_MCP_AI_Subtab_Cross_Contamination_Test extends WP_UnitTestCase {
 	public function test_wrong_subtab_returns_empty() {
 		$section = new WP_MCP_AI_Section_General();
 
-		// Simulate a subtab that doesn't exist in General.
-		$_POST['subtab'] = 'data_management'; // This is from Advanced, not General.
-		$submitted       = array(
+		// Simulate a form submission for a subtab that doesn't exist in General
+		// (data_management belongs to Advanced). The submitted settings array
+		// marks this as a real form save rather than an import.
+		$_POST['subtab_general']     = 'data_management';
+		$_POST['wp_mcp_ai_settings'] = array(
+			'enable_logging' => '1',
+		);
+		$submitted = array(
 			'enable_logging' => '1',
 		);
 
@@ -173,16 +178,27 @@ class WP_MCP_AI_Subtab_Cross_Contamination_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $sanitized );
 
 		// Clean up.
-		unset( $_POST['subtab'] );
+		unset( $_POST['subtab_general'], $_POST['wp_mcp_ai_settings'] );
 	}
 
 	/**
 	 * Test that missing subtab POST param defaults correctly.
 	 */
 	public function test_missing_subtab_uses_default() {
+		// Configure OpenAI so 'openai' is a valid default_provider option (the
+		// provider dropdown is dynamically filtered to enabled providers).
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_openai'  => true,
+				'openai_api_key' => 'sk-test-config',
+			)
+		);
+
 		$section = new WP_MCP_AI_Section_General();
 
-		// Don't set $_POST['subtab'] - it should default to 'core'.
+		// Don't set any subtab POST field - the import fallback sanitizes
+		// every field so exported settings re-import without data loss.
 		$submitted = array(
 			'default_provider'  => 'openai',
 			'default_assistant' => '0',
@@ -194,6 +210,8 @@ class WP_MCP_AI_Subtab_Cross_Contamination_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $sanitized );
 		$this->assertArrayHasKey( 'default_provider', $sanitized );
 		$this->assertEquals( 'openai', $sanitized['default_provider'] );
+
+		delete_option( 'wp_mcp_ai_settings' );
 	}
 
 	/**
