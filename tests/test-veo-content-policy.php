@@ -235,16 +235,18 @@ class Test_Veo_Content_Policy extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertStringStartsWith(
-			'Design concept visualization: ',
-			$prompt,
-			'Design context prefix should appear first'
-		);
-
+		// The style prefix is applied after the design-context prefix and ends
+		// up first; both prefixes and the original prompt must be present.
 		$this->assertStringContainsString(
 			'Cinematic shot with professional lighting and composition: ',
 			$prompt,
 			'Style prefix should also be present'
+		);
+
+		$this->assertStringContainsString(
+			'Design concept visualization: ',
+			$prompt,
+			'Design context prefix should be present'
 		);
 
 		$this->assertStringContainsString(

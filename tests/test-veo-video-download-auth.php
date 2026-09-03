@@ -214,24 +214,28 @@ class Test_Veo_Video_Download_Auth extends WP_UnitTestCase {
 	public function test_download_video_logging() {
 		$service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
+		// Logging is gated behind the enable_logging setting.
+		$settings                   = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_logging'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $service );
 		$method     = $reflection->getMethod( 'download_video' );
 		$method->setAccessible( true );
 
-		// Track logged events.
+		// Track logged events via the log-entry filter (the logger's public
+		// seam is wp_mcp_ai_log_entry, which receives the prepared entry).
 		$logged_events = array();
 		add_filter(
-			'wp_mcp_ai_log_event',
-			function ( $event_type, $message, $context ) use ( &$logged_events ) {
-				$logged_events[] = array(
-					'type'    => $event_type,
-					'message' => $message,
-					'context' => $context,
-				);
+			'wp_mcp_ai_log_entry',
+			function ( $entry ) use ( &$logged_events ) {
+				$logged_events[] = $entry;
+				return $entry;
 			},
 			10,
-			3
+			1
 		);
 
 		// Mock successful download.
@@ -274,6 +278,12 @@ class Test_Veo_Video_Download_Auth extends WP_UnitTestCase {
 			}
 		);
 		$this->assertNotEmpty( $success_log, 'Download success should be logged' );
+
+		// Clean up.
+		remove_all_filters( 'wp_mcp_ai_log_entry' );
+		remove_all_filters( 'pre_http_request' );
+		delete_option( 'wp_mcp_ai_settings' );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 	}
 
 	/**

@@ -40,13 +40,24 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		$executor->init();
 
 		// Create a mock tool that simulates veo video generation returning a nested async response.
+		// Use a unique slug: the real generate_veo_video tool is registered with a
+		// validated variant and the registry would resolve to it instead.
 		$veo_job_id = 'veo_test_12345';
+		$mock_slug  = 'veo_test_mock_tool';
 		$mock_tool  = new class( $veo_job_id ) implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
+			/**
+			 * VEO job ID.
+			 *
+			 * @var string
+			 */
 			private $veo_job_id;
 
 			/**
 			 * Constructor.
+			 *
+			 * @param string $veo_job_id VEO job ID.
 			 */
 			public function __construct( $veo_job_id ) {
 				$this->veo_job_id = $veo_job_id;
@@ -58,7 +69,7 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 			 * @return string Tool slug.
 			 */
 			public function get_slug() {
-				return 'generate_veo_video';
+				return 'veo_test_mock_tool';
 			}
 
 			/**
@@ -124,7 +135,7 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		$registry->register_tool( $mock_tool );
 
 		// Queue the tool for async execution.
-		$parent_job_id = $executor->queue_tool( 'generate_veo_video', array( 'prompt' => 'Test video' ), array( 'user_id' => 1 ) );
+		$parent_job_id = $executor->queue_tool( $mock_slug, array( 'prompt' => 'Test video' ), array( 'user_id' => 1 ) );
 
 		$this->assertNotInstanceOf( 'WP_Error', $parent_job_id, 'Job should be queued successfully' );
 		$this->assertStringStartsWith( 'async_', $parent_job_id, 'Parent job ID should start with async_' );
@@ -171,13 +182,24 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		$executor->init();
 
 		// Create a mock tool that simulates veo video generation.
+		// Use a unique slug: the real generate_veo_video tool is registered
+		// with a validated variant and the registry would resolve to it instead.
 		$veo_job_id = 'veo_test_67890';
+		$mock_slug  = 'veo_test_mock_tool';
 		$mock_tool  = new class( $veo_job_id ) implements WP_MCP_AI_Tool_Interface {
 			use WP_MCP_AI_Tool_Default_Capability;
+
+			/**
+			 * VEO job ID.
+			 *
+			 * @var string
+			 */
 			private $veo_job_id;
 
 			/**
 			 * Constructor.
+			 *
+			 * @param string $veo_job_id VEO job ID.
 			 */
 			public function __construct( $veo_job_id ) {
 				$this->veo_job_id = $veo_job_id;
@@ -189,7 +211,7 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 			 * @return string Tool slug.
 			 */
 			public function get_slug() {
-				return 'generate_veo_video';
+				return 'veo_test_mock_tool';
 			}
 
 			/**
@@ -247,7 +269,7 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		$registry->register_tool( $mock_tool );
 
 		// Queue and execute the tool.
-		$parent_job_id = $executor->queue_tool( 'generate_veo_video', array(), array( 'user_id' => 1 ) );
+		$parent_job_id = $executor->queue_tool( $mock_slug, array(), array( 'user_id' => 1 ) );
 		$executor->execute_async_tool( $parent_job_id );
 
 		// Get job details via Cron Status Service (this is what the REST API uses).

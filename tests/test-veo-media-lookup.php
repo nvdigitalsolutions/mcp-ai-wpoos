@@ -54,7 +54,9 @@ class Test_Veo_Media_Lookup extends WP_UnitTestCase {
 	 * Test that get_async_status recovers from media when transient missing.
 	 */
 	public function test_get_async_status_recovers_from_media() {
-		$job_id = 'veo_test_' . uniqid( '', true );
+		// Job IDs are sanitized with sanitize_key() during lookup and storage,
+		// so use a dot-free ID (uniqid with more_entropy inserts dots).
+		$job_id = 'veo_test_' . uniqid();
 
 		// Create an attachment with the job_id in metadata.
 		$attachment_id = $this->factory->attachment->create(
@@ -189,7 +191,9 @@ class Test_Veo_Media_Lookup extends WP_UnitTestCase {
 			$this->markTestSkipped( 'wp_upload_bits not available' );
 		}
 
-		$job_id = 'veo_save_' . uniqid( '', true );
+		// Job IDs are sanitized with sanitize_key() during storage, so use a
+		// dot-free ID (uniqid with more_entropy inserts dots).
+		$job_id = 'veo_save_' . uniqid();
 
 		// Create a mock video result.
 		$result = array(
