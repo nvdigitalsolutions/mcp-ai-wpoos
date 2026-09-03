@@ -84,4 +84,50 @@ class WP_MCP_AI_Assistant_Metabox_Crash_Fix_Test extends WP_UnitTestCase {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Dashboard' ), 'Settings dashboard class should exist' );
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Registry' ), 'Settings registry class should exist' );
 	}
+
+	/**
+	 * The SiteKit tools must return string-flag arrays from
+	 * get_capability_flags(). They previously referenced a nonexistent
+	 * interface constant (CAPABILITY_CAN_USE_IF_ADMIN), which threw an
+	 * uncaught Error while the assistant tools metabox rendered the grid and
+	 * killed the whole page on nugl.com (the render died exactly at
+	 * sitekit_get_adsense).
+	 */
+	public function test_sitekit_tools_capability_flags_return_arrays() {
+		$tools = array(
+			'WP_MCP_AI_Tool_SiteKit_AdSense',
+			'WP_MCP_AI_Tool_SiteKit_Analytics',
+			'WP_MCP_AI_Tool_SiteKit_PageSpeed',
+			'WP_MCP_AI_Tool_SiteKit_Search_Console',
+		);
+
+		foreach ( $tools as $class_name ) {
+			$this->assertTrue(
+				class_exists( $class_name ),
+				$class_name . ' should exist.'
+			);
+
+			$tool = new $class_name();
+
+			$this->assertInstanceOf(
+				'WP_MCP_AI_Tool_Capability_Flags_Interface',
+				$tool,
+				$class_name . ' should implement the capability flags interface.'
+			);
+
+			$flags = $tool->get_capability_flags();
+
+			$this->assertIsArray(
+				$flags,
+				$class_name . '::get_capability_flags() should return an array.'
+			);
+
+			foreach ( $flags as $flag ) {
+				$this->assertIsString(
+					$flag,
+					$class_name . ' capability flags should be strings.'
+				);
+			}
+		}
+	}
 }
