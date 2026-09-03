@@ -18,7 +18,34 @@ See the plans:
 |---|---|
 | `nv-oos-fleet/dashboard/` | Dashboard plugin: `manifest.json`, IIFE UI bundle, styles, FastAPI backend (`plugin_api.py`), registry template |
 | `nv-oos-fleet/theme/nv-oos.yaml` | NV oOS brand theme for the dashboard theme switcher |
+| `tests/backend_smoke.py` | Functional backend test (mocked upstream WP site, throwaway venv) |
 | `install.sh` | Copies the plugin + theme into `~/.hermes/` |
+
+## Features (v0.2.0)
+
+One dashboard tab with twelve sub-views:
+
+- **Sites** — registry CRUD, connection tests, MCP-config generation and
+  one-click apply into `~/.hermes/config.yaml` + `.env` (with backups).
+- **Fleet / Overview** — fleet-wide health grid and per-site deep dive
+  (health, status, site summary, update status).
+- **Logs** — activity/error feeds via the site's validated-logs tool.
+- **Jobs** — async tool jobs and WP cron, cancel/retry/delete (write-gated),
+  and a live SSE stream (one upstream connection per site, fanned out to
+  browser tabs).
+- **Analytics** — cost dashboard/total/by-provider per site.
+- **Security** — security posture score per site.
+- **Tools** — the site's MCP tool registry, searchable; generic tool calls
+  (write-gated and site-side allowlisted).
+- **Tokens** — read-only per-user usage passthrough (issuance stays on the
+  WordPress side).
+- **Paper Store** — browse collections/records, create/import, delete
+  (writes gated).
+- **Workflows** — Pro orchestration runs + per-run event logs.
+- **Mesh** — federation directory peers, reverify/report (write-gated).
+
+Shell slots: `header-right` fleet badge, `chat:bottom` ask-the-fleet widget,
+`sessions:bottom` cross-site cost summary.
 
 ## Prerequisites
 
@@ -51,10 +78,13 @@ WordPress side (`Settings → External Operators`, or
   (0600). No endpoint returns tokens — responses carry a redacted `token_hint`.
 - All plugin routes sit behind the dashboard's auth gate.
 - https-only URLs unless a site entry opts into `allow_insecure`.
+- Every write path (job cancel/retry, cron delete, tool calls, paper-store
+  writes, mesh reverify/report) requires the site entry's `write: true` flag
+  **and** the site-side operator allowlist — defense in depth.
 - **Do not** expose the dashboard with `--host 0.0.0.0` while this plugin is
   installed (official Hermes guidance for plugins that hold credentials).
-- Write-path features (later phases) require a per-site `write: true` flag
-  plus write-scoped operator tokens.
+- `mcp-config/apply` creates a timestamped backup of `config.yaml` before
+  editing and writes the `.env` entry with 0600.
 
 ## Development
 

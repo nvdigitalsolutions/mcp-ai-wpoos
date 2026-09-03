@@ -1,7 +1,7 @@
 # Hermes Dashboard Fleet Extensions — Implementation Plan
 
 > **Branch:** `add/hermes-dashboard-fleet-extensions`
-> **Status:** Phase 0 implemented; Phases 1–3 specified
+> **Status:** Phases 0–3 implemented (v0.2.0); deferred items in §9.1
 > **Proposal:** [`hermes-dashboard-extensions-plan.md`](hermes-dashboard-extensions-plan.md)
 > **Companion (WP-side):** `addons/fleet-operator/`
 
@@ -15,20 +15,27 @@ NV oOS WordPress sites, monitor them from one pane of glass, and (in later
 phases) operate them — moving viewing/orchestration load off WordPress while
 tool execution stays where the data lives.
 
-**In scope (this branch — Phase 0):**
+**In scope (this branch — Phases 0–3 delivered):**
 
 - Repo home `hermes-extensions/` (source of truth, excluded from the WP.org
   build via `.distignore`).
-- `nv-oos-fleet` dashboard plugin: site registry CRUD + connection test,
-  fleet health/status endpoints with in-memory TTL caching, MCP config
-  fragment generator, header-right fleet badge, sites/fleet UI tabs.
+- `nv-oos-fleet` dashboard plugin v0.2.0: site registry CRUD + connection
+  tests, cached fleet health/status, per-site overview, logs, async-job + WP
+  cron views with a live SSE hub, analytics summary, security posture, tool
+  registry browse + gated tool calls, token-usage passthrough, Paper Store
+  browse/CRUD, workflow-run monitor, federation mesh view, MCP config
+  generation + local apply (with backups), and cross-site cost summary.
+- UI slots: `header-right` fleet badge, `chat:bottom` ask-the-fleet,
+  `sessions:bottom` fleet costs.
 - `nv-oos` dashboard theme YAML.
 - Installer script + operator README.
+- Functional smoke test with a mocked upstream WP site
+  (`hermes-extensions/tests/backend_smoke.py`).
 - This implementation plan and the earlier proposal document.
 
-**Out of scope (later phases):** logs/jobs/analytics/security tabs, write-path
-control plane (tokens, workflows, tools), chat monitoring, MCP bridge
-automation, WP-side `WP_MCP_AI_HEADLESS_ADMIN` constant.
+**Deferred (see §9.1):** full chat-session monitor via `/sse`, one-click
+config application from the chat widget, credential *issuance* from the
+dashboard (stays on the WP side), WP-side `WP_MCP_AI_HEADLESS_ADMIN` constant.
 
 ---
 
@@ -68,21 +75,21 @@ Runtime mapping (per Hermes docs):
 {
   "name": "nv-oos-fleet",
   "label": "NV oOS Fleet",
-  "description": "Register and monitor NV oOS WordPress sites from the Hermes dashboard.",
+  "description": "Register, monitor, and operate NV oOS WordPress sites from the Hermes dashboard.",
   "icon": "Globe",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "tab": { "path": "/nv-oos-fleet", "position": "end" },
-  "slots": ["header-right"],
+  "slots": ["header-right", "chat:bottom", "sessions:bottom"],
   "entry": "dist/index.js",
   "css": "dist/style.css",
   "api": "plugin_api.py"
 }
 ```
 
-Decisions: one nav tab with internal sub-views (Sites/Fleet) instead of two
-manifest tabs, so later phases add sub-views without polluting the nav.
-`icon` is `Globe` (in the documented Lucide map). `slots` is documentation
-only; real registration happens in the bundle.
+Decisions: one nav tab with internal sub-views (12 views) instead of many
+manifest tabs, so later additions never pollute the nav. `icon` is `Globe`
+(in the documented Lucide map). `slots` is documentation only; real
+registration happens in the bundle.
 
 ### 3.2 `plugin_api.py` — backend plugin
 
@@ -238,52 +245,63 @@ Add `hermes-extensions` so the WP.org SVN build never ships Hermes-side code.
 
 ---
 
-## 4. Phase 1 — read-only fleet monitoring (forward spec)
+## 4. Phase 1 — read-only fleet monitoring (implemented)
 
-New sub-views in the same tab; new backend routes; all reads against the
-existing WP REST surface (no WP changes).
+Delivered as backend routes + UI sub-views; all reads against the existing
+WP REST/MCP surface (no WP changes). Route contracts live in
+`plugin_api.py`'s docstring and the smoke test's mock handler.
 
 | Sub-view | Backend routes | WP endpoint | Cache TTL |
 |---|---|---|---|
-| Logs | `/logs/errors?site=`, `/logs/activity?site=&since=` | log options via REST managers | 15 s |
-| Jobs | `/jobs/snapshot`, `/jobs/stream` (SSE proxy), `/jobs/{id}/cancel`, `/jobs/{id}/retry` | `/mcp-ai/v1/cron-status*` | snapshot 5 s; stream passthrough |
-| Analytics | `/analytics/summary?range=`, `/analytics/top-tools`, `/analytics/costs` | measurement store + `mcp-ai-pro/v1/analytics/*` | 5–15 min, aggregates in Hermes SQLite |
-| Security | `/security/posture`, `/security/audit`, `/security/restrictions` | security REST managers + `/restrictions` | 60 s |
+| Overview | `GET /fleet/overview?site=` | `/health`, `/status`, RPC `get_site_summary`, `get_update_status` | 60 s |
+| Logs | `GET /logs?site=&limit=` | RPC `get_system_logs_validated` | 15 s |
+| Jobs | `GET /jobs?site=`, `GET /jobs/stream?site=` (SSE hub), `POST /jobs/{site}/cancel|retry`, `POST /jobs/{site}/wp-cron/delete` | `/cron-status`, `/cron-status/stream`, `/cron-status/{id}/cancel|retry`, RPC `list_cron_jobs` / `delete_cron_job` | 5 s snapshot; stream passthrough |
+| Analytics | `GET /analytics/summary?site=` | `/cost/dashboard-summary`, `/cost/total`, `/cost/by-provider` | 300 s |
+| Security | `GET /security/posture?site=&refresh=` | `/security/posture` | 60 s |
 
-Rules: per-site semaphore + 5 s timeout on fan-out; one dead site degrades
-its card only; jobs SSE uses one upstream connection per site with local
-fan-out (StreamingResponse); writes (`cancel`/`retry`) require `write: true`
-on the site entry.
+Implemented rules: per-source degradation (a failing sub-source becomes an
+`errors.<key>` entry, never a 5xx), one upstream SSE connection per site via
+the in-process hub with bounded subscriber queues and clean task teardown,
+`cancel`/`retry`/`wp-cron delete` gated on `write: true`.
 
 ---
 
-## 5. Phase 2 — control plane (forward spec)
+## 5. Phase 2 — control plane (implemented, with deviations)
 
-| Sub-view | Capability | Gate |
+| Sub-view | Backend routes | Gate |
 |---|---|---|
-| Tokens | generate/rotate/revoke operator credentials fleet-wide, bulk rotation with per-site results | `write: true` + write-scoped token |
-| Tools | search the tool registry per site, flip per-assistant enablement | `write: true` |
-| Workflows | Pro workflow runs: history, re-dispatch, cancel | `write: true` |
-| Paper Store | browse/search + import/export across sites | read/write tokens |
-| Mesh | federation directory browser (`ai-dir/v1/peers`), verify/report | admin-scoped token |
+| Tools | `GET /tools?site=` (RPC `tools/list`), `POST /tools/call` | call gated on `write: true` + site-side allowlist |
+| Tokens | `GET /tokens/usage?site=&user_id=` (read-only passthrough) | — |
+| Paper Store | `GET /paper-store`, `/paper-store/records`, `/paper-store/search`; `POST` / `DELETE /paper-store/records` | writes gated |
+| Workflows | `GET /workflows/runs`, `/workflows/runs/{site}/{id}`, `.../events` | read-only |
+| Mesh | `GET /mesh/peers?site=`; `POST /mesh/peers/reverify|report` | writes gated |
 
-Rules: mutations run sequentially (not fire-and-forget), each with an audit
-row written into Hermes' session store (`hermes_state`); rate-limit-aware
-(backoff + jitter on 429, honour IETF rate-limit headers).
+Deviations from the forward spec:
+- **Tokens**: the base REST surface has no credential-issuance route —
+  generating/revoking `op_*` credentials stays on the WordPress side
+  (fleet-operator admin / `wp mcp-ai operator`). The tab is a read-only
+  usage passthrough and says so in the UI.
+- **Workflows**: upstream exposes list/single/events only; dispatch/cancel
+  routes were not found, so no write paths were invented.
+- **Bulk token rotation** and Paper Store import are available through the
+  generic `tools/call` when the operator's allowlist includes those tools.
 
 ---
 
-## 6. Phase 3 — agent ops (forward spec)
+## 6. Phase 3 — agent ops (implemented, with deviations)
 
-1. **MCP bridge automation** — `/sites/{id}/mcp-config` (already shipped in
-   Phase 0) gains a one-click "write into `~/.hermes/config.yaml`" action
-   with backup + validation; `.env` entry written with 0600.
-2. **Chat monitor** — `/nv-oos/chat` sub-view streaming active `/sse`
-   sessions per site (one upstream per site, local fan-out).
-3. **Ask-the-fleet widget** — `chat:bottom` slot launching a Hermes agent
-   session that has all sites mounted as MCP servers.
-4. **`sessions:bottom` slot** — cross-site cost/usage summary for the active
-   Hermes session window.
+| Feature | Delivered as |
+|---|---|
+| MCP bridge | `GET /sites/{id}/mcp-config` fragment; `POST /sites/{id}/mcp-config/apply` writes `~/.hermes/config.yaml` (merged `mcp_servers` entry, backup created) + `.env` line (0600) |
+| Live jobs monitor | `GET /jobs/stream` SSE hub (one upstream connection per site, fan-out to browser tabs) |
+| Ask-the-fleet | `chat:bottom` slot with per-site MCP-config copy button |
+| Cost summary | `sessions:bottom` slot backed by `GET /costs/summary` (300 s cache) |
+
+Deviations:
+- Full chat-session monitoring via the public `/sse` directory stream is
+  deferred (§9.1) — the jobs stream covers the standing-load case.
+- The chat widget copies the config; one-click apply from that widget is
+  deferred (the Sites tab already has an "Apply MCP config" button).
 
 ---
 
@@ -312,9 +330,13 @@ bash -n hermes-extensions/install.sh
 ```
 
 Plus a functional backend test (`hermes-extensions/tests/backend_smoke.py`)
-that runs the FastAPI routes in-process (CRUD, validation, redaction, health
-classification, caching, persistence) and refuses to run when a live
-`sites.yaml` exists:
+that runs every route in-process against a mocked upstream WP site
+(httpx.MockTransport injected into the plugin's client pools): registry CRUD,
+validation, redaction, caching, fleet health/status/overview, logs, jobs
+(incl. write gating), analytics, posture, tools list + gated call, token
+usage, paper-store CRUD, workflow runs, mesh peers, costs summary, the SSE
+hub (fan-out + teardown), and mcp-config/apply against a temp HERMES_HOME.
+It refuses to run when a live `sites.yaml` exists:
 
 ```bash
 cd hermes-extensions
@@ -322,9 +344,13 @@ python3 -m venv .venv && .venv/bin/python -m pip install fastapi httpx pyyaml
 .venv/bin/python tests/backend_smoke.py
 ```
 
-This test already caught one portability bug (httpx 0.28 removed per-request
-`verify`, fixed via pooled per-verify clients) — run it on every backend
-change.
+Test-harness note: the SSE hub is exercised directly through
+`StreamingResponse.body_iterator` because this venv's starlette/httpx
+ASGITransport cannot deliver streaming responses at all (a minimal FastAPI
+streaming app hangs identically — a harness limitation, not plugin code).
+The suite already caught two real bugs: httpx 0.28's removal of per-request
+`verify` (fixed via pooled per-verify clients) and a Starlette TestClient
+`delete(json=...)` incompatibility. Run it on every backend change.
 
 ### Manual smoke test (requires a Hermes dashboard + one Docker WP site)
 
@@ -334,9 +360,13 @@ change.
    discovered; `curl …/api/plugins/nv-oos-fleet/meta` → `{"ok": true}`.
 4. UI: add the Docker site (credential from `wp mcp-ai operator create` or an
    assistant `cred_` token), Test → green with latency; Fleet tab shows the
-   card; header badge appears; theme switcher shows **NV oOS**.
+   card; header badge appears; theme switcher shows **NV oOS**; Logs, Jobs
+   (live stream), Analytics, Security, Tools, Paper Store, Workflows, Mesh
+   tabs render for the site; write-gated buttons enable only when the site
+   entry has `write: true`.
 5. Negative tests: bad URL (rejected), wrong token (Test → 401, degraded
-   badge), delete + confirm, restart persistence of `sites.yaml`.
+   badge), delete + confirm, restart persistence of `sites.yaml`,
+   mcp-config/apply writes + backups.
 
 ### Load validation (Phase 1+ acceptance)
 
@@ -354,17 +384,33 @@ change.
 | Backend routes mount once at startup | README calls out restart; `/meta` endpoint detects stale installs |
 | `sites.yaml` token leak via repo | `.gitignore` + `sites.yaml.example` + 0600 + redaction |
 | Hermes plugin API is young | only documented surfaces used; defensive SDK guards throughout |
+| Upstream REST gaps (no credential-issuance or workflow-cancel routes) | endpoints degrade per-source; issuance stays on the WP side; no invented write routes |
+| SSE delivery depends on the dashboard's ASGI streaming path | hub logic unit-tested directly; bounded queues + teardown prevent leaks |
+
+### 9.1 Deferred items (explicit)
+
+- Chat-session monitoring via the public `/sse` directory stream.
+- One-click "apply MCP config" from the `chat:bottom` widget (Sites tab
+  already has the apply button).
+- Credential issuance/revocation from the dashboard (WP-side only today).
+- WP-side `WP_MCP_AI_HEADLESS_ADMIN` constant to unregister heavy admin
+  screens on fully-managed sites (separate PR against the PHP plugin).
+- Audit rows into `hermes_state` for proxied writes (Hermes-internals
+  import, needs live-dashboard verification first).
 
 ---
 
 ## 10. Acceptance criteria (this branch)
 
-- [x] New top-level `hermes-extensions/` tree with the Phase 0 files above.
+- [x] New top-level `hermes-extensions/` tree with the Phase 0–3 files.
 - [x] `.distignore` excludes the tree from WP.org builds.
-- [x] `plugin_api.py` compiles; `index.js` parses; YAML files load.
+- [x] `plugin_api.py` compiles; `index.js` parses; YAML/JSON files load;
+      `install.sh` passes `bash -n`.
+- [x] Functional smoke test passes: all Phase 0–3 endpoints, write gating,
+      redaction, SSE hub teardown, mcp-config/apply with backups.
 - [x] Proposal + implementation plan docs cross-link each other and
       `addons/fleet-operator/`.
-- [ ] (needs live Hermes) §8 smoke test passes end to end.
+- [ ] (needs live Hermes) §8 manual smoke test passes end to end.
 
 ---
 
