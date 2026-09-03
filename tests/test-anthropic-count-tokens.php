@@ -35,7 +35,7 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * list_models() must return a non-empty array.
+	 * The list_models() method must return a non-empty array.
 	 */
 	public function test_list_models_returns_array() {
 		$client = new WP_MCP_AI_Anthropic_Client();
@@ -70,9 +70,9 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 		$client = new WP_MCP_AI_Anthropic_Client();
 		$ids    = array_column( $client->list_models(), 'id' );
 
-		// Claude 3 family.
-		$this->assertContains( 'claude-3-haiku-20240307', $ids );
-		$this->assertContains( 'claude-3-5-sonnet-20241022', $ids );
+		// Claude 3 family (retired IDs migrated to current models).
+		$this->assertContains( 'claude-haiku-4-5', $ids );
+		$this->assertContains( 'claude-sonnet-5', $ids );
 
 		// Claude 4 family (per proposal).
 		$has_claude4 = false;
@@ -90,11 +90,16 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * count_tokens() must return an error when no API key is configured.
+	 * The count_tokens() method must return an error when no API key is configured.
 	 */
 	public function test_count_tokens_requires_api_key() {
 		$client   = new WP_MCP_AI_Anthropic_Client();
-		$messages = array( array( 'role' => 'user', 'content' => 'Hello' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
 		$result   = $client->count_tokens( $messages );
 
 		$this->assertWPError( $result );
@@ -102,7 +107,7 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * count_tokens() must return an error when the messages array is empty.
+	 * The count_tokens() method must return an error when the messages array is empty.
 	 */
 	public function test_count_tokens_requires_messages() {
 		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -117,7 +122,7 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * count_tokens() must call the /v1/messages/count_tokens endpoint.
+	 * The count_tokens() method must call the /v1/messages/count_tokens endpoint.
 	 */
 	public function test_count_tokens_hits_correct_endpoint() {
 		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -142,7 +147,12 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 		);
 
 		$client   = new WP_MCP_AI_Anthropic_Client();
-		$messages = array( array( 'role' => 'user', 'content' => 'Hello, Claude.' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello, Claude.',
+			),
+		);
 		$result   = $client->count_tokens( $messages );
 
 		$this->assertNotNull( $captured_url );
@@ -151,7 +161,7 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * count_tokens() must return the input_tokens integer from the API response.
+	 * The count_tokens() method must return the input_tokens integer from the API response.
 	 */
 	public function test_count_tokens_returns_integer() {
 		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -173,14 +183,19 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 		);
 
 		$client   = new WP_MCP_AI_Anthropic_Client();
-		$messages = array( array( 'role' => 'user', 'content' => 'Count my tokens please.' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Count my tokens please.',
+			),
+		);
 		$result   = $client->count_tokens( $messages );
 
 		$this->assertSame( 42, $result );
 	}
 
 	/**
-	 * count_tokens() must include x-api-key and anthropic-version headers.
+	 * The count_tokens() method must include x-api-key and anthropic-version headers.
 	 */
 	public function test_count_tokens_sends_correct_headers() {
 		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -205,7 +220,12 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 		);
 
 		$client   = new WP_MCP_AI_Anthropic_Client();
-		$messages = array( array( 'role' => 'user', 'content' => 'Hi' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hi',
+			),
+		);
 		$client->count_tokens( $messages );
 
 		$this->assertNotNull( $captured_args );
@@ -216,7 +236,7 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * count_tokens() must include system prompt when provided via options.
+	 * The count_tokens() method must include the system prompt when provided via options.
 	 */
 	public function test_count_tokens_includes_system_prompt() {
 		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -241,7 +261,12 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 		);
 
 		$client   = new WP_MCP_AI_Anthropic_Client();
-		$messages = array( array( 'role' => 'user', 'content' => 'Hello' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
 		$client->count_tokens( $messages, array( 'system_prompt' => 'You are a helpful assistant.' ) );
 
 		$this->assertNotNull( $payload_sent );
@@ -250,7 +275,7 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * count_tokens() must return a WP_Error when the API response has no input_tokens field.
+	 * The count_tokens() method must return a WP_Error when the API response has no input_tokens field.
 	 */
 	public function test_count_tokens_handles_missing_input_tokens_field() {
 		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
@@ -271,7 +296,12 @@ class WP_MCP_AI_Anthropic_Count_Tokens_Test extends WP_UnitTestCase {
 		);
 
 		$client   = new WP_MCP_AI_Anthropic_Client();
-		$messages = array( array( 'role' => 'user', 'content' => 'Hello' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
 		$result   = $client->count_tokens( $messages );
 
 		$this->assertWPError( $result );
