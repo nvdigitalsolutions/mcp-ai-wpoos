@@ -17,7 +17,12 @@ import PrevNext from '../components/PrevNext';
 import PageFooter from '../components/PageFooter';
 import NotFound from './NotFound';
 
-export default function DocPage() {
+interface DocPageProps {
+	/** Set of every slug in the manifest, used for internal link resolution. */
+	slugSet?: Set<string>;
+}
+
+export default function DocPage( { slugSet }: DocPageProps ) {
 	const params = useParams<{ '*': string }>();
 	const slug = params[ '*' ] ?? '';
 
@@ -67,6 +72,29 @@ export default function DocPage() {
 		}
 	}, [ slug ] );
 
+	// Scroll to a heading anchor carried across a page navigation
+	// (links like `#/slug#anchor`). The router consumes the first fragment
+	// as the route, so the browser never scrolls to the second one on its
+	// own — do it manually once the content has rendered.
+	useEffect( () => {
+		if ( loading || ! page ) {
+			return;
+		}
+		const hash = window.location.hash;
+		const frag = /#([^#]+)$/.exec( hash );
+		if ( ! frag ) {
+			return;
+		}
+		// Skip when the trailing fragment is just the route itself (#/slug).
+		if ( frag[ 1 ] === slug ) {
+			return;
+		}
+		const target = document.getElementById( decodeURIComponent( frag[ 1 ] ) );
+		if ( target ) {
+			target.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+		}
+	}, [ loading, page, slug ] );
+
 	if ( loading ) {
 		return (
 			<div className="dh-loading">
@@ -93,7 +121,12 @@ export default function DocPage() {
 		<>
 			<main id="nvoos-dh-main" tabIndex={ -1 } className="dh-main-area">
 				<Breadcrumbs slug={ page.slug } title={ page.title } />
-				<ContentArea content={ page.content } remoteUrl={ page.remote_url } />
+				<ContentArea
+					content={ page.content }
+					remoteUrl={ page.remote_url }
+					slugSet={ slugSet }
+					pagePath={ page.relative_path }
+				/>
 				<PrevNext prev={ page.prev } next={ page.next } />
 				<PageFooter
 					lastModified={ page.last_modified }

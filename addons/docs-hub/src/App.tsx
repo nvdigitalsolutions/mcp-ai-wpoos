@@ -11,7 +11,7 @@
  * @since 1.0.0
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { fetchManifest } from './api/manifest-client';
 import { indexManifest } from './search/flexsearch-adapter';
@@ -19,7 +19,6 @@ import type { Manifest } from './api/manifest-client';
 import Sidebar from './components/Sidebar';
 import SearchBox from './components/SearchBox';
 import DocPage from './routes/DocPage';
-import NotFound from './routes/NotFound';
 
 // ---------------------------------------------------------------------------
 // Theming helper
@@ -70,6 +69,13 @@ export default function App() {
 	const [ manifestError, setManifestError ] = useState<string | null>( null );
 	const [ theme, setTheme ] = useState<string>( getInitialTheme );
 	const [ mobileSidebarOpen, setMobileSidebarOpen ] = useState( false );
+
+	// Set of every indexed slug — used by ContentArea to rewrite internal
+	// `.md` links into `#/slug` hash routes.
+	const slugSet = useMemo(
+		() => new Set( ( manifest?.tree ?? [] ).flatMap( ( g ) => g.pages.map( ( p ) => p.slug ) ) ),
+		[ manifest ]
+	);
 
 	useEffect( () => {
 		fetchManifest()
@@ -174,8 +180,10 @@ export default function App() {
 					     content region rather than the sidebar. */ }
 					<Routes>
 						<Route path="/" element={ <HomeRedirect manifest={ manifest } /> } />
-						<Route path="/*" element={ <DocPage /> } />
-						<Route path="*" element={ <NotFound /> } />
+						{ /* DocPage renders NotFound itself for unknown slugs; a
+							 separate `*` fallback would be unreachable because `/*`
+							 already matches everything. */ }
+						<Route path="/*" element={ <DocPage slugSet={ slugSet } /> } />
 					</Routes>
 				</div>
 			</HashRouter>

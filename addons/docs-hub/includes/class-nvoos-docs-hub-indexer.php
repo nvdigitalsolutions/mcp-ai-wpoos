@@ -417,14 +417,27 @@ class NV_oOS_Docs_Hub_Indexer {
 			return $toc;
 		}
 
+		// Track previously emitted anchors so duplicates get the same `-1`,
+		// `-2`, … suffixes that github-slugger (rehype-slug) applies in the SPA.
+		$seen = array();
+
 		foreach ( $matches as $match ) {
 			$level = strlen( $match[1] );
 			$raw   = trim( $match[2] );
-			// Keep the anchor based on the raw text (rehype-slug does the same),
-			// but strip inline Markdown from the display text.
-			$anchor = $this->slugify_heading( $raw );
+			// Anchor must mirror the id rehype-slug assigns to the rendered
+			// heading, otherwise clicking a TOC link silently fails to scroll.
+			// rehype-slug slugs the *text content* (markdown stripped), so slug
+			// the stripped text — not the raw line — otherwise headings like
+			// `### [Core Architecture](core/)` get anchors that don't exist.
 			$text   = $this->strip_inline_markdown( $raw );
-			$toc[]  = array(
+			$anchor = $this->slugify_heading( $text );
+			if ( isset( $seen[ $anchor ] ) ) {
+				++$seen[ $anchor ];
+				$anchor = $anchor . '-' . $seen[ $anchor ];
+			} else {
+				$seen[ $anchor ] = 0;
+			}
+			$toc[] = array(
 				'level'  => $level,
 				'text'   => $text,
 				'anchor' => $anchor,
@@ -443,9 +456,16 @@ class NV_oOS_Docs_Hub_Indexer {
 	 * @return string
 	 */
 	private function slugify_heading( $text ) {
-		$slug = strtolower( $text );
-		$slug = preg_replace( '/[^a-z0-9\s\-]/', '', $slug );
-		$slug = preg_replace( '/[\s]+/', '-', trim( $slug ) );
+		// Mirror github-slugger (the library behind rehype-slug) exactly so
+		// server-side TOC anchors match the ids the SPA renders: lowercase,
+		// strip every character that is not a letter, number, hyphen or
+		// underscore, then convert spaces to hyphens. Hyphen runs are NOT
+		// collapsed — github-slugger preserves them.
+		$slug = function_exists( 'mb_strtolower' )
+			? mb_strtolower( (string) $text, 'UTF-8' )
+			: strtolower( (string) $text );
+		$slug = preg_replace( '/[^\p{L}\p{N}_\- ]/u', '', $slug );
+		$slug = preg_replace( '/ /', '-', $slug );
 		return $slug;
 	}
 
@@ -522,6 +542,22 @@ class NV_oOS_Docs_Hub_Indexer {
 				'source' => $relative_path,
 				'target' => $href,
 			);
+
+			// Record the source page's slug and source type so the admin UI
+			// can distinguish local files (editable via /fix-links) from
+			// remote repository files (read-only), and so the REST fixer can
+			// resolve the entry unambiguously — relative paths like
+			// `README.md` exist in many addons, so matching on relative_path
+			// alone can pick the wrong file.
+			foreach ( $this->slug_map as $map_slug => $data ) {
+				if ( ( isset( $data['relative_path'] ) ? (string) $data['relative_path'] : '' ) === $relative_path ) {
+					$entry['slug'] = (string) $map_slug;
+					if ( isset( $data['source'] ) ) {
+						$entry['source_type'] = (string) $data['source'];
+					}
+					break;
+				}
+			}
 
 			if ( ! empty( $suggestions ) ) {
 				$entry['suggestions'] = $suggestions;
@@ -856,6 +892,21 @@ class NV_oOS_Docs_Hub_Indexer {
 	public function suggest_fix( $broken_target, $source_path ) {
 		$suggestions = array();
 
+		// Remote-sourced pages live in the flat content-hash cache, so a
+		// filesystem-relative target is meaningless for them. Their
+		// suggestions stay slug-based (informational only — the REST fixer
+		// refuses to edit remote files anyway).
+		$source_is_remote = false;
+		foreach ( $this->slug_map as $data ) {
+			if (
+				isset( $data['path'] ) && (string) $data['path'] === (string) $source_path
+				&& 'remote' === ( isset( $data['source'] ) ? (string) $data['source'] : '' )
+			) {
+				$source_is_remote = true;
+				break;
+			}
+		}
+
 		// Normalize: drop anchors and directory parts to get the filename stem.
 		$target_basename = basename( $broken_target );
 		$target_stem     = preg_replace( '/\.md$/i', '', $target_basename );
@@ -884,7 +935,7 @@ class NV_oOS_Docs_Hub_Indexer {
 						: '';
 
 					$suggestions[] = array(
-						'target'     => $cur_slug . '.md',
+						'target'     => $this->suggestion_target( $cur_slug, $source_path, $source_is_remote ),
 						'slug'       => $cur_slug,
 						'title'      => $title,
 						'confidence' => 0.95,
@@ -943,7 +994,7 @@ class NV_oOS_Docs_Hub_Indexer {
 			$confidence = min( 1.0, $confidence );
 
 			$suggestions[] = array(
-				'target'     => $match_slug . '.md',
+				'target'     => $this->suggestion_target( $match_slug, $source_path, $source_is_remote ),
 				'slug'       => $match_slug,
 				'title'      => $title,
 				'confidence' => round( $confidence, 2 ),
@@ -1003,7 +1054,7 @@ class NV_oOS_Docs_Hub_Indexer {
 					$similarity = $min_len > 0 ? $common_prefix_len / $min_len : 0;
 					if ( $common_prefix_len >= 3 || $similarity >= 0.5 ) {
 						$suggestions[] = array(
-							'target'     => $neighbor_basename,
+							'target'     => $this->relative_link_target( $source_path, $neighbor_path ),
 							'slug'       => $neighbor_stem,
 							'title'      => '',
 							'confidence' => 0.5,
@@ -1039,7 +1090,7 @@ class NV_oOS_Docs_Hub_Indexer {
 			$title = isset( $data['title'] ) ? (string) $data['title'] : '';
 
 			$suggestions[] = array(
-				'target'     => $slug . '.md',
+				'target'     => $this->suggestion_target( $slug, $source_path, $source_is_remote ),
 				'slug'       => $slug,
 				'title'      => $title,
 				'confidence' => 0.9,
@@ -1091,6 +1142,58 @@ class NV_oOS_Docs_Hub_Indexer {
 		asort( $results, SORT_NUMERIC );
 
 		return $results;
+	}
+
+	/**
+	 * Build the corrected link target for a suggestion.
+	 *
+	 * For local files the target is computed relative to the directory of
+	 * the file containing the broken link (e.g. `../reference/tools/x.md`),
+	 * preserving the on-disk case of the destination filename. Remote-sourced
+	 * pages keep the slug-based form because their local cache files are flat
+	 * content-hash names with no meaningful relative path.
+	 *
+	 * @since 0.4.2
+	 *
+	 * @param string $slug             Suggested slug.
+	 * @param string $source_path      Absolute path of the file with the broken link.
+	 * @param bool   $source_is_remote Whether the source page is remote-sourced.
+	 * @return string Corrected link target.
+	 */
+	private function suggestion_target( $slug, $source_path, $source_is_remote ) {
+		if ( $source_is_remote || ! isset( $this->slug_map[ $slug ]['path'] ) ) {
+			return $slug . '.md';
+		}
+
+		return $this->relative_link_target( $source_path, (string) $this->slug_map[ $slug ]['path'] );
+	}
+
+	/**
+	 * Compute a forward-slash relative path from the directory of $source_path
+	 * to $dest_path (both absolute).
+	 *
+	 * Example: source `/repo/docs/admin-guides/a.md`, destination
+	 * `/repo/docs/reference/tools/x.md` → `../reference/tools/x.md`.
+	 *
+	 * @since 0.4.2
+	 *
+	 * @param string $source_path Absolute path of the source file.
+	 * @param string $dest_path   Absolute path of the destination file.
+	 * @return string Relative link target (forward slashes).
+	 */
+	private function relative_link_target( $source_path, $dest_path ) {
+		$source_dir  = str_replace( '\\', '/', (string) dirname( $source_path ) );
+		$dest        = str_replace( '\\', '/', (string) $dest_path );
+		$source_part = array_values( array_filter( explode( '/', $source_dir ), 'strlen' ) );
+		$dest_part   = array_values( array_filter( explode( '/', $dest ), 'strlen' ) );
+
+		while ( $source_part && $dest_part && $source_part[0] === $dest_part[0] ) {
+			array_shift( $source_part );
+			array_shift( $dest_part );
+		}
+
+		$rel = str_repeat( '../', count( $source_part ) ) . implode( '/', $dest_part );
+		return '' === $rel ? basename( $dest ) : $rel;
 	}
 
 	/**

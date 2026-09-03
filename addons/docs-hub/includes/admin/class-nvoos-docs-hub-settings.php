@@ -844,16 +844,21 @@ class NV_oOS_Docs_Hub_Settings {
 				<tbody>
 					<?php
 					foreach ( $broken_list as $i => $link ) :
-						$src   = isset( $link['source'] ) ? (string) $link['source'] : '';
-						$tgt   = isset( $link['target'] ) ? (string) $link['target'] : '';
-						$suggs = isset( $link['suggestions'] ) ? (array) $link['suggestions'] : array();
-						$best  = ! empty( $suggs ) ? $suggs[0] : null;
-						$has_fix = null !== $best && isset( $best['target'] );
+						$src         = isset( $link['source'] ) ? (string) $link['source'] : '';
+						$tgt         = isset( $link['target'] ) ? (string) $link['target'] : '';
+						$src_slug    = isset( $link['slug'] ) ? (string) $link['slug'] : '';
+						$src_type    = isset( $link['source_type'] ) ? (string) $link['source_type'] : '';
+						$is_remote   = ( 'remote' === $src_type );
+						$suggs       = isset( $link['suggestions'] ) ? (array) $link['suggestions'] : array();
+						$best        = ! empty( $suggs ) ? $suggs[0] : null;
+						$has_fix     = null !== $best && isset( $best['target'] );
 						?>
 						<tr data-index="<?php echo esc_attr( $i ); ?>"
 							data-source="<?php echo esc_attr( $src ); ?>"
+							data-slug="<?php echo esc_attr( $src_slug ); ?>"
+							data-source-type="<?php echo esc_attr( $src_type ); ?>"
 							data-old-target="<?php echo esc_attr( $tgt ); ?>"
-							data-new-target="<?php echo $has_fix ? esc_attr( $best['target'] ) : ''; ?>">
+							data-new-target="<?php echo ( $has_fix && ! $is_remote ) ? esc_attr( $best['target'] ) : ''; ?>">
 							<td><code><?php echo esc_html( $src ); ?></code></td>
 							<td><code style="color: #a00;"><?php echo esc_html( $tgt ); ?></code></td>
 							<td>
@@ -878,7 +883,9 @@ class NV_oOS_Docs_Hub_Settings {
 								<?php endif; ?>
 							</td>
 							<td>
-								<?php if ( $has_fix ) : ?>
+								<?php if ( $is_remote ) : ?>
+									<span style="color: #999;"><?php esc_html_e( 'Remote source — fix in the source repository', 'nvoos-docs-hub' ); ?></span>
+								<?php elseif ( $has_fix ) : ?>
 									<button type="button" class="button button-small nvoos-dh-accept-fix">
 										<?php esc_html_e( 'Accept fix', 'nvoos-docs-hub' ); ?>
 									</button>
@@ -1086,27 +1093,40 @@ class NV_oOS_Docs_Hub_Settings {
 									return;
 								}
 
-								// Fade out fixed rows.
+								// Annotate each row with its outcome: fade fixed rows,
+								// show the server-provided reason on skipped rows so
+								// "N skipped" is no longer a dead end.
 								var rows = table.querySelectorAll( 'tbody tr' );
 								var resultsArr = ( data.results && data.results.results ) ? data.results.results : [];
 								resultsArr.forEach( function ( r ) {
-									if ( r.status !== 'fixed' && r.status !== 'would_fix' ) { return; }
 									rows.forEach( function ( row ) {
-										if ( row.getAttribute( 'data-source' ) === r.source ) {
+										if ( row.getAttribute( 'data-source' ) !== r.source ) { return; }
+										if ( r.status === 'fixed' || r.status === 'would_fix' ) {
 											row.style.opacity = '0.35';
 											var acceptBtn = row.querySelector( '.nvoos-dh-accept-fix' );
 											if ( acceptBtn ) { acceptBtn.disabled = true; }
+										} else {
+											var cell = row.querySelector( 'td:last-child' );
+											if ( cell && ! cell.querySelector( '.nvoos-dh-row-note' ) ) {
+												var note = document.createElement( 'span' );
+												note.className = 'nvoos-dh-row-note';
+												note.style.cssText = 'display:block;color:#a00;font-style:italic;';
+												note.textContent = r.reason || r.status || 'Skipped';
+												cell.appendChild( note );
+											}
 										}
 									} );
 								} );
 
 								var fixedCount = data.results ? ( data.results.fixed || 0 ) : 0;
 								var skippedCount = data.results ? ( data.results.skipped || 0 ) : 0;
+								var errorCount = ( data.results && data.results.errors ) ? data.results.errors.length : 0;
 								setStatus(
 									'Fixed ' + fixedCount + ' link(s).'
 									+ ( skippedCount > 0 ? ' ' + skippedCount + ' skipped.' : '' )
+									+ ( errorCount > 0 ? ' ' + errorCount + ' error(s).' : '' )
 									+ ( data.dry_run ? ' (dry run)' : ' Rebuild to refresh.' ),
-									skippedCount > 0
+									( skippedCount > 0 || errorCount > 0 )
 								);
 
 								if ( btn ) { btn.disabled = false; }
@@ -1128,13 +1148,14 @@ class NV_oOS_Docs_Hub_Settings {
 							var btn = e.target.closest( '.nvoos-dh-accept-fix' );
 							if ( ! btn || btn.disabled ) { return; }
 
-							var row = btn.closest( 'tr' );
-							var fix = {
-								source:     row.getAttribute( 'data-source' ),
-								old_target: row.getAttribute( 'data-old-target' ),
-								new_target: row.getAttribute( 'data-new-target' )
-							};
-							applyFixes( [ fix ], btn );
+								var row = btn.closest( 'tr' );
+								var fix = {
+									source:     row.getAttribute( 'data-source' ),
+									slug:       row.getAttribute( 'data-slug' ),
+									old_target: row.getAttribute( 'data-old-target' ),
+									new_target: row.getAttribute( 'data-new-target' )
+								};
+								applyFixes( [ fix ], btn );
 						} );
 
 						// Accept All.
@@ -1149,6 +1170,7 @@ class NV_oOS_Docs_Hub_Settings {
 									if ( acceptBtn && acceptBtn.disabled ) { return; }
 									fixes.push( {
 										source:     row.getAttribute( 'data-source' ),
+										slug:       row.getAttribute( 'data-slug' ),
 										old_target: row.getAttribute( 'data-old-target' ),
 										new_target: newTarget
 									} );

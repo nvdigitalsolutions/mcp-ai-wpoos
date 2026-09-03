@@ -134,4 +134,69 @@ describe( 'ContentArea', () => {
 		expect( link ).toHaveAttribute( 'target', '_blank' );
 		expect( link ).toHaveAttribute( 'rel', 'noopener noreferrer' );
 	} );
+
+	it( 'rewrites a local .md link into a #/slug hash route', () => {
+		const slugSet = new Set( [ 'features/chat' ] );
+		render(
+			<ContentArea
+				content="[Chat](chat.md)"
+				slugSet={ slugSet }
+				pagePath="docs/features/chat.md"
+			/>
+		);
+		const link = screen.getByRole( 'link', { name: 'Chat' } );
+		expect( link ).toHaveAttribute( 'href', '#/features/chat' );
+	} );
+
+	it( 'preserves heading anchors when rewriting a local .md link', () => {
+		const slugSet = new Set( [ 'features/chat' ] );
+		render(
+			<ContentArea
+				content="[Chat setup](chat.md#setup)"
+				slugSet={ slugSet }
+				pagePath="docs/features/chat.md"
+			/>
+		);
+		const link = screen.getByRole( 'link', { name: 'Chat setup' } );
+		expect( link ).toHaveAttribute( 'href', '#/features/chat#setup' );
+	} );
+
+	it( 'resolves parent-relative local .md links against the page path', () => {
+		const slugSet = new Set( [ 'reference/tools/tool-reference' ] );
+		render(
+			<ContentArea
+				content="[Tools](../reference/tools/tool-reference.md)"
+				slugSet={ slugSet }
+				pagePath="docs/admin-guides/tools-manager.md"
+			/>
+		);
+		const link = screen.getByRole( 'link', { name: 'Tools' } );
+		expect( link ).toHaveAttribute( 'href', '#/reference/tools/tool-reference' );
+	} );
+
+	it( 'leaves links to unindexed files untouched', () => {
+		const slugSet = new Set( [ 'features/chat' ] );
+		render(
+			<ContentArea
+				content="[Internal](internal-notes.md)"
+				slugSet={ slugSet }
+				pagePath="docs/features/chat.md"
+			/>
+		);
+		const link = screen.getByRole( 'link', { name: 'Internal' } );
+		expect( link ).toHaveAttribute( 'href', 'internal-notes.md' );
+	} );
+
+	it( 'leaves absolute URLs untouched on local pages', () => {
+		const slugSet = new Set( [ 'features/chat' ] );
+		render(
+			<ContentArea
+				content="[Site](https://example.com/x.md)"
+				slugSet={ slugSet }
+				pagePath="docs/features/chat.md"
+			/>
+		);
+		const link = screen.getByRole( 'link', { name: 'Site' } );
+		expect( link ).toHaveAttribute( 'href', 'https://example.com/x.md' );
+	} );
 } );

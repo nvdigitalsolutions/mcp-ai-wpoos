@@ -31,6 +31,17 @@ import type { Element } from 'hast';
 interface ContentAreaProps {
 	content: string;
 	remoteUrl?: string;
+	/**
+	 * Set of every slug in the manifest. Used to rewrite internal `.md`
+	 * links on local (non-remote) pages into `#/slug` hash routes so clicks
+	 * stay inside the SPA instead of navigating the browser away.
+	 */
+	slugSet?: Set<string>;
+	/**
+	 * Repo-relative path of the current page (e.g. `docs/features/chat.md`),
+	 * used as the base for resolving relative link targets.
+	 */
+	pagePath?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,6 +135,59 @@ function resolveRemoteHref( href: string, remoteUrl: string ): string {
 
 	// Rule 4 — return the absolute URL unchanged; caller adds target="_blank".
 	return absoluteHref;
+}
+
+/**
+ * Normalize a link path by resolving `.` and `..` segments.
+ * Mirrors NV_oOS_Docs_Hub_Indexer::normalize_link_path() in PHP.
+ */
+function normalizeLinkPath( path: string ): string {
+	const segments: string[] = [];
+	for ( const seg of path.split( '/' ) ) {
+		if ( seg === '' || seg === '.' ) {
+			continue;
+		}
+		if ( seg === '..' ) {
+			segments.pop();
+			continue;
+		}
+		segments.push( seg );
+	}
+	return segments.join( '/' );
+}
+
+/**
+ * Resolve an internal `.md` link on a LOCAL page to a SPA hash route.
+ *
+ * The server resolves the same way (slug map first, then the filesystem),
+ * so the slug computed here matches the manifest when the target page is
+ * indexed. Links to files that are not indexed (e.g. `.context/*` for
+ * guests) are left untouched so the browser falls back to its default
+ * behaviour instead of silently dropping the click.
+ */
+function resolveLocalHref( href: string, pagePath: string, slugSet: Set<string> ): string {
+	// Absolute URLs and non-markdown links pass through untouched.
+	if ( /^[a-z][a-z0-9+.-]*:/i.test( href ) ) {
+		return href;
+	}
+	if ( ! /\.md(#[^)]*)?$/i.test( href ) ) {
+		return href;
+	}
+
+	const fragMatch = /#(.*)$/.exec( href );
+	const fragment = fragMatch ? '#' + fragMatch[ 1 ] : '';
+	const hrefPath = href.replace( /#.*$/, '' );
+
+	const sourceDir = pagePath.includes( '/' ) ? pagePath.replace( /\/[^/]*$/, '' ) : '';
+	const target = sourceDir ? sourceDir + '/' + hrefPath : hrefPath;
+	const slug = deriveSlugFromPath( normalizeLinkPath( target ) );
+
+	if ( ! slug || ! slugSet.has( slug ) ) {
+		return href;
+	}
+
+	// Preserve heading anchors (e.g. #/slug#installation) for in-page scroll.
+	return '#/' + slug + fragment;
 }
 
 // ---------------------------------------------------------------------------
@@ -276,8 +340,42 @@ function remarkDirectiveCallouts() {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function ContentArea( { content, remoteUrl }: ContentAreaProps ) {
+export default function ContentArea( { content, remoteUrl, slugSet, pagePath }: ContentAreaProps ) {
 	const extraComponents: Components = {};
+
+	if ( ! remoteUrl && slugSet && pagePath ) {
+		// Local page: rewrite internal `.md` links to `#/slug` hash routes.
+		const capturedSlugSet = slugSet;
+		const capturedPagePath = pagePath;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		extraComponents.a = function LocalAnchor( props: any ) {
+			const { href, children, ...rest } = props;
+			const hrefStr = href ? String( href ) : '';
+
+			if ( hrefStr && isInPageAnchor( hrefStr ) ) {
+				return (
+					<a
+						href={ hrefStr }
+						{ ...rest }
+						onClick={ ( e: React.MouseEvent<HTMLAnchorElement> ) =>
+							scrollToAnchor( e, hrefStr.slice( 1 ) )
+						}
+					>
+						{ children }
+					</a>
+				);
+			}
+
+			if ( hrefStr ) {
+				const resolved = resolveLocalHref( hrefStr, capturedPagePath, capturedSlugSet );
+				if ( resolved !== hrefStr ) {
+					return <a href={ resolved } { ...rest }>{ children }</a>;
+				}
+			}
+
+			return <a href={ hrefStr || undefined } { ...rest }>{ children }</a>;
+		};
+	}
 
 	if ( remoteUrl ) {
 		const capturedUrl = remoteUrl;
