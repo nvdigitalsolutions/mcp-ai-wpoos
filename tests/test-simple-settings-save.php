@@ -196,4 +196,58 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'existing-gemini-key', $credentials['gemini_api_key'], 'Existing Gemini key should be preserved' );
 		$this->assertTrue( $settings['enable_openai'], 'New checkbox should be saved' );
 	}
+
+	/**
+	 * A save must restore the object-cache addition suspension state it toggles.
+	 *
+	 * The save flow suspends cache additions around its read-merge-write cycle.
+	 * If the restore step captured the wrong state, additions would stay
+	 * suspended for the rest of the process — WP 7.1's WP_Object_Cache::add()
+	 * returns false while suspended, which silently jams the cooperative tick
+	 * locks behind the transcript mining, SaaS apply, and VEO async jobs.
+	 */
+	public function test_save_restores_cache_addition_suspension_state() {
+		// Known baseline: cache additions enabled.
+		if ( function_exists( 'wp_suspend_cache_addition' ) ) {
+			wp_suspend_cache_addition( false );
+		}
+
+		// Initialize settings dashboard.
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Simulate POST data from the simple settings page.
+		$_POST = array(
+			'_wpnonce'           => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
+			'action'             => 'wp_mcp_ai_save_settings',
+			'active_tab'         => 'general',
+			'subtab_general'     => 'logs',
+			'wp_mcp_ai_settings' => array(
+				'enable_logging' => '1',
+			),
+		);
+
+		// check_admin_referer reads $_REQUEST, which does not merge POST data
+		// under the test bootstrap — mirror the nonce there explicitly.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Test fixture for the save handler's nonce check.
+		$_REQUEST['_wpnonce'] = $_POST['_wpnonce'];
+
+		// Set SERVER variables.
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', '__return_false' );
+
+		// Call the save handler.
+		try {
+			$dashboard->handle_save_settings();
+		} catch ( Exception $e ) {
+			// Expected.
+			unset( $e );
+		}
+
+		$this->assertFalse(
+			wp_suspend_cache_addition(),
+			'Cache addition must resume after the settings save completes'
+		);
+	}
 }

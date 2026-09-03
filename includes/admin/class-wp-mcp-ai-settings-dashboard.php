@@ -613,9 +613,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// back to the persistent object cache (Redis/Memcached) while we're
 				// performing the read-merge-write cycle. This eliminates the most
 				// common source of intermittent key wipes in production.
-				$was_cache_suspended = function_exists( 'wp_suspend_cache_addition' )
-					? wp_suspend_cache_addition( true )
-					: false;
+				// Capture the previous suspension state first: wp_suspend_cache_addition()
+				// returns the *new* state, so passing true directly would make the
+				// restore step below re-suspend instead of resuming (WP 7.1's
+				// WP_Object_Cache::add() returns false while suspended, which would
+				// silently jam cooperative tick locks for the rest of the request).
+				$was_cache_suspended = false;
+				if ( function_exists( 'wp_suspend_cache_addition' ) ) {
+					$was_cache_suspended = wp_suspend_cache_addition();
+					wp_suspend_cache_addition( true );
+				}
 
 				// Step 2: Clear ALL caches before reading existing settings.
 				// This prevents race conditions and ensures we have the latest database values.
@@ -1006,7 +1013,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					// STEP 7: Restore Cache and Final Invalidation
 					// ========================================================================
 					// Restore the previous cache addition state.
-					if ( function_exists( 'wp_suspend_cache_addition' ) && false !== $was_cache_suspended ) {
+					if ( function_exists( 'wp_suspend_cache_addition' ) ) {
 						wp_suspend_cache_addition( $was_cache_suspended );
 					}
 
