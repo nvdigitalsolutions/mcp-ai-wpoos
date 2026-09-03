@@ -195,10 +195,9 @@ class Test_API_Caching extends WP_UnitTestCase {
 		$cached = WP_MCP_AI_Cache_Helper::get( $cache_key );
 		$this->assertEquals( 'test_value', $cached, 'Cache should exist immediately' );
 
-		// Wait 2 seconds and check again (transients should expire).
-		// Note: This test may be flaky depending on system load.
-		// In production, WordPress handles transient expiration.
-		sleep( 2 );
+		// Force the transient timeout into the past instead of sleeping, so the
+		// expiration check is deterministic under any system load.
+		update_option( '_transient_timeout_wp_mcp_ai_' . $cache_key, time() - 5 );
 
 		// After expiration, get_transient returns false.
 		$expired = get_transient( 'wp_mcp_ai_' . $cache_key );
