@@ -152,6 +152,11 @@ export function ChatPage( props: ChatPageProps ): JSX.Element {
 		provider: model.provider,
 		transcriptsEndpoint: endpoints?.transcripts ?? '',
 		allowSensitiveTools: !!runtime?.config?.allowSensitiveTools,
+		guest: !!runtime?.config?.guest,
+		guestToken:
+			typeof runtime?.config?.guestToken === 'string'
+				? runtime.config.guestToken
+				: '',
 	} );
 
 	const {
