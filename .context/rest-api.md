@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 3, 2026 (v1.1.68).
+> Last reviewed: September 4, 2026 (v1.1.69).
+>
+> **New in v1.1.69 (PR #6265):** no new routes this window — `WP_MCP_AI_REST::check_rate_limit()` now accepts the dispatching request's HTTP method so internal dispatches (`rest_do_request`, WP-CLI) are classified by their real verb instead of the ambient `$_SERVER['REQUEST_METHOD']`; GET/HEAD remain exempt. The nefarious-usage monitor keeps its own `wp_mcp_ai_nefarious_rate_limit_` counter, separate from the chat REST limiter's `wp_mcp_ai_rate_limit_` (a shared counter halves the configured chat budget). Custom emitters of `wp_mcp_ai_before_chat_request` may fire the legacy 2-arg `( $messages, $request_data )` shape — core subscribers default every parameter and tolerate both shapes.
 >
 > **New in v1.1.68 (PR #6225, #6259):** the chat controller exposes `GET /mcp-ai/v1/session/nonce` — deliberately `__return_true` + nonce-free because the returned nonce is already embedded in every page of the site, it mints the nonce from the request's own auth cookie (`wp_get_session_token`), and it sends `no-cache, no-store, must-revalidate` headers so edge caches never hand one user's nonce to another (F-AUTHZ-01 class: keep the justification comment if you touch it). The chat client retries `403 rest_cookie_invalid_nonce` failures against it instead of surfacing "Cookie check failed". Attachment segments register through the new `wp_mcp_ai_attachment_segment_provider` filter (default `openai`) — providers without a remote file API (e.g. Ollama) resolve attachments to local references instead of uploading (#6259, merged upstream after the main pass).
 >
