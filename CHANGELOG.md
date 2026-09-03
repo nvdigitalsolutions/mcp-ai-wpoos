@@ -1,5 +1,11 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — Vision Analysis Toolkit (Pro): Image Object Counting
+
+- New Pro toolkit in `addons/pro/includes/tools/vision-analysis/` — the `analyze_image_objects` tool detects and counts objects in an image (attachment, file, URL, or base64) and returns a per-category breakdown (`counts[]` with label, count, avg confidence, optional bounding boxes, `total_items`, `message`). Detection runs on HuggingFace OWLv2 (or any HF detection model) with a local Ollama vision fallback; a VLM pass (OpenAI / Anthropic / Gemini) provides open-world counting (`mode=vlm`) and hybrid label normalization — in hybrid mode the detector owns the counts and the VLM only renames mislabeled categories, never recounts. Phase 2 adds `annotate=true`: a GD-drawn labeled bounding-box copy is returned as a media attachment. New admin settings page (NV oOS → Vision Analysis) gates the toolkit (`enable_vision_analysis_toolkit`) with detector/VLM model, confidence, and payload-size settings. Includes `WP_MCP_AI_Vision_Count_Normalizer` (shared breakdown math), `WP_MCP_AI_Vision_VLM_Client`, `WP_MCP_AI_Vision_Annotator`, `WP_MCP_AI_HF_Vision_Inference_Service::count_objects()`, SSRF URL-guard enforcement on remote image URLs, and a dedicated test suite. See `docs/proposals/vision-analysis-object-counting-tool.md` and `docs/toolkits/vision-analysis-toolkit.md`. Pro tool count +1.
+
 ## [1.1.68] - 2026-09-03
 
 ### Added — Pro SPA v2 Shortcode & Embedded Mode (Pro, PR #6256)

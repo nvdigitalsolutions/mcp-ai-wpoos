@@ -1831,6 +1831,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools     = array_merge( $pro_tools, $ext_cog_tools );
 		}
 
+		// Vision Analysis Toolkit (image object counting, 1.1.68).
+		if ( ! empty( $settings['enable_vision_analysis_toolkit'] ) ) {
+			$vision_analysis_tools = array(
+				'WP_MCP_AI_Tool_Analyze_Image_Objects' => WP_MCP_AI_PRO_PATH . 'includes/tools/vision-analysis/class-wp-mcp-ai-tool-analyze-image-objects.php',
+			);
+			$pro_tools             = array_merge( $pro_tools, $vision_analysis_tools );
+		}
+
 		/**
 		 * Filter the list of Pro tools to register.
 		 *

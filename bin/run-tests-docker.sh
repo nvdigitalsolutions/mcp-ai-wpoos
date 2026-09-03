@@ -58,12 +58,20 @@ echo "Ensuring test database 'wordpress_test' exists..."
 docker exec "$DB_CONTAINER" mysql -u root -pwordpress \
   -e "CREATE DATABASE IF NOT EXISTS wordpress_test" 2>/dev/null || true
 
-# ── Ensure composer autoloader is fresh ───────────────────
-# The bind mount can cache stale files; dump-autoload forces a
-# fresh classmap that works correctly inside the Linux container.
-if [ -f vendor/autoload.php ]; then
-  echo "Refreshing Composer autoloader..."
-  composer dump-autoload --no-interaction --quiet 2>/dev/null || true
+# ── Ensure Composer dependencies (incl. dev) are installed ───────────
+# A fresh clone ships a production-only vendor/ (dev packages are gitignored),
+# so a full `composer install` — not just dump-autoload — is required to
+# restore PHPUnit and map its classes. dump-autoload alone regenerates the
+# classmap from the production-only installed.json, leaving dev packages
+# installed-but-unmapped (PHPUnit fails with "Class not found").
+if [ -f composer.json ] && command -v composer >/dev/null 2>&1; then
+  echo "Installing Composer dependencies (including dev)..."
+  if ! composer install --no-interaction --prefer-dist --quiet 2>/dev/null; then
+    echo "WARNING: composer install failed — attempting dump-autoload fallback." >&2
+    composer dump-autoload --no-interaction --quiet 2>/dev/null || true
+  fi
+else
+  echo "WARNING: Composer not found — skipping dependency install. Tests may fail." >&2
 fi
 
 # ── Test plugin status check ─────────────────────────────
