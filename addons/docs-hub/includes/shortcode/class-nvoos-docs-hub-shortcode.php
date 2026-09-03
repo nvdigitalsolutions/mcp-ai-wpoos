@@ -40,6 +40,13 @@ class NV_oOS_Docs_Hub_Shortcode {
 	 * @return string HTML output.
 	 */
 	public static function render( $atts ) {
+		// The core emoji loader rewrites text nodes anywhere in the document,
+		// including inside the React-managed SPA, which corrupts React's DOM
+		// references and crashes the app on the next commit ("Failed to
+		// execute 'removeChild'/'insertBefore' on 'Node'"). See
+		// {@see disable_emoji_processing()} — must run before any output.
+		self::disable_emoji_processing();
+
 		// Multiple shortcode / block instances per page must not re-localize
 		// identical data — track which instance we're on so the static guards
 		// in enqueue_assets() / localize_once() can no-op cleanly. The counter
@@ -158,6 +165,47 @@ class NV_oOS_Docs_Hub_Shortcode {
 			esc_attr__( 'Documentation browser', 'nvoos-docs-hub' ),
 			esc_attr( $config_json )
 		);
+	}
+
+	/**
+	 * Prevent WordPress's emoji loader from rewriting the SPA's DOM.
+	 *
+	 * The core emoji loader (the inline `wp-emoji-loader` module script)
+	 * installs a MutationObserver that replaces emoji text nodes with
+	 * `<img class="emoji">` elements anywhere in the document — including
+	 * inside the React-managed SPA, whose documentation is full of emoji
+	 * (checkmarks, arrows, stars). React keeps direct references to those
+	 * text nodes, so the next commit (clicking a sidebar link, navigating)
+	 * throws `NotFoundError: Failed to execute 'removeChild'/'insertBefore'
+	 * on 'Node': The node ... is not a child of this node` and unmounts the
+	 * whole app — which is why "the left panel links stopped working".
+	 *
+	 * The loader is printed by `_print_emoji_detection_script()` on
+	 * `wp_print_footer_scripts`, which fires after `the_content` — so
+	 * unhooking it here, while the shortcode/block renders, reliably
+	 * prevents the observer from ever being installed on pages that embed
+	 * the docs browser. Native emoji rendering in browsers is unaffected;
+	 * only the legacy emoji-to-image fallback is skipped on these pages.
+	 *
+	 * @since 0.4.2
+	 *
+	 * @return void
+	 */
+	public static function disable_emoji_processing() {
+		// Intentionally no static done-guard: the removals are idempotent and
+		// cheap, and a guard would no-op when multiple shortcode/block
+		// instances render (fine in production, but it also breaks test
+		// isolation when other suites render the shortcode first).
+
+		// The footer action is what actually prints the settings JSON and the
+		// MutationObserver loader — removing it disables the whole pipeline.
+		remove_action( 'wp_print_footer_scripts', '_print_emoji_detection_script' );
+
+		// Back-compat removals so the legacy detection script and emoji styles
+		// do not get scheduled / printed on SPA pages either.
+		remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+		remove_action( 'wp_print_styles', 'print_emoji_styles' );
+		remove_action( 'wp_enqueue_scripts', 'wp_enqueue_emoji_styles' );
 	}
 
 	/**
