@@ -35,75 +35,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Measurement_Dashboard' ) ) {
 class Test_WP_MCP_AI_Measurement_Help_Tabs extends WP_UnitTestCase {
 
 	/**
-	 * Build a fake screen object with the same shape as `WP_Screen`
-	 * but isolated from global state so each test starts clean.
+	 * Build and install a real WP_Screen (WP 7.1's get_current_screen() only
+	 * returns WP_Screen instances) that captures help tabs.
 	 *
-	 * @return object
-	 */
-	private function fake_screen() {
-		return new class() {
-			/**
-			 * Tabs registered via add_help_tab().
-			 *
-			 * @var array<int,array<string,mixed>>
-			 */
-			public $tabs = array();
-
-			/**
-			 * Sidebar HTML.
-			 *
-			 * @var string
-			 */
-			public $sidebar = '';
-
-			/**
-			 * Capture a help tab.
-			 *
-			 * @param array<string,mixed> $tab Tab definition.
-			 * @return void
-			 */
-			public function add_help_tab( $tab ) {
-				$this->tabs[] = $tab;
-			}
-
-			/**
-			 * Capture the sidebar HTML.
-			 *
-			 * @param string $html Sidebar markup.
-			 * @return void
-			 */
-			public function set_help_sidebar( $html ) {
-				$this->sidebar = (string) $html;
-			}
-
-			/**
-			 * WP 6.9+ is_admin() calls $GLOBALS['current_screen']->in_admin();
-			 * implement it so a leaked fake screen can never fatal later suites.
-			 *
-			 * @return bool Always false (front-end context).
-			 */
-			public function in_admin() {
-				return false;
-			}
-		};
-	}
-
-	/**
-	 * Swap `get_current_screen()` to return our fake screen for the
-	 * duration of one call by stashing it in a global.
-	 *
-	 * @return object Fake screen.
+	 * @return WP_Screen
 	 */
 	private function install_fake_screen() {
-		$fake                                  = $this->fake_screen();
-		$GLOBALS['wp_mcp_ai_test_help_screen'] = $fake;
+		$screen = WP_Screen::get( 'wp-mcp-ai-measurement' );
+		set_current_screen( $screen );
 
-		// Override get_current_screen via a runtime define-once shim.
-		// Built-in `get_current_screen()` tolerates being called when
-		// no screen is set; we substitute by setting `$current_screen`
-		// to our fake object.
-		$GLOBALS['current_screen'] = $fake;
-		return $fake;
+		// WP_Screen::get() returns a cached singleton per hook, so reset the
+		// help-tab state captured by previous tests.
+		$screen->remove_help_tabs();
+		return $screen;
 	}
 
 	/**
@@ -111,7 +55,7 @@ class Test_WP_MCP_AI_Measurement_Help_Tabs extends WP_UnitTestCase {
 	 * starts from a clean slate.
 	 */
 	public function tearDown(): void {
-		unset( $GLOBALS['wp_mcp_ai_test_help_screen'], $GLOBALS['current_screen'] );
+		$GLOBALS['current_screen'] = null;
 		remove_all_filters( 'wp_mcp_ai_measurement_help_tabs' );
 		parent::tearDown();
 	}
@@ -128,14 +72,14 @@ class Test_WP_MCP_AI_Measurement_Help_Tabs extends WP_UnitTestCase {
 			static function ( $tab ) {
 				return isset( $tab['id'] ) ? $tab['id'] : '';
 			},
-			$screen->tabs
+			$screen->get_help_tabs()
 		);
 
 		$this->assertContains( 'wp_mcp_ai_measurement_overview', $ids );
 		$this->assertContains( 'wp_mcp_ai_measurement_metrics', $ids );
 		$this->assertContains( 'wp_mcp_ai_measurement_privacy', $ids );
 		$this->assertContains( 'wp_mcp_ai_measurement_cli', $ids );
-		$this->assertNotEmpty( $screen->sidebar );
+		$this->assertNotEmpty( $screen->get_help_sidebar() );
 	}
 
 	/**
@@ -159,7 +103,7 @@ class Test_WP_MCP_AI_Measurement_Help_Tabs extends WP_UnitTestCase {
 		$dashboard = new WP_MCP_AI_Admin_Measurement_Dashboard();
 		$dashboard->register_help_tabs();
 
-		$ids = array_column( $screen->tabs, 'id' );
+		$ids = array_column( $screen->get_help_tabs(), 'id' );
 		$this->assertContains( 'site_runbook', $ids );
 	}
 
@@ -194,7 +138,7 @@ class Test_WP_MCP_AI_Measurement_Help_Tabs extends WP_UnitTestCase {
 		$dashboard = new WP_MCP_AI_Admin_Measurement_Dashboard();
 		$dashboard->register_help_tabs();
 
-		$ids = array_column( $screen->tabs, 'id' );
+		$ids = array_column( $screen->get_help_tabs(), 'id' );
 		$this->assertSame( array( 'good' ), $ids );
 	}
 
@@ -203,7 +147,7 @@ class Test_WP_MCP_AI_Measurement_Help_Tabs extends WP_UnitTestCase {
 	 * cleanly instead of fataling.
 	 */
 	public function test_no_screen_no_op() {
-		unset( $GLOBALS['current_screen'] );
+		$GLOBALS['current_screen'] = null;
 		$dashboard = new WP_MCP_AI_Admin_Measurement_Dashboard();
 		$dashboard->register_help_tabs();
 		$this->assertTrue( true ); // reached without error.

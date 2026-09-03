@@ -17,6 +17,47 @@
 class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up test environment.
+	 *
+	 * The e-commerce page classes register their admin_menu hooks when they
+	 * are initialized; wp-phpunit restores hooks between tests, so re-initialize
+	 * them here for a deterministic hook table.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return;
+		}
+
+		// Menu pages require the WooCommerce edit_products capability; create
+		// an administrator (granting the cap explicitly in case WC caps were
+		// not seeded) so admin_menu registration succeeds.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$admin    = get_user_by( 'id', $admin_id );
+		if ( $admin && ! user_can( $admin_id, 'edit_products' ) ) {
+			$admin->add_cap( 'edit_products' );
+		}
+		wp_set_current_user( $admin_id );
+
+		if ( ! class_exists( 'WP_MCP_AI_Product_Consolidate_Page' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-consolidate-page.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Product_Research_Page' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-research-page.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Ecommerce_Settings_Page' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-ecommerce-settings-page.php';
+		}
+
+		// Order matters: the settings page's top-level menu must register before
+		// the submenu pages (all at priority 25/26), matching production init.
+		new WP_MCP_AI_Ecommerce_Settings_Page();
+		WP_MCP_AI_Product_Consolidate_Page::init();
+		WP_MCP_AI_Product_Research_Page::init();
+	}
+
+	/**
 	 * Test that toolkit settings page registers at reasonable priority.
 	 */
 	public function test_toolkit_settings_page_registers_at_reasonable_priority() {
@@ -142,8 +183,10 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $consolidate_priority, 'Consolidate page should be registered' );
 		$this->assertNotNull( $settings_priority, 'Settings page should be registered' );
 
-		// Verify research page is at priority 30 (after top-level menu at priority 25).
-		$this->assertEquals( 30, $research_priority, 'Research page should be at priority 30' );
+		// Consolidate registers at 25 so the parent menu exists first; research
+		// and settings follow at 26 and 25 respectively (settings re-uses the
+		// parent hook priority via its constructor).
+		$this->assertEquals( 26, $research_priority, 'Research page should be at priority 26' );
 
 		// Verify consolidate page is at priority 25.
 		$this->assertEquals( 25, $consolidate_priority, 'Consolidate page should be at priority 25' );
