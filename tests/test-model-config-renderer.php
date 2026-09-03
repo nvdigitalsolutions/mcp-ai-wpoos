@@ -167,9 +167,19 @@ class Test_Model_Config_Renderer extends WP_UnitTestCase {
 	public function test_model_cannot_be_own_fallback() {
 		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
 
-		// The output should not allow a model to select itself as fallback.
-		// This is ensured by the conditional check in render_model_row.
-		$this->assertStringContainsString( 'fallback_model_id !== $model_id', $output );
+		// The guard is applied server-side: a model's own ID must never be
+		// offered inside its own fallback dropdown.
+		$model_id = 'gpt-4o-mini';
+		$this->assertStringContainsString( 'data-model-id="' . $model_id . '"', $output );
+
+		$pattern = '/<tr data-model-id="' . preg_quote( $model_id, '/' ) . '">.*?<\/tr>/s';
+		$this->assertSame( 1, preg_match( $pattern, $output, $matches ) );
+
+		$this->assertStringNotContainsString(
+			'<option value="' . $model_id . '"',
+			$matches[0],
+			'A model must not be listed as its own fallback option.'
+		);
 	}
 
 	/**

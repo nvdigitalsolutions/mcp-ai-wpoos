@@ -21,7 +21,7 @@ class Test_Gemini_25_Pro_Pricing extends WP_UnitTestCase {
 
 		$this->assertIsArray( $config, 'gemini-2.5-pro should have a configuration' );
 		$this->assertArrayHasKey( 'cost_per_1k', $config, 'Configuration should have cost_per_1k' );
-		$this->assertEquals( 0.003, $config['cost_per_1k'], 'gemini-2.5-pro cost should be $0.003 per 1k tokens ($3 per 1M tokens)' );
+		$this->assertEquals( 0.00125, $config['cost_per_1k'], 'gemini-2.5-pro cost should be $0.00125 per 1k tokens ($1.25 per 1M tokens)' );
 	}
 
 	/**
@@ -42,7 +42,7 @@ class Test_Gemini_25_Pro_Pricing extends WP_UnitTestCase {
 		$config = WP_MCP_AI_Model_Config::get_model_config( 'gemini-2.5-pro' );
 
 		$this->assertIsArray( $config, 'gemini-2.5-pro should have a configuration' );
-		$this->assertEquals( 2000000, $config['context_window'], 'gemini-2.5-pro should have 2M token context window' );
+		$this->assertEquals( 1000000, $config['context_window'], 'gemini-2.5-pro should have 1M token context window' );
 	}
 
 	/**

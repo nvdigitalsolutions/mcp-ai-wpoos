@@ -151,11 +151,12 @@ class WP_MCP_AI_Token_Budget_Manager_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Small message shouldn't trigger streaming.
-		$should_stream = WP_MCP_AI_Token_Budget_Manager::should_stream( $messages, 'gpt-4o', 10000 );
+		// Small message shouldn't trigger streaming even with a large threshold
+		// (the reserved budget scales with the model's 128k context window).
+		$should_stream = WP_MCP_AI_Token_Budget_Manager::should_stream( $messages, 'gpt-4o', 200000 );
 		$this->assertFalse( $should_stream );
 
-		// Large threshold should trigger streaming.
+		// Small threshold should trigger streaming.
 		$should_stream = WP_MCP_AI_Token_Budget_Manager::should_stream( $messages, 'gpt-4o', 100 );
 		$this->assertTrue( $should_stream );
 	}

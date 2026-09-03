@@ -72,6 +72,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gpt-4.1-mini'              => 1000000,
 		'gpt-4.1-nano'              => 1000000,
 		'gpt-4.1'                   => 128000,
+		'gpt-4o'                    => 128000,
 		'gpt-4o-mini'               => 128000,
 		'gpt-4-turbo'               => 128000,
 		'gpt-4'                     => 8192,
