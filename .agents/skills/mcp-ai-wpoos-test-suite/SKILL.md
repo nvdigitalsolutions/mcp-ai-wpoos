@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 27 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 37 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -303,6 +303,71 @@ one-off runners too (same shared DB).
     rendered checked on fresh installs and any Providers-page save persisted
     them. When changing a default, update all three layers and the test that
     codifies the field default (e.g. `test_provider_enable_field_defaults`).
+28. **Capability-gated render paths.** The chat shortcode/block render
+    enforces the chat capability (`wp_mcp_ai_chat_capability` filter, default
+    `edit_posts`) — without a capable current user the render silently
+    produces no chat markup. Fix: create an administrator and
+    `wp_set_current_user()` in `setUp()` (reset to 0 in `tear_down()`),
+    like `test-chat-template-selector.php`.
+29. **Rate-limiter test contract: non-429 means allowed through.** Any
+    status other than 429 means the limiter passed the request through to the
+    handler; without a configured provider the handler returns 400
+    `wp_mcp_ai_missing_api_key`, which is unrelated to the limiter. Don't
+    count 200/500 as "success". Also: `WP_MCP_AI_REST::check_rate_limit()`
+    accepts the dispatching request's HTTP method so internal dispatches
+    (`rest_do_request()`, WP-CLI) are classified by their real verb instead
+    of the ambient `$_SERVER['REQUEST_METHOD']`; GET/HEAD stay exempt.
+30. **Dual-shape action emitters.** `wp_mcp_ai_before_chat_request` has a
+    canonical `( $assistant_id, $messages, $options, $request )` shape, but
+    legacy/custom emitters (and unit tests) fire the 2-arg
+    `( $messages, $request_data )` shape. Subscribers (nefarious monitor,
+    OOS shadow runner, harness trace capture) must default every parameter
+    and detect the legacy shape when the first argument is an array — never
+    give a subscriber a strict signature.
+31. **Shared rate-limit counters halve budgets.** The nefarious-usage
+    monitor deliberately namespaces its transient
+    (`wp_mcp_ai_nefarious_rate_limit_`) away from the chat REST limiter
+    (`wp_mcp_ai_rate_limit_`) — sharing one counter halves the configured
+    chat budget and entangles the two enforcement paths in tests.
+32. **Transcript payload includes the assistant reply.** The chat service
+    appends the final assistant response to the conversation before
+    persisting the transcript, so `$request_payload['messages']` carries the
+    user message plus the assistant reply. Assert both (role `user` then
+    `assistant`).
+33. **Docs Hub TOC anchors must mirror github-slugger** (the library behind
+    rehype-slug): slug the Markdown-*stripped* text — not the raw line
+    (`### [Core Architecture](core/)` otherwise gets an anchor that doesn't
+    exist) — preserve Unicode letters, do NOT collapse hyphen runs, and
+    dedupe repeats with `-1`, `-2`, … suffixes.
+34. **Docs Hub link fixer: resolve-then-contain path guard.** Link targets
+    must be plain relative paths — no URL schemes, absolute paths,
+    backslash separators, or NUL bytes. Relative `../` is legitimate and NOT
+    rejected; safety comes from `realpath()` containment of the resolved
+    destination against the filterable `nvoos_docs_hub_fixer_allowed_roots`
+    list (extend it with your temp dir in tests). Remote-sourced pages are
+    never fixable server-side (flat content-hash cache) — the admin UI shows
+    "Remote source" rows. Source resolution prefers the page `slug` because
+    relative paths like `README.md` collide across addons.
+35. **Docs Hub rebuild job contracts.** The sync rebuild honours the
+    aggregate file cap (`nvoos_docs_hub_max_files_total`, default
+    `NV_oOS_Docs_Hub_Rebuild_State::DEFAULT_MAX_FILES_TOTAL` = 5000).
+    `promote_staging()` failure throws — never report "Rebuilt N pages"
+    with nothing persisted. The search REST envelope is identical with or
+    without an index (`results`, `total`, `query`).
+36. **Core emoji loader corrupts React-managed SPAs.**
+    `_print_emoji_detection_script()` installs a MutationObserver that
+    replaces emoji text nodes with `<img>` elements anywhere in the
+    document; React keeps direct text-node references, so the next commit
+    throws `NotFoundError: Failed to execute 'removeChild'/'insertBefore' on
+    'Node'` and unmounts the app ("left panel links stopped working"). The
+    Docs Hub shortcode render removes that action (plus the legacy detection
+    and emoji styles) before output; tests assert the removals. No static
+    done-guard — it would break cross-suite test isolation.
+37. **Addon test bootstrap without activation.** PHPUnit never runs
+    activation hooks, so addon suites define the addon's constants
+    (`NVOOS_DOCS_HUB_VERSION/PATH/URL/FILE`) and `require` the classes they
+    need directly in `setUp()`; filters like
+    `nvoos_docs_hub_fixer_allowed_roots` provide the temp-dir seams.
 
 ## Production fix vs test fix
 
@@ -326,6 +391,19 @@ committing.**
 ```php
 fwrite( STDERR, 'STATE: ' . wp_json_encode( $data ) . PHP_EOL );
 ```
+
+## Enumerating the suite
+
+Canonical scan dirs: `tests`, `addons/pro/tests`,
+`addons/canvas-toolkit/tests`, `addons/media-studio/tests`,
+`addons/saas-controller/tests`. Exclude: `tests/manual`, `tests/fixtures`,
+`tests/regression`, `tests/helpers`, all `bootstrap.php` /
+`wp-tests-config.php` / `wp-cli-smoke.php` files, the abilities mock tool and
+bootstrap trait, the paper-store helpers trait, the graphify and
+saas-controller bootstraps, and
+`addons/pro/tests/class-wp-mcp-ai-workflow-log-context-recorder-tool.php`.
+Batched runs sort the remaining files alphabetically and resume from a
+suffix index (chunk manifests list files, they are not inputs).
 
 ## Cluster state board
 
@@ -357,6 +435,13 @@ dashboard, #6140 slash command sync docs, #6141 REST assistant directory,
 #6146 rate limit backoff, #6147 provider subtab settings, #6148 orchestration
 slider settings, #6149 MCP client configuration, #6150 federation test,
 #6153 Google Chat fields (open).
+
+Newer merged clusters (post-#6153, discovered via the PR merge log):
+#6249 Hermes dashboard fleet extensions, #6251 Auth0 toggle, #6252 Auth0
+menu, #6253 docs-hub emoji DOM crash, #6254 auto-categorize, #6255 provider
+defaults, #6256 Pro SPA v2 shortcode, #6257 chart tiers, #6258 theme
+sortable compat, #6259 chat attachments, #6260 count-tokens params, #6262
+continuation seam, #6263 chat SSE handler, #6264 cache helper.
 
 Remaining candidates change quickly; re-triage from the latest CI log rather
 than trusting an old list.
