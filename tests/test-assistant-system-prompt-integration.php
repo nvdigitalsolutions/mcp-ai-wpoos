@@ -99,7 +99,8 @@ class WP_MCP_AI_Assistant_System_Prompt_Integration_Test extends WP_UnitTestCase
 
 		$this->assertIsArray( $sanitized, 'Sanitized options should be an array' );
 		$this->assertArrayHasKey( 'system_prompt', $sanitized, 'Options should have system_prompt key' );
-		$this->assertEquals( $config['system_prompt'], $sanitized['system_prompt'], 'System prompt should be from config' );
+		$this->assertStringStartsWith( $config['system_prompt'], $sanitized['system_prompt'], 'System prompt should be from config' );
+		$this->assertStringContainsString( '**Current Context Information:**', $sanitized['system_prompt'], 'Temporal context should be injected' );
 	}
 
 	/**
@@ -118,7 +119,7 @@ class WP_MCP_AI_Assistant_System_Prompt_Integration_Test extends WP_UnitTestCase
 
 		$this->assertIsArray( $sanitized, 'Sanitized options should be an array' );
 		$this->assertArrayHasKey( 'system_prompt', $sanitized, 'Options should have system_prompt key' );
-		$this->assertEquals( 'You are a specialized debugging assistant.', $sanitized['system_prompt'], 'System prompt should be from request' );
+		$this->assertStringStartsWith( 'You are a specialized debugging assistant.', $sanitized['system_prompt'], 'System prompt should be from request' );
 		$this->assertNotEquals( $config['system_prompt'], $sanitized['system_prompt'], 'Should not use config when request has value' );
 	}
 
