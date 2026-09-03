@@ -1,6 +1,6 @@
 # NV oOS Docs Hub — Changelog
 
-## Unreleased (0.4.2)
+## 0.4.2 — 2026-09-03
 
 ### Fixed
 - **Clicking internal links on local pages left the SPA.** ContentArea only resolved same-repo GitHub links to `#/slug` hash routes on remote-sourced pages. On local pages (base/addons/root sources) every `[text](other.md)` link rendered as a plain relative href, so clicking it navigated the browser away from the docs browser (usually to a 404). The SPA now resolves internal `.md` links against the page's `relative_path` and the manifest slug set, rewriting them to `#/slug` routes (heading anchors preserved via `#/slug#anchor`), and scrolls to the anchor after cross-page navigation.

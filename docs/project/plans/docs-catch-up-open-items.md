@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-02 (v1.1.67 pass)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.65-docs-catch-up.md`](v1.1.65-docs-catch-up.md).
+> **Last reviewed:** 2026-09-03 (v1.1.68 pass)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.68-docs-catch-up.md`](v1.1.68-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -23,6 +23,8 @@
 | 4 | `@since 1.0.0` | `includes/google/*` — 7 files (PR #5959) | 1.1.64 | v1.1.64 plan |
 | 5 | `@since 1.1.65` | `includes/class-wp-mcp-ai-job-notifier.php` — 1 instance (PRs #6036–#6039, merged after the 1.1.65 catch-up) | 1.1.66 | v1.1.66 plan |
 | 6 | `@since 1.11.0` | `includes/class-wp-mcp-ai-toolkit-registry.php` — 1 instance (PR #6117) | 1.1.67 | v1.1.67 plan |
+| 7 | `@since 1.1.67` | `includes/rest/class-wp-mcp-ai-rest-chat-controller.php` — `handle_session_nonce()` (PR #6225) | 1.1.68 | v1.1.68 plan |
+| 8 | `@since 2.1.0` | `addons/pro/includes/class-wp-mcp-ai-pro-spa-shortcode.php` (5×) + `class-wp-mcp-ai-pro-spa-config.php` (11×, PR #6256) | 1.1.68 (Pro addon ships 1.1.68) | v1.1.68 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
