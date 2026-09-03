@@ -303,7 +303,7 @@ class Test_Async_Response_UI_Integration extends WP_UnitTestCase {
 
 		$this->assertIsArray( $metadata, 'Job metadata should be stored for polling' );
 		$this->assertEquals( $job_id, $metadata['job_id'] );
-		$this->assertEquals( 'pending', $metadata['status'] );
+		$this->assertEquals( 'polling', $metadata['status'] );
 
 		// Cleanup.
 		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
