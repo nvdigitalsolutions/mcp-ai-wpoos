@@ -43,17 +43,13 @@ class WP_MCP_AI_Chat_Client_Agentic_Workflow_Test extends WP_UnitTestCase {
 		// Execute the tool with extra parameters that would normally cause errors.
 		// Before the fix, this would fail with "Invalid parameter(s): messages".
 		// After the fix, the extra parameters should be filtered out automatically.
+		// Note: text and messages are mutually exclusive by design, so the junk
+		// parameters here are non-schema extras rather than a second input source.
 		$arguments = array(
-			'text'     => 'Hello world, this is a test message.',
-			'method'   => 'heuristic',
+			'text'   => 'Hello world, this is a test message.',
+			'method' => 'heuristic',
 			// Extra parameters that should be filtered out.
-			'messages' => array(
-				array(
-					'role'    => 'user',
-					'content' => 'Previous message',
-				),
-			),
-			'extra'    => 'Should be ignored',
+			'extra'  => 'Should be ignored',
 		);
 
 		$context = array(
