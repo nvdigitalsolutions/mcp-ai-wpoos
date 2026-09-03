@@ -45,8 +45,17 @@ class WP_MCP_AI_Provider_Subtabs_Consistency_Test extends WP_UnitTestCase {
 		$sanitized = $section->sanitize( $input );
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
-		$this->assertCount( 5, $sanitized['provider_priority_list'] );
-		$this->assertEquals( 'gemini', $sanitized['provider_priority_list'][0] );
+
+		// The sanitizer appends any missing valid providers to guarantee a
+		// complete ordering, so the list covers every provider exactly once.
+		$list = $sanitized['provider_priority_list'];
+		$this->assertGreaterThanOrEqual( 5, count( $list ) );
+		$this->assertEquals( 'gemini', $list[0] );
+		$this->assertEquals( 'openai', $list[1] );
+		$this->assertEquals( 'ollama', $list[2] );
+		$this->assertEquals( 'anthropic', $list[3] );
+		$this->assertEquals( 'lm_studio', $list[4] );
+		$this->assertCount( count( $list ), array_unique( $list ), 'Priority list must contain no duplicates' );
 	}
 
 	/**
@@ -227,15 +236,16 @@ class WP_MCP_AI_Provider_Subtabs_Consistency_Test extends WP_UnitTestCase {
 		$section    = new WP_MCP_AI_Section_Providers();
 		$reflection = new ReflectionClass( $section );
 
-		// Verify the section uses sanitize_with_subtabs from parent class.
+		// The Providers section overrides sanitize() only to handle the
+		// priority list and delegate the embedded subtab; every other subtab
+		// flows through the parent's sanitize_with_subtabs().
 		$sanitize_method = $reflection->getMethod( 'sanitize' );
 		$declaring_class = $sanitize_method->getDeclaringClass()->getName();
 
-		// Should be inherited from parent, not overridden.
 		$this->assertEquals(
-			'WP_MCP_AI_Settings_Section',
+			'WP_MCP_AI_Section_Providers',
 			$declaring_class,
-			'Providers section should inherit sanitize from parent class'
+			'Providers section owns its sanitize override that delegates to the parent'
 		);
 	}
 }

@@ -129,7 +129,8 @@ class WP_MCP_AI_Provider_Subtab_Save_Bug_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that saving from simple settings page (no subtab) works correctly.
+	 * Test that saving a General subtab routes through the section-specific
+	 * subtab field (the legacy flat-page Simple Settings Saver is disabled).
 	 */
 	public function test_simple_settings_page_save_works_without_subtab() {
 		// Set up initial state.
@@ -141,17 +142,14 @@ class WP_MCP_AI_Provider_Subtab_Save_Bug_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Simulate form submission from simple settings page (save_all_tabs, no subtab).
-		// No subtab means we're on the flat settings page where ALL fields are visible.
+		// Simulate the General → Logs subtab form submission.
 		$_POST['active_tab']         = 'general';
 		$_POST['save_all_tabs']      = '1';
+		$_POST['subtab_general']     = 'logs';
 		$_POST['wp_mcp_ai_settings'] = array(
 			'enable_logging'  => '1', // Enabling logging.
-			'request_timeout' => '120', // Updating timeout.
+			'request_timeout' => '120', // Belongs to the behavior subtab.
 		);
-
-		// Simple Settings Saver SHOULD be used here because there's no subtab.
-		// This is the intended use case for Simple Settings Saver.
 
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 		$sanitized = $dashboard->sanitize_settings( $_POST['wp_mcp_ai_settings'], 'general' );
@@ -159,8 +157,10 @@ class WP_MCP_AI_Provider_Subtab_Save_Bug_Test extends WP_UnitTestCase {
 		$existing = get_option( 'wp_mcp_ai_settings', array() );
 		$merged   = array_merge( $existing, $sanitized );
 
-		// Verify settings were updated.
+		// Verify logging was updated.
 		$this->assertTrue( $merged['enable_logging'], 'Logging should be enabled' );
-		$this->assertEquals( 120, $merged['request_timeout'], 'Request timeout should be updated' );
+
+		// Fields from other subtabs must not be processed (cross-subtab protection).
+		$this->assertArrayNotHasKey( 'request_timeout', $sanitized, 'request_timeout belongs to another subtab and should not be saved here' );
 	}
 }
