@@ -363,6 +363,142 @@ class Test_Docs_Hub_Indexer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that local-source suggestions produce targets relative to the
+	 * source file's directory (regression: suggestions used the slug alone,
+	 * which produced links that were still broken after being "fixed").
+	 *
+	 * @return void
+	 */
+	public function test_suggest_fix_local_target_is_relative_to_source() {
+		$indexer = new NV_oOS_Docs_Hub_Indexer();
+		$indexer->set_slug_map(
+			array(
+				'reference/tools/tool-reference' => array(
+					'path'          => $this->test_dir . '/docs/reference/tools/TOOL_REFERENCE.md',
+					'title'         => 'Tool Reference',
+					'source'        => 'base',
+					'plugin_name'   => 'plugin',
+					'relative_path' => 'docs/reference/tools/TOOL_REFERENCE.md',
+				),
+			)
+		);
+
+		// The source page lives in docs/admin-guides/, so the correct relative
+		// target from there is ../reference/tools/TOOL_REFERENCE.md — with the
+		// on-disk filename case preserved.
+		$source_file = $this->test_dir . '/docs/admin-guides/tools-manager.md';
+
+		$suggestions = $indexer->suggest_fix(
+			'../tools/tool-reference.md',
+			$source_file
+		);
+
+		$this->assertNotEmpty( $suggestions );
+		$this->assertEquals( '../reference/tools/TOOL_REFERENCE.md', $suggestions[0]['target'] );
+	}
+
+	/**
+	 * Test that remote-source suggestions keep the slug-based target form.
+	 *
+	 * @return void
+	 */
+	public function test_suggest_fix_remote_target_stays_slug_based() {
+		$indexer = new NV_oOS_Docs_Hub_Indexer();
+		$indexer->set_slug_map(
+			array(
+				'pro-toolkit-optimization' => array(
+					'path'          => $this->test_dir . '/remote-flat-cache-file.md',
+					'title'         => 'Pro Toolkit Optimization',
+					'source'        => 'remote',
+					'plugin_name'   => 'repo',
+					'relative_path' => 'pro-toolkit-optimization.md',
+				),
+			)
+		);
+
+		$source_file = $this->test_dir . '/remote-flat-cache-file.md';
+		file_put_contents( $source_file, '# Index' );
+
+		$suggestions = $indexer->suggest_fix(
+			'features/pro-toolkit-optimization.md',
+			$source_file
+		);
+
+		$this->assertNotEmpty( $suggestions );
+		$this->assertEquals( 'pro-toolkit-optimization.md', $suggestions[0]['target'] );
+	}
+
+	/**
+	 * Test that heading anchors mirror github-slugger (rehype-slug):
+	 * underscores are preserved, spaces become hyphens, and duplicate
+	 * headings get `-1`, `-2` suffixes.
+	 *
+	 * @return void
+	 */
+	public function test_heading_anchors_mirror_github_slugger() {
+		$indexer = new NV_oOS_Docs_Hub_Indexer();
+
+		$content = implode(
+			"\n",
+			array(
+				'# wp_mcp_ai_error_tracked',
+				'# Admin Menu Issue - Diagnostic Report',
+				'## Initial Load',
+				'## Initial Load',
+				'## [Core Architecture](core/)',
+				'## **The auto sentinel**',
+			)
+		);
+
+		$toc = $indexer->extract_heading_tree( $content );
+
+		$this->assertCount( 6, $toc );
+		$this->assertEquals( 'wp_mcp_ai_error_tracked', $toc[0]['anchor'] );
+		// github-slugger preserves internal hyphens: spaces become hyphens,
+		// runs are NOT collapsed.
+		$this->assertEquals( 'admin-menu-issue---diagnostic-report', $toc[1]['anchor'] );
+		$this->assertEquals( 'initial-load', $toc[2]['anchor'] );
+		$this->assertEquals( 'initial-load-1', $toc[3]['anchor'] );
+		// Anchors are derived from the *rendered* text (markdown stripped),
+		// matching what rehype-slug slugs in the SPA.
+		$this->assertEquals( 'core-architecture', $toc[4]['anchor'] );
+		$this->assertEquals( 'the-auto-sentinel', $toc[5]['anchor'] );
+	}
+
+	/**
+	 * Test that broken-link entries carry a source_type so the admin UI can
+	 * distinguish remote (read-only) sources from editable local files.
+	 *
+	 * @return void
+	 */
+	public function test_broken_links_carry_source_type() {
+		$indexer = new NV_oOS_Docs_Hub_Indexer();
+		$indexer->set_slug_map(
+			array(
+				'chat' => array(
+					'path'          => $this->test_dir . '/chat.md',
+					'title'         => 'Chat',
+					'source'        => 'remote',
+					'plugin_name'   => 'repo',
+					'relative_path' => 'docs/chat.md',
+				),
+			)
+		);
+
+		file_put_contents( $this->test_dir . '/chat.md', '# Chat' );
+
+		$broken = $indexer->detect_broken_links(
+			'[Missing](does-not-exist.md).',
+			$this->test_dir . '/chat.md',
+			'docs/chat.md'
+		);
+
+		$this->assertCount( 1, $broken );
+		$this->assertEquals( 'remote', $broken[0]['source_type'] );
+		$this->assertEquals( 'chat', $broken[0]['slug'] );
+	}
+
+	/**
 	 * Recursively remove a directory.
 	 *
 	 * @param string $dir Directory to remove.

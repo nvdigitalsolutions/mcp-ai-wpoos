@@ -1,5 +1,31 @@
 # NV oOS Docs Hub — Changelog
 
+## Unreleased (0.4.2)
+
+### Fixed
+- **Clicking internal links on local pages left the SPA.** ContentArea only resolved same-repo GitHub links to `#/slug` hash routes on remote-sourced pages. On local pages (base/addons/root sources) every `[text](other.md)` link rendered as a plain relative href, so clicking it navigated the browser away from the docs browser (usually to a 404). The SPA now resolves internal `.md` links against the page's `relative_path` and the manifest slug set, rewriting them to `#/slug` routes (heading anchors preserved via `#/slug#anchor`), and scrolls to the anchor after cross-page navigation.
+- **TOC anchors silently did nothing on many pages.** The server-side heading anchors were generated with a bespoke slugifier that disagreed with github-slugger (rehype-slug) on underscores, hyphen runs and duplicate headings — so clicking a "On this page" link found no matching element id. `slugify_heading()` now mirrors github-slugger exactly (lowercase, keep `_`/`-`, spaces → hyphens without collapsing, `-1`/`-2` duplicate suffixes) and slugs the *rendered* text (inline Markdown stripped) instead of the raw line. Verified: 0 mismatches across ~63,000 headings in the full local index.
+- **"Accept fix" wrote links that were still broken.** `suggest_fix()` returned slug-derived targets (e.g. `features/foo.md`) without accounting for the source page's directory, so ~87% of accepted fixes produced a path that still didn't resolve. Suggestions now compute the target relative to the source file's directory (preserving on-disk filename case), so the rewritten link resolves.
+- **The fixer rejected every `../` link.** The old guard blocked *any* target containing `..`, which is exactly the shape of most genuinely-broken links (`../../moved.md`). It now validates target shape (no schemes, absolute paths, backslashes or null bytes) and containment-checks the *resolved* destination against the plugin/content roots (filterable via `nvoos_docs_hub_fixer_allowed_roots`).
+- **"Accept All Suggestions → Fixed 0 link(s). 28 skipped" with no explanation.** Three changes:
+  1. Broken-link entries now carry `slug` and `source_type`; the REST fixer resolves the source file by slug (relative paths like `README.md` exist in many addons, so relative-path matching could edit the wrong file).
+  2. Remote-sourced rows no longer show an "Accept fix" button (remote repos are read-only); they display "Remote source — fix in the source repository" instead.
+  3. The settings table now shows the server-provided reason next to each skipped row and reports error counts in the status line.
+- **`wp nvoos-docs sync` / `POST /rebuild?sync=1` reported success when nothing was persisted.** The sync path ignored `promote_staging()`'s result, so an unwritable uploads directory produced "Rebuilt in 0ms. Pages: N" while the cache stayed empty. It now throws and surfaces "Atomic swap failed: staging cache empty or unwritable."
+- **Unreachable 404 route.** `App.tsx` declared a `path="*"` fallback after `path="/*"`, which already matches everything; the dead route is removed (DocPage renders NotFound itself).
+
+### Tests
+- New `tests/test-link-fixer.php`: parent-relative fixes inside allowed roots, rejection of escapes/absolute targets, remote-source skips, end-to-end apply, and slug-vs-relative-path resolution ambiguity.
+- New indexer cases: github-slugger anchor parity (underscores, hyphen runs, duplicate suffixes, link/bold headings), relative suggestion targets, remote slug-based targets, and `slug`/`source_type` on broken-link entries.
+- New vitest cases for ContentArea local link resolution (hash-route rewrite, fragment preservation, parent-relative resolution, unindexed/absolute passthrough).
+- Repaired `test-shortcode.php` drift (`init()` → `register()`, script-queue leak between tests).
+- Made the suite runnable standalone and in a single PHPUnit invocation:
+  - `test-rebuild-chunked.php` now pins local sources and bounds rebuilds via `nvoos_docs_hub_max_files_total` (previously failed with zero pages on a fresh test DB and left the exclusion test with no assertions); the sync rebuild path now honours that filter too.
+  - `test-rest-manifest.php` now loads the rebuild job/pipeline classes it exercises.
+  - `test-remote-tree-endpoint.php` loads `NV_oOS_Docs_Hub_Remote_Repo` at file scope (its stub class extends it, so `setUp()` was too late).
+  - `test-fnmatch-polyfill.php` is a standalone script that used to `exit()` mid-run when PHPUnit discovered it — it now no-ops under PHPUnit.
+  - Search REST responses always include the `query` key, even when the index is empty.
+
 ## 0.4.1 — 2026-08-19
 
 ### Fixed

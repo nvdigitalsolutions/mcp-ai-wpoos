@@ -101,7 +101,7 @@ class Test_Docs_Hub_Shortcode extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_shortcode_is_registered() {
-		NV_oOS_Docs_Hub_Shortcode::init();
+		NV_oOS_Docs_Hub_Shortcode::register();
 		$this->assertTrue( shortcode_exists( 'nvoos_docs' ) );
 	}
 
@@ -202,6 +202,12 @@ class Test_Docs_Hub_Shortcode extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_no_assets_enqueued_when_can_render_false() {
+		// Clean the queue first: earlier tests in this file render the
+		// shortcode, which enqueues the bundle into the shared $wp_scripts
+		// queue that persists across tests in a single process.
+		wp_dequeue_script( 'nvoos-docs-hub' );
+		wp_dequeue_style( 'nvoos-docs-hub' );
+
 		add_filter( 'nvoos_docs_hub_can_render', '__return_false' );
 
 		NV_oOS_Docs_Hub_Shortcode::render( array() );

@@ -49,9 +49,39 @@ class Test_Docs_Hub_Rebuild_Chunked extends WP_UnitTestCase {
 		require_once NVOOS_DOCS_HUB_PATH . 'includes/jobs/class-nvoos-docs-hub-rebuild-job.php';
 		require_once NVOOS_DOCS_HUB_PATH . 'includes/jobs/class-nvoos-docs-hub-rebuild-pipeline.php';
 
+		// Pin the local filesystem sources. A fresh test database has no
+		// settings option, and get_settings() defaults fresh installs to
+		// remote-only (no remote repos configured → zero pages), which made
+		// every "pages > 0" assertion fail and left the exclusion test with
+		// no entries to assert against.
+		update_option(
+			NV_oOS_Docs_Hub_Plugin::OPTION_KEY,
+			array_merge(
+				NV_oOS_Docs_Hub_Plugin::get_settings(),
+				array(
+					'sources'      => array( 'base', 'addons', 'root' ),
+					'remote_repos' => array(),
+				)
+			)
+		);
+
+		// Bound the full-rebuild tests to a small file cap. The scanner walk
+		// itself is cheap (glob-only), but indexing every page payload of the
+		// real ~2,000-file repo makes each rebuild test take minutes.
+		add_filter( 'nvoos_docs_hub_max_files_total', array( $this, 'cap_files_total' ) );
+
 		// Reset persistent state between tests.
 		NV_oOS_Docs_Hub_Rebuild_State::reset();
 		( new NV_oOS_Docs_Hub_Cache() )->clear();
+	}
+
+	/**
+	 * Cap the number of files indexed during rebuild tests.
+	 *
+	 * @return int Maximum indexed files.
+	 */
+	public function cap_files_total() {
+		return 40;
 	}
 
 	/**
@@ -61,6 +91,8 @@ class Test_Docs_Hub_Rebuild_Chunked extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		parent::tearDown();
+		remove_filter( 'nvoos_docs_hub_max_files_total', array( $this, 'cap_files_total' ) );
+		delete_option( NV_oOS_Docs_Hub_Plugin::OPTION_KEY );
 		NV_oOS_Docs_Hub_Rebuild_State::reset();
 		( new NV_oOS_Docs_Hub_Cache() )->clear();
 	}

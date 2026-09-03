@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Docs Hub
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: React-based documentation browser for NV oOS. Discovers, indexes, and renders Markdown docs from the base plugin and every addon in a GitBook-style SPA. Shortcode [nvoos_docs] embeds it on any page.
- * Version:     0.4.1
+ * Version:     0.4.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_DOCS_HUB_VERSION', '0.4.1' );
+define( 'NVOOS_DOCS_HUB_VERSION', '0.4.2' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_DOCS_HUB_FILE', __FILE__ );

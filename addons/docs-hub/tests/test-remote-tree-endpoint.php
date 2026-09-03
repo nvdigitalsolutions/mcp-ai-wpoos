@@ -9,6 +9,17 @@
  * @since   0.3.0
  */
 
+// The stub class below extends NV_oOS_Docs_Hub_Remote_Repo, so the parent
+// must be loaded at file scope — setUp() runs too late for class loading
+// and standalone runs of this suite would fatal with "Class not found".
+if ( ! class_exists( 'NV_oOS_Docs_Hub_Remote_Repo' ) ) {
+	$nvoos_docs_hub_remote_repo_file = dirname( __DIR__ ) . '/includes/class-nvoos-docs-hub-remote-repo.php';
+	if ( file_exists( $nvoos_docs_hub_remote_repo_file ) ) {
+		require_once $nvoos_docs_hub_remote_repo_file;
+	}
+	unset( $nvoos_docs_hub_remote_repo_file );
+}
+
 /**
  * REST tree endpoint test case.
  */

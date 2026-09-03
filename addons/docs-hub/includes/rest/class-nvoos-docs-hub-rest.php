@@ -150,6 +150,10 @@ class NV_oOS_Docs_Hub_REST {
 									'type'     => 'string',
 									'required' => true,
 								),
+								'slug'       => array(
+									'description' => __( 'Slug of the source page (unambiguous; preferred over source path).', 'nvoos-docs-hub' ),
+									'type'        => 'string',
+								),
 								'old_target' => array(
 									'type'     => 'string',
 									'required' => true,
@@ -457,11 +461,14 @@ class NV_oOS_Docs_Hub_REST {
 		$cache        = new NV_oOS_Docs_Hub_Cache();
 		$search_index = $cache->get_search_index();
 
+		// Keep the response envelope identical whether or not an index
+		// exists yet, so SPA code and API consumers can rely on the shape.
 		if ( ! is_array( $search_index ) ) {
 			return rest_ensure_response(
 				array(
 					'results' => array(),
 					'total'   => 0,
+					'query'   => $q,
 				)
 			);
 		}
