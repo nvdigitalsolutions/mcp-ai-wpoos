@@ -141,7 +141,10 @@ final class LegacyToolAdapterTest extends TestCase {
 		$schema = $adapter->getParametersSchema();
 
 		$this->assertSame( 'object', $schema['type'] );
-		$this->assertSame( array(), $schema['properties'] );
+		// `properties` must encode as `{}`, never as `[]` — strict
+		// providers (DeepSeek) reject empty JSON arrays for it.
+		$this->assertInstanceOf( \stdClass::class, $schema['properties'] );
+		$this->assertSame( '{}', \json_encode( $schema['properties'] ) );
 	}
 
 	public function testExecutePassesThroughSuccessEnvelope(): void {

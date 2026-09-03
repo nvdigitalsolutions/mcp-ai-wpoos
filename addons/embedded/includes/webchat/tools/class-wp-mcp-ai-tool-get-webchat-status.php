@@ -46,7 +46,9 @@ class WP_MCP_AI_Tool_Get_WebChat_Status implements WP_MCP_AI_Tool_Interface, WP_
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
-			'properties'           => array(),
+			// Empty stdClass encodes as `{}`; an empty PHP array would encode
+			// as `[]`, which strict providers (DeepSeek) reject.
+			'properties'           => new stdClass(),
 			'required'             => array(),
 			'additionalProperties' => false,
 		);

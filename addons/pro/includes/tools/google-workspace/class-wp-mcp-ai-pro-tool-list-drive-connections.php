@@ -55,7 +55,10 @@ class WP_MCP_AI_Pro_Tool_List_Drive_Connections implements WP_MCP_AI_Tool_Interf
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
-			'properties'           => array(),
+			// An empty stdClass encodes as `{}`; an empty PHP array would
+			// encode as `[]`, which strict providers (DeepSeek) reject with
+			// "[] is not of type 'object'" when MCP clients forward the schema.
+			'properties'           => new stdClass(),
 			'required'             => array(),
 			'additionalProperties' => false,
 		);

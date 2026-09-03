@@ -941,4 +941,23 @@ class WP_MCP_AI_Gmail_Read_Tools_Test extends WP_UnitTestCase {
 		$this->assertTrue( $result['messages'][0]['has_attachments'] );
 		$this->assertSame( array( 'invoice.pdf' ), $result['messages'][0]['attachment_names'] );
 	}
+
+	/**
+	 * Argument-less Gmail tools must encode empty properties as `{}`.
+	 *
+	 * Strict providers (DeepSeek) reject schemas whose `properties` key is a
+	 * JSON array: "Invalid schema for function 'x': [] is not of type 'object'".
+	 */
+	public function test_list_gmail_connections_schema_encodes_empty_properties_as_object() {
+		$tool   = new WP_MCP_AI_Pro_Tool_List_Gmail_Connections();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertSame( 'object', $schema['type'] );
+		$this->assertArrayHasKey( 'properties', $schema );
+		$this->assertSame(
+			'{}',
+			wp_json_encode( $schema['properties'] ),
+			'list_gmail_connections properties must encode as an empty object, not [].'
+		);
+	}
 }

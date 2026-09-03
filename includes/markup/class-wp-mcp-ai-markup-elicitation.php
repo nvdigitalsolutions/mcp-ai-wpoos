@@ -204,7 +204,9 @@ class WP_MCP_AI_Markup_Elicitation {
 		if ( empty( $schema ) ) {
 			return array(
 				'type'       => 'object',
-				'properties' => array(),
+				// Empty stdClass encodes as `{}`; an empty PHP array would
+				// encode as `[]`, which strict clients reject.
+				'properties' => new stdClass(),
 				'required'   => array(),
 			);
 		}
@@ -212,7 +214,7 @@ class WP_MCP_AI_Markup_Elicitation {
 			$schema['type'] = 'object';
 		}
 		if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-			$schema['properties'] = array();
+			$schema['properties'] = new stdClass();
 		}
 		if ( ! isset( $schema['required'] ) || ! is_array( $schema['required'] ) ) {
 			$schema['required'] = array();

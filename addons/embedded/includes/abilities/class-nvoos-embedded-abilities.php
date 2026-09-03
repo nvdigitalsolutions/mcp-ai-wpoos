@@ -158,7 +158,9 @@ class NV_oOS_Embedded_Abilities {
 				'category'            => self::CATEGORY_VOICE,
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties' => array(),
+					// Empty stdClass encodes as `{}`; an empty PHP array would
+					// encode as `[]`, which strict providers reject.
+					'properties' => new stdClass(),
 				),
 				'output_schema'       => array(
 					'type'       => 'object',
@@ -205,7 +207,9 @@ class NV_oOS_Embedded_Abilities {
 				'category'            => self::CATEGORY_INFERENCE,
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties' => array(),
+					// Empty stdClass encodes as `{}`; an empty PHP array would
+					// encode as `[]`, which strict providers reject.
+					'properties' => new stdClass(),
 				),
 				'output_schema'       => array(
 					'type'       => 'object',

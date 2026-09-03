@@ -59,7 +59,9 @@ class WP_MCP_AI_Tool_Wait_For_User implements WP_MCP_AI_Tool_Interface {
 			'required_capability' => 'read',
 			'parameters'          => array(
 				'type'       => 'object',
-				'properties' => array(),
+				// Empty stdClass encodes as `{}`; an empty PHP array would encode
+				// as `[]`, which strict providers (DeepSeek) reject.
+				'properties' => new stdClass(),
 				'required'   => array(),
 			),
 		);

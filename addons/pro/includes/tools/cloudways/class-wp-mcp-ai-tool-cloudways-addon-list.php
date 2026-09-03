@@ -44,7 +44,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Cloudways_Addon_List' ) ) {
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
-				'properties' => array(),
+				// Empty stdClass encodes as `{}`; an empty PHP array would encode
+				// as `[]`, which strict providers (DeepSeek) reject.
+				'properties' => new stdClass(),
 			);
 		}
 
