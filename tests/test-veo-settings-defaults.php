@@ -157,7 +157,7 @@ class WP_MCP_AI_Veo_Settings_Defaults_Test extends WP_UnitTestCase {
 		// Verify defaults.
 		$this->assertEquals( 'gemini-omni-flash', $fields['gemini_video_model']['default'], 'Default model should be Omni Flash' );
 		$this->assertEquals( '720p', $fields['gemini_video_resolution']['default'], 'Default resolution should be 720p' );
-		$this->assertEquals( '3:2', $fields['gemini_video_aspect_ratio']['default'], 'Default aspect ratio should be 16:9' );
+		$this->assertEquals( '16:9', $fields['gemini_video_aspect_ratio']['default'], 'Default aspect ratio should be 16:9' );
 		$this->assertEquals( '5', $fields['gemini_video_duration']['default'], 'Default duration should be 5' );
 	}
 

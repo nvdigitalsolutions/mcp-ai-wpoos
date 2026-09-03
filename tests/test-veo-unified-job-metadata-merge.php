@@ -219,7 +219,7 @@ class Test_Veo_Unified_Job_Metadata_Merge extends WP_UnitTestCase {
 		$this->assertStringStartsWith( 'veo_', $result['job_id'], 'Job ID should start with veo_ prefix' );
 
 		// Verify transient was created with veo prefix.
-		$veo_prefix = 'wp_mcp_ai_veo_async_op_';
+		$veo_prefix = WP_MCP_AI_Gemini_Video_Generation_Service::ASYNC_OP_PREFIX;
 		$metadata   = get_transient( $veo_prefix . $result['job_id'] );
 
 		$this->assertIsArray( $metadata, 'Metadata should exist with veo prefix' );
