@@ -233,7 +233,7 @@ class WP_MCP_AI_Anthropic_Client_Test extends WP_UnitTestCase {
 	public function test_max_tokens_required() {
 		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$defaults['anthropic_api_key'] = 'sk-ant-test-key';
-		$defaults['anthropic_model']   = 'claude-3-sonnet-20240229';
+		$defaults['anthropic_model']   = 'claude-sonnet-4-6';
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
@@ -247,7 +247,7 @@ class WP_MCP_AI_Anthropic_Client_Test extends WP_UnitTestCase {
 				'id'          => 'msg_test',
 				'type'        => 'message',
 				'role'        => 'assistant',
-				'model'       => 'claude-3-sonnet-20240229',
+				'model'       => 'claude-sonnet-4-6',
 				'content'     => array(
 					array(
 						'type' => 'text',
