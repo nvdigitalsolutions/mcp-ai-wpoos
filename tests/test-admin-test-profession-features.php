@@ -101,8 +101,22 @@ class Test_Admin_Test_Profession_Features extends WP_UnitTestCase {
 		// Set the current screen to test profession page.
 		set_current_screen( 'mcp_ai_profession_page_wp-mcp-ai-test-profession' );
 
+		// WordPress fires admin_menu before admin_enqueue_scripts; the base
+		// class records its page_hook during menu registration and the
+		// enqueue callback bails unless the hook matches it.
+		do_action( 'admin_menu' );
+
+		// In PHPUnit the suffix falls back to the generic admin_page_* form
+		// because wp-admin/menu.php never runs, so read the recorded hook
+		// instead of hardcoding the production {post_type}_page_{slug} form.
+		$reflection = new ReflectionClass( $this->test_profession );
+		$prop       = $reflection->getProperty( 'page_hook' );
+		$prop->setAccessible( true );
+		$hook = $prop->getValue( $this->test_profession );
+
+		$this->assertNotEmpty( $hook );
+
 		// Trigger enqueue scripts.
-		$hook = 'mcp_ai_profession_page_wp-mcp-ai-test-profession';
 		do_action( 'admin_enqueue_scripts', $hook );
 
 		// Check if chat.js is enqueued.
@@ -189,8 +203,9 @@ class Test_Admin_Test_Profession_Features extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data-profession-id="' . $this->profession_id . '"', $output );
 		$this->assertStringContainsString( 'Test Profession', $output );
 
-		// Check that profession metadata is in the JSON data.
-		$this->assertStringContainsString( 'technical', $output );
+		// Check that profession metadata is in the JSON data. The renderer
+		// capitalizes the stored category label for display.
+		$this->assertStringContainsStringIgnoringCase( 'technical', $output );
 	}
 
 	/**
