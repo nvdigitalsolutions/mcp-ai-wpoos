@@ -98,7 +98,7 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 		$settings['rate_limit_window']    = 60; // Per 60 seconds.
 		update_option( 'wp_mcp_ai_settings', $settings );
 
-		$successful_count   = 0;
+		$allowed_count     = 0;
 		$rate_limited_count = 0;
 
 		// Make more requests than the limit.
@@ -121,9 +121,13 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 
 			if ( 429 === $status ) {
 				++$rate_limited_count;
-			} elseif ( 200 === $status || 500 === $status ) {
-				// 500 can occur if provider is not configured, but permission check passed.
-				++$successful_count;
+			} else {
+				// Any non-429 status means the rate limiter let the request
+				// through to the chat handler. Without a configured provider
+				// the handler returns 400 wp_mcp_ai_missing_api_key — the
+				// rate limiter's contract is unaffected by that downstream
+				// provider error.
+				++$allowed_count;
 			}
 		}
 
@@ -134,11 +138,11 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 			'Requests exceeding the limit should be rate limited with 429 status'
 		);
 
-		// Exactly 3 requests should succeed (up to the limit).
+		// Exactly 3 requests should pass through the rate limiter.
 		$this->assertEquals(
 			3,
-			$successful_count,
-			'Requests within the limit should succeed (or fail with non-rate-limit errors)'
+			$allowed_count,
+			'Requests within the limit should pass through the rate limiter'
 		);
 
 		// Clean up.
