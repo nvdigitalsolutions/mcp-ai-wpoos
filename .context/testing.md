@@ -1,13 +1,15 @@
 # NV oOS Testing Patterns
 
 > **GSD Context File** — Load this when writing or reviewing PHPUnit tests.
-> Last reviewed: September 2, 2026 (v1.1.67).
+> Last reviewed: September 3, 2026 (v1.1.68).
 >
 > **Repair workflow:** when a suite is *failing* (rather than being written),
 > use the [`.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md`](../.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md)
 > skill — Docker test commands (WP 6.9/7.1), CI-log triage, recurring
 > root-cause patterns, and the cluster-by-cluster PR conventions live there.
 > This file stays focused on test-writing patterns and the coverage policy.
+>
+> **New in v1.1.68:** a third, smaller PHPUnit repair wave (~21 test PRs, #6224–#6257 plus the CI alpha-log refresh #6223) kept the suite aligned with current contracts. Production seams the suites now depend on: `WP_MCP_AI_Agent_Identity_Resolver::resolve()` casts alias-table canonical IDs to int (#6232); `WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit()` restored the `wp_mcp_ai_model_tpm_limit` filter seam across the CCT → catalog fallback (#6233); untrashing an assistant restores its pre-trash status via the `wp_untrash_post_status` filter (#6239); `WP_MCP_AI_Tool_Presets_Helper` excludes test-only doubles and includes the missing tools (#6242); `wp_mcp_ai_seed_task_templates` AJAX is registered on the settings dashboard (#6243); provider enable flags default to false on fresh installs with wizard auto-enable (#6255); post-edit admin scripts enqueue the core `jquery-ui-sortable` shim (#6258); the chat client self-heals stale nonces against `GET /mcp-ai/v1/session/nonce` (#6225); the `mcp-ai-wpoos-test-suite` skill grew to **27** patterns (#6255). Keep those seams when touching the corresponding production paths.
 >
 > **New in v1.1.67:** the Sep 1–2 repair-campaign continuation (~70 suite PRs, #6143–#6208) kept the suite green through the Content Graph platform extraction and ecosystem-port work plus PHPUnit 11 / WP 7.1 environment drift; the `mcp-ai-wpoos-test-suite` skill was refreshed to **26** root-cause patterns distilled from ~70 cluster PRs (#6154). Two new CI matrices landed with the extraction/port features: `.github/workflows/phpunit-platform.yml` (platform addon) and `.github/workflows/phpunit-ai.yml` (Content Graph AI monolith + standalone). Production seams the tests now depend on: the settings registry exposes `unregister_section()` (#6144) and settings-section tests clean up after themselves; `WP_MCP_AI_Tool_Token_Limits::get_tool_multiplier()` is public (#6189); REST tool-error reporting tolerates a null request (#6186); the WhatsApp webhook signature validator rejects a missing app secret (#6192); assistant pages render their modal structure on permission/disabled notices (#6174). Keep those seams when touching the corresponding production paths.
 >

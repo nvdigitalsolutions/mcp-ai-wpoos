@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 2, 2026 (v1.1.67).
+> Last reviewed: September 3, 2026 (v1.1.68).
+>
+> **New in v1.1.68 (PR #6225):** the chat controller exposes `GET /mcp-ai/v1/session/nonce` — deliberately `__return_true` + nonce-free because the returned nonce is already embedded in every page of the site, it mints the nonce from the request's own auth cookie (`wp_get_session_token`), and it sends `no-cache, no-store, must-revalidate` headers so edge caches never hand one user's nonce to another (F-AUTHZ-01 class: keep the justification comment if you touch it). The chat client retries `403 rest_cookie_invalid_nonce` failures against it instead of surfacing "Cookie check failed".
 >
 > **New in v1.1.67 (PRs #6141, #6172, #6186, #6187):** the assistant-directory REST handler guards an empty `title` param (#6141); tool-error reporting is null-safe when the request object is absent (#6186); LLM payload sanitization is delegated to `WP_MCP_AI_REST_Validator` (`sanitize_metadata_for_llm()` recursion + transport-field stripping — `headers`/`raw`/`response`/`request`/`retrieved_at`/`fetched_at`/`user_agent`) instead of private REST helpers (#6187); transcript `display` metadata segments are sanitized (`sanitize_display_metadata()` — `bubbleType` via `sanitize_key()`) and persisted (#6172).
 >

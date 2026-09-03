@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.67"
-  plugin-version-tested: "1.1.67"
+  plugin-version: "1.1.68"
+  plugin-version-tested: "1.1.68"
   last-updated: "2026-09-03"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -613,6 +613,40 @@ Import external AI conversation exports into the JetEngine
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Front-End Surfaces, Nonce Self-Heal & Provider Defaults (v1.1.68+)
+
+- **Pro SPA v2 shortcode** — `[nvoos_pro_spa]` embeds the Pro SPA v2 chat
+  surface on the front end (chat-first embedded mode: threads, drawers,
+  tool shortcuts, OKF drawer; router-free; optional guest mode behind the
+  "Allow Guest Access" setting). Proposal 033.
+- **Hermes dashboard fleet extensions** — new top-level `extensions/` tree
+  (fleet monitoring + control plane, backup-download, external-app-tab,
+  mcp-tool-shortcuts; `install.sh` + smoke tests). Plans in
+  `docs/developer/integration/`.
+- **Stale REST nonce self-heal** — `GET /mcp-ai/v1/session/nonce` mints a
+  fresh session-bound nonce from the request's own auth cookie (`no-cache`/
+  `no-store`); chat surfaces retry `403 rest_cookie_invalid_nonce` failures
+  instead of showing "Cookie check failed" (full-page caching / SPA session
+  rotation).
+- **Docs Hub 0.4.2** — local-page links resolve to in-app `#/slug` routes,
+  TOC anchors match github-slugger, "Accept fix" suggestions are
+  directory-relative with `../` validation + skip reasons, sync failures
+  surface "Atomic swap failed", and the emoji loader no longer crashes the
+  React SPA on docs-browser pages.
+- **Provider enable defaults (fresh installs)** — OpenAI/Anthropic/Gemini
+  now default to **disabled**; provider dropdowns list only enabled +
+  credentialed providers (`get_available_providers()`); the onboarding
+  wizard auto-enables the provider whose key you enter. When helping users
+  with "no providers available", check both the key **and** the enable
+  checkbox.
+- **Grouped fixes (third test wave, ~21 PRs)** — calendar granted-scopes
+  `%20` normalization; agent-identity canonical-ID int cast; token-budget
+  catalog dedup + `wp_mcp_ai_model_tpm_limit` filter seam; assistant
+  untrash restores the pre-trash status; presets gain missing tools;
+  `wp_mcp_ai_seed_task_templates` AJAX; `fast-uri` >=4.1.4; Tiptap 3.30.4
+  pins; jQuery UI sortable shim on post edit screens. Tool count unchanged:
+  ~303 base + ~1,262 Pro (~1,565 total).
 
 ## Platform Extraction v2.0.0, Ecosystem Port Wave D + D-UI & Google Workspace Read Tools (v1.1.67+)
 
