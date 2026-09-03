@@ -30,6 +30,10 @@ class Test_Auth0_Setup_Menu_Registration extends WP_UnitTestCase {
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );
 
+		// The admin_menu hook is registered in the constructor; instantiate the
+		// class so the registration is present in this test's hook table.
+		new WP_MCP_AI_Auth0_Setup();
+
 		// Trigger the admin_menu action to register menus.
 		do_action( 'admin_menu' );
 
@@ -58,6 +62,10 @@ class Test_Auth0_Setup_Menu_Registration extends WP_UnitTestCase {
 		// Set up an admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );
+
+		// The admin_menu hook is registered in the constructor; instantiate the
+		// class so the registration is present in this test's hook table.
+		new WP_MCP_AI_Auth0_Setup();
 
 		// Trigger the admin_menu action to register menus.
 		do_action( 'admin_menu' );
