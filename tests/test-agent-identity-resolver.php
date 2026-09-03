@@ -57,7 +57,8 @@ class Test_Agent_Identity_Resolver extends WP_UnitTestCase {
 		$this->assertTrue( $resolved['resolved'] );
 		$this->assertSame( 'nvoos-pro-spa-memory-drawer', $resolved['original'] );
 
-		$this->assertSame( 953, WP_MCP_AI_Agent_Identity_Resolver::get_canonical( 'nvoos-pro-spa-memory-drawer' ) );
+		// The alias map stores canonical IDs as strings.
+		$this->assertSame( '953', WP_MCP_AI_Agent_Identity_Resolver::get_canonical( 'nvoos-pro-spa-memory-drawer' ) );
 	}
 
 	/**
