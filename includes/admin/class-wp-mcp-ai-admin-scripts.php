@@ -69,9 +69,84 @@ class WP_MCP_AI_Admin_Scripts {
 	 * admin_enqueue_scripts callbacks, so the core-registered handle is
 	 * enqueued first and is printed before those scripts execute. Enqueuing
 	 * a core handle is idempotent and adds no asset of our own.
+	 *
+	 * Enqueuing the core handle is not sufficient on its own: another plugin
+	 * or theme can dequeue or deregister it later in the enqueue phase (or
+	 * even after admin_head), leaving the page without jQuery UI Sortable.
+	 * A fallback therefore re-checks the final queue state at admin_head and
+	 * at wp_print_footer_scripts and prints a bundled copy of jQuery UI
+	 * Sortable inline. Because head scripts and the wp_print_footer_scripts
+	 * action both execute before any document-ready handler, the fallback
+	 * guarantees jQuery.fn.sortable exists before third-party ready
+	 * callbacks run, regardless of queue tampering.
 	 */
 	private static function ensure_sortable_compatibility() {
 		wp_enqueue_script( 'jquery-ui-sortable' );
+
+		// The admin_head pass catches handles removed during the enqueue
+		// phase; the footer pass catches handles removed even later.
+		add_action( 'admin_head', array( __CLASS__, 'print_sortable_compatibility_fallback' ), 1 );
+		add_action( 'wp_print_footer_scripts', array( __CLASS__, 'print_sortable_compatibility_fallback' ), 1 );
+	}
+
+	/**
+	 * Print a bundled jQuery UI Sortable copy when the core-registered
+	 * handle will not load, so jQuery.fn.sortable exists before any
+	 * document-ready handler can execute.
+	 *
+	 * Runs after every admin_enqueue_scripts callback (and, on the footer
+	 * pass, after admin_footer) has had the chance to dequeue or deregister
+	 * the core handle, so it always inspects the final queue state.
+	 *
+	 * @return void
+	 */
+	public static function print_sortable_compatibility_fallback() {
+		if ( self::core_sortable_will_load() ) {
+			// The core queue will print the handle (head or footer). Ready
+			// handlers only run after all synchronous footer scripts have
+			// executed, so no fallback is needed.
+			return;
+		}
+
+		$fallback = WP_MCP_AI_PATH . 'assets/js/vendor/jquery-ui-sortable.min.js';
+
+		if ( ! file_exists( $fallback ) || ! is_readable( $fallback ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local bundled asset read.
+		$source = file_get_contents( $fallback );
+
+		if ( false === $source ) {
+			return;
+		}
+
+		wp_print_inline_script_tag( $source );
+
+		// A copy is already printed: the remaining safety-net hook must not
+		// print a second one.
+		remove_action( 'wp_print_footer_scripts', array( __CLASS__, 'print_sortable_compatibility_fallback' ), 1 );
+	}
+
+	/**
+	 * Whether the core jquery-ui-sortable handle is registered with a
+	 * printable source and enqueued, meaning the core queue will load it.
+	 *
+	 * @return bool True when the core queue will load jQuery UI Sortable.
+	 */
+	private static function core_sortable_will_load() {
+		$wp_scripts = wp_scripts();
+
+		if ( ! isset( $wp_scripts->registered['jquery-ui-sortable'] ) ) {
+			return false;
+		}
+
+		if ( empty( $wp_scripts->registered['jquery-ui-sortable']->src ) ) {
+			// Deregistered or hijacked with no usable source.
+			return false;
+		}
+
+		return (bool) wp_script_is( 'jquery-ui-sortable', 'enqueued' );
 	}
 
 	/**
