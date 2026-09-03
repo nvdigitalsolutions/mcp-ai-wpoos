@@ -64,7 +64,7 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 
 		// Verify the comment explaining the fix.
 		$this->assertStringContainsString(
-			'prevent double-async',
+			'prevents double-async',
 			$source,
 			'Source should have comment explaining double-async prevention'
 		);
