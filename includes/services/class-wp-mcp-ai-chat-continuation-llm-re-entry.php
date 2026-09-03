@@ -37,14 +37,20 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_LLM_Re_Entry' ) ) {
 	class WP_MCP_AI_Chat_Continuation_LLM_Re_Entry {
 
 		/**
+		 * Whether the hook listener has been registered.
+		 *
+		 * @var bool
+		 */
+		private static $initialized = false;
+
+		/**
 		 * Register the hook listener.  Idempotent.
 		 */
 		public static function init() {
-			static $initialized = false;
-			if ( $initialized ) {
+			if ( self::$initialized ) {
 				return;
 			}
-			$initialized = true;
+			self::$initialized = true;
 
 			// Priority 10 — default; runs after dispatcher fires the ready action.
 			add_action( 'wp_mcp_ai_chat_continuation_ready', array( __CLASS__, 'on_continuation_ready' ), 10, 3 );
@@ -56,6 +62,7 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_LLM_Re_Entry' ) ) {
 		 * @internal PHPUnit only.
 		 */
 		public static function reset_for_tests() {
+			self::$initialized = false;
 			remove_action( 'wp_mcp_ai_chat_continuation_ready', array( __CLASS__, 'on_continuation_ready' ), 10 );
 		}
 
