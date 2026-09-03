@@ -1,0 +1,15 @@
+# Hermes-side source mirrors the runtime layout. Never commit the live fleet
+# registry — it holds real operator tokens. sites.yaml.example is the
+# documented template.
+**/sites.yaml
+!**/sites.yaml.example
+
+# Runtime artefacts.
+__pycache__/
+*.pyc
+*.log
+.sidecar.pid
+
+# Local venv for the backend smoke test (tests/backend_smoke.py).
+.venv/
+.venv-test/

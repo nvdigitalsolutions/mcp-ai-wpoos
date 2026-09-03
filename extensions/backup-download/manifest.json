@@ -1,0 +1,43 @@
+{
+  "extensions": [
+    {
+      "id": "backup-download",
+      "name": "Backup Download",
+      "description": "Create a downloadable Hermes backup from the WebUI (full or quick snapshot via a loopback sidecar).",
+      "enabled": true,
+      "scripts": [
+        "assets/backup-download.js"
+      ],
+      "stylesheets": [
+        "assets/backup-download.css"
+      ],
+      "sidecar": {
+        "type": "loopback",
+        "origin": "http://127.0.0.1:19001",
+        "health_path": "/health"
+      },
+      "permissions": {
+        "webui_api": {
+          "read": [],
+          "write": []
+        },
+        "dom": {
+          "owned": true,
+          "mutates_core_views": false
+        },
+        "storage": {
+          "owned": [
+            "hermes-ext-backup-download-last"
+          ],
+          "shared_webui_keys": []
+        },
+        "loopback_sidecar": true,
+        "filesystem": {
+          "arbitrary": false,
+          "serves_bundled_assets": true
+        },
+        "network_external": false
+      }
+    }
+  ]
+}

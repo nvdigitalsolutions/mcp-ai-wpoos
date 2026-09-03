@@ -21,7 +21,7 @@
 .context
 .devcontainer
 .zed
-hermes-extensions
+extensions
 .eslintrc.json
 .eslintignore
 .editorconfig

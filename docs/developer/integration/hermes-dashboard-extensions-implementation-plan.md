@@ -17,7 +17,7 @@ tool execution stays where the data lives.
 
 **In scope (this branch — Phases 0–3 delivered):**
 
-- Repo home `hermes-extensions/` (source of truth, excluded from the WP.org
+- Repo home `extensions/` (source of truth, excluded from the WP.org
   build via `.distignore`).
 - `nv-oos-fleet` dashboard plugin v0.2.0: site registry CRUD + connection
   tests, cached fleet health/status, per-site overview, logs, async-job + WP
@@ -30,7 +30,7 @@ tool execution stays where the data lives.
 - `nv-oos` dashboard theme YAML.
 - Installer script + operator README.
 - Functional smoke test with a mocked upstream WP site
-  (`hermes-extensions/tests/backend_smoke.py`).
+  (`extensions/tests/backend_smoke.py`).
 - This implementation plan and the earlier proposal document.
 
 **Deferred (see §9.1):** full chat-session monitor via `/sse`, one-click
@@ -42,7 +42,7 @@ dashboard (stays on the WP side), WP-side `WP_MCP_AI_HEADLESS_ADMIN` constant.
 ## 2. Repo layout (source of truth)
 
 ```
-hermes-extensions/
+extensions/
 ├── README.md                      # operator docs: install, verify, security
 ├── install.sh                     # copies plugin + theme into ~/.hermes
 ├── .gitignore                     # never commit sites.yaml (real tokens)
@@ -62,8 +62,8 @@ Runtime mapping (per Hermes docs):
 
 | Source | Runtime |
 |---|---|
-| `hermes-extensions/nv-oos-fleet/` | `~/.hermes/plugins/nv-oos-fleet/` |
-| `hermes-extensions/nv-oos-fleet/theme/nv-oos.yaml` | `~/.hermes/dashboard-themes/nv-oos.yaml` |
+| `extensions/nv-oos-fleet/` | `~/.hermes/plugins/nv-oos-fleet/` |
+| `extensions/nv-oos-fleet/theme/nv-oos.yaml` | `~/.hermes/dashboard-themes/nv-oos.yaml` |
 
 ---
 
@@ -241,7 +241,7 @@ overrides. `layoutVariant: standard` (cockpit rail is a later phase decision).
 
 ### 3.7 `.distignore`
 
-Add `hermes-extensions` so the WP.org SVN build never ships Hermes-side code.
+Add `extensions` so the WP.org SVN build never ships Hermes-side code.
 
 ---
 
@@ -323,13 +323,13 @@ Deviations:
 ### Automated (runs on this branch, no Hermes install needed)
 
 ```bash
-python3 -m py_compile hermes-extensions/nv-oos-fleet/dashboard/plugin_api.py
-node --check hermes-extensions/nv-oos-fleet/dashboard/dist/index.js
-python3 -c "import yaml; yaml.safe_load(open('hermes-extensions/nv-oos-fleet/theme/nv-oos.yaml'))"
-bash -n hermes-extensions/install.sh
+python3 -m py_compile extensions/nv-oos-fleet/dashboard/plugin_api.py
+node --check extensions/nv-oos-fleet/dashboard/dist/index.js
+python3 -c "import yaml; yaml.safe_load(open('extensions/nv-oos-fleet/theme/nv-oos.yaml'))"
+bash -n extensions/install.sh
 ```
 
-Plus a functional backend test (`hermes-extensions/tests/backend_smoke.py`)
+Plus a functional backend test (`extensions/tests/backend_smoke.py`)
 that runs every route in-process against a mocked upstream WP site
 (httpx.MockTransport injected into the plugin's client pools): registry CRUD,
 validation, redaction, caching, fleet health/status/overview, logs, jobs
@@ -339,7 +339,7 @@ hub (fan-out + teardown), and mcp-config/apply against a temp HERMES_HOME.
 It refuses to run when a live `sites.yaml` exists:
 
 ```bash
-cd hermes-extensions
+cd extensions
 python3 -m venv .venv && .venv/bin/python -m pip install fastapi httpx pyyaml
 .venv/bin/python tests/backend_smoke.py
 ```
@@ -354,7 +354,7 @@ The suite already caught two real bugs: httpx 0.28's removal of per-request
 
 ### Manual smoke test (requires a Hermes dashboard + one Docker WP site)
 
-1. `bash hermes-extensions/install.sh`
+1. `bash extensions/install.sh`
 2. Restart `hermes dashboard` (backend routes mount at startup).
 3. `curl http://127.0.0.1:9119/api/dashboard/plugins` → `nv-oos-fleet`
    discovered; `curl …/api/plugins/nv-oos-fleet/meta` → `{"ok": true}`.
@@ -402,7 +402,7 @@ The suite already caught two real bugs: httpx 0.28's removal of per-request
 
 ## 10. Acceptance criteria (this branch)
 
-- [x] New top-level `hermes-extensions/` tree with the Phase 0–3 files.
+- [x] New top-level `extensions/` tree with the Phase 0–3 files.
 - [x] `.distignore` excludes the tree from WP.org builds.
 - [x] `plugin_api.py` compiles; `index.js` parses; YAML/JSON files load;
       `install.sh` passes `bash -n`.

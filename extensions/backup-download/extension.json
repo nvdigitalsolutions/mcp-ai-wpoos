@@ -1,0 +1,54 @@
+{
+  "id": "backup-download",
+  "name": "Backup Download",
+  "description": "Create a downloadable Hermes backup right from the WebUI. Wraps the native `hermes backup` command via a loopback sidecar — full or quick snapshot — and assembles the zip in the browser through the authenticated WebUI proxy (proxied responses are capped at 512 KB, so the file is fetched in 448 KB chunks and saved as one download).",
+  "version": "0.1.0",
+  "author": "ppuhgmkjff-workspace",
+  "assets": {
+    "scripts": [
+      "assets/backup-download.js"
+    ],
+    "stylesheets": [
+      "assets/backup-download.css"
+    ]
+  },
+  "capabilities": [
+    "manifest-bundle"
+  ],
+  "lifecycle": {
+    "webui_restart_required": true,
+    "sidecar_start_required": true,
+    "native_host_start_required": false,
+    "native_host_autostart": "none"
+  },
+  "sidecar": {
+    "type": "loopback",
+    "origin": "http://127.0.0.1:19001",
+    "health_path": "/health"
+  },
+  "screenshots": [],
+  "permissions": {
+    "webui_api": {
+      "read": [],
+      "write": []
+    },
+    "webui_navigation": false,
+    "dom": {
+      "owned": true,
+      "mutates_core_views": false
+    },
+    "storage": {
+      "owned": [
+        "hermes-ext-backup-download-last"
+      ],
+      "shared_webui_keys": []
+    },
+    "loopback_sidecar": true,
+    "native_host": false,
+    "filesystem": {
+      "arbitrary": false,
+      "serves_bundled_assets": true
+    },
+    "network_external": false
+  }
+}

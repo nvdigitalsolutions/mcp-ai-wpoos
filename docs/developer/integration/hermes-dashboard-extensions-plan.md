@@ -179,15 +179,15 @@ One plugin directory, three layers, phased delivery. Everything below is a
 **single install**: `~/.hermes/plugins/nv-oos-fleet/` +
 `~/.hermes/dashboard-themes/nv-oos.yaml`.
 
-**Repo home:** `hermes-extensions/nv-oos-fleet/` (top-level, outside the
+**Repo home:** `extensions/nv-oos-fleet/` (top-level, outside the
 WordPress plugin tree — Hermes-side code does not ship in the WP plugin;
-`.distignore` excludes the folder). `hermes-extensions/install.sh` copies the
+`.distignore` excludes the folder). `extensions/install.sh` copies the
 tree into `~/.hermes/`. The WP-side companion is `addons/fleet-operator/`,
 which issues the `op_*.SECRET` operator credentials this extension consumes.
 
 ```
 # Source of truth (this repo)
-hermes-extensions/nv-oos-fleet/
+extensions/nv-oos-fleet/
 ├── dashboard/
 │   ├── manifest.json
 │   ├── dist/
