@@ -249,13 +249,13 @@ class Test_Chart_Data_Formatting extends WP_UnitTestCase {
 	public function test_tier_distribution_with_custom_tiers() {
 		// Create users with different tiers.
 		$free_user = $this->factory->user->create();
-		update_user_meta( $free_user, 'wp_mcp_ai_token_tier', 'free' );
+		update_user_meta( $free_user, '_wp_mcp_ai_token_tier', 'free' );
 
 		$pro_user = $this->factory->user->create();
-		update_user_meta( $pro_user, 'wp_mcp_ai_token_tier', 'pro' );
+		update_user_meta( $pro_user, '_wp_mcp_ai_token_tier', 'pro' );
 
 		$enterprise_user = $this->factory->user->create();
-		update_user_meta( $enterprise_user, 'wp_mcp_ai_token_tier', 'enterprise' );
+		update_user_meta( $enterprise_user, '_wp_mcp_ai_token_tier', 'enterprise' );
 
 		// Get distribution.
 		$data = WP_MCP_AI_Chart_JS_Helper::get_tier_distribution_data();
