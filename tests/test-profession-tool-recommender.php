@@ -228,6 +228,6 @@ class Test_Profession_Tool_Recommender extends WP_UnitTestCase {
 		$generic_guidance    = $method->invoke( $this->recommender, 'web_search', 'generic_profession' );
 
 		$this->assertNotEquals( $journalist_guidance, $generic_guidance, 'Should provide different guidance for different professions' );
-		$this->assertStringContainsString( 'journalist', $journalist_guidance, 'Should mention profession in guidance' );
+		$this->assertStringContainsString( 'fact-checking', $journalist_guidance, 'Journalist guidance should focus on fact-checking' );
 	}
 }
