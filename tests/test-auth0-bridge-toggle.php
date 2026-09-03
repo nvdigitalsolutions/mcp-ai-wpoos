@@ -133,6 +133,11 @@ class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 	public function test_ajax_action_registered() {
 		global $wp_filter;
 
+		// The AJAX hook is registered in the constructor; instantiate the class
+		// so the registration is present in this test's hook table (the hook
+		// table is restored between tests).
+		new WP_MCP_AI_Auth0_Setup();
+
 		$this->assertTrue(
 			isset( $wp_filter['wp_ajax_wp_mcp_ai_toggle_auth0_bridge'] ),
 			'wp_ajax_wp_mcp_ai_toggle_auth0_bridge action should be registered'
