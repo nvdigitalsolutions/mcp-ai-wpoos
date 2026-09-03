@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.1.67"
   plugin-version-tested: "1.1.67"
-  last-updated: "2026-09-02"
+  last-updated: "2026-09-03"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -810,9 +810,18 @@ update_post_meta( $assistant_id, '_wp_mcp_ai_tools', array( 'web_search', 'creat
 
 ### "No AI providers configured" / tools return errors
 
-**Cause:** No API key for the provider.
+**Cause:** No API key for the provider, or the provider's enable flag is off.
 **Fix:** Set environment variables before starting Docker (Fix 3 auto-detects
 them), or set keys via WordPress admin → oOS → Providers tab.
+
+Since the provider-defaults fix (PR #6255), fresh installs keep **all** cloud
+providers disabled by default: after adding an API key, also check the
+"Enable … Provider" checkbox on Settings → NV oOS → AI Providers (each
+provider's subtab), or enter the key via the onboarding wizard, which
+auto-enables the provider whose key you provide. Provider dropdowns elsewhere
+in admin only list providers that are both **enabled** and **credentialed**
+(`WP_MCP_AI_Model_Config::get_available_providers()`), so an enabled-but-keyless
+or keyed-but-disabled provider is invisible in dropdowns.
 
 ### semantic_content_search returns "No OpenAI API key has been configured"
 

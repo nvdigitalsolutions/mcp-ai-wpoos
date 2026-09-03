@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment, CI log triage, 26 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 27 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-09-01"
+  last-updated: "2026-09-03"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -55,6 +55,54 @@ Rules:
 - `phpcbf` can auto-fix (e.g. array alignment): run it inside the container,
   it edits the bind-mounted file directly.
 
+### Cross-worktree runs (when `oos-wp` mounts a different worktree)
+
+The `oos-wp` plugin path bind-mounts **one** worktree. Check which one:
+
+```bash
+docker inspect oos-wp --format "{{json .Mounts}}"
+```
+
+If the mounted path is not the worktree you are editing, `docker exec oos-wp`
+runs the wrong code. Instead run a one-off container on the same network
+sharing the WP-core volume, with your worktree mounted over the plugin path:
+
+```bash
+# 1. Build a Linux vendor into a named volume (the Windows-host vendor/
+#    breaks inside Linux — classmap paths with backslashes →
+#    'Class "PHPUnit\\TextUI\\Application" not found').
+docker volume create <worktree>-vendor
+MSYS_NO_PATHCONV=1 docker run --rm \
+  -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos:/app:ro \
+  -v <worktree>-vendor:/app/vendor \
+  composer:2 sh -c 'cd /app && composer install --no-interaction --prefer-dist --no-progress'
+
+# 2. Run the tests (nested mounts: volume over the worktree's vendor/ works).
+MSYS_NO_PATHCONV=1 docker run --rm \
+  -e WP_CORE_DIR=/var/www/html -e WP_DB_HOST=db -e WP_DB_NAME=wordpress_test \
+  -e WP_DB_USER=wordpress -e WP_DB_PASSWORD=wordpress \
+  -v oos-wp_wp_core:/var/www/html \
+  -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos:/var/www/html/wp-content/plugins/mcp-ai-wpoos \
+  -v <worktree>-vendor:/var/www/html/wp-content/plugins/mcp-ai-wpoos/vendor \
+  --network oos-wp_default \
+  wordpress:6.9-php8.2-apache \
+  sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php -d memory_limit=1G vendor/bin/phpunit <paths> --no-coverage'
+```
+
+**WP 7.1 cross-worktree:** the wp71 core lives in the `oos-wp` container's own
+`/tmp/wp71` (NOT in the shared `oos-wp_wp_core` volume). Copy it out, mount it
+at `/tmp/wp71` in the one-off run, and swap `WP_CORE_DIR=/tmp/wp71` +
+`WP_DB_NAME=wordpress_test_wp71`:
+
+```bash
+docker cp oos-wp:/tmp/wp71 ./docker-tmp-wp71
+# add: -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos/docker-tmp-wp71:/tmp/wp71
+```
+
+Clean up afterwards: `rm -rf docker-tmp-wp71` and `docker volume rm <worktree>-vendor`
+— never stage either artifact. The no-concurrent-phpunit rule applies to
+one-off runners too (same shared DB).
+
 ## Cluster → PR workflow
 
 1. `git fetch origin alpha-working` (auto-gc may make this time out — verify
@@ -65,7 +113,8 @@ Rules:
 3. Reproduce locally, fix, validate (both WP versions + phpcs).
 4. Stage explicit paths only (`git add <file>` — **never `git add -A`**, and
    **never stage `vendor/`**; the worktree carries local vendor edits that
-   must not be committed).
+   must not be committed). On Windows Git Bash `2>nul` creates a literal
+   `nul` file in the repo — delete stray artifacts before staging.
 5. Commit with imperative subject ≤ 50 chars; PR base is `alpha-working`.
 6. The user merges manually; move to the next candidate regardless.
 
@@ -242,6 +291,18 @@ Rules:
     hooks don't run. Per-addon suite bootstraps (`tests/*/bootstrap.php`)
     must call the schema installer directly
     (`NV_oOS_Graphify_DB::install()`) so CI tables exist (#6145).
+27. **Settings defaults live in three layers** — the section field
+    `'default'` in `get_fields()` (drives checkbox render state via
+    `WP_MCP_AI_Settings_Section::render_field()`), the base defaults in
+    `WP_MCP_AI_Admin_Settings_Base::get_default_settings()` (merged into
+    `get_settings()`), and runtime fallbacks like
+    `isset( $settings[ $key ] ) ? $settings[ $key ] : false`. Fixing only one
+    layer leaves fresh installs inconsistent: #6255 flipped the runtime
+    fallback in `get_available_providers()` but the section fields still had
+    `'default' => true`, so the OpenAI/Anthropic/Gemini enable checkboxes
+    rendered checked on fresh installs and any Providers-page save persisted
+    them. When changing a default, update all three layers and the test that
+    codifies the field default (e.g. `test_provider_enable_field_defaults`).
 
 ## Production fix vs test fix
 

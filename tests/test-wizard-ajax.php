@@ -114,6 +114,34 @@ class Test_Wizard_AJAX extends WP_MCP_AI_Ajax_TestCase {
 		$this->assertArrayHasKey( 'success', $response );
 	}
 
+	/** Entering a key in step 2 enables the provider (all providers default to disabled on fresh installs). */
+	public function test_save_step_enables_openai_when_key_provided() {
+		$this->as_admin();
+
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$response = $this->dispatch(
+			'wp_mcp_ai_wizard_save_step',
+			array(
+				'nonce'    => wp_create_nonce( 'wp_mcp_ai_wizard_save_step' ),
+				'step'     => 2,
+				'provider' => 'openai',
+				'api_key'  => 'sk-test-wizard-key',
+			)
+		);
+
+		$this->assertAjaxSuccess( $response );
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$this->assertSame( 'sk-test-wizard-key', $settings['openai_api_key'] );
+		$this->assertTrue(
+			! empty( $settings['enable_openai'] ),
+			'OpenAI should be enabled when a key is provided in the wizard.'
+		);
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
 	// ---
 	// wp_mcp_ai_wizard_complete
 	// ---
