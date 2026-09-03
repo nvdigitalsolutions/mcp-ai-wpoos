@@ -33,8 +33,21 @@ class WP_MCP_AI_Project_Management_Admin_Test extends WP_UnitTestCase {
 		$settings['enable_project_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
-		// Register post types.
+		// Register post types. The helper only registers the auxiliary CPTs
+		// (Task Plans / Task Templates); the main Project, Task and Event CPTs
+		// are registered by their respective classes, so call those directly.
+		// Leaving them unregistered makes map_meta_cap raise an incorrect-usage
+		// notice when capabilities are checked against posts of those types.
 		wp_mcp_ai_register_project_management_post_types();
+		if ( class_exists( 'WP_MCP_AI_Project_CPT' ) ) {
+			WP_MCP_AI_Project_CPT::register_post_type();
+		}
+		if ( class_exists( 'WP_MCP_AI_Task_CPT' ) ) {
+			WP_MCP_AI_Task_CPT::register_post_type();
+		}
+		if ( class_exists( 'WP_MCP_AI_Event_CPT' ) ) {
+			WP_MCP_AI_Event_CPT::register_post_type();
+		}
 
 		// Set user for tests.
 		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
@@ -146,14 +159,15 @@ class WP_MCP_AI_Project_Management_Admin_Test extends WP_UnitTestCase {
 		// Simulate saving metabox data.
 		$_POST['wp_mcp_ai_event_details_nonce'] = wp_create_nonce( 'wp_mcp_ai_event_details' );
 		$_POST['event_type']                    = 'meeting';
-		$_POST['event_all_day']                 = '0';
-		$_POST['event_start_date']              = '2025-06-15';
-		$_POST['event_start_time']              = '10:00';
-		$_POST['event_end_date']                = '2025-06-15';
-		$_POST['event_end_time']                = '11:00';
-		$_POST['event_location']                = 'Conference Room A';
-		$_POST['event_project_id']              = $project_id;
-		$_POST['event_attendees']               = array( get_current_user_id() );
+		// `event_all_day` is a checkbox: presence in POST means checked, absence
+		// means unchecked. Omitting it saves the '0' value asserted below.
+		$_POST['event_start_date'] = '2025-06-15';
+		$_POST['event_start_time'] = '10:00';
+		$_POST['event_end_date']   = '2025-06-15';
+		$_POST['event_end_time']   = '11:00';
+		$_POST['event_location']   = 'Conference Room A';
+		$_POST['event_project_id'] = $project_id;
+		$_POST['event_attendees']  = array( get_current_user_id() );
 
 		// Call save method.
 		$post = get_post( $event_id );

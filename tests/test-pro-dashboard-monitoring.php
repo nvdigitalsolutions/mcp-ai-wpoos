@@ -36,6 +36,25 @@ class Test_Pro_Dashboard_Monitoring extends WP_UnitTestCase {
 		// Get singleton instance.
 		$this->dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
+		// The singleton registers its enqueue hooks only on first construction;
+		// re-invoke init_hooks() so they exist in this test (wp-phpunit resets
+		// hooks between tests).
+		$dashboard_reflection = new ReflectionClass( $this->dashboard );
+		$init_hooks_method    = $dashboard_reflection->getMethod( 'init_hooks' );
+		$init_hooks_method->setAccessible( true );
+		$init_hooks_method->invoke( $this->dashboard );
+
+		// Reset script and style queues so enqueue assertions are not
+		// affected by leftovers from previous tests. Dequeueing via the
+		// public API also invalidates the internal dependency memo.
+		global $wp_scripts;
+		foreach ( (array) $wp_scripts->queue as $handle ) {
+			wp_dequeue_script( $handle );
+		}
+		foreach ( (array) wp_styles()->queue as $handle ) {
+			wp_dequeue_style( $handle );
+		}
+
 		// Set up admin user for menu registration.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
@@ -266,6 +285,11 @@ class Test_Pro_Dashboard_Monitoring extends WP_UnitTestCase {
 	 */
 	public function test_monitoring_assets_enqueued() {
 		global $wp_scripts, $wp_styles;
+
+		// Simulate main dashboard page load; without a current screen the
+		// WooCommerce integration raises a get_current_page() incorrect-usage
+		// notice when admin_enqueue_scripts fires.
+		set_current_screen( 'toplevel_page_nvoos-pro-dashboard' );
 
 		// Trigger asset enqueue with pro dashboard hook.
 		do_action( 'admin_enqueue_scripts', 'toplevel_page_nvoos-pro-dashboard' );

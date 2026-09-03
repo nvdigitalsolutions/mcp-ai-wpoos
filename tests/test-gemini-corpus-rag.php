@@ -34,7 +34,11 @@ class WP_MCP_AI_Gemini_Corpus_RAG_Test extends WP_UnitTestCase {
 	 * Verify the corpus_name meta is registered for the assistant CPT.
 	 */
 	public function test_corpus_name_meta_registered() {
-		do_action( 'init' );
+		// Call the registration functions directly: re-firing `do_action( 'init' )`
+		// re-registers WooCommerce blocks/integrations and fails the test with
+		// "already registered" incorrect-usage notices.
+		WP_MCP_AI_Assistant_CPT::register_post_type();
+		WP_MCP_AI_Assistant_CPT::register_meta();
 		$registered = get_registered_meta_keys( 'post', WP_MCP_AI_Assistant_CPT::POST_TYPE );
 		$this->assertArrayHasKey( WP_MCP_AI_Assistant_CPT::META_CORPUS_NAME, $registered );
 		$this->assertSame( 'string', $registered[ WP_MCP_AI_Assistant_CPT::META_CORPUS_NAME ]['type'] );
@@ -84,7 +88,7 @@ class WP_MCP_AI_Gemini_Corpus_RAG_Test extends WP_UnitTestCase {
 	 * Verify the REST validator propagates corpus_name from assistant config to options.
 	 */
 	public function test_sanitize_options_propagates_corpus_name_from_config() {
-		$validator      = new WP_MCP_AI_REST_Validator();
+		$validator        = new WP_MCP_AI_REST_Validator();
 		$assistant_config = array(
 			'corpus_name' => 'corpora/my-corpus',
 			'provider'    => 'gemini',
@@ -169,7 +173,10 @@ class WP_MCP_AI_Gemini_Corpus_RAG_Test extends WP_UnitTestCase {
 						),
 					)
 				),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -236,7 +243,10 @@ class WP_MCP_AI_Gemini_Corpus_RAG_Test extends WP_UnitTestCase {
 						),
 					)
 				),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -296,7 +306,10 @@ class WP_MCP_AI_Gemini_Corpus_RAG_Test extends WP_UnitTestCase {
 						),
 					)
 				),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -361,11 +374,17 @@ class WP_MCP_AI_Gemini_Corpus_RAG_Test extends WP_UnitTestCase {
 		);
 
 		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request, $corpus_response ) {
-			$captured_request = array( 'args' => $args, 'url' => $url );
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
 			return array(
 				'headers'  => array(),
 				'body'     => wp_json_encode( $corpus_response ),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -426,7 +445,10 @@ class WP_MCP_AI_Gemini_Corpus_RAG_Test extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => wp_json_encode( array( 'name' => 'corpora/my-bare-id' ) ),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -467,7 +489,10 @@ class WP_MCP_AI_Gemini_Corpus_RAG_Test extends WP_UnitTestCase {
 			return array(
 				'headers'  => array(),
 				'body'     => '{}',
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
@@ -520,11 +545,17 @@ class WP_MCP_AI_Gemini_Corpus_RAG_Test extends WP_UnitTestCase {
 		$captured_request = null;
 
 		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
-			$captured_request = array( 'args' => $args, 'url' => $url );
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
 			return array(
 				'headers'  => array(),
 				'body'     => wp_json_encode( array( 'relevantChunks' => array() ) ),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 
