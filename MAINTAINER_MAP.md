@@ -66,7 +66,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
   ├─ Load npm-integration-filters.php   (Node.js microservice bridges)
   ├─ Load Pro CDN loader, CPT meta schema, product type helper,
   │   remote connection manager, ERP connector
-  ├─ Register Pro tool classes (~1,262 Pro tools via pro.php class-loader)
+  ├─ Register Pro tool classes (~1,263 Pro tools via pro.php class-loader)
   └─ do_action('wp_mcp_ai_pro_init')
 ```
 
@@ -74,7 +74,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
 
 | Constant | Default | Effect |
 |---|---|---|
-| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~303 tool classes); `false` = full mode (~1,565 tools: ~303 base + ~1,262 Pro) |
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~303 tool classes); `false` = full mode (~1,566 tools: ~303 base + ~1,263 Pro) |
 | `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks |
 | `WP_MCP_AI_PRO_VERSION` | set by Pro | Prevents double-loading of Pro addon |
 | `WP_DEBUG` | WordPress default | Enables extra error logging throughout |
@@ -100,7 +100,7 @@ mcp-ai-wpoos/
 │   ├─ google/                  ← Shared Google OAuth + Calendar foundation (OAuth service, Calendar v3 client, scope registry, credential resolver, sync, push — v1.1.64)
 │   ├─ conversation-import/      ← External AI conversation import pipeline → JetEngine CCT (17 classes, v1.1.60)
 │   │
-│   ├─ tools/                  ← Tool classes (~1,565 total implementations registered through the singleton registry; live count authoritative)
+│   ├─ tools/                  ← Tool classes (~1,566 total implementations registered through the singleton registry; live count authoritative)
 │   │   └─ class-wp-mcp-ai-tool-{name}.php   (one file per tool)
 │   │   └─ orchestration/      ← Tool routing / multi-tool orchestration
 │   │
@@ -283,7 +283,7 @@ npm run rebuild:all               # Rebuild all three ZIPs
 | | Base | Pro |
 |---|---|---|
 | **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
-| **Tools** | ~303 core tools | +~1,262 Pro tools = **~1,565 total** |
+| **Tools** | ~303 core tools | +~1,263 Pro tools = **~1,566 total** |
 | **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
 | **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (PHP 8.1+ deps: phpspreadsheet, etc.) |
 | **JS build** | `esbuild.config.js` | `esbuild.config.pro.js` |
