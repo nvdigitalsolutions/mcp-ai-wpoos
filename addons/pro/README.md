@@ -1,6 +1,6 @@
 # Open Operator System (NV oOS) - Pro Add-on
 
-**COMMERCIAL PLUGIN** - Premium WordPress AI automation platform with 30 specialized professional toolkits.
+**COMMERCIAL PLUGIN** - Premium WordPress AI automation platform with 31 specialized professional toolkits.
 
 ---
 
@@ -13,7 +13,7 @@
 
 ## Overview
 
-The **Pro Add-on** is a premium commercial extension that transforms the base Open Operator System into a comprehensive enterprise-grade AI automation platform. It adds **30 specialized professional toolkits** with **289+ advanced tools** powered by best-in-class NPM packages.
+The **Pro Add-on** is a premium commercial extension that transforms the base Open Operator System into a comprehensive enterprise-grade AI automation platform. It adds **31 specialized professional toolkits** with **289+ advanced tools** powered by best-in-class NPM packages.
 
 **This is NOT open-source software.** It is a commercial product available only through authorized channels with proper licensing.
 
@@ -48,7 +48,7 @@ same attributes. Override rendering with the `nvoos_pro_spa_can_render` filter
 
 ## Professional Toolkits
 
-The Pro Add-on includes **30 specialized professional toolkits** organized into the following categories.
+The Pro Add-on includes **31 specialized professional toolkits** organized into the following categories.
 
 > **Per-toolkit documentation:** every toolkit has a dedicated overview page in
 > [`docs/toolkits/`](docs/toolkits/README.md) that covers its activation setting, custom
@@ -444,6 +444,18 @@ conversion, structured-data extraction, research aggregation.
 
 **Use Cases**: Knowledge-base assistants, RAG pipelines
 **Docs**: [docs/toolkits/vector-storage.md](docs/toolkits/vector-storage.md)
+
+#### 31. Vision Analysis Toolkit ✅
+**Image object counting**
+
+The `analyze_image_objects` tool detects and counts objects in an image
+(attachment, file, URL, or base64) via HuggingFace OWLv2 / Ollama detectors,
+VLM counting, or hybrid label normalization; `annotate=true` returns a
+GD-drawn labeled bounding-box copy as a media attachment.
+
+**Use Cases**: Inventory checks, quality control, visual analytics
+**Activation**: `enable_vision_analysis_toolkit` (off by default; NV oOS → Vision Analysis settings page)
+**Docs**: [docs/toolkits/vision-analysis-toolkit.md](docs/toolkits/vision-analysis-toolkit.md)
 
 ---
 

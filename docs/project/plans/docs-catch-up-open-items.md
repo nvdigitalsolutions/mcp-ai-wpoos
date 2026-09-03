@@ -1,7 +1,7 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-03 (v1.1.68 pass)
+> **Last reviewed:** 2026-09-04 (v1.1.69 pass)
 > **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.68-docs-catch-up.md`](v1.1.68-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
@@ -26,6 +26,7 @@
 | 7 | `@since 1.1.67` | `includes/rest/class-wp-mcp-ai-rest-chat-controller.php` — `handle_session_nonce()` (PR #6225) | 1.1.68 | v1.1.68 plan |
 | 8 | `@since 2.1.0` | `addons/pro/includes/class-wp-mcp-ai-pro-spa-shortcode.php` (5×) + `class-wp-mcp-ai-pro-spa-config.php` (11×, PR #6256) | 1.1.68 (Pro addon ships 1.1.68) | v1.1.68 plan |
 | 9 | `@since 1.2.0` | `includes/rest/class-wp-mcp-ai-rest-validator.php` — `wp_mcp_ai_attachment_segment_provider` filter (PR #6259) | 1.1.68 | v1.1.68 plan |
+| 10 | `@since 1.1.68` | `addons/pro/includes/tools/vision-analysis/` (5 files) + `class-wp-mcp-ai-vision-analysis-settings.php` + `class-wp-mcp-ai-hf-vision-inference-service.php` (PR #6267; also the "Vision Analysis Toolkit … 1.1.68" code comment in `addons/pro/mcp-ai-wpoos-pro.php`) | 1.1.69 | v1.1.69 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -35,7 +36,7 @@
 - **Status:** 🔒 Parked by user decision. Counts stay delta-derived in catch-up passes.
 - **Issue:** [#5967 — Re-derive live tool counts on a fully provisioned environment](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/5967)
 - **What:** run `WP_MCP_AI_Tool_Registry::get_tools()` on a fully provisioned environment (seeded toolkits + optional plugins) and replace the delta-based figure.
-- **Current figure (v1.1.67):** ~303 base + ~1,262 Pro (~1,565 total), live-registry caveat retained on every count surface.
+- **Current figure (v1.1.69):** ~303 base + ~1,263 Pro (~1,566 total), live-registry caveat retained on every count surface.
 - **Known attempt:** QA container (`oos-qa-wp`) returns 363 tools because its DB is unprovisioned — not usable as source of truth.
 - **First noted in:** v1.1.59 plan; carried every pass since.
 
