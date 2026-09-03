@@ -31,6 +31,10 @@ class Test_Admin_Scripts extends WP_UnitTestCase {
 			wp_dequeue_script( $handle );
 		}
 		wp_deregister_script( 'wp-mcp-ai-model-selector' );
+
+		// Remove fallback hooks registered by earlier tests in this process.
+		remove_action( 'admin_head', array( 'WP_MCP_AI_Admin_Scripts', 'print_sortable_compatibility_fallback' ), 1 );
+		remove_action( 'wp_print_footer_scripts', array( 'WP_MCP_AI_Admin_Scripts', 'print_sortable_compatibility_fallback' ), 1 );
 	}
 
 	/**
@@ -100,6 +104,112 @@ class Test_Admin_Scripts extends WP_UnitTestCase {
 		$this->assertNotNull(
 			$wp_scripts->get_data( 'wp-mcp-ai-model-selector', 'data' ),
 			'The model selector should carry localized data.'
+		);
+	}
+
+	/**
+	 * The fallback callbacks must be hooked on post edit screens so a
+	 * dequeued/deregistered core handle is still compensated for.
+	 */
+	public function test_register_scripts_hooks_sortable_fallback_on_post_screens() {
+		WP_MCP_AI_Admin_Scripts::register_scripts( 'post.php' );
+
+		$this->assertNotFalse(
+			has_action( 'admin_head', array( 'WP_MCP_AI_Admin_Scripts', 'print_sortable_compatibility_fallback' ) ),
+			'The admin_head fallback should be hooked on post.php.'
+		);
+		$this->assertNotFalse(
+			has_action( 'wp_print_footer_scripts', array( 'WP_MCP_AI_Admin_Scripts', 'print_sortable_compatibility_fallback' ) ),
+			'The footer safety-net fallback should be hooked on post.php.'
+		);
+	}
+
+	/**
+	 * The fallback must not be hooked on non-post screens.
+	 */
+	public function test_register_scripts_skips_sortable_fallback_on_other_screens() {
+		WP_MCP_AI_Admin_Scripts::register_scripts( 'index.php' );
+
+		$this->assertFalse(
+			has_action( 'admin_head', array( 'WP_MCP_AI_Admin_Scripts', 'print_sortable_compatibility_fallback' ) ),
+			'The admin_head fallback should not be hooked on non-post screens.'
+		);
+		$this->assertFalse(
+			has_action( 'wp_print_footer_scripts', array( 'WP_MCP_AI_Admin_Scripts', 'print_sortable_compatibility_fallback' ) ),
+			'The footer fallback should not be hooked on non-post screens.'
+		);
+	}
+
+	/**
+	 * When the core handle is registered with a source and enqueued, the
+	 * fallback must print nothing and leave the footer hook in place.
+	 */
+	public function test_fallback_prints_nothing_when_core_handle_healthy() {
+		WP_MCP_AI_Admin_Scripts::register_scripts( 'post.php' );
+
+		ob_start();
+		WP_MCP_AI_Admin_Scripts::print_sortable_compatibility_fallback();
+		$output = ob_get_clean();
+
+		$this->assertSame(
+			'',
+			$output,
+			'The fallback should not print when the core handle will load.'
+		);
+		$this->assertNotFalse(
+			has_action( 'wp_print_footer_scripts', array( 'WP_MCP_AI_Admin_Scripts', 'print_sortable_compatibility_fallback' ) ),
+			'The footer safety net should remain hooked when nothing was printed.'
+		);
+	}
+
+	/**
+	 * When the core handle is dequeued and deregistered, the fallback must
+	 * print the bundled jQuery UI Sortable copy inline and unhook the footer
+	 * safety net to prevent a duplicate print.
+	 */
+	public function test_fallback_prints_bundled_sortable_when_core_handle_removed() {
+		WP_MCP_AI_Admin_Scripts::register_scripts( 'post.php' );
+		wp_dequeue_script( 'jquery-ui-sortable' );
+		wp_deregister_script( 'jquery-ui-sortable' );
+
+		ob_start();
+		WP_MCP_AI_Admin_Scripts::print_sortable_compatibility_fallback();
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString(
+			'ui.sortable',
+			$output,
+			'The fallback should print the bundled jQuery UI Sortable copy.'
+		);
+		$this->assertStringContainsString(
+			'jQuery UI Sortable',
+			$output,
+			'The fallback should print the bundled jQuery UI Sortable license banner.'
+		);
+		$this->assertFalse(
+			has_action( 'wp_print_footer_scripts', array( 'WP_MCP_AI_Admin_Scripts', 'print_sortable_compatibility_fallback' ) ),
+			'The footer safety net should be removed after the head print.'
+		);
+	}
+
+	/**
+	 * A hijacked handle that is enqueued but registered without a usable
+	 * source must also trigger the fallback.
+	 */
+	public function test_fallback_prints_when_core_handle_has_no_source() {
+		WP_MCP_AI_Admin_Scripts::register_scripts( 'post.php' );
+		wp_deregister_script( 'jquery-ui-sortable' );
+		wp_register_script( 'jquery-ui-sortable', false );
+		wp_enqueue_script( 'jquery-ui-sortable' );
+
+		ob_start();
+		WP_MCP_AI_Admin_Scripts::print_sortable_compatibility_fallback();
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString(
+			'ui.sortable',
+			$output,
+			'The fallback should print when the enqueued core handle has no source.'
 		);
 	}
 }
