@@ -36,8 +36,12 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 
 		/**
 		 * Transient key for rate limiting tracking.
+		 *
+		 * Deliberately namespaced away from the chat REST rate limiter
+		 * (wp_mcp_ai_rate_limit_*): sharing one counter would halve the
+		 * configured chat budget and entangle the two enforcement paths.
 		 */
-		const RATE_LIMIT_TRANSIENT = 'wp_mcp_ai_rate_limit_';
+	const RATE_LIMIT_TRANSIENT = 'wp_mcp_ai_nefarious_rate_limit_';
 
 		/**
 		 * Maximum allowed requests per minute (default threshold).
@@ -110,8 +114,11 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 			add_filter( 'wp_mcp_ai_can_execute_tool', array( $this, 'check_tool_execution' ), 1, 3 );
 			add_action( 'wp_mcp_ai_tool_executed', array( $this, 'monitor_tool_execution' ), 10, 4 );
 
-			// Hook into chat requests.
-			add_action( 'wp_mcp_ai_before_chat_request', array( $this, 'monitor_chat_request' ), 1, 2 );
+			// Hook into chat requests. The canonical emitter shape is
+			// `( $assistant_id, $messages, $options, $request )`; the callback
+			// also tolerates the legacy 2-arg `( $messages, $request_data )`
+			// shape used by some custom emitters and unit-tests.
+			add_action( 'wp_mcp_ai_before_chat_request', array( $this, 'monitor_chat_request' ), 1, 4 );
 
 			// Register admin_notices on init to avoid early translation loading (WordPress 6.7.0+).
 			add_action( 'init', array( $this, 'register_admin_notices' ) );
@@ -285,12 +292,27 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		/**
 		 * Monitor chat requests for suspicious patterns.
 		 *
-		 * @param array $messages     Chat messages.
-		 * @param array $request_data Request data.
+		 * The canonical emitter shape is
+		 * `( $assistant_id, $messages, $options, $request )`; the legacy
+		 * 2-arg shape `( $messages, $request_data )` is detected when the
+		 * first argument is the messages array.
+		 *
+		 * @param mixed $assistant_id Assistant ID, or the messages array under the legacy shape.
+		 * @param mixed $messages     Chat messages, or request data under the legacy shape.
+		 * @param mixed $options      Chat options (unused, reserved).
+		 * @param mixed $request_data Request data.
 		 */
-		public function monitor_chat_request( $messages, $request_data ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for request context analysis.
+		public function monitor_chat_request( $assistant_id = null, $messages = null, $options = null, $request_data = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Options/request parameters reserved for request context analysis.
 			if ( ! $this->enabled ) {
 				return;
+			}
+
+			// Detect the legacy 2-arg emitter shape (first arg is the messages
+			// array) and realign to the canonical parameter order. The canonical
+			// first argument is an assistant ID and is never an array.
+			if ( is_array( $assistant_id ) ) {
+				$request_data = $messages;
+				$messages     = $assistant_id;
 			}
 
 			// Ensure messages is an array to prevent foreach errors.

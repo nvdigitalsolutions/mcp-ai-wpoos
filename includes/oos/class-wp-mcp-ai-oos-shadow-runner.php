@@ -69,12 +69,17 @@ class WP_MCP_AI_OOS_Shadow_Runner {
 	 *  - try/catch + deadline — the shadow run can never break the
 	 *    legacy response.
 	 *
+	 * The canonical emitter shape is
+	 * `( $assistant_id, $messages, $options, $request )`, but every argument
+	 * is defaulted so the subscriber also tolerates the legacy 2-arg shape
+	 * used by some custom emitters and unit-tests.
+	 *
 	 * @param mixed $assistant_id Assistant ID (int).
 	 * @param mixed $messages     OpenAI-format messages.
 	 * @param mixed $options      Chat options.
 	 * @param mixed $request      WP_REST_Request or event object.
 	 */
-	public static function maybe_run( $assistant_id, $messages, $options, $request ) {
+public static function maybe_run( $assistant_id = null, $messages = null, $options = null, $request = null ) {
 		if ( ! function_exists( 'wp_mcp_ai_oos_shadow_enabled' ) || ! wp_mcp_ai_oos_shadow_enabled() ) {
 			return;
 		}
