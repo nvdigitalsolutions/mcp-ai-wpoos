@@ -24,6 +24,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// The count normalizer owns all breakdown grouping math so the service, the
+// tool, and the tests can never drift apart on counting semantics.
+if ( ! class_exists( 'WP_MCP_AI_Vision_Count_Normalizer' ) ) {
+	require_once dirname( __DIR__ ) . '/tools/vision-analysis/class-wp-mcp-ai-vision-count-normalizer.php';
+}
+
 /**
  * HuggingFace Vision Inference Service.
  *
@@ -146,6 +152,39 @@ class WP_MCP_AI_HF_Vision_Inference_Service {
 		}
 
 		return $this->normalize_detection_result( $response, $model );
+	}
+
+	/**
+	 * Run object detection and return a per-category count breakdown.
+	 *
+	 * Thin wrapper over run_object_detection() that groups raw detections
+	 * into the canonical count-breakdown shape used by the Vision Analysis
+	 * toolkit. Grouping math lives in WP_MCP_AI_Vision_Count_Normalizer.
+	 *
+	 * @since 1.1.68
+	 *
+	 * @param string   $image_base64     Base64-encoded image.
+	 * @param string[] $candidate_labels Optional list of text labels to detect.
+	 * @param string   $model            HuggingFace model ID (default: google/owlv2-base-patch16).
+	 * @param float    $threshold        Minimum confidence score (0.0–1.0).
+	 * @param bool     $include_boxes    Whether to retain per-entry bounding boxes.
+	 * @return array|WP_Error Count breakdown or error.
+	 */
+	public function count_objects( $image_base64, array $candidate_labels = array(), $model = '', $threshold = 0.5, $include_boxes = true ) {
+		$result = $this->run_object_detection( $image_base64, $candidate_labels, $model, $threshold );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$counts = WP_MCP_AI_Vision_Count_Normalizer::group_detections( $result['detections'], $include_boxes );
+
+		return array(
+			'success'     => true,
+			'model'       => $result['model'],
+			'counts'      => $counts,
+			'total_items' => WP_MCP_AI_Vision_Count_Normalizer::total_from_breakdown( $counts ),
+			'detections'  => $result['detections'],
+		);
 	}
 
 	/**
