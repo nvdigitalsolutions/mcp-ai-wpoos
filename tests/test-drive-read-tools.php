@@ -632,4 +632,23 @@ class WP_MCP_AI_Drive_Read_Tools_Test extends WP_UnitTestCase {
 		$ids = wp_list_pluck( $rows, 'id' );
 		$this->assertContains( 'settings', $ids, 'Settings-based fallback should be listed.' );
 	}
+
+	/**
+	 * Argument-less Drive tools must encode empty properties as `{}`.
+	 *
+	 * Strict providers (DeepSeek) reject schemas whose `properties` key is a
+	 * JSON array: "Invalid schema for function 'x': [] is not of type 'object'".
+	 */
+	public function test_list_drive_connections_schema_encodes_empty_properties_as_object() {
+		$tool   = new WP_MCP_AI_Pro_Tool_List_Drive_Connections();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertSame( 'object', $schema['type'] );
+		$this->assertArrayHasKey( 'properties', $schema );
+		$this->assertSame(
+			'{}',
+			wp_json_encode( $schema['properties'] ),
+			'list_drive_connections properties must encode as an empty object, not [].'
+		);
+	}
 }

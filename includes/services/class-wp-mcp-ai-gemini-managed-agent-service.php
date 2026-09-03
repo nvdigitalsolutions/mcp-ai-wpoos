@@ -530,7 +530,9 @@ class WP_MCP_AI_Gemini_Managed_Agent_Service {
 			if ( ! is_array( $schema ) ) {
 				$schema = array(
 					'type'       => 'object',
-					'properties' => array(),
+					// Empty stdClass encodes as `{}`; an empty PHP array would
+					// encode as `[]`, which strict providers reject.
+					'properties' => new stdClass(),
 				);
 			}
 

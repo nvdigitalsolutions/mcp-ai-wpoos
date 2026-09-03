@@ -89,8 +89,16 @@ final class LegacyToolAdapter implements ToolInterface, ToolWriteClassInterface 
 			);
 		}
 
-		if ( ! isset( $schema['properties'] ) || ! \is_array( $schema['properties'] ) ) {
-			$schema['properties'] = array();
+		// `properties` must encode as a JSON object (`{}`), never as an
+		// empty JSON array (`[]`) — strict providers (DeepSeek) reject
+		// "[] is not of type 'object'". Preserve object-valued property
+		// maps (stdClass) and upgrade empty arrays to an empty stdClass.
+		if ( ! isset( $schema['properties'] ) ) {
+			$schema['properties'] = new \stdClass();
+		} elseif ( ! \is_array( $schema['properties'] ) && ! \is_object( $schema['properties'] ) ) {
+			$schema['properties'] = new \stdClass();
+		} elseif ( \is_array( $schema['properties'] ) && array() === $schema['properties'] ) {
+			$schema['properties'] = new \stdClass();
 		}
 
 		return $schema;
