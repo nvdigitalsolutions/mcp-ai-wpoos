@@ -37,6 +37,13 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 	protected $transcript_handler;
 
 	/**
+	 * Original transcript repository instance (restored in tearDown).
+	 *
+	 * @var object|null
+	 */
+	protected $original_transcript_repository;
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -63,12 +70,74 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 
 		WP_MCP_AI_REST::get_instance();
 		rest_get_server();
-		do_action( 'init' );
 
-		// This test saves and retrieves transcripts, which requires JetEngine CCT.
-		if ( ! function_exists( 'jet_engine' ) ) {
-			$this->markTestSkipped( 'Requires JetEngine for transcript storage' );
-		}
+		// Wire the retrieval endpoints to a mock repository backed by the mock
+		// handler so the full save→retrieve cycle runs without JetEngine.
+		$repository = new class( $this ) {
+			/**
+			 * Enclosing test case.
+			 *
+			 * @var Test_Chat_Transcript_Save_Retrieve_Cycle
+			 */
+			private $test_case;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param Test_Chat_Transcript_Save_Retrieve_Cycle $test_case Enclosing test case.
+			 */
+			public function __construct( $test_case ) {
+				$this->test_case = $test_case;
+			}
+
+			/**
+			 * Return rows for one session from the mock handler.
+			 *
+			 * @param int    $user_id      User ID.
+			 * @param string $session_key  Session key.
+			 * @param int    $assistant_id Optional assistant ID.
+			 * @return array
+			 */
+			public function get_session( $user_id, $session_key, $assistant_id = 0 ) {
+				$records = $this->test_case->provide_transcript_handler()->get_records( $session_key, $user_id );
+				$rows    = array();
+				foreach ( $records as $record ) {
+					$rows[] = array(
+						'assistant_id'          => isset( $record['assistant_id'] ) ? $record['assistant_id'] : (string) $assistant_id,
+						'assistant_model'       => isset( $record['assistant_model'] ) ? $record['assistant_model'] : '',
+						'request_payload'       => isset( $record['request_payload'] ) ? $record['request_payload'] : '',
+						'response_payload'      => isset( $record['response_payload'] ) ? $record['response_payload'] : '',
+						'request_started_at'    => isset( $record['request_started_at'] ) ? $record['request_started_at'] : '',
+						'response_completed_at' => isset( $record['response_completed_at'] ) ? $record['response_completed_at'] : '',
+						'cct_created'           => isset( $record['cct_created'] ) ? $record['cct_created'] : '',
+					);
+				}
+				return $rows;
+			}
+
+			/**
+			 * Return an empty session list.
+			 *
+			 * @param int $user_id      User ID.
+			 * @param int $per_page     Per page.
+			 * @param int $page         Page.
+			 * @param int $assistant_id Optional assistant ID.
+			 * @return array
+			 */
+			public function get_sessions( $user_id, $per_page, $page, $assistant_id = 0 ) {
+				return array(
+					'items' => array(),
+					'total' => 0,
+				);
+			}
+		};
+
+		$rest       = WP_MCP_AI_REST::get_instance();
+		$reflection = new ReflectionClass( $rest );
+		$property   = $reflection->getProperty( 'transcript_repository' );
+		$property->setAccessible( true );
+		$this->original_transcript_repository = $property->getValue( $rest );
+		$property->setValue( $rest, $repository );
 	}
 
 	/**
@@ -76,6 +145,18 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
+
+		// Restore the original transcript repository so later suites in the
+		// same process do not inherit this suite's mock.
+		if ( null !== $this->original_transcript_repository ) {
+			$rest       = WP_MCP_AI_REST::get_instance();
+			$reflection = new ReflectionClass( $rest );
+			$property   = $reflection->getProperty( 'transcript_repository' );
+			$property->setAccessible( true );
+			$property->setValue( $rest, $this->original_transcript_repository );
+			$this->original_transcript_repository = null;
+		}
+
 		wp_set_current_user( 0 );
 		$this->transcript_handler = null;
 		parent::tearDown();
@@ -89,8 +170,19 @@ class Test_Chat_Transcript_Save_Retrieve_Cycle extends WP_UnitTestCase {
 	public function provide_transcript_handler() {
 		if ( ! $this->transcript_handler ) {
 			$this->transcript_handler = new class() {
+				/**
+				 * Stored records keyed by session_key + user_id.
+				 *
+				 * @var array
+				 */
 				public $records = array();
 
+				/**
+				 * Store a transcript record.
+				 *
+				 * @param array $record Transcript record.
+				 * @return true|WP_Error True on success, error for invalid records.
+				 */
 				public function update_item( $record ) {
 					// Store records indexed by session_key and cct_author_id for retrieval.
 					$session_key = isset( $record['session_key'] ) ? $record['session_key'] : '';

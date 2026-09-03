@@ -17,8 +17,10 @@ class WP_MCP_AI_File_Attachment_Flow_Test extends WP_UnitTestCase {
 		$attachment_id = $this->factory->attachment->create_upload_object( WP_MCP_AI_PATH . 'tests/fixtures/test-image.jpg' );
 		$this->assertGreaterThan( 0, $attachment_id );
 
-		// Create attachment helper.
-		$helper = new WP_MCP_AI_Message_Attachments();
+		// Create attachment helper. Use a provider without a remote file API
+		// (ollama) so the segment is built from a local reference without
+		// requiring an OpenAI API key in the test environment.
+		$helper = new WP_MCP_AI_Message_Attachments( 'ollama' );
 
 		// Prepare image segment with attachment_id.
 		$segment = $helper->prepare_input_image_segment(
@@ -52,8 +54,10 @@ class WP_MCP_AI_File_Attachment_Flow_Test extends WP_UnitTestCase {
 		);
 		$this->assertGreaterThan( 0, $attachment_id );
 
-		// Create attachment helper.
-		$helper = new WP_MCP_AI_Message_Attachments();
+		// Create attachment helper. Use a provider without a remote file API
+		// (ollama) so the segment is built from a local reference without
+		// requiring an OpenAI API key in the test environment.
+		$helper = new WP_MCP_AI_Message_Attachments( 'ollama' );
 
 		// Prepare file segment with attachment_id.
 		$segment = $helper->prepare_input_file_segment(
@@ -75,8 +79,10 @@ class WP_MCP_AI_File_Attachment_Flow_Test extends WP_UnitTestCase {
 	 * Test that unsupported MIME types are rejected.
 	 */
 	public function test_unsupported_mime_type_rejected() {
-		// Create a test file with unsupported MIME type.
-		$upload = wp_upload_bits( 'test-file.exe', null, 'Binary content' );
+		// Upload a benign text file, then store an unsupported MIME type on the
+		// attachment. wp_upload_bits() rejects .exe uploads outright, and the
+		// MIME gate under test reads the stored post_mime_type.
+		$upload = wp_upload_bits( 'test-file.txt', null, 'Binary content' );
 		$this->assertFalse( $upload['error'] );
 
 		$attachment_id = $this->factory->attachment->create_object(

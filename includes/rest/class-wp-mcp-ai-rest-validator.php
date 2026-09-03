@@ -621,6 +621,41 @@ class WP_MCP_AI_REST_Validator {
 			}
 		}
 
+		if ( isset( $display['attachments'] ) && is_array( $display['attachments'] ) ) {
+			$attachments = array();
+			foreach ( $display['attachments'] as $attachment ) {
+				if ( ! is_array( $attachment ) ) {
+					continue;
+				}
+
+				$entry = array();
+
+				if ( isset( $attachment['url'] ) && '' !== $attachment['url'] ) {
+					$entry['url'] = esc_url_raw( (string) $attachment['url'] );
+				}
+
+				if ( isset( $attachment['label'] ) ) {
+					$entry['label'] = sanitize_text_field( wp_unslash( (string) $attachment['label'] ) );
+				}
+
+				if ( isset( $attachment['downloadName'] ) ) {
+					$entry['downloadName'] = sanitize_text_field( wp_unslash( (string) $attachment['downloadName'] ) );
+				}
+
+				if ( isset( $attachment['meta'] ) ) {
+					$entry['meta'] = sanitize_text_field( wp_unslash( (string) $attachment['meta'] ) );
+				}
+
+				if ( ! empty( $entry ) ) {
+					$attachments[] = $entry;
+				}
+			}
+
+			if ( ! empty( $attachments ) ) {
+				$clean['attachments'] = $attachments;
+			}
+		}
+
 		return $clean;
 	}
 

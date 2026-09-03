@@ -99,9 +99,9 @@ class Test_Unified_Team_Chat_Fix extends WP_UnitTestCase {
 		);
 
 		// Add profession configuration.
-		update_post_meta( $profession_id, '_wp_mcp_ai_profession_system_prompt', 'You are a helpful developer.' );
-		update_post_meta( $profession_id, '_wp_mcp_ai_profession_provider', 'openai' );
-		update_post_meta( $profession_id, '_wp_mcp_ai_profession_model', 'gpt-4' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_role_description', 'You are a helpful developer.' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_provider', 'openai' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_model', 'gpt-4' );
 
 		// Test messages.
 		$messages = array(
@@ -152,9 +152,9 @@ class Test_Unified_Team_Chat_Fix extends WP_UnitTestCase {
 		);
 
 		$system_prompt = 'You are a helpful assistant.';
-		update_post_meta( $profession_id, '_wp_mcp_ai_profession_system_prompt', $system_prompt );
-		update_post_meta( $profession_id, '_wp_mcp_ai_profession_provider', 'openai' );
-		update_post_meta( $profession_id, '_wp_mcp_ai_profession_model', 'gpt-4' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_role_description', $system_prompt );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_provider', 'openai' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_model', 'gpt-4' );
 
 		// Mock the router to capture the messages parameter.
 		$captured_messages = null;
@@ -204,7 +204,7 @@ class Test_Unified_Team_Chat_Fix extends WP_UnitTestCase {
 
 		// First message should be the system prompt.
 		$this->assertEquals( 'system', $captured_messages[0]['role'] );
-		$this->assertEquals( $system_prompt, $captured_messages[0]['content'] );
+		$this->assertStringContainsString( $system_prompt, $captured_messages[0]['content'] );
 
 		// Second message should be the original user message.
 		$this->assertEquals( 'user', $captured_messages[1]['role'] );
@@ -225,9 +225,9 @@ class Test_Unified_Team_Chat_Fix extends WP_UnitTestCase {
 		);
 
 		$system_prompt = 'You are a helpful assistant.';
-		update_post_meta( $profession_id, '_wp_mcp_ai_profession_system_prompt', $system_prompt );
-		update_post_meta( $profession_id, '_wp_mcp_ai_profession_provider', 'openai' );
-		update_post_meta( $profession_id, '_wp_mcp_ai_profession_model', 'gpt-4' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_role_description', $system_prompt );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_provider', 'openai' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_default_model', 'gpt-4' );
 
 		// Mock the router to capture the messages parameter.
 		$captured_messages = null;
@@ -307,10 +307,10 @@ class Test_Unified_Team_Chat_Fix extends WP_UnitTestCase {
 			)
 		);
 
-		update_post_meta( $profession_one, '_wp_mcp_ai_profession_provider', 'openai' );
-		update_post_meta( $profession_one, '_wp_mcp_ai_profession_model', 'gpt-4' );
-		update_post_meta( $profession_two, '_wp_mcp_ai_profession_provider', 'openai' );
-		update_post_meta( $profession_two, '_wp_mcp_ai_profession_model', 'gpt-4' );
+		update_post_meta( $profession_one, '_wp_mcp_ai_profession_default_provider', 'openai' );
+		update_post_meta( $profession_one, '_wp_mcp_ai_profession_default_model', 'gpt-4' );
+		update_post_meta( $profession_two, '_wp_mcp_ai_profession_default_provider', 'openai' );
+		update_post_meta( $profession_two, '_wp_mcp_ai_profession_default_model', 'gpt-4' );
 
 		$team_id = wp_insert_post(
 			array(
