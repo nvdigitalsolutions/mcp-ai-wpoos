@@ -62,6 +62,8 @@ wp-mcp-ai-pm-engine
 wp-mcp-ai-pm-pipeline-stages
 wp-mcp-ai-pm-workflow-engine
 wp-mcp-ai-pro-capture-tool-base
+wp-mcp-ai-pro-gmail-client
+wp-mcp-ai-pro-google-drive-client
 wp-mcp-ai-pro-google-service-account
 wp-mcp-ai-pro-tool-add-discord-message-reaction
 wp-mcp-ai-pro-tool-add-google-chat-space-member
@@ -115,7 +117,10 @@ wp-mcp-ai-pro-tool-get-brevo-statistics
 wp-mcp-ai-pro-tool-get-discord-channels
 wp-mcp-ai-pro-tool-get-discord-messages
 wp-mcp-ai-pro-tool-get-discord-voice-channel-members
+wp-mcp-ai-pro-tool-get-drive-file
 wp-mcp-ai-pro-tool-get-facebook-instagram-insights
+wp-mcp-ai-pro-tool-get-gmail-message
+wp-mcp-ai-pro-tool-get-gmail-thread
 wp-mcp-ai-pro-tool-get-google-analytics-report
 wp-mcp-ai-pro-tool-get-google-business-insights
 wp-mcp-ai-pro-tool-get-google-chat-messages
@@ -153,7 +158,9 @@ wp-mcp-ai-pro-tool-jetengine-manage-relations
 wp-mcp-ai-pro-tool-jetengine-mcp-bridge
 wp-mcp-ai-pro-tool-jetengine-prompts
 wp-mcp-ai-pro-tool-jetengine-site-context
+wp-mcp-ai-pro-tool-list-drive-connections
 wp-mcp-ai-pro-tool-list-github-repositories
+wp-mcp-ai-pro-tool-list-gmail-connections
 wp-mcp-ai-pro-tool-list-google-calendar-events
 wp-mcp-ai-pro-tool-list-google-calendars
 wp-mcp-ai-pro-tool-list-google-chat-space-members
@@ -169,6 +176,7 @@ wp-mcp-ai-pro-tool-manage-mailjet-contacts
 wp-mcp-ai-pro-tool-manage-telegram-commands
 wp-mcp-ai-pro-tool-manage-telegram-webhook
 wp-mcp-ai-pro-tool-manage-twitter-webhook
+wp-mcp-ai-pro-tool-modify-gmail-message
 wp-mcp-ai-pro-tool-plan-schedules-from-workflow
 wp-mcp-ai-pro-tool-post-facebook-instagram
 wp-mcp-ai-pro-tool-post-google-business-update
@@ -701,6 +709,7 @@ wp-mcp-ai-tool-generate-truth-table
 wp-mcp-ai-tool-generate-video-captions
 wp-mcp-ai-tool-generate-video-thumbnails
 wp-mcp-ai-tool-generate-visit-summary
+wp-mcp-ai-tool-generate-woocommerce-order-invoice-pdf
 wp-mcp-ai-tool-generate-word
 wp-mcp-ai-tool-generic-rest-api
 wp-mcp-ai-tool-get-abandoned-carts
