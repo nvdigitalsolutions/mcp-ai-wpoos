@@ -441,7 +441,8 @@ Newer merged clusters (post-#6153, discovered via the PR merge log):
 menu, #6253 docs-hub emoji DOM crash, #6254 auto-categorize, #6255 provider
 defaults, #6256 Pro SPA v2 shortcode, #6257 chart tiers, #6258 theme
 sortable compat, #6259 chat attachments, #6260 count-tokens params, #6262
-continuation seam, #6263 chat SSE handler, #6264 cache helper.
+continuation seam, #6263 chat SSE handler, #6264 cache helper, #6265
+nefarious rate limiter + chat hook tolerance (open).
 
 Remaining candidates change quickly; re-triage from the latest CI log rather
 than trusting an old list.
