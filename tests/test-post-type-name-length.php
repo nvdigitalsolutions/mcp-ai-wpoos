@@ -20,10 +20,10 @@ class Test_Post_Type_Name_Length extends WP_UnitTestCase {
 	 * WordPress requires post type names to be between 1 and 20 characters.
 	 */
 	public function test_post_type_names_within_length_limit() {
-		// Trigger post type registration.
-		do_action( 'init' );
-
-		// Get all registered post types.
+		// Plugin and core post types are registered during the bootstrap's
+		// real `init` fire; re-firing `do_action( 'init' )` here re-runs
+		// WooCommerce block/integration registrations and raises
+		// "already registered" incorrect-usage notices.
 		$post_types = get_post_types( array(), 'objects' );
 
 		$invalid_post_types = array();
@@ -52,10 +52,8 @@ class Test_Post_Type_Name_Length extends WP_UnitTestCase {
 	 * This test specifically checks the post types registered by this plugin.
 	 */
 	public function test_plugin_post_types_within_length_limit() {
-		// Trigger post type registration.
-		do_action( 'init' );
-
-		// Plugin post type prefixes.
+		// Post types are registered during the bootstrap `init` fire; re-firing
+		// the action re-registers WooCommerce integrations and fails the test.
 		$plugin_prefixes = array( 'mcp_', 'mcp_ai_' );
 
 		$post_types         = get_post_types( array(), 'objects' );

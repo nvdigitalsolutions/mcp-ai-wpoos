@@ -76,7 +76,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 1. Default pattern coverage
 	 * ------------------------------------------------------------------ */
 
@@ -127,7 +128,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		$gh_pat_body   = 'NOTAREAL' . str_repeat( 'a', 28 );
 		$gh_srv_body   = 'NOTAREAL' . str_repeat( 'b', 28 );
 		$gh_oauth_body = 'NOTAREAL' . str_repeat( 'c', 28 );
-		$google_body   = 'SyNOTAREAL' . str_repeat( 'a', 31 );
+		$google_body   = 'SyNOTAREAL' . str_repeat( 'a', 25 );
 		$slack_body    = 'fake-' . str_repeat( '1', 10 ) . '-' . $alpha20;
 		$stripe_body   = 'NOTAREAL' . $alpha20;
 		$bearer_body   = 'NOTAREAL' . $alpha20;
@@ -154,7 +155,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 * PEM private keys span multiple lines and must be redacted as a block.
 	 */
 	public function test_pem_private_key_is_redacted_as_block() {
-		$pem = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdef\nGhIjKlMnOpQrStUv\n-----END RSA PRIVATE KEY-----";
+		$pem    = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdef\nGhIjKlMnOpQrStUv\n-----END RSA PRIVATE KEY-----";
 		$result = WP_MCP_AI_Memory_Privacy_Filter::redact( "User shared: {$pem} — please rotate." );
 
 		$this->assertStringNotContainsString( 'MIIEowIBAAKCAQEAabcdef', $result );
@@ -162,7 +163,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'please rotate', $result );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 2. Recursive array redaction
 	 * ------------------------------------------------------------------ */
 
@@ -180,8 +182,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 			'content'  => 'see metadata',
 			'tags'     => array( 'config', $openai_fake ),
 			'metadata' => array(
-				'source'    => $anthropic_fake,
-				'nested'    => array(
+				'source' => $anthropic_fake,
+				'nested' => array(
 					'inner_secret' => $github_fake,
 				),
 			),
@@ -231,7 +233,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		$this->assertNull( $result );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 3. Filter integration
 	 * ------------------------------------------------------------------ */
 
@@ -240,7 +243,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 */
 	public function test_bootstrap_registers_filter_at_priority_5() {
 		// Reset bootstrap flag for this test (private — use reflection).
-		$ref = new ReflectionClass( 'WP_MCP_AI_Memory_Privacy_Filter' );
+		$ref  = new ReflectionClass( 'WP_MCP_AI_Memory_Privacy_Filter' );
 		$prop = $ref->getProperty( 'bootstrapped' );
 		$prop->setAccessible( true );
 		$prop->setValue( null, false );
@@ -262,7 +265,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 * filter twice.
 	 */
 	public function test_bootstrap_is_idempotent() {
-		$ref = new ReflectionClass( 'WP_MCP_AI_Memory_Privacy_Filter' );
+		$ref  = new ReflectionClass( 'WP_MCP_AI_Memory_Privacy_Filter' );
 		$prop = $ref->getProperty( 'bootstrapped' );
 		$prop->setAccessible( true );
 		$prop->setValue( null, false );
@@ -318,7 +321,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 * the raw secret into the title field — it must see the redacted content.
 	 */
 	public function test_runs_before_user_transforms() {
-		$ref = new ReflectionClass( 'WP_MCP_AI_Memory_Privacy_Filter' );
+		$ref  = new ReflectionClass( 'WP_MCP_AI_Memory_Privacy_Filter' );
 		$prop = $ref->getProperty( 'bootstrapped' );
 		$prop->setAccessible( true );
 		$prop->setValue( null, false );
@@ -353,7 +356,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		$this->assertStringContainsString( '[REDACTED]', $final['title'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 4. Master kill-switch
 	 * ------------------------------------------------------------------ */
 
@@ -362,7 +366,7 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 * bootstrap time, the filter is NOT registered.
 	 */
 	public function test_kill_switch_prevents_filter_registration() {
-		$ref = new ReflectionClass( 'WP_MCP_AI_Memory_Privacy_Filter' );
+		$ref  = new ReflectionClass( 'WP_MCP_AI_Memory_Privacy_Filter' );
 		$prop = $ref->getProperty( 'bootstrapped' );
 		$prop->setAccessible( true );
 		$prop->setValue( null, false );
@@ -377,7 +381,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		);
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 5. Custom patterns and replacement
 	 * ------------------------------------------------------------------ */
 
@@ -424,6 +429,11 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 	 * defaults (never zero out the protection).
 	 */
 	public function test_invalid_patterns_filter_falls_back_to_defaults() {
+		// The production fallback raises a `_doing_it_wrong` notice when a
+		// listener returns a non-array; that notice is the documented contract
+		// being verified, so expect it.
+		$this->setExpectedIncorrectUsage( 'wp_mcp_ai_memory_privacy_patterns' );
+
 		add_filter(
 			'wp_mcp_ai_memory_privacy_patterns',
 			static function () {
@@ -471,7 +481,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		$this->assertStringContainsString( '[REDACTED]', $result );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 6. Verbatim discipline contract
 	 * ------------------------------------------------------------------ */
 
@@ -494,7 +505,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		$this->assertStringContainsString( '[REDACTED]', $result['content'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 7. Broken regex resilience
 	 * ------------------------------------------------------------------ */
 
@@ -526,7 +538,8 @@ class Test_Memory_Privacy_Filter extends WP_UnitTestCase {
 		$this->assertSame( 'note', $result['title'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	------------------------------------------------------------------
 	 * 8. Audit-trail action
 	 * ------------------------------------------------------------------ */
 
