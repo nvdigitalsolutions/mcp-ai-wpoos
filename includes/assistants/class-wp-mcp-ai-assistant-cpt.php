@@ -653,10 +653,31 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					continue;
 				}
 
+				$shortcuts[ $tool_slug ] = $this->collect_prebuilt_shortcut_tasks( $tool_slug, $assistant_id );
+			}
+
+			return $shortcuts;
+		}
+
+		/**
+		 * Collect the pre-built shortcut entries for a single tool.
+		 *
+		 * Isolated from the render path so that a Throwable raised by any one
+		 * tool implementation — or by a callback on one of the shortcut
+		 * filters — is contained: the failing tool is logged and skipped
+		 * instead of taking down the whole assistant edit screen.
+		 *
+		 * @param string $tool_slug    Tool slug.
+		 * @param int    $assistant_id Assistant post ID.
+		 * @return array Shortcut entries for the tool. Empty when the tool is
+		 *               missing or its shortcut metadata could not be built.
+		 */
+		protected function collect_prebuilt_shortcut_tasks( $tool_slug, $assistant_id ) {
+			try {
 				$tool = $this->registry->get_tool( $tool_slug );
 
 				if ( ! $tool ) {
-					continue;
+					return array();
 				}
 
 				$tasks         = array();
@@ -676,8 +697,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks_' . $tool_slug, $tasks, $tool, $assistant_id );
 
 				if ( null === $tasks ) {
-					$shortcuts[ $tool_slug ] = array();
-					continue;
+					return array();
 				}
 
 				$entries = array();
@@ -716,9 +736,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							);
 						}
 
-						$shortcuts[ $tool_slug ] = $entries;
-						continue;
+						return $entries;
 					}
+				}
+
+				if ( ! is_array( $tasks ) ) {
+					// A filter replaced the task list with a non-array value.
+					// Treat it as "no tasks" rather than iterating over it.
+					$tasks = array();
 				}
 
 				foreach ( $tasks as $task ) {
@@ -778,10 +803,46 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					}
 				}
 
-				$shortcuts[ $tool_slug ] = $entries;
+				return $entries;
+			} catch ( \Throwable $e ) {
+				self::log_assistant_edit_failure(
+					sprintf(
+						/* translators: 1: Tool slug. 2: Assistant post ID. */
+						__( 'Failed to build pre-built prompt shortcuts for tool "%1$s" on assistant %2$d.', 'mcp-ai-wpoos' ),
+						$tool_slug,
+						(int) $assistant_id
+					),
+					array(
+						'tool'         => $tool_slug,
+						'assistant_id' => (int) $assistant_id,
+						'error'        => $e->getMessage(),
+					)
+				);
+
+				return array();
+			}
+		}
+
+		/**
+		 * Record an assistant-edit-screen rendering failure.
+		 *
+		 * Centralises logging for the shortcut sections so contained failures
+		 * surface in the plugin log (and in PHP's debug log when WP_DEBUG is
+		 * on) without interrupting the admin page.
+		 *
+		 * @param string $message Human-readable failure description.
+		 * @param array  $context Structured context for the log entry.
+		 * @return void
+		 */
+		private static function log_assistant_edit_failure( $message, array $context = array() ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'error', $message, $context );
 			}
 
-			return $shortcuts;
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only diagnostic for a contained failure.
+				error_log( '[WP MCP AI] ' . $message );
+			}
 		}
 
 		/**
@@ -3477,7 +3538,25 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			echo '</div>';
 
-			$this->render_prebuilt_shortcuts_editor( $post, $selected_tools, $prebuilt_shortcuts );
+			try {
+				$this->render_prebuilt_shortcuts_editor( $post, $selected_tools, $prebuilt_shortcuts );
+			} catch ( \Throwable $e ) {
+				self::log_assistant_edit_failure(
+					sprintf(
+						/* translators: %d: Assistant post ID. */
+						__( 'Failed to render the pre-built prompt shortcuts editor for assistant %d.', 'mcp-ai-wpoos' ),
+						(int) $post->ID
+					),
+					array(
+						'assistant_id' => (int) $post->ID,
+						'error'        => $e->getMessage(),
+					)
+				);
+
+				echo '<div class="notice notice-warning inline" style="margin-top: 1rem;"><p>';
+				echo esc_html__( 'The pre-built prompt shortcuts section could not be displayed. Tool shortcuts remain unaffected and the error has been logged.', 'mcp-ai-wpoos' );
+				echo '</p></div>';
+			}
 		}
 
 		/**
@@ -3519,13 +3598,31 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			foreach ( $tools as $tool ) {
-				$slug = $tool->get_slug();
-
-				if ( ! empty( $selected_tools ) && ! in_array( $slug, $selected_tools, true ) ) {
+				if ( ! $tool instanceof WP_MCP_AI_Tool_Interface ) {
 					continue;
 				}
 
-				$tool_options[ $slug ] = $tool->get_name();
+				try {
+					$slug = $tool->get_slug();
+
+					if ( ! empty( $selected_tools ) && ! in_array( $slug, $selected_tools, true ) ) {
+						continue;
+					}
+
+					$tool_options[ $slug ] = $tool->get_name();
+				} catch ( \Throwable $e ) {
+					self::log_assistant_edit_failure(
+						sprintf(
+							/* translators: %d: Assistant post ID. */
+							__( 'Failed to read tool metadata while rendering the prompt shortcuts metabox for assistant %d.', 'mcp-ai-wpoos' ),
+							(int) $post->ID
+						),
+						array(
+							'assistant_id' => (int) $post->ID,
+							'error'        => $e->getMessage(),
+						)
+					);
+				}
 			}
 
 			/* translators: %d: shortcut number */
