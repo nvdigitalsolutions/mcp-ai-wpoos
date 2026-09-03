@@ -41,7 +41,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		 * (wp_mcp_ai_rate_limit_*): sharing one counter would halve the
 		 * configured chat budget and entangle the two enforcement paths.
 		 */
-	const RATE_LIMIT_TRANSIENT = 'wp_mcp_ai_nefarious_rate_limit_';
+		const RATE_LIMIT_TRANSIENT = 'wp_mcp_ai_nefarious_rate_limit_';
 
 		/**
 		 * Maximum allowed requests per minute (default threshold).

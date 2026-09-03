@@ -79,7 +79,7 @@ class WP_MCP_AI_OOS_Shadow_Runner {
 	 * @param mixed $options      Chat options.
 	 * @param mixed $request      WP_REST_Request or event object.
 	 */
-public static function maybe_run( $assistant_id = null, $messages = null, $options = null, $request = null ) {
+	public static function maybe_run( $assistant_id = null, $messages = null, $options = null, $request = null ) {
 		if ( ! function_exists( 'wp_mcp_ai_oos_shadow_enabled' ) || ! wp_mcp_ai_oos_shadow_enabled() ) {
 			return;
 		}

@@ -98,7 +98,7 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 		$settings['rate_limit_window']    = 60; // Per 60 seconds.
 		update_option( 'wp_mcp_ai_settings', $settings );
 
-		$allowed_count     = 0;
+		$allowed_count      = 0;
 		$rate_limited_count = 0;
 
 		// Make more requests than the limit.
