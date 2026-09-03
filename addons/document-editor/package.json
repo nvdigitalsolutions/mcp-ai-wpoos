@@ -14,15 +14,15 @@
   },
   "dependencies": {
     "@grapesjs/react": "^2.0.0",
-    "@tiptap/extension-link": "3.22.5",
-    "@tiptap/extension-placeholder": "3.22.5",
-    "@tiptap/extension-table": "3.22.5",
-    "@tiptap/extension-table-cell": "3.22.5",
-    "@tiptap/extension-table-header": "3.22.5",
-    "@tiptap/extension-table-row": "3.22.5",
-    "@tiptap/pm": "3.22.5",
-    "@tiptap/react": "3.22.5",
-    "@tiptap/starter-kit": "3.22.5",
+    "@tiptap/extension-link": "3.30.4",
+    "@tiptap/extension-placeholder": "3.30.4",
+    "@tiptap/extension-table": "3.30.4",
+    "@tiptap/extension-table-cell": "3.30.4",
+    "@tiptap/extension-table-header": "3.30.4",
+    "@tiptap/extension-table-row": "3.30.4",
+    "@tiptap/pm": "3.30.4",
+    "@tiptap/react": "3.30.4",
+    "@tiptap/starter-kit": "3.30.4",
     "grapesjs": "^0.22.16",
     "react": "19.1.0",
     "react-dom": "19.1.0"
@@ -54,7 +54,9 @@
                   "brace-expansion@^1": "1.1.16",
                   "brace-expansion@^2": "2.1.2",
                   "brace-expansion@^5": ">=5.0.8",
-      "nanoid": "^3.3.17"
+      "nanoid": "^3.3.17",
+      "@tiptap/extension-bubble-menu": "3.30.4",
+      "@tiptap/extension-floating-menu": "3.30.4"
     },
   "type": "module"
 }
