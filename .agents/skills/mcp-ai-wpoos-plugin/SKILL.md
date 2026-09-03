@@ -465,6 +465,17 @@ Two independent limiters apply to MCP traffic:
    assistant credential is already an explicit grant of its tool set).
    Pre-1.1.55 this was a hardcoded 60 calls/60s with no UI — agents burst
    through it routinely.
+3. **Nefarious usage monitor** — a third counter, deliberately namespaced
+   (`wp_mcp_ai_nefarious_rate_limit_` transient) away from the chat REST
+   limiter (`wp_mcp_ai_rate_limit_`): a shared counter would halve the
+   configured chat budget and entangle the two enforcement paths.
+   Rate-limit classification uses the dispatching request's real HTTP verb
+   (internal dispatches like `rest_do_request`/WP-CLI are classified
+   correctly instead of by the ambient request); GET/HEAD stay exempt.
+   Custom emitters of `wp_mcp_ai_before_chat_request` may fire the legacy
+   2-arg `( $messages, $request_data )` shape — core subscribers tolerate
+   both it and the canonical
+   `( $assistant_id, $messages, $options, $request )`.
 
 **Symptom of a tripped tool limiter on pre-1.1.55 servers:** tools/call
 returns HTTP 500 with a `-32603 "Tool rate limit exceeded"` error body —

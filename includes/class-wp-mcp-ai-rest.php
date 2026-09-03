@@ -2038,7 +2038,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( true === $mesh_validated ) {
 					$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
 					// Check rate limiting for mesh authenticated requests.
-					$rate_limit_check = $this->check_rate_limit( 0 ); // Use 0 for mesh requests.
+					$rate_limit_check = $this->check_rate_limit( 0, $request->get_method() ); // Use 0 for mesh requests.
 					if ( is_wp_error( $rate_limit_check ) ) {
 						return $rate_limit_check;
 					}
@@ -2056,7 +2056,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( true === $local ) {
 					// Check rate limiting for local token authenticated requests.
 					$user_id          = get_current_user_id();
-					$rate_limit_check = $this->check_rate_limit( $user_id );
+					$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 					if ( is_wp_error( $rate_limit_check ) ) {
 						return $rate_limit_check;
 					}
@@ -2096,7 +2096,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Check rate limiting for bearer token authenticated requests.
 				$user_id          = get_current_user_id();
-				$rate_limit_check = $this->check_rate_limit( $user_id );
+				$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 				if ( is_wp_error( $rate_limit_check ) ) {
 					return $rate_limit_check;
 				}
@@ -2121,7 +2121,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( true === $local ) {
 					// Check rate limiting for local token authenticated requests.
 					$user_id          = get_current_user_id();
-					$rate_limit_check = $this->check_rate_limit( $user_id );
+					$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 					if ( is_wp_error( $rate_limit_check ) ) {
 						return $rate_limit_check;
 					}
@@ -2139,7 +2139,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Check rate limiting for public/guest requests.
 				$user_id          = get_current_user_id(); // Will be 0 for guests.
-				$rate_limit_check = $this->check_rate_limit( $user_id );
+				$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 				if ( is_wp_error( $rate_limit_check ) ) {
 					return $rate_limit_check;
 				}
@@ -2187,7 +2187,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Check rate limiting if enabled.
 			$user_id          = get_current_user_id();
-			$rate_limit_check = $this->check_rate_limit( $user_id );
+			$rate_limit_check = $this->check_rate_limit( $user_id, $request->get_method() );
 			if ( is_wp_error( $rate_limit_check ) ) {
 				return $rate_limit_check;
 			}
@@ -2845,10 +2845,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			/**
 			 * Check if rate limiting is enabled and enforce limits.
 			 *
-			 * @param int $user_id User ID making the request (0 for guests).
+			 * @param int         $user_id        User ID making the request (0 for guests).
+			 * @param string|null $request_method Optional HTTP method of the dispatching request.
+			 *                                    When null, falls back to $_SERVER['REQUEST_METHOD'].
 			 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
 			 */
-		protected function check_rate_limit( $user_id ) {
+		protected function check_rate_limit( $user_id, $request_method = null ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			// Check if rate limiting is enabled.
@@ -2860,7 +2862,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// SSE stream checks). MCP client retry loops can legitimately issue
 			// many of them per hour, so they must not consume the budget aimed
 			// at expensive or state-changing traffic.
-			$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+			// Prefer the method of the dispatching request when provided so that
+			// internal dispatches (rest_do_request, WP-CLI) are classified by
+			// their real verb instead of the ambient HTTP request's method.
+			if ( null === $request_method ) {
+				$request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+			} else {
+				$request_method = sanitize_text_field( $request_method );
+			}
 			if ( in_array( strtoupper( $request_method ), array( 'GET', 'HEAD' ), true ) ) {
 				return true;
 			}

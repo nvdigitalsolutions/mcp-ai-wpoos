@@ -128,7 +128,7 @@ class WP_MCP_AI_Harness_Trace_Capture {
 	 * @param WP_REST_Request $request      REST request instance.
 	 * @return void
 	 */
-	public static function on_before_chat_request( $assistant_id, $messages, $options, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $messages, $options, $request required by hook.
+	public static function on_before_chat_request( $assistant_id = null, $messages = null, $options = null, $request = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $messages, $options, $request required by hook.
 		$assistant_id = (int) $assistant_id;
 		if ( $assistant_id <= 0 ) {
 			return;

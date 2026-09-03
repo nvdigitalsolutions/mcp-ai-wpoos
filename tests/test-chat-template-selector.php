@@ -28,6 +28,12 @@ class WP_MCP_AI_Chat_Template_Selector_Test extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// The shortcode/block render enforces the chat capability
+		// (wp_mcp_ai_chat_capability, default edit_posts) — run as an admin so
+		// the render path under test actually produces the chat markup.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
 		// Create a test assistant.
 		$this->assistant_id = $this->factory->post->create(
 			array(
@@ -46,6 +52,8 @@ class WP_MCP_AI_Chat_Template_Selector_Test extends WP_UnitTestCase {
 		if ( $this->assistant_id ) {
 			wp_delete_post( $this->assistant_id, true );
 		}
+
+		wp_set_current_user( 0 );
 
 		parent::tear_down();
 	}
