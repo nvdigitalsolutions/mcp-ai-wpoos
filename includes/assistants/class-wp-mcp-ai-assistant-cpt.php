@@ -103,6 +103,28 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_deleted_assistant_credentials' ) );
 			// Clean up CCT items when post status changes from publish to something else.
 			add_action( 'transition_post_status', array( $this, 'handle_post_status_transition' ), 10, 3 );
+			// Restore the pre-trash status when an assistant is untrashed. WordPress
+			// 6.6+ defaults restored posts to draft; a published assistant must come
+			// back as publish so CCT sync resumes.
+			add_filter( 'wp_untrash_post_status', array( $this, 'restore_previous_status_on_untrash' ), 10, 3 );
+		}
+
+		/**
+		 * Restore the pre-trash status for untrashed assistant posts.
+		 *
+		 * @param string $new_status      Default status WordPress would assign.
+		 * @param int    $post_id         Post ID being untrashed.
+		 * @param string $previous_status Status the post had when it was trashed.
+		 * @return string Status to assign on untrash.
+		 */
+		public function restore_previous_status_on_untrash( $new_status, $post_id, $previous_status ) {
+			$post = get_post( $post_id );
+
+			if ( $post && self::POST_TYPE === $post->post_type ) {
+				return $previous_status;
+			}
+
+			return $new_status;
 		}
 
 		/**
