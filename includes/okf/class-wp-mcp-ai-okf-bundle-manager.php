@@ -758,7 +758,9 @@ class WP_MCP_AI_OKF_Bundle_Manager {
 			);
 		}
 
-		$entry_count = $zip->num_files;
+		// `num_files` is not exposed as a ZipArchive property on PHP 8.x
+		// (the loop silently never runs), so count the archive instead.
+		$entry_count = count( $zip );
 		if ( $entry_count > self::MAX_ZIP_ENTRIES ) {
 			$zip->close();
 

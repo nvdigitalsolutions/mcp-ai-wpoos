@@ -86,6 +86,10 @@ class Test_Tool_Pro_Send_ECA_Notification extends WP_UnitTestCase {
 	 * Test that user_id=0 returns WP_Error('wp_mcp_ai_forbidden').
 	 */
 	public function test_guest_returns_forbidden() {
+		// The tool falls back to the current user when context user_id is 0;
+		// a real guest request runs with current user 0.
+		wp_set_current_user( 0 );
+
 		$result = $this->tool->execute(
 			array(
 				'eca_id'            => 1,

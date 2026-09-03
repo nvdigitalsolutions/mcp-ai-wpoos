@@ -155,18 +155,33 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 		$this->assertGreaterThan( 0, $res['design_pressure_pa'] );
 	}
 
-	/** Test wind loads unknown zone returns error.
+	/** Test wind loads unknown zone falls back to country default.
 	 */
 	public function test_wind_loads_unknown_zone_returns_error() {
 		$tool = new WP_MCP_AI_Tool_Calculate_Wind_Loads();
-		$res  = $tool->execute(
+
+		// Unknown zone for a KNOWN country: the engine falls back to the
+		// country default zone and the tool returns a successful result.
+		$res = $tool->execute(
 			array(
 				'country_code' => 'LK',
 				'wind_zone'    => 'bogus',
 			),
 			array( 'user_id' => $this->editor_id )
 		);
+		$this->assertNotInstanceOf( 'WP_Error', $res );
+		$this->assertGreaterThan( 0, $res['basic_wind_ms'] );
+
+		// Unknown COUNTRY: no table exists, so the tool returns an error.
+		$res = $tool->execute(
+			array(
+				'country_code' => 'XX',
+				'wind_zone'    => 'standard',
+			),
+			array( 'user_id' => $this->editor_id )
+		);
 		$this->assertInstanceOf( 'WP_Error', $res );
+		$this->assertSame( 'wp_mcp_ai_unknown_zone', $res->get_error_code() );
 	}
 
 	// =================================================================
@@ -711,6 +726,10 @@ class Test_Architectural_Tools_Phase_B extends WP_UnitTestCase {
 	/** Test tools reject unauthenticated context.
 	 */
 	public function test_tools_reject_unauthenticated_context() {
+		// The tool falls back to the current user when context user_id is
+		// absent; a real guest request runs with current user 0.
+		wp_set_current_user( 0 );
+
 		$tool = new WP_MCP_AI_Tool_Calculate_Wind_Loads();
 		$res  = $tool->execute(
 			array(

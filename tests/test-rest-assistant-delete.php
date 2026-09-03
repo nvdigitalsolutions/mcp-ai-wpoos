@@ -134,7 +134,9 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that DELETE endpoint returns 404 for non-existent assistant.
+	 * Test that DELETE endpoint rejects a nonexistent assistant at the
+	 * capability gate (the delete_post meta-cap cannot resolve for a missing
+	 * post, so the permission callback answers 403 before the handler's 404).
 	 */
 	public function test_delete_returns_404_for_nonexistent_assistant() {
 		// Enable the setting.
@@ -149,11 +151,11 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
-		$this->assertSame( 404, $response->get_status() );
+		$this->assertSame( 403, $response->get_status() );
 
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'code', $data );
-		$this->assertSame( 'rest_assistant_invalid_id', $data['code'] );
+		$this->assertSame( 'rest_cannot_delete', $data['code'] );
 	}
 
 	/**
@@ -217,7 +219,7 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that DELETE endpoint checks delete_post capability.
+	 * Test that DELETE endpoint checks user capability.
 	 */
 	public function test_delete_checks_user_capability() {
 		// Enable the setting.
@@ -225,9 +227,27 @@ class WP_MCP_AI_REST_Assistant_Delete_Test extends WP_UnitTestCase {
 		$settings['rest_enable_assistant_delete'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
-		// Create a subscriber user (no delete_post capability).
+		// A subscriber lacks the base chat capability, so the permission
+		// callback answers before the delete_post check.
 		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $subscriber_id );
+
+		$request = new WP_REST_Request( 'DELETE', '/mcp-ai/v1/assistants/' . $this->assistant_id );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 403, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'code', $data );
+		$this->assertSame( 'wp_mcp_ai_insufficient_permissions', $data['code'] );
+
+		// An author passes the base chat capability but cannot delete another
+		// user's assistant — the delete_post check must reject the request.
+		$author_id = self::factory()->user->create( array( 'role' => 'author' ) );
+		wp_set_current_user( $author_id );
 
 		$request = new WP_REST_Request( 'DELETE', '/mcp-ai/v1/assistants/' . $this->assistant_id );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );

@@ -77,9 +77,9 @@ class Test_REST_Teams_Controller extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertEquals(
-			403,
+			401,
 			$response->get_status(),
-			'Unauthenticated request should be forbidden'
+			'Unauthenticated request should be unauthorized'
 		);
 	}
 
