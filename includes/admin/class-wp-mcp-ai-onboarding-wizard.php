@@ -1186,14 +1186,20 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				// Do not overwrite a real key if the user saw the masked placeholder.
 				if ( ! $this->is_masked_key( $api_key ) ) {
 					$settings['openai_api_key'] = $api_key;
+					// Enable OpenAI (disabled by default) when a key is provided.
+					$settings['enable_openai'] = true;
 				}
 			} elseif ( 'anthropic' === $provider ) {
 				if ( ! $this->is_masked_key( $api_key ) ) {
 					$settings['anthropic_api_key'] = $api_key;
+					// Enable Anthropic (disabled by default) when a key is provided.
+					$settings['enable_anthropic'] = true;
 				}
 			} elseif ( 'gemini' === $provider ) {
 				if ( ! $this->is_masked_key( $api_key ) ) {
 					$settings['gemini_api_key'] = $api_key;
+					// Enable Gemini (disabled by default) when a key is provided.
+					$settings['enable_gemini'] = true;
 				}
 			} elseif ( 'huggingface' === $provider ) {
 				if ( ! $this->is_masked_key( $api_key ) ) {

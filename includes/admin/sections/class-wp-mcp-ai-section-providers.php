@@ -325,7 +325,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'          => __( 'Enable OpenAI Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable OpenAI as an available provider', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When disabled, OpenAI will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
-					'default'        => true,
+					'default'        => false,
 				),
 				'openai_api_key_type'                => array(
 					'type'        => 'select',
@@ -607,7 +607,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'          => __( 'Enable Anthropic Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Anthropic (Claude) as an available provider', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When disabled, Anthropic will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
-					'default'        => true,
+					'default'        => false,
 				),
 				'anthropic_api_key_type'             => array(
 					'type'        => 'select',
@@ -695,7 +695,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'          => __( 'Enable Gemini Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Google Gemini as an available provider', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When disabled, Gemini will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
-					'default'        => true,
+					'default'        => false,
 				),
 				'gemini_api_key_type'                => array(
 					'type'        => 'select',
