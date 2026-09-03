@@ -269,7 +269,7 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.6' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2.5' ) );
 		$this->assertEquals( 256000, $this->client->get_context_window( 'kimi-k2' ) );
-		$this->assertEquals( 128000, $this->client->get_context_window( 'moonshot-v1' ) );
+		$this->assertEquals( 131072, $this->client->get_context_window( 'moonshot-v1' ) );
 	}
 
 	/**

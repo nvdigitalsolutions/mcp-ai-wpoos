@@ -39,7 +39,7 @@ class Test_Token_Manager_Tool_Multipliers extends WP_UnitTestCase {
 		$this->assertEquals( 1.5, $multipliers['search_content'] );
 
 		$this->assertArrayHasKey( 'web_search', $multipliers );
-		$this->assertEquals( 1.5, $multipliers['web_search'] );
+		$this->assertEquals( 2.0, $multipliers['web_search'] );
 
 		$this->assertArrayHasKey( 'submit_document_prompt', $multipliers );
 		$this->assertEquals( 2.0, $multipliers['submit_document_prompt'] );

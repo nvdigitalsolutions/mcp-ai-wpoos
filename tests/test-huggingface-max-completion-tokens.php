@@ -150,18 +150,20 @@ class WP_MCP_AI_Huggingface_Max_Completion_Tokens_Tests extends WP_UnitTestCase 
 	 * Test that model config has max_completion_tokens for Qwen models.
 	 */
 	public function test_qwen_models_have_max_completion_tokens_in_config() {
+		// Expected caps mirror the bundled model catalog.
 		$qwen_models = array(
-			'Qwen/Qwen3-Coder-30B-A3B-Instruct',
-			'Qwen/Qwen2.5-72B-Instruct',
-			'Qwen/Qwen2.5-32B-Instruct',
-			'Qwen/Qwen2.5-7B-Instruct',
+			'Qwen/Qwen3-Coder-30B-A3B-Instruct' => 8192,
+			'Qwen/Qwen2.5-72B-Instruct'         => 4096,
+			'Qwen/Qwen2.5-32B-Instruct'         => 8192,
+			'Qwen/Qwen2.5-7B-Instruct'          => 2048,
+			'Qwen/Qwen3-7B-Instruct'            => 4096,
 		);
 
-		foreach ( $qwen_models as $model ) {
+		foreach ( $qwen_models as $model => $expected_limit ) {
 			$config = WP_MCP_AI_Model_Config::get_model_config( $model );
 			$this->assertIsArray( $config, "Config for $model should be an array" );
 			$this->assertArrayHasKey( 'max_completion_tokens', $config, "Config for $model should have max_completion_tokens" );
-			$this->assertEquals( 8192, $config['max_completion_tokens'], "max_completion_tokens for $model should be 8192" );
+			$this->assertEquals( $expected_limit, $config['max_completion_tokens'], "max_completion_tokens for $model should be $expected_limit" );
 		}
 	}
 
