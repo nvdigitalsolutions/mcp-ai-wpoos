@@ -9,9 +9,9 @@ the WordPress plugin** — `extensions` is excluded from the wp.org build via
 | Extension | Runtime target | What it does | Status |
 |---|---|---|---|
 | [`nv-oos-fleet/`](nv-oos-fleet/) | `hermes dashboard` plugin system (`~/.hermes/plugins/`) | Fleet console: register NV oOS WordPress sites, monitor (health, logs, jobs w/ live SSE, analytics, security), gated control actions, MCP config apply | complete; functional test suite |
-| [`backup-download/`](backup-download/) | Hermes WebUI manifest-bundle (`HERMES_WEBUI_EXTENSION_DIR`) | Floating 💾 Backup button wrapping `hermes backup` via a loopback sidecar | **assets pending** — manifest references `assets/backup-download.js` / `.css` not yet present |
+| [`backup-download/`](backup-download/) | Hermes WebUI manifest-bundle (`HERMES_WEBUI_EXTENSION_DIR`) | Floating 💾 Backup button wrapping `hermes backup` via a loopback sidecar | complete |
 | [`external-app-tab/`](external-app-tab/) | Hermes WebUI manifest-bundle | Pin a self-hosted web app (Grafana, Vaultwarden, …) as an iframe tab in the WebUI | complete |
-| [`mcp-tool-shortcuts/`](mcp-tool-shortcuts/) | Hermes WebUI manifest-bundle | Pin MCP tools; one click drafts a review-before-send prompt into the composer | **assets pending** — manifest references `assets/mcp-tool-shortcuts.js` / `.css` not yet present |
+| [`mcp-tool-shortcuts/`](mcp-tool-shortcuts/) | Hermes WebUI manifest-bundle | Pin MCP tools; one click drafts a review-before-send prompt into the composer | complete |
 
 Two different extension systems live side by side:
 

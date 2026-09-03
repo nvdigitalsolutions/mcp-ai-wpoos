@@ -1,0 +1,166 @@
+/* Backup Download extension — floating widget styles. Scoped to .hwx-bd-* */
+
+.hwx-bd-btn {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9990;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(30, 34, 42, 0.94);
+  color: #e8eaf0;
+  font: 600 13px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.hwx-bd-btn:hover {
+  background: rgba(45, 50, 62, 0.98);
+  transform: translateY(-1px);
+}
+
+.hwx-bd-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 60px;
+  z-index: 9991;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: 70vh;
+  overflow-y: auto;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(24, 27, 34, 0.97);
+  color: #e8eaf0;
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.hwx-bd-panel--open { display: flex; }
+
+.hwx-bd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hwx-bd-title { font-size: 14px; font-weight: 700; }
+.hwx-bd-close {
+  border: 0;
+  background: transparent;
+  color: #aab0bd;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.hwx-bd-close:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+
+.hwx-bd-status { color: #c6ccd8; min-height: 20px; }
+.hwx-bd-status code, .hwx-bd-foot code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.hwx-bd-actions { display: flex; gap: 8px; }
+.hwx-bd-create {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid rgba(110, 160, 255, 0.5);
+  border-radius: 8px;
+  background: rgba(80, 130, 255, 0.25);
+  color: #dfe8ff;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+.hwx-bd-create:hover:not(:disabled) { background: rgba(80, 130, 255, 0.4); }
+.hwx-bd-create--ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #c6ccd8;
+}
+.hwx-bd-create:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.hwx-bd-consent {
+  padding: 10px;
+  border: 1px solid rgba(255, 200, 90, 0.4);
+  border-radius: 8px;
+  background: rgba(255, 200, 90, 0.08);
+  color: #f2e3bd;
+}
+.hwx-bd-approve {
+  display: block;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #e0a52e;
+  color: #1a1608;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hwx-bd-approve:hover { background: #f0b840; }
+
+.hwx-bd-progress { color: #9fd4a8; min-height: 0; }
+
+.hwx-bd-list { display: flex; flex-direction: column; gap: 6px; }
+.hwx-bd-empty { color: #8a90a0; font-style: italic; }
+.hwx-bd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.hwx-bd-row-name {
+  font-weight: 600;
+  font-size: 12px;
+  word-break: break-all;
+}
+.hwx-bd-row-meta { color: #8a90a0; font-size: 11px; }
+.hwx-bd-dl {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(90, 200, 130, 0.22);
+  color: #b9eccb;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+.hwx-bd-dl:hover { background: rgba(90, 200, 130, 0.35); }
+
+.hwx-bd-foot {
+  color: #7d838f;
+  font-size: 11px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+.hwx-bd-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 9999;
+  transform: translate(-50%, 12px);
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(30, 34, 42, 0.97);
+  color: #e8eaf0;
+  font: 13px/1.4 system-ui, sans-serif;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.hwx-bd-toast--in { opacity: 1; transform: translate(-50%, 0); }
