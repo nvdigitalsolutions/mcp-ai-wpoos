@@ -400,6 +400,49 @@ r = client.post("/mesh/peers/report", json={"site": sid_a, "peer_id": 3, "reason
 assert r.status_code == 200
 
 # ---------------------------------------------------------------------------
+# Input validation hardening (upstream path-segment injection guards)
+# ---------------------------------------------------------------------------
+
+r = client.get(f"/paper-store/records?site={sid_a}&collection=..%2F..%2Fetc")
+assert r.status_code == 422, "traversal collection accepted"
+r = client.post(
+    "/paper-store/records",
+    json={"site": sid_a, "collection": "bad/../../etc", "record": {"title": "x"}},
+)
+assert r.status_code == 422, "traversal collection accepted on create"
+r = client.request(
+    "DELETE",
+    "/paper-store/records",
+    content=json.dumps({"site": sid_a, "collection": "knowledge", "record_id": "../r1"}),
+    headers={"Content-Type": "application/json"},
+)
+assert r.status_code == 422, "traversal record_id accepted"
+r = client.post(
+    "/tools/call",
+    json={"site": sid_a, "tool": "bad tool/name", "arguments": {}},
+)
+assert r.status_code == 422, "malformed tool name accepted"
+r = client.post(f"/jobs/{sid_a}/cancel", json={"job_id": "bad/job"})
+assert r.status_code == 422, "malformed job_id accepted"
+r = client.get(f"/paper-store/search?site={sid_a}&q={'x' * 300}")
+assert r.status_code == 422, "over-long query accepted"
+r = client.post(
+    "/sites",
+    json={"label": "L" * 300, "url": "https://demo3.example.com", "token": TOKEN_A},
+)
+assert r.status_code == 422, "over-long label accepted"
+
+# Manifest audit — mirrors the WebUI workstream's validate-extensions tooling:
+# every file the dashboard manifest references must exist.
+manifest = json.loads((DASHBOARD / "manifest.json").read_text(encoding="utf-8"))
+assert manifest["name"] == "nv-oos-fleet"
+assert manifest["tab"]["path"].startswith("/")
+assert manifest["entry"] and manifest["css"] and manifest["api"]
+for rel in (manifest["entry"], manifest["css"], manifest["api"]):
+    assert (DASHBOARD / rel).exists(), f"manifest references missing file: {rel}"
+assert "header-right" in manifest["slots"]
+
+# ---------------------------------------------------------------------------
 # Phase 3 — agent ops
 # ---------------------------------------------------------------------------
 

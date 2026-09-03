@@ -56,6 +56,19 @@ STREAM_TIMEOUT = 25.0  # no per-chunk deadline; bounded by connect + heartbeats
 
 HEALTH_PATH = "/wp-json/mcp-ai/v1/assistants"
 
+# Upstream path-segment patterns (mirror the WP route regexes) — values that
+# will be interpolated into URLs must match these or be rejected with 422.
+_SITE_ID_RE = re.compile(r"^[a-z0-9-]{1,64}$")
+_COLLECTION_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
+_RECORD_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,128}$")
+_JOB_ID_RE = re.compile(r"^[a-zA-Z0-9_.:-]{1,128}$")
+_TOOL_RE = re.compile(r"^[a-zA-Z0-9_.:-]{1,128}$")
+
+LABEL_MAX = 100
+NOTES_MAX = 500
+QUERY_MAX = 200
+REASON_MAX = 500
+
 # Per-endpoint cache TTLs (seconds).
 TTL = {
     "fleet": 30.0,
@@ -204,6 +217,20 @@ def _body_dict(model: BaseModel) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _check(pattern: "re.Pattern", value: str, label: str) -> str:
+    """Reject values that would be interpolated into an upstream URL path."""
+    if not value or not isinstance(value, str) or not pattern.fullmatch(value):
+        raise HTTPException(status_code=422, detail=f"invalid {label}")
+    return value
+
+
+def _cap(value: str, limit: int, label: str) -> str:
+    value = value.strip()
+    if len(value) > limit:
+        raise HTTPException(status_code=422, detail=f"{label} exceeds {limit} characters")
+    return value
 
 
 def _now() -> str:
@@ -549,15 +576,17 @@ async def create_site(body: SiteIn) -> Dict[str, Any]:
     if not token:
         raise HTTPException(status_code=422, detail="token is required")
     url = _validate_url(body.url, body.allow_insecure)
+    label = _cap(body.label, LABEL_MAX, "label") if body.label.strip() else url
+    notes = _cap(body.notes, NOTES_MAX, "notes")
     now = _now()
     site = {
         "id": f"site-{uuid.uuid4().hex[:10]}",
-        "label": body.label.strip() or url,
+        "label": label,
         "url": url,
         "token": token,
         "write": bool(body.write),
         "allow_insecure": bool(body.allow_insecure),
-        "notes": body.notes.strip(),
+        "notes": notes,
         "created_at": now,
         "updated_at": now,
     }
@@ -585,9 +614,9 @@ async def update_site(site_id: str, body: SitePatch) -> Dict[str, Any]:
             bool(changes.get("allow_insecure", site.get("allow_insecure", False))),
         )
     if changes.get("label") is not None:
-        changes["label"] = str(changes["label"]).strip() or site.get("label", "")
+        changes["label"] = _cap(str(changes["label"]), LABEL_MAX, "label") or site.get("label", "")
     if changes.get("notes") is not None:
-        changes["notes"] = str(changes["notes"]).strip()
+        changes["notes"] = _cap(str(changes["notes"]), NOTES_MAX, "notes")
     changes["updated_at"] = _now()
     async with _registry_lock:
         site.update(changes)
@@ -830,8 +859,9 @@ async def jobs_stream(site: str) -> StreamingResponse:
 async def job_cancel(site: str, body: JobAction) -> Dict[str, Any]:
     site_entry = _require_site(site)
     _require_write(site_entry)
+    job_id = _check(_JOB_ID_RE, body.job_id, "job_id")
     result = await _rest_send(
-        site_entry, "POST", f"mcp-ai/v1/cron-status/{body.job_id}/cancel"
+        site_entry, "POST", f"mcp-ai/v1/cron-status/{job_id}/cancel"
     )
     _invalidate_cache()
     return _unwrap(result)
@@ -841,8 +871,9 @@ async def job_cancel(site: str, body: JobAction) -> Dict[str, Any]:
 async def job_retry(site: str, body: JobAction) -> Dict[str, Any]:
     site_entry = _require_site(site)
     _require_write(site_entry)
+    job_id = _check(_JOB_ID_RE, body.job_id, "job_id")
     result = await _rest_send(
-        site_entry, "POST", f"mcp-ai/v1/cron-status/{body.job_id}/retry"
+        site_entry, "POST", f"mcp-ai/v1/cron-status/{job_id}/retry"
     )
     _invalidate_cache()
     return _unwrap(result)
@@ -852,11 +883,12 @@ async def job_retry(site: str, body: JobAction) -> Dict[str, Any]:
 async def wp_cron_delete(site: str, body: JobAction) -> Dict[str, Any]:
     site_entry = _require_site(site)
     _require_write(site_entry)
+    job_id = _check(_JOB_ID_RE, body.job_id, "job_id")
     result = _unwrap(
         await _rpc(
             site_entry,
             "tools/call",
-            {"name": "delete_cron_job", "arguments": {"job_id": body.job_id}},
+            {"name": "delete_cron_job", "arguments": {"job_id": job_id}},
         )
     )
     _invalidate_cache()
@@ -927,11 +959,12 @@ async def tools(site: str) -> Dict[str, Any]:
 async def tools_call(body: ToolCall) -> Dict[str, Any]:
     site_entry = _require_site(body.site)
     _require_write(site_entry)
+    tool = _check(_TOOL_RE, body.tool, "tool name")
     result = _unwrap(
         await _rpc(
             site_entry,
             "tools/call",
-            {"name": body.tool, "arguments": body.arguments or {}},
+            {"name": tool, "arguments": body.arguments or {}},
         )
     )
     return result
@@ -964,6 +997,7 @@ async def paper_store_collections(site: str) -> Dict[str, Any]:
 @router.get("/paper-store/records")
 async def paper_store_records(site: str, collection: str) -> Dict[str, Any]:
     site_entry = _require_site(site)
+    collection = _check(_COLLECTION_RE, collection, "collection")
     cache_key = f"paper:{site}:{collection}"
     cached = _cache_get(cache_key)
     if cached is not None:
@@ -982,6 +1016,7 @@ async def paper_store_records(site: str, collection: str) -> Dict[str, Any]:
 @router.get("/paper-store/search")
 async def paper_store_search(site: str, q: str) -> Dict[str, Any]:
     site_entry = _require_site(site)
+    q = _cap(q, QUERY_MAX, "query")
     try:
         payload = await _rest_get(
             site_entry, "mcp-ai/v1/paper-store/search", params={"q": q}
@@ -995,18 +1030,19 @@ async def paper_store_search(site: str, q: str) -> Dict[str, Any]:
 async def paper_store_create(body: PaperRecordIn) -> Dict[str, Any]:
     site_entry = _require_site(body.site)
     _require_write(site_entry)
+    collection = _check(_COLLECTION_RE, body.collection, "collection")
     if body.records is not None:
         result = await _rest_send(
             site_entry,
             "POST",
-            f"mcp-ai/v1/paper-store/{body.collection}/import",
+            f"mcp-ai/v1/paper-store/{collection}/import",
             json_body={"records": body.records},
         )
     else:
         result = await _rest_send(
             site_entry,
             "POST",
-            f"mcp-ai/v1/paper-store/{body.collection}",
+            f"mcp-ai/v1/paper-store/{collection}",
             json_body=body.record or {},
         )
     _invalidate_cache()
@@ -1017,10 +1053,12 @@ async def paper_store_create(body: PaperRecordIn) -> Dict[str, Any]:
 async def paper_store_delete(body: PaperRecordDelete) -> Dict[str, Any]:
     site_entry = _require_site(body.site)
     _require_write(site_entry)
+    collection = _check(_COLLECTION_RE, body.collection, "collection")
+    record_id = _check(_RECORD_ID_RE, body.record_id, "record_id")
     result = await _rest_send(
         site_entry,
         "DELETE",
-        f"mcp-ai/v1/paper-store/{body.collection}/{body.record_id}",
+        f"mcp-ai/v1/paper-store/{collection}/{record_id}",
     )
     _invalidate_cache()
     return _unwrap(result)
@@ -1100,11 +1138,12 @@ async def mesh_reverify(body: MeshAction) -> Dict[str, Any]:
 async def mesh_report(body: MeshReport) -> Dict[str, Any]:
     site_entry = _require_site(body.site)
     _require_write(site_entry)
+    reason = _cap(body.reason, REASON_MAX, "reason")
     result = await _rest_send(
         site_entry,
         "POST",
         f"ai-dir/v1/report/{body.peer_id}",
-        json_body={"reason": body.reason} if body.reason else {},
+        json_body={"reason": reason} if reason else {},
     )
     _invalidate_cache()
     return _unwrap(result)

@@ -57,6 +57,29 @@ for the full feature set and the load-offload rationale.
 - `mcp-config/apply` backs up `~/.hermes/config.yaml` before editing and
   writes `.env` entries with 0600.
 
+## Permissions & trust (nv-oos-fleet)
+
+The dashboard manifest format has no permissions field, so the trust contract
+is declared here — mirroring the WebUI `extension.json` permissions model:
+
+- **API**: reads/writes only its own routes under `/api/plugins/nv-oos-fleet/*`.
+- **Network**: outbound HTTPS to registered sites only; `https://` enforced
+  unless a site opts into `allow_insecure`; no arbitrary URLs.
+- **Storage**: `sites.yaml` (0600) in its own directory; all other caches are
+  in-memory only.
+- **Filesystem**: `sites.yaml`, and — for the explicit apply action —
+  `~/.hermes/config.yaml` (backed up first) + `~/.hermes/.env` (0600).
+  Nothing else.
+- **Sidecar/native host/iframes**: none.
+- **DOM**: only its own tab and the declared slots (`header-right`,
+  `chat:bottom`, `sessions:bottom`).
+- **Write paths**: gated on the site entry's `write: true` flag **and** the
+  site-side operator allowlist; the Tools view requires an explicit confirm
+  before any `tools/call` (review-before-execute, never auto-runs).
+- **Input validation**: every value interpolated into an upstream URL path
+  (collection, record_id, tool name, job_id) is pattern-checked and rejected
+  with 422; free-text fields are length-capped.
+
 ## Development
 
 Static checks:
@@ -69,6 +92,11 @@ bash -n extensions/install.sh
 python3 -m json.tool extensions/*/extension.json
 python3 -m json.tool extensions/*/manifest.json
 ```
+
+Rendering rule: all data in the fleet bundle is rendered through
+`React.createElement` (text escaping by default). Never introduce
+`dangerouslySetInnerHTML` / raw `innerHTML` into `dist/index.js` — upstream
+values (site labels, log lines, tool descriptions) are untrusted.
 
 Functional backend test (mocked upstream WP site; throwaway venv):
 

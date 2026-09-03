@@ -307,14 +307,21 @@ Deviations:
 
 ## 7. Security checklist (applies to every phase)
 
-- [ ] Tokens only in `sites.yaml` (0600); never in JS, logs, or responses.
-- [ ] `token_hint` redaction on every endpoint.
-- [ ] https-only unless per-site `allow_insecure` opt-in.
-- [ ] Write paths gated by per-site `write: true` + scoped operator tokens.
+- [x] Tokens only in `sites.yaml` (0600); never in JS, logs, or responses.
+- [x] `token_hint` redaction on every endpoint.
+- [x] https-only unless per-site `allow_insecure` opt-in.
+- [x] Write paths gated by per-site `write: true` + scoped operator tokens.
+- [x] Upstream URL path segments (collection, record_id, tool, job_id)
+      pattern-validated (422 on traversal attempts); free text length-capped.
+- [x] Tool calls require explicit user confirmation (review-before-execute).
+- [x] UI renders exclusively via `React.createElement` (escaping by default;
+      `dangerouslySetInnerHTML` forbidden in the bundle).
+- [x] Manifest audit: every file referenced by `manifest.json` must exist
+      (checked in the smoke test, mirroring the WebUI `validate-extensions`
+      tooling).
 - [ ] Dashboard not exposed with `--host 0.0.0.0` while the plugin is
-      installed (official Hermes warning).
-- [ ] Upstream errors never include request headers/tokens.
-- [ ] Registry file corruption degrades to empty registry + logged error.
+      installed (operator-side rule, documented).
+- [x] Registry file corruption degrades to empty registry + logged error.
 
 ---
 

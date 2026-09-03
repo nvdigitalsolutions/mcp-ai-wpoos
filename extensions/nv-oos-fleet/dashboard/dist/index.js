@@ -1077,6 +1077,15 @@
 				setResult({ error: "Invalid JSON arguments: " + errText(err) });
 				return;
 			}
+			// Review-before-execute: tool calls run on the WordPress site.
+			if (
+				typeof window.confirm === "function" &&
+				!window.confirm(
+					"Call " + open + " on " + (siteEntry ? siteEntry.label : siteId) + "? This executes on the WordPress site."
+				)
+			) {
+				return;
+			}
 			setResult({ running: true });
 			api("/tools/call", {
 				method: "POST",
