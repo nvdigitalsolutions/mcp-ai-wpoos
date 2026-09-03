@@ -34,9 +34,10 @@
 
 - `fast-uri` override raised to **>=4.1.4** across the root, Pro, and SaaS Controller npm trees (package-lock files included) to clear the remaining GitHub security alerts.
 
-### Changed — PHPUnit Repair Campaign Continuation (PRs #6223–#6258 window)
+### Changed — PHPUnit Repair Campaign Continuation (PRs #6223–#6258 window, + #6259 merged upstream)
 
 - A third, smaller campaign wave (~21 test-only PRs: #6224, #6227–#6231, #6234–#6241, #6245, #6247, #6248, #6251, #6252, #6254, #6257, plus the CI PHPUnit alpha-log refresh #6223) kept the suite aligned with current contracts after the extraction/port work. The production-side fixes it carried:
+- **Attachment segments** — the new `wp_mcp_ai_attachment_segment_provider` filter (default `openai`) lets providers without a remote file API (e.g. Ollama) resolve attachment segments to local references instead of uploading them during message sanitization (#6259, merged upstream after the main pass).
 - **Agent identity & token budgets** — the agent-identity resolver casts canonical IDs read from the alias table to int (#6232); the token-budget catalog drops drifted duplicate entries (`gpt-4.1`, `gemini-2.5-flash`) and `get_model_tpm_limit()` restores the `wp_mcp_ai_model_tpm_limit` filter seam across the CCT → catalog fallback path (#6233).
 - **Assistants & presets** — untrashing an assistant restores its pre-trash status (`wp_untrash_post_status`) so a published assistant comes back as publish and CCT sync resumes, instead of WP 6.6+'s draft default (#6239); tool presets gain the missing tools (OKF enrich/router, Google Calendar, Gmail/Drive, `composio_manage_accounts`, `git_inspect`/`git_change`) (#6242); the `wp_mcp_ai_seed_task_templates` AJAX action is registered on the settings dashboard (#6243).
 - **Admin compat** — a jQuery UI sortable shim enqueues the core `jquery-ui-sortable` handle at priority 5 on post edit screens so third-party theme/plugin scripts (e.g. tagDiv Newspaper) stop fatalling with "sortable is not a function" (#6258).

@@ -25,6 +25,7 @@
 | 6 | `@since 1.11.0` | `includes/class-wp-mcp-ai-toolkit-registry.php` — 1 instance (PR #6117) | 1.1.67 | v1.1.67 plan |
 | 7 | `@since 1.1.67` | `includes/rest/class-wp-mcp-ai-rest-chat-controller.php` — `handle_session_nonce()` (PR #6225) | 1.1.68 | v1.1.68 plan |
 | 8 | `@since 2.1.0` | `addons/pro/includes/class-wp-mcp-ai-pro-spa-shortcode.php` (5×) + `class-wp-mcp-ai-pro-spa-config.php` (11×, PR #6256) | 1.1.68 (Pro addon ships 1.1.68) | v1.1.68 plan |
+| 9 | `@since 1.2.0` | `includes/rest/class-wp-mcp-ai-rest-validator.php` — `wp_mcp_ai_attachment_segment_provider` filter (PR #6259) | 1.1.68 | v1.1.68 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
