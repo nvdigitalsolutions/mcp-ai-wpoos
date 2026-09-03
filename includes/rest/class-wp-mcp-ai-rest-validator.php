@@ -343,8 +343,19 @@ class WP_MCP_AI_REST_Validator {
 			);
 		}
 
-		$attachments_helper = new WP_MCP_AI_Message_Attachments();
-		$sanitized          = array();
+		/**
+		 * Filter the provider used to register attachment segments during
+		 * message sanitization. Defaults to openai; providers without a
+		 * remote file API (e.g. ollama) resolve attachments to local
+		 * references instead of uploading them.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $provider Provider key.
+		 */
+		$attachment_provider = apply_filters( 'wp_mcp_ai_attachment_segment_provider', 'openai' );
+		$attachments_helper  = new WP_MCP_AI_Message_Attachments( sanitize_key( $attachment_provider ) );
+		$sanitized           = array();
 
 		$default_roles = array( 'user', 'assistant', 'system', 'tool' );
 		$allowed_roles = apply_filters( 'wp_mcp_ai_allowed_message_roles', $default_roles );

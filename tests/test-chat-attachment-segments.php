@@ -13,6 +13,15 @@ class Test_Chat_Attachment_Segments extends WP_UnitTestCase {
 	 * Test that attachment segments are properly created and processed.
 	 */
 	public function test_attachment_segment_processing() {
+		// Register attachments via a provider without a remote file API so
+		// sanitization resolves to local references (no API key required).
+		add_filter(
+			'wp_mcp_ai_attachment_segment_provider',
+			static function () {
+				return 'ollama';
+			}
+		);
+
 		// Create a test image attachment.
 		$filename      = DIR_TESTDATA . '/images/test-image.jpg';
 		$attachment_id = $this->factory->attachment->create_upload_object( $filename );
@@ -42,10 +51,13 @@ class Test_Chat_Attachment_Segments extends WP_UnitTestCase {
 		$validator = new WP_MCP_AI_REST_Validator();
 		$sanitized = $validator->sanitize_messages( array( $message ) );
 
+		// sanitize_messages() returns a messages/attachments envelope.
 		$this->assertIsArray( $sanitized, 'Sanitized messages should be an array' );
-		$this->assertCount( 1, $sanitized, 'Should have one message' );
+		$this->assertArrayHasKey( 'messages', $sanitized, 'Sanitized response should include a messages key' );
+		$messages = $sanitized['messages'];
+		$this->assertCount( 1, $messages, 'Should have one message' );
 
-		$sanitized_message = $sanitized[0];
+		$sanitized_message = $messages[0];
 		$this->assertEquals( 'user', $sanitized_message['role'], 'Role should be user' );
 		$this->assertIsArray( $sanitized_message['content'], 'Content should be an array' );
 
