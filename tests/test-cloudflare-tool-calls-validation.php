@@ -7,11 +7,12 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
  */
-
 class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 
 	/**
 	 * Cloudflare client instance.
+	 *
+	 * @var WP_MCP_AI_Cloudflare_Client
 	 */
 	private $client;
 
@@ -25,7 +26,23 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 		}
 
+		// Recent-activity recording is gated behind enable_logging.
+		$settings                   = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$settings['enable_logging'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 		$this->client = new WP_MCP_AI_Cloudflare_Client();
+	}
+
+	/**
+	 * Tear down test environment.
+	 */
+	public function tearDown(): void {
+		delete_option( 'wp_mcp_ai_recent_activity' );
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+		parent::tearDown();
 	}
 
 	/**

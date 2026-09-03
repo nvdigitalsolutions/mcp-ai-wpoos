@@ -14,6 +14,32 @@
 class Test_Cloudflare_Connection_Handler extends WP_UnitTestCase {
 
 	/**
+	 * Bootstrap the Cloudflare integration (container service + action hooks).
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-cloudflare-connection-handler.php';
+		}
+
+		// The integration registers its container service on
+		// wp_mcp_ai_register_services and its admin action hooks on admin_init;
+		// neither fires automatically under PHPUnit.
+		do_action( 'wp_mcp_ai_register_services', wp_mcp_ai_container() );
+
+		if ( ! did_action( 'admin_init' ) ) {
+			do_action( 'admin_init' );
+		}
+
+		// WooCommerce registers privacy-policy content on admin_init without
+		// an is_admin() guard; WP 6.9 flags that as incorrect usage in the
+		// non-admin test context. The notice is environmental, not from the
+		// code under test.
+		$this->setExpectedIncorrectUsage( 'wp_add_privacy_policy_content' );
+	}
+
+	/**
 	 * Test that the handler class exists.
 	 */
 	public function test_cloudflare_connection_handler_class_exists() {
