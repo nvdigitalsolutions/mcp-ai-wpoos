@@ -1,5 +1,55 @@
 # oOS – Changelog
 
+## [1.1.68] - 2026-09-03
+
+### Added — Pro SPA v2 Shortcode & Embedded Mode (Pro, PR #6256)
+
+- New `[nvoos_pro_spa]` shortcode embeds the Pro SPA v2 chat surface on the front end — chat-first embedded mode (`AgentPanel` + drawers, tool shortcuts, OKF drawer), router-free with no admin routes, per-instance `data-config` attributes, and optional guest mode that rides the base plugin's guest-token machinery (`X-WP-MCP-AI-Guest`) behind the global "Allow Guest Access" setting. New `WP_MCP_AI_Pro_SPA_Shortcode` + `WP_MCP_AI_Pro_SPA_Config`, module-registry entry, `spa-v2` block render, and an `EmbeddedApp`/`EmbeddedSidebar` mount. See proposal [`033-pro-spa-v2-shortcode-proposal.md`](docs/project/proposals/033-pro-spa-v2-shortcode-proposal.md) + `addons/pro/README.md`.
+
+### Added — Hermes Dashboard Fleet Extensions (PR #6249)
+
+- New top-level `extensions/` tree (formerly `hermes-extensions/`) for the Hermes WebUI dashboard: a fleet monitoring + control plane extension (`extensions/nv-oos-fleet/` — Python plugin API over ~35 sites with health/status/control endpoints, `sites.yaml` inventory, dashboard bundle), plus `backup-download`, `external-app-tab`, and `mcp-tool-shortcuts` WebUI extensions, an `install.sh`, extension manifests, and backend smoke tests. Two implementation plans ship in `docs/developer/integration/` (dashboard extensions plan + implementation plan).
+
+### Fixed — Chat Bubble Stale-Nonce Self-Heal (PR #6225)
+
+- New `GET /mcp-ai/v1/session/nonce` endpoint returns a fresh session-bound `wp_rest` nonce minted from the request's own auth cookie (deliberately nonce- and capability-free, `no-cache`/`no-store` headers). The chat client now self-heals `403 rest_cookie_invalid_nonce` failures caused by full-page caching or session-token rotation on long-lived SPA pages (e.g. the Docs Hub) instead of surfacing WordPress's opaque "Cookie check failed" error. `docs/reference/api/rest-api.md` updated.
+
+### Fixed — Docs Hub 0.4.2: Local Links, Anchors & Broken-Link Fixes (PRs #6246, #6253)
+
+- **Docs Hub bumps 0.4.1 → 0.4.2.** Internal `.md` links on local pages now resolve to `#/slug` hash routes (heading anchors preserved as `#/slug#anchor`) instead of navigating away to a 404; TOC heading anchors now mirror github-slugger exactly (verified 0 mismatches across ~63,000 headings); "Accept fix" suggestions are computed relative to the source file's directory (preserving filename case); the fixer accepts `../` links with target-shape validation + containment checks against the plugin/content roots (`nvoos_docs_hub_fixer_allowed_roots` filter); broken-link entries carry `slug`/`source_type` so fixes resolve the right file, remote-sourced rows explain they are read-only, and skipped rows show the server-provided reason; sync/rebuild surfaces "Atomic swap failed" when the staging cache is unwritable instead of reporting success; a dead 404 route removed. The shortcode also disables the core emoji loader on docs-browser pages — its MutationObserver was rewriting React-managed text nodes and crashing the SPA on the next commit. Addon changelog: `addons/docs-hub/CHANGELOG.md`.
+
+### Fixed — Providers Disabled by Default on Fresh Installs (PR #6255)
+
+- OpenAI, Anthropic, and Gemini now default to **disabled** on fresh installs (enable flags default `false`); provider dropdowns only list providers that are both enabled and credentialed. The onboarding wizard auto-enables the provider whose API key is entered, and the provider subtabs carry an explicit "Enable … Provider" checkbox. The plugin + test-suite agent skills document the new defaults.
+
+### Fixed — Calendar Granted-Scopes URL Corruption (PR #6226)
+
+- The settings-dashboard sanitizer applied `esc_url_raw()` to any string starting with `http(s)://`, encoding every space as `%20` — which corrupted space-delimited OAuth scope grants. It now applies `esc_url_raw()` only to single-URL values; the Google Calendar scopes parser additionally normalizes legacy `%20`-encoded grants back to spaces so saved scopes split into real URLs again.
+
+### Fixed — Tiptap mergeAttributes Prototype Pollution (PR #6250)
+
+- Canvas Toolkit + Document Editor pin the full `@tiptap/*` package family to **3.30.4** (dist rebuilds included), fixing the `mergeAttributes` prototype-pollution vector flagged by the GitHub security advisory.
+
+### Fixed — fast-uri npm Override Bump (PR #6244)
+
+- `fast-uri` override raised to **>=4.1.4** across the root, Pro, and SaaS Controller npm trees (package-lock files included) to clear the remaining GitHub security alerts.
+
+### Changed — PHPUnit Repair Campaign Continuation (PRs #6223–#6258 window, + #6259 merged upstream)
+
+- A third, smaller campaign wave (~21 test-only PRs: #6224, #6227–#6231, #6234–#6241, #6245, #6247, #6248, #6251, #6252, #6254, #6257, plus the CI PHPUnit alpha-log refresh #6223) kept the suite aligned with current contracts after the extraction/port work. The production-side fixes it carried:
+- **Attachment segments** — the new `wp_mcp_ai_attachment_segment_provider` filter (default `openai`) lets providers without a remote file API (e.g. Ollama) resolve attachment segments to local references instead of uploading them during message sanitization (#6259, merged upstream after the main pass).
+- **Agent identity & token budgets** — the agent-identity resolver casts canonical IDs read from the alias table to int (#6232); the token-budget catalog drops drifted duplicate entries (`gpt-4.1`, `gemini-2.5-flash`) and `get_model_tpm_limit()` restores the `wp_mcp_ai_model_tpm_limit` filter seam across the CCT → catalog fallback path (#6233).
+- **Assistants & presets** — untrashing an assistant restores its pre-trash status (`wp_untrash_post_status`) so a published assistant comes back as publish and CCT sync resumes, instead of WP 6.6+'s draft default (#6239); tool presets gain the missing tools (OKF enrich/router, Google Calendar, Gmail/Drive, `composio_manage_accounts`, `git_inspect`/`git_change`) (#6242); the `wp_mcp_ai_seed_task_templates` AJAX action is registered on the settings dashboard (#6243).
+- **Admin compat** — a jQuery UI sortable shim enqueues the core `jquery-ui-sortable` handle at priority 5 on post edit screens so third-party theme/plugin scripts (e.g. tagDiv Newspaper) stop fatalling with "sortable is not a function" (#6258).
+
+### Housekeeping
+
+- Stale **1.1.67** build ZIPs removed from `build/`, `build/optional-components/`, and `build/toolkit-addons/` (27 files), matching the 1.1.66 cleanup convention.
+
+### Versioning
+
+- Bumped to 1.1.68 across plugin header, `WP_MCP_AI_VERSION` and `WP_MCP_AI_PRO_VERSION` constants, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Pro addon: 1.1.68. Media Worker: **v3.2.0** (unchanged). nvoos-content-graph: 1.0.3 (unchanged). nvoos-content-graph-ai: 1.0.4 (unchanged). nvoos-content-graph-ai-platform: 2.0.0 (unchanged). Docs Hub addon: **0.4.2** (bumped in this window). Tool count: ~303 base + ~1,262 Pro (~1,565 total; live registry authoritative — no new tools this window). Providers: 15. Addons: 27. Bundled skills: 74 base + 41 Pro. Coding-time agent skills: 53.
+
 ## [1.1.67] - 2026-09-02
 
 ### Added — Content Graph Platform Extraction, Waves A–C + Blueprints (PR #6123)

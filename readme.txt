@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.67
+Stable tag: 1.1.68
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.68 - September 3, 2026 =
+
+Front-end surfaces, stability and defaults release. Pro SPA v2 ships a new [nvoos_pro_spa] shortcode with a chat-first embedded mode (drawers, tool shortcuts, OKF drawer, optional guest mode behind the guest-token machinery) for page builders and client portals. Hermes WebUI gains a new extensions/ tree: a fleet monitoring + control plane extension (Python plugin API over ~35 sites), plus backup-download, external-app-tab, and mcp-tool-shortcuts extensions with installer and smoke tests. Chat surfaces self-heal stale REST nonces: the new GET /mcp-ai/v1/session/nonce endpoint mints a fresh session-bound nonce, so full-page caching and session-token rotation no longer produce opaque "Cookie check failed" 403s on long-lived pages. Docs Hub bumps to 0.4.2: internal links on local pages resolve to in-app hash routes, TOC anchors match github-slugger exactly, "Accept fix" suggestions are directory-relative and ../ links are validated, skipped fixes show reasons, sync failures surface as errors, and the emoji loader no longer crashes the SPA's React DOM. Fresh installs now default OpenAI/Anthropic/Gemini to disabled (dropdowns list only enabled + credentialed providers; the onboarding wizard auto-enables the provider whose key you enter). Fixed: Google Calendar granted-scopes corruption from URL-encoding (space-delimited scope grants keep their separators), Tiptap mergeAttributes prototype pollution (canvas/document editor pins 3.30.4), fast-uri bumped to >=4.1.4 across npm trees, assistant untrash restores the pre-trash status (CCT sync resumes), tool presets gain the missing Google/Gmail/Drive/OKF/git tools, and a jQuery UI sortable shim stops third-party admin scripts from fatalling on post edit screens. Third PHPUnit repair wave (~21 PRs) keeps the suite green; a late-merged fix adds the wp_mcp_ai_attachment_segment_provider filter so providers without a remote file API (e.g. Ollama) resolve attachments to local references. Stale 1.1.67 build ZIPs removed. Tool count unchanged: ~303 base + ~1,262 Pro (~1,565 total; live registry authoritative).
 
 = 1.1.67 - September 2, 2026 =
 

@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: September 2, 2026 (v1.1.67).
+> Last reviewed: September 3, 2026 (v1.1.68).
 
 ---
 
@@ -15,6 +15,8 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
 **Total tools:** ~1,565 (~303 base + ~1,262 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.68:** No tools added or removed. Preset and contract changes only: `WP_MCP_AI_Tool_Presets_Helper` gained the missing tools across presets — OKF `okf_enrich_site_content`/`route_knowledge_query`, the Google Calendar family (`list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability`, `quick_add_google_calendar_event`), Gmail/Drive (`get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message`, `get_drive_file`, `list_drive_connections`), `composio_manage_accounts`, and `git_inspect`/`git_change` (#6242). `WP_MCP_AI_Token_Budget_Manager` dropped drifted duplicate catalog entries (`gpt-4.1`, `gemini-2.5-flash` now single entries with corrected limits) and `get_model_tpm_limit()` restored the `wp_mcp_ai_model_tpm_limit` filter seam across the CCT → bundled-catalog fallback path (#6233). The agent-identity resolver casts canonical IDs read from the alias table to int (`absint`, #6232). Assistant untrash restores the pre-trash status via `wp_untrash_post_status` so published assistants keep CCT sync (#6239). `wp_mcp_ai_seed_task_templates` AJAX action registered on the settings dashboard (#6243).
 
 **New in v1.1.67:** +6 Pro tools. (1) Four Gmail tools in `addons/pro/includes/tools/google-workspace/` — `get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message` (the modify tool is destructive-ops gated) — backed by the new `WP_MCP_AI_Pro_Gmail_Client` (PR #6151). (2) Two Drive tools — `get_drive_file`, `list_drive_connections` — backed by the new `WP_MCP_AI_Pro_Google_Drive_Client` (PR #6152). Both clients resolve credentials through the shared `includes/google/` foundation + Pro Remote Sites; `search_gmail`/`search_drive` were updated to match. Campaign-carried tool-contract fixes: `create_post` applies categories/tags only when explicitly passed as arrays (#6115); `generate_veo_video` duration floor raised to 5 seconds (#6180); `WP_MCP_AI_Tool_Token_Limits::get_tool_multiplier()` is now public (#6189); token-tier caching guards numeric user IDs (#6178); CRM workflow presets normalized to the canonical node schema (`toolSlug`/`arguments`, edge IDs, #6208); content-format helper exposes `wp_mcp_ai_detected_seo_plugin` + Elementor filter seams (#6203); Pro invoice-PDF tool class renamed to `generate_woocommerce_order_invoice_pdf` (Composer ambiguity, #6198); toolkit registry resolves the live tool-registry singleton per call (#6117).
 
