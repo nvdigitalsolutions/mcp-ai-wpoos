@@ -45,9 +45,33 @@ class WP_MCP_AI_Admin_Scripts {
 			return;
 		}
 
+		// Compatibility shim: guarantee jQuery UI Sortable exists on post edit
+		// screens before third-party admin scripts run.
+		self::ensure_sortable_compatibility();
+
 		// Register model selector script with localization.
 		// This is used by Assistant, Profession, and Team metaboxes.
 		self::register_model_selector_script();
+	}
+
+	/**
+	 * Enqueue jquery-ui-sortable as a compatibility shim for third-party
+	 * admin scripts on post edit screens.
+	 *
+	 * Some themes and plugins call jQuery.fn.sortable() from a ready handler
+	 * without declaring jquery-ui-sortable as a script dependency (e.g.
+	 * tagDiv Newspaper's td_wp_admin.min.js). When that script runs before
+	 * jQuery UI Sortable is loaded, the call throws
+	 * "sortable is not a function", which halts the remaining scripts on the
+	 * edit screen and prevents the page from loading fully.
+	 *
+	 * This registrar runs at priority 5, before most other
+	 * admin_enqueue_scripts callbacks, so the core-registered handle is
+	 * enqueued first and is printed before those scripts execute. Enqueuing
+	 * a core handle is idempotent and adds no asset of our own.
+	 */
+	private static function ensure_sortable_compatibility() {
+		wp_enqueue_script( 'jquery-ui-sortable' );
 	}
 
 	/**
