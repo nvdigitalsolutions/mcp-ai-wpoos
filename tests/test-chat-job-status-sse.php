@@ -363,6 +363,11 @@ class Test_Chat_Job_Status_SSE extends WP_UnitTestCase {
 	 * Test that Chat Controller registers SSE event handler.
 	 */
 	public function test_chat_controller_registers_sse_handler() {
+		// The SSE handler is registered in the controller constructor;
+		// instantiate it so the registration is present in this test's hook
+		// table (the hook table is restored between tests).
+		new WP_MCP_AI_Rest_Chat_Controller();
+
 		$this->assertTrue(
 			has_action( 'wp_mcp_ai_emit_sse_event' ),
 			'Chat Controller should register handler for wp_mcp_ai_emit_sse_event'
