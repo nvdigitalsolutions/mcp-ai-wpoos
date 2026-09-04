@@ -54,7 +54,15 @@ class WP_MCP_AI_Plugins_Integration_Settings_Test extends WP_UnitTestCase {
 		$_POST['enable_jetengine_tools']   = '1';
 		$_POST['enable_woocommerce_tools'] = '1';
 		$_POST['enable_elementor_widgets'] = '1';
-		$_POST['_wpnonce']                 = wp_create_nonce( 'wp_mcp_ai_save_plugins_settings' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.VIP.SuperGlobalInputUsage.AccessDetected -- Test fixture populates a valid nonce for check_admin_referer().
+		$_POST['_wpnonce'] = wp_create_nonce( 'wp_mcp_ai_save_plugins_settings' );
+		// check_admin_referer() reads $_REQUEST; the CLI test process does not
+		// merge $_POST into $_REQUEST, so populate both.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.VIP.SuperGlobalInputUsage.AccessDetected -- Copying the fixture nonce into $_REQUEST for check_admin_referer().
+		$_REQUEST['_wpnonce'] = $_POST['_wpnonce'];
+
+		// Prevent the handler's terminating exit from killing PHPUnit.
+		add_filter( 'wp_mcp_ai_plugins_integration_redirect_terminate', '__return_false' );
 
 		// Call the save method using reflection.
 		$reflection = new ReflectionClass( $instance );
@@ -66,9 +74,11 @@ class WP_MCP_AI_Plugins_Integration_Settings_Test extends WP_UnitTestCase {
 		try {
 			$method->invoke( $instance );
 		} catch ( WPDieException $e ) {
-			// Expected behavior on redirect.
+			unset( $e ); // Expected behavior on redirect: wp_die() becomes an exception under the test harness.
 		}
 		ob_end_clean();
+
+		remove_filter( 'wp_mcp_ai_plugins_integration_redirect_terminate', '__return_false' );
 
 		// Verify settings were saved.
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -84,6 +94,7 @@ class WP_MCP_AI_Plugins_Integration_Settings_Test extends WP_UnitTestCase {
 		unset( $_POST['enable_woocommerce_tools'] );
 		unset( $_POST['enable_elementor_widgets'] );
 		unset( $_POST['_wpnonce'] );
+		unset( $_REQUEST['_wpnonce'] );
 	}
 
 	/**
@@ -110,7 +121,13 @@ class WP_MCP_AI_Plugins_Integration_Settings_Test extends WP_UnitTestCase {
 		);
 
 		// Simulate POST data with NO checkboxes checked.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.VIP.SuperGlobalInputUsage.AccessDetected -- Test fixture populates a valid nonce for check_admin_referer().
 		$_POST['_wpnonce'] = wp_create_nonce( 'wp_mcp_ai_save_plugins_settings' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.VIP.SuperGlobalInputUsage.AccessDetected -- Copying the fixture nonce into $_REQUEST for check_admin_referer().
+		$_REQUEST['_wpnonce'] = $_POST['_wpnonce'];
+
+		// Prevent the handler's terminating exit from killing PHPUnit.
+		add_filter( 'wp_mcp_ai_plugins_integration_redirect_terminate', '__return_false' );
 
 		// Call the save method.
 		$reflection = new ReflectionClass( $instance );
@@ -121,9 +138,11 @@ class WP_MCP_AI_Plugins_Integration_Settings_Test extends WP_UnitTestCase {
 		try {
 			$method->invoke( $instance );
 		} catch ( WPDieException $e ) {
-			// Expected.
+			unset( $e ); // Expected: wp_die() becomes an exception under the test harness.
 		}
 		ob_end_clean();
+
+		remove_filter( 'wp_mcp_ai_plugins_integration_redirect_terminate', '__return_false' );
 
 		// Verify settings were updated to false.
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -135,5 +154,6 @@ class WP_MCP_AI_Plugins_Integration_Settings_Test extends WP_UnitTestCase {
 
 		// Clean up.
 		unset( $_POST['_wpnonce'] );
+		unset( $_REQUEST['_wpnonce'] );
 	}
 }

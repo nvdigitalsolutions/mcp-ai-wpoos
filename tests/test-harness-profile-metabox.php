@@ -23,6 +23,9 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 	 */
 	private $assistant_id = 0;
 
+	/**
+	 * Set up the assistant scratch post, an admin user, and cue defaults.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -44,6 +47,9 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		WP_MCP_AI_Prompt_Cue_Library::get_instance()->all(); // Triggers default seeding.
 	}
 
+	/**
+	 * Tear down: reset the cue library and clear superglobals.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Prompt_Cue_Library::get_instance()->reset();
 		// Clean up superglobals between tests.
@@ -60,6 +66,9 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		return new WP_MCP_AI_Metabox_Harness_Profile( $cpt );
 	}
 
+	/**
+	 * Saving without a nonce must be a no-op.
+	 */
 	public function test_save_is_noop_without_nonce() {
 		$metabox = $this->build_metabox();
 		$post    = get_post( $this->assistant_id );
@@ -80,6 +89,9 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		$this->assertSame( array(), $profile['cues'] );
 	}
 
+	/**
+	 * Saving with a valid nonce persists the sanitized form payload.
+	 */
 	public function test_save_persists_form_payload_when_nonce_valid() {
 		$metabox = $this->build_metabox();
 		$post    = get_post( $this->assistant_id );
@@ -101,6 +113,9 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 0.5, (float) $profile['cost_ceiling_usd'], 0.0001 );
 	}
 
+	/**
+	 * Unchecking the enabled box disables the profile.
+	 */
 	public function test_unchecking_enabled_disables_profile() {
 		// First: enable.
 		WP_MCP_AI_Harness_Profile::save(
@@ -129,16 +144,19 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		$this->assertFalse( $profile['enabled'] );
 	}
 
+	/**
+	 * Saving preserves fields the metabox does not surface.
+	 */
 	public function test_save_preserves_non_ui_fields() {
-		// Seed a profile that carries evals_enabled + verifiers — fields the
-		// metabox does not surface.
+		// Seed a profile that carries verifiers, a field the metabox does not
+		// surface. evals_enabled IS surfaced by the eval-suite UI, so it
+		// legitimately resets when its checkboxes are absent from the form.
 		WP_MCP_AI_Harness_Profile::save(
 			$this->assistant_id,
 			array(
-				'enabled'       => true,
-				'cues'          => array( 'chain_of_thought' ),
-				'evals_enabled' => array( 'mmlu', 'humaneval' ),
-				'verifiers'     => array( 'citation_verifier' ),
+				'enabled'   => true,
+				'cues'      => array( 'chain_of_thought' ),
+				'verifiers' => array( 'citation_verifier' ),
 			)
 		);
 
@@ -161,10 +179,12 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		$this->assertSame( array( 'cite_or_abstain' ), $profile['cues'] );
 
 		// Non-UI fields preserved.
-		$this->assertSame( array( 'mmlu', 'humaneval' ), $profile['evals_enabled'] );
 		$this->assertSame( array( 'citation_verifier' ), $profile['verifiers'] );
 	}
 
+	/**
+	 * Saving persists the layer B through F settings from the form.
+	 */
 	public function test_save_persists_layer_b_through_f_settings() {
 		$metabox = $this->build_metabox();
 		$post    = get_post( $this->assistant_id );
@@ -219,6 +239,9 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		$this->assertTrue( $profile['memory']['pii_filter'] );
 	}
 
+	/**
+	 * Saving clamps out-of-range layer values to their hard caps.
+	 */
 	public function test_save_clamps_layer_values_to_hard_caps() {
 		$metabox = $this->build_metabox();
 		$post    = get_post( $this->assistant_id );
@@ -251,16 +274,33 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		$this->assertSame( WP_MCP_AI_Harness_Profile::MAX_REFINE_ITERATIONS, $profile['refine']['max_iters'] );
 	}
 
+	/**
+	 * Unchecking a layer checkbox disables that layer while preserving numerics.
+	 */
 	public function test_save_unchecking_layer_checkbox_disables_layer() {
 		// Seed: every layer enabled.
 		WP_MCP_AI_Harness_Profile::save(
 			$this->assistant_id,
 			array(
 				'enabled'   => true,
-				'reasoning' => array( 'enabled' => true, 'n_samples' => 3 ),
-				'retrieval' => array( 'enabled' => true, 'k' => 7, 'require_citations' => true ),
-				'refine'    => array( 'enabled' => true, 'max_iters' => 2 ),
-				'memory'    => array( 'scoped' => true, 'task_class' => 'support', 'pii_filter' => true ),
+				'reasoning' => array(
+					'enabled'   => true,
+					'n_samples' => 3,
+				),
+				'retrieval' => array(
+					'enabled'           => true,
+					'k'                 => 7,
+					'require_citations' => true,
+				),
+				'refine'    => array(
+					'enabled'   => true,
+					'max_iters' => 2,
+				),
+				'memory'    => array(
+					'scoped'     => true,
+					'task_class' => 'support',
+					'pii_filter' => true,
+				),
 			)
 		);
 
@@ -298,6 +338,9 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		$this->assertSame( 'support', $profile['memory']['task_class'] );
 	}
 
+	/**
+	 * An invalid router value falls back to the fixed router.
+	 */
 	public function test_save_invalid_router_value_falls_back_to_fixed() {
 		$metabox = $this->build_metabox();
 		$post    = get_post( $this->assistant_id );
@@ -316,6 +359,9 @@ class Test_Harness_Profile_Metabox extends WP_UnitTestCase {
 		$this->assertSame( 'fixed', $profile['tools']['router'] );
 	}
 
+	/**
+	 * Saving is rejected when the current user lacks edit capability.
+	 */
 	public function test_save_rejects_when_user_lacks_capability() {
 		// Drop down to a subscriber.
 		$user = self::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );

@@ -226,10 +226,10 @@ class WP_MCP_AI_Quiz_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 		}
 
 		if ( isset( $input['default_passing_score'] ) ) {
-			// Cast rather than absint(): absint( -10 ) would coerce a negative
-			// score into a positive value (10); negatives must clamp to 0.
-			$passing_score                      = max( 0, (int) $input['default_passing_score'] );
-			$sanitized['default_passing_score'] = min( 100, $passing_score );
+			// absint() flips negatives to positives; clamp with max(0, ...)
+			// so out-of-range low values resolve to 0 instead of a positive.
+			$passing_score                      = max( 0, min( 100, (int) $input['default_passing_score'] ) );
+			$sanitized['default_passing_score'] = $passing_score;
 		}
 
 		if ( isset( $input['enable_research'] ) ) {

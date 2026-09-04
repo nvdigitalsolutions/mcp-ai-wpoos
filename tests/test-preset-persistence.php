@@ -125,7 +125,12 @@ class WP_MCP_AI_Preset_Persistence_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that checkboxes still reset to false when not in form.
+	 * Test that checkboxes preserve their existing value when the key is
+	 * absent from a partial form submission.
+	 *
+	 * Sub-tab saves submit only their own fields; absent checkbox keys must
+	 * keep the stored value instead of being forced to false, otherwise
+	 * saving one tab would uncheck every checkbox on other tabs.
 	 */
 	public function test_checkboxes_reset_correctly() {
 		// Clear existing settings.
@@ -143,19 +148,19 @@ class WP_MCP_AI_Preset_Persistence_Test extends WP_UnitTestCase {
 		$settings_base    = new WP_MCP_AI_Admin_Settings_Base();
 		$partial_settings = array(
 			'default_model' => 'gpt-4o',
-			// Checkboxes are NOT included - should be treated as false.
+			// Checkboxes are NOT included - their existing values are preserved.
 		);
 
 		$sanitized = $settings_base->sanitize_settings( $partial_settings );
 
-		// Verify checkboxes were reset to false.
-		$this->assertFalse(
+		// Verify checkbox values were preserved, not reset.
+		$this->assertTrue(
 			$sanitized['enable_budget_management'],
-			'Unchecked checkboxes should be false'
+			'Absent checkbox keys should preserve the stored value'
 		);
-		$this->assertFalse(
+		$this->assertTrue(
 			$sanitized['enable_logging'],
-			'Unchecked checkboxes should be false'
+			'Absent checkbox keys should preserve the stored value'
 		);
 
 		// Clean up.

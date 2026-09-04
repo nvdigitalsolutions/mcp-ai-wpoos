@@ -85,6 +85,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 					admin_url( 'admin.php' )
 				)
 			);
+
+			/**
+			 * Filter whether the request should terminate after the redirect.
+			 *
+			 * Test suites disable the terminating exit so the handler can be
+			 * exercised without killing the PHPUnit process.
+			 *
+			 * @since 1.1.69
+			 *
+			 * @param bool $terminate Whether to exit after redirecting. Default true.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_plugins_integration_redirect_terminate', true ) ) {
+				return;
+			}
+
 			exit;
 		}
 
