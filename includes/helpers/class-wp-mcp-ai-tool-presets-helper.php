@@ -794,6 +794,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'erlang_c_concurrency_advisor',
 					'erlang_c_queue_health',
 					'erlang_c_staffing_advisor',
+					// Conversation import (ChatGPT / Google Takeout → transcript CCT).
+					'conversation_import_detect',
+					'conversation_import_run',
+					'conversation_import_status',
+					'conversation_import_delete',
 				),
 			),
 

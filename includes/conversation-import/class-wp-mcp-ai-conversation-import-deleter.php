@@ -34,7 +34,7 @@ class WP_MCP_AI_Conversation_Import_Deleter {
 	 * @return int|\WP_Error Row count, or a WP_Error.
 	 */
 	public function count_imported( $platform = '' ) {
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) || ( ! function_exists( 'jet_engine' ) && ! class_exists( 'Jet_Engine' ) ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) || ! WP_MCP_AI_JetEngine_CCT::is_storage_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_import_jetengine_missing',
 				__( 'JetEngine is not active; imported conversation counts are unavailable.', 'mcp-ai-wpoos' )
@@ -96,7 +96,7 @@ class WP_MCP_AI_Conversation_Import_Deleter {
 			);
 		}
 
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) || ( ! function_exists( 'jet_engine' ) && ! class_exists( 'Jet_Engine' ) ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) || ! WP_MCP_AI_JetEngine_CCT::is_storage_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_import_jetengine_missing',
 				__( 'JetEngine is not active; imported conversation lookups are unavailable.', 'mcp-ai-wpoos' )
@@ -214,7 +214,7 @@ class WP_MCP_AI_Conversation_Import_Deleter {
 			return false;
 		}
 
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) || ( ! function_exists( 'jet_engine' ) && ! class_exists( 'Jet_Engine' ) ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) || ! WP_MCP_AI_JetEngine_CCT::is_storage_available() ) {
 			return false;
 		}
 
