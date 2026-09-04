@@ -327,7 +327,8 @@ class Test_Gemini_Client_File_Support extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result, 'Should return array' );
 		$this->assertArrayHasKey( 'fileData', $result, 'Should build fileData part' );
-		$this->assertStringContainsString( 'files/abc123', $result['fileData']['fileUri'], 'URI should include the Gemini file name' );
+		// The file name is rawurlencode()d into the URI (files/abc123 → files%2Fabc123).
+		$this->assertStringContainsString( 'files%2Fabc123', $result['fileData']['fileUri'], 'URI should include the URL-encoded Gemini file name' );
 		$this->assertEquals( 'image/jpeg', $result['fileData']['mimeType'], 'mimeType should match' );
 	}
 
