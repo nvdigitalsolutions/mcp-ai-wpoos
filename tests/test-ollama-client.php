@@ -494,26 +494,15 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
-		$client           = new WP_MCP_AI_Ollama_Client();
-		$curl_handle_info = null;
+		$client        = new WP_MCP_AI_Ollama_Client();
+		$captured_args = null;
 
-		// Capture cURL handle configuration.
-		$curl_filter_callback = function ( $handle, $args, $url ) use ( &$curl_handle_info ) {
-			// Only capture if this is our test URL.
+		// The pre_http_request filter fires before the HTTP transport runs, so
+		// the cURL-level http_api_curl filter is never reached in this offline
+		// test — capture the request arguments here instead.
+		$http_response_callback = function ( $preempt, $args, $url ) use ( &$captured_args ) {
 			if ( strpos( $url, '192.168.2.222' ) !== false ) {
-				$curl_handle_info = array(
-					'url'  => $url,
-					'args' => $args,
-				);
-			}
-			return $handle;
-		};
-
-		add_filter( 'http_api_curl', $curl_filter_callback, 100, 3 );
-
-		// Mock the HTTP response to avoid actual network call.
-		$http_response_callback = function ( $preempt, $args, $url ) {
-			if ( strpos( $url, '192.168.2.222' ) !== false ) {
+				$captured_args = $args;
 				return array(
 					'headers'  => array(),
 					'body'     => wp_json_encode(
@@ -535,16 +524,33 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		// Trigger a connection attempt.
 		$client->list_models();
 
-		remove_filter( 'http_api_curl', $curl_filter_callback, 100 );
 		remove_filter( 'pre_http_request', $http_response_callback, 10 );
 
-		// Verify that our filter was called for the private IP.
-		$this->assertNotNull( $curl_handle_info, 'cURL filter should have been called for private IP' );
-		$this->assertStringContainsString( '192.168.2.222', $curl_handle_info['url'] );
+		$this->assertNotNull( $captured_args, 'HTTP request should have been attempted for the private IP' );
+		$this->assertArrayHasKey( 'timeout', $captured_args );
+		$this->assertGreaterThanOrEqual( 30, $captured_args['timeout'] );
 
-		// Verify timeout is set to at least 30 seconds.
-		$this->assertArrayHasKey( 'timeout', $curl_handle_info['args'] );
-		$this->assertGreaterThanOrEqual( 30, $curl_handle_info['args']['timeout'] );
+		// The connection-timeout handler must recognise private-network hosts.
+		$this->assertTrue(
+			WP_MCP_AI_HTTP_Helper::is_loopback_address( '192.168.2.222' ),
+			'Private-network IPs must be recognised by the connection-timeout handler.'
+		);
+
+		// Where the PHP cURL binding exposes CURLINFO_CONNECTTIMEOUT, verify the
+		// handler extends CURLOPT_CONNECTTIMEOUT to the overall request timeout
+		// so the connection phase cannot fail before the overall timeout elapses.
+		if ( function_exists( 'curl_init' ) && defined( 'CURLINFO_CONNECTTIMEOUT' ) ) {
+			$handle = curl_init(); // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init -- Native cURL handle required to inspect the connect-timeout option applied by the HTTP helper.
+			WP_MCP_AI_HTTP_Helper::set_connection_timeout(
+				$handle,
+				$captured_args,
+				'http://192.168.2.222:11434/api/tags'
+			);
+			$connect_timeout = curl_getinfo( $handle, CURLINFO_CONNECTTIMEOUT ); // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_getinfo -- Native cURL API required to read back the connect-timeout option.
+			curl_close( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_close -- Closing the native cURL handle created for this assertion.
+
+			$this->assertEquals( $captured_args['timeout'], $connect_timeout );
+		}
 	}
 
 	/**

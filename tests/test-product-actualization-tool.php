@@ -536,8 +536,9 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 		$decoded = base64_decode( $clean, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding test fixture to verify whitespace-stripping logic, not obfuscating code.
 
 		$this->assertNotFalse( $decoded, 'Whitespace-stripped b64_json must decode successfully.' );
-		// Without the strip, strict decode would fail.
-		$this->assertFalse( base64_decode( $wrapped_b64, true ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Testing that un-stripped wrapped base64 fails strict-mode decode.
+		// PHP tolerates whitespace inside base64 input even in strict mode, so
+		// assert the stripped payload matches the raw payload instead.
+		$this->assertSame( base64_decode( $raw_b64, true ), $decoded ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Comparing decoded fixtures to verify whitespace-stripping logic.
 	}
 
 	/**

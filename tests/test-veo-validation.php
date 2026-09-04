@@ -26,6 +26,9 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
+		// Pin an empty Gemini API key so the missing-key gate is deterministic
+		// regardless of what earlier suites left in the settings option.
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 'gemini_api_key' => '' ) );
 		$this->service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 	}
 

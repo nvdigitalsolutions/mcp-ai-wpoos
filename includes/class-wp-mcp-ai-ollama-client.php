@@ -853,9 +853,12 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				}
 			}
 
-				// Normalise and filter messages after system prompt injection.
+				// Normalise messages after system prompt injection. Filtering for
+				// incomplete/orphan tool groups already ran on the original
+				// OpenAI-format messages in create_chat_completion(); re-running it
+				// here would run against Ollama-native tool_calls (which carry no
+				// 'id') and wrongly drop matching tool-role messages.
 				$payload['messages'] = $this->normalise_messages_for_payload( $payload['messages'] );
-				$payload['messages'] = $this->filter_tool_messages_for_payload( $payload['messages'] );
 
 				return $payload;
 		}

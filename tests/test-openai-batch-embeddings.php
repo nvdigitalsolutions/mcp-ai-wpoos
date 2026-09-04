@@ -219,7 +219,8 @@ class WP_MCP_AI_OpenAI_Batch_Embeddings_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'embed-0', $upload_multipart_body );
 		$this->assertStringContainsString( 'embed-1', $upload_multipart_body );
 		$this->assertStringContainsString( 'embed-2', $upload_multipart_body );
-		$this->assertStringContainsString( '/v1/embeddings', $upload_multipart_body );
+		// The JSONL line is JSON-encoded, so slashes appear escaped.
+		$this->assertStringContainsString( wp_json_encode( '/v1/embeddings' ), $upload_multipart_body );
 	}
 
 	/**
