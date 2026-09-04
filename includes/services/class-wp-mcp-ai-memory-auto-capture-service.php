@@ -58,6 +58,17 @@ class WP_MCP_AI_Memory_Auto_Capture_Service {
 	const DEDUP_TRANSIENT_PREFIX = 'wp_mcp_ai_memory_dedup_';
 
 	/**
+	 * Shared agent bucket for guest captures.
+	 *
+	 * Guests are skipped by default; when a site opts in via
+	 * `wp_mcp_ai_memory_auto_capture_guests_allowed`, observations are
+	 * written under this single identifier because a guest has no stable
+	 * user-scoped identity (the cross-visitor risk of the shared bucket is
+	 * documented on the filter itself).
+	 */
+	const DEFAULT_GUEST_AGENT_ID = 'guest';
+
+	/**
 	 * Default importance score for auto-captured records.
 	 *
 	 * Auto-captures are observations, not user-curated facts, so they start
@@ -375,17 +386,28 @@ class WP_MCP_AI_Memory_Auto_Capture_Service {
 			return false;
 		}
 
-		self::mark_dedup( $sha256 );
-
-		// 3. Build the capture envelope and hand off to the existing service.
+		// 3. Resolve the identity the capture will be written under. Logged-in
+		// users get a `user_{ID}` bucket; guests have no user-scoped identity
+		// and are skipped unless the site explicitly opts in via
+		// `wp_mcp_ai_memory_auto_capture_guests_allowed`, in which case all
+		// guest observations share the `guest` bucket.
 		$user_id  = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
 		$agent_id = isset( $args['agent_id'] ) && ! empty( $args['agent_id'] )
 			? $args['agent_id']
-			: ( $user_id > 0 ? 'user_' . $user_id : 0 );
+			: ( $user_id > 0 ? 'user_' . $user_id : '' );
 
 		if ( empty( $agent_id ) ) {
-			return false;
+			if ( $user_id <= 0 && (bool) apply_filters( 'wp_mcp_ai_memory_auto_capture_guests_allowed', false ) ) {
+				$agent_id = self::DEFAULT_GUEST_AGENT_ID;
+			} else {
+				return false;
+			}
 		}
+
+		// Only enter the dedup window once the capture is actually eligible —
+		// a blocked observation must not consume the window for a later
+		// legitimate capture of the same content.
+		self::mark_dedup( $sha256 );
 
 		$importance = (float) apply_filters( 'wp_mcp_ai_memory_auto_capture_importance', self::DEFAULT_IMPORTANCE );
 		if ( $importance < 0.0 ) {

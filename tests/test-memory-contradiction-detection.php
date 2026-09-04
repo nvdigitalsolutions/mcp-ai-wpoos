@@ -53,6 +53,13 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// The store_agent_context integration exercises the tool's execute()
+		// path, which gates on the `read` capability (added by a later
+		// security pass). Run the suite as an administrator so the store
+		// path — not the capability denial branch — is exercised.
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
 		$this->detected_events = array();
 		$this->resolved_events = array();
 
@@ -96,12 +103,15 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_recall_memory_candidates' );
 		remove_all_actions( 'wp_mcp_ai_memory_contradiction_detected' );
 		remove_all_actions( 'wp_mcp_ai_memory_contradiction_resolved' );
+		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 1. Empty when no candidate exceeds the similarity threshold
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * When the only candidate scores below the similarity threshold, the
@@ -117,7 +127,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 						'title'      => 'Random unrelated entry',
 						'content'    => 'Apples and oranges and bananas.',
 						'similarity' => 0.10, // Below default 0.85 threshold.
-						'metadata'   => array( 'key' => 'k', 'value' => 'old' ),
+						'metadata'   => array(
+							'key'   => 'k',
+							'value' => 'old',
+						),
 					),
 				);
 			}
@@ -129,7 +142,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 				'agent_id'   => 'agent_1',
 				'title'      => 'Random unrelated entry',
 				'content'    => 'Pears and grapes and melons.',
-				'metadata'   => array( 'key' => 'k', 'value' => 'new' ),
+				'metadata'   => array(
+					'key'   => 'k',
+					'value' => 'new',
+				),
 			)
 		);
 
@@ -137,9 +153,11 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 		$this->assertCount( 0, $this->detected_events );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 2. Key/value conflict
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Same metadata.key with a different metadata.value flags the older row.
@@ -185,9 +203,11 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 		$this->assertSame( 'key_value_conflict', $this->detected_events[0]['reason'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 3. Title-match, content diverges
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Same title with low Jaccard similarity on content flags the older row.
@@ -225,9 +245,11 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 		$this->assertCount( 1, $this->detected_events );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 4. Auto-supersession OFF by default
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Detection MUST fire `detected` but NOT `resolved` when
@@ -243,7 +265,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 						'title'      => 'Capital',
 						'content'    => 'Paris is the capital.',
 						'similarity' => 0.95,
-						'metadata'   => array( 'key' => 'capital_of_france', 'value' => 'Paris' ),
+						'metadata'   => array(
+							'key'   => 'capital_of_france',
+							'value' => 'Paris',
+						),
 					),
 				);
 			}
@@ -255,7 +280,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 				'agent_id'   => 'agent_1',
 				'title'      => 'Capital',
 				'content'    => 'Paris is the capital.',
-				'metadata'   => array( 'key' => 'capital_of_france', 'value' => 'Lyon' ),
+				'metadata'   => array(
+					'key'   => 'capital_of_france',
+					'value' => 'Lyon',
+				),
 			)
 		);
 
@@ -263,9 +291,11 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 		$this->assertCount( 0, $this->resolved_events, 'auto-supersession is off by default.' );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 5. Auto-supersession ON
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * When the auto-supersede filter is enabled, the `resolved` event MUST fire
@@ -284,7 +314,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 						'title'      => 'Capital',
 						'content'    => 'Lyon is the capital.',
 						'similarity' => 0.95,
-						'metadata'   => array( 'key' => 'capital_of_france', 'value' => 'Lyon' ),
+						'metadata'   => array(
+							'key'   => 'capital_of_france',
+							'value' => 'Lyon',
+						),
 					),
 				);
 			}
@@ -296,7 +329,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 				'agent_id'   => 'agent_1',
 				'title'      => 'Capital',
 				'content'    => 'Paris is the capital.',
-				'metadata'   => array( 'key' => 'capital_of_france', 'value' => 'Paris' ),
+				'metadata'   => array(
+					'key'   => 'capital_of_france',
+					'value' => 'Paris',
+				),
 			)
 		);
 
@@ -306,9 +342,11 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 		$this->assertSame( 'ctx_super_new', $this->resolved_events[0]['new_id'] );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 6. Master kill-switch
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * When the detector is globally disabled, no events are emitted and an
@@ -326,7 +364,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 						'title'      => 'X',
 						'content'    => 'A',
 						'similarity' => 0.99,
-						'metadata'   => array( 'key' => 'k', 'value' => 'old' ),
+						'metadata'   => array(
+							'key'   => 'k',
+							'value' => 'old',
+						),
 					),
 				);
 			}
@@ -338,7 +379,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 				'agent_id'   => 'agent_1',
 				'title'      => 'X',
 				'content'    => 'A',
-				'metadata'   => array( 'key' => 'k', 'value' => 'new' ),
+				'metadata'   => array(
+					'key'   => 'k',
+					'value' => 'new',
+				),
 			)
 		);
 
@@ -346,9 +390,11 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 		$this->assertCount( 0, $this->detected_events );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 7. store_agent_context integration — fires event and survives throws
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * A write through `store_agent_context` that has a similar existing memory
@@ -444,9 +490,11 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 		$this->assertCount( 0, $this->detected_events, 'No event when the candidate provider threw.' );
 	}
 
-	/* ------------------------------------------------------------------
+	/*
+	 * ------------------------------------------------------------------
 	 * 8. Performance — top-K cap is strictly enforced
-	 * ------------------------------------------------------------------ */
+	 * ------------------------------------------------------------------
+	 */
 
 	/**
 	 * Even when the candidate pool contains many conflicts, the detector must
@@ -454,7 +502,12 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 	 * of 10 conflicting records, no more than 2 events should fire.
 	 */
 	public function test_top_k_cap_is_strictly_enforced() {
-		add_filter( 'wp_mcp_ai_memory_contradiction_top_k', static function () { return 2; } );
+		add_filter(
+			'wp_mcp_ai_memory_contradiction_top_k',
+			static function () {
+				return 2;
+			}
+		);
 
 		add_filter(
 			'wp_mcp_ai_memory_contradiction_candidates',
@@ -466,7 +519,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 						'title'      => 'Shared title',
 						'content'    => 'Token A token B token C nothing else.',
 						'similarity' => 0.95,
-						'metadata'   => array( 'key' => 'k', 'value' => 'v_' . $i ),
+						'metadata'   => array(
+							'key'   => 'k',
+							'value' => 'v_' . $i,
+						),
 					);
 				}
 				return $rows;
@@ -479,7 +535,10 @@ class Test_Memory_Contradiction_Detection extends WP_UnitTestCase {
 				'agent_id'   => 'agent_1',
 				'title'      => 'Shared title',
 				'content'    => 'Completely different vocabulary entirely.',
-				'metadata'   => array( 'key' => 'k', 'value' => 'v_new' ),
+				'metadata'   => array(
+					'key'   => 'k',
+					'value' => 'v_new',
+				),
 			)
 		);
 
