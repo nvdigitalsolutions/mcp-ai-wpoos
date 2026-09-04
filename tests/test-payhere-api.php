@@ -16,19 +16,20 @@
 class WP_MCP_AI_PayHere_API_Test extends WP_UnitTestCase {
 
 	/**
-	 * Test that PayHere settings are in default settings.
+	 * Test that PayHere settings migrated out of default settings.
+	 *
+	 * PayHere credentials moved to Remote Connections (see
+	 * docs/features/integrations/REMOTE_CONNECTION_MIGRATION.md). The legacy
+	 * settings keys are still honoured by the client as a migration fallback
+	 * (covered by test_payhere_client_retrieves_credentials) but must no
+	 * longer be advertised as first-class settings defaults.
 	 */
-	public function test_payhere_settings_in_defaults() {
+	public function test_payhere_settings_migrated_out_of_defaults() {
 		$defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
 
-		$this->assertArrayHasKey( 'payhere_app_id', $defaults, 'payhere_app_id should be in default settings' );
-		$this->assertSame( '', $defaults['payhere_app_id'], 'payhere_app_id should default to empty string' );
-
-		$this->assertArrayHasKey( 'payhere_app_secret', $defaults, 'payhere_app_secret should be in default settings' );
-		$this->assertSame( '', $defaults['payhere_app_secret'], 'payhere_app_secret should default to empty string' );
-
-		$this->assertArrayHasKey( 'payhere_sandbox_mode', $defaults, 'payhere_sandbox_mode should be in default settings' );
-		$this->assertFalse( $defaults['payhere_sandbox_mode'], 'payhere_sandbox_mode should default to false' );
+		$this->assertArrayNotHasKey( 'payhere_app_id', $defaults, 'payhere_app_id should no longer be in default settings' );
+		$this->assertArrayNotHasKey( 'payhere_app_secret', $defaults, 'payhere_app_secret should no longer be in default settings' );
+		$this->assertArrayNotHasKey( 'payhere_sandbox_mode', $defaults, 'payhere_sandbox_mode should no longer be in default settings' );
 	}
 
 	/**
@@ -197,27 +198,53 @@ class WP_MCP_AI_PayHere_API_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that providers section includes PayHere fields.
+	 * Test that PayHere client retrieves credentials from a Remote Connection.
+	 *
+	 * PayHere credentials are now configured as a `payhere` Remote Connection.
+	 * When the client is constructed with a connection ID it must read the
+	 * credentials from the connection (decrypting the stored app secret)
+	 * instead of the legacy settings fallback.
 	 */
-	public function test_providers_section_includes_payhere_fields() {
-		$providers_section = new WP_MCP_AI_Section_Providers();
-		$fields            = $providers_section->get_fields();
+	public function test_payhere_client_retrieves_credentials_from_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon (Remote Connections) not available' );
+		}
 
-		$this->assertArrayHasKey( 'payhere_app_id', $fields, 'Providers section should include payhere_app_id field' );
-		$this->assertSame( 'text', $fields['payhere_app_id']['type'], 'payhere_app_id should be text type' );
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Test PayHere',
+				'url'             => 'https://www.payhere.lk',
+				'connection_type' => 'payhere',
+				'auth_type'       => 'none',
+				'app_id'          => 'conn-app-123',
+				'app_secret'      => 'conn-secret-456',
+				'sandbox_mode'    => true,
+				'enabled'         => true,
+			)
+		);
 
-		$this->assertArrayHasKey( 'payhere_app_secret', $fields, 'Providers section should include payhere_app_secret field' );
-		$this->assertSame( 'password', $fields['payhere_app_secret']['type'], 'payhere_app_secret should be password type' );
+		$this->assertIsString( $connection_id, 'PayHere connection should save successfully' );
 
-		$this->assertArrayHasKey( 'payhere_sandbox_mode', $fields, 'Providers section should include payhere_sandbox_mode field' );
-		$this->assertSame( 'checkbox', $fields['payhere_sandbox_mode']['type'], 'payhere_sandbox_mode should be checkbox type' );
+		$client = new WP_MCP_AI_PayHere_Client( $connection_id );
+
+		$this->assertSame( 'conn-app-123', $client->get_app_id(), 'PayHere client should read App ID from the connection' );
+		$this->assertSame( 'conn-secret-456', $client->get_app_secret(), 'PayHere client should decrypt App Secret from the connection' );
+		$this->assertTrue( $client->is_sandbox_mode(), 'PayHere client should read sandbox mode from the connection' );
 	}
 
 	/**
-	 * Test that PayHere subtab exists in providers section.
+	 * Test that providers section no longer exposes PayHere fields or subtab.
+	 *
+	 * The PayHere configuration UI moved to Remote Connections. The providers
+	 * settings section must no longer advertise the legacy fields or subtab.
 	 */
-	public function test_providers_section_has_payhere_subtab() {
+	public function test_providers_section_has_no_payhere_subtab() {
 		$providers_section = new WP_MCP_AI_Section_Providers();
+		$fields            = $providers_section->get_fields();
+
+		$this->assertArrayNotHasKey( 'payhere_app_id', $fields, 'Providers section should no longer include payhere_app_id field' );
+		$this->assertArrayNotHasKey( 'payhere_app_secret', $fields, 'Providers section should no longer include payhere_app_secret field' );
+		$this->assertArrayNotHasKey( 'payhere_sandbox_mode', $fields, 'Providers section should no longer include payhere_sandbox_mode field' );
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $providers_section );
@@ -225,11 +252,7 @@ class WP_MCP_AI_PayHere_API_Test extends WP_UnitTestCase {
 		$method->setAccessible( true );
 		$subtabs = $method->invoke( $providers_section );
 
-		$this->assertArrayHasKey( 'payhere', $subtabs, 'Providers section should have PayHere subtab' );
-		$this->assertSame( 'payhere', $subtabs['payhere']['id'], 'PayHere subtab should have correct id' );
-		$this->assertContains( 'payhere_app_id', $subtabs['payhere']['fields'], 'PayHere subtab should include app_id field' );
-		$this->assertContains( 'payhere_app_secret', $subtabs['payhere']['fields'], 'PayHere subtab should include app_secret field' );
-		$this->assertContains( 'payhere_sandbox_mode', $subtabs['payhere']['fields'], 'PayHere subtab should include sandbox_mode field' );
+		$this->assertArrayNotHasKey( 'payhere', $subtabs, 'Providers section should no longer have a PayHere subtab' );
 	}
 
 	/**
