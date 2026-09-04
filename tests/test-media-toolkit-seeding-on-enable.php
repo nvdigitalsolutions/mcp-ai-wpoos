@@ -100,13 +100,14 @@ class Test_Media_Toolkit_Seeding_On_Enable extends WP_UnitTestCase {
 		$this->assertTrue( $was_toolkit_disabled, 'Toolkit should start disabled' );
 		$this->assertTrue( $is_toolkit_enabled, 'Toolkit should be enabled in merged settings' );
 
+		// Update the settings first — seed_presets() gates on the stored
+		// enable_media_toolkit flag.
+		update_option( 'wp_mcp_ai_settings', $merged_settings );
+
 		if ( $was_toolkit_disabled && $is_toolkit_enabled ) {
 			// Media toolkit was just enabled, seed the template presets.
 			WP_MCP_AI_Media_Template_Presets::seed_presets();
 		}
-
-		// Update the settings.
-		update_option( 'wp_mcp_ai_settings', $merged_settings );
 
 		// Verify presets were seeded.
 		$templates = get_posts(

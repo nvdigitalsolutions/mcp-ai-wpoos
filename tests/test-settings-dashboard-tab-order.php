@@ -130,7 +130,8 @@ class Test_Settings_Dashboard_Tab_Order extends WP_UnitTestCase {
 			'providers',
 			'authentication',
 			'tools',
-			'integrations',
+			'orchestration',
+			'token_manager',
 			'security',
 			'advanced',
 		);

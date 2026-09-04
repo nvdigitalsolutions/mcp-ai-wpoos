@@ -135,6 +135,6 @@ class Test_Performance_Security_Check extends WP_UnitTestCase {
 		// Verify try-catch exists.
 		$this->assertStringContainsString( 'try', $body );
 		$this->assertStringContainsString( 'catch', $body );
-		$this->assertStringContainsString( 'Exception', $body );
+		$this->assertStringContainsString( 'Throwable', $body );
 	}
 }

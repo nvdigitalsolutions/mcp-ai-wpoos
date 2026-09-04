@@ -148,6 +148,7 @@ class WP_MCP_AI_Harness_Trace_Store {
 			'run_id'         => $run_id,
 			'assistant_id'   => $assistant_id,
 			'started_at'     => time(),
+			'started_at_ms'  => (int) round( microtime( true ) * 1000 ),
 			'finished_at'    => null,
 			'duration_ms'    => null,
 			'model'          => isset( $meta['model'] ) ? (string) $meta['model'] : '',
@@ -307,9 +308,13 @@ class WP_MCP_AI_Harness_Trace_Store {
 		$run = self::$active_runs[ $run_id ];
 
 		// Update meta.json with finish timestamp.
-		$meta                 = $run['meta'];
-		$meta['finished_at']  = time();
-		$meta['duration_ms']  = (int) round( ( $meta['finished_at'] - $meta['started_at'] ) * 1000 );
+		$meta                = $run['meta'];
+		$meta['finished_at'] = time();
+
+		// Prefer the millisecond-precision start marker; floor at 1ms so a run
+		// that finished within the same millisecond still records a duration.
+		$started_ms           = isset( $meta['started_at_ms'] ) ? (int) $meta['started_at_ms'] : (int) round( $meta['started_at'] * 1000 );
+		$meta['duration_ms']  = max( 1, (int) round( microtime( true ) * 1000 ) - $started_ms );
 		$meta['profile_hash'] = isset( $meta['profile_hash'] ) ? $meta['profile_hash'] : '';
 		self::atomic_write( $run['dir'] . '/meta.json', wp_json_encode( $meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
 

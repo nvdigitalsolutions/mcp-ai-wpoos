@@ -98,8 +98,9 @@ class WP_MCP_AI_Preset_Application_Fix_Test extends WP_UnitTestCase {
 	 * Test suggesting category for a tool.
 	 */
 	public function test_suggest_tool_category() {
-		// Test with a tool that should match a pattern.
-		$suggestion = WP_MCP_AI_Tool_Recommendations::suggest_tool_category( 'test_search_content' );
+		// Test with a search tool (real registered slug so the registry lookup
+		// succeeds — unknown slugs fall back to low_resource with confidence 0).
+		$suggestion = WP_MCP_AI_Tool_Recommendations::suggest_tool_category( 'search_content' );
 
 		$this->assertIsArray( $suggestion );
 		$this->assertArrayHasKey( 'category', $suggestion );
@@ -112,12 +113,12 @@ class WP_MCP_AI_Preset_Application_Fix_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'high_resource', $suggestion['category'] );
 
 		// Test with a cache tool.
-		$cache_suggestion = WP_MCP_AI_Tool_Recommendations::suggest_tool_category( 'test_purge_cache' );
+		$cache_suggestion = WP_MCP_AI_Tool_Recommendations::suggest_tool_category( 'purge_cache' );
 		$this->assertEquals( 'cache_performance', $cache_suggestion['category'] );
 
-		// Test with a message tool.
-		$message_suggestion = WP_MCP_AI_Tool_Recommendations::suggest_tool_category( 'send_test_message' );
-		$this->assertEquals( 'messaging', $message_suggestion['category'] );
+		// Test with a token tool.
+		$token_suggestion = WP_MCP_AI_Tool_Recommendations::suggest_tool_category( 'count_tokens' );
+		$this->assertEquals( 'security_auth', $token_suggestion['category'] );
 	}
 
 	/**
