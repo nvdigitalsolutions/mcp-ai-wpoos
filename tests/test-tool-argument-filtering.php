@@ -38,8 +38,9 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 	/**
 	 * Test that extra parameters are filtered out when additionalProperties is false.
 	 *
-	 * The count_tokens tool has additionalProperties => false, so extra parameters
-	 * like 'messages' (from the chat context) should be filtered out before execution.
+	 * The count_tokens tool has additionalProperties => false, so parameters
+	 * outside its schema (like 'extra' or 'foo') are dropped before execution,
+	 * while schema-defined parameters (text, method, messages) are preserved.
 	 */
 	public function test_filters_extra_parameters_for_strict_schema() {
 		// Load the REST class.
@@ -60,10 +61,12 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		$this->assertFalse( $schema['additionalProperties'], 'count_tokens should have additionalProperties => false' );
 
 		// Create arguments with extra parameters (simulating AI provider behavior).
+		// 'messages' is part of the count_tokens schema, so it is preserved;
+		// only parameters outside the schema are dropped.
 		$arguments = array(
 			'text'     => 'Hello world',
 			'method'   => 'heuristic',
-			'messages' => 'This extra parameter should be filtered out',
+			'messages' => 'This schema-defined parameter should be preserved',
 			'extra'    => array( 'data' => 'value' ),
 			'foo'      => 'bar',
 		);
@@ -80,7 +83,7 @@ class WP_MCP_AI_Tool_Argument_Filtering_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $filtered, 'Filtered result should be an array' );
 		$this->assertArrayHasKey( 'text', $filtered, 'text parameter should be preserved' );
 		$this->assertArrayHasKey( 'method', $filtered, 'method parameter should be preserved' );
-		$this->assertArrayNotHasKey( 'messages', $filtered, 'messages parameter should be filtered out' );
+		$this->assertArrayHasKey( 'messages', $filtered, 'messages parameter should be preserved' );
 		$this->assertArrayNotHasKey( 'extra', $filtered, 'extra parameter should be filtered out' );
 		$this->assertArrayNotHasKey( 'foo', $filtered, 'foo parameter should be filtered out' );
 		$this->assertSame( 'Hello world', $filtered['text'] );

@@ -200,11 +200,13 @@ class Test_WP_MCP_AI_Token_Budget_Manager_Stabilization extends WP_UnitTestCase 
 	public function test_validate_with_conversation_history() {
 		$messages = array();
 
-		// Add multiple messages to build up token count.
+		// Add multiple messages to build up token count. The content size is
+		// kept realistic so the total stays under the 12k input cap under
+		// both the chars/4 heuristic and tiktoken-backed counting.
 		for ( $i = 0; $i < 50; $i++ ) {
 			$messages[] = array(
 				'role'    => $i % 2 === 0 ? 'user' : 'assistant',
-				'content' => str_repeat( 'This is message content. ', 50 ),
+				'content' => str_repeat( 'This is message content. ', 4 ),
 			);
 		}
 

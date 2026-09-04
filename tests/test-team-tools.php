@@ -223,7 +223,7 @@ class WP_MCP_AI_Team_Tools_Test extends WP_UnitTestCase {
 		$this->assertSame( 'gpt-4', $model );
 
 		$temperature = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_DEFAULT_TEMPERATURE, true );
-		$this->assertSame( 0.7, $temperature );
+		$this->assertSame( '0.7', $temperature );
 
 		// Clean up.
 		$_POST = array();

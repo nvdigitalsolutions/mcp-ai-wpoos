@@ -169,13 +169,13 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 			array(
 				'handler'    => function () {
 					return 'help text'; },
-				'aliases'    => array( 'h', '?' ),
+				'aliases'    => array( 'h', 'halp' ),
 				'capability' => 'read',
 			)
 		);
 
 		$result1 = $this->handler->execute( '/h', array( 'user_id' => 1 ) );
-		$result2 = $this->handler->execute( '/?', array( 'user_id' => 1 ) );
+		$result2 = $this->handler->execute( '/halp', array( 'user_id' => 1 ) );
 
 		$this->assertEquals( 'help text', $result1 );
 		$this->assertEquals( 'help text', $result2 );

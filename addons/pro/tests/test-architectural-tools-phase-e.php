@@ -104,18 +104,31 @@ class Test_Architectural_Tools_Phase_E extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Fixed-length pseudo-embedding deterministic per text — lets us test
-	 * embedding mode without an OpenAI key. Hash-based, length 16.
+	 * Pseudo-embedding deterministic per text — lets us test embedding mode
+	 * without an OpenAI key. Tokens are hashed into a fixed-length vector
+	 * and L2-normalised, so cosine similarity reflects shared vocabulary:
+	 * a query about tropical courtyards ranks the tropical precedent above
+	 * an unrelated one, independently of incidental corpus metadata.
 	 *
 	 * @param string $text Text.
 	 * @return array
 	 */
 	protected function pseudo_embedding( $text ) {
-		$hash = hash( 'sha256', strtolower( $text ), true );
-		$vec  = array();
-		for ( $i = 0; $i < 16; $i++ ) {
-			$byte  = ord( $hash[ $i ] );
-			$vec[] = ( $byte / 255.0 ) - 0.5;
+		$tokens = preg_split( '/[^a-z0-9]+/', strtolower( (string) $text ), -1, PREG_SPLIT_NO_EMPTY );
+		$vec    = array_fill( 0, 64, 0.0 );
+		foreach ( (array) $tokens as $token ) {
+			$idx          = hexdec( substr( hash( 'sha256', $token ), 0, 4 ) ) % 64;
+			$vec[ $idx ] += 1.0;
+		}
+		$mag = 0.0;
+		foreach ( $vec as $v ) {
+			$mag += $v * $v;
+		}
+		$mag = sqrt( $mag );
+		if ( $mag > 0 ) {
+			foreach ( $vec as $i => $v ) {
+				$vec[ $i ] = $v / $mag;
+			}
 		}
 		return $vec;
 	}

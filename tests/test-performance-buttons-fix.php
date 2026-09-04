@@ -53,6 +53,10 @@ class Test_Performance_Buttons_Fix extends WP_UnitTestCase {
 		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_user );
 
+		// Clear any enqueue left by the previous test — the global script
+		// queue persists across tests in the same process.
+		wp_dequeue_script( 'wp-mcp-ai-performance-admin' );
+
 		// Simulate being on a different page.
 		$_GET['page'] = 'wp-mcp-ai-dashboard';
 		$_GET['tab']  = 'general';
