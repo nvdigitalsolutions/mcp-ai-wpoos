@@ -73,8 +73,15 @@ class Test_OAuth_Circular_Dependency extends WP_UnitTestCase {
 		$result = $settings_base->sanitize_settings( $test_settings );
 		$this->assertIsArray( $result );
 
-		// Verify the API key is sanitized (whitespace removed).
-		$this->assertEquals( 'test_key', $result['openai_api_key'] );
+		// Verify the API key is sanitized (whitespace removed) and encrypted at
+		// rest by the sensitive-settings path, and decrypts back to the input.
+		$stored_key = $result['openai_api_key'];
+		$this->assertStringStartsWith( 'v2:', (string) $stored_key, 'Sensitive settings must be encrypted at rest' );
+		$this->assertEquals(
+			'test_key',
+			WP_MCP_AI_Admin_Settings_Base::maybe_decrypt_sensitive_setting_value( $stored_key ),
+			'Encrypted API key must decrypt back to the sanitized value'
+		);
 
 		// Verify boolean is converted properly.
 		$this->assertTrue( $result['enable_logging'] );

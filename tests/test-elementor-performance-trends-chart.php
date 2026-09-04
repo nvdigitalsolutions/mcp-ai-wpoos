@@ -157,26 +157,34 @@ class WP_MCP_AI_Elementor_Performance_Trends_Chart_Test extends WP_UnitTestCase 
 		$this->render_widget_output( $widget );
 		$output = ob_get_clean();
 
-		// Verify that canvas ID is referenced in JavaScript.
+		// The canvas ID is emitted into the inline script via wp_json_encode(),
+		// which escapes quotes and control characters before insertion.
 		$this->assertStringContainsString(
-			"getElementById('wp-mcp-ai-trends-chart-",
+			'var chartId = ' . wp_json_encode( 'wp-mcp-ai-trends-chart-test-widget' ) . ';',
+			$output,
+			'Canvas ID should be JSON-encoded in the chart script'
+		);
+
+		// Verify that the canvas ID is referenced in the getElementById call.
+		$this->assertStringContainsString(
+			'document.getElementById(chartId)',
 			$output,
 			'Canvas ID should be referenced in getElementById call'
 		);
 
-		// Verify proper escaping (no unescaped quotes).
-		preg_match( "/getElementById\('([^']+)'\)/", $output, $matches );
-		$this->assertNotEmpty( $matches, 'Should find getElementById with canvas ID' );
+		// A hostile widget ID containing quotes must not break out of the
+		// JavaScript string or the HTML attribute.
+		$hostile_widget = $this->get_mock_widget( 'test-widget" + alert(1) + "' );
 
-		if ( ! empty( $matches[1] ) ) {
-			$canvas_id = $matches[1];
-			// Verify no dangerous characters in ID.
-			$this->assertDoesNotMatchRegularExpression(
-				'/["\']/',
-				$canvas_id,
-				'Canvas ID should not contain quotes'
-			);
-		}
+		ob_start();
+		$this->render_widget_output( $hostile_widget );
+		$hostile_output = ob_get_clean();
+
+		$this->assertStringNotContainsString(
+			'" + alert(1) + "',
+			$hostile_output,
+			'Hostile canvas ID quotes must be escaped in the rendered output'
+		);
 	}
 
 	/**

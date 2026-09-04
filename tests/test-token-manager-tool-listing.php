@@ -42,12 +42,23 @@ class Test_Token_Manager_Tool_Listing extends WP_UnitTestCase {
 		// Verify we got more than the hardcoded 2 tools.
 		$this->assertGreaterThan( 2, count( $tools ), 'Should return more than 2 hardcoded tools' );
 
-		// Verify we got all registered tools.
-		$this->assertEquals(
+		// The listing is a superset of the registered tools: it also surfaces
+		// conditionally-registered Pro tools (settings-gated) for configuration
+		// purposes, so verify containment rather than exact equality.
+		$this->assertGreaterThanOrEqual(
 			$registered_count,
 			count( $tools ),
-			'Should return all registered tools from the registry'
+			'Should return at least all registered tools from the registry'
 		);
+		foreach ( $registered_tools as $tool ) {
+			if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
+				$slug = $tool->get_slug();
+				$name = $tool->get_name();
+				if ( ! empty( $slug ) && ! empty( $name ) ) {
+					$this->assertArrayHasKey( $slug, $tools, "Registered tool '{$slug}' should appear in the listing" );
+				}
+			}
+		}
 
 		// Verify each tool has a slug and name.
 		foreach ( $tools as $slug => $name ) {

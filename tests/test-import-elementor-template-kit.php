@@ -114,12 +114,20 @@ class WP_MCP_AI_Import_Elementor_Template_Kit_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test is_available returns false when Elementor is not active.
+	 * Test is_available reflects whether Elementor is loaded.
 	 */
 	public function test_is_available_without_elementor() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php';
 
-		// Since Elementor is not installed in test environment, is_available should return false.
+		if ( defined( 'ELEMENTOR_VERSION' ) || class_exists( '\\Elementor\\Plugin', false ) ) {
+			// Elementor ships with the test environment, so the absence branch
+			// of the gate cannot be exercised here — it is covered by
+			// test_execute_returns_error_without_elementor via an override.
+			$this->assertTrue( WP_MCP_AI_Tool_Import_Elementor_Template_Kit::is_available() );
+			return;
+		}
+
+		// Without Elementor the tool must report itself unavailable.
 		$this->assertFalse( WP_MCP_AI_Tool_Import_Elementor_Template_Kit::is_available() );
 	}
 
@@ -141,7 +149,19 @@ class WP_MCP_AI_Import_Elementor_Template_Kit_Test extends WP_UnitTestCase {
 	public function test_execute_returns_error_without_elementor() {
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php';
 
-		$tool = new WP_MCP_AI_Tool_Import_Elementor_Template_Kit();
+		// Elementor is loaded in the test environment, so simulate its absence
+		// by overriding the availability gate on a subclass. execute() resolves
+		// the gate through late static binding (static::is_available()).
+		$tool = new class() extends WP_MCP_AI_Tool_Import_Elementor_Template_Kit {
+			/**
+			 * Simulate a site where Elementor is not active.
+			 *
+			 * @return bool Always false.
+			 */
+			public static function is_available() {
+				return false;
+			}
+		};
 
 		// Create an admin user.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );

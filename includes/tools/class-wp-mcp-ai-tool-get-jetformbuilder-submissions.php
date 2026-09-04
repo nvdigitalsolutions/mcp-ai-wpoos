@@ -135,6 +135,7 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 		if ( 'http' !== $transport && ! $connection_id ) {
 			// Direct DB access only needs the tool's advertised capability.
 			$required_cap = $this->get_required_capability();
+			// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- $required_cap comes from the tool's advertised capability, resolved at runtime.
 			if ( $required_cap && ! user_can( $user_id, $required_cap ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_forbidden',
@@ -162,25 +163,17 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 		}
 
 		$params = array(
-			'limit'   => $limit,
-			'filters' => array(),
+			'per_page' => $limit,
 		);
 
-		if ( $form_id ) {
-			$params['filters']['form'] = $form_id;
-		}
-
 		if ( $status ) {
-			$params['filters']['status'] = $status;
-		}
-
-		if ( empty( $params['filters'] ) ) {
-			unset( $params['filters'] );
+			$params['status'] = $status;
 		}
 
 		$result = WP_MCP_AI_JetFormBuilder_Tool_Handlers::dispatch(
 			'fetch_submissions',
 			array(
+				'id'        => $form_id,
 				'params'    => $params,
 				'transport' => $transport,
 			),
@@ -241,6 +234,7 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 
 		foreach ( (array) $capabilities as $capability ) {
 			$capability = sanitize_key( $capability );
+			// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- $capability is built from a filterable list of record-access capabilities, resolved at runtime.
 			if ( $capability && user_can( $user_id, $capability ) ) {
 				return true;
 			}

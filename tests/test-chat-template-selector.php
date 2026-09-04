@@ -162,26 +162,21 @@ class WP_MCP_AI_Chat_Template_Selector_Test extends WP_UnitTestCase {
 
 		$widget = new WP_MCP_AI_Elementor_Widget();
 
-		// Use reflection to check if the widget registers the template control.
-		$reflection = new ReflectionClass( $widget );
-		$method     = $reflection->getMethod( 'register_controls' );
-		$method->setAccessible( true );
+		// get_controls() lazily registers the control stack through Elementor's
+		// open_stack()/init_controls() flow. Calling register_controls() directly
+		// would redeclare controls against the shared singleton stack.
+		$controls = $widget->get_controls();
 
-		// Capture output to avoid side effects.
-		ob_start();
-		try {
-			$method->invoke( $widget );
-		} catch ( Exception $e ) {
-			// Some methods may throw exceptions in test environment.
-			unset( $e );
-		}
-		ob_end_clean();
-
-		// We can't easily test the control registration without full Elementor setup,.
-		// but we can verify the method exists and doesn't throw errors.
-		$this->assertTrue(
-			method_exists( $widget, 'register_controls' ),
-			'Widget should have register_controls method'
+		// Verify the template control is registered.
+		$this->assertArrayHasKey(
+			'template',
+			$controls,
+			'Widget should register the template control'
 		);
+
+		// Verify the control uses the expected type and default.
+		$template_control = $controls['template'];
+		$this->assertEquals( \Elementor\Controls_Manager::SELECT, $template_control['type'] );
+		$this->assertEquals( 'classic', $template_control['default'] );
 	}
 }
