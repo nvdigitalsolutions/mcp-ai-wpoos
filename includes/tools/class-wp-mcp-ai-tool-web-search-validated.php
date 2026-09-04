@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Web_Search_Validated extends WP_MCP_AI_Validated_Tool imple
 
 			'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
 
-			'profession_tags'       => array( 'researcher', 'journalist', 'analyst' ),
+			'profession_tags'       => array( 'researcher', 'journalist', 'analyst', 'writer', 'librarian' ),
 
 			'risk_level'            => 'info',
 
