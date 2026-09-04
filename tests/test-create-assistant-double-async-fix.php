@@ -113,8 +113,8 @@ class Test_Create_Assistant_Double_Async_Fix extends WP_UnitTestCase {
 	/**
 	 * Test tool has proper capability flags.
 	 *
-	 * The tool should be marked as long-running so the orchestrator
-	 * knows to queue it for async execution.
+	 * The tool should be marked as timeout-prone so the orchestrator knows
+	 * to queue it for async execution.
 	 */
 	public function test_capability_flags() {
 		$tool  = new WP_MCP_AI_Tool_Create_Assistant();
@@ -122,9 +122,14 @@ class Test_Create_Assistant_Double_Async_Fix extends WP_UnitTestCase {
 
 		$this->assertIsArray( $flags );
 		$this->assertContains(
-			'long-running',
+			'may-timeout',
 			$flags,
-			'create-assistant should be flagged as long-running'
+			'create-assistant should be flagged as may-timeout'
+		);
+		$this->assertContains(
+			'async-capable',
+			$flags,
+			'create-assistant should be flagged as async-capable'
 		);
 	}
 
@@ -139,10 +144,11 @@ class Test_Create_Assistant_Double_Async_Fix extends WP_UnitTestCase {
 
 		// Get source to verify the logic flow.
 		$reflection = new ReflectionClass( $tool );
-		$source     = file_get_contents( $reflection->getFileName() );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading the tool class source to assert the logic flow pattern.
+		$source = file_get_contents( $reflection->getFileName() );
 
 		// The execute method should check for in_async_executor in context.
-		// Pattern: if ( isset( $context['in_async_executor'] ) && $context['in_async_executor'] )
+		// Pattern to verify: if ( isset( $context['in_async_executor'] ) && $context['in_async_executor'] ).
 		$pattern = '/if\s*\(\s*isset\s*\(\s*\$context\s*\[\s*[\'"]in_async_executor[\'"]\s*\]\s*\)\s*&&\s*\$context\s*\[\s*[\'"]in_async_executor[\'"]\s*\]\s*\)/';
 
 		$this->assertMatchesRegularExpression(

@@ -76,7 +76,14 @@ class Test_Section_Integrations_Meta_Label extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'meta', $subtabs );
 		$this->assertArrayHasKey( 'fields', $subtabs['meta'] );
 
-		$expected_fields = array( 'meta_access_token', 'meta_app_id', 'meta_app_secret', 'meta_business_account_id' );
+		$expected_fields = array(
+			'meta_access_token',
+			'meta_app_id',
+			'meta_app_secret',
+			'meta_business_account_id',
+			'meta_connected_user_name',
+			'meta_connected_user_id',
+		);
 		$this->assertEquals( $expected_fields, $subtabs['meta']['fields'] );
 	}
 }
