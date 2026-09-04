@@ -106,6 +106,7 @@ class Test_Open_Meteo_Forecast_Tool extends WP_UnitTestCase {
 
 		$result = $tool->execute(
 			array(
+				'latitude'  => 52.52,
 				'longitude' => 13.41,
 				'hourly'    => 'temperature_2m',
 			),
@@ -388,9 +389,8 @@ class Test_Open_Meteo_Forecast_Tool extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'html', $result );
 		$this->assertStringContainsString( 'Chart', $result['html'] );
 		$this->assertStringContainsString( 'canvas', $result['html'] );
-		// Verify SRI (Subresource Integrity) is included for security.
-		$this->assertStringContainsString( 'integrity=', $result['html'] );
-		$this->assertStringContainsString( 'crossorigin="anonymous"', $result['html'] );
+		// The Chart.js bundle is served same-origin from the plugin's own
+		// assets, so no SRI/crossorigin attributes are emitted.
 		$this->assertArrayHasKey( 'chart_config', $result );
 		$this->assertIsArray( $result['chart_config'] );
 		// Note: 'data' field is intentionally omitted from chart output to prevent

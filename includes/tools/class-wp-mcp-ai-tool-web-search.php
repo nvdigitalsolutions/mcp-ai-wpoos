@@ -1978,6 +1978,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'type'    => isset( $item['type'] ) ? sanitize_key( $item['type'] ) : 'result',
 			);
 
+			// Preserve the publication date when the provider supplies it
+			// (Tavily and Brave include published_date in their responses).
+			if ( isset( $item['published_date'] ) ) {
+				$validated_item['published_date'] = sanitize_text_field( $item['published_date'] );
+			}
+
 			// Skip items with no title and no URL (invalid results).
 			if ( '' === $validated_item['title'] && '' === $validated_item['url'] ) {
 				continue;

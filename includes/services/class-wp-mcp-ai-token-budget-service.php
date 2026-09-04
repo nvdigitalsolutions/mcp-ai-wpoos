@@ -296,6 +296,19 @@ class WP_MCP_AI_Token_Budget_Manager {
 			}
 		}
 
+		// Provider-prefixed slugs (e.g. nvidia/nemotron-3-nano-30b-a3b) never
+		// match the bare model-family keys above, so retry against the slug
+		// without its leading provider segment.
+		$slash_position = strpos( $model, '/' );
+		if ( false !== $slash_position ) {
+			$unprefixed_model = substr( $model, $slash_position + 1 );
+			foreach ( self::$model_limits as $key => $limit ) {
+				if ( 0 === strpos( $unprefixed_model, $key ) ) {
+					return $limit;
+				}
+			}
+		}
+
 		// Default to a conservative limit.
 		/**
 		 * Filter the default token limit fallback for unknown models.

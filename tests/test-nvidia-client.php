@@ -109,10 +109,10 @@ class Test_Nvidia_Client extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_model() returns empty string when not configured.
+	 * Test get_model() returns the settings default when not configured.
 	 */
-	public function test_get_model_returns_empty_when_unconfigured() {
-		$this->assertSame( '', $this->client->get_model() );
+	public function test_get_model_returns_default_when_unconfigured() {
+		$this->assertSame( 'nvidia/nemotron-3-nano-30b-a3b', $this->client->get_model() );
 	}
 
 	/**
@@ -233,7 +233,15 @@ class Test_Nvidia_Client extends WP_UnitTestCase {
 	 * resolved (no options.model, no nvidia_model setting, no fallback).
 	 */
 	public function test_chat_completion_errors_when_model_missing() {
-		update_option( 'wp_mcp_ai_settings', array( 'nvidia_api_key' => 'nvapi-test' ) );
+		// The settings now ship a default NVIDIA model, so explicitly clear it
+		// to exercise the missing-model branch.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'nvidia_api_key' => 'nvapi-test',
+				'nvidia_model'   => '',
+			)
+		);
 
 		// Force the fallback filter to return an empty string so resolve_model()
 		// has nothing to fall back to.

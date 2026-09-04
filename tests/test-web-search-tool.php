@@ -515,15 +515,17 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		$tool = new WP_MCP_AI_Tool_Web_Search();
 
-		// Mock settings to enable Brave Search.
-		add_filter(
-			'option_wp_mcp_ai_settings',
-			function () {
-				return array(
-					'web_search_provider'  => 'brave',
-					'brave_search_api_key' => 'test_api_key_123',
-				);
-			}
+		// Configure Brave Search via the real settings option. Mocking through
+		// the option_wp_mcp_ai_settings filter is unreliable here because the
+		// tool reads settings through WP_MCP_AI_Settings_Registry, which uses
+		// get_option() directly — and the option filter is skipped when the
+		// option does not exist in the database.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'web_search_provider'  => 'brave',
+				'brave_search_api_key' => 'test_api_key_123',
+			)
 		);
 
 		$http_stub = static function ( $preempt, $args, $url ) {
@@ -554,7 +556,6 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		);
 
 		remove_filter( 'pre_http_request', $http_stub, 10 );
-		remove_all_filters( 'option_wp_mcp_ai_settings' );
 
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_search_pending', $result->get_error_code() );

@@ -32,7 +32,7 @@ class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
 		$result = $tool->execute( array(), array() );
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_missing_audio_attachment', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_missing_audio_source', $result->get_error_code() );
 	}
 
 	/**
@@ -330,7 +330,7 @@ class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		$attachment_id = $this->create_audio_attachment( $user_id, 'audio/aac' );
+		$attachment_id = $this->create_audio_attachment( $user_id, 'audio/aac', 'tool-audio.aac' );
 
 		$tool   = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
 		$result = $tool->execute( array( 'attachment_id' => $attachment_id ), array( 'user_id' => $user_id ) );
@@ -681,13 +681,15 @@ class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Helper to create a dummy audio attachment for testing.
+	 * Create an audio attachment backed by a file on disk.
 	 *
-	 * @param int $author_id Optional author identifier.
+	 * @param int         $author_id          Optional author identifier.
+	 * @param string|null $mime_type_override Optional MIME override.
+	 * @param string      $filename           Optional base filename (default tool-audio.mp3).
 	 * @return int Attachment ID.
 	 */
-	protected function create_audio_attachment( $author_id = 0, $mime_type_override = null ) {
-		return $this->create_test_attachment( 'tool-audio.mp3', 'FAKEAUDIO', $author_id, $mime_type_override );
+	protected function create_audio_attachment( $author_id = 0, $mime_type_override = null, $filename = 'tool-audio.mp3' ) {
+		return $this->create_test_attachment( $filename, 'FAKEAUDIO', $author_id, $mime_type_override );
 	}
 
 	/**
