@@ -657,6 +657,16 @@ Import external AI conversation exports into the JetEngine
   suspending (the function returns the new state, so reading it after
   suspends re-applies `true` and jams inline-async tick locks on WP 7.1).
 - **Tool count** — ~303 base + ~1,263 Pro (~1,566 total).
+- **Wave-5 fixes (same release)** — on `exec`-disabled hosts the Pro admin
+  pages + OCR no longer fatal: probe Node.js via
+  `wp_mcp_ai_check_nodejs_available()` / `wp_mcp_ai_get_nodejs_version()`
+  and CLI tools via `is_cli_tool_available()` / `run_cli_command()`
+  (exec-first + Process Service fallback); JetEngine detection requires
+  `JET_ENGINE_VERSION` and CCT checks probe with a direct SELECT
+  (`is_storage_available()`); complexity-based model routing runs from an
+  empty base; `get_model_limit()` strips provider prefixes (`nvidia/…`);
+  image permission checks use the acting user (`user_can( $user_id, … )`);
+  the legacy SSE handshake is filterable (`wp_mcp_ai_legacy_sse_enabled`).
 
 ## Front-End Surfaces, Nonce Self-Heal & Provider Defaults (v1.1.68+)
 
