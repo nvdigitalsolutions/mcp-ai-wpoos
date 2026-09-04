@@ -274,6 +274,11 @@ class Test_Mesh_Peer_Sync extends WP_UnitTestCase {
 	 * Test that sync is triggered on option update.
 	 */
 	public function test_sync_triggered_on_option_update() {
+		// The update_option hook is registered by the class constructor; under
+		// PHPUnit the federation feature loader (which instantiates the sync
+		// class in production) has not run, so instantiate it explicitly.
+		new WP_MCP_AI_Mesh_Peer_Sync();
+
 		// Simulate updating the option with mesh peers.
 		$settings                    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$settings['mesh_peer_sites'] = array(
