@@ -928,7 +928,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( $this->cct_table_exists( $table_name ) ) {
 			global $wpdb;
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct update required; JetEngine's db->update() reads from $_POST and ignores the supplied array outside of a form-submission context.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct update required; JetEngine's db->update() reads from $_POST and ignores the supplied array outside of a form-submission context.
 			$result = $wpdb->update( $table_name, $fields, array( '_ID' => $item_id ) );
 
 			if ( false === $result ) {
@@ -1140,13 +1140,30 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Check whether a CCT table exists in the database.
 	 *
-	 * @param string $table_name Fully-qualified table name.
+	 * Uses a direct SELECT probe instead of SHOW TABLES: on MySQL 8.0 the
+	 * data-dictionary view behind SHOW TABLES does not see DDL executed
+	 * inside the current transaction (e.g. tables created during plugin
+	 * activation or by test fixtures), while a regular SELECT against the
+	 * table does. A probe that raises no error means the table exists.
+	 *
+	 * @param string $table_name Fully-qualified table name (derived from a sanitized slug).
 	 * @return bool True when the table exists, false otherwise.
 	 */
 	protected function cct_table_exists( $table_name ) {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Schema existence check using SHOW TABLES; result intentionally not cached.
-		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
+
+		$wpdb->last_error = '';
+
+		// Suppress the expected table-missing error output for absent tables;
+		// the probe is checking for exactly that condition.
+		$suppress = $wpdb->suppress_errors( true );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from a sanitized slug; SHOW TABLES misses transactional DDL on MySQL 8.0.
+		$wpdb->get_var( "SELECT 1 FROM `{$table_name}` LIMIT 1" );
+
+		$wpdb->suppress_errors( $suppress );
+
+		return '' === $wpdb->last_error;
 	}
 
 	/**
