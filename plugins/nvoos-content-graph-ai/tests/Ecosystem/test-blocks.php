@@ -116,18 +116,19 @@ class Test_Blocks extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * Build a WP_Block instance for the render callbacks.
+	 * Render a registered block with WordPress block-support context.
 	 *
 	 * @param string $name  Block name.
 	 * @param array  $attrs Block attributes.
-	 * @return \WP_Block
+	 * @return string Rendered block HTML.
 	 */
-	private function block_instance( string $name, array $attrs = array() ): \WP_Block {
-		return new \WP_Block(
+	private function render_block( string $name, array $attrs = array() ): string {
+		return \render_block(
 			array(
-				'blockName' => $name,
-				'attrs'     => $attrs,
-				'innerHTML' => '',
+				'blockName'    => $name,
+				'attrs'        => $attrs,
+				'innerHTML'    => '',
+				'innerContent' => array(),
 			)
 		);
 	}
@@ -214,10 +215,9 @@ class Test_Blocks extends \WP_UnitTestCase {
 	}
 
 	public function test_chat_block_render_embeds_widget(): void {
-		$html = ChatBlock::render(
-			array( 'height' => '320px' ),
-			'',
-			$this->block_instance( ChatBlock::BLOCK_NAME )
+		$html = $this->render_block(
+			ChatBlock::BLOCK_NAME,
+			array( 'height' => '320px' )
 		);
 
 		$this->assertStringContainsString( 'wp-block-nvoos-content-graph-ai-chat', $html );
@@ -234,7 +234,8 @@ class Test_Blocks extends \WP_UnitTestCase {
 			)
 		);
 
-		ChatBlock::render(
+		$this->render_block(
+			ChatBlock::BLOCK_NAME,
 			array(
 				'assistantId' => $assistant_id,
 				'allowGuests' => true,
@@ -243,9 +244,7 @@ class Test_Blocks extends \WP_UnitTestCase {
 				'height'      => '400px',
 				'showCost'    => false,
 				'placeholder' => 'Ask me anything',
-			),
-			'',
-			$this->block_instance( ChatBlock::BLOCK_NAME )
+			)
 		);
 
 		$config = $this->injected_config();
@@ -267,7 +266,8 @@ class Test_Blocks extends \WP_UnitTestCase {
 	// ─── Chat bubble block ──────────────────────────────────────────
 
 	public function test_bubble_block_render_markup_and_assets(): void {
-		$html = ChatBubbleBlock::render(
+		$html = $this->render_block(
+			ChatBubbleBlock::BLOCK_NAME,
 			array(
 				'bubblePosition'   => 'top-left',
 				'bubbleSize'       => 'large',
@@ -278,9 +278,7 @@ class Test_Blocks extends \WP_UnitTestCase {
 				'panelHeight'      => 700,
 				'bubbleColor'      => '#123456',
 				'headerBackground' => '#abcdef',
-			),
-			'',
-			$this->block_instance( ChatBubbleBlock::BLOCK_NAME )
+			)
 		);
 
 		$this->assertStringContainsString( 'wp-block-nvoos-content-graph-ai-chat-bubble', $html );
@@ -309,14 +307,13 @@ class Test_Blocks extends \WP_UnitTestCase {
 	}
 
 	public function test_bubble_block_render_sanitizes_input(): void {
-		$html = ChatBubbleBlock::render(
+		$html = $this->render_block(
+			ChatBubbleBlock::BLOCK_NAME,
 			array(
 				'bubbleColor'   => 'red;background:url(evil)',
 				'bubbleTooltip' => '<script>alert(1)</script>Hello',
 				'panelTitle'    => '<b>Hi</b>',
-			),
-			'',
-			$this->block_instance( ChatBubbleBlock::BLOCK_NAME )
+			)
 		);
 
 		// Invalid hex colours never reach the style attribute.
