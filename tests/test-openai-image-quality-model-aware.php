@@ -24,9 +24,14 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that gpt-image-1 defaults to 'medium' quality when no settings exist.
+	 * Test that chat models (the Responses API path) default to 'medium'
+	 * quality inside the image_generation tool when no settings exist.
+	 *
+	 * GPT-image models are no longer sent as mainline Responses API models;
+	 * image generation via the Responses API now goes through a chat model
+	 * with the image_generation tool.
 	 */
-	public function test_gpt_image_1_defaults_to_medium_quality_via_responses() {
+	public function test_chat_model_defaults_to_medium_quality_via_responses() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_api_key'] = 'sk-test';
 		// Don't set openai_image_quality - let it use defaults.
@@ -44,7 +49,7 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 			);
 
 			$payload = array(
-				'model'  => 'gpt-image-1',
+				'model'  => 'gpt-4.1',
 				'output' => array(
 					array(
 						'type'    => 'image_generation',
@@ -69,7 +74,7 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
-		$result = $client->generate_image( 'Test prompt', array( 'model' => 'gpt-image-1' ) );
+		$result = $client->generate_image( 'Test prompt', array( 'model' => 'gpt-4.1' ) );
 
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 
@@ -81,7 +86,7 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'tools', $body );
 		$this->assertSame( 'image_generation', $body['tools'][0]['type'] );
 
-		// gpt-image-1 should send 'medium' quality.
+		// Chat models should send 'medium' quality in the image_generation tool.
 		$this->assertSame( 'medium', $body['tools'][0]['quality'] );
 	}
 
@@ -105,18 +110,11 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 			);
 
 			$payload = array(
-				'model'  => 'gpt-image-1',
-				'output' => array(
+				'created' => time(),
+				'model'   => 'gpt-image-1',
+				'data'    => array(
 					array(
-						'type'    => 'image_generation',
-						'content' => array(
-							array(
-								'type'  => 'output_image',
-								'image' => array(
-									'b64_json' => $png_base64,
-								),
-							),
-						),
+						'b64_json' => $png_base64,
 					),
 				),
 			);
@@ -139,10 +137,10 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 
 		$body = json_decode( $captured_request['args']['body'], true );
 		$this->assertIsArray( $body );
-		$this->assertArrayHasKey( 'tools', $body );
 
-		// gpt-image-1 sends quality in the image_generation tool.
-		$this->assertSame( 'medium', $body['tools'][0]['quality'] );
+		// gpt-image-1 goes through the classic Images endpoint and sends
+		// quality in the top-level payload.
+		$this->assertSame( 'medium', $body['quality'] );
 	}
 
 	/**
@@ -217,18 +215,11 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 			);
 
 			$payload = array(
-				'model'  => 'gpt-image-1',
-				'output' => array(
+				'created' => time(),
+				'model'   => 'gpt-image-1',
+				'data'    => array(
 					array(
-						'type'    => 'image_generation',
-						'content' => array(
-							array(
-								'type'  => 'output_image',
-								'image' => array(
-									'b64_json' => $png_base64,
-								),
-							),
-						),
+						'b64_json' => $png_base64,
 					),
 				),
 			);
@@ -251,10 +242,10 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 
 		$body = json_decode( $captured_request['args']['body'], true );
 		$this->assertIsArray( $body );
-		$this->assertArrayHasKey( 'tools', $body );
 
-		// gpt-image-1 should send 'high' quality in the tool.
-		$this->assertSame( 'high', $body['tools'][0]['quality'] );
+		// gpt-image-1 should send the configured 'high' quality in the
+		// top-level classic Images payload.
+		$this->assertSame( 'high', $body['quality'] );
 	}
 
 	/**

@@ -61,7 +61,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$tool             = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 		$captured_request = null;
 		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
-		$png_binary       = base64_decode( $png_base64 );
+		$png_binary       = base64_decode( $png_base64 ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding test fixture image data.
 
 		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
 			$captured_request = array(
@@ -71,7 +71,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 			$payload = array(
 				'created' => 456,
-				'model'   => 'gpt-image-test',
+				'model'   => 'gpt-image-1',
 				'data'    => array(
 					array(
 						'b64_json'       => $png_base64,
@@ -92,7 +92,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$result = $tool->execute(
 			array(
 				'prompt'          => 'A friendly robot painting a portrait',
-				'model'           => 'gpt-image-test',
+				'model'           => 'gpt-image-1',
 				'size'            => '1024x1536',
 				'quality'         => 'high',
 				'format'          => 'png',
@@ -118,9 +118,11 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wp-content/uploads/', $result['url'] );
 		$this->assertSame( 'png', $result['format'] );
 		$this->assertSame( '1024x1536', $result['size'] );
-		$this->assertSame( 'hd', $result['quality'] ); // 'high' is translated to 'hd'
-		$this->assertSame( 'gpt-image-test', $result['model'] );
-		$this->assertSame( 'b64_json', $result['response_format'] );
+		$this->assertSame( 'high', $result['quality'] ); // gpt-image-1 sends 'high' directly.
+		$this->assertSame( 'gpt-image-1', $result['model'] );
+		// The API currently rejects response_format, so the tool reports the
+		// 'url' fallback even when 'b64_json' was requested.
+		$this->assertSame( 'url', $result['response_format'] );
 		$this->assertSame( 'A friendlier robot', $result['revised_prompt'] );
 		$this->assertSame( 456, $result['created'] );
 
@@ -129,7 +131,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Successfully generated image', $result['text'] );
 		$this->assertStringContainsString( 'Revised prompt: A friendlier robot', $result['text'] );
 		$this->assertStringContainsString( '1024x1536', $result['text'] );
-		$this->assertStringContainsString( 'hd', $result['text'] ); // 'high' is translated to 'hd'
+		$this->assertStringContainsString( 'high', $result['text'] ); // gpt-image-1 sends 'high' directly.
 
 		$attachment_id = $result['attachment_id'];
 		$this->assertNotEmpty( $attachment_id );
@@ -138,6 +140,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$file_path = get_attached_file( $attachment_id );
 		$this->assertFileExists( $file_path );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local attachment file for assertion.
 		$this->assertSame( $png_binary, file_get_contents( $file_path ) );
 
 		$this->assertGreaterThan( 0, (int) $result['bytes'] );
@@ -147,7 +150,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $openai_meta );
 		$this->assertSame( 'openai', $openai_meta['source'] );
 		$this->assertSame( 'A friendly robot painting a portrait', $openai_meta['original_prompt'] );
-		$this->assertSame( 'gpt-image-test', $openai_meta['model'] );
+		$this->assertSame( 'gpt-image-1', $openai_meta['model'] );
 		$this->assertSame( 'A friendlier robot', $openai_meta['revised_prompt'] );
 		$this->assertSame( 456, $openai_meta['created'] );
 		$this->assertSame( 'png', $openai_meta['format'] );
@@ -254,7 +257,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$tool             = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 		$captured_request = null;
 		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
-		$png_binary       = base64_decode( $png_base64 );
+		$png_binary       = base64_decode( $png_base64 ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding test fixture image data.
 		$image_url        = 'https://example.com/generated.png';
 
 		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_binary, $image_url ) {
@@ -396,7 +399,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 				'url'  => $url,
 			);
 
-			// Simulate OpenAI returning a different model (e.g., due to fallback or upgrade)
+			// Simulate OpenAI returning a different model (e.g., due to fallback or upgrade).
 			$payload = array(
 				'created' => 789,
 				'model'   => 'dall-e-3',
@@ -459,8 +462,9 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
-		$png_binary = base64_decode( $png_base64 );
+		$png_binary = base64_decode( $png_base64 ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding test fixture image data.
 
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- pre_http_request filter signature requires all three parameters.
 		$http_stub = function ( $preempt, $args, $url ) use ( $png_base64 ) {
 			$payload = array(
 				'created' => time(),
@@ -555,8 +559,8 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $captured_request );
 		$payload = json_decode( $captured_request['args']['body'], true );
-		$this->assertSame( 'medium', $payload['quality'] ); // gpt-image-1 sends 'medium' directly
-		$this->assertSame( 'medium', $result['quality'] ); // Result reports actual value
+		$this->assertSame( 'medium', $payload['quality'] ); // gpt-image-1 sends 'medium' directly.
+		$this->assertSame( 'medium', $result['quality'] ); // Result reports actual value.
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );
@@ -616,8 +620,8 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $captured_request );
 		$payload = json_decode( $captured_request['args']['body'], true );
-		$this->assertSame( 'high', $payload['quality'] ); // gpt-image-1 sends 'high' directly
-		$this->assertSame( 'high', $result['quality'] ); // Result reports actual value
+		$this->assertSame( 'high', $payload['quality'] ); // gpt-image-1 sends 'high' directly.
+		$this->assertSame( 'high', $result['quality'] ); // Result reports actual value.
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );
@@ -890,19 +894,24 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
 
-		// For gpt-image-1, invalid qualities (not low/medium/high/auto) should fall back to 'medium'.
-		// 'standard' and 'hd' are converted to 'medium' and 'high' respectively.
+		// For gpt-image-1 (the default model), the allowed vocabulary is
+		// low/medium/high/auto. DALL-E values ('standard', 'hd') and invalid
+		// values are not in that vocabulary and fall back to 'medium'.
+		// The list uses numeric entries so the null quality case (which would
+		// collide with the empty-string key in a keyed array) stays covered.
 		$test_cases = array(
-			'standard' => 'medium', // DALL-E value converted to gpt-image value
-			'hd'       => 'high',   // DALL-E value converted to gpt-image value
-			'ultra'    => 'medium', // Invalid value, fallback to default
-			'best'     => 'medium', // Invalid value, fallback to default
-			''         => 'medium', // Empty value, fallback to default
-			null       => 'medium', // Null value, fallback to default
-			'invalid'  => 'medium', // Invalid value, fallback to default
+			array( 'standard', 'medium' ), // DALL-E value not valid for gpt-image-1.
+			array( 'hd', 'medium' ),       // DALL-E value not valid for gpt-image-1.
+			array( 'ultra', 'medium' ),    // Invalid value, fallback to default.
+			array( 'best', 'medium' ),     // Invalid value, fallback to default.
+			array( '', 'medium' ),         // Empty value, fallback to default.
+			array( null, 'medium' ),       // Null value, fallback to default.
+			array( 'invalid', 'medium' ),  // Invalid value, fallback to default.
 		);
 
-		foreach ( $test_cases as $invalid_quality => $expected_quality ) {
+		foreach ( $test_cases as $test_case ) {
+			$invalid_quality  = $test_case[0];
+			$expected_quality = $test_case[1];
 			$captured_request = null;
 
 			$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
@@ -940,9 +949,11 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 			remove_filter( 'pre_http_request', $http_stub, 10 );
 
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- Test failure message formatting.
 			$this->assertNotNull( $captured_request, 'Request not captured for quality: ' . var_export( $invalid_quality, true ) );
 			$payload = json_decode( $captured_request['args']['body'], true );
-			// For gpt-image-1, invalid or DALL-E qualities should be converted/fallback to gpt-image values.
+			// For gpt-image-1, invalid or DALL-E qualities fall back to the model default.
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- Test failure message formatting.
 			$this->assertSame( $expected_quality, $payload['quality'], "Quality should be '{$expected_quality}' for value: " . var_export( $invalid_quality, true ) );
 
 			if ( ! empty( $result['attachment_id'] ) ) {
@@ -965,6 +976,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
 
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- pre_http_request filter signature requires all three parameters.
 		$http_stub = function ( $preempt, $args, $url ) use ( $png_base64 ) {
 			$payload = array(
 				'created' => 123,
@@ -1127,13 +1139,13 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that dall-e-3 is the current default model and is treated as a
-	 * DALL·E-family model for quality + response_format handling.
+	 * Test that gpt-image-1 is the current default model and that DALL-E 3
+	 * remains the DALL·E-family reference for quality + response_format handling.
 	 */
-	public function test_dall_e_3_is_default_model() {
-		// Tool default model is dall-e-3.
+	public function test_gpt_image_1_is_default_model() {
+		// Tool default model is gpt-image-1.
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php';
-		$this->assertSame( 'dall-e-3', WP_MCP_AI_Tool_Generate_OpenAI_Image::DEFAULT_MODEL );
+		$this->assertSame( 'gpt-image-1', WP_MCP_AI_Tool_Generate_OpenAI_Image::DEFAULT_MODEL );
 
 		// dall-e-3 should NOT support response_format (the API currently rejects it).
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'dall-e-3' ) );
@@ -1141,7 +1153,23 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		// Quality normalization: dall-e-3 accepts standard/hd, maps gpt-image values.
 		$captured_request = null;
-		$filter_callback  = function ( $preempt, $args ) use ( &$captured_request ) {
+		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+		$filter_callback  = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+			if ( WP_MCP_AI_OpenAI_Client::IMAGES_ENDPOINT !== $url ) {
+				// The client downloads the image URL returned in the response;
+				// answer that second request with the raw PNG bytes.
+				return array(
+					'headers'  => array(
+						'content-type' => 'image/png',
+					),
+					'body'     => base64_decode( $png_base64 ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding test fixture image data.
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+				);
+			}
+
 			$captured_request = $args;
 			return array(
 				'headers'  => array(
