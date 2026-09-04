@@ -250,7 +250,11 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @return bool|WP_Error True if available, WP_Error otherwise.
 		 */
 		public function is_cct_available() {
-			if ( ! function_exists( 'jet_engine' ) ) {
+			// The version constant is JetEngine's own load marker. Test suites
+			// leak file-scope `jet_engine()` stubs process-wide in the
+			// single-process run, so function existence alone cannot prove the
+			// real plugin is loaded — without the constant, treat it as missing.
+			if ( ! function_exists( 'jet_engine' ) || ! defined( 'JET_ENGINE_VERSION' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_shopify_sync_jetengine_missing',
 					__( 'JetEngine plugin is required for Shopify Sync storage. Please install and activate JetEngine.', 'mcp-ai-wpoos-pro' )
@@ -1927,7 +1931,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @param string                   $run_id  Optional sync run ID for logging.
 		 * @return array|WP_Error Sync result or WP_Error.
 		 */
-		public function sync_from_catalog_api( $client, $dry_run = false, $run_id = '' ) {
+		public function sync_from_catalog_api( $client, $dry_run = false, $run_id = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $run_id is part of the public sync API signature for run-correlated logging.
 			$start_time = microtime( true );
 
 			// Ensure CCT columns exist.
@@ -2126,7 +2130,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Sync_CCT_Manager' ) ) {
 		 * @param string $sync_mode 'full' or 'minimal'.
 		 * @return array Array of CCT row arrays.
 		 */
-		protected function map_catalog_product_to_cct_rows( $product, $sync_mode = 'full' ) {
+		protected function map_catalog_product_to_cct_rows( $product, $sync_mode = 'full' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $sync_mode switches mapping depth for future callers; the default path covers both modes today.
 			$rows    = array();
 			$base_id = isset( $product['id'] ) ? sanitize_text_field( $product['id'] ) : '';
 

@@ -276,6 +276,9 @@ class WP_MCP_AI_Markup_REST_Controller {
 		$cleaned    = $this->validator->validate( $record, is_array( $annotation ) ? $annotation : array() );
 		if ( is_wp_error( $cleaned ) ) {
 			do_action( 'wp_mcp_ai_markup_resolved', $record, 'invalid' );
+			// Validation failures are client errors: annotate the WP_Error so the
+			// REST server surfaces 400 instead of its default 500.
+			$cleaned->add_data( array( 'status' => 400 ), $cleaned->get_error_code() );
 			return $cleaned;
 		}
 

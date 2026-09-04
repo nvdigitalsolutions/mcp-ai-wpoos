@@ -996,7 +996,9 @@ class WP_MCP_AI_Shortcode {
 			// The WP_DEBUG fix in the main plugin class ensures debug output.
 
 			// won't break the editor when WP_DEBUG is enabled.
-			$is_elementor_editor = $this->is_elementor_editor();
+			// Use the init variant so the editor detection also honours the
+			// `action=elementor` request flag, matching register_assets().
+			$is_elementor_editor = $this->is_elementor_editor_init();
 
 			// Get assistant provider and model for client-side execution (embedded provider).
 			// This must be done BEFORE enqueuing chat scripts to ensure correct dependency order.
