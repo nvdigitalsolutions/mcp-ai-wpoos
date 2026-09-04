@@ -284,7 +284,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 		 *
 		 * @return string[]
 		 */
-		public function allow_github_oauth_redirect_host( $allowed_hosts, $redirect = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
+		public function allow_github_oauth_redirect_host( $allowed_hosts, $redirect = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by WordPress filter signature.
 			/**
 			 * Filter the GitHub OAuth authorize endpoint.
 			 *
@@ -336,6 +336,21 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 		 */
 		private function redirect_to_settings_page() {
 			wp_safe_redirect( $this->get_settings_page_url() );
+
+			/**
+			 * Filter whether the request should terminate after the redirect.
+			 *
+			 * Test suites disable the terminating exit so the handler can be
+			 * exercised without killing the PHPUnit process.
+			 *
+			 * @since 1.1.69
+			 *
+			 * @param bool $terminate Whether to exit after redirecting. Default true.
+			 */
+			if ( ! apply_filters( 'wp_mcp_ai_github_oauth_redirect_terminate', true ) ) {
+				return;
+			}
+
 			exit;
 		}
 

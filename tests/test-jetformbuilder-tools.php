@@ -216,9 +216,12 @@ class WP_MCP_AI_JetFormBuilder_Tools_Test extends WP_UnitTestCase {
 			parse_str( $parsed_url['query'], $query_args );
 		}
 
-		$route_path     = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '';
-		$rest_route     = isset( $query_args['rest_route'] ) ? $query_args['rest_route'] : '';
-		$expected_route = '/jet-form-builder/v1/forms/45/records/';
+		$route_path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '';
+		$rest_route = isset( $query_args['rest_route'] ) ? $query_args['rest_route'] : '';
+		// WP_MCP_AI_Proxy_Utils::build_rest_url() trims trailing slashes, so
+		// the canonical rest_route has no trailing slash (the JFB endpoint
+		// canonicalizes both forms).
+		$expected_route = '/jet-form-builder/v1/forms/45/records';
 
 		$path_matches = '' !== $route_path && substr( $route_path, -strlen( $expected_route ) ) === $expected_route;
 

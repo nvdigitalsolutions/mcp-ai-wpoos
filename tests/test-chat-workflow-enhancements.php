@@ -201,9 +201,12 @@ class Test_Chat_Workflow_Enhancements extends WP_UnitTestCase {
 		$secret2 = $method->invoke( null );
 		$this->assertEquals( $secret1, $secret2 );
 
-		// Verify it was stored in the database.
+		// Verify it was stored in the database, encrypted at rest by the API
+		// key store, and that it decrypts back to the generated value.
 		$stored = get_option( 'wp_mcp_ai_webhook_secret' );
-		$this->assertEquals( $secret1, $stored );
+		$this->assertNotEquals( $secret1, $stored, 'Stored secret must not be plaintext' );
+		$this->assertStringStartsWith( 'v2:', (string) $stored, 'Stored secret must carry the encrypted v2: prefix' );
+		$this->assertEquals( $secret1, wp_mcp_ai_get_api_key( 'webhook_secret', '' ), 'Stored secret must decrypt back to the generated value' );
 	}
 
 	/**

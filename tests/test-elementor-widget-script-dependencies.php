@@ -87,8 +87,14 @@ class WP_MCP_AI_Elementor_Widget_Script_Dependencies_Test extends WP_UnitTestCas
 	 * Test that shortcode registers assets on Elementor hook.
 	 */
 	public function test_shortcode_registers_assets_on_elementor_hook() {
-		// Get the priority of the registered action.
-		$priority = has_action( 'elementor/frontend/after_register_scripts', array( WP_MCP_AI_Shortcode::class, 'register_assets' ) );
+		// The shortcode constructor wires asset registration on the Elementor
+		// frontend hook through an instance callback.
+		$shortcode = new WP_MCP_AI_Shortcode();
+
+		$priority = has_action(
+			'elementor/frontend/after_register_scripts',
+			array( $shortcode, 'register_assets' )
+		);
 
 		$this->assertNotFalse(
 			$priority,
