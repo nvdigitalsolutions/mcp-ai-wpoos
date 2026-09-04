@@ -21,10 +21,16 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Determine whether JetEngine is available.
 	 *
+	 * Requires the version constant JetEngine defines in its main plugin file.
+	 * Test suites install file-scope `Jet_Engine` / `jet_engine()` stubs that
+	 * leak process-wide in the single-process run, so function/class existence
+	 * alone cannot distinguish the real plugin from a stub.
+	 *
 	 * @return bool
 	 */
 	public static function is_available() {
-		return function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' );
+		return defined( 'JET_ENGINE_VERSION' )
+			&& ( function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' ) );
 	}
 
 	/**
@@ -121,6 +127,7 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$required_cap = isset( $post_type_object->cap->edit_posts ) ? $post_type_object->cap->edit_posts : 'edit_posts';
+		// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- $required_cap derives from the queried post type's capability map and cannot be statically resolved.
 		if ( ! user_can( $user_id, $required_cap ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to read content from this post type.', 'mcp-ai-wpoos' ) );
 		}
