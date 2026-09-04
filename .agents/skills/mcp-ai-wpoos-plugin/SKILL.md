@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.68"
-  plugin-version-tested: "1.1.68"
-  last-updated: "2026-09-03"
+  plugin-version: "1.1.69"
+  plugin-version-tested: "1.1.69"
+  last-updated: "2026-09-04"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -43,7 +43,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~303 base / ~1,565 full tools
+     │  Tool Registry     │  ~303 base / ~1,566 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -624,6 +624,39 @@ Import external AI conversation exports into the JetEngine
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Vision Analysis, tagDiv Compat, DeepSeek Schemas & ZipSlip Revival (v1.1.69+)
+
+- **Vision Analysis toolkit (Pro)** — new `analyze_image_objects` tool
+  counts objects per category (HF OWLv2 / Ollama `detection`, VLM `vlm`,
+  hybrid label normalization; `annotate=true` returns a GD box-annotated
+  attachment). Gated by `enable_vision_analysis_toolkit` on the NV oOS →
+  Vision Analysis settings page — **off by default**; remote image URLs go
+  through the SSRF URL guard. Docs: `docs/toolkits/vision-analysis-toolkit.md`.
+- **tagDiv Newspaper admin compat** — the four SiteKit tools return string
+  capability-flag arrays (the old `CAPABILITY_CAN_USE_IF_ADMIN` constant
+  never existed and fatalled the assistant tools metabox at
+  `sitekit_get_adsense`); the sortable shim prints a bundled jQuery UI
+  1.14.2 copy whenever `td_wp_admin` is enqueued (detected via the print
+  queue — a registered+enqueued core handle can still fail to execute);
+  tools metabox CSS is enqueued on `admin_enqueue_scripts` so it prints in
+  the head.
+- **Tool schemas: `properties` must be an object** — argument-less tools
+  encode `"properties": {}` (never `[]`; DeepSeek returns 400 otherwise).
+  `LegacyToolAdapter` preserves object maps and upgrades empty arrays; the
+  AI Tool Builder scaffold emits `new stdClass()` for parameterless tools.
+- **ZipSlip guard** — `ZipArchive::$num_files` does not exist on PHP 8.x;
+  the entry loops must use `count( $zip )` (OKF bundle manager + four Pro
+  admin pages). The guard was silently dead code.
+- **Rate limiting** — `check_rate_limit()` classifies internal dispatches by
+  the dispatching request's real HTTP verb; the nefarious monitor keeps its
+  own `wp_mcp_ai_nefarious_rate_limit_` counter (never share the chat REST
+  limiter's — it halves the chat budget). `wp_mcp_ai_before_chat_request`
+  subscribers tolerate the legacy 2-arg emitter shape.
+- **Settings save** — capture `wp_suspend_cache_addition()` state *before*
+  suspending (the function returns the new state, so reading it after
+  suspends re-applies `true` and jams inline-async tick locks on WP 7.1).
+- **Tool count** — ~303 base + ~1,263 Pro (~1,566 total).
 
 ## Front-End Surfaces, Nonce Self-Heal & Provider Defaults (v1.1.68+)
 

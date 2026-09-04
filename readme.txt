@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.68
+Stable tag: 1.1.69
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.69 - September 4, 2026 =
+
+AI-vision and admin-compat release. Pro gains a new Vision Analysis toolkit: the analyze_image_objects tool detects and counts objects in an image (attachment, file, URL, or base64) with HuggingFace OWLv2 / Ollama detection, VLM counting, hybrid label normalization, and an annotate=true mode that returns a GD-drawn labeled bounding-box copy as a media attachment; a new NV oOS → Vision Analysis settings page gates the toolkit (off by default) with SSRF-guarded remote URLs. Fixed: the four SiteKit tools returned a non-existent capability-flag constant that crashed the assistant tools metabox on the tagDiv Newspaper theme (string flag arrays now; the sortable shim also prints its bundled copy whenever td_wp_admin is enqueued, and the tools metabox CSS is enqueued in the head); DeepSeek 400s on argument-less tools whose properties encoded as [] instead of {} (29 files emit {} and LegacyToolAdapter preserves object maps); a dead-code ZipSlip guard (ZipArchive::$num_files doesn't exist on PHP 8.x — count($zip) restores path-traversal rejection in OKF bundle import and four Pro admin pages); rate-limiter classification by the dispatching request's real HTTP verb with a separate nefarious-monitor counter and dual-shape chat hook tolerance; assistant edit screen no longer fatals when one tool's shortcut tasks throw; model catalog fixes (gpt-4o 128k context, gemini-2.0-flash video-capable typo, claude-sonnet-4-6/gpt-4o active status, two Qwen entries); and a settings-save bug that left object-cache additions suspended (jamming inline-async tick locks on WP 7.1). Fourth PHPUnit repair wave (~9 test PRs); the mcp-ai-wpoos-test-suite skill now distills 37 root-cause patterns. Tool count: ~303 base + ~1,263 Pro (~1,566 total; live registry authoritative).
 
 = 1.1.68 - September 3, 2026 =
 

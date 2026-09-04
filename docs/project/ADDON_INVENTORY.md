@@ -1,7 +1,7 @@
 # Addon Inventory
 
 > **Purpose:** One-stop reference for every addon in this monorepo — its status, version, license, dependencies, and whether it's production-ready.
-> **Last Updated:** September 3, 2026
+> **Last Updated:** September 4, 2026
 
 ---
 
@@ -33,7 +33,7 @@
 
 | # | Addon | Directory | Version | Status | License | Requires | Description |
 |---|---|---|---|---|---|---|---|
-| 1 | **Pro** | `addons/pro/` | (live) | ✅ Production | Proprietary | Base plugin, PHP 8.1+ | 30 toolkits, ~584 tools, commercial license. E-commerce, CRM, document generation, media production, healthcare, legal, scheduling, analytics, OKF knowledge routing (skill bridge, auto-enrichment, hybrid router, SPA skills drawer), artifact evolution (gated Darwinian loop for skills/prompts/roles, v1.1.63), Addons one-click installer page (v1.1.63), Google Calendar connection on the shared `includes/google/` foundation with 6 new google-workspace tools (v1.1.64), Composio account-health engine + `composio_manage_accounts` (v1.1.64). |
+| 1 | **Pro** | `addons/pro/` | (live) | ✅ Production | Proprietary | Base plugin, PHP 8.1+ | 31 toolkits, ~584 tools, commercial license. E-commerce, CRM, document generation, media production, healthcare, legal, scheduling, analytics, OKF knowledge routing (skill bridge, auto-enrichment, hybrid router, SPA skills drawer), artifact evolution (gated Darwinian loop for skills/prompts/roles, v1.1.63), Addons one-click installer page (v1.1.63), Google Calendar connection on the shared `includes/google/` foundation with 6 new google-workspace tools (v1.1.64), Composio account-health engine + `composio_manage_accounts` (v1.1.64), Vision Analysis object-counting toolkit (`analyze_image_objects`, v1.1.69). |
 | 2 | **Core Plugin** | `core/` | 1.0.0 | ✅ Production | GPL-3.0 | None (standalone) | Separate lightweight MCP server framework. Not a dependency of the main plugin. Provides baseline tools (posts, media, users, taxonomies) via a stable public API. |
 
 ### Active Addons

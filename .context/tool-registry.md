@@ -1,7 +1,7 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: September 3, 2026 (v1.1.68).
+> Last reviewed: September 4, 2026 (v1.1.69).
 
 ---
 
@@ -14,7 +14,9 @@ Tools are the core extensibility unit of NV oOS. Each tool:
 - Implements `execute( $arguments, $context )`
 - Is registered in `includes/tools-init.php` (base) or `addons/pro/mcp-ai-wpoos-pro.php` (pro)
 
-**Total tools:** ~1,565 (~303 base + ~1,262 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,566 (~303 base + ~1,263 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+
+**New in v1.1.69:** +1 Pro tool — `analyze_image_objects` (Vision Analysis toolkit, `addons/pro/includes/tools/vision-analysis/`, PR #6267): detects and counts objects per category via HuggingFace OWLv2 / Ollama (`detection`), chat-VLM counting (`vlm`), or hybrid label normalization; `annotate=true` returns a GD box-annotated attachment. Gated by `enable_vision_analysis_toolkit` in the Pro module registry's conditional-toolkit map (off by default; the tool is only registered when enabled). Schema-contract sweep: every argument-less tool now emits `properties: {}` (never `[]`) — DeepSeek rejects empty-array properties with a 400 — across 29 files (`list_gmail_connections`, `list_drive_connections`, Cloudways ×4, DietPi ×7, `wait_for_user`, `okf_list_bundles`, WebChat `get_webchat_status`, graphify `content_gaps`/`graph_stats`, embedded ability `input_schema`s, `ProfessionStatsTool`, content-graph tools); `LegacyToolAdapter` preserves object maps and upgrades empty arrays to `stdClass` instead of normalizing objects back to arrays; the AI Tool Builder scaffold emits `new stdClass()` for parameterless tools (#6272). Model-catalog fixes: `gpt-4o` context limit 128000 in `WP_MCP_AI_Token_Budget_Manager::$model_limits` (prefix match no longer returns 8192), `gemini-2.0-flash` restored to the video-capable list (duplicate `gemini-2.5-flash` typo), `claude-sonnet-4-6`/`gpt-4o` restored to `active`, and two Qwen Hugging Face entries added to `includes/data/model-catalog.json` (#6274). SiteKit tools return string capability-flag arrays instead of the non-existent `CAPABILITY_CAN_USE_IF_ADMIN` constant (metabox crash, #6278).
 
 **New in v1.1.68:** No tools added or removed. Preset and contract changes only: `WP_MCP_AI_Tool_Presets_Helper` gained the missing tools across presets — OKF `okf_enrich_site_content`/`route_knowledge_query`, the Google Calendar family (`list_google_calendars`, `list_google_calendar_events`, `update_google_calendar_event`, `delete_google_calendar_event`, `check_google_calendar_availability`, `quick_add_google_calendar_event`), Gmail/Drive (`get_gmail_message`, `get_gmail_thread`, `list_gmail_connections`, `modify_gmail_message`, `get_drive_file`, `list_drive_connections`), `composio_manage_accounts`, and `git_inspect`/`git_change` (#6242). `WP_MCP_AI_Token_Budget_Manager` dropped drifted duplicate catalog entries (`gpt-4.1`, `gemini-2.5-flash` now single entries with corrected limits) and `get_model_tpm_limit()` restored the `wp_mcp_ai_model_tpm_limit` filter seam across the CCT → bundled-catalog fallback path (#6233). The agent-identity resolver casts canonical IDs read from the alias table to int (`absint`, #6232). Assistant untrash restores the pre-trash status via `wp_untrash_post_status` so published assistants keep CCT sync (#6239). `wp_mcp_ai_seed_task_templates` AJAX action registered on the settings dashboard (#6243).
 

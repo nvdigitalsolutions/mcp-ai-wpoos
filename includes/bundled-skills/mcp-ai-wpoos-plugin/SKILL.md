@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.68"
-  plugin-version-tested: "1.1.68"
+  plugin-version: "1.1.69"
+  plugin-version-tested: "1.1.69"
   last-updated: "2026-09-02"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -43,7 +43,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~303 base / ~1,565 full tools
+     │  Tool Registry     │  ~303 base / ~1,566 full tools
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
