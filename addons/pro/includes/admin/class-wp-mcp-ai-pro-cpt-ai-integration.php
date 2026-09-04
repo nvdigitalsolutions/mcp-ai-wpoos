@@ -43,6 +43,30 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	}
 
 	/**
+	 * Reset the singleton and every hook its constructor registered.
+	 *
+	 * Exposed for tests so each test can exercise the hook-registration logic
+	 * in isolation (the constructor registers hooks only while the feature is
+	 * enabled, and the singleton caches that state forever). Production code
+	 * never calls this.
+	 *
+	 * @internal
+	 */
+	public static function reset_for_tests() {
+		if ( null === self::$instance ) {
+			return;
+		}
+
+		remove_action( 'add_meta_boxes', array( self::$instance, 'add_ai_metabox' ) );
+		remove_action( 'load-term.php', array( self::$instance, 'add_term_ai_metabox' ) );
+		remove_action( 'load-edit-tags.php', array( self::$instance, 'add_term_ai_metabox' ) );
+		remove_action( 'admin_enqueue_scripts', array( self::$instance, 'enqueue_admin_assets' ) );
+		remove_action( 'wp_ajax_wp_mcp_ai_cpt_chat', array( self::$instance, 'handle_ajax_chat' ) );
+
+		self::$instance = null;
+	}
+
+	/**
 	 * Constructor.
 	 */
 	private function __construct() {
