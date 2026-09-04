@@ -128,8 +128,11 @@ class Test_Remote_Sites_OAuth_Redirect_URI extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'page=wp-mcp-ai-remote-sites', $escaped_uri, 'esc_url should preserve page parameter' );
 		$this->assertStringContainsString( 'oauth_handler=gmail_oauth_callback', $escaped_uri, 'esc_url should preserve oauth_handler parameter' );
 
-		// Parse and verify.
-		$parsed = wp_parse_url( $escaped_uri );
+		// Parse and verify. esc_url() HTML-encodes ampersands (&#038;) for
+		// attribute contexts; a browser decodes them back before requesting,
+		// so decode entities before parsing (wp_parse_url would otherwise
+		// treat the leading # as a fragment delimiter).
+		$parsed = wp_parse_url( html_entity_decode( $escaped_uri ) );
 		parse_str( $parsed['query'], $query_params );
 
 		$this->assertArrayHasKey( 'oauth_handler', $query_params, 'oauth_handler should be present after esc_url' );
