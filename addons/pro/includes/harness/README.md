@@ -39,6 +39,7 @@ Stable contract: tool slug, JSONL row shape (OpenAI chat-format: `{"messages":[s
 - **`HARD_MAX_CASES` is a ceiling, not a default.** Admins exporting larger corpora must chunk by suite; do not raise the constant to dodge the cap.
 - **Per-case payload cap is `DEFAULT_PER_CASE_CHAR_CAP` characters** (input + expected). Cases over the cap are skipped with reason `skipped_too_large` rather than truncated — silent truncation would poison a fine-tune corpus.
 - **Non-string inputs/expecteds are `wp_json_encode`-d** so the row stays well-formed. Do not introduce a custom serialiser.
+- **Empty input/expected structures are skipped** with reasons `skipped_no_input` / `skipped_no_expect` — an empty `input` array must never surface as a `"[]"` user message in the corpus.
 - **Honour the canonical Pro tool envelope** (`WP_MCP_AI_Tool_Interface` return contract). The two-gate sanitisation rule applies: sanitise `$arguments` at entry, escape any values that surface in admin messages at exit.
 - The Pro slice **must be safe to deactivate** independently — keep all wiring inside this folder + `harness-init.php`. Base Layers A–G must keep working when Layer H is unloaded.
 

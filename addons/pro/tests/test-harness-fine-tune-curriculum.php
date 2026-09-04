@@ -105,6 +105,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		// Clean up temp files.
 		if ( is_dir( $this->tmp_upload_dir ) ) {
 			array_map( 'unlink', glob( $this->tmp_upload_dir . '/*' ) );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Test fixture cleanup on a temp dir.
 			rmdir( $this->tmp_upload_dir );
 		}
 		if ( method_exists( 'WP_MCP_AI_Eval_Suite_Registry', 'reset_instance' ) ) {
@@ -299,12 +300,12 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'c1',
-					'input'    => 'Q1',
+					'input'    => array( 'prompt' => 'Q1' ),
 					'expected' => 'A1',
 				),
 				array(
 					'slug'     => 'c2',
-					'input'    => 'Q2',
+					'input'    => array( 'prompt' => 'Q2' ),
 					'expected' => 'A2',
 				),
 			)
@@ -339,7 +340,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'c1',
-					'input'    => 'Q1',
+					'input'    => array( 'prompt' => 'Q1' ),
 					'expected' => 'A1',
 				),
 			)
@@ -372,12 +373,12 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'empty_input',
-					'input'    => '',
+					'input'    => array(),
 					'expected' => 'A1',
 				),
 				array(
 					'slug'     => 'good_case',
-					'input'    => 'Q2',
+					'input'    => array( 'prompt' => 'Q2' ),
 					'expected' => 'A2',
 				),
 			)
@@ -410,12 +411,12 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'no_expect',
-					'input'    => 'Q1',
+					'input'    => array( 'prompt' => 'Q1' ),
 					'expected' => '',
 				),
 				array(
 					'slug'     => 'good_case',
-					'input'    => 'Q2',
+					'input'    => array( 'prompt' => 'Q2' ),
 					'expected' => 'A2',
 				),
 			)
@@ -457,12 +458,12 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'long_case',
-					'input'    => $long,
-					'expected' => $long,
+					'input'    => array( 'text' => $long ),
+					'expected' => array( 'text' => $long ),
 				),
 				array(
 					'slug'     => 'ok_case',
-					'input'    => 'Q',
+					'input'    => array( 'prompt' => 'Q' ),
 					'expected' => 'A',
 				),
 			)
@@ -494,7 +495,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		for ( $i = 1; $i <= 10; $i++ ) {
 			$cases[] = array(
 				'slug'     => "c{$i}",
-				'input'    => "Q{$i}",
+				'input'    => array( 'prompt' => "Q{$i}" ),
 				'expected' => "A{$i}",
 			);
 		}
@@ -568,7 +569,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'c1',
-					'input'    => 'What is 2+2?',
+					'input'    => array( 'prompt' => 'What is 2+2?' ),
 					'expected' => '4',
 				),
 			)
@@ -596,7 +597,9 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		$this->assertSame( array( 'system', 'user', 'assistant' ), $roles );
 
 		$this->assertSame( 'You are helpful.', $messages[0]['content'] );
-		$this->assertSame( 'What is 2+2?', $messages[1]['content'] );
+		$user_content = json_decode( $messages[1]['content'], true );
+		$this->assertIsArray( $user_content );
+		$this->assertSame( 'What is 2+2?', $user_content['prompt'] );
 		$this->assertSame( '4', $messages[2]['content'] );
 	}
 
@@ -614,7 +617,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'c1',
-					'input'    => 'Q',
+					'input'    => array( 'prompt' => 'Q' ),
 					'expected' => 'A',
 				),
 			)
@@ -654,12 +657,12 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'w1',
-					'input'    => 'Hello',
+					'input'    => array( 'prompt' => 'Hello' ),
 					'expected' => 'World',
 				),
 				array(
 					'slug'     => 'w2',
-					'input'    => 'Foo',
+					'input'    => array( 'prompt' => 'Foo' ),
 					'expected' => 'Bar',
 				),
 			)
@@ -683,6 +686,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 		$this->assertFileExists( $result['file_path'] );
 
 		// Validate every line is valid JSON with a 'messages' key.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local fixture file for assertion.
 		$lines = array_filter( explode( "\n", file_get_contents( $result['file_path'] ) ) );
 		$this->assertCount( 2, $lines );
 		foreach ( $lines as $line ) {
@@ -705,7 +709,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'g1',
-					'input'    => 'Q',
+					'input'    => array( 'prompt' => 'Q' ),
 					'expected' => 'A',
 				),
 			)
@@ -740,7 +744,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'f1',
-					'input'    => 'Q',
+					'input'    => array( 'prompt' => 'Q' ),
 					'expected' => 'A',
 				),
 			)
@@ -771,7 +775,7 @@ class Test_WP_MCP_AI_Pro_Harness_Fine_Tune_Curriculum extends WP_UnitTestCase {
 			array(
 				array(
 					'slug'     => 'p1',
-					'input'    => 'Q',
+					'input'    => array( 'prompt' => 'Q' ),
 					'expected' => 'A',
 				),
 			)
