@@ -41,10 +41,12 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 		$settings['enable_high_token_model_switch'] = true;
 		$settings['high_token_fallback_model']      = 'gemini-2.0-flash-exp';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
-		// Create messages that exceed gpt-4o-mini's TPM limit (200,000).
-		// Simulate 250,000 tokens (62,500 chars * 4).
-		$large_text = str_repeat( 'This is a large document with lots of content. ', 1400 );
+		// Create messages that exceed claude-3-haiku's hardcoded TPM default
+		// (50,000): ~51,000 tokens (204,000 chars / 4). gpt-4o-mini was retired
+		// in the July 2026 model catalog and has no TPM entry anymore.
+		$large_text = str_repeat( 'This is a large document with lots of content. ', 4000 );
 
 		$messages = array(
 			array(
@@ -54,7 +56,7 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 		);
 
 		$options = array(
-			'model' => 'gpt-4o-mini',
+			'model' => 'claude-3-haiku',
 		);
 
 		// This should trigger fallback to the global setting.
@@ -63,9 +65,9 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 		// The model selector should fall back to a higher-capacity model.
 		// Since we have a very large request, it should use the configured fallback.
 		$this->assertNotEquals(
-			'gpt-4o-mini',
+			'claude-3-haiku',
 			$selected_model,
-			'Should fall back from gpt-4o-mini when TPM limit is exceeded'
+			'Should fall back from claude-3-haiku when TPM limit is exceeded'
 		);
 	}
 
