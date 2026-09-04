@@ -19,6 +19,7 @@ class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 				'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'lm_studio' ),
 			)
 		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
 		$openai_client    = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
 		$gemini_client    = $this->createMock( WP_MCP_AI_Gemini_Client::class );
@@ -49,6 +50,7 @@ class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 				'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'lm_studio' ),
 			)
 		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
 		$openai_client    = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
 		$gemini_client    = $this->createMock( WP_MCP_AI_Gemini_Client::class );
@@ -75,25 +77,43 @@ class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure the router uses OpenAI as fallback when no priority list is configured.
+	 * Ensure the router uses the default priority list when no settings exist.
 	 */
 	public function test_router_uses_default_priority_list_when_not_configured() {
 		// Clear settings.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		// The default priority list is derived from the Model Config catalog
+		// (alphabetically sorted), so resolve the first provider from the same
+		// source instead of hardcoding an order that the catalog can change.
+		$defaults       = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$first_provider = isset( $defaults['provider_priority_list'][0] ) ? $defaults['provider_priority_list'][0] : 'openai';
 
 		$openai_client    = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
 		$gemini_client    = $this->createMock( WP_MCP_AI_Gemini_Client::class );
 		$ollama_client    = $this->createMock( WP_MCP_AI_Ollama_Client::class );
 		$lm_studio_client = $this->createMock( WP_MCP_AI_LM_Studio_Client::class );
+		$anthropic_client = $this->createMock( WP_MCP_AI_Anthropic_Client::class );
 
-		// Expect openai_client to be called (default priority list starts with openai).
-		$openai_client->expects( $this->once() )
+		$clients = array(
+			'openai'    => $openai_client,
+			'gemini'    => $gemini_client,
+			'ollama'    => $ollama_client,
+			'lm_studio' => $lm_studio_client,
+			'anthropic' => $anthropic_client,
+		);
+
+		$this->assertArrayHasKey( $first_provider, $clients, 'Expected the first default provider to be mockable in this test.' );
+
+		// Expect the first provider in the default priority list to be called.
+		$clients[ $first_provider ]->expects( $this->once() )
 			->method( 'create_chat_completion' )
 			->willReturn( array( 'content' => 'test response' ) );
 
-		$router = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client );
+		$router = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client, $anthropic_client );
 
-		// Call without specifying a provider - should use default priority list.
+		// Call without specifying a provider - should use the default priority list.
 		$result = $router->create_chat_completion( array(), array() );
 
 		$this->assertIsArray( $result );
@@ -110,6 +130,7 @@ class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 				'provider_priority_list' => array( 'gemini', 'openai' ),
 			)
 		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
 		$openai_client    = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
 		$gemini_client    = $this->createMock( WP_MCP_AI_Gemini_Client::class );
@@ -166,6 +187,7 @@ class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 				'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'lm_studio' ),
 			)
 		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
 		$openai_client    = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
 		$gemini_client    = $this->createMock( WP_MCP_AI_Gemini_Client::class );

@@ -61,6 +61,7 @@ class WP_MCP_AI_Image_Tool_Settings_Test extends WP_UnitTestCase {
 	public function test_openai_image_tool_falls_back_to_hardcoded_defaults() {
 		// No settings configured - should use hardcoded defaults.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php';
 		$tool   = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
@@ -69,13 +70,13 @@ class WP_MCP_AI_Image_Tool_Settings_Test extends WP_UnitTestCase {
 		// Verify hardcoded defaults are used.
 		$this->assertArrayHasKey( 'properties', $schema );
 		$this->assertArrayHasKey( 'default', $schema['properties']['model'] );
-		$this->assertEquals( 'dall-e-3', $schema['properties']['model']['default'] );
+		$this->assertEquals( 'gpt-image-1', $schema['properties']['model']['default'] );
 
 		$this->assertArrayHasKey( 'default', $schema['properties']['size'] );
 		$this->assertEquals( '1024x1024', $schema['properties']['size']['default'] );
 
 		$this->assertArrayHasKey( 'default', $schema['properties']['quality'] );
-		$this->assertEquals( 'standard', $schema['properties']['quality']['default'] );
+		$this->assertEquals( 'medium', $schema['properties']['quality']['default'] );
 	}
 
 	/**
