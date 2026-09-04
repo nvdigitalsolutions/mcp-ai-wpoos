@@ -85,12 +85,12 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 		// Test with a LangChain package.
 		$result = $method->invoke( null, 'langchain' );
 
-		// Check expected paths would be tested (files now live in Pro addon directory):
+		// Check expected paths would be tested (files now live in Pro addon directory).
 		// 1. WP_MCP_AI_PRO_PATH . 'assets/js/langchain-orchestration.min.js' (production)
 		// 2. WP_MCP_AI_PRO_PATH . 'assets/js/langchain-tool-adapter.min.js' (production)
 		// 3. WP_MCP_AI_PRO_PATH . 'assets/js/langchain-orchestration.js' (development)
 		// 4. WP_MCP_AI_PRO_PATH . 'assets/js/langchain-tool-adapter.js' (development)
-		// 5. WP_MCP_AI_PRO_PATH . 'node_modules/langchain' (development)
+		// 5. WP_MCP_AI_PRO_PATH . 'node_modules/langchain' (development).
 
 		// The result depends on environment, but method should not throw errors.
 		$this->assertIsBool( $result, 'LangChain package check should return boolean' );
@@ -108,8 +108,12 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 		$this->assertIsArray( $composer['require-dev'] );
 
 		// Check for known production dependencies.
-		$this->assertArrayHasKey( 'rahul900day/tiktoken-php', $composer['require'] );
+		$this->assertArrayHasKey( 'psr/event-dispatcher', $composer['require'] );
 		$this->assertArrayHasKey( 'symfony/http-client', $composer['require'] );
+
+		// rahul900day/tiktoken-php moved to the optional "suggest" section,
+		// so it must no longer be advertised as a hard requirement.
+		$this->assertArrayNotHasKey( 'rahul900day/tiktoken-php', $composer['require'] );
 
 		// Check for known dev dependencies.
 		$this->assertArrayHasKey( 'phpunit/phpunit', $composer['require-dev'] );
@@ -128,13 +132,13 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 		$method     = $reflection->getMethod( 'check_composer_package_installed' );
 		$method->setAccessible( true );
 
-		// Test with a known package.
-		$result = $method->invoke( null, 'rahul900day/tiktoken-php' );
+		// Test with a package that is required by composer.json.
+		$result = $method->invoke( null, 'symfony/http-client' );
 
 		// The result should be a boolean.
 		$this->assertIsBool(
 			$result,
-			"check_composer_package_installed('rahul900day/tiktoken-php') should return boolean"
+			"check_composer_package_installed('symfony/http-client') should return boolean"
 		);
 
 		// In development environment, vendor should exist.
@@ -157,7 +161,7 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 		$this->assertArrayHasKey( 'type', $composer );
 
 		// Verify expected values.
-		$this->assertEquals( 'mcp-ai-wpoos/mcp-ai-wpoos', $composer['name'] );
+		$this->assertEquals( 'nvdigitalsolutions/mcp-ai-wpoos', $composer['name'] );
 		$this->assertEquals( 'wordpress-plugin', $composer['type'] );
 	}
 
