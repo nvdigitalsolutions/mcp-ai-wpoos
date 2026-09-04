@@ -27,6 +27,11 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 			require_once dirname( __DIR__ ) . '/includes/admin/class-wp-mcp-ai-pro-cpt-ai-integration.php';
 		}
 
+		// The integration is a singleton that only registers its hooks while
+		// the feature is enabled at construction time. Reset it so each test
+		// observes the hook state for its own settings fixture.
+		WP_MCP_AI_Pro_CPT_AI_Integration::reset_for_tests();
+
 		// Set admin context.
 		set_current_screen( 'post' );
 	}
@@ -38,6 +43,9 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 		// Clean up any settings.
 		delete_option( 'wp_mcp_ai_settings' );
 
+		// Drop the singleton and its hooks so later suites do not inherit them.
+		WP_MCP_AI_Pro_CPT_AI_Integration::reset_for_tests();
+
 		parent::tearDown();
 	}
 
@@ -48,8 +56,14 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 		// Disable feature (default state).
 		update_option( 'wp_mcp_ai_settings', array() );
 
-		// Check if metabox action is registered.
-		$this->assertFalse( has_action( 'add_meta_boxes' ) );
+		// Constructing the singleton under the disabled feature must not
+		// register the integration's hooks. Other plugins legitimately hook
+		// add_meta_boxes, so assert against our own callback, not the global
+		// hook count.
+		$integration = WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+
+		$this->assertFalse( has_action( 'add_meta_boxes', array( $integration, 'add_ai_metabox' ) ) );
+		$this->assertFalse( has_action( 'wp_ajax_wp_mcp_ai_cpt_chat', array( $integration, 'handle_ajax_chat' ) ) );
 	}
 
 	/**
@@ -219,19 +233,19 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		// Set up AJAX action.
-		try {
-			// Mock AJAX request without nonce.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$_POST['message'] = 'Test message';
+		// Instantiate so the AJAX handler is actually registered.
+		WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
 
-			// This should throw an exception for missing nonce.
-			$this->expectException( 'WPAjaxDieContinueException' );
-			do_action( 'wp_ajax_wp_mcp_ai_cpt_chat' );
-		} catch ( Exception $e ) {
-			// Expected to fail without nonce.
-			$this->assertTrue( true );
-		}
+		// Mock AJAX request without nonce.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$_POST['message'] = 'Test message';
+
+		// Missing nonce must die. The test bootstrap routes check_ajax_referer()
+		// failures through wp_die( -1, 403 ), which its throwing die handler
+		// surfaces as WPDieException.
+		$this->expectException( 'WPDieException' );
+		$this->expectExceptionMessage( '-1' );
+		do_action( 'wp_ajax_wp_mcp_ai_cpt_chat' );
 	}
 
 	/**
@@ -256,6 +270,10 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 		// Set up AJAX request with valid nonce.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_cpt_chat' );
+		// The test bootstrap does not merge POST into REQUEST, but
+		// check_ajax_referer() reads $_REQUEST — mirror the nonce there.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		$_REQUEST['nonce'] = $_POST['nonce'];
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$_POST['message'] = 'Test message';
 
