@@ -676,8 +676,26 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 *
 	 * @return bool True when enabled.
 	 */
+	/**
+	 * Whether the legacy HTTP+SSE transport handshake is enabled.
+	 *
+	 * Enabled by default for legacy MCP clients that send a pure
+	 * `Accept: text/event-stream` header. Sites (and tests) can disable it
+	 * via the WP_MCP_AI_LEGACY_SSE_ENABLED constant or the
+	 * wp_mcp_ai_legacy_sse_enabled filter — mixed Accept headers that
+	 * include application/json never trigger the legacy handshake.
+	 *
+	 * @return bool True when the legacy SSE handshake is enabled.
+	 */
 	protected function legacy_sse_enabled() {
-		return ! defined( 'WP_MCP_AI_LEGACY_SSE_ENABLED' ) || WP_MCP_AI_LEGACY_SSE_ENABLED;
+		$enabled = defined( 'WP_MCP_AI_LEGACY_SSE_ENABLED' ) ? WP_MCP_AI_LEGACY_SSE_ENABLED : true;
+
+		/**
+		 * Filter whether the legacy MCP HTTP+SSE handshake is enabled.
+		 *
+		 * @param bool $enabled Whether legacy SSE is enabled.
+		 */
+		return (bool) apply_filters( 'wp_mcp_ai_legacy_sse_enabled', $enabled );
 	}
 
 	/**

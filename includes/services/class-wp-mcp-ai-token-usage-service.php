@@ -145,6 +145,10 @@ class WP_MCP_AI_Token_Usage_Service {
 	 * currently registered due to missing configuration or disabled features.
 	 * This allows admin pages to display all tools for configuration purposes.
 	 *
+	 * The class => file map is the one the Pro addon computed during tool
+	 * registration (cached via wp_mcp_ai_pro_get_tool_map()); the legacy
+	 * filter fallback covers the pre-cache window before the first pass.
+	 *
 	 * @since 1.0.0
 	 * @return array Tool slug => Tool name pairs for unregistered tools.
 	 */
@@ -156,10 +160,14 @@ class WP_MCP_AI_Token_Usage_Service {
 			return $unregistered_tools;
 		}
 
-		// Get the list of Pro tool class => file mappings by applying the filter
-		// that the Pro addon uses during tool registration.
-		// This gives us the complete list without having to duplicate the code.
-		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
+		// Get the list of Pro tool class => file mappings computed by the Pro
+		// addon during tool registration. This gives us the complete list
+		// without having to duplicate the code.
+		if ( function_exists( 'wp_mcp_ai_pro_get_tool_map' ) ) {
+			$pro_tools = wp_mcp_ai_pro_get_tool_map();
+		} else {
+			$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
+		}
 
 		if ( empty( $pro_tools ) ) {
 			return $unregistered_tools;

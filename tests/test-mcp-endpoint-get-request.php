@@ -116,19 +116,22 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that GET /mcp?stream=true returns SSE stream.
+	 * Test that GET /mcp?stream=true enforces the strict MCP auth policy.
 	 *
-	 * When the stream parameter is explicitly set, the endpoint should
-	 * switch to SSE mode.
+	 * The SSE stream opt-in opens a blocking SSE handshake (a long-lived
+	 * emitter), so it enforces the same machine-authentication policy as
+	 * POST /mcp: a nonce-only request must be rejected with 401 before any
+	 * stream is opened. The handshake itself is a blocking emitter and is
+	 * asserted via the emitted-frame contract elsewhere.
 	 */
-	public function test_mcp_get_with_stream_param_returns_sse() {
+	public function test_mcp_get_with_stream_param_requires_machine_auth() {
 		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
 			->disableOriginalConstructor()
 			->getMock();
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// GET request with stream=true parameter.
+		// GET request with stream=true parameter and only a cookie nonce.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'stream', 'true' );
@@ -136,14 +139,8 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
-		$this->assertSame( 200, $response->get_status(), 'GET /mcp?stream=true should return 200' );
-
-		$headers = $response->get_headers();
-		$this->assertStringStartsWith(
-			'text/event-stream',
-			$headers['Content-Type'] ?? '',
-			'GET /mcp?stream=true should return SSE content type'
-		);
+		$this->assertSame( 401, $response->get_status(), 'GET /mcp?stream=true must require machine auth' );
+		$this->assertSame( 'wp_mcp_ai_mcp_auth_required', $response->get_data()['code'] ?? '', 'SSE opt-in must return the MCP auth-required error' );
 	}
 
 	/**
@@ -151,7 +148,8 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 	 *
 	 * This is the LM Studio scenario - LM Studio sends Accept: text/event-stream
 	 * by default, but expects JSON-RPC discovery response, not SSE.
-	 * Accept header should NOT trigger SSE mode for /mcp endpoint.
+	 * The legacy handshake that honours a pure SSE Accept header is disabled
+	 * via the wp_mcp_ai_legacy_sse_enabled filter for this contract.
 	 */
 	public function test_mcp_get_with_sse_accept_header_returns_json() {
 		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
@@ -160,12 +158,16 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
+		add_filter( 'wp_mcp_ai_legacy_sse_enabled', '__return_false' );
+
 		// GET request with Accept: text/event-stream header (LM Studio scenario).
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
 
 		$response = rest_get_server()->dispatch( $request );
+
+		remove_filter( 'wp_mcp_ai_legacy_sse_enabled', '__return_false' );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status(), 'GET /mcp with Accept: text/event-stream should return 200' );

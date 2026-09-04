@@ -70,19 +70,40 @@ class Test_Github_OAuth_Handler extends WP_UnitTestCase {
 		$_GET['state'] = 'invalid_state';
 		$_GET['code']  = 'test_code';
 
+		// Prevent the terminating exit and outbound network calls so the
+		// handler can be exercised inside the single-process run.
+		add_filter( 'wp_mcp_ai_github_oauth_redirect_terminate', '__return_false' );
+		add_filter(
+			'pre_http_request',
+			function () {
+				return array(
+					'body'     => wp_json_encode( array( 'access_token' => 'gho_test' ) ),
+					'response' => array( 'code' => 200 ),
+					'headers'  => array(),
+				);
+			}
+		);
+
+		$redirected_location = null;
+
 		// Mock the redirect to avoid actual redirect.
 		add_filter(
 			'wp_redirect',
-			function ( $location ) {
-				// Verify redirect location contains settings page.
-				$this->assertStringContainsString( 'wp-mcp-ai-settings', $location );
+			function ( $location ) use ( &$redirected_location ) {
+				$redirected_location = $location;
 				// Prevent actual redirect.
 				return false;
 			}
 		);
 
-		// This should redirect due to invalid state.
-		$this->expectException( 'WPDieException' );
 		$handler->handle_github_oauth_callback();
+
+		remove_all_filters( 'pre_http_request' );
+		remove_all_filters( 'wp_mcp_ai_github_oauth_redirect_terminate' );
+
+		// Invalid state must redirect back to the dashboard connections tab.
+		$this->assertNotNull( $redirected_location, 'An invalid state must trigger a redirect' );
+		$this->assertStringContainsString( 'wp-mcp-ai-dashboard', $redirected_location );
+		$this->assertStringContainsString( 'tab=tools', $redirected_location );
 	}
 }

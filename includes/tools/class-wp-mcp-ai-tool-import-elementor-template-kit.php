@@ -123,7 +123,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		if ( ! self::is_available() ) {
+		if ( ! static::is_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_elementor_missing',
 				__( 'Elementor is not active on this site.', 'mcp-ai-wpoos' )
