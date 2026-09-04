@@ -444,6 +444,14 @@ sortable compat, #6259 chat attachments, #6260 count-tokens params, #6262
 continuation seam, #6263 chat SSE handler, #6264 cache helper, #6265
 nefarious rate limiter + chat hook tolerance (open).
 
+Session 2026-09-04 clusters (run 91006542428): #6286 memory auto-capture
+service (open), #6287 AI CPT management integration (open), #6288 PayHere
+API tests vs Remote Connections migration (open), #6289 music generation
+tests vs Mubert contract (open), #6290 OpenAI image tests vs classic
+Images API (open), #6291 pro settings composer drift (open), #6293 pro
+schedule research AJAX hook wipe + curriculum exporter array-input drift
+(open).
+
 Remaining candidates change quickly; re-triage from the latest CI log rather
 than trusting an old list.
 
