@@ -149,7 +149,7 @@ class WP_MCP_AI_Get_Profession_Stats_Tool_Test extends WP_UnitTestCase {
 		// Add filter to require manage_options capability.
 		add_filter(
 			'wp_mcp_ai_profession_stats_capability',
-			function ( $default_cap ) {
+			function ( $default_cap ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Filter callback overrides the default capability.
 				return 'manage_options';
 			}
 		);
@@ -163,11 +163,11 @@ class WP_MCP_AI_Get_Profession_Stats_Tool_Test extends WP_UnitTestCase {
 
 		$result = $this->tool->execute( array(), $context );
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'], 'Subscriber should not have manage_options capability' );
-		$this->assertArrayHasKey( 'message', $result );
-		$this->assertStringContainsString( 'permission', strtolower( $result['message'] ) );
+		// The canonical envelope for permission failures is a WP_Error (tools no
+		// longer return array( 'success' => false ) shapes).
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code(), 'Subscriber should not have manage_options capability' );
+		$this->assertStringContainsString( 'permission', strtolower( $result->get_error_message() ) );
 
 		// Remove filter.
 		remove_all_filters( 'wp_mcp_ai_profession_stats_capability' );
