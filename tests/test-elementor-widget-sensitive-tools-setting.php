@@ -77,15 +77,10 @@ class WP_MCP_AI_Elementor_Widget_Sensitive_Tools_Setting_Test extends WP_UnitTes
 			return;
 		}
 
-		// Use reflection to access protected method.
-		$reflection = new ReflectionClass( $this->widget );
-		$method     = $reflection->getMethod( 'register_controls' );
-		$method->setAccessible( true );
-
-		// Register controls.
-		$method->invoke( $this->widget );
-
-		// Get the controls.
+		// get_controls() lazily initialises the control stack through
+		// Elementor's own open_stack()/init_controls() flow and reuses the
+		// shared stack when it is already registered. Directly re-invoking
+		// register_controls() would redeclare controls against that stack.
 		$controls = $this->widget->get_controls();
 
 		// Verify allow_sensitive_tools control exists.
