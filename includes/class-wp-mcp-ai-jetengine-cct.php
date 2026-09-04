@@ -19,6 +19,31 @@ class WP_MCP_AI_JetEngine_CCT {
 	const SLUG = 'ai_chat_transcripts';
 
 	/**
+	 * Determine whether the transcript CCT storage is physically available.
+	 *
+	 * Consumers that read/write the CCT directly (conversation import,
+	 * transcript repository) must gate on this rather than on
+	 * `function_exists( 'jet_engine' )` / `class_exists( 'Jet_Engine' )`
+	 * alone: on sites where JetEngine is only partially loaded (or a
+	 * compatibility shim defines the class without installing the table),
+	 * the gate passes but every query fails, and `$wpdb` turns the failure
+	 * into an empty result that looks like a successful read/write.
+	 *
+	 * @return bool True when the transcript CCT table exists.
+	 */
+	public static function is_storage_available() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'jet_cct_' . self::SLUG;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery -- Table existence probe; no WP cache group covers JetEngine CCT tables.
+		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+
+		return null !== $found;
+	}
+
+	/**
 	 * Hook into JetEngine to provision the transcript content type.
 	 */
 	public static function bootstrap() {

@@ -253,6 +253,7 @@ wp-mcp-ai-tool-adjust-video-speed
 wp-mcp-ai-tool-analyze-competitor-sites
 wp-mcp-ai-tool-analyze-daylight-and-solar-gain
 wp-mcp-ai-tool-analyze-geospatial
+wp-mcp-ai-tool-analyze-image-objects
 wp-mcp-ai-tool-analyze-natural-ventilation
 wp-mcp-ai-tool-analyze-scene-lighting
 wp-mcp-ai-tool-analyze-structural-feasibility
@@ -1218,3 +1219,6 @@ wp-mcp-ai-tool-vin-decode
 wp-mcp-ai-tool-web-browser
 wp-mcp-ai-tool-withdraw-student-eca
 wp-mcp-ai-tool-withdrawal-strategy-planner
+wp-mcp-ai-vision-annotator
+wp-mcp-ai-vision-count-normalizer
+wp-mcp-ai-vision-vlm-client

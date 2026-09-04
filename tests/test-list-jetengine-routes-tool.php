@@ -12,21 +12,7 @@
  * @license   GPL-3.0-or-later
  */
 
-// Mock JetEngine if not loaded.
-if ( ! class_exists( 'Jet_Engine' ) ) {
-	class Jet_Engine {
-	}
-}
-
-if ( ! function_exists( 'jet_engine' ) ) {
-	function jet_engine() {
-		static $instance = null;
-		if ( null === $instance ) {
-			$instance = new Jet_Engine();
-		}
-		return $instance;
-	}
-}
+require_once __DIR__ . '/helpers/jetengine-stubs.php';
 
 /**
  * Test class for list_jetengine_rest_routes tool.

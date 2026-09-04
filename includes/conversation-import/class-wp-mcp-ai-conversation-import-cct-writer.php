@@ -134,7 +134,7 @@ class WP_MCP_AI_Conversation_Import_CCT_Writer {
 			return array();
 		}
 
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) || ( ! function_exists( 'jet_engine' ) && ! class_exists( 'Jet_Engine' ) ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) || ! WP_MCP_AI_JetEngine_CCT::is_storage_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_import_jetengine_missing',
 				__( 'JetEngine is not active; imported conversation lookups are unavailable.', 'mcp-ai-wpoos' )
@@ -173,7 +173,7 @@ class WP_MCP_AI_Conversation_Import_CCT_Writer {
 	 * @return object|\WP_Error
 	 */
 	protected function get_handler() {
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) || ! WP_MCP_AI_JetEngine_CCT::is_storage_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_import_jetengine_missing',
 				__( 'JetEngine is not active; imported conversations cannot be written to the CCT.', 'mcp-ai-wpoos' )

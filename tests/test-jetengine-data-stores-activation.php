@@ -7,74 +7,7 @@
  * @license   GPL-3.0-or-later
  */
 
-if ( ! class_exists( 'Jet_Engine_Modules' ) ) {
-	/**
-	 * Mock JetEngine Modules class.
-	 */
-	class Jet_Engine_Modules {
-		private $active_modules = array();
-		private $modules        = array();
-
-		/**
-		 * Constructor.
-		 */
-		public function __construct() {
-			// Mock data stores module.
-			$this->modules['data-stores'] = new stdClass();
-		}
-
-		public function is_module_active( $module_id ) {
-			return in_array( $module_id, $this->active_modules, true );
-		}
-
-		public function get_module( $module_id ) {
-			return isset( $this->modules[ $module_id ] ) ? $this->modules[ $module_id ] : false;
-		}
-
-		public function activate_module( $module ) {
-			if ( ! in_array( $module, $this->active_modules, true ) ) {
-				$this->active_modules[] = $module;
-			}
-		}
-
-		public function get_active_modules() {
-			return $this->active_modules;
-		}
-	}
-}
-
-if ( ! class_exists( 'Jet_Engine' ) ) {
-	/**
-	 * Mock JetEngine class.
-	 */
-	class Jet_Engine {
-		public $modules;
-
-		/**
-		 * Constructor.
-		 */
-		public function __construct() {
-			$this->modules = new Jet_Engine_Modules();
-		}
-	}
-}
-
-$wp_mcp_ai_mock_jet_engine_cct = null;
-
-if ( ! function_exists( 'jet_engine' ) ) {
-	/**
-	 * Mock jet_engine() function.
-	 */
-	function jet_engine() {
-		global $wp_mcp_ai_mock_jet_engine_cct;
-
-		if ( null === $wp_mcp_ai_mock_jet_engine_cct ) {
-			$wp_mcp_ai_mock_jet_engine_cct = new Jet_Engine();
-		}
-
-		return $wp_mcp_ai_mock_jet_engine_cct;
-	}
-}
+require_once __DIR__ . '/helpers/jetengine-stubs.php';
 
 /**
  * Test class for JetEngine data stores activation.
@@ -87,17 +20,15 @@ class WP_MCP_AI_JetEngine_Data_Stores_Activation_Test extends WP_UnitTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		// Reset the global mock to ensure a fresh state.
-		global $wp_mcp_ai_mock_jet_engine_cct;
-		$wp_mcp_ai_mock_jet_engine_cct = null;
+		// Reset the shared stub so jet_engine() lazily creates a fresh mock.
+		wp_mcp_ai_jetengine_stub_reset();
 	}
 
 	/**
 	 * Tear down test environment.
 	 */
 	protected function tearDown(): void {
-		global $wp_mcp_ai_mock_jet_engine_cct;
-		$wp_mcp_ai_mock_jet_engine_cct = null;
+		wp_mcp_ai_jetengine_stub_reset();
 		parent::tearDown();
 	}
 

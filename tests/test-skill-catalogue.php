@@ -85,6 +85,10 @@ class WP_MCP_AI_Skill_Catalogue_Test extends WP_Test_REST_TestCase {
 		remove_filter( 'pre_http_request', array( $this, 'intercept_http' ) );
 		remove_filter( 'upload_dir', array( $this, 'filter_upload_dir' ) );
 		$this->recursive_rmdir( $this->test_skills_dir );
+		// The registry writes installed skills into a shared skills subdir of
+		// the redirected uploads basedir; remove it so later suites sharing
+		// the temp parent directory do not see leaked fixtures.
+		$this->recursive_rmdir( trailingslashit( dirname( $this->test_skills_dir ) ) . WP_MCP_AI_Skill_Registry::UPLOAD_DIR );
 		WP_MCP_AI_Skill_Registry::reset();
 		WP_MCP_AI_Skill_Catalogue_Service::reset();
 		delete_option( WP_MCP_AI_Skill_Catalogue_Service::OPTION_SOURCES );

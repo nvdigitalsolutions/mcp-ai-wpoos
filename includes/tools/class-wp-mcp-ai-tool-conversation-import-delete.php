@@ -25,7 +25,15 @@ class WP_MCP_AI_Tool_Conversation_Import_Delete implements WP_MCP_AI_Tool_Interf
 	 * @return bool
 	 */
 	public static function is_available() {
-		return function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' );
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			return false;
+		}
+
+		// Gate on the physical CCT table, not just the JetEngine class: a
+		// partially-loaded JetEngine (or a compatibility shim defining
+		// Jet_Engine) passes class checks but has no transcript table, and
+		// every query would fail silently.
+		return WP_MCP_AI_JetEngine_CCT::is_storage_available();
 	}
 
 	/**

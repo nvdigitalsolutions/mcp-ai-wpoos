@@ -1848,6 +1848,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		 */
 		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', $pro_tools );
 
+		// Cache the computed map so consumers (e.g. the token-usage service's
+		// unregistered-tools fallback) can enumerate every Pro tool — including
+		// the ones gated off by settings — without rebuilding it.
+		$GLOBALS['wp_mcp_ai_pro_tools_map'] = $pro_tools;
+
 		/**
 		 * Trigger the action to load toolkit-specific tools.
 		 *
@@ -1902,6 +1907,23 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				}
 			}
 		}
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_get_tool_map' ) ) {
+	/**
+	 * Retrieve the last-computed Pro tool class => file map.
+	 *
+	 * Populated by {@see wp_mcp_ai_pro_register_tools()} whenever the Pro tool
+	 * registry runs. Returns an empty array before the first registration pass.
+	 *
+	 * @since 1.1.69
+	 *
+	 * @return array<string, string> Tool class names keyed to their file paths.
+	 */
+	function wp_mcp_ai_pro_get_tool_map() {
+		$map = isset( $GLOBALS['wp_mcp_ai_pro_tools_map'] ) ? $GLOBALS['wp_mcp_ai_pro_tools_map'] : array();
+		return is_array( $map ) ? $map : array();
 	}
 }
 

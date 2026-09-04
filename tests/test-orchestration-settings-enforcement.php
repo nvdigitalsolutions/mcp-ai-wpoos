@@ -46,32 +46,27 @@ class WP_MCP_AI_Orchestration_Settings_Enforcement_Test extends WP_UnitTestCase 
 
 	/**
 	 * Test that budget management setting is checked for request timeout.
+	 *
+	 * The enforcement now lives in WP_MCP_AI_Orchestration_Budget_Enforcement_Service,
+	 * which filters the resource-manager timeout: tier-based values pass through
+	 * when budget management is enabled, and the high-tier value is forced when
+	 * it is disabled. Test the service contract directly — the resource-manager
+	 * singleton caches its workload tier, so driving it through filters here
+	 * would be order-dependent.
 	 */
 	public function test_budget_management_controls_timeout() {
-		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-
-		// Force low tier for predictable test.
-		add_filter(
-			'wp_mcp_ai_workload_tier',
-			function () {
-				return 'low';
-			}
-		);
-
-		// Enable budget management - should use low tier timeout (30s).
+		// Enabled - the tier-based timeout passes through unchanged.
 		update_option( 'wp_mcp_ai_settings', array( 'enable_budget_management' => true ) );
-		$timeout_enabled = $resource_mgr->get_request_timeout( true );
+		$timeout_enabled = WP_MCP_AI_Orchestration_Budget_Enforcement_Service::apply_budget_management_to_timeout( 30, 'low', 300, true );
 
-		// Disable budget management - should use high tier timeout (120s).
+		// Disabled - the high-tier timeout is forced regardless of tier.
 		update_option( 'wp_mcp_ai_settings', array( 'enable_budget_management' => false ) );
-		$timeout_disabled = $resource_mgr->get_request_timeout( true );
+		$timeout_disabled = WP_MCP_AI_Orchestration_Budget_Enforcement_Service::apply_budget_management_to_timeout( 30, 'low', 300, true );
 
-		// Disabled should return high tier timeout regardless of actual tier.
 		$this->assertEquals( 30, $timeout_enabled );
 		$this->assertEquals( 120, $timeout_disabled );
 
 		// Clean up.
-		remove_all_filters( 'wp_mcp_ai_workload_tier' );
 		delete_option( 'wp_mcp_ai_settings' );
 	}
 

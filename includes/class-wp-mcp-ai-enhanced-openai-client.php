@@ -42,13 +42,20 @@ class WP_MCP_AI_Enhanced_OpenAI_Client {
 	 * @return array|WP_Error Response or error.
 	 */
 	public function create_chat_completion( array $messages, array $options = array() ) {
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$model    = ! empty( $options['model'] ) ? $options['model'] : WP_MCP_AI_Admin_Settings::get_default_model();
+		$model = ! empty( $options['model'] ) ? $options['model'] : '';
 
 		// Apply intelligent model routing if enabled.
 		if ( ! isset( $options['disable_auto_routing'] ) || ! $options['disable_auto_routing'] ) {
-			$model = WP_MCP_AI_Model_Selector::select_model( $messages, $options, $model );
-			// Update options with selected model.
+			// Pass the explicit model (if any) as the routing base. An empty
+			// base lets the selector pick light/advanced by task complexity;
+			// a concrete base is honoured as-is (with TPM fallback). Feeding
+			// the settings default in as the base would short-circuit the
+			// complexity routing entirely.
+			$model            = WP_MCP_AI_Model_Selector::select_model( $messages, $options, $model );
+			$options['model'] = $model;
+		} elseif ( '' === $model ) {
+			// Routing disabled and no explicit model: fall back to the site default.
+			$model            = WP_MCP_AI_Admin_Settings::get_default_model();
 			$options['model'] = $model;
 		}
 
@@ -374,7 +381,7 @@ class WP_MCP_AI_Enhanced_OpenAI_Client {
 			return call_user_func_array( array( $this->client, $method ), $args );
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- trigger_error() is a development error handler, not HTML output; esc_html() is already applied to the method name. WordPress.PHP.DevelopmentFunctions.error_log_trigger_error -- Intentional fatal developer error for undefined magic method calls.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error -- Intentional fatal developer error for undefined magic method calls; esc_html() is already applied to the method name.
 		trigger_error( 'Call to undefined method ' . esc_html( __CLASS__ . '::' . $method ) . '()', E_USER_ERROR );
 	}
 }

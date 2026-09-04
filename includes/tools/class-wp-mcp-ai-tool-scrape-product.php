@@ -662,8 +662,11 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Remove extra spaces.
 		$selector = trim( $selector );
 
-		// Replace descendant combinator (space) with XPath descendant axis.
+		// Replace descendant combinator (space) with XPath descendant axis
+		// BEFORE the class/ID replacements below — doing it afterwards would
+		// corrupt the spaces inside the generated contains() predicates.
 		$selector = preg_replace( '/\s+/', ' ', $selector );
+		$selector = str_replace( ' ', '//', $selector );
 
 		// Handle ID selector (#id).
 		$selector = preg_replace( '/#([a-zA-Z0-9_-]+)/', '*[@id="$1"]', $selector );
@@ -673,7 +676,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$selector = preg_replace_callback(
 			'/\.([a-zA-Z0-9_-]+)/',
 			function ( $matches ) {
-				return '*[contains(concat(" ", normalize-space(@class), " "), " ' . $matches[1] . ' ")]';
+				return '[contains(concat(" ", normalize-space(@class), " "), " ' . $matches[1] . ' ")]';
 			},
 			$selector
 		);
@@ -681,8 +684,12 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Convert element.class or element#id patterns.
 		$selector = preg_replace( '/([a-zA-Z][a-zA-Z0-9]*)\*/', '$1', $selector );
 
-		// Convert space separator to // (descendant).
-		$selector = str_replace( ' ', '//', $selector );
+		// Predicates must follow an element test — insert a wildcard where the
+		// start of the path or a descendant axis is followed directly by one.
+		$selector = str_replace( '//[', '//*[', $selector );
+		if ( 0 === strpos( $selector, '[' ) ) {
+			$selector = '*' . $selector;
+		}
 
 		// Prepend // if not already present.
 		if ( 0 !== strpos( $selector, '//' ) ) {

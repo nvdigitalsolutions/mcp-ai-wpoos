@@ -7,26 +7,11 @@
  * @license   GPL-3.0-or-later
  */
 
-if ( ! class_exists( 'Jet_Engine' ) ) {
-	class Jet_Engine {
-		public $api;
-	}
-}
+require_once __DIR__ . '/helpers/jetengine-stubs.php';
 
-$wp_mcp_ai_mock_jet_engine = null;
-
-if ( ! function_exists( 'jet_engine' ) ) {
-	function jet_engine() {
-		global $wp_mcp_ai_mock_jet_engine;
-
-		if ( null === $wp_mcp_ai_mock_jet_engine ) {
-			$wp_mcp_ai_mock_jet_engine = new Jet_Engine();
-		}
-
-		return $wp_mcp_ai_mock_jet_engine;
-	}
-}
-
+/**
+ * Tests covering JetEngine CRUD dispatch via the MCP integration layer.
+ */
 class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 
 	/**
@@ -56,9 +41,8 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		global $wp_mcp_ai_mock_jet_engine;
-		$wp_mcp_ai_mock_jet_engine = new Jet_Engine();
-		$this->jet_engine          = $wp_mcp_ai_mock_jet_engine;
+		$this->jet_engine = new Jet_Engine();
+		wp_mcp_ai_jetengine_stub_set_instance( $this->jet_engine );
 
 		$reflection = new ReflectionProperty( WP_MCP_AI_JetEngine_Tool_Handlers::class, 'operations' );
 		$reflection->setAccessible( true );
@@ -75,36 +59,65 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 	 */
 	protected function tearDown(): void {
 		self::$routes_registered = false;
-		global $wp_mcp_ai_mock_jet_engine;
-		$wp_mcp_ai_mock_jet_engine = null;
+		wp_mcp_ai_jetengine_stub_reset();
 		parent::tearDown();
 	}
 
+	/**
+	 * Dynamic operations must be discovered from the JetEngine API endpoints.
+	 */
 	public function test_dynamic_operations_are_discovered_from_jetengine_api() {
 		$endpoint = new class() {
+			/**
+			 * Endpoint name.
+			 *
+			 * @return string
+			 */
 			public function get_name() {
 				return 'add-content-type';
 			}
 
+			/**
+			 * HTTP method.
+			 *
+			 * @return string
+			 */
 			public function get_method() {
 				return 'POST';
 			}
 
+			/**
+			 * Query params.
+			 *
+			 * @return string
+			 */
 			public function get_query_params() {
 				return '';
 			}
 		};
 
 		$this->jet_engine->api = new class( $endpoint ) {
+			/**
+			 * Endpoint instance.
+			 *
+			 * @var object
+			 */
 			protected $endpoint;
 
 			/**
 			 * Constructor.
+			 *
+			 * @param object $endpoint Endpoint instance.
 			 */
 			public function __construct( $endpoint ) {
 				$this->endpoint = $endpoint;
 			}
 
+			/**
+			 * Registered endpoints.
+			 *
+			 * @return array
+			 */
 			public function get_endpoints() {
 				return array( $this->endpoint );
 			}
@@ -338,7 +351,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 	public function test_dispatch_remote_uses_proxy_token_for_authentication() {
 		$captured_args = null;
 
-		$http_interceptor = function ( $preempt, $parsed_args, $url ) use ( &$captured_args ) {
+		$http_interceptor = function ( $preempt, $parsed_args, $url ) use ( &$captured_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $preempt/$url are required by the pre_http_request filter signature.
 			$captured_args = $parsed_args;
 
 			return array(

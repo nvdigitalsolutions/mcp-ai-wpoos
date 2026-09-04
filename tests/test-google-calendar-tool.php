@@ -47,7 +47,7 @@ class WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
 
 		$tool = new WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event();
 
-		$access_token_filter = function ( $token ) {
+		$access_token_filter = function ( $token ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Filter callback overrides the supplied token.
 			return 'test-token';
 		};
 
@@ -96,7 +96,7 @@ class WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
 		remove_filter( 'wp_mcp_ai_google_calendar_access_token', $access_token_filter, 10 );
 
 		$this->assertIsArray( $result );
-		$this->assertSame( 'evt_123', $result['id'] );
+		$this->assertSame( 'evt_123', $result['event_id'] );
 
 		$this->assertNotNull( $captured_request );
 		$this->assertStringContainsString( '/calendars/primary/events', $captured_request['url'] );
@@ -191,7 +191,7 @@ class WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
 		remove_filter( 'wp_mcp_ai_google_calendar_service_account_credentials', $credentials_filter, 10 );
 
 		$this->assertIsArray( $result );
-		$this->assertSame( 'evt_service', $result['id'] );
+		$this->assertSame( 'evt_service', $result['event_id'] );
 
 		$this->assertCount( 2, $requests );
 		$this->assertStringContainsString( 'oauth2.googleapis.com/token', $requests[0]['url'] );

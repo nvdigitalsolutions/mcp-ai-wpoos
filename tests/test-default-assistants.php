@@ -59,7 +59,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 
 		$this->assertEquals( 'orchestrator-supervisor', $orchestrator['slug'] );
 		$this->assertEquals( 'openai', $orchestrator['provider'] );
-		$this->assertEquals( 'gpt-4o', $orchestrator['model'] );
+		$this->assertEquals( 'gpt-4.1', $orchestrator['model'] );
 		$this->assertEquals( 0.3, $orchestrator['temperature'] );
 		$this->assertContains( 'supervisor', $orchestrator['primary_roles'] );
 		$this->assertIsArray( $orchestrator['tools'] );
@@ -198,6 +198,11 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 		// Initial install.
 		WP_MCP_AI_Default_Assistants::install();
 		$first_install_info = WP_MCP_AI_Default_Assistants::get_installation_info();
+
+		// Ensure the reinstall records a distinct installed_at timestamp — the
+		// stored format has second precision, so a same-second reinstall would
+		// be indistinguishable from the first install.
+		sleep( 1 );
 
 		// Reinstall.
 		$result = WP_MCP_AI_Default_Assistants::reinstall();

@@ -220,7 +220,9 @@ class WP_MCP_AI_Quiz_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 
 		// Add quiz-specific sanitization.
 		if ( isset( $input['default_time_limit'] ) ) {
-			$sanitized['default_time_limit'] = absint( $input['default_time_limit'] );
+			// Cast rather than absint(): absint( -10 ) would coerce a negative
+			// time limit into a positive value (10); negatives must clamp to 0.
+			$sanitized['default_time_limit'] = max( 0, (int) $input['default_time_limit'] );
 		}
 
 		if ( isset( $input['default_passing_score'] ) ) {

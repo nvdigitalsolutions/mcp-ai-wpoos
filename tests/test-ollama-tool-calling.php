@@ -344,7 +344,9 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Without tools, tool-role messages should be stringified as [Tool name]: content.
+	 * Without tools, orphan tool-role messages (no matching assistant
+	 * tool_calls) are dropped from the payload, mirroring the OpenAI-client
+	 * parity filter, instead of being stringified into user messages.
 	 */
 	public function test_tool_role_stringified_without_tools() {
 		$this->mock_http_response( $this->make_chat_response() );
@@ -362,18 +364,17 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		$this->client->create_chat_completion( $messages ); // No tools option.
 
 		$sent_messages = $this->last_request_body['messages'];
-		// The tool message should have been converted to a user message.
-		$user_messages = array_filter( $sent_messages, function ( $m ) { return 'user' === $m['role']; } );
 		$tool_messages = array_filter( $sent_messages, function ( $m ) { return 'tool' === $m['role']; } );
 
 		$this->assertEmpty( $tool_messages, 'No tool-role messages should remain when tools are absent.' );
+
 		$found = false;
-		foreach ( $user_messages as $m ) {
-			if ( false !== strpos( $m['content'], '[Tool some_tool]' ) ) {
+		foreach ( $sent_messages as $m ) {
+			if ( false !== strpos( $m['content'], 'some_tool' ) ) {
 				$found = true;
 			}
 		}
-		$this->assertTrue( $found, 'Tool result should be stringified into a user message.' );
+		$this->assertFalse( $found, 'Orphan tool result should be dropped, not stringified.' );
 	}
 
 	// -----------------------------------------------------------------------

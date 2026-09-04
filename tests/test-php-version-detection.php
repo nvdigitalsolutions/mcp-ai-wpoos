@@ -43,8 +43,14 @@ class WP_MCP_AI_PHP_Version_Detection_Test extends WP_UnitTestCase {
 		// Should include PHP platform requirement from config.platform.
 		$this->assertArrayHasKey( 'php', $packages['require'], 'Should include PHP platform requirement' );
 
-		// PHP version should match composer.json config.platform.php value.
-		$this->assertEquals( '8.1.0', $packages['require']['php'], 'PHP version should be 8.1.0 from platform config' );
+		// The base composer.json no longer pins a config.platform override;
+		// the php requirement now comes from the Pro addon composer.json
+		// ("php": "^8.1"). Verify against the file so the assertion tracks
+		// the authoritative source.
+		if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'composer.json' ) ) {
+			$pro_composer = json_decode( file_get_contents( WP_MCP_AI_PRO_PATH . 'composer.json' ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local manifest file.
+			$this->assertEquals( $pro_composer['require']['php'], $packages['require']['php'], 'PHP requirement should match the Pro composer.json require' );
+		}
 	}
 
 	/**

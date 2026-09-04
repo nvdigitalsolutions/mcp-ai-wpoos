@@ -410,24 +410,6 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_In
 		if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
 			// Remote URL case.
 			$image_url = esc_url_raw( $resolved['url'] );
-		} elseif ( is_wp_error( $resolved ) ) {
-			// Trait couldn't resolve - try direct image_url / url parameters.
-			$direct_url = '';
-			if ( ! empty( $arguments['image_url'] ) ) {
-				$direct_url = esc_url_raw( $arguments['image_url'] );
-			} elseif ( ! empty( $arguments['url'] ) ) {
-				$direct_url = esc_url_raw( $arguments['url'] );
-			}
-
-			if ( ! empty( $direct_url ) ) {
-				$image_url = $direct_url;
-			} else {
-				return new WP_Error(
-					'wp_mcp_ai_missing_image',
-					__( 'You must provide an image via attachment_id, file_id, url, or image_url.', 'mcp-ai-wpoos-pro' ),
-					array( 'status' => 400 )
-				);
-			}
 		} elseif ( $resolved > 0 ) {
 			$attachment_id = absint( $resolved );
 			$image_url     = wp_get_attachment_url( $attachment_id );
@@ -453,6 +435,27 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_In
 			if ( $file_path && file_exists( $file_path ) ) {
 				$file_size = filesize( $file_path );
 			}
+		}
+
+		// Fall back to direct image_url / url parameters when the resolver
+		// found nothing usable (it returns 0 for absent inputs).
+		if ( empty( $image_url ) && empty( $attachment_id ) ) {
+			$direct_url = '';
+			if ( ! empty( $arguments['image_url'] ) ) {
+				$direct_url = esc_url_raw( $arguments['image_url'] );
+			} elseif ( ! empty( $arguments['url'] ) ) {
+				$direct_url = esc_url_raw( $arguments['url'] );
+			}
+
+			if ( empty( $direct_url ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_image',
+					__( 'You must provide an image via attachment_id, file_id, url, or image_url.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$image_url = $direct_url;
 		}
 
 		// If we only have a URL, try to fetch headers for metadata.

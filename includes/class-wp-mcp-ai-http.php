@@ -524,6 +524,7 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 
 			$needles = array(
 				'timed out',
+				'timed-out',
 				'timeout',
 				'time-out',
 				'operation timed out',
