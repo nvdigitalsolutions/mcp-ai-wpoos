@@ -523,9 +523,9 @@ class WP_MCP_AI_OCR_Service {
 			return $this->convert_pdf_with_imagick( $pdf_path, $dpi, $max_pages );
 		}
 
-		// Fallback: try pdftoppm command-line tool.
-		$pdftoppm = shell_exec( 'which pdftoppm 2>/dev/null' );
-		if ( ! empty( $pdftoppm ) ) {
+		// Fallback: try pdftoppm command-line tool (safe probe — never fatals
+		// when exec()/proc_open are disabled).
+		if ( $this->is_cli_tool_available( 'pdftoppm' ) ) {
 			return $this->convert_pdf_with_pdftoppm( $pdf_path, $dpi, $max_pages );
 		}
 
@@ -609,16 +609,25 @@ class WP_MCP_AI_OCR_Service {
 			escapeshellarg( $temp_prefix )
 		);
 
-		exec( $cmd, $output, $return_code );
+		$result = $this->run_cli_command( $cmd );
 
-		if ( 0 !== $return_code ) {
+		if ( $result['disabled'] ) {
+			return $this->log_and_return_error(
+				'pdftoppm_failed',
+				'ocr_pdftoppm_failed',
+				'pdftoppm conversion failed: process execution (exec/proc_open) is disabled on this server',
+				array()
+			);
+		}
+
+		if ( 0 !== $result['return_code'] ) {
 			return $this->log_and_return_error(
 				'pdftoppm_failed',
 				'ocr_pdftoppm_failed',
 				'pdftoppm conversion failed',
 				array(
-					'output' => implode( "\n", $output ),
-					'code'   => $return_code,
+					'output' => $result['output'],
+					'code'   => $result['return_code'],
 				)
 			);
 		}
@@ -926,9 +935,9 @@ class WP_MCP_AI_OCR_Service {
 			}
 		}
 
-		// Fallback to command-line tesseract.
-		$tesseract = shell_exec( 'which tesseract 2>/dev/null' );
-		if ( empty( $tesseract ) ) {
+		// Fallback to command-line tesseract (safe probe — never fatals when
+		// exec()/proc_open are disabled).
+		if ( ! $this->is_cli_tool_available( 'tesseract' ) ) {
 			return new WP_Error(
 				'tesseract_not_found',
 				__( 'Tesseract OCR is not installed on the system. The plugin includes pre-bundled Node.js OCR service, but it appears unavailable. Please ensure Node.js is installed or install system Tesseract with: apt-get install tesseract-ocr (Linux) or brew install tesseract (macOS).', 'mcp-ai-wpoos-pro' ),
@@ -948,11 +957,11 @@ class WP_MCP_AI_OCR_Service {
 			escapeshellarg( $language )
 		);
 
-		exec( $cmd, $output, $return_code );
+		$result = $this->run_cli_command( $cmd );
 
 		$text_file = $output_file . '.txt';
 
-		if ( 0 === $return_code && file_exists( $text_file ) ) {
+		if ( ! $result['disabled'] && 0 === $result['return_code'] && file_exists( $text_file ) ) {
 			$text = file_get_contents( $text_file );
 			if ( file_exists( $text_file ) ) {
 				wp_delete_file( $text_file );
@@ -970,13 +979,17 @@ class WP_MCP_AI_OCR_Service {
 			wp_delete_file( $output_file );
 		}
 
+		$error_message = $result['disabled']
+			? 'Tesseract OCR failed: process execution (exec/proc_open) is disabled on this server'
+			: 'Tesseract OCR failed';
+
 		return $this->log_and_return_error(
 			'tesseract_failed',
 			'ocr_tesseract_failed',
-			'Tesseract OCR failed',
+			$error_message,
 			array(
-				'output' => implode( "\n", $output ),
-				'code'   => $return_code,
+				'output' => $result['output'],
+				'code'   => $result['return_code'],
 			)
 		);
 	}
@@ -1141,9 +1154,9 @@ class WP_MCP_AI_OCR_Service {
 			return 'deepseek_ocr';
 		}
 
-		// Finally, fall back to Tesseract if available.
-		$tesseract = shell_exec( 'which tesseract 2>/dev/null' );
-		if ( ! empty( $tesseract ) ) {
+		// Finally, fall back to Tesseract if available (safe probe — never
+		// fatals when exec()/proc_open are disabled).
+		if ( $this->is_cli_tool_available( 'tesseract' ) ) {
 			return 'tesseract';
 		}
 
@@ -1297,6 +1310,11 @@ class WP_MCP_AI_OCR_Service {
 			$error_message = isset( $json_output['error'] )
 				? $json_output['error']
 				: $output_text;
+
+			// Surface the process-disabled diagnostic when no output was captured.
+			if ( empty( $error_message ) && ! empty( $result['error'] ) ) {
+				$error_message = $result['error'];
+			}
 
 			return new WP_Error(
 				'node_ocr_failed',
@@ -1625,6 +1643,17 @@ class WP_MCP_AI_OCR_Service {
 	 * @return array Array with 'output', 'return_code', and 'timed_out' keys.
 	 */
 	protected function execute_node_service_with_timeout( $command, $timeout = 60 ) {
+		// Bail safely when process functions are disabled (disable_functions) —
+		// on PHP 8+ calling a disabled function throws a fatal Error.
+		if ( ! function_exists( 'proc_open' ) || ! function_exists( 'proc_close' ) || ! function_exists( 'proc_terminate' ) ) {
+			return array(
+				'output'      => array(),
+				'return_code' => -1,
+				'timed_out'   => false,
+				'error'       => 'Process control functions (proc_open, proc_close) are disabled on this server.',
+			);
+		}
+
 		$descriptors = array(
 			0 => array( 'pipe', 'r' ), // stdin.
 			1 => array( 'pipe', 'w' ), // stdout.
@@ -1716,6 +1745,95 @@ class WP_MCP_AI_OCR_Service {
 			'return_code' => $return_code,
 			'timed_out'   => $timed_out,
 			'error'       => trim( $error_output ),
+		);
+	}
+
+	/**
+	 * Safely probe whether a command-line tool is available.
+	 *
+	 * Never calls exec() when it is disabled (disable_functions) — on PHP 8+
+	 * that throws a fatal Error. Falls back to the Process Service
+	 * (proc_open), which reports unavailable instead of throwing.
+	 *
+	 * @param string $command Command name (e.g. 'pdftoppm', 'tesseract').
+	 * @return bool True when the command is available.
+	 */
+	private function is_cli_tool_available( $command ) {
+		if ( function_exists( 'exec' ) ) {
+			$output = array();
+			$return = null;
+			$which  = stripos( PHP_OS, 'WIN' ) === 0 ? 'where' : 'which';
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec,WordPress.PHP.NoSilencedErrors.Discouraged
+			@exec( $which . ' ' . escapeshellarg( $command ) . ' 2>&1', $output, $return );
+
+			return 0 === $return && ! empty( $output );
+		}
+
+		if ( class_exists( '\WP_MCP_AI\Services\WP_MCP_AI_Process_Service' ) ) {
+			$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+			return $process_service->is_command_available( $command );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Safely run a command-line tool, capturing output and exit code.
+	 *
+	 * Uses exec() when available (legacy behaviour) and falls back to the
+	 * Process Service (proc_open) when exec() is disabled — on PHP 8+ calling
+	 * a disabled function throws a fatal Error.
+	 *
+	 * @param string $command Full shell command (arguments must be escaped by the caller).
+	 * @param int    $timeout Timeout in seconds for the Process Service fallback.
+	 * @return array {
+	 *     @type string $output      Combined stdout/stderr output.
+	 *     @type int    $return_code Exit code (-1 when unavailable).
+	 *     @type bool   $disabled    Whether process execution is disabled on this server.
+	 * }
+	 */
+	private function run_cli_command( $command, $timeout = self::DEFAULT_TIMEOUT ) {
+		if ( function_exists( 'exec' ) ) {
+			$output      = array();
+			$return_code = null;
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec,WordPress.PHP.NoSilencedErrors.Discouraged
+			@exec( $command, $output, $return_code );
+
+			return array(
+				'output'      => implode( "\n", $output ),
+				'return_code' => null === $return_code ? -1 : (int) $return_code,
+				'disabled'    => false,
+			);
+		}
+
+		if ( class_exists( '\WP_MCP_AI\Services\WP_MCP_AI_Process_Service' ) ) {
+			$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+			$result          = $process_service->run_silent( $command, array( 'timeout' => $timeout ) );
+
+			if ( ! empty( $result['disabled'] ) ) {
+				return array(
+					'output'      => '',
+					'return_code' => -1,
+					'disabled'    => true,
+				);
+			}
+
+			$output = trim( $result['output'] );
+			if ( ! empty( $result['error'] ) ) {
+				$output = trim( $output . "\n" . $result['error'] );
+			}
+
+			return array(
+				'output'      => $output,
+				'return_code' => isset( $result['exit_code'] ) ? (int) $result['exit_code'] : -1,
+				'disabled'    => false,
+			);
+		}
+
+		return array(
+			'output'      => '',
+			'return_code' => -1,
+			'disabled'    => true,
 		);
 	}
 
