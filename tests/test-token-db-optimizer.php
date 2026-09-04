@@ -185,6 +185,11 @@ class WP_MCP_AI_Token_DB_Optimizer_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WP_MCP_AI_Logger not available' );
 		}
 
+		// Enable logging so the event reaches the recent-activity option,
+		// regardless of what earlier suites left in the settings.
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 'enable_logging' => true ) );
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 		// Clear any existing logs.
 		delete_option( 'wp_mcp_ai_recent_activity' );
 
@@ -198,7 +203,7 @@ class WP_MCP_AI_Token_DB_Optimizer_Test extends WP_UnitTestCase {
 		$found_event = false;
 		if ( is_array( $recent_activity ) ) {
 			foreach ( $recent_activity as $event ) {
-				if ( isset( $event['event'] ) && 'token_db_optimized' === $event['event'] ) {
+				if ( isset( $event['type'] ) && 'token_db_optimized' === $event['type'] ) {
 					$found_event = true;
 					break;
 				}
