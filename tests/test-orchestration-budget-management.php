@@ -259,8 +259,11 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 
 		remove_all_filters( 'wp_mcp_ai_tool_result_max_tokens' );
 
-		// Result should be very short due to low limit.
-		$this->assertLessThan( 100, strlen( $adjusted ) );
+		// The content portion must respect the 10-token (~40 character) budget;
+		// the truncation notice is appended after it.
+		$adjusted_content = strtok( $adjusted, "\n" );
+		$this->assertLessThanOrEqual( 40, strlen( $adjusted_content ) );
+		$this->assertStringContainsString( 'truncated by orchestration layer', $adjusted );
 	}
 
 	/**
@@ -290,7 +293,7 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 	 * @param string $tool_slug Tool slug.
 	 */
 	protected function set_user_usage_above_limit( $tool_slug ) {
-		$limit    = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
+		$limit    = WP_MCP_AI_Tool_Token_Limits::get_user_tool_limit( self::$user_id, $tool_slug );
 		$date_key = gmdate( 'Y-m-d', time() );
 
 		$usage = array(
