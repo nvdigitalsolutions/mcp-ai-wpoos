@@ -34,11 +34,22 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 			);
 		}
 
-		$url     = esc_url_raw( $peer['url'] );
+		// Require an absolute URL: validate the raw input BEFORE sanitisation
+		// so scheme-less strings (which esc_url_raw() would silently prefix
+		// with http://) are rejected instead of accepted.
+		$raw_url = trim( (string) $peer['url'] );
+		if ( false === filter_var( $raw_url, FILTER_VALIDATE_URL ) ) {
+			return new WP_Error(
+				'invalid_url',
+				__( 'Invalid peer URL.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$url     = esc_url_raw( $raw_url );
 		$api_key = isset( $peer['api_key'] ) ? sanitize_text_field( $peer['api_key'] ) : '';
 
 		// Validate URL format.
-		if ( empty( $url ) || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+		if ( empty( $url ) ) {
 			return new WP_Error(
 				'invalid_url',
 				__( 'Invalid peer URL.', 'mcp-ai-wpoos' )

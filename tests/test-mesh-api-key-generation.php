@@ -143,10 +143,12 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
 		$sanitized     = $settings_base->sanitize_settings( $input );
 
-		// The mesh API key should NOT be generated.
-		$this->assertArrayNotHasKey(
-			'mesh_inbound_api_key',
-			$sanitized,
+		// The key slot is always present in the sanitized defaults; it is only
+		// GENERATED when mesh computing or a federation flag is enabled.
+		$this->assertArrayHasKey( 'mesh_inbound_api_key', $sanitized );
+		$this->assertEquals(
+			'',
+			$sanitized['mesh_inbound_api_key'],
 			'mesh_inbound_api_key should NOT be generated when federation directory is disabled'
 		);
 	}
