@@ -163,11 +163,11 @@ class WP_MCP_AI_Get_Profession_Stats_Tool_Test extends WP_UnitTestCase {
 
 		$result = $this->tool->execute( array(), $context );
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'success', $result );
-		$this->assertFalse( $result['success'], 'Subscriber should not have manage_options capability' );
-		$this->assertArrayHasKey( 'message', $result );
-		$this->assertStringContainsString( 'permission', strtolower( $result['message'] ) );
+		// The tool returns a WP_Error (canonical failure envelope) when the
+		// acting user lacks the required capability.
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+		$this->assertStringContainsString( 'permission', strtolower( $result->get_error_message() ) );
 
 		// Remove filter.
 		remove_all_filters( 'wp_mcp_ai_profession_stats_capability' );

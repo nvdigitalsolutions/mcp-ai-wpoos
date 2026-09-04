@@ -280,8 +280,11 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 				return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The specified attachment does not exist.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
 			}
 
-			// Check permissions.
-			if ( $user_id && ! current_user_can( 'read_post', $attachment_id ) ) {
+			// Check permissions against the acting user, not the global
+			// current user — the tool executes under $context['user_id'] and
+			// the global state may not reflect that user (e.g. cron, CLI, or
+			// token-authenticated executions).
+			if ( $user_id && ! user_can( $user_id, 'read_post', $attachment_id ) ) {
 				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'mcp-ai-wpoos' ), array( 'status' => 403 ) );
 			}
 		} elseif ( '' !== $image_url ) {

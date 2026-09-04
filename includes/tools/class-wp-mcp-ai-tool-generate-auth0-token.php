@@ -135,9 +135,14 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 			$audience = 'https://' . $auth0_domain . '/api/v2/';
 		}
 
-		// Validate audience URL.
-		$audience = esc_url_raw( $audience, array( 'https' ) );
-		if ( ! $audience || ! wp_http_validate_url( $audience ) ) {
+		// Validate audience. Auth0 audiences are API identifiers, not
+		// endpoints this plugin connects to — they must be well-formed https
+		// URLs but are not guaranteed to resolve via DNS, so validate the
+		// structure instead of using wp_http_validate_url() (which performs
+		// a DNS lookup).
+		$audience       = esc_url_raw( $audience, array( 'https' ) );
+		$audience_parts = wp_parse_url( $audience );
+		if ( ! $audience || ! is_array( $audience_parts ) || empty( $audience_parts['host'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_invalid_audience',
 				__( 'Invalid Auth0 audience URL.', 'mcp-ai-wpoos' ),
