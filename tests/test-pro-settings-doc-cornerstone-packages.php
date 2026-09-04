@@ -174,9 +174,12 @@ class WP_MCP_AI_Pro_Settings_Doc_Cornerstone_Packages_Test extends WP_UnitTestCa
 	}
 
 	/**
-	 * Test wp_mcp_ai_get_npm_package_status() returns correct source for doc gen bundles.
+	 * Test wp_mcp_ai_get_npm_package_status() source for doc gen packages.
+	 *
+	 * Vendored copies under assets/vendor/ take precedence over the
+	 * Node.js bin bundles, so packages that ship both report 'vendor'.
 	 */
-	public function test_npm_package_status_doc_gen_source_is_bundled() {
+	public function test_npm_package_status_doc_gen_source() {
 		if ( ! function_exists( 'wp_mcp_ai_get_npm_package_status' ) ) {
 			$this->markTestSkipped( 'wp_mcp_ai_get_npm_package_status() not available' );
 		}
@@ -191,7 +194,12 @@ class WP_MCP_AI_Pro_Settings_Doc_Cornerstone_Packages_Test extends WP_UnitTestCa
 				$status = wp_mcp_ai_get_npm_package_status( $package );
 				$this->assertIsArray( $status, "Status for '{$package}' should be array" );
 				$this->assertTrue( $status['available'], "Status for '{$package}' should be available" );
-				$this->assertEquals( 'bundled', $status['source'], "Source for '{$package}' should be 'bundled'" );
+
+				// Vendor copies (assets/vendor/<package>) are checked before the
+				// bin bundles and win when both are present.
+				$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $package;
+				$expected    = ( is_dir( $vendor_path ) || file_exists( $vendor_path . '/package.json' ) ) ? 'vendor' : 'bundled';
+				$this->assertEquals( $expected, $status['source'], "Source for '{$package}' should be '{$expected}'" );
 			}
 		}
 	}
@@ -216,7 +224,7 @@ class WP_MCP_AI_Pro_Settings_Doc_Cornerstone_Packages_Test extends WP_UnitTestCa
 			$this->markTestSkipped( 'imaging-viewer.js not present' );
 		}
 
-		$has_vendor = function_exists( 'wp_mcp_ai_has_vendored_cornerstone' )
+		$has_vendor      = function_exists( 'wp_mcp_ai_has_vendored_cornerstone' )
 			&& wp_mcp_ai_has_vendored_cornerstone();
 		$expected_source = $has_vendor ? 'vendor' : 'cdn';
 
