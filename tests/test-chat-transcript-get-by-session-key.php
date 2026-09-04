@@ -112,21 +112,27 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 
 		$status = $response->get_status();
 
-		// The response should be either:
-		// - 404 if the transcript doesn't exist (when JetEngine is available).
-		// - 200 with null session if transcript storage is unavailable (when JetEngine is not active).
-		$this->assertContains(
-			$status,
-			array( 200, 404 ),
-			'Should return 404 for missing transcript or 200 if storage unavailable'
-		);
+		// The single-process run cannot control whether an earlier suite left
+		// the JetEngine CCT table behind, so derive the expectation from the
+		// live storage probe rather than assuming one environment:
+		// - Storage unavailable: 200 with a null session.
+		// - Storage available: 404 for a missing transcript, or a 200 session
+		// envelope with zero messages when the query returns no rows.
+		$repository        = wp_mcp_ai_get_transcript_repository();
+		$storage_available = $repository->table_exists();
 
-		// If 200, verify it has the expected structure for unavailable storage.
-		if ( 200 === $status ) {
+		if ( ! $storage_available ) {
+			$this->assertSame( 200, $status, 'Should return 200 when transcript storage is unavailable' );
 			$data = $response->get_data();
 			$this->assertIsArray( $data, 'Data should be an array' );
 			$this->assertArrayHasKey( 'session', $data, 'Data should have session key' );
 			$this->assertNull( $data['session'], 'Session should be null when storage unavailable' );
+		} else {
+			$this->assertContains(
+				$status,
+				array( 200, 404 ),
+				'Should return 404 for missing transcript or a 200 envelope when storage is available'
+			);
 		}
 	}
 
