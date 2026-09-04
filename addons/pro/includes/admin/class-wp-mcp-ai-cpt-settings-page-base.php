@@ -333,7 +333,9 @@ abstract class WP_MCP_AI_CPT_Settings_Page_Base {
 		$sanitized = array();
 
 		if ( isset( $input['assistant_id'] ) ) {
-			$sanitized['assistant_id'] = absint( $input['assistant_id'] );
+			// Cast rather than absint(): absint( -5 ) would coerce a negative
+			// value into an unrelated positive ID (5); negatives must clamp to 0.
+			$sanitized['assistant_id'] = max( 0, (int) $input['assistant_id'] );
 		}
 
 		return $sanitized;
