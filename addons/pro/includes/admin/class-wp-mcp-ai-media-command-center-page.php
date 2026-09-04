@@ -2039,6 +2039,11 @@ class WP_MCP_AI_Media_Command_Center_Page {
 		if ( function_exists( 'wp_mcp_ai_check_nodejs_available' ) ) {
 			return wp_mcp_ai_check_nodejs_available();
 		}
+		// Fallback when the shared helper is unavailable: never call exec()
+		// unguarded — on PHP 8+ a disabled exec() throws a fatal Error.
+		if ( ! function_exists( 'exec' ) ) {
+			return false;
+		}
 		// Fallback: try to execute node --version.
 		$output     = null;
 		$return_var = 0;

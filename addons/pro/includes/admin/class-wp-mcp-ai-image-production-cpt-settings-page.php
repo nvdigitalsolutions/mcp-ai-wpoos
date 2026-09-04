@@ -240,12 +240,16 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_CPT_Settings_Pa
 	 * @return bool
 	 */
 	protected function check_nodejs_available() {
-		// Simple check - try to run node --version.
-		$output = array();
-		$return = null;
-		@exec( 'node --version 2>&1', $output, $return ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		// Canonical safe probe (exec() first, Process Service fallback) lives
+		// in npm-integration-filters.php. It never fatals on hosts where
+		// exec()/proc_open are disabled via disable_functions.
+		if ( function_exists( 'wp_mcp_ai_check_nodejs_available' ) ) {
+			return wp_mcp_ai_check_nodejs_available();
+		}
 
-		return 0 === $return && ! empty( $output );
+		// Defensive fallback when the Pro helper is unavailable: avoid any
+		// unguarded shell call, which throws a fatal Error on PHP 8+.
+		return false;
 	}
 
 	/**
