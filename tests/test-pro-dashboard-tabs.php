@@ -36,6 +36,14 @@ class Test_Pro_Dashboard_Tabs extends WP_UnitTestCase {
 		// Get singleton instance.
 		$this->dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
+		// Re-register the admin_menu hooks: if an earlier suite instantiated the
+		// singleton, its lazily-registered hooks were dropped by the per-test
+		// hook-table restore and do_action( 'admin_menu' ) would never fire.
+		$dashboard_reflection = new ReflectionClass( $this->dashboard );
+		$init_hooks_method    = $dashboard_reflection->getMethod( 'init_hooks' );
+		$init_hooks_method->setAccessible( true );
+		$init_hooks_method->invoke( $this->dashboard );
+
 		// Set up admin user for menu registration.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );

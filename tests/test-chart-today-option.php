@@ -26,6 +26,10 @@ class Test_Chart_Today_Option extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Clear the dashboard user-ID cache: earlier suites may have primed a
+		// stale list that does not include the users created here.
+		WP_MCP_AI_Cache_Helper::delete( 'dashboard_user_ids' );
+
 		// Create test users.
 		$this->test_user_ids = array(
 			'user1' => $this->factory->user->create( array( 'role' => 'subscriber' ) ),
@@ -44,6 +48,9 @@ class Test_Chart_Today_Option extends WP_UnitTestCase {
 			delete_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY );
 			delete_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY );
 		}
+
+		// Drop the dashboard user-ID cache so later suites start fresh.
+		WP_MCP_AI_Cache_Helper::delete( 'dashboard_user_ids' );
 
 		parent::tearDown();
 	}
