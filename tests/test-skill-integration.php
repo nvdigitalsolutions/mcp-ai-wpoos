@@ -45,11 +45,17 @@ class WP_MCP_AI_Skill_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * Filter upload dir for test isolation.
 	 *
+	 * Point `basedir` at the per-test directory so the registry resolves its
+	 * skills dir to `{$this->test_skills_dir}/mcp-ai-skills` — fully isolated
+	 * per test and removed wholesale in tearDown. (Previously the filter used
+	 * `dirname()`, which shared the system temp dir across suites and leaked
+	 * installed skills between runs.)
+	 *
 	 * @param array $upload_dir Upload directory data.
 	 * @return array Modified upload directory data.
 	 */
 	public function filter_upload_dir( $upload_dir ) {
-		$upload_dir['basedir'] = dirname( $this->test_skills_dir );
+		$upload_dir['basedir'] = $this->test_skills_dir;
 		return $upload_dir;
 	}
 
