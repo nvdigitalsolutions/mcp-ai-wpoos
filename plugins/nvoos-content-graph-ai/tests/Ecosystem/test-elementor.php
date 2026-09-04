@@ -169,10 +169,11 @@ class Test_Chat_Widget extends \NvoosContentGraphAi\Elementor\ChatWidget {
 	/**
 	 * Return the injected settings.
 	 *
-	 * @return array
+	 * @param string|null $setting_key Optional setting key.
+	 * @return mixed
 	 */
-	public function get_settings_for_display() {
-		return $this->settings;
+	public function get_settings_for_display( $setting_key = null ) {
+		return null === $setting_key ? $this->settings : ( $this->settings[ $setting_key ] ?? null );
 	}
 
 	/**
@@ -198,10 +199,20 @@ class Test_Bubble_Widget extends \NvoosContentGraphAi\Elementor\ChatBubbleWidget
 	/**
 	 * Return the injected settings.
 	 *
-	 * @return array
+	 * @param string|null $setting_key Optional setting key.
+	 * @return mixed
 	 */
-	public function get_settings_for_display() {
-		return $this->settings;
+	public function get_settings_for_display( $setting_key = null ) {
+		return null === $setting_key ? $this->settings : ( $this->settings[ $setting_key ] ?? null );
+	}
+
+	/**
+	 * Return a deterministic widget ID.
+	 *
+	 * @return string
+	 */
+	public function get_id() {
+		return 'test-1';
 	}
 
 	/**
