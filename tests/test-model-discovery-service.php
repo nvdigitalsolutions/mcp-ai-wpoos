@@ -70,7 +70,12 @@ class Test_Model_Discovery_Service extends WP_UnitTestCase {
 		);
 
 		$service = new WP_MCP_AI_Model_Discovery_Service();
-		$diff    = $service->run( array() ); // No enabled providers.
+
+		// Ensure no provider is considered enabled, regardless of what earlier
+		// suites left in the settings option.
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$diff = $service->run( array() ); // No enabled providers.
 
 		$this->assertIsArray( $diff );
 		$this->assertArrayHasKey( 'additions', $diff );
