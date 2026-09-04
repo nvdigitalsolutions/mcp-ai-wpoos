@@ -61,6 +61,7 @@ class WP_MCP_AI_Skill_Manager_REST_Test extends WP_Test_REST_TestCase {
 		WP_MCP_AI_Skill_Registry::reset();
 
 		$this->test_skills_dir = sys_get_temp_dir() . '/wp-mcp-ai-test-rest-skills-' . uniqid();
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- Test fixture isolation directory.
 		mkdir( $this->test_skills_dir, 0755, true );
 		add_filter( 'upload_dir', array( $this, 'filter_upload_dir' ) );
 
@@ -78,6 +79,10 @@ class WP_MCP_AI_Skill_Manager_REST_Test extends WP_Test_REST_TestCase {
 	public function tearDown(): void {
 		remove_filter( 'upload_dir', array( $this, 'filter_upload_dir' ) );
 		$this->recursive_rmdir( $this->test_skills_dir );
+		// The registry writes installed skills into a shared skills subdir of
+		// the redirected uploads basedir; remove it so later suites sharing
+		// the temp parent directory do not see leaked fixtures.
+		$this->recursive_rmdir( trailingslashit( dirname( $this->test_skills_dir ) ) . WP_MCP_AI_Skill_Registry::UPLOAD_DIR );
 		WP_MCP_AI_Skill_Registry::reset();
 		delete_option( WP_MCP_AI_Skill_Registry::OPTION_SKILL_INDEX );
 
