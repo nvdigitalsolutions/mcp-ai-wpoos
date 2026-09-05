@@ -769,7 +769,8 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertSame( 'System logs retrieved successfully', $result['summary'] );
 		$this->assertArrayHasKey( 'logging_enabled', $result['wp_mcp_ai'] );
-		$this->assertArrayHasKey( 'WordPress', $result );
+		// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- The tool envelope key is lowercase by contract.
+		$this->assertArrayHasKey( 'wordpress', $result );
 		$this->assertArrayHasKey( 'message', $result['plugin_logs'] );
 	}
 
