@@ -35,6 +35,12 @@ byte-identical `wp_mcp_ai_cron_jobs` option, argument normalisation,
 record/remove lifecycle, retention-window pruning, and stable job-ID
 generation — the tracked cron-event layer for the plugin's scheduling
 tools.
+`SlaManager` is the aligned port of `WP_MCP_AI_SLA_Manager`:
+byte-identical tier/priority/SLA-target/concurrency constants,
+capability-flag tier inference, Little's Law capacity math, tuning
+recommendations, and compliance tracking/statistics (same
+`wp_mcp_ai_sla_compliance_log` option) — the prioritization layer the
+job queue managers consume.
 
 ## Tier
 
@@ -80,11 +86,16 @@ tools.
   Scheduler bridge, Job Notifier (E2), base logger;
   `QueueManager` resolves the RabbitMQ client + tool registry per install
   mode (base classes monolith / AI addon + CoreBridge standalone);
-  `JobQueueManager` resolves SLA/resource/logging through dormant
-  seams until those pieces port; `DeadLetterQueue` resolves the retry
-  dispatchers per install mode (base manager/notifier/executor monolith —
-  boot-gated probes — platform `JobQueueManager` standalone);
+  `JobQueueManager` resolves SLA per install mode (base
+  `WP_MCP_AI_SLA_Manager` monolith / this package's `SlaManager`
+  standalone — both probes gated on `defined( 'WP_MCP_AI_PATH' )`),
+  resource/logging through dormant seams; `DeadLetterQueue` resolves the
+  retry dispatchers per install mode (base manager/notifier/executor
+  monolith — boot-gated probes — platform `JobQueueManager` standalone);
   `RateLimitManager` targets the base logger through a dormant seam;
+  `SlaManager` resolves queue statistics per install mode (base
+  `WP_MCP_AI_Job_Queue_Manager` monolith / platform `JobQueueManager`
+  standalone);
   `SchedulerBridge` resolves the executing queue class per install mode
   (base `WP_MCP_AI_Async_Job_Queue` monolith / platform `AsyncJobQueue`
   standalone)
