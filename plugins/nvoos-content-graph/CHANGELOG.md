@@ -1,6 +1,6 @@
 # NV oOS Content Graph — Changelog
 
-## 1.0.4 — Unreleased
+## 1.0.4 — 2026-09-05
 
 ### New — Visual Experience System
 
@@ -11,9 +11,9 @@
 - **Edge upgrades** — new `GET /edges` REST route; edges render up front with relationship color families (hierarchical / similarity / reference / authorship), arrow / tapered / haystack density presets, hover edge labels, and a 2,000-edge render budget with auto-density above 500
 - **Accessibility & performance** — keyboard navigation (arrows / Enter / Escape / + / − / 0), `prefers-reduced-motion` support, zoom-aware label density, texture-on-viewport rendering, pixelRatio 1
 - **Export** — theme / transparent / white backgrounds and 1×/2×/3× scale options
-- **Frontend parity** — `[nvoos_graph]` and the block gain `theme`, `color_by`, `show_legend`, `show_icons`, `show_edges`, `edge_style`, `min_label_zoom`, `label_font_size` attributes; block inspector defaults inherit Appearance settings until changed
+- **Frontend parity** — `[nvoos_graph]` and the block gain `theme`, `color_by`, `show_legend`, `show_icons`, `show_edges`, `edge_style`, `min_label_zoom`, `label_font_size` attributes; block attributes left unset (in the block code editor) inherit Appearance settings until changed
 - **Filters** — `nvoos_content_graph/type_palette`, `nvoos_content_graph/type_icons`, `nvoos_content_graph/visual_config` (addons can register icons/colors for their own node types)
-- Docs: `docs/visual-theming.md`; contrast gate verification script at `scripts/verify-contrast.php`; PHPUnit coverage in `tests/Unit/Visual/TokensTest.php` and `tests/Unit/Admin/AppearanceSectionTest.php`
+- Docs: `docs/visual-theming.md`; parity/contrast verification script at `scripts/verify-theme-engine.js`; PHPUnit coverage in `tests/Unit/Visual/TokensTest.php` and `tests/Unit/Admin/AppearanceSectionTest.php`
 
 ### New — Checkout for the AI addon
 
@@ -26,6 +26,7 @@
 ### Security
 
 - The browser never sees a secret key; the publishable key is returned per-session by the vendor
+- Stripe.js is not enqueued with the settings page — it is injected on demand when the purchase modal opens, so no third-party script loads without an explicit user action
 - Verification (status, amount, product, site binding) happens on the vendor's server; the plugin re-checks only the HTTPS scheme of the returned download URL
 - Checkout-session creation is throttled per user (max 5 per 10 minutes)
 - Install ZIP downloads go through `download_url()` + `Plugin_Upgrader` with the same filesystem checks as wp-admin installs

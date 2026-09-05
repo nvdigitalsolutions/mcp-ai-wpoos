@@ -18,6 +18,8 @@
 # Vendor — ships in full. `composer install --no-dev` produces only the
 # autoloader (vendor/autoload.php + vendor/composer/), which is REQUIRED at
 # runtime. Excluding any part of it would break class loading on activation.
+# The backup tree below contains phpunit dev dependencies and must never ship.
+/vendor.bak-phpunit-conflict
 
 # Build artifacts
 /bin
@@ -30,8 +32,9 @@
 /.vscode
 /*.sublime-*
 
-# Docs (keep readme.txt only)
-/docs
+# Docs — keep the two markdown guides referenced from readme.txt
+# (visual-theming.md, commerce-vendor-api.md); drop the page preview.
+/docs/wporg-page-preview.html
 /README.md
 /WPORG-REVIEW-*.md
 /CONTRIBUTING.md

@@ -33,6 +33,7 @@ foreach ( $tables as $table ) {
 // Delete options.
 delete_option( 'nvoos_content_graph_settings' );
 delete_option( 'nvoos_content_graph_db_version' );
+delete_option( 'nvoos_content_graph_license' );
 
 // Clear transients.
 $wpdb->query(
