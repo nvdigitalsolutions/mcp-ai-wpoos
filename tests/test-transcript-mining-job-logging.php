@@ -56,6 +56,12 @@ class WP_MCP_AI_Transcript_Mining_Job_Logging_Test extends WP_UnitTestCase {
 				'enable_logging' => true,
 			)
 		);
+
+		// Logging is opt-in: drop the static settings cache so the write above
+		// is what is_logging_enabled() observes, independent of options left
+		// behind by earlier suites in the same process.
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 		delete_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION );
 		delete_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );
 

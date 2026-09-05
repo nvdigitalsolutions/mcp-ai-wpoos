@@ -531,12 +531,14 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
-	 * Apply the subset of wake-up filters that the graph path may not have
-	 * already enforced (context_types and min_importance) against a flattened
-	 * memory record returned by retrieve_agent_memory.
+	 * Apply wake-up filters against a flattened memory record returned by
+	 * retrieve_agent_memory.
 	 *
-	 * Wing/room are already enforced by the graph anchors, and tag/date
-	 * filters are not exposed by the wake-up schema in Phase 4a.
+	 * The graph path must enforce wing/room here as well: the graph anchors
+	 * only boost scores for wing/room membership, they never exclude
+	 * out-of-scope memories (every agent-owned memory remains a candidate
+	 * via the agent anchor). Tag/date filters are not exposed by the wake-up
+	 * schema in Phase 4a.
 	 *
 	 * @since 1.1.0
 	 *
@@ -545,6 +547,20 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return bool True when the record satisfies the filters.
 	 */
 	private function matches_wake_filters( array $record, array $filters ) {
+		if ( ! empty( $filters['wing'] ) ) {
+			$record_wing = isset( $record['wing'] ) ? (string) $record['wing'] : '';
+			if ( $record_wing !== $filters['wing'] ) {
+				return false;
+			}
+		}
+
+		if ( ! empty( $filters['room'] ) ) {
+			$record_room = isset( $record['room'] ) ? (string) $record['room'] : '';
+			if ( $record_room !== $filters['room'] ) {
+				return false;
+			}
+		}
+
 		if ( ! empty( $filters['context_types'] ) && is_array( $filters['context_types'] ) ) {
 			$type = isset( $record['context_type'] ) ? (string) $record['context_type'] : '';
 			if ( ! in_array( $type, $filters['context_types'], true ) ) {
