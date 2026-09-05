@@ -16,9 +16,10 @@
  * - SLA tier limits resolve through the base `WP_MCP_AI_SLA_Manager`
  *   when present (dormant standalone until SlaManager ports); the
  *   resource-manager concurrency default falls back to
- *   `DEFAULT_MAX_CONCURRENT` standalone; the DLQ forward keeps the base
- *   `add()` call shape behind a method_exists guard (documented
- *   hardening); logging goes through a dormant seam.
+ *   `DEFAULT_MAX_CONCURRENT` standalone; the DLQ forward resolves per
+ *   install mode (base `WP_MCP_AI_Dead_Letter_Queue` monolith / this
+ *   package's `DeadLetterQueue` standalone) behind a method_exists
+ *   guard (documented hardening); logging goes through a dormant seam.
  *
  * @package NvoosContentGraphAiPlatform\Queues
  * @since   2.1.0
@@ -632,6 +633,10 @@ class JobQueueManager {
 		}
 
 		if ( static::dead_letter_available() ) {
+			$dlq_class = class_exists( 'WP_MCP_AI_Dead_Letter_Queue' )
+				? \WP_MCP_AI_Dead_Letter_Queue::class
+				: __NAMESPACE__ . '\DeadLetterQueue';
+
 			$retry_history = array();
 			for ( $i = 0; $i <= $retry_count; $i++ ) {
 				$retry_history[] = array(
@@ -641,8 +646,8 @@ class JobQueueManager {
 				);
 			}
 
-			\WP_MCP_AI_Dead_Letter_Queue::add(
-				\WP_MCP_AI_Dead_Letter_Queue::TYPE_JOB_QUEUE,
+			$dlq_class::add(
+				$dlq_class::TYPE_JOB_QUEUE,
 				$job_id,
 				array(
 					'job_id'   => $job_id,
@@ -811,14 +816,19 @@ class JobQueueManager {
 	/**
 	 * Whether the dead-letter queue is available.
 	 *
-	 * Dormant standalone until the DLQ ports (E2). The method_exists
-	 * guard is a documented hardening deviation (mirrors the queue core).
+	 * Resolves per install mode: the base `WP_MCP_AI_Dead_Letter_Queue`
+	 * in monolith installs, this package's `DeadLetterQueue` standalone.
+	 * The method_exists guard is a documented hardening deviation.
 	 *
 	 * @return bool
 	 */
 	protected static function dead_letter_available(): bool {
-		return class_exists( 'WP_MCP_AI_Dead_Letter_Queue' )
-			&& method_exists( 'WP_MCP_AI_Dead_Letter_Queue', 'add' );
+		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) && method_exists( 'WP_MCP_AI_Dead_Letter_Queue', 'add' ) ) {
+			return true;
+		}
+
+		return class_exists( __NAMESPACE__ . '\DeadLetterQueue' )
+			&& method_exists( __NAMESPACE__ . '\DeadLetterQueue', 'add' );
 	}
 
 	/**

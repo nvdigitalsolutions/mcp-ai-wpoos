@@ -41,6 +41,7 @@ final class Plugin {
 		$this->registerBlueprints();
 		$this->registerQueues();
 		$this->registerQueueManager();
+		$this->registerDeadLetterQueue();
 	}
 
 	private function registerAdmin(): void {
@@ -215,6 +216,32 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Queues\QueueManager' ) ) {
 			\NvoosContentGraphAiPlatform\Queues\QueueManager::get_instance();
 		}
+	}
+
+	/**
+	 * Register the dead letter queue (Wave E2).
+	 *
+	 * Standalone-only: the base plugin owns the same table and cron hooks
+	 * in monolith installs; double registration would double-schedule the
+	 * weekly cleanup.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerDeadLetterQueue(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( ! class_exists( __NAMESPACE__ . '\Queues\DeadLetterQueue' ) ) {
+			return;
+		}
+
+		\NvoosContentGraphAiPlatform\Queues\DeadLetterQueue::create_table();
+
+		add_action( 'init', array( \NvoosContentGraphAiPlatform\Queues\DeadLetterQueue::class, 'schedule_cleanup' ) );
+		add_action( 'wp_mcp_ai_dlq_cleanup', array( \NvoosContentGraphAiPlatform\Queues\DeadLetterQueue::class, 'cleanup' ) );
 	}
 
 	private function __clone() {}

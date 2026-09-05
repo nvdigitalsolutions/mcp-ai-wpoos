@@ -14,6 +14,10 @@ is the aligned port of `WP_MCP_AI_Job_Queue_Manager`: byte-identical
 `mcp_ai_concurrent_jobs` schema, priority/status constants, atomic
 claiming, retry/fail handling, stale-job cleanup, and queue stats — the
 concurrency layer the queue-processing cron path consumes.
+`DeadLetterQueue` is the aligned port of `WP_MCP_AI_Dead_Letter_Queue`:
+byte-identical `mcp_ai_dead_letters` schema, type/limit/retention
+constants, error codes, retry dispatch, and stats — the failure sink the
+queue managers forward exhausted retries to.
 
 ## Tier
 
@@ -32,6 +36,7 @@ concurrency layer the queue-processing cron path consumes.
 | `NvoosContentGraphAiPlatform\Queues\AsyncJobQueue` | `AsyncJobQueue.php` | `Plugin::registerQueues()` — queue lifecycle + cron wiring |
 | `NvoosContentGraphAiPlatform\Queues\QueueManager` | `QueueManager.php` | `Plugin::registerQueueManager()` — tool-execution orchestration (filter + AJAX status) |
 | `NvoosContentGraphAiPlatform\Queues\JobQueueManager` | `JobQueueManager.php` | Queue-processing cron path + CLI (static utility; no hooks of its own — wiring lands with the scheduler bridge) |
+| `NvoosContentGraphAiPlatform\Queues\DeadLetterQueue` | `DeadLetterQueue.php` | `Plugin::registerDeadLetterQueue()` — table + weekly cleanup cron; consumed by `JobQueueManager` failure forwarding |
 
 ## Inputs / Outputs / Neighbors
 
@@ -44,11 +49,13 @@ concurrency layer the queue-processing cron path consumes.
 - **Upstream callers:** WP-Cron ticks, future platform subsystems
   (workflow engine E1 registers executors via the filter)
 - **Downstream collaborators (dormant until their waves):** Action
-  Scheduler bridge, Dead Letter Queue, Job Notifier (E2), base logger;
+  Scheduler bridge, Job Notifier (E2), base logger;
   `QueueManager` resolves the RabbitMQ client + tool registry per install
   mode (base classes monolith / AI addon + CoreBridge standalone);
-  `JobQueueManager` resolves SLA/resource/DLQ/logging through dormant
-  seams until those pieces port
+  `JobQueueManager` resolves SLA/resource/logging through dormant
+  seams until those pieces port; `DeadLetterQueue` resolves the retry
+  dispatchers per install mode (base manager/notifier/executor monolith —
+  boot-gated probes — platform `JobQueueManager` standalone)
 
 ## Conventions
 
@@ -56,8 +63,9 @@ concurrency layer the queue-processing cron path consumes.
   hooks in monolith installs.
 - Byte-identical constants/hooks/error codes with the base; deviations
   documented in the class docblock (minute interval registration,
-  method_exists guards, executor filter seam; `JobQueueManager` drops the
-  base's deprecated option-fallback storage — custom table only).
+  method_exists guards, executor filter seam; `JobQueueManager` and
+  `DeadLetterQueue` drop the base's deprecated option-fallback storage —
+  custom table only).
 - Protected seams (`*_available()`, `emit_sse_event`, `log_event`) let
   tests exercise dormant collaborators without global stubs.
 
