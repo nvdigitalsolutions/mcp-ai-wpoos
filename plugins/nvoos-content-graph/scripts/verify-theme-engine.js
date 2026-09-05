@@ -68,7 +68,8 @@ var visual = {
 	shape_map: { post: 'round-rectangle', entity: 'diamond' }
 };
 
-// 1. PHP/JS parity on the known-corrected values from verify-contrast.php.
+// 1. PHP/JS parity on the known-corrected values from the PHP Tokens
+//    implementation (src/Visual/Tokens.php).
 check( 'parity: post light correction', theme.ensureContrast( '#3498db', '#f7f8fa' ) === '#2e95da' );
 check( 'parity: term light correction', theme.ensureContrast( '#f39c12', '#f7f8fa' ) === '#c57d0a' );
 check( 'parity: memory light correction', theme.ensureContrast( '#f1c40f', '#f7f8fa' ) === '#aa8a0a' );

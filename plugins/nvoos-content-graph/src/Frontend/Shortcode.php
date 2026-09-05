@@ -5,6 +5,7 @@ namespace NvoosContentGraph\Frontend;
 
 use NvoosContentGraph\Settings;
 use NvoosContentGraph\Schema;
+use function __;
 use function absint;
 use function apply_filters;
 use function array_merge;
@@ -13,6 +14,7 @@ use function esc_url_raw;
 use function in_array;
 use function max;
 use function min;
+use function preg_match;
 use function rest_url;
 use function sanitize_key;
 use function sanitize_text_field;
@@ -76,7 +78,12 @@ class Shortcode {
 		$communityId = sanitize_text_field( $atts['community_id'] );
 		$postId      = absint( $atts['post_id'] );
 		$height      = sanitize_text_field( $atts['height'] );
-		$maxNodes    = max( 10, min( 2000, absint( $atts['max_nodes'] ) ) );
+		// Only a unitless number or a number followed by a CSS length unit is
+		// a valid height; anything else falls back to the default.
+		if ( ! preg_match( '/^\d+(?:\.\d+)?(?:px|%|vh|vw|em|rem)?$/', $height ) ) {
+			$height = '600px';
+		}
+		$maxNodes = max( 10, min( 2000, absint( $atts['max_nodes'] ) ) );
 
 		// Visual overrides for this embed. Empty att values inherit the
 		// Appearance settings; explicit values are sanitized and passed through.
@@ -180,6 +187,14 @@ class Shortcode {
 					'rest_url'     => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
 					'nonce'        => wp_create_nonce( 'wp_rest' ),
 					'visual'       => $visual,
+					'i18n'         => array(
+						'loading'           => __( 'Loading graph…', 'nvoos-content-graph' ),
+						'cytoscape_missing' => __( 'Cytoscape.js not loaded.', 'nvoos-content-graph' ),
+						'graph_unavailable' => __( 'Graph data unavailable.', 'nvoos-content-graph' ),
+						'zoom_out'          => __( 'Zoom out', 'nvoos-content-graph' ),
+						'zoom_in'           => __( 'Zoom in', 'nvoos-content-graph' ),
+						'fit'               => __( 'Fit', 'nvoos-content-graph' ),
+					),
 				)
 			) . ';',
 			'before'

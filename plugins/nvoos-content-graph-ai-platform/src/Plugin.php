@@ -43,6 +43,7 @@ final class Plugin {
 		$this->registerQueueManager();
 		$this->registerDeadLetterQueue();
 		$this->registerOutboundWebhook();
+		$this->registerCronManager();
 	}
 
 	private function registerAdmin(): void {
@@ -263,6 +264,27 @@ final class Plugin {
 
 		if ( class_exists( __NAMESPACE__ . '\Queues\OutboundWebhook' ) ) {
 			\NvoosContentGraphAiPlatform\Queues\OutboundWebhook::get_instance();
+		}
+	}
+
+	/**
+	 * Register the cron manager (Wave E2).
+	 *
+	 * Standalone-only: the base plugin owns the same `init` prune hook in
+	 * monolith installs; double registration would double-prune the shared
+	 * `wp_mcp_ai_cron_jobs` option.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerCronManager(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Queues\CronManager' ) ) {
+			\NvoosContentGraphAiPlatform\Queues\CronManager::init();
 		}
 	}
 
