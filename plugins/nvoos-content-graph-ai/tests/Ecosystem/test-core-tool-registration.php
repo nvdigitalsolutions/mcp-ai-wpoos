@@ -769,6 +769,7 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertSame( 'System logs retrieved successfully', $result['summary'] );
 		$this->assertArrayHasKey( 'logging_enabled', $result['wp_mcp_ai'] );
+		// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- The tool envelope key is lowercase by contract.
 		$this->assertArrayHasKey( 'wordpress', $result );
 		$this->assertArrayHasKey( 'message', $result['plugin_logs'] );
 	}
@@ -820,5 +821,161 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		$this->assertArrayHasKey( 'errors', $violations );
 		$this->assertSame( 'activity_limit', $violations['errors'][0]['field'] );
 		$this->assertStringContainsString( 'between 1 and 50', $violations['errors'][0]['message'] );
+	}
+
+	public function test_cluster_2c5_tools_are_registered(): void {
+		$bridge = CoreBridge::instance();
+
+		$expected = array(
+			'responsive_image_validator',
+			'graphic_editor_plus',
+			'batch_manage_memory',
+			'wake_up_context',
+			'trace_memory_provenance',
+			'cloudflareai_text_to_image',
+			'gutenberg_block_pattern_generator',
+			'pro_excel',
+			'submit_document_prompt',
+			'open_openai_usage',
+			'openai_usage_analytics',
+			'prioritize_context',
+			'get_profession_stats',
+		);
+
+		foreach ( $expected as $slug ) {
+			$this->assertTrue( $bridge->tools->has( $slug ), "Expected Cluster 2c-5 tool {$slug} to be registered." );
+		}
+	}
+
+	public function test_open_openai_usage_returns_dashboard_url(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$result = $bridge->tools->execute(
+			'open_openai_usage',
+			array(),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'https://platform.openai.com/usage', $result['url'] );
+		$this->assertSame( 'OpenAI Usage Dashboard', $result['label'] );
+		$this->assertArrayHasKey( 'message', $result );
+	}
+
+	public function test_get_profession_stats_degrades_standalone(): void {
+		$bridge = CoreBridge::instance();
+
+		// Standalone installs have no profession module — the base tool's
+		// own function_exists() guard must yield its degradation envelope.
+		$result = $bridge->tools->execute( 'get_profession_stats', array(), array( 'user_id' => 0 ) );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+	}
+
+	public function test_openai_usage_analytics_envelope(): void {
+		$bridge = CoreBridge::instance();
+
+		$result = $bridge->tools->execute(
+			'openai_usage_analytics',
+			array(
+				'period'   => 'month',
+				'group_by' => 'model',
+			),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'message', $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'total_requests', $result['data'] );
+		$this->assertArrayHasKey( 'total_tokens', $result['data'] );
+	}
+
+	public function test_prioritize_context_ranks_within_budget(): void {
+		$bridge = CoreBridge::instance();
+
+		$result = $bridge->tools->execute(
+			'prioritize_context',
+			array(
+				'context_items' => array(
+					array(
+						'context_id' => 'ctx-high',
+						'title'      => 'High',
+						'content'    => 'Payment security compliance requirements for the store.',
+						'importance' => 'critical',
+					),
+					array(
+						'context_id' => 'ctx-low',
+						'title'      => 'Low',
+						'content'    => 'Misc.',
+						'importance' => 'low',
+					),
+				),
+				'token_budget'  => 100,
+				'strategy'      => 'balanced',
+			),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 2, $result['count'] );
+		// Highest score first.
+		$this->assertSame( 'ctx-high', $result['prioritized'][0]['context_id'] );
+		$this->assertGreaterThanOrEqual( $result['prioritized'][1]['score'], $result['prioritized'][0]['score'] );
+		$this->assertLessThanOrEqual( 100, $result['total_tokens'] );
+	}
+
+	public function test_prioritize_context_requires_items(): void {
+		$bridge = CoreBridge::instance();
+
+		$result = $bridge->tools->execute(
+			'prioritize_context',
+			array( 'token_budget' => 500 ),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+	}
+
+	public function test_gutenberg_block_pattern_generator_produces_pattern(): void {
+		$bridge = CoreBridge::instance();
+
+		$result = $bridge->tools->execute(
+			'gutenberg_block_pattern_generator',
+			array(
+				'action'       => 'generate_pattern',
+				'pattern_type' => 'hero',
+				'title'        => 'D8 Test Pattern',
+			),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertNotEmpty( $result['slug'] );
+		$this->assertSame( 'D8 Test Pattern', $result['title'] );
+		$this->assertArrayHasKey( 'content', $result['pattern'] );
+		$this->assertArrayHasKey( 'preview', $result );
+	}
+
+	public function test_responsive_image_validator_rejects_unknown_action(): void {
+		$bridge = CoreBridge::instance();
+
+		$result = $bridge->tools->execute(
+			'responsive_image_validator',
+			array( 'action' => 'bogus' ),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_error', $result->get_error_code() );
+		$this->assertSame( 'Invalid action specified', $result->get_error_message() );
 	}
 }
