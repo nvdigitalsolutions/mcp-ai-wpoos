@@ -69,7 +69,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					__( 'Keys configured in Settings → Connectors are automatically shared with NV oOS. Manage your connections on the %s screen.', 'mcp-ai-wpoos' ),
 					sprintf(
 						'<a href="%s">%s</a>',
-						esc_url( admin_url( 'admin.php?page=connectors' ) ),
+						esc_url( admin_url( 'options-connectors.php' ) ),
 						esc_html__( 'Connectors', 'mcp-ai-wpoos' )
 					)
 				);

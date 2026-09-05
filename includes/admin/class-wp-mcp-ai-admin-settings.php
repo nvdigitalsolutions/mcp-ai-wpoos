@@ -3935,7 +3935,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					esc_html__( 'You can also configure this key in %1$s, or via the %2$s environment variable.', 'mcp-ai-wpoos' ),
 					sprintf(
 						'<a href="%s">%s</a>',
-						esc_url( admin_url( 'admin.php?page=connectors' ) ),
+						esc_url( admin_url( 'options-connectors.php' ) ),
 						esc_html__( 'Settings → Connectors', 'mcp-ai-wpoos' )
 					),
 					'<code>' . esc_html( strtoupper( $provider ) . '_API_KEY' ) . '</code>'
