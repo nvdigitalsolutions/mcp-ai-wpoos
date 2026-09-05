@@ -317,8 +317,8 @@ class Test_Pro_Toolkit_Optimization extends WP_UnitTestCase {
 				'some_random_option'
 			)
 		);
-		// Should remain 'yes' (unchanged).
-		$this->assertSame( 'yes', $autoload );
+		// Since WP 6.6 update_option() persists autoload=true as 'on'.
+		$this->assertSame( 'on', $autoload );
 	}
 
 	/**

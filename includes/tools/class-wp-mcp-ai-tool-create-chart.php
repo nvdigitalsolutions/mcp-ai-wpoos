@@ -597,6 +597,17 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return array|WP_Error Attachment data or error.
 	 */
 	protected function save_chart_as_attachment( $html, $file_name, $chart_type, $user_id ) {
+		// HTML attachments carry markup, so mirror WP core's policy: only
+		// users with unfiltered_html may create them. Check the ACTING user
+		// (the tool executes under $context['user_id']), not the global
+		// current user, which is unrelated in cron/CLI/token contexts.
+		if ( $user_id && ! user_can( $user_id, 'unfiltered_html' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'Saving chart HTML attachments requires the unfiltered_html capability.', 'mcp-ai-wpoos' )
+			);
+		}
+
 		$file_stem = $this->normalize_file_stem( $file_name, $chart_type );
 		$file_name = sprintf( '%s-%s.html', $file_stem, gmdate( 'Ymd-His' ) );
 
@@ -604,7 +615,19 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 
+		// wp_upload_bits() validates the file type against the GLOBAL current
+		// user, stripping html for non-admins. Re-allow html for the duration
+		// of the upload so the acting user's capability (checked above) is
+		// what governs — not ambient global state.
+		$allow_html_mime = function ( $mimes ) {
+			$mimes         = is_array( $mimes ) ? $mimes : array();
+			$mimes['html'] = 'text/html';
+			$mimes['htm']  = 'text/html';
+			return $mimes;
+		};
+		add_filter( 'upload_mimes', $allow_html_mime );
 		$upload = wp_upload_bits( $file_name, null, $html );
+		remove_filter( 'upload_mimes', $allow_html_mime );
 
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error(

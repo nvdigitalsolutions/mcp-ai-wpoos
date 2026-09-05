@@ -272,6 +272,10 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 	 * Test saving chart as attachment.
 	 */
 	public function test_save_as_attachment() {
+		// HTML attachments mirror WP core policy: only unfiltered_html users
+		// (admins) may create them.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
 		$arguments = array(
 			'type'               => 'bar',
 			'data'               => array(
@@ -287,7 +291,7 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 			'file_name'          => 'test-chart',
 		);
 
-		$context = array( 'user_id' => $this->user_id );
+		$context = array( 'user_id' => $admin_id );
 		$result  = $this->tool->execute( $arguments, $context );
 
 		$this->assertNotWPError( $result );

@@ -82,7 +82,7 @@ class WP_MCP_AI_Shortcodes_Coordinator_Tests extends WP_UnitTestCase {
 		$reflection = new ReflectionClass( $handler );
 
 		// Verify essential methods exist.
-		$this->assertTrue( $reflection->hasMethod( 'render' ) || $reflection->hasMethod( 'shortcode' ) );
+		$this->assertTrue( $reflection->hasMethod( 'render_shortcode' ) );
 	}
 
 	/**
@@ -92,10 +92,12 @@ class WP_MCP_AI_Shortcodes_Coordinator_Tests extends WP_UnitTestCase {
 		$shortcodes = new WP_MCP_AI_Shortcodes();
 		$reflection = new ReflectionClass( $shortcodes );
 
-		// Should only have one property (the chat_shortcode).
+		// The coordinator holds the primary chat handler and the professional
+		// selector shortcode handler.
 		$properties = $reflection->getProperties();
-		$this->assertCount( 1, $properties );
+		$this->assertCount( 2, $properties );
 		$this->assertEquals( 'chat_shortcode', $properties[0]->getName() );
+		$this->assertEquals( 'professional_selector_shortcode', $properties[1]->getName() );
 	}
 
 	/**
