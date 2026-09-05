@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace NvoosContentGraphAi\Admin\Sections;
 
-use NvoosContentGraph\Admin\Section;
 use NvoosContentGraphAi\Adapter\CredentialResolver;
+use NvoosContentGraphAi\Admin\Settings\AiSection;
 use NvoosContentGraphAi\Security\CredentialStore;
 
 /**
@@ -21,7 +21,7 @@ use NvoosContentGraphAi\Security\CredentialStore;
  *
  * @since 1.0.0
  */
-class ApiKeys extends Section {
+class ApiKeys extends AiSection {
 
 	public function get_id(): string {
 		return 'ai_api_keys';

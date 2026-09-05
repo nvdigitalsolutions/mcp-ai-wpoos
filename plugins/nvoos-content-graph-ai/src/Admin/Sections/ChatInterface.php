@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace NvoosContentGraphAi\Admin\Sections;
 
-use NvoosContentGraph\Admin\Section;
+use NvoosContentGraphAi\Admin\Settings\AiSection;
 
 /**
  * Chat Interface — interactive AI chat testing panel.
@@ -18,7 +18,7 @@ use NvoosContentGraph\Admin\Section;
  *
  * @since 1.0.0
  */
-class ChatInterface extends Section {
+class ChatInterface extends AiSection {
 
 	public function get_id(): string {
 		return 'ai_chat_interface';

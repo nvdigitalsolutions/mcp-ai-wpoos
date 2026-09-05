@@ -1,5 +1,11 @@
 # NV oOS Content Graph — AI · Changelog
 
+## Unreleased
+
+### Added
+
+- **Settings shell (Wave D-UI-5)** — the ported settings shell lands in `src/Admin/Settings/`: `SettingsValidator` (the base validator's method/error-code contract), `AiSection` (validate-then-sanitize section base — rejected input records a settings error and preserves previous values), and a `SettingsRegistry` facade over the parent plugin's registry (consumed, never modified) exposing the public `nvoos_content_graph_ai/register_settings_sections` hook for the platform addon. All four settings sections re-base onto `AiSection`; provider/model and chat-behaviour fields now validate on save. 14 characterization tests green in both ecosystem matrices.
+
 ## 1.0.4 — 2026-08-31
 
 ### Security
