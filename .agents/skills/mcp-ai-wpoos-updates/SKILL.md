@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-updates
-description: Operational guide for the two recurring NV oOS maintenance tracks — (1) Docs & Release Catch-Up: the plan-first per-version documentation/context/version-bump pass (plan template, P0–P3 work items, commit breakdown, branch+PR conventions, validation sweeps, stale-ZIP housekeeping, skill-count bookkeeping); (2) Model Catalog & Config Updates: the monthly model-config refresh across includes/data/model-catalog.json and its ~24 derived files (migration map, settings defaults, selector/router, provider clients, token budgets, cost tables, admin placeholders, Pro tool enums). Use when asked to "catch up docs", "do the docs catch-up for version X", "complete the release notes", "update the model configs", "refresh the model catalog", or "do the same monthly model exercise".
+description: "Operational guide for the two recurring NV oOS maintenance tracks — (1) Docs & Release Catch-Up: the plan-first per-version documentation/context/version-bump pass (plan template, P0–P3 work items, commit breakdown, branch+PR conventions, validation sweeps, stale-ZIP housekeeping, skill-count bookkeeping); (2) Model Catalog & Config Updates: the monthly model-config refresh across includes/data/model-catalog.json and its ~24 derived files (migration map, settings defaults, selector/router, provider clients, token budgets, cost tables, admin placeholders, Pro tool enums). Use when asked to 'catch up docs', 'do the docs catch-up for version X', 'complete the release notes', 'update the model configs', 'refresh the model catalog', or 'do the same monthly model exercise'."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
