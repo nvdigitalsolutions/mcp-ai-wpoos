@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.69
+Stable tag: 1.1.70
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.70 - September 5, 2026 =
+
+Host-hardening and test-suite stability release. Pro admin pages and the OCR service no longer fatal on hosts that disable exec (new exec-first / Process Service fallback helpers for Node.js probes and CLI tools, plus max(0, ...) clamps replacing absint() across the CPT/settings sanitizers). A fifth PHPUnit repair wave (~29 test-only PRs across two CI triage runs) closed the remaining clusters and carried grouped production fixes: transcript display metadata (attachments key) is no longer stripped on save and default max tokens are capped by the model's window; Pro dashboard event stats accept both underscore and dashed event slugs; the validated web_search tool's profession tags align with the base tool; schedule presets drop a phantom tool step and place the hook in schedule_data; mesh peer URLs are validated before sanitization (scheme-less strings no longer accepted); opt-in guest memory auto-capture writes under a stable shared guest bucket; JetEngine gates require the real plugin's load marker and a physical CCT-table probe (plus a transactional-DDL-safe table check, restored JetFormBuilder id/flat params, and a cached Pro tool map for the token manager); light/advanced complexity routing works again (the default model no longer short-circuits it) and provider-prefixed model slugs resolve their real token limits; Auth0 audience validation is structural (no DNS resolution; the domain keeps the SSRF guard) and image tools check permissions against the acting user; markup REST validation errors return 400 and the legacy SSE handshake is filterable; skill packs reject numeric-keyed entries and always fire their installed action; Elementor editor detection honours the action=elementor flag; the recent-activity allowlist gains the agentic event types and trace durations use millisecond precision; webhook IDs are sanitize_key-stable with dotted event names, the settings repository falls back to the canonical settings blob so runtime gates see dashboard-saved values, chart HTML attachments gate on the acting user's unfiltered_html, social publishing resets post dates, PSO keywords match inflected forms, site-builder heading tags are allowlisted, and the schema verifier enforces required independently of properties. Tool count unchanged: ~303 base + ~1,263 Pro (~1,566 total; live registry authoritative).
 
 = 1.1.69 - September 4, 2026 =
 
