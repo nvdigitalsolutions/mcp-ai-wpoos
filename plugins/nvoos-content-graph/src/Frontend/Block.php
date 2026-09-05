@@ -37,25 +37,60 @@ class Block {
 			array(
 				'api_version'     => 3,
 				'attributes'      => array(
-					'mode'         => array(
+					'mode'            => array(
 						'type'    => 'string',
 						'default' => 'full',
 					),
-					'community_id' => array(
+					'community_id'    => array(
 						'type'    => 'string',
 						'default' => '',
 					),
-					'post_id'      => array(
+					'post_id'         => array(
 						'type'    => 'integer',
 						'default' => 0,
 					),
-					'height'       => array(
+					'height'          => array(
 						'type'    => 'string',
 						'default' => '600px',
 					),
-					'max_nodes'    => array(
+					'max_nodes'       => array(
 						'type'    => 'integer',
 						'default' => 300,
+					),
+					// Visual experience attributes. `null` defaults mean
+					// "inherit the Appearance settings" — the shortcode only
+					// receives explicit values once an inspector control is used.
+					'theme'           => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'color_by'        => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'show_legend'     => array(
+						'type'    => 'boolean',
+						'default' => null,
+					),
+					'show_icons'      => array(
+						'type'    => 'boolean',
+						'default' => null,
+					),
+					'show_edges'      => array(
+						'type'    => 'boolean',
+						'default' => null,
+					),
+					'edge_style'      => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'min_label_zoom'  => array(
+						'type'    => 'number',
+						'default' => null,
+					),
+					'label_font_size' => array(
+						'type'    => 'number',
+						'default' => null,
 					),
 				),
 				'render_callback' => array( $this, 'render' ),
@@ -73,6 +108,22 @@ class Block {
 	 */
 	public function render( array $attributes ): string {
 		$shortcode = new Shortcode();
+
+		// Boolean/number block attributes arrive as true/false or floats;
+		// the shortcode atts expect '' (inherit) or explicit 1/0 values.
+		// `null` means the user never touched the inspector control, so the
+		// Appearance settings keep driving the embed.
+		foreach ( array( 'show_legend', 'show_icons', 'show_edges' ) as $key ) {
+			if ( isset( $attributes[ $key ] ) && null !== $attributes[ $key ] ) {
+				$attributes[ $key ] = $attributes[ $key ] ? '1' : '0';
+			}
+		}
+		foreach ( array( 'min_label_zoom', 'label_font_size' ) as $key ) {
+			if ( isset( $attributes[ $key ] ) && null !== $attributes[ $key ] ) {
+				$attributes[ $key ] = (string) $attributes[ $key ];
+			}
+		}
+
 		return $shortcode->render( $attributes );
 	}
 }

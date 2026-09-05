@@ -127,6 +127,7 @@ class SettingsPage {
 		SettingsRegistry::register_tab( 'sources', __( 'Sources (CPT / CCT)', 'nvoos-content-graph' ) );
 		SettingsRegistry::register_tab( 'remote', __( 'Remote Sources', 'nvoos-content-graph' ) );
 		SettingsRegistry::register_tab( 'embeddings', __( 'Embeddings', 'nvoos-content-graph' ) );
+		SettingsRegistry::register_tab( 'appearance', __( 'Appearance', 'nvoos-content-graph' ) );
 
 		// ─── Register core sections ─────────────────────────────-
 		if ( class_exists( 'NvoosContentGraph\Admin\Sections\GeneralSection' ) ) {
@@ -149,6 +150,9 @@ class SettingsPage {
 		}
 		if ( class_exists( 'NvoosContentGraph\Admin\Sections\SourcesExtSection' ) ) {
 			SettingsRegistry::register_section( new \NvoosContentGraph\Admin\Sections\SourcesExtSection() );
+		}
+		if ( class_exists( 'NvoosContentGraph\Admin\Sections\AppearanceSection' ) ) {
+			SettingsRegistry::register_section( new \NvoosContentGraph\Admin\Sections\AppearanceSection() );
 		}
 
 		/**
@@ -310,6 +314,20 @@ class SettingsPage {
 					<select id="nvoos-content-graph-type-filter">
 						<option value=""><?php esc_html_e( 'All types', 'nvoos-content-graph' ); ?></option>
 					</select>
+					<select id="nvoos-content-graph-color-by" title="<?php esc_attr_e( 'Color nodes by — live preview, saved in Appearance settings', 'nvoos-content-graph' ); ?>">
+						<option value="type"><?php esc_html_e( 'Color: Type', 'nvoos-content-graph' ); ?></option>
+						<option value="community"><?php esc_html_e( 'Color: Community', 'nvoos-content-graph' ); ?></option>
+						<option value="degree"><?php esc_html_e( 'Color: Degree', 'nvoos-content-graph' ); ?></option>
+						<option value="monochrome"><?php esc_html_e( 'Color: Monochrome', 'nvoos-content-graph' ); ?></option>
+					</select>
+					<select id="nvoos-content-graph-layout-select" title="<?php esc_attr_e( 'Layout algorithm', 'nvoos-content-graph' ); ?>"></select>
+					<select id="nvoos-content-graph-edge-style" title="<?php esc_attr_e( 'Edge style — live preview, saved in Appearance settings', 'nvoos-content-graph' ); ?>">
+						<option value="plain"><?php esc_html_e( 'Edges: Plain', 'nvoos-content-graph' ); ?></option>
+						<option value="arrows"><?php esc_html_e( 'Edges: Arrows', 'nvoos-content-graph' ); ?></option>
+						<option value="tapered"><?php esc_html_e( 'Edges: Tapered', 'nvoos-content-graph' ); ?></option>
+						<option value="density"><?php esc_html_e( 'Edges: Density', 'nvoos-content-graph' ); ?></option>
+						<option value="auto"><?php esc_html_e( 'Edges: Auto', 'nvoos-content-graph' ); ?></option>
+					</select>
 					<input type="text" id="nvoos-content-graph-agent-filter" placeholder="<?php esc_attr_e( 'Agent ID…', 'nvoos-content-graph' ); ?>" style="width:140px;">
 					<input type="text" id="nvoos-content-graph-wing-filter" placeholder="<?php esc_attr_e( 'Wing…', 'nvoos-content-graph' ); ?>" style="width:120px;">
 					<button id="nvoos-content-graph-memory-preset-btn" class="button" title="<?php esc_attr_e( 'Show only the agent / wing combination above', 'nvoos-content-graph' ); ?>">
@@ -318,12 +336,36 @@ class SettingsPage {
 					<button id="nvoos-content-graph-memory-clear-btn" class="button">
 						<?php esc_html_e( 'Clear', 'nvoos-content-graph' ); ?>
 					</button>
-					<button id="nvoos-content-graph-fit-btn" class="button"><?php esc_html_e( 'Fit', 'nvoos-content-graph' ); ?></button>
-					<button id="nvoos-content-graph-relayout-btn" class="button"><?php esc_html_e( 'Relayout', 'nvoos-content-graph' ); ?></button>
+					<span class="nvoos-cg-zoom-cluster">
+						<button id="nvoos-content-graph-zoom-out-btn" class="button" title="<?php esc_attr_e( 'Zoom out', 'nvoos-content-graph' ); ?>">−</button>
+						<span id="nvoos-content-graph-zoom-badge" class="nvoos-cg-zoom-badge" aria-live="polite">100%</span>
+						<button id="nvoos-content-graph-zoom-in-btn" class="button" title="<?php esc_attr_e( 'Zoom in', 'nvoos-content-graph' ); ?>">+</button>
+						<button id="nvoos-content-graph-fit-btn" class="button"><?php esc_html_e( 'Fit', 'nvoos-content-graph' ); ?></button>
+					</span>
+					<select id="nvoos-content-graph-export-bg" title="<?php esc_attr_e( 'Export background', 'nvoos-content-graph' ); ?>">
+						<option value="theme"><?php esc_html_e( 'BG: Theme', 'nvoos-content-graph' ); ?></option>
+						<option value="transparent"><?php esc_html_e( 'BG: Transparent', 'nvoos-content-graph' ); ?></option>
+						<option value="white"><?php esc_html_e( 'BG: White', 'nvoos-content-graph' ); ?></option>
+					</select>
+					<select id="nvoos-content-graph-export-scale" title="<?php esc_attr_e( 'Export scale', 'nvoos-content-graph' ); ?>">
+						<option value="1">1×</option>
+						<option value="2" selected>2×</option>
+						<option value="3">3×</option>
+					</select>
 					<button id="nvoos-content-graph-export-png-btn" class="button"><?php esc_html_e( 'Export PNG', 'nvoos-content-graph' ); ?></button>
+					<button id="nvoos-content-graph-fullscreen-btn" class="button" title="<?php esc_attr_e( 'Toggle fullscreen', 'nvoos-content-graph' ); ?>">⛶</button>
 				</div>
-				<div id="nvoos-content-graph-explorer" style="height:<?php echo esc_attr( $settings['cytoscape_height'] ); ?>;"></div>
-				<div id="nvoos-content-graph-sidebar" class="nvoos-content-graph-sidebar" style="display:none;"></div>
+				<div class="nvoos-cg-explorer-body">
+					<div id="nvoos-content-graph-explorer"
+						style="height:<?php echo esc_attr( $settings['cytoscape_height'] ); ?>;"
+						tabindex="0"
+						role="application"
+						aria-label="<?php esc_attr_e( 'Knowledge graph explorer', 'nvoos-content-graph' ); ?>">
+						<div id="nvoos-content-graph-legend" class="nvoos-cg-legend" hidden></div>
+						<div id="nvoos-content-graph-minimap" class="nvoos-cg-minimap" hidden><canvas id="nvoos-content-graph-minimap-canvas" width="160" height="100"></canvas></div>
+					</div>
+					<div id="nvoos-content-graph-sidebar" class="nvoos-content-graph-sidebar" style="display:none;"></div>
+				</div>
 			</div>
 			<?php endif; ?>
 
@@ -400,13 +442,34 @@ class SettingsPage {
 			true
 		);
 
+		// Visual experience system: icon glyphs, then the theme engine,
+		// then the admin explorer (which depends on both).
 		\wp_enqueue_script(
-			'nvoos-content-graph-admin',
-			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-admin.js',
-			array( 'jquery', 'nvoos-content-graph-cytoscape', 'nvoos-content-graph-cytoscape-fcose' ),
+			'nvoos-content-graph-icons',
+			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-icons.js',
+			array(),
 			NVOOS_CONTENT_GRAPH_VERSION,
 			true
 		);
+		\wp_enqueue_script(
+			'nvoos-content-graph-theme',
+			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-theme.js',
+			array( 'nvoos-content-graph-icons' ),
+			NVOOS_CONTENT_GRAPH_VERSION,
+			true
+		);
+
+		\wp_enqueue_script(
+			'nvoos-content-graph-admin',
+			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-admin.js',
+			array( 'jquery', 'nvoos-content-graph-cytoscape', 'nvoos-content-graph-cytoscape-fcose', 'nvoos-content-graph-theme' ),
+			NVOOS_CONTENT_GRAPH_VERSION,
+			true
+		);
+
+		// WordPress color picker for the Appearance tab's per-type colors.
+		\wp_enqueue_style( 'wp-color-picker' );
+		\wp_enqueue_script( 'wp-color-picker' );
 
 		// Stripe.js + the addon purchase modal. Only enqueued on this page;
 		// Stripe is contacted exclusively when the user opens the checkout.
@@ -444,6 +507,33 @@ class SettingsPage {
 				'ajax_nonce' => wp_create_nonce( 'nvoos_content_graph_admin' ),
 				'height'     => esc_js( $settings['cytoscape_height'] ),
 				'max_nodes'  => absint( $settings['max_display_nodes'] ),
+				'visual'     => \NvoosContentGraph\Visual\Tokens::visual_config( $settings ),
+				'presets'    => \NvoosContentGraph\Visual\Tokens::presets(),
+				'i18n'       => array(
+					'all_types'   => __( 'All types', 'nvoos-content-graph' ),
+					'loading'     => __( 'Loading graph…', 'nvoos-content-graph' ),
+					'load_error'  => __( 'Failed to load graph data. Ensure the graph has been built.', 'nvoos-content-graph' ),
+					'cy_missing'  => __( 'Cytoscape.js did not load. Check your network connection.', 'nvoos-content-graph' ),
+					'legend'      => __( 'Legend', 'nvoos-content-graph' ),
+					'zoom_in'     => __( 'Zoom in', 'nvoos-content-graph' ),
+					'zoom_out'    => __( 'Zoom out', 'nvoos-content-graph' ),
+					'fit'         => __( 'Fit', 'nvoos-content-graph' ),
+					'fullscreen'  => __( 'Fullscreen', 'nvoos-content-graph' ),
+					'export_png'  => __( 'Export PNG', 'nvoos-content-graph' ),
+					'bg_theme'    => __( 'Background: theme', 'nvoos-content-graph' ),
+					'bg_transparent' => __( 'Background: transparent', 'nvoos-content-graph' ),
+					'bg_white'    => __( 'Background: white', 'nvoos-content-graph' ),
+					'scale'       => __( 'Scale', 'nvoos-content-graph' ),
+					'color_by'    => __( 'Color by', 'nvoos-content-graph' ),
+					'layout'      => __( 'Layout', 'nvoos-content-graph' ),
+					'edges_note'  => __( 'Showing %1$d of %2$d edges (budget reached)', 'nvoos-content-graph' ),
+					'node'        => __( 'Node', 'nvoos-content-graph' ),
+					'connections' => __( 'connections', 'nvoos-content-graph' ),
+					'community'   => __( 'Community', 'nvoos-content-graph' ),
+					'view_post'   => __( 'View post ↗', 'nvoos-content-graph' ),
+					'neighbors'   => __( 'Neighbors', 'nvoos-content-graph' ),
+					'a11y_hint'   => __( 'Graph explorer. Use arrow keys to move between nodes, Enter to open details, Escape to clear, + and - to zoom.', 'nvoos-content-graph' ),
+				),
 			)
 		);
 
@@ -453,10 +543,11 @@ class SettingsPage {
 			'nvoos-content-graph-commerce',
 			'nvoosContentGraphCommerce',
 			array(
-				'rest_url'    => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
-				'nonce'       => wp_create_nonce( 'wp_rest' ),
-				'price_label' => \NvoosContentGraph\Commerce\Payments::priceLabel(),
-				'i18n'        => array(
+				'rest_url'     => esc_url_raw( rest_url( Schema::REST_NAMESPACE ) ),
+				'nonce'        => wp_create_nonce( 'wp_rest' ),
+				'price_label'  => \NvoosContentGraph\Commerce\Payments::priceLabel(),
+				'fallback_url' => esc_url_raw( \NvoosContentGraph\Commerce\Payments::fallbackProductUrl() ),
+				'i18n'         => array(
 					'title'         => __( 'Get NV oOS Content Graph — AI', 'nvoos-content-graph' ),
 					'pay'           => __( 'Pay', 'nvoos-content-graph' ),
 					'cancel'        => __( 'Cancel', 'nvoos-content-graph' ),
@@ -470,6 +561,7 @@ class SettingsPage {
 					'test_mode'     => __( 'Test mode — no real payment will be taken.', 'nvoos-content-graph' ),
 					'pending_retry' => __( 'Check again', 'nvoos-content-graph' ),
 					'pending_new'   => __( 'Start a new purchase', 'nvoos-content-graph' ),
+					'fallback_note' => __( 'The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…', 'nvoos-content-graph' ),
 				),
 			)
 		);

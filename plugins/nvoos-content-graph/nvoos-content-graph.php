@@ -3,7 +3,7 @@
  * Plugin Name:  NV oOS Content Graph
  * Plugin URI:   https://github.com/nvdigitalsolutions/nvoos-content-graph
  * Description:  Visual knowledge graph for WordPress. Maps your content into an interactive, navigable graph. Zero API keys required.
- * Version:      1.0.3
+ * Version:      1.0.4
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Author:       NV Digital Solutions
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NVOOS_CONTENT_GRAPH_VERSION', '1.0.3' );
+define( 'NVOOS_CONTENT_GRAPH_VERSION', '1.0.4' );
 define( 'NVOOS_CONTENT_GRAPH_FILE', __FILE__ );
 define( 'NVOOS_CONTENT_GRAPH_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NVOOS_CONTENT_GRAPH_URL', plugin_dir_url( __FILE__ ) );

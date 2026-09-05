@@ -100,6 +100,18 @@ and cached, or proxied) only while the token is valid. Errors mirror the
 `/session` codes; `402` means the payment did not complete or the amount
 is wrong — the plugin surfaces the message verbatim in the modal.
 
+### Checkout-unavailable fallback
+
+When the plugin cannot reach the vendor `/session` endpoint — network
+failure, `404` (route missing), or a server error (`5xx`) — the purchase
+modal shows a short notice and redirects the user to the vendor product
+page so the purchase can still complete. The target URL defaults to
+<https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/> and is
+filterable (`nvoos_content_graph/payments/fallback_url`); an empty value
+disables the redirect and keeps the plain in-modal error. Client errors
+that mean the endpoint IS available (e.g. `429` session-creation
+throttling) are shown in the modal instead of redirecting.
+
 ## Reference implementation (host on your server)
 
 The contract above is implemented by the **NV oOS Checkout API** addon in
@@ -132,3 +144,4 @@ release publishing) see `addons/checkout-api/README.md`.
 | `nvoos_content_graph/payments/price_cents` | Display price (vendor sets the authoritative amount) |
 | `nvoos_content_graph/payments/addon_version` | Version pinned in payloads + fallback URL |
 | `nvoos_content_graph/payments/addon_zip_url` | Fallback ZIP URL when the vendor returns no `download_url` |
+| `nvoos_content_graph/payments/fallback_url` | Product-page redirect target when the checkout endpoint is unreachable (default: the nvdigitalsolutions.com AI addon page; empty = disabled) |

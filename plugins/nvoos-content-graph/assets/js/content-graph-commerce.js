@@ -82,6 +82,43 @@
 	}
 
 	/**
+	 * Checkout endpoint unavailable — fall back to the product page.
+	 *
+	 * When the `/payments/session` endpoint cannot be reached (network
+	 * failure, 404, or server error), replace the modal with a short
+	 * notice and redirect to the vendor product page so the purchase can
+	 * still complete. The URL is filterable server-side
+	 * (`nvoos_content_graph/payments/fallback_url`); an empty value keeps
+	 * the plain in-modal error instead.
+	 *
+	 * @return {void}
+	 */
+	function checkoutUnavailable() {
+		var fallback = String( config.fallback_url || '' ).trim();
+
+		if ( ! fallback || ! /^https?:\/\//i.test( fallback ) ) {
+			showError( i18n.generic_error );
+			return;
+		}
+
+		if ( dialog ) {
+			var modalBody = dialog.querySelector( '.nvoos-cg-modal-body' );
+			var footer = dialog.querySelector( '.nvoos-cg-modal-footer' );
+			if ( modalBody ) {
+				modalBody.innerHTML = '';
+				modalBody.appendChild( el( 'p', 'nvoos-cg-pending-message', i18n.fallback_note || 'The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…' ) );
+			}
+			if ( footer ) {
+				footer.innerHTML = '';
+			}
+		}
+
+		window.setTimeout( function () {
+			window.location.href = fallback;
+		}, 1200 );
+	}
+
+	/**
 	 * Hide the modal error box.
 	 *
 	 * @return {void}
@@ -246,7 +283,14 @@
 
 		apiPost( '/payments/session' ).then( function ( result ) {
 			if ( ! result.ok ) {
-				showError( ( result.data && result.data.message ) || i18n.generic_error );
+				// The endpoint is unreachable (route missing or server error):
+				// redirect to the vendor product page. Other client errors
+				// (e.g. session throttling) keep the in-modal error.
+				if ( result.status === 404 || result.status >= 500 ) {
+					checkoutUnavailable();
+				} else {
+					showError( ( result.data && result.data.message ) || i18n.generic_error );
+				}
 				return;
 			}
 
@@ -266,7 +310,9 @@
 			payBtn.dataset.clientSecret = result.data.client_secret;
 			payBtn.disabled = false;
 		} ).catch( function () {
-			showError( i18n.generic_error );
+			// Network-level failure (fetch rejection): the endpoint is
+			// unavailable — fall back to the product page.
+			checkoutUnavailable();
 		} );
 	}
 
