@@ -22,7 +22,8 @@
  * - `tools/call` validates its parameters but tool *execution* is not
  *   ported to CG-AI yet — it answers the documented
  *   `wp_mcp_ai_mcp_unavailable` (HTTP 503 data) error. Execution lands
- *   with the tool-execution wave (D-Tools); the response-shaping helpers
+ *   with the tool-execution wave (D8) —
+ *   docs/project/plans/d8-tool-execution-port-plan.md; the response-shaping helpers
  *   (`is_mcp_content_array` / `convert_to_text_content` / async polling)
  *   are ported then too.
  * - SSE transports are deferred: `GET /mcp` always returns discovery
@@ -943,14 +944,14 @@ class McpController {
 	 * is not ported to CG-AI yet, so after validation the handler answers
 	 * the documented `wp_mcp_ai_mcp_unavailable` error (HTTP 503 data).
 	 * Execution (and the async poll + MCP content shaping) lands with the
-	 * tool-execution wave.
+	 * tool-execution wave (D8 — docs/project/plans/d8-tool-execution-port-plan.md).
 	 *
 	 * @param array           $params  Method parameters.
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array|WP_Error
 	 */
 	protected function mcp_tools_call( $params, \WP_REST_Request $request ) {
-		unset( $request ); // Reserved for the execution path (D-Tools wave).
+		unset( $request ); // Reserved for the execution path (D8 wave).
 
 		if ( ! isset( $params['name'] ) ) {
 			return new \WP_Error(

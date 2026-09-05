@@ -21,7 +21,7 @@
 |---|---|---|---|
 | A2A | `includes/a2a/` (7 classes) | `src/A2A/` (7 classes ported) | 🟢 Extracted (Wave A) |
 | Agents (role system) | `includes/agents/` (12 classes) | `src/Agents/` | 🟢 Extracted (Wave C) |
-| Assistant CPT | `includes/assistants/` + `includes/class-assistant-cpt.php` | (stays in base — plan §10 decision 1) | ⏸️ Deferred |
+| Assistant CPT | `includes/assistants/` + `includes/class-assistant-cpt.php` | (stays in base — plan §10 decision 1) | ⏸️ Deferred — the CPT itself stays base-owned in monolith mode; CG-AI dual-registers it standalone (Wave D-UI-4), and the standalone editor/metadata/consumption port is tracked as ecosystem Wave D-UI-6 |
 | Skills | `includes/class-wp-mcp-ai-skill-registry.php`, `-skill-parser.php`, `-skill-pack-registry.php` | `src/Skills/` (registry, parser, pack registry; SkillBridge resolves ported-first) | 🟢 Extracted (Wave B) |
 | Slash Commands | `includes/slash-commands/` (7 classes + commands/) | `src/SlashCommands/` + `src/SlashCommands/Commands/` | 🟢 Extracted (Wave B, S1–S2) |
 | Harness | `includes/harness/` (30 classes) | `src/Harness/` | 🟢 Extracted (Wave C) |
@@ -112,7 +112,8 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 
 ## Next extraction waves
 
-1. **Phase 5 (release-gated)** — delete base copies (plan §10b, decision #4), meta-plugin mode (decision #3 — needs a shared ownership discriminator replacing `defined('WP_MCP_AI_PATH')` checks across services + a third CI matrix), base 2.0.0, docs sweep.
+1. **Tool execution (ecosystem Wave D8)** — the base tool inventory (271 slugs) and the `tools/call` execution path port into the ecosystem; cluster plan: `docs/project/plans/d8-tool-execution-port-plan.md`. The platform's harness-tool cluster (8 tools) lands here too, so standalone harness tooling stops degrading to base-only registrars.
+2. **Phase 5 (release-gated)** — delete base copies (plan §10b, decision #4), meta-plugin mode (decision #3 — needs a shared ownership discriminator replacing `defined('WP_MCP_AI_PATH')` checks across services + a third CI matrix), base 2.0.0, docs sweep.
 
 ## Phase 5 status (2026-09-01)
 

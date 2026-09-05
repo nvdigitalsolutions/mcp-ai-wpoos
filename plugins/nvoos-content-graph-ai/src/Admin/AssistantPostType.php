@@ -13,7 +13,8 @@
  *
  * Decoupling (documented, additive):
  * - No metabox system is ported yet — the base's metaboxes remain with
- *   the base (they land with the assistant editor wave); standalone
+ *   the base (they land with the assistant editor + metadata wave,
+ *   ecosystem Wave D-UI-6); standalone
  *   installs edit assistant meta through the REST surface and the
  *   builder pages.
  * - The meta auth callback uses the same `edit_post` capability gate
