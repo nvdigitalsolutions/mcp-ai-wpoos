@@ -114,7 +114,7 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$this->assertIsArray( $suggested );
 		$this->assertNotEmpty( $suggested );
 		$this->assertTrue(
-			in_array( 'gemini-1.5-flash', $suggested, true ) || in_array( 'gemini-2.0-flash', $suggested, true ),
+			in_array( 'gemini-2.5-flash', $suggested, true ) || in_array( 'gemini-3.6-flash', $suggested, true ),
 			'Should suggest Gemini for very large requests (> 200k tokens).'
 		);
 	}
