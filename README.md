@@ -126,7 +126,7 @@
 | `lib/core/` | Framework-agnostic AI orchestration engine (nvoos/core): 32 domain contracts, 21 WordPress adapters, ChatOrchestrator, ProviderRouter, ToolRegistry, SkillRegistry — PHP 8.1+ |
 | `addons/` | 27 installable addons (Pro, Chat SPA, Docs Hub, SaaS Controller, Cloud Worker, Cloudways Dashboard, Toolkit Shell, Canvas, Canvas Toolkit, Document Editor, Media Studio, Media Worker, Graphify, Comic Reader, Funiq Bridge, Fleet Operator, Algorave, Cornerstone3D, Crocoblock DS, Embedded, Fantasy Football, LibreChat, Schedule Anything Platform, Schedule Anything SPA, Tenant Router, Page Agent, Checkout API) |
 | `assets/` | Frontend JS/CSS, images, CSV templates, examples |
-| `.agents/skills/` | 53 coding-time agent skills for Zed editor (20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide + mcp-ai-wpoos-test-suite repair guide) |
+| `.agents/skills/` | 54 coding-time agent skills for Zed editor (20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide + mcp-ai-wpoos-test-suite repair guide + mcp-ai-wpoos-updates maintenance guide) |
 | `.bmad/` | 6 BMAD workflow agent YAML definitions + team composition config |
 | `.context/` | Subsystem context files (10 topics + 5 templates) for agent session loading |
 | `plugins/` | Standalone plugins: NVOOS Content Graph, NVOOS Content Graph AI, NVOOS Content Graph AI Platform |
