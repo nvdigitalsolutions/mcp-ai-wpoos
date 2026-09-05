@@ -948,7 +948,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							<tr>
 								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<code><?php echo esc_html( isset( $settings['kimi_model'] ) && '' !== $settings['kimi_model'] ? $settings['kimi_model'] : 'kimi-k2.6' ); ?></code>
+									<code><?php echo esc_html( isset( $settings['kimi_model'] ) && '' !== $settings['kimi_model'] ? $settings['kimi_model'] : 'kimi-k3' ); ?></code>
 								</td>
 							</tr>
 							<tr>
@@ -2521,7 +2521,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 			try {
 				$client = new WP_MCP_AI_DeepSeek_Client();
-				$model  = isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-chat';
+				$model  = isset( $settings['deepseek_model'] ) && '' !== $settings['deepseek_model'] ? $settings['deepseek_model'] : 'deepseek-v4-flash';
 
 				$base_url = isset( $settings['deepseek_base_url'] ) && '' !== trim( $settings['deepseek_base_url'] )
 					? untrailingslashit( esc_url_raw( $settings['deepseek_base_url'] ) )
@@ -2884,7 +2884,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			}
 
 			try {
-				$model = isset( $settings['kimi_model'] ) && '' !== $settings['kimi_model'] ? $settings['kimi_model'] : 'kimi-k2.6';
+				$model = isset( $settings['kimi_model'] ) && '' !== $settings['kimi_model'] ? $settings['kimi_model'] : 'kimi-k3';
 
 				$base_url = isset( $settings['kimi_base_url'] ) && '' !== trim( $settings['kimi_base_url'] )
 					? untrailingslashit( esc_url_raw( $settings['kimi_base_url'] ) )

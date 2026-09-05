@@ -291,8 +291,8 @@ class WP_MCP_AI_Model_Selector {
 				return self::get_high_capacity_fallback_model( $model );
 			}
 
-			// Otherwise, try claude-3-haiku.
-			return 'claude-3-haiku';
+			// Otherwise, try claude-haiku-4-5.
+			return 'claude-haiku-4-5';
 		}
 
 		// Default fallback for unknown models - use configured high-capacity model.

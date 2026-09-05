@@ -5541,6 +5541,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		protected function format_model_label( $model_name ) {
 			// Handle special cases first.
 			$special_cases = array(
+				// GPT-6 Astra (September 2026).
+				'gpt-6-astra'                             => __( 'GPT-6 Astra (Limited Preview)', 'mcp-ai-wpoos' ),
+				// GPT-5.6 series (July 2026 - Sol/Terra/Luna tiers).
+				'gpt-5.6-sol'                             => __( 'GPT-5.6 Sol (Flagship)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-terra'                           => __( 'GPT-5.6 Terra (Balanced)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-luna'                            => __( 'GPT-5.6 Luna (Lowest Cost)', 'mcp-ai-wpoos' ),
+				'gpt-5.6'                                 => __( 'GPT-5.6 (Sol Tier)', 'mcp-ai-wpoos' ),
 				// GPT-5.5 series (flagship - Apr 2026).
 				'gpt-5.5'                                 => __( 'GPT-5.5 (Flagship - Apr 2026)', 'mcp-ai-wpoos' ),
 				// GPT-5.4 series (flagship - Mar/Apr 2026).
@@ -5680,6 +5687,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public static function format_model_label_static( $model_name ) {
 			// Handle special cases first.
 			$special_cases = array(
+				'gpt-6-astra'                             => __( 'GPT-6 Astra (Limited Preview)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-sol'                             => __( 'GPT-5.6 Sol (Flagship)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-terra'                           => __( 'GPT-5.6 Terra (Balanced)', 'mcp-ai-wpoos' ),
+				'gpt-5.6-luna'                            => __( 'GPT-5.6 Luna (Lowest Cost)', 'mcp-ai-wpoos' ),
+				'gpt-5.6'                                 => __( 'GPT-5.6 (Sol Tier)', 'mcp-ai-wpoos' ),
 				'gpt-5.5'                                 => __( 'GPT-5.5 (Flagship - Apr 2026)', 'mcp-ai-wpoos' ),
 				'gpt-5.4'                                 => __( 'GPT-5.4 (1M Context)', 'mcp-ai-wpoos' ),
 				'gpt-5.4-pro'                             => __( 'GPT-5.4 Pro (Enterprise)', 'mcp-ai-wpoos' ),
@@ -5747,6 +5759,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
+					// GPT-6 Astra (September 2026 - limited preview).
+					'gpt-6-astra'                        => __( 'GPT-6 Astra (Limited Preview)', 'mcp-ai-wpoos' ),
+					// GPT-5.6 series (July 2026) - Sol/Terra/Luna tiers.
+					'gpt-5.6-sol'                        => __( 'GPT-5.6 Sol (Flagship)', 'mcp-ai-wpoos' ),
+					'gpt-5.6-terra'                      => __( 'GPT-5.6 Terra (Balanced)', 'mcp-ai-wpoos' ),
+					'gpt-5.6-luna'                       => __( 'GPT-5.6 Luna (Lowest Cost)', 'mcp-ai-wpoos' ),
 					// GPT-5.5 series (flagship - Apr 2026) - 1M+ context window.
 					'gpt-5.5'                            => __( 'GPT-5.5 (Flagship - Apr 2026)', 'mcp-ai-wpoos' ),
 					// GPT-5.4 series (Mar/Apr 2026) - 1M+ context window.

@@ -13,12 +13,12 @@
  * - Cloudflare: @cf/meta/llama-4-scout-17b-instruct or @cf/deepseek/deepseek-v3.2-thinking
  * - HuggingFace: meta-llama/Llama-3.3-70B-Instruct or deepseek-ai/DeepSeek-V3.2
  * - Ollama: llama3.3 or deepseek-r1 (privacy-focused local research)
- * - DeepSeek: deepseek-chat or deepseek-reasoner (chain-of-thought reasoning)
+ * - DeepSeek: deepseek-v4-flash (non-thinking) or deepseek-v4-pro (chain-of-thought reasoning)
  * - OpenRouter: openrouter/auto (access to 200+ models) or any specific model
  * - NVIDIA NIM: meta/llama-3.1-8b-instruct (fast inference)
  * - LM Studio: local models (privacy-focused, no API key needed)
  * - DigitalOcean: llama3.3-70b-instruct (cloud-hosted open models)
- * - Kimi: kimi-k2.7-code (256K context, Moonshot AI)
+ * - Kimi: kimi-k3 (2.8T MoE, 1M context, Moonshot AI)
  * - Baseten: deepseek-ai/DeepSeek-V3 (serverless inference)
  * - Z.AI: GLM models (Chinese/English bilingual)
  *
@@ -870,8 +870,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! in_array( 'deepseek', $exclude_providers, true ) && ! empty( $settings['deepseek_api_key'] ) && class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 			$client = new WP_MCP_AI_DeepSeek_Client();
-			// Prefer deepseek-reasoner for deep research (chain-of-thought reasoning) or fall back to configured default.
-			$model = ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-chat';
+			// Prefer deepseek-v4-flash for deep research (thinking mode) or fall back to configured default.
+			$model = ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-v4-flash';
 			return array(
 				'client'   => $client,
 				'provider' => 'deepseek',
@@ -922,7 +922,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! in_array( 'kimi', $exclude_providers, true ) && ! empty( $settings['kimi_api_key'] ) && class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 			$client = new WP_MCP_AI_Kimi_Client();
-			$model  = ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k2.7-code';
+			$model  = ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k3';
 			return array(
 				'client'   => $client,
 				'provider' => 'kimi',

@@ -1139,13 +1139,14 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that gpt-image-1 is the current default model and that DALL-E 3
-	 * remains the DALL·E-family reference for quality + response_format handling.
+	 * Test that gpt-image-2 is the current default model (gpt-image-1 retires
+	 * from the API on 2026-10-23) and that DALL-E 3 remains the DALL·E-family
+	 * reference for quality + response_format handling.
 	 */
 	public function test_gpt_image_1_is_default_model() {
-		// Tool default model is gpt-image-1.
+		// Tool default model is gpt-image-2.
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php';
-		$this->assertSame( 'gpt-image-1', WP_MCP_AI_Tool_Generate_OpenAI_Image::DEFAULT_MODEL );
+		$this->assertSame( 'gpt-image-2', WP_MCP_AI_Tool_Generate_OpenAI_Image::DEFAULT_MODEL );
 
 		// dall-e-3 should NOT support response_format (the API currently rejects it).
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'dall-e-3' ) );

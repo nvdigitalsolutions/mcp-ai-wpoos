@@ -22,7 +22,7 @@ class WP_MCP_AI_Cost_Calculator {
 	/**
 	 * Provider pricing models (USD per 1M tokens).
 	 *
-	 * Prices updated as of July 2026.
+	 * Prices updated as of September 2026.
 	 * Source: Official provider pricing pages and Hugging Face Inference API.
 	 *
 	 * Retired ids (e.g., gpt-4, gpt-4-turbo, gpt-3.5-turbo, o1*, gemini-1.5-*,
@@ -31,6 +31,28 @@ class WP_MCP_AI_Cost_Calculator {
 	 */
 	const PRICING = array(
 		'openai'       => array(
+			// GPT-6 Astra (September 2026 flagship, limited preview).
+			'gpt-6-astra'                  => array(
+				'input'  => 10.00, // $10 per 1M input tokens.
+				'output' => 50.00, // $50 per 1M output tokens.
+			),
+			// GPT-5.6 series (July 2026). Sol/Terra/Luna tiers.
+			'gpt-5.6-sol'                  => array(
+				'input'  => 4.00,  // $4 per 1M input tokens (promo through Nov 21, 2026; standard $5).
+				'output' => 20.00, // $20 per 1M output tokens (promo; standard $30).
+			),
+			'gpt-5.6-terra'                => array(
+				'input'  => 2.00,  // $2 per 1M input tokens.
+				'output' => 12.00, // $12 per 1M output tokens.
+			),
+			'gpt-5.6-luna'                 => array(
+				'input'  => 0.20,  // $0.20 per 1M input tokens.
+				'output' => 1.20,  // $1.20 per 1M output tokens.
+			),
+			'gpt-5.6'                      => array(
+				'input'  => 5.00,  // $5 per 1M input tokens (standard Sol rate).
+				'output' => 30.00, // $30 per 1M output tokens (standard Sol rate).
+			),
 			// GPT-5.5 series (July 2026 flagship).
 			'gpt-5.5'                      => array(
 				'input'        => 5.00,  // $5 per 1M input tokens.
@@ -148,6 +170,27 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'gemini'       => array(
+			// Gemini 3.8/3.7/3.6 Flash (July-September 2026). Intro pricing through Dec 31, 2026.
+			'gemini-3.8-flash'              => array(
+				'input'        => 0.75,   // $0.75 per 1M (intro; standard $1.50 from Jan 1, 2027).
+				'output'       => 3.75,   // $3.75 per 1M (intro; standard $7.50 from Jan 1, 2027).
+				'cached_input' => 0.075,  // $0.075 per 1M cached input.
+			),
+			'gemini-3.7-flash'              => array(
+				'input'        => 0.75,   // $0.75 per 1M (intro; standard $1.50 from Jan 1, 2027).
+				'output'       => 3.75,   // $3.75 per 1M (intro; standard $7.50 from Jan 1, 2027).
+				'cached_input' => 0.075,
+			),
+			'gemini-3.6-flash'              => array(
+				'input'        => 0.75,   // $0.75 per 1M (intro; standard $1.50 from Jan 1, 2027).
+				'output'       => 3.75,   // $3.75 per 1M (intro; standard $7.50 from Jan 1, 2027).
+				'cached_input' => 0.075,
+			),
+			'gemini-3.5-flash-lite'         => array(
+				'input'        => 0.30,   // $0.30 per 1M.
+				'output'       => 2.50,   // $2.50 per 1M.
+				'cached_input' => 0.03,
+			),
 			// Gemini 3.5 series (May 2026).
 			'gemini-3.5-flash'              => array(
 				'input'        => 1.50,   // $1.50 per 1M.
@@ -195,10 +238,6 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 30.00,  // $30 per 1M (images, ~$0.039/image at 1024x1024).
 			),
 			// [DEPRECATED] Legacy entries.
-			'gemini-3.1-flash'              => array(
-				'input'  => 0.50,   // $0.50 per 1M (use gemini-3-flash-preview).
-				'output' => 3.00,   // $3.00 per 1M.
-			),
 			// Veo 3.1 video generation ($0.40/sec standard).
 			'veo-3.1-generate-preview'      => array(
 				'per_second' => 0.040,
@@ -215,6 +254,21 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'anthropic'    => array(
+			// Claude Fable 5.1 (September 2026 - top tier, cache reads $0.25/1M).
+			'claude-fable-5.1'           => array(
+				'input'  => 10.00,  // $10 per 1M input tokens.
+				'output' => 50.00,  // $50 per 1M output tokens.
+			),
+			// Claude Mythos 5 (July 2026 - invitation-gated top tier).
+			'claude-mythos-5'            => array(
+				'input'  => 10.00,  // $10 per 1M input tokens.
+				'output' => 50.00,  // $50 per 1M output tokens.
+			),
+			// Claude Opus 5 (July 2026 - new default flagship).
+			'claude-opus-5'              => array(
+				'input'  => 5.00,   // $5 per 1M input tokens.
+				'output' => 25.00,  // $25 per 1M output tokens.
+			),
 			// Claude Fable 5 (June 2026 - top tier above Opus).
 			'claude-fable-5'             => array(
 				'input'  => 10.00,  // $10 per 1M input tokens.
@@ -232,7 +286,7 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 			// Claude Opus 4.7.
 			'claude-opus-4-7'            => array(
-				'input'  => 15.00,  // $15 per 1M input tokens.
+				'input'  => 5.00,   // $5 per 1M input tokens.
 				'output' => 25.00,  // $25 per 1M output tokens.
 			),
 			// Claude 4.6 series.
@@ -241,7 +295,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 15.00,
 			),
 			'claude-opus-4-6'            => array(
-				'input'  => 15.00,  // $15 per 1M input tokens.
+				'input'  => 5.00,   // $5 per 1M input tokens.
 				'output' => 25.00,  // $25 per 1M output tokens.
 			),
 			// Claude 4.5 series (deprecated alias retained for backward compatibility).
@@ -254,8 +308,8 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 15.00,
 			),
 			'claude-opus-4-5'            => array(
-				'input'  => 15.00,
-				'output' => 75.00,
+				'input'  => 5.00,
+				'output' => 25.00,
 			),
 			'claude-haiku-4-5'           => array(
 				'input'  => 1.00,
@@ -290,30 +344,20 @@ class WP_MCP_AI_Cost_Calculator {
 		'deepseek'     => array(
 			// DeepSeek-V4-Flash — current flagship (cache-miss pricing).
 			// Standard: $0.14/$0.28 per 1M tokens. Cache hit: $0.0028.
-			'deepseek-v4-flash'     => array(
+			'deepseek-v4-flash'            => array(
 				'input'  => 0.14,   // $0.14 per 1M input tokens (cache miss).
 				'output' => 0.28,   // $0.28 per 1M output tokens.
 			),
-			// DeepSeek-V4-Pro — reasoning/agentic (regular pricing, promo ended 2026-05-31).
-			// Regular: $0.435/$0.87 per 1M tokens. Regular: $1.74/$3.48.
-			'deepseek-v4-pro'       => array(
-				'input'  => 1.74,   // $1.74 per 1M input tokens (regular).
-				'output' => 3.48,   // $3.48 per 1M output tokens (regular).
+			// DeepSeek-V4-Flash Vision (experimental, August 2026).
+			// Images are converted to tokens by dimensions and billed as input.
+			'deepseek-v4-flash-vision-exp' => array(
+				'input'  => 0.14,   // $0.14 per 1M input tokens (cache miss).
+				'output' => 0.28,   // $0.28 per 1M output tokens.
 			),
-			// [DEPRECATED] Legacy DeepSeek-V3 general-purpose + tool-calling model.
-			'deepseek-chat'         => array(
-				'input'  => 0.27,   // $0.27 per 1M input tokens (legacy standard).
-				'output' => 1.10,   // $1.10 per 1M output tokens (legacy standard).
-			),
-			// [DEPRECATED] Legacy DeepSeek-R1 chain-of-thought reasoning model.
-				'deepseek-reasoner' => array(
-					'input'  => 0.55,   // $0.55 per 1M input tokens.
-					'output' => 2.19,   // $2.19 per 1M output tokens.
-				),
-			// [DEPRECATED] Legacy DeepSeek Coder variant.
-			'deepseek-coder'        => array(
-				'input'  => 0.27,
-				'output' => 1.10,
+			// DeepSeek-V4-Pro — reasoning/agentic (official pricing, verified Aug 2026).
+			'deepseek-v4-pro'              => array(
+				'input'  => 0.435,  // $0.435 per 1M input tokens (cache miss).
+				'output' => 0.87,   // $0.87 per 1M output tokens.
 			),
 		),
 		'huggingface'  => array(
