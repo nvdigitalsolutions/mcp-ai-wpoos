@@ -11,9 +11,12 @@
  * seams resolving per install mode.
  *
  * Action Scheduler is not loaded in the test environment, so a global
- * `as_enqueue_async_action()` stub is defined once at file load and
- * records dispatches into `AsStub`. This affects every suite running in
- * the same process — the platform suite is the only consumer here.
+ * `as_enqueue_async_action()` stub — required from
+ * `helpers/as-scheduler-stub.php` because unqualified function lookups
+ * only fall back to the global namespace, which the namespaced test
+ * files cannot reach — records dispatches into `AsStub`. This affects
+ * every suite running in the same process — the platform suite is the
+ * only consumer here.
  *
  * @package NvoosContentGraphAiPlatform\Tests
  */
@@ -25,28 +28,7 @@ namespace NvoosContentGraphAiPlatform\Tests;
 use NvoosContentGraphAiPlatform\Queues\AsyncJobQueue;
 use NvoosContentGraphAiPlatform\Queues\SchedulerBridge;
 
-// phpcs:disable Universal.Files.SeparateFunctionsFromOO -- The global AS function stub must share this file with its test cases (function_exists guard prevents redeclaration).
-
-if ( ! function_exists( 'as_enqueue_async_action' ) ) {
-	/**
-	 * Test stub for Action Scheduler's enqueue function.
-	 *
-	 * @param string $hook  Action Scheduler hook.
-	 * @param array  $args  Hook arguments.
-	 * @param string $group Action Scheduler group.
-	 * @return int Fake action ID.
-	 */
-	function as_enqueue_async_action( $hook, $args = array(), $group = '' ) {
-		AsStub::$actions[] = array(
-			'hook'  => $hook,
-			'args'  => $args,
-			'group' => $group,
-		);
-		++AsStub::$next_id;
-
-		return AsStub::$next_id;
-	}
-}
+require_once __DIR__ . '/helpers/as-scheduler-stub.php';
 
 /**
  * Static capture holder for the Action Scheduler stub.
