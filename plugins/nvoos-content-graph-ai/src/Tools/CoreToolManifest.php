@@ -245,10 +245,16 @@ final class CoreToolManifest {
 			'update_term'             => array( 'NvoosContentGraphAi\Tools\UpdateTermTool', array( 'errors' ) ),
 
 			// ── D8 Cluster 2c — ported self-contained base tools ──
+			'2fa_setup_assistant'     => array( 'NvoosContentGraphAi\Tools\TwoFactorSetupAssistantTool', array( 'errors' ) ),
 			'add_model_config'       => array( 'NvoosContentGraphAi\Tools\AddModelConfigTool', array( 'errors' ) ),
+			'check_site_security'    => array( 'NvoosContentGraphAi\Tools\CheckSiteSecurityTool', array( 'errors' ) ),
 			'discover_new_models'    => array( 'NvoosContentGraphAi\Tools\DiscoverNewModelsTool', array( 'errors' ) ),
 			'enable_reasoning_mode'  => array( 'NvoosContentGraphAi\Tools\EnableReasoningModeTool', array( 'errors' ) ),
+			'login_security_monitor' => array( 'NvoosContentGraphAi\Tools\LoginSecurityMonitorTool', array( 'errors' ) ),
+			'memory_audit_trail'     => array( 'NvoosContentGraphAi\Tools\MemoryAuditTrailTool', array( 'errors' ) ),
+			'password_strength_analyzer' => array( 'NvoosContentGraphAi\Tools\PasswordStrengthAnalyzerTool', array( 'errors' ) ),
 			'research_model'         => array( 'NvoosContentGraphAi\Tools\ResearchModelTool', array( 'errors' ) ),
+			'user_activity_auditor'  => array( 'NvoosContentGraphAi\Tools\UserActivityAuditorTool', array( 'errors' ) ),
 		);
 		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
 	}

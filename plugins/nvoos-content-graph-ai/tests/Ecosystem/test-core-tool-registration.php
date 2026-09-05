@@ -471,4 +471,281 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		$this->assertEmpty( $result['discovered'] );
 		$this->assertSame( 'Found 0 new models', $result['message'] );
 	}
+
+	public function test_check_site_security_reports_checks(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$result = $bridge->tools->execute(
+			'check_site_security',
+			array(),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'risk_level', $result );
+		$this->assertArrayHasKey( 'is_safe_to_use', $result );
+		$this->assertArrayHasKey( 'recommendation', $result );
+		$this->assertSame( 8, $result['summary']['total'] );
+		$this->assertArrayHasKey( 'https', $result['checks'] );
+		$this->assertArrayHasKey( 'debug_mode', $result['checks'] );
+		$this->assertArrayHasKey( 'file_edit', $result['checks'] );
+		$this->assertArrayHasKey( 'default_admin', $result['checks'] );
+		$this->assertArrayHasKey( 'wp_version', $result['checks'] );
+		$this->assertArrayHasKey( 'ssl_verify', $result['checks'] );
+		$this->assertArrayHasKey( 'force_ssl_admin', $result['checks'] );
+		$this->assertArrayHasKey( 'db_prefix', $result['checks'] );
+	}
+
+	public function test_login_security_monitor_empty_period_returns_summary(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		// The test environment has no login-meta rows, so the envelope
+		// must still come back complete with zeroed counters.
+		$result = $bridge->tools->execute(
+			'login_security_monitor',
+			array(
+				'time_period'      => '24hours',
+				'include_analysis' => false,
+			),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'time_range', $result );
+		$this->assertSame( 0, $result['summary']['total_attempts'] );
+		$this->assertSame( 'low', $result['summary']['threat_level'] );
+		$this->assertNotEmpty( $result['recommendations'] );
+	}
+
+	public function test_login_security_monitor_invalid_custom_period(): void {
+		$bridge = CoreBridge::instance();
+		$tool   = new \NvoosContentGraphAi\Tools\LoginSecurityMonitorTool( $bridge->errors );
+
+		$result = $tool->execute(
+			array(
+				'time_period' => 'custom',
+				'start_date'  => '',
+				'end_date'    => '',
+			),
+			array( 'user_id' => self::factory()->user->create( array( 'role' => 'administrator' ) ) )
+		);
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'invalid_dates', $result->get_error_code() );
+	}
+
+	public function test_password_strength_analyzer_scores_strong_password(): void {
+		$bridge = CoreBridge::instance();
+
+		$result = $bridge->tools->execute(
+			'password_strength_analyzer',
+			array(
+				'password'            => 'Xy9!kL2@mQ7#vT4$',
+				'include_suggestions' => false,
+			),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 98, $result['strength_score'] ); // 30+8 length, 25 complexity, 20 patterns, 15 dictionary.
+		$this->assertSame( 'Excellent', $result['strength_label'] );
+		$this->assertTrue( $result['checks']['length']['passed'] );
+		$this->assertTrue( $result['checks']['complexity']['passed'] );
+	}
+
+	public function test_password_strength_analyzer_flags_weak_password(): void {
+		$bridge = CoreBridge::instance();
+
+		$result = $bridge->tools->execute(
+			'password_strength_analyzer',
+			array(
+				'password'            => 'password123',
+				'include_suggestions' => false,
+			),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertLessThan( 30, $result['strength_score'] );
+		$this->assertFalse( $result['checks']['dictionary_words']['passed'] );
+		$this->assertContains( 'contains_dictionary_words', $result['issues'] );
+		$this->assertContains( 'password_too_short', $result['issues'] );
+	}
+
+	public function test_user_activity_auditor_summary_contract(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		\wp_set_current_user( $admin_id );
+
+		$result = $bridge->tools->execute(
+			'user_activity_auditor',
+			array(
+				'event_type'  => 'all',
+				'time_period' => '24hours',
+			),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'events', $result );
+		$this->assertArrayHasKey( 'count', $result );
+		$this->assertArrayHasKey( 'time_range', $result );
+		$this->assertArrayHasKey( 'summary', $result );
+		$this->assertSame( $result['count'], $result['summary']['total_events'] );
+		$this->assertArrayHasKey( 'risk_score', $result['summary'] );
+	}
+
+	public function test_memory_audit_trail_history_and_stats_round_trip(): void {
+		$bridge = CoreBridge::instance();
+
+		$agent_id   = 'd8-agent';
+		$context_id = 'd8-ctx';
+
+		// Seed the base-identical version-history transient.
+		$history = array(
+			1 => array(
+				'version'     => 1,
+				'data'        => array( 'key' => 'v1' ),
+				'change_type' => 'create',
+				'timestamp'   => current_time( 'mysql' ),
+			),
+			2 => array(
+				'version'     => 2,
+				'data'        => array( 'key' => 'v2' ),
+				'change_type' => 'update',
+				'timestamp'   => current_time( 'mysql' ),
+			),
+		);
+		set_transient( 'mcp_ai_ctx_history_' . md5( $agent_id . '_' . $context_id ), $history, YEAR_IN_SECONDS );
+
+		// Seed the base-identical audit log transient.
+		$audit = array(
+			array(
+				'context_id' => $context_id,
+				'action'     => 'update',
+				'metadata'   => array(),
+				'timestamp'  => current_time( 'mysql' ),
+				'user_id'    => 0,
+			),
+		);
+		set_transient( 'mcp_ai_audit_log_' . md5( $agent_id ), $audit, YEAR_IN_SECONDS );
+
+		$history_result = $bridge->tools->execute(
+			'memory_audit_trail',
+			array(
+				'action'     => 'get_history',
+				'agent_id'   => $agent_id,
+				'context_id' => $context_id,
+			),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $history_result );
+		$this->assertTrue( $history_result['success'] );
+		$this->assertSame( 2, $history_result['total_versions'] );
+
+		$compare = $bridge->tools->execute(
+			'memory_audit_trail',
+			array(
+				'action'     => 'compare_versions',
+				'agent_id'   => $agent_id,
+				'context_id' => $context_id,
+				'versions'   => array(
+					'from' => 1,
+					'to'   => 2,
+				),
+			),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $compare );
+		$this->assertSame(
+			array(
+				'from' => 'v1',
+				'to'   => 'v2',
+			),
+			$compare['differences']['modified']['key']
+		);
+
+		$stats = $bridge->tools->execute(
+			'memory_audit_trail',
+			array(
+				'action'   => 'get_stats',
+				'agent_id' => $agent_id,
+			),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $stats );
+		$this->assertTrue( $stats['success'] );
+		$this->assertSame( 1, $stats['stats']['total_events'] );
+		$this->assertSame( 1, $stats['stats']['by_action']['update'] );
+
+		delete_transient( 'mcp_ai_ctx_history_' . md5( $agent_id . '_' . $context_id ) );
+		delete_transient( 'mcp_ai_audit_log_' . md5( $agent_id ) );
+	}
+
+	public function test_2fa_setup_assistant_email_flow(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		\wp_set_current_user( $admin_id );
+
+		$setup = $bridge->tools->execute(
+			'2fa_setup_assistant',
+			array(
+				'action'  => 'setup',
+				'user_id' => $admin_id,
+				'method'  => 'email',
+			),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $setup );
+		$this->assertTrue( $setup['success'] );
+		$this->assertSame( 'email', $setup['method'] );
+		$this->assertNotEmpty( $setup['backup_codes'] );
+		$this->assertNotEmpty( $setup['instructions'] );
+
+		// Byte-identical user-meta keys.
+		$this->assertSame( 'email', get_user_meta( $admin_id, 'wp_mcp_ai_2fa_method', true ) );
+		$this->assertNotEmpty( get_user_meta( $admin_id, 'wp_mcp_ai_2fa_backup_codes', true ) );
+
+		$status = $bridge->tools->execute(
+			'2fa_setup_assistant',
+			array(
+				'action'  => 'status',
+				'user_id' => $admin_id,
+			),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $status );
+		$this->assertFalse( $status['2fa_enabled'] );
+		$this->assertSame( 'email', $status['2fa_method'] );
+		$this->assertTrue( $status['has_backup_codes'] );
+
+		// Cleanup (privacy-erasure path, base-identical meta keys).
+		delete_user_meta( $admin_id, 'wp_mcp_ai_2fa_enabled' );
+		delete_user_meta( $admin_id, 'wp_mcp_ai_2fa_method' );
+		delete_user_meta( $admin_id, 'wp_mcp_ai_2fa_email' );
+		delete_user_meta( $admin_id, 'wp_mcp_ai_2fa_backup_codes' );
+	}
 }
