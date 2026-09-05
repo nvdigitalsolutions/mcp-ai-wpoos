@@ -39,6 +39,7 @@ final class Plugin {
 		$this->registerACP();
 		$this->registerFederation();
 		$this->registerBlueprints();
+		$this->registerQueues();
 	}
 
 	private function registerAdmin(): void {
@@ -169,6 +170,26 @@ final class Plugin {
 	private function registerBlueprints(): void {
 		if ( class_exists( __NAMESPACE__ . '\Blueprints\BlueprintService' ) ) {
 			\NvoosContentGraphAiPlatform\Blueprints\BlueprintService::instance()->register();
+		}
+	}
+
+	/**
+	 * Register the async job queue (Wave E2).
+	 *
+	 * Standalone-only: the base plugin owns the same table and cron hooks
+	 * in monolith installs; double registration would double-consume jobs.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerQueues(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Queues\AsyncJobQueue' ) ) {
+			\NvoosContentGraphAiPlatform\Queues\AsyncJobQueue::init();
 		}
 	}
 
