@@ -118,6 +118,25 @@ class CommerceTest extends WP_UnitTestCase {
 	}
 
 	/** @test */
+	public function fallbackProductUrlDefaultsToVendorPage(): void {
+		$this->assertSame(
+			'https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/',
+			Payments::fallbackProductUrl()
+		);
+	}
+
+	/** @test */
+	public function fallbackProductUrlIsFilterable(): void {
+		add_filter( Schema::FILTER_FALLBACK_URL, static fn() => 'https://example.com/buy' );
+		$this->assertSame( 'https://example.com/buy', Payments::fallbackProductUrl() );
+
+		// An empty value disables the redirect fallback (JS keeps the in-modal error).
+		add_filter( Schema::FILTER_FALLBACK_URL, static fn() => '' );
+		$this->assertSame( '', Payments::fallbackProductUrl() );
+		remove_all_filters( Schema::FILTER_FALLBACK_URL );
+	}
+
+	/** @test */
 	public function licenseKeyRoundTrips(): void {
 		$this->assertFalse( License::isLicensed() );
 

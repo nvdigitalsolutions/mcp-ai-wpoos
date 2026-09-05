@@ -127,6 +127,33 @@ abstract class Section {
 				}
 				return $val;
 
+			case 'decimal':
+				$val = (float) $value;
+				if ( isset( $field['min'] ) ) {
+					$val = max( (float) $field['min'], $val );
+				}
+				if ( isset( $field['max'] ) ) {
+					$val = min( (float) $field['max'], $val );
+				}
+				return $val;
+
+			case 'color':
+				$clean = \sanitize_hex_color( (string) $value );
+				if ( $clean ) {
+					return $clean;
+				}
+				$default = \sanitize_hex_color( (string) ( $field['default'] ?? '' ) );
+				return $default ?: '';
+
+			case 'icon':
+				$allowed = \NvoosContentGraph\Visual\Tokens::icon_catalog();
+				$value   = \sanitize_key( (string) $value );
+				if ( isset( $allowed[ $value ] ) ) {
+					return $value;
+				}
+				$default = \sanitize_key( (string) ( $field['default'] ?? '' ) );
+				return isset( $allowed[ $default ] ) ? $default : 'dot';
+
 			case 'select':
 				$allowed = array_keys( $field['options'] ?? array() );
 				if ( in_array( $value, $allowed, true ) ) {
@@ -217,6 +244,43 @@ abstract class Section {
 					isset( $field['min'] ) ? sprintf( ' min="%d"', \absint( $field['min'] ) ) : '',
 					isset( $field['max'] ) ? sprintf( ' max="%d"', \absint( $field['max'] ) ) : ''
 				);
+				if ( $desc ) {
+					echo '<p class="description">' . \esc_html( $desc ) . '</p>';
+				}
+				break;
+
+			case 'decimal':
+				printf(
+					'<input type="number" step="0.05" name="%s" value="%s"%s%s class="small-text">',
+					esc_attr( $name ),
+					esc_attr( (string) (float) $value ),
+					isset( $field['min'] ) ? sprintf( ' min="%s"', \esc_attr( (string) (float) $field['min'] ) ) : '',
+					isset( $field['max'] ) ? sprintf( ' max="%s"', \esc_attr( (string) (float) $field['max'] ) ) : ''
+				);
+				if ( $desc ) {
+					echo '<p class="description">' . \esc_html( $desc ) . '</p>';
+				}
+				break;
+
+			case 'color':
+				printf(
+					'<input type="text" name="%s" value="%s" class="nvoos-cg-color-field" data-default-color="%s">',
+					esc_attr( $name ),
+					esc_attr( (string) $value ),
+					esc_attr( (string) ( $field['default'] ?? '' ) )
+				);
+				if ( $desc ) {
+					echo '<p class="description">' . \esc_html( $desc ) . '</p>';
+				}
+				break;
+
+			case 'icon':
+				$catalog = \NvoosContentGraph\Visual\Tokens::icon_catalog();
+				printf( '<select name="%s">', esc_attr( $name ) );
+				foreach ( $catalog as $opt_value => $opt_label ) {
+					echo '<option value="' . \esc_attr( $opt_value ) . '" ' . \selected( $value, $opt_value, false ) . '>' . \esc_html( $opt_label ) . '</option>';
+				}
+				echo '</select>';
 				if ( $desc ) {
 					echo '<p class="description">' . \esc_html( $desc ) . '</p>';
 				}

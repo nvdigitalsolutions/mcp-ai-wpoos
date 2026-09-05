@@ -133,6 +133,36 @@ class Controller {
 			)
 		);
 
+		// GET /edges — paginated edge list (visual explorer edge set).
+		register_rest_route(
+			Schema::REST_NAMESPACE,
+			'/edges',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'getEdges' ),
+				'permission_callback' => array( $this, 'checkReadPermission' ),
+				'args'                => array(
+					'per_page' => array(
+						'type'              => 'integer',
+						'default'           => 100,
+						'minimum'           => 1,
+						'maximum'           => 2000,
+						'sanitize_callback' => 'absint',
+					),
+					'page'     => array(
+						'type'              => 'integer',
+						'default'           => 1,
+						'minimum'           => 1,
+						'sanitize_callback' => 'absint',
+					),
+					'relation' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
 		// POST /build — trigger a build.
 		register_rest_route(
 			Schema::REST_NAMESPACE,
@@ -503,7 +533,37 @@ class Controller {
 	}
 
 	/**
-	 * POST /build — Trigger a graph build.
+	 * GET /edges — Paginated edge list.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function getEdges( WP_REST_Request $request ): WP_REST_Response {
+		$perPage  = $request->get_param( 'per_page' );
+		$page     = $request->get_param( 'page' );
+		$relation = $request->get_param( 'relation' );
+		$offset   = ( $page - 1 ) * $perPage;
+
+		$args = array(
+			'limit'  => $perPage,
+			'offset' => $offset,
+		);
+		if ( $relation ) {
+			$args['relation'] = $relation;
+		}
+
+		$edges    = Db::listEdges( $args );
+		$response = rest_ensure_response( $edges );
+		$response->header( 'X-WP-Page', $page );
+		$response->header( 'X-WP-PerPage', $perPage );
+
+		return $response;
+	}
+
+	/**
+	 * POST /build — trigger a build.
 	 *
 	 * @since 1.0.0
 	 *

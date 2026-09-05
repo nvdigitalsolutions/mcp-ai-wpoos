@@ -5,7 +5,7 @@ Tags: knowledge graph, content visualization, cytoscape, content strategy, seman
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -26,6 +26,9 @@ Click "Build Graph" and ~10-30 seconds later, your entire site becomes a visual 
 
 = Interactive Graph Explorer =
 Explore your content visually using Cytoscape.js. Search for nodes by label, click for details, zoom and pan. Color-coded by content type (posts, pages, terms, users).
+
+= Visual Theming & Styling =
+Style the graph to match your brand from the new Appearance tab: dark, light, auto, and WordPress-admin themes; per-type colors and icons (colorblind-safe defaults with automatic WCAG 2.2 contrast correction); color-by-type/community/degree modes; an interactive legend; edge style presets; layout presets; a minimap; keyboard navigation; and theme-aware PNG export. See `docs/visual-theming.md`.
 
 = Content Gap Analysis =
 Discover orphan content (no internal links), thin topic clusters, and missing link opportunities. Generate actionable content strategy recommendations.
@@ -151,6 +154,14 @@ Both libraries are served locally from `assets/vendor/` and never loaded from th
 6. Graph Explorer — interactive Cytoscape.js visualization with search and node details
 
 == Changelog ==
+
+= 1.0.4 =
+* New Appearance tab: themes (dark/light/auto/admin), per-type color and icon overrides, WCAG contrast report, and one-click style presets
+* Icon glyphs and legend panel in the graph explorer; color-by type/community/degree/monochrome modes
+* Relationship-aware edge styling (color families, arrowheads, tapered, haystack density mode) and edge labels
+* Minimap, zoom controls, layout presets, keyboard navigation, reduced-motion support, view persistence, and theme-aware PNG export
+* New `GET /edges` REST endpoint; front-end shortcode/block visual attributes (`theme`, `color_by`, `show_legend`, `show_icons`, `show_edges`, `edge_style`)
+* Stripe checkout for the AI addon (payments via the vendor checkout API; no Stripe keys ship in the plugin)
 
 = 1.0.3 — 2026-08-20 =
 * Encrypt remote-source credentials (AES-256-GCM) before storing them

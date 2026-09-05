@@ -75,10 +75,185 @@
 }
 
 #nvoos-content-graph-explorer {
-	background: #0f0f1a;
+	/* Theme engine overrides these custom properties per active theme. */
+	--nvoos-cg-canvas: #0f0f1a;
+	--nvoos-cg-surface: #1a1a2e;
+	--nvoos-cg-border: #2a2a4a;
+	--nvoos-cg-label: #e0e0ff;
+	--nvoos-cg-muted: #8b8fa3;
+	--nvoos-cg-accent: #7c9ff2;
+	--nvoos-cg-edge: #5b6478;
+
+	background: var( --nvoos-cg-canvas );
 	border-radius: 8px;
-	border: 1px solid #2a2a4a;
+	border: 1px solid var( --nvoos-cg-border );
 	overflow: hidden;
+	position: relative;
+	outline: none;
+}
+
+#nvoos-content-graph-explorer:focus-visible {
+	box-shadow: 0 0 0 2px var( --nvoos-cg-accent );
+}
+
+.nvoos-cg-explorer-body {
+	position: relative;
+}
+
+/* ---- Legend ---- */
+.nvoos-cg-legend {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	z-index: 10;
+	max-width: 210px;
+	max-height: 60%;
+	overflow-y: auto;
+	background: var( --nvoos-cg-surface );
+	border: 1px solid var( --nvoos-cg-border );
+	border-radius: 6px;
+	padding: 8px 10px;
+	font-size: 11px;
+	color: var( --nvoos-cg-label );
+	box-shadow: 0 2px 10px rgba( 0, 0, 0, 0.35 );
+}
+
+.nvoos-cg-legend-title {
+	margin: 0 0 6px;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var( --nvoos-cg-muted );
+}
+
+.nvoos-cg-legend-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.nvoos-cg-legend-row {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding: 3px 4px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.nvoos-cg-legend-row:hover,
+.nvoos-cg-legend-row:focus-visible {
+	background: rgba( 128, 128, 200, 0.15 );
+	outline: none;
+}
+
+.nvoos-cg-legend-swatch {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	border-radius: 4px;
+	border: 1px solid var( --nvoos-cg-border );
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.nvoos-cg-legend-swatch img {
+	width: 11px;
+	height: 11px;
+}
+
+.nvoos-cg-legend-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nvoos-cg-legend-ramp {
+	display: flex;
+	gap: 0;
+	margin-bottom: 4px;
+}
+
+.nvoos-cg-legend-ramp-stop {
+	flex: 1;
+	height: 8px;
+}
+
+.nvoos-cg-legend-note {
+	margin: 0;
+	color: var( --nvoos-cg-muted );
+	font-size: 10px;
+}
+
+/* ---- Minimap ---- */
+.nvoos-cg-minimap {
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	z-index: 10;
+	background: var( --nvoos-cg-surface );
+	border: 1px solid var( --nvoos-cg-border );
+	border-radius: 6px;
+	padding: 4px;
+	cursor: crosshair;
+	opacity: 0.85;
+}
+
+.nvoos-cg-minimap:hover {
+	opacity: 1;
+}
+
+.nvoos-cg-minimap canvas {
+	display: block;
+	max-width: 160px;
+	max-height: 100px;
+}
+
+/* ---- Zoom cluster / toolbar extras ---- */
+.nvoos-cg-zoom-cluster {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.nvoos-cg-zoom-badge {
+	min-width: 44px;
+	text-align: center;
+	font-size: 11px;
+	color: #50575e;
+}
+
+/* ---- Appearance tab ---- */
+.nvoos-cg-type-grid,
+.nvoos-cg-contrast-report {
+	margin-bottom: 12px;
+}
+
+.nvoos-cg-type-grid td,
+.nvoos-cg-contrast-report td {
+	vertical-align: middle;
+}
+
+.nvoos-cg-swatch {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border-radius: 3px;
+	border: 1px solid #c3c4c7;
+	vertical-align: -3px;
+	margin-right: 4px;
+}
+
+.nvoos-cg-ok {
+	color: #007017;
+	font-weight: 600;
+}
+
+.nvoos-cg-bad {
+	color: #b32d2e;
+	font-weight: 600;
 }
 
 /* ---- Sidebar ---- */

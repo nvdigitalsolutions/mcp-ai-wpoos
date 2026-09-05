@@ -127,6 +127,25 @@ final class Payments {
 	}
 
 	/**
+	 * Fallback product page URL.
+	 *
+	 * Shown (and redirected to) when the vendor checkout endpoint is not
+	 * available, so users can still purchase the AI addon from the vendor
+	 * site. Override via the `nvoos_content_graph/payments/fallback_url`
+	 * filter; an empty value disables the redirect fallback.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @return string
+	 */
+	public static function fallbackProductUrl(): string {
+		return (string) apply_filters(
+			Schema::FILTER_FALLBACK_URL,
+			'https://nvdigitalsolutions.com/plugins/nvoos-content-graph-ai/'
+		);
+	}
+
+	/**
 	 * Payload identifying this site and product to the vendor API.
 	 *
 	 * The vendor binds the payment to `site_url` so an intent created for
