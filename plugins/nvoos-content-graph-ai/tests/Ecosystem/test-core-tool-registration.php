@@ -241,4 +241,47 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		$this->assertArrayHasKey( 'environment', $status );
 		$this->assertSame( get_bloginfo( 'version' ), $status['environment']['wordpress_version'] );
 	}
+
+	public function test_enable_reasoning_mode_activates_for_complex_task(): void {
+		$bridge = CoreBridge::instance();
+
+		// Engineered task crossing the base's 0.7 threshold across all five
+		// indicators (multi-step, logical, code, domain, verification).
+		$result = $bridge->tools->execute(
+			'enable_reasoning_mode',
+			array(
+				'task'    => 'Implement a PHP class to process payments, then analyze the result and calculate the total, because compliance requires verification. If the result is correct then test it, finally review for security, ensure accuracy and confirm production readiness.',
+				'context' => array(
+					'task_type'  => 'code_generation',
+					'multi_step' => true,
+				),
+			),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'message', $result );
+		$this->assertArrayHasKey( 'data', $result );
+		$this->assertTrue( $result['data']['reasoning_recommended'] );
+		$this->assertTrue( $result['data']['reasoning_activated'] );
+		$this->assertSame( 0.3, $result['data']['enhancements']['temperature'] );
+
+		// Decision history persists under the byte-identical option key.
+		$history = get_option( 'wp_mcp_ai_reasoning_history', array() );
+		$this->assertNotEmpty( $history );
+	}
+
+	public function test_enable_reasoning_mode_passes_through_simple_task(): void {
+		$bridge = CoreBridge::instance();
+
+		$result = $bridge->tools->execute(
+			'enable_reasoning_mode',
+			array( 'task' => 'Say hello.' ),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertFalse( $result['data']['reasoning_recommended'] );
+		$this->assertFalse( $result['data']['reasoning_activated'] );
+	}
 }

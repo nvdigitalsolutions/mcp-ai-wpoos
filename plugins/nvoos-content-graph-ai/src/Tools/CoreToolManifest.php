@@ -243,6 +243,9 @@ final class CoreToolManifest {
 			'list_taxonomies'         => array( 'NvoosContentGraphAi\Tools\ListTaxonomiesTool', array( 'errors' ) ),
 			'list_terms'              => array( 'NvoosContentGraphAi\Tools\ListTermsTool', array( 'errors' ) ),
 			'update_term'             => array( 'NvoosContentGraphAi\Tools\UpdateTermTool', array( 'errors' ) ),
+
+			// ── D8 Cluster 2c — ported self-contained base tools ──
+			'enable_reasoning_mode'  => array( 'NvoosContentGraphAi\Tools\EnableReasoningModeTool', array( 'errors' ) ),
 		);
 		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
 	}
