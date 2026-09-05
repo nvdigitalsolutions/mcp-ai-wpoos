@@ -66,6 +66,7 @@ One PR per sub-wave; characterization tests against the base implementation firs
 | D5 | REST surface: port the `mcp-ai/v1` controllers (chat, tools, assistants, MCP methods) onto CG-AI's auth; A2A receive route lands in the platform (sub-wave E5) |
 | D6 | WP-CLI: 20+ commands under `wp nvoos-cg-ai *` (base command names aliased during transition) |
 | D7 | Agent memory CCT bridge/migrator/reader |
+| D8 | Tool execution: port the base tool inventory and the `tools/call` execution path — cluster plan: `docs/project/plans/d8-tool-execution-port-plan.md` (execution spine, registration of the 148 pre-ported `lib/core` tools, port of the ~46 self-contained missing tools, harness tools in the platform, deferred plugin/SaaS/engine buckets); scope: `includes/tools/` (259 tool class files + sub-directories; 271 unique slugs) + the 24 `*_validated` wrappers + the 2 side-loader tools + the 8 harness tools, onto the nvoos-core registry seam (`CoreBridge`); wire `tools/call` dispatch in `McpController` (today 503 `wp_mcp_ai_mcp_unavailable` — D5c deviation), assistant tool scoping, and the canonical envelope + two-gate sanitisation contract per tool |
 
 **Exit gate:** monolith + standalone + meta matrices green; root suite untouched; a live chat turn through CG-AI matches the base path output for the same assistant config.
 
@@ -78,6 +79,7 @@ One PR per sub-wave; characterization tests against the base implementation firs
 | D-UI-3 | Elementor chat-family widgets (chat-bubble, chat-faq, chat-intro, chat-usage-timer, quick-actions, professional-selector) — gated on `elementor/loaded`; other widgets follow their subsystems (decision D3) |
 | D-UI-4 | Assistant builder/test/add pages + create-assistant modal + assistant-selector/builder blocks → `content-graph-ai` (D-NOCORE resolves the old core-home option); the CPT registers only when the base plugin is absent |
 | D-UI-5 | Settings shell + sections → `content-graph-ai` (shell, renderer, registry, validator + sections); the platform registers its sections via a public hook; core's `SettingsRegistry` is consumed, never modified |
+| D-UI-6 | Assistant editor + metadata: port the base's 14 assistant metaboxes (4 inline + 10 dedicated classes in `includes/assistants/metaboxes/` — Credentials, Defaults, Primary_Roles, Base_Knowledge, Mesh_Routing, Datasets, Skills, MCP_Apps, Harness_Profile, Artifact_Governance); complete `register_meta` parity for the base's ~25 meta keys; wire assistant-config consumption into the chat flow (assistant_id → system prompt/model/temperature/tools); credential issuance or an explicit token-scoping deferral |
 
 **Exit gate:** the same shortcode/block markup renders in the ecosystem plugin with identical DOM handles; Elementor widgets register under identical widget IDs.
 

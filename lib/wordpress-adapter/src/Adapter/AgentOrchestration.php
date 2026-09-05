@@ -8,7 +8,9 @@ final class AgentOrchestration implements AgentOrchestrationInterface
     private $orchestrator;
 
     public function __construct() {
-        if (\class_exists('WP_MCP_AI_Agent_Team_Orchestrator')) {
+        // Standalone: the base plugin's class files may reference
+        // WP_MCP_AI_PATH at file scope — probe only when it booted.
+        if (\defined('WP_MCP_AI_PATH') && \class_exists('WP_MCP_AI_Agent_Team_Orchestrator')) {
             $this->orchestrator = new \WP_MCP_AI_Agent_Team_Orchestrator();
         }
     }

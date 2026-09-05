@@ -109,7 +109,10 @@ final class CoreBridge {
 		// 4. Register AI tools.
 		$this->registerAiTools();
 
-		// 5. Wire embeddings + RAG + memory.
+		// 5. Register the portable core tool inventory (standalone-only).
+		\NvoosContentGraphAi\Tools\CoreToolFactory::register( $this );
+
+		// 6. Wire embeddings + RAG + memory.
 		$this->embeddings = new Embeddings\EmbeddingService(
 			$this->settings,
 			$this->psrHttp,

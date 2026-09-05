@@ -69,6 +69,7 @@ class Test_Mcp_Controller extends \WP_UnitTestCase {
 	public function tearDown(): void {
 		$this->clear_tools_cache();
 		$this->reset_settings_state();
+		$this->clear_tool_rate_limit_transients();
 		\wp_set_current_user( 0 );
 
 		parent::tearDown();
@@ -106,6 +107,22 @@ class Test_Mcp_Controller extends \WP_UnitTestCase {
 		}
 
 		\delete_option( 'nvoos_content_graph_settings' );
+	}
+
+	/**
+	 * Clear tool rate-limit transients left behind by tools/call tests.
+	 *
+	 * @return void
+	 */
+	private function clear_tool_rate_limit_transients(): void {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transient cleanup for tests.
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_wp_mcp_ai_tool_rl_' ) . '%'
+			)
+		);
 	}
 
 	/**
@@ -462,15 +479,15 @@ class Test_Mcp_Controller extends \WP_UnitTestCase {
 		}
 	}
 
-	// ─── tools/call (execution stub) ────────────────────────────────
+	// ─── tools/call (Wave D8 Cluster 0 — execution) ────────────────
 
-	public function test_tools_call_returns_unavailable_stub(): void {
+	public function test_tools_call_unknown_tool_returns_missing(): void {
 		$response = $this->controller->handle_mcp_request(
 			$this->mcp_request(
 				$this->rpc_body(
 					'tools/call',
 					array(
-						'name'      => 'ai_analyze_image',
+						'name'      => 'definitely_not_a_registered_tool',
 						'arguments' => array(),
 					)
 				)
@@ -479,8 +496,60 @@ class Test_Mcp_Controller extends \WP_UnitTestCase {
 
 		$data = $response->get_data();
 		$this->assertSame( -32603, $data['error']['code'] );
-		$this->assertStringContainsString( 'not available', $data['error']['message'] );
-		$this->assertSame( 503, $data['error']['data']['status'] );
+		$this->assertSame( 404, $data['error']['data']['status'] );
+	}
+
+	public function test_tools_call_executes_registered_tool_error_envelope(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			// The standalone execution path is the new surface; in monolith
+			// installs the base plugin serves tools/call on the same route
+			// and is covered by the base suite.
+			$this->markTestSkipped( 'Standalone-only execution surface.' );
+		}
+
+		$response = $this->controller->handle_mcp_request(
+			$this->mcp_request(
+				$this->rpc_body(
+					'tools/call',
+					array(
+						'name'      => 'ai_summarize_text',
+						'arguments' => array(),
+					)
+				)
+			)
+		);
+
+		$data = $response->get_data();
+		$this->assertSame( -32603, $data['error']['code'] );
+		$this->assertStringContainsString( 'Text is required', $data['error']['message'] );
+	}
+
+	public function test_tools_call_executes_registered_tool_shapes_text_content(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			$this->markTestSkipped( 'Standalone-only execution surface.' );
+		}
+
+		$response = $this->controller->handle_mcp_request(
+			$this->mcp_request(
+				$this->rpc_body(
+					'tools/call',
+					array(
+						'name'      => 'ai_summarize_text',
+						'arguments' => array(
+							'text' => 'A test paragraph for the summarizer.',
+						),
+					)
+				)
+			)
+		);
+
+		$data    = $response->get_data();
+		$content = $data['result']['content'];
+
+		$this->assertIsArray( $content );
+		$this->assertSame( 'text', $content[0]['type'] );
+		$this->assertStringContainsString( 'client_method', $content[0]['text'] );
+		$this->assertStringContainsString( 'summarize', $content[0]['text'] );
 	}
 
 	public function test_tools_call_missing_name(): void {

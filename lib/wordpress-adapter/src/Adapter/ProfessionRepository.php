@@ -46,17 +46,21 @@ final class ProfessionRepository implements ProfessionRepositoryInterface
 
     public function __construct()
     {
-        if (\class_exists('WP_MCP_AI_Profession_Service') && \class_exists('WP_MCP_AI_Profession_Repository')) {
-            $repo    = new \WP_MCP_AI_Profession_Repository();
-            $this->service = new \WP_MCP_AI_Profession_Service($repo);
-        }
+        // Standalone: probe base classes only when the base booted (its
+        // class files may reference WP_MCP_AI_PATH at file scope).
+        if (\defined('WP_MCP_AI_PATH')) {
+            if (\class_exists('WP_MCP_AI_Profession_Service') && \class_exists('WP_MCP_AI_Profession_Repository')) {
+                $repo    = new \WP_MCP_AI_Profession_Repository();
+                $this->service = new \WP_MCP_AI_Profession_Service($repo);
+            }
 
-        if (\class_exists('WP_MCP_AI_Profession_Knowledge_Base_Loader')) {
-            $this->kbLoader = new \WP_MCP_AI_Profession_Knowledge_Base_Loader();
-        }
+            if (\class_exists('WP_MCP_AI_Profession_Knowledge_Base_Loader')) {
+                $this->kbLoader = new \WP_MCP_AI_Profession_Knowledge_Base_Loader();
+            }
 
-        if (\class_exists('WP_MCP_AI_Profession_Tool_Recommender')) {
-            $this->toolRecommender = new \WP_MCP_AI_Profession_Tool_Recommender();
+            if (\class_exists('WP_MCP_AI_Profession_Tool_Recommender')) {
+                $this->toolRecommender = new \WP_MCP_AI_Profession_Tool_Recommender();
+            }
         }
     }
 

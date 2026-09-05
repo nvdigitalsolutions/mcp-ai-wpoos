@@ -114,6 +114,14 @@ class MediaLibraryOptimizerTool extends AbstractTool {
 	// ─── Action handlers ───────────────────────────────────────────────
 
 	private function handleAnalyze( int $max_items ): array {
+		// Standalone gate: the batch iterator lives in the base plugin.
+		if ( ! \defined( 'WP_MCP_AI_PATH' ) || ! \class_exists( 'WP_MCP_AI_Batch_Iterator' ) ) {
+			return array(
+				'success' => false,
+				'error'   => 'Media library batch iterator is unavailable in this install.',
+			);
+		}
+
 		$total_images  = 0;
 		$total_size    = 0;
 		$format_counts = array( 'jpeg' => 0, 'png' => 0, 'gif' => 0, 'webp' => 0, 'avif' => 0, 'other' => 0 );
@@ -316,6 +324,14 @@ class MediaLibraryOptimizerTool extends AbstractTool {
 
 	private function handleDetectUnused( int $age_days, int $max_items ): array {
 		global $wpdb;
+
+		// Standalone gate: the batch iterator lives in the base plugin.
+		if ( ! \defined( 'WP_MCP_AI_PATH' ) || ! \class_exists( 'WP_MCP_AI_Batch_Iterator' ) ) {
+			return array(
+				'success' => false,
+				'error'   => 'Media library batch iterator is unavailable in this install.',
+			);
+		}
 
 		$cutoff_date = \gmdate( 'Y-m-d H:i:s', \strtotime( "-{$age_days} days" ) );
 
