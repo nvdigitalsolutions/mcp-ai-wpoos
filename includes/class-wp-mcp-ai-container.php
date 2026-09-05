@@ -398,7 +398,15 @@ class WP_MCP_AI_Container {
 			}
 		);
 
-		$this->singleton(
+		// The registry is a process-wide singleton, so a shared binding would
+		// normally be fine. It is registered transient so every get() resolves
+		// the LIVE singleton instead of a cached reference: test suites swap
+		// WP_MCP_AI_Tool_Registry::$instance per test (reflection) and a cached
+		// binding resolved during such a window would permanently point at the
+		// discarded instance for the rest of the process. In production the
+		// singleton never changes, so the binding returns the same object every
+		// call either way.
+		$this->transient(
 			'tool_registry',
 			function () {
 				return WP_MCP_AI_Tool_Registry::get_instance();
