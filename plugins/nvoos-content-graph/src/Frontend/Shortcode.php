@@ -168,7 +168,7 @@ class Shortcode {
 		// nvoosContentGraphData_<container_id_with_underscores>.
 		$dataKey = 'nvoosContentGraphData_' . str_replace( '-', '_', $containerId );
 
-			wp_add_inline_script(
+		wp_add_inline_script(
 			'nvoos-content-graph-frontend',
 			'window.' . $dataKey . ' = ' . wp_json_encode(
 				array(

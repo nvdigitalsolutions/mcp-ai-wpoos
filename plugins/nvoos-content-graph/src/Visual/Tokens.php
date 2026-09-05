@@ -272,22 +272,22 @@ final class Tokens {
 	 */
 	public static function visual_defaults(): array {
 		return array(
-			'visual_theme'            => 'dark',
-			'visual_preset'           => 'default',
-			'visual_color_by'         => 'type',
-			'visual_show_icons'       => 1,
-			'visual_icon_mode'        => 'filled',
-			'visual_node_shapes'      => 0,
-			'visual_show_legend'      => 1,
-			'visual_min_label_zoom'   => 0.35,
-			'visual_edge_style'       => 'plain',
-			'visual_edge_labels'      => 'hover',
-			'visual_size_min'         => 12,
-			'visual_size_max'         => 60,
-			'visual_label_font_size'  => 10,
-			'visual_anim_enabled'     => 1,
-			'visual_type_colors'      => array(),
-			'visual_type_icons'       => array(),
+			'visual_theme'           => 'dark',
+			'visual_preset'          => 'default',
+			'visual_color_by'        => 'type',
+			'visual_show_icons'      => 1,
+			'visual_icon_mode'       => 'filled',
+			'visual_node_shapes'     => 0,
+			'visual_show_legend'     => 1,
+			'visual_min_label_zoom'  => 0.35,
+			'visual_edge_style'      => 'plain',
+			'visual_edge_labels'     => 'hover',
+			'visual_size_min'        => 12,
+			'visual_size_max'        => 60,
+			'visual_label_font_size' => 10,
+			'visual_anim_enabled'    => 1,
+			'visual_type_colors'     => array(),
+			'visual_type_icons'      => array(),
 		);
 	}
 
@@ -304,8 +304,8 @@ final class Tokens {
 	public static function presets(): array {
 		return array(
 			'default'       => array(
-				'label'     => __( 'Default (dark, icons)', 'nvoos-content-graph' ),
-				'visual'    => array(
+				'label'  => __( 'Default (dark, icons)', 'nvoos-content-graph' ),
+				'visual' => array(
 					'visual_theme'       => 'dark',
 					'visual_color_by'    => 'type',
 					'visual_show_icons'  => 1,
@@ -315,30 +315,30 @@ final class Tokens {
 				),
 			),
 			'high_contrast' => array(
-				'label'     => __( 'High Contrast', 'nvoos-content-graph' ),
-				'visual'    => array(
-					'visual_theme'            => 'dark',
-					'visual_color_by'         => 'type',
-					'visual_show_icons'       => 1,
-					'visual_icon_mode'        => 'high',
-					'visual_edge_style'       => 'arrows',
-					'visual_label_font_size'  => 12,
+				'label'  => __( 'High Contrast', 'nvoos-content-graph' ),
+				'visual' => array(
+					'visual_theme'           => 'dark',
+					'visual_color_by'        => 'type',
+					'visual_show_icons'      => 1,
+					'visual_icon_mode'       => 'high',
+					'visual_edge_style'      => 'arrows',
+					'visual_label_font_size' => 12,
 				),
 			),
 			'editorial'     => array(
-				'label'     => __( 'Editorial (light)', 'nvoos-content-graph' ),
-				'visual'    => array(
-					'visual_theme'            => 'light',
-					'visual_color_by'         => 'type',
-					'visual_show_icons'       => 1,
-					'visual_icon_mode'        => 'outline',
-					'visual_edge_style'       => 'plain',
-					'visual_label_font_size'  => 12,
+				'label'  => __( 'Editorial (light)', 'nvoos-content-graph' ),
+				'visual' => array(
+					'visual_theme'           => 'light',
+					'visual_color_by'        => 'type',
+					'visual_show_icons'      => 1,
+					'visual_icon_mode'       => 'outline',
+					'visual_edge_style'      => 'plain',
+					'visual_label_font_size' => 12,
 				),
 			),
 			'minimal'       => array(
-				'label'     => __( 'Minimal', 'nvoos-content-graph' ),
-				'visual'    => array(
+				'label'  => __( 'Minimal', 'nvoos-content-graph' ),
+				'visual' => array(
 					'visual_theme'       => 'dark',
 					'visual_color_by'    => 'monochrome',
 					'visual_show_icons'  => 0,
@@ -507,6 +507,13 @@ final class Tokens {
 		$minZoom = isset( $settings['visual_min_label_zoom'] ) ? (float) $settings['visual_min_label_zoom'] : (float) $defaults['visual_min_label_zoom'];
 		$minZoom = max( 0.0, min( 1.0, $minZoom ) );
 
+		// Booleans stored as '0'/'1' — fall back to defaults when absent
+		// (visual_config() must be callable with a partial settings array).
+		$showIcons   = isset( $settings['visual_show_icons'] ) ? $settings['visual_show_icons'] : $defaults['visual_show_icons'];
+		$showLegend  = isset( $settings['visual_show_legend'] ) ? $settings['visual_show_legend'] : $defaults['visual_show_legend'];
+		$nodeShapes  = isset( $settings['visual_node_shapes'] ) ? $settings['visual_node_shapes'] : $defaults['visual_node_shapes'];
+		$animEnabled = isset( $settings['visual_anim_enabled'] ) ? $settings['visual_anim_enabled'] : $defaults['visual_anim_enabled'];
+
 		$typeColors = self::sanitize_type_colors( isset( $settings['visual_type_colors'] ) && is_array( $settings['visual_type_colors'] ) ? $settings['visual_type_colors'] : array() );
 		$typeIcons  = self::sanitize_type_icons( isset( $settings['visual_type_icons'] ) && is_array( $settings['visual_type_icons'] ) ? $settings['visual_type_icons'] : array() );
 
@@ -514,17 +521,17 @@ final class Tokens {
 			'version'           => '1',
 			'theme'             => $theme,
 			'color_by'          => $colorBy,
-			'show_icons'        => ! empty( $settings['visual_show_icons'] ),
+			'show_icons'        => ! empty( $showIcons ),
 			'icon_mode'         => $iconMode,
-			'node_shapes'       => ! empty( $settings['visual_node_shapes'] ),
-			'show_legend'       => ! empty( $settings['visual_show_legend'] ),
+			'node_shapes'       => ! empty( $nodeShapes ),
+			'show_legend'       => ! empty( $showLegend ),
 			'min_label_zoom'    => $minZoom,
 			'edge_style'        => $edgeStyle,
 			'edge_labels'       => $edgeLabels,
 			'size_min'          => $sizeMin,
 			'size_max'          => $sizeMax,
 			'label_font_size'   => $fontSize,
-			'anim_enabled'      => ! empty( $settings['visual_anim_enabled'] ),
+			'anim_enabled'      => ! empty( $animEnabled ),
 			'type_colors'       => (object) $typeColors,
 			'type_icons'        => (object) $typeIcons,
 			'type_palette'      => (object) self::type_palette(),
@@ -567,14 +574,14 @@ final class Tokens {
 			$ratioLight = self::contrast_ratio( $color, $themes['light']['canvas'] );
 
 			$rows[] = array(
-				'type'         => $type,
-				'color'        => $color,
-				'ratio_dark'   => round( $ratioDark, 2 ),
-				'ok_dark'      => $ratioDark >= self::MIN_NON_TEXT_CONTRAST,
-				'fix_dark'     => $ratioDark >= self::MIN_NON_TEXT_CONTRAST ? $color : self::ensure_contrast( $color, $themes['dark']['canvas'] ),
-				'ratio_light'  => round( $ratioLight, 2 ),
-				'ok_light'     => $ratioLight >= self::MIN_NON_TEXT_CONTRAST,
-				'fix_light'    => $ratioLight >= self::MIN_NON_TEXT_CONTRAST ? $color : self::ensure_contrast( $color, $themes['light']['canvas'] ),
+				'type'        => $type,
+				'color'       => $color,
+				'ratio_dark'  => round( $ratioDark, 2 ),
+				'ok_dark'     => $ratioDark >= self::MIN_NON_TEXT_CONTRAST,
+				'fix_dark'    => $ratioDark >= self::MIN_NON_TEXT_CONTRAST ? $color : self::ensure_contrast( $color, $themes['dark']['canvas'] ),
+				'ratio_light' => round( $ratioLight, 2 ),
+				'ok_light'    => $ratioLight >= self::MIN_NON_TEXT_CONTRAST,
+				'fix_light'   => $ratioLight >= self::MIN_NON_TEXT_CONTRAST ? $color : self::ensure_contrast( $color, $themes['light']['canvas'] ),
 			);
 		}
 
@@ -593,8 +600,10 @@ final class Tokens {
 		$clean = array();
 		foreach ( $raw as $type => $color ) {
 			$typeKey = sanitize_key( (string) $type );
-			$hex     = is_string( $color ) ? sanitize_hex_color( $color ) : '';
-			if ( '' !== $typeKey && '' !== $hex ) {
+			// sanitize_hex_color() returns null on invalid input — a
+			// truthiness check (not a '' comparison) drops those rows.
+			$hex = is_string( $color ) ? sanitize_hex_color( $color ) : null;
+			if ( '' !== $typeKey && ! empty( $hex ) ) {
 				$clean[ $typeKey ] = $hex;
 			}
 		}
@@ -720,10 +729,10 @@ final class Tokens {
 
 		$hueToRgb = static function ( float $t ) use ( $p, $q ): float {
 			if ( $t < 0 ) {
-				$t += 1;
+				++$t;
 			}
 			if ( $t > 1 ) {
-				$t -= 1;
+				--$t;
 			}
 			if ( $t < 1 / 6 ) {
 				return $p + ( $q - $p ) * 6 * $t;

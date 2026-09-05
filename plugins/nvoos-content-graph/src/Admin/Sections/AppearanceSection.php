@@ -78,14 +78,14 @@ class AppearanceSection extends Section {
 		}
 
 		return array(
-			'visual_preset'           => array(
+			'visual_preset'          => array(
 				'type'        => 'select',
 				'label'       => __( 'Preset', 'nvoos-content-graph' ),
 				'description' => __( 'One-click style presets. Choosing one fills the fields below — review, then Save Changes.', 'nvoos-content-graph' ),
 				'options'     => $presetOptions,
 				'default'     => '',
 			),
-			'visual_theme'            => array(
+			'visual_theme'           => array(
 				'type'        => 'select',
 				'label'       => __( 'Theme', 'nvoos-content-graph' ),
 				'description' => __( 'Dark, light, follow the OS setting, or follow the WordPress admin color scheme.', 'nvoos-content-graph' ),
@@ -97,7 +97,7 @@ class AppearanceSection extends Section {
 				),
 				'default'     => 'dark',
 			),
-			'visual_color_by'         => array(
+			'visual_color_by'        => array(
 				'type'        => 'select',
 				'label'       => __( 'Color nodes by', 'nvoos-content-graph' ),
 				'description' => __( 'Type (default), detected community, connection degree, or a single accent color.', 'nvoos-content-graph' ),
@@ -109,35 +109,35 @@ class AppearanceSection extends Section {
 				),
 				'default'     => 'type',
 			),
-			'visual_show_icons'       => array(
+			'visual_show_icons'      => array(
 				'type'        => 'checkbox',
 				'label'       => __( 'Show icons', 'nvoos-content-graph' ),
 				'description' => __( 'Render a glyph inside each node (a redundant, colorblind-friendly encoding). Unknown types fall back to a monogram.', 'nvoos-content-graph' ),
 				'default'     => 1,
 			),
-			'visual_icon_mode'        => array(
-				'type'        => 'select',
-				'label'       => __( 'Icon style', 'nvoos-content-graph' ),
-				'options'     => array(
+			'visual_icon_mode'       => array(
+				'type'    => 'select',
+				'label'   => __( 'Icon style', 'nvoos-content-graph' ),
+				'options' => array(
 					'filled'  => __( 'Filled node', 'nvoos-content-graph' ),
 					'outline' => __( 'Outline node', 'nvoos-content-graph' ),
 					'high'    => __( 'High contrast', 'nvoos-content-graph' ),
 				),
-				'default'     => 'filled',
+				'default' => 'filled',
 			),
-			'visual_node_shapes'      => array(
+			'visual_node_shapes'     => array(
 				'type'        => 'checkbox',
 				'label'       => __( 'Shape mode', 'nvoos-content-graph' ),
 				'description' => __( 'Encode top-level categories as node shapes (posts as rounded squares, entities as diamonds, …). Alternative to icons.', 'nvoos-content-graph' ),
 				'default'     => 0,
 			),
-			'visual_show_legend'      => array(
+			'visual_show_legend'     => array(
 				'type'        => 'checkbox',
 				'label'       => __( 'Show legend', 'nvoos-content-graph' ),
 				'description' => __( 'Auto-generated legend panel with swatches, icons, and node counts. Click a row to filter.', 'nvoos-content-graph' ),
 				'default'     => 1,
 			),
-			'visual_edge_style'       => array(
+			'visual_edge_style'      => array(
 				'type'        => 'select',
 				'label'       => __( 'Edge style', 'nvoos-content-graph' ),
 				'description' => __( 'Plain lines, arrowheads, tapered by strength, or the fast haystack mode for dense graphs. Auto switches to density above 500 edges.', 'nvoos-content-graph' ),
@@ -150,38 +150,38 @@ class AppearanceSection extends Section {
 				),
 				'default'     => 'plain',
 			),
-			'visual_edge_labels'      => array(
-				'type'        => 'select',
-				'label'       => __( 'Edge labels', 'nvoos-content-graph' ),
-				'options'     => array(
+			'visual_edge_labels'     => array(
+				'type'    => 'select',
+				'label'   => __( 'Edge labels', 'nvoos-content-graph' ),
+				'options' => array(
 					'off'    => __( 'Off', 'nvoos-content-graph' ),
 					'hover'  => __( 'On hover / selection', 'nvoos-content-graph' ),
 					'always' => __( 'Always', 'nvoos-content-graph' ),
 				),
-				'default'     => 'hover',
+				'default' => 'hover',
 			),
-			'visual_size_min'         => array(
-				'type'        => 'number',
-				'label'       => __( 'Node size — minimum (px)', 'nvoos-content-graph' ),
-				'min'         => 8,
-				'max'         => 40,
-				'default'     => 12,
+			'visual_size_min'        => array(
+				'type'    => 'number',
+				'label'   => __( 'Node size — minimum (px)', 'nvoos-content-graph' ),
+				'min'     => 8,
+				'max'     => 40,
+				'default' => 12,
 			),
-			'visual_size_max'         => array(
-				'type'        => 'number',
-				'label'       => __( 'Node size — maximum (px)', 'nvoos-content-graph' ),
-				'min'         => 40,
-				'max'         => 120,
-				'default'     => 60,
+			'visual_size_max'        => array(
+				'type'    => 'number',
+				'label'   => __( 'Node size — maximum (px)', 'nvoos-content-graph' ),
+				'min'     => 40,
+				'max'     => 120,
+				'default' => 60,
 			),
-			'visual_label_font_size'  => array(
-				'type'        => 'number',
-				'label'       => __( 'Label font size (px)', 'nvoos-content-graph' ),
-				'min'         => 9,
-				'max'         => 16,
-				'default'     => 10,
+			'visual_label_font_size' => array(
+				'type'    => 'number',
+				'label'   => __( 'Label font size (px)', 'nvoos-content-graph' ),
+				'min'     => 9,
+				'max'     => 16,
+				'default' => 10,
 			),
-			'visual_min_label_zoom'   => array(
+			'visual_min_label_zoom'  => array(
 				'type'        => 'decimal',
 				'label'       => __( 'Label zoom threshold', 'nvoos-content-graph' ),
 				'description' => __( 'Hide labels below this zoom level (0–1). Lower values show labels sooner; 0 always shows them.', 'nvoos-content-graph' ),
@@ -189,7 +189,7 @@ class AppearanceSection extends Section {
 				'max'         => 1,
 				'default'     => 0.35,
 			),
-			'visual_anim_enabled'     => array(
+			'visual_anim_enabled'    => array(
 				'type'        => 'checkbox',
 				'label'       => __( 'Animate layouts', 'nvoos-content-graph' ),
 				'description' => __( 'Animate node positions during layout. Always disabled when the OS requests reduced motion.', 'nvoos-content-graph' ),

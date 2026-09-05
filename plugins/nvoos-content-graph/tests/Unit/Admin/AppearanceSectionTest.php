@@ -35,17 +35,17 @@ class AppearanceSectionTest extends WP_UnitTestCase {
 	public function test_sanitize_scalar_fields(): void {
 		$out = $this->section->sanitize(
 			array(
-				'visual_theme'  => 'neon',
-				'visual_color_by' => 'community',
-				'visual_show_icons' => '0',
-				'visual_icon_mode' => 'outline',
-				'visual_edge_style' => 'density',
-				'visual_edge_labels' => 'always',
-				'visual_size_min' => '5',
-				'visual_size_max' => '999',
+				'visual_theme'           => 'neon',
+				'visual_color_by'        => 'community',
+				'visual_show_icons'      => '0',
+				'visual_icon_mode'       => 'outline',
+				'visual_edge_style'      => 'density',
+				'visual_edge_labels'     => 'always',
+				'visual_size_min'        => '5',
+				'visual_size_max'        => '999',
 				'visual_label_font_size' => '99',
-				'visual_min_label_zoom' => '7',
-				'visual_anim_enabled' => '1',
+				'visual_min_label_zoom'  => '7',
+				'visual_anim_enabled'    => '1',
 			)
 		);
 

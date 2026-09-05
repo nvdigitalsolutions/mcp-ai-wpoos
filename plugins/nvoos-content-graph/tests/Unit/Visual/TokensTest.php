@@ -152,10 +152,10 @@ class TokensTest extends WP_UnitTestCase {
 	public function test_visual_config_invalid_values_fall_back(): void {
 		$config = Tokens::visual_config(
 			array(
-				'visual_theme'        => 'neon',
-				'visual_color_by'     => 'mood',
-				'visual_size_min'     => 999,
-				'visual_size_max'     => 1,
+				'visual_theme'          => 'neon',
+				'visual_color_by'       => 'mood',
+				'visual_size_min'       => 999,
+				'visual_size_max'       => 1,
 				'visual_min_label_zoom' => 42,
 			)
 		);
@@ -175,11 +175,11 @@ class TokensTest extends WP_UnitTestCase {
 	public function test_sanitize_type_colors(): void {
 		$clean = Tokens::sanitize_type_colors(
 			array(
-				'post'        => '#ff0000',
-				'bad color!'  => '#00ff00',
-				'term'        => 'not-a-hex',
-				'page'        => '#abc',
-				'entity'      => 'javascript:alert(1)',
+				'post'       => '#ff0000',
+				'bad color!' => '#00ff00',
+				'term'       => 'not-a-hex',
+				'page'       => '#abc',
+				'entity'     => 'javascript:alert(1)',
 			)
 		);
 
