@@ -324,9 +324,234 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 'data', $data );
 		$this->assertArrayHasKey( 'retry_after', $data['data'] );
-		$this->assertEquals( 60, $data['data']['retry_after'], 'Retry-after should match time window' );
+		// retry_after reports the time *remaining* in the fixed window, so it
+		// starts at the configured window length and ticks down — never more
+		// than the window, never zero (the window resets once it elapses).
+		$this->assertGreaterThanOrEqual( 1, $data['data']['retry_after'], 'Retry-after should be at least 1 second' );
+		$this->assertLessThanOrEqual( 60, $data['data']['retry_after'], 'Retry-after should never exceed the time window' );
 
 		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that the rate-limit window is fixed, not sliding.
+	 *
+	 * A window that has been running for 30 of its 60 seconds must report
+	 * roughly 30 seconds remaining — not a full fresh window — and a window
+	 * whose time has fully elapsed must start fresh instead of staying
+	 * blocked.
+	 */
+	public function test_rate_limiting_uses_fixed_window() {
+		// Create admin user and assistant.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$assistant_id = $this->create_assistant_post();
+		$nonce        = wp_create_nonce( 'wp_rest' );
+
+		// Enable rate limiting: 3 requests per 60 seconds.
+		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting'] = true;
+		$settings['rate_limit_requests']  = 3;
+		$settings['rate_limit_window']    = 60;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$transient_key = 'wp_mcp_ai_rate_limit_user_' . $user_id;
+
+		// Prime a window that started 30 seconds ago and is already exhausted.
+		set_transient(
+			$transient_key,
+			array(
+				'count'      => 3,
+				'first_seen' => time() - 30,
+			),
+			60
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_header( 'X-WP-Nonce', $nonce );
+		$request->set_param( 'assistant_id', $assistant_id );
+		$request->set_param(
+			'messages',
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Blocked request',
+				),
+			)
+		);
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 429, $response->get_status(), 'Exhausted mid-window request should be rate limited' );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'retry_after', $data['data'] );
+		// 30 seconds of a 60-second window have elapsed, so roughly 30 remain.
+		$this->assertGreaterThanOrEqual( 25, $data['data']['retry_after'], 'Retry-after should reflect elapsed time' );
+		$this->assertLessThanOrEqual( 30, $data['data']['retry_after'], 'Retry-after should not reset to the full window' );
+
+		// The blocked request must not have slid the window forward.
+		$state = get_transient( $transient_key );
+		$this->assertIsArray( $state );
+		$this->assertSame( 3, $state['count'], 'Blocked requests must not increment the counter' );
+		$this->assertLessThanOrEqual( time() - 30, $state['first_seen'], 'Blocked requests must not extend the window start' );
+
+		// A window whose time has fully elapsed starts fresh.
+		set_transient(
+			$transient_key,
+			array(
+				'count'      => 3,
+				'first_seen' => time() - 61,
+			),
+			60
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_header( 'X-WP-Nonce', $nonce );
+		$request->set_param( 'assistant_id', $assistant_id );
+		$request->set_param(
+			'messages',
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Fresh window request',
+				),
+			)
+		);
+		$response = rest_do_request( $request );
+
+		$this->assertNotEquals( 429, $response->get_status(), 'An elapsed window should reset and allow the request' );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that exceeding the request limiter flags a restriction record.
+	 */
+	public function test_rate_limiting_flags_restriction_registry() {
+		// Create admin user and assistant.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$assistant_id = $this->create_assistant_post();
+		$nonce        = wp_create_nonce( 'wp_rest' );
+
+		// Ensure the registry listens to the limiter's action.
+		WP_MCP_AI_Restriction_Registry::register();
+
+		// Enable strict rate limiting.
+		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting'] = true;
+		$settings['rate_limit_requests']  = 1;
+		$settings['rate_limit_window']    = 60;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$make_request = function () use ( $assistant_id, $nonce ) {
+			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+			$request->set_header( 'X-WP-Nonce', $nonce );
+			$request->set_param( 'assistant_id', $assistant_id );
+			$request->set_param(
+				'messages',
+				array(
+					array(
+						'role'    => 'user',
+						'content' => 'Hello',
+					),
+				)
+			);
+
+			return rest_do_request( $request );
+		};
+
+		// First request passes; second exhausts the budget and gets flagged.
+		$make_request();
+		$response = $make_request();
+
+		$this->assertEquals( 429, $response->get_status(), 'Second request should be rate limited' );
+		$this->assertTrue(
+			WP_MCP_AI_Restriction_Registry::is_restricted( $user_id, WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT ),
+			'Exceeding the request limiter should flag a rate_limit restriction'
+		);
+
+		$records = WP_MCP_AI_Restriction_Registry::get_for_user( $user_id );
+		$this->assertArrayHasKey( WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT, $records );
+		$this->assertSame( 'rest', $records[ WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT ]['scope'] );
+		$this->assertSame( 1, $records[ WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT ]['limit'] );
+
+		// Clean up registry state and settings.
+		delete_user_meta( $user_id, WP_MCP_AI_Restriction_Registry::USER_META_KEY );
+		delete_option( WP_MCP_AI_Restriction_Registry::INDEX_OPTION );
+		delete_option( WP_MCP_AI_Restriction_Registry::NOTICE_OPTION );
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that lifting a flagged restriction resets the request window.
+	 */
+	public function test_lifting_restriction_resets_rate_limit_window() {
+		// Create admin user and assistant.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$assistant_id = $this->create_assistant_post();
+		$nonce        = wp_create_nonce( 'wp_rest' );
+
+		// Ensure the registry listens to the limiter's action.
+		WP_MCP_AI_Restriction_Registry::register();
+
+		// Enable strict rate limiting.
+		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting'] = true;
+		$settings['rate_limit_requests']  = 1;
+		$settings['rate_limit_window']    = 60;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$make_request = function () use ( $assistant_id, $nonce ) {
+			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+			$request->set_header( 'X-WP-Nonce', $nonce );
+			$request->set_param( 'assistant_id', $assistant_id );
+			$request->set_param(
+				'messages',
+				array(
+					array(
+						'role'    => 'user',
+						'content' => 'Hello',
+					),
+				)
+			);
+
+			return rest_do_request( $request );
+		};
+
+		// Exhaust the budget so the user gets blocked and flagged.
+		$make_request();
+		$blocked = $make_request();
+
+		$this->assertEquals( 429, $blocked->get_status(), 'Second request should be rate limited' );
+		$this->assertTrue(
+			WP_MCP_AI_Restriction_Registry::is_restricted( $user_id, WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT ),
+			'Exceeding the request limiter should flag a rate_limit restriction'
+		);
+
+		// An admin lifts the restriction from the Command Center.
+		$result = WP_MCP_AI_Restriction_Registry::lift( $user_id, WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT );
+
+		$this->assertTrue( $result, 'Lifting the restriction should succeed' );
+		$this->assertFalse(
+			get_transient( 'wp_mcp_ai_rate_limit_user_' . $user_id ),
+			'Lifting should delete the request-limit window transient'
+		);
+
+		// The user can immediately make requests again.
+		$retry = $make_request();
+		$this->assertNotEquals( 429, $retry->get_status(), 'A lifted user should pass the rate limiter' );
+
+		// Clean up registry state and settings.
+		delete_user_meta( $user_id, WP_MCP_AI_Restriction_Registry::USER_META_KEY );
+		delete_option( WP_MCP_AI_Restriction_Registry::INDEX_OPTION );
+		delete_option( WP_MCP_AI_Restriction_Registry::NOTICE_OPTION );
 		delete_option( 'wp_mcp_ai_settings' );
 	}
 }
