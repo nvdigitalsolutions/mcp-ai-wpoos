@@ -11,6 +11,7 @@
             <directory suffix=".php">addons/canvas-toolkit/tests</directory>
             <directory suffix=".php">addons/media-studio/tests</directory>
             <directory suffix=".php">addons/saas-controller/tests</directory>
+            <directory suffix=".php">addons/checkout-api/tests</directory>
             <exclude>tests/manual-test-preset-preview.php</exclude>
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
             <exclude>tests/manual</exclude>
@@ -26,6 +27,7 @@
             <exclude>tests/paper-store/trait-paper-store-test-helpers.php</exclude>
             <exclude>addons/pro/tests/class-wp-mcp-ai-workflow-log-context-recorder-tool.php</exclude>
             <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
+            <exclude>addons/checkout-api/tests/bootstrap.php</exclude>
         </testsuite>
     </testsuites>
     <groups>
@@ -48,6 +50,7 @@
             <directory suffix=".php">addons/algorave/includes</directory>
             <directory suffix=".php">addons/fantasy-football/includes</directory>
             <directory suffix=".php">addons/graphify/includes</directory>
+            <directory suffix=".php">addons/checkout-api/includes</directory>
         </include>
         <exclude>
             <directory>vendor</directory>
@@ -55,6 +58,7 @@
             <directory>addons/pro/vendor</directory>
             <directory>tests</directory>
             <directory>addons/pro/tests</directory>
+            <directory>addons/checkout-api/tests</directory>
             <directory>bin</directory>
             <directory>examples</directory>
             <directory>assets/examples</directory>
