@@ -40,6 +40,7 @@ final class Plugin {
 		$this->registerFederation();
 		$this->registerBlueprints();
 		$this->registerQueues();
+		$this->registerQueueManager();
 	}
 
 	private function registerAdmin(): void {
@@ -190,6 +191,29 @@ final class Plugin {
 
 		if ( class_exists( __NAMESPACE__ . '\Queues\AsyncJobQueue' ) ) {
 			\NvoosContentGraphAiPlatform\Queues\AsyncJobQueue::init();
+		}
+	}
+
+	/**
+	 * Register the tool-execution queue manager (Wave E2).
+	 *
+	 * Standalone-only: the base plugin owns the same
+	 * `wp_mcp_ai_before_tool_execute` filter and queue-status AJAX action
+	 * in monolith installs; double registration would double-queue tool
+	 * executions. Hooks only register when RabbitMQ is explicitly enabled
+	 * (byte-identical feature-flag contract).
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerQueueManager(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Queues\QueueManager' ) ) {
+			\NvoosContentGraphAiPlatform\Queues\QueueManager::get_instance();
 		}
 	}
 
