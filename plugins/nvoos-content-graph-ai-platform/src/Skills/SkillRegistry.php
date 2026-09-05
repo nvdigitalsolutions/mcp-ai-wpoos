@@ -710,10 +710,10 @@ class SkillRegistry {
 		$base_len = strlen( $dir ) + 1;
 
 		try {
-			$iterator = new RecursiveIteratorIterator(
-				new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS )
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS )
 			);
-		} catch ( UnexpectedValueException $e ) {
+		} catch ( \UnexpectedValueException $e ) {
 			return $files;
 		}
 

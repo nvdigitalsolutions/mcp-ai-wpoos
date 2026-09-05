@@ -62,10 +62,13 @@ final class MeasurementService {
 		// then wire the lifecycle hooks (mirroring the base bootstrap file).
 		require_once __DIR__ . '/shim-functions.php';
 
-		// `plugins_loaded` at a late priority ensures other plugins (and the
-		// Pro addon) have had a chance to register their own measurement
-		// hooks before the registries freeze.
-		add_action( 'plugins_loaded', 'wp_mcp_ai_measurement_bootstrap', 50 );
+		// `init` rather than `plugins_loaded`: the stock metric registrars
+		// (ChatTurnMetrics, SseMetrics) build translatable labels at
+		// registration time, and WP 6.7+ requires translation functions to
+		// run on `init` or later. Other plugins still get to register their
+		// measurement hooks first (init fires after plugins_loaded), so the
+		// late-priority freeze guarantee is preserved.
+		add_action( 'init', 'wp_mcp_ai_measurement_bootstrap', 50 );
 		add_action( 'admin_init', 'wp_mcp_ai_measurement_ensure_capabilities', 5 );
 		add_action( 'wp_mcp_ai_register_verifiers', 'wp_mcp_ai_register_reference_verifiers', 20 );
 		add_action( 'wp_mcp_ai_register_reward_functions', 'wp_mcp_ai_register_reference_rewards', 20 );
