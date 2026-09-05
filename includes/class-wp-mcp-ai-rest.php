@@ -2845,6 +2845,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			/**
 			 * Check if rate limiting is enabled and enforce limits.
 			 *
+			 * The window is fixed, not sliding: the transient payload records
+			 * the window start (`first_seen`) and the TTL is never extended past
+			 * `first_seen + time_window`, so a steady stream of requests cannot
+			 * keep the window alive indefinitely. `retry_after` reports the time
+			 * actually remaining in the window.
+			 *
+			 * When the limit trips for an authenticated user, the
+			 * `wp_mcp_ai_rest_request_rate_limit_exceeded` action fires so the
+			 * restriction registry can surface the block in the Command Center.
+			 *
+			 * @since 1.1.71 Fixed-window accounting and restriction-registry flagging.
+			 *
 			 * @param int         $user_id        User ID making the request (0 for guests).
 			 * @param string|null $request_method Optional HTTP method of the dispatching request.
 			 *                                    When null, falls back to $_SERVER['REQUEST_METHOD'].
@@ -2888,11 +2900,50 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					: 'unknown';
 				$transient_key = 'wp_mcp_ai_rate_limit_ip_' . md5( $client_ip . wp_salt( 'nonce' ) );
 			}
-			$current_count = get_transient( $transient_key );
+			$now          = time();
+			$window_state = get_transient( $transient_key );
 
-			if ( false === $current_count ) {
+			if ( false === $window_state ) {
 				// First request in this time window, start counting.
-				set_transient( $transient_key, 1, $time_window );
+				set_transient(
+					$transient_key,
+					array(
+						'count'      => 1,
+						'first_seen' => $now,
+					),
+					$time_window
+				);
+				return true;
+			}
+
+			// Normalize legacy integer-only payloads written before 1.1.71.
+			if ( is_numeric( $window_state ) ) {
+				$window_state = array(
+					'count'      => max( 0, (int) $window_state ),
+					'first_seen' => $now,
+				);
+			} elseif ( ! is_array( $window_state ) ) {
+				$window_state = array(
+					'count'      => 0,
+					'first_seen' => $now,
+				);
+			}
+
+			$current_count = isset( $window_state['count'] ) ? max( 0, absint( $window_state['count'] ) ) : 0;
+			$first_seen    = isset( $window_state['first_seen'] ) ? absint( $window_state['first_seen'] ) : $now;
+			$window_end    = $first_seen + $time_window;
+			$remaining     = max( 0, $window_end - $now );
+
+			// The fixed window elapsed: start a fresh one.
+			if ( $remaining <= 0 ) {
+				set_transient(
+					$transient_key,
+					array(
+						'count'      => 1,
+						'first_seen' => $now,
+					),
+					$time_window
+				);
 				return true;
 			}
 
@@ -2927,6 +2978,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 				}
 
+				/**
+				 * Fires when the general REST request rate limiter blocks a user.
+				 *
+				 * The restriction registry subscribes to this action and flags a
+				 * `rate_limit` restriction so admins can see and lift the block
+				 * from the Command Center. Guest (user_id=0) blocks are ignored
+				 * by the handler because there is no user record to flag.
+				 *
+				 * @since 1.1.71
+				 *
+				 * @param int $user_id       Affected user ID (0 for guest/IP-keyed limits).
+				 * @param int $max_requests  Requests allowed per window.
+				 * @param int $time_window   Window length in seconds.
+				 * @param int $current_count Requests consumed in the current window.
+				 * @param int $window_end    Unix timestamp at which the fixed window ends.
+				 */
+				do_action( 'wp_mcp_ai_rest_request_rate_limit_exceeded', $user_id, $max_requests, $time_window, $current_count, $window_end );
+
 				return new WP_Error(
 					'wp_mcp_ai_rate_limit_exceeded',
 					sprintf(
@@ -2937,7 +3006,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					),
 					array(
 						'status'        => 429,
-						'retry_after'   => $time_window,
+						'retry_after'   => max( 1, $remaining ),
 						'max_requests'  => $max_requests,
 						'time_window'   => $time_window,
 						'current_count' => $current_count,
@@ -2945,8 +3014,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			// Increment the counter.
-			set_transient( $transient_key, $current_count + 1, $time_window );
+			// Increment without extending the window past its fixed end. The
+			// payload's first_seen governs expiry; the TTL is clamped to >= 1
+			// because an expiration of 0 means "never expire" in WordPress.
+			set_transient(
+				$transient_key,
+				array(
+					'count'      => $current_count + 1,
+					'first_seen' => $first_seen,
+				),
+				max( 1, $remaining )
+			);
 			return true;
 		}
 

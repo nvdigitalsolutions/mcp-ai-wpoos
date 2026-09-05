@@ -230,6 +230,73 @@ class Test_Restriction_Registry extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test the REST request rate-limit hook handler flags users.
+	 */
+	public function test_on_rest_request_rate_limit_exceeded_flags_users() {
+		$window_end = time() + 3600;
+
+		WP_MCP_AI_Restriction_Registry::on_rest_request_rate_limit_exceeded(
+			$this->test_user_id,
+			998,
+			3600,
+			998,
+			$window_end
+		);
+
+		$this->assertTrue( WP_MCP_AI_Restriction_Registry::is_restricted( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT ) );
+
+		$records = WP_MCP_AI_Restriction_Registry::get_for_user( $this->test_user_id );
+		$record  = $records[ WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT ];
+
+		$this->assertSame( 'rest', $record['scope'] );
+		$this->assertSame( 998, $record['limit'] );
+		$this->assertSame( 3600, $record['window'] );
+		$this->assertSame( 998, $record['usage'] );
+		$this->assertSame( $window_end, $record['released_at'] );
+	}
+
+	/**
+	 * Test the REST request rate-limit hook handler ignores guests.
+	 */
+	public function test_on_rest_request_rate_limit_exceeded_ignores_guests() {
+		WP_MCP_AI_Restriction_Registry::on_rest_request_rate_limit_exceeded( 0, 100, 3600, 100, time() + 3600 );
+
+		$this->assertSame( 0, WP_MCP_AI_Restriction_Registry::count_active() );
+	}
+
+	/**
+	 * Test lifting a REST rate-limit flag deletes the request-limit window.
+	 */
+	public function test_lift_rate_limit_deletes_rest_request_window() {
+		$transient_key = 'wp_mcp_ai_rate_limit_user_' . $this->test_user_id;
+		set_transient(
+			$transient_key,
+			array(
+				'count'      => 5,
+				'first_seen' => time(),
+			),
+			60
+		);
+
+		WP_MCP_AI_Restriction_Registry::flag(
+			$this->test_user_id,
+			WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT,
+			array(
+				'scope'       => 'rest',
+				'limit'       => 5,
+				'window'      => 60,
+				'released_at' => time() + 60,
+			)
+		);
+
+		$result = WP_MCP_AI_Restriction_Registry::lift( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT );
+
+		$this->assertTrue( $result );
+		$this->assertFalse( get_transient( $transient_key ), 'Lifting should clear the REST request-limit window' );
+		$this->assertFalse( WP_MCP_AI_Restriction_Registry::is_restricted( $this->test_user_id, WP_MCP_AI_Restriction_Registry::TYPE_RATE_LIMIT ) );
+	}
+
+	/**
 	 * Test manual blocks via the public helper.
 	 */
 	public function test_add_manual_block() {
