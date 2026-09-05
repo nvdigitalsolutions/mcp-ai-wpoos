@@ -43,7 +43,7 @@ Automatic structured data injection for SEO — taxonomy terms as `about` and in
 Appends graph-neighbor posts to your content based on knowledge graph proximity.
 
 = REST API =
-Full programmatic access with 14 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
+Full programmatic access with 17 endpoints. Read endpoints require the `read` capability (all logged-in users) or a valid guest token (guest tokens are provided by the NV oOS base plugin when installed); write endpoints require `manage_options`.
 
 = Extensible Tool System =
 14 built-in tools for graph operations: query, search, traverse, analyze, export. Addon plugins can register their own tools.
@@ -127,7 +127,7 @@ When you configure a remote source driver (REST API, RSS/Sitemap feed, SPARQL en
 
 **Stripe payments (opt-in only)**
 
-The "Get NV oOS Content Graph — AI" buttons on the plugin's settings page open an optional checkout for the companion addon. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. The checkout is created and verified by the vendor's own server (NV Digital Solutions); this plugin only sends the product name, your site URL, and the Stripe payment ID to that service. A local purchase record (license key, payment ID, price paid) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
+The "Get NV oOS Content Graph — AI" buttons on the plugin's settings page open an optional checkout for the companion addon. Card and payment details are entered directly on Stripe's servers (`js.stripe.com` iframe); the plugin never stores or transmits card data. Stripe.js is loaded only when the purchase modal is opened — merely visiting the settings page contacts no third party. The checkout is created and verified by the vendor's own server (NV Digital Solutions); this plugin only sends the product name, your site URL, and the Stripe payment ID to that service. A local purchase record (license key, payment ID, price paid, and the purchasing administrator's email address) is stored after the vendor confirms the payment. Payment is entirely optional — the core plugin is fully functional without it.
 
 - **Service provider:** Stripe, Inc. — Privacy Policy: https://stripe.com/privacy
 
@@ -141,8 +141,10 @@ This plugin bundles the following open-source libraries:
 
 * **Cytoscape.js** v3.28.1 — MIT License — https://github.com/cytoscape/cytoscape.js
 * **cytoscape-fcose** v2.2.0 — MIT License — https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
+* **layout-base** v2.0.1 — MIT License — https://github.com/iVis-at-Bilkent/layout-base
+* **cose-base** v2.2.0 — MIT License — https://github.com/iVis-at-Bilkent/cose-base
 
-Both libraries are served locally from `assets/vendor/` and never loaded from third-party CDNs.
+All libraries are served locally from `assets/vendor/` and never loaded from third-party CDNs.
 
 == Screenshots ==
 
@@ -155,13 +157,13 @@ Both libraries are served locally from `assets/vendor/` and never loaded from th
 
 == Changelog ==
 
-= 1.0.4 =
+= 1.0.4 — 2026-09-05 =
 * New Appearance tab: themes (dark/light/auto/admin), per-type color and icon overrides, WCAG contrast report, and one-click style presets
 * Icon glyphs and legend panel in the graph explorer; color-by type/community/degree/monochrome modes
 * Relationship-aware edge styling (color families, arrowheads, tapered, haystack density mode) and edge labels
 * Minimap, zoom controls, layout presets, keyboard navigation, reduced-motion support, view persistence, and theme-aware PNG export
 * New `GET /edges` REST endpoint; front-end shortcode/block visual attributes (`theme`, `color_by`, `show_legend`, `show_icons`, `show_edges`, `edge_style`)
-* Stripe checkout for the AI addon (payments via the vendor checkout API; no Stripe keys ship in the plugin)
+* Stripe checkout for the AI addon (payments via the vendor checkout API; no Stripe keys ship in the plugin; Stripe.js loads only when the purchase modal opens)
 
 = 1.0.3 — 2026-08-20 =
 * Encrypt remote-source credentials (AES-256-GCM) before storing them

@@ -5,6 +5,8 @@ namespace NvoosContentGraph\Admin\Sections;
 
 use NvoosContentGraph\Admin\Section;
 
+use function preg_match;
+
 /**
  * Display settings section.
  *
@@ -41,6 +43,25 @@ class DisplaySection extends Section {
 	 */
 	public function get_priority(): int {
 		return 30;
+	}
+
+	/**
+	 * @inheritDoc
+	 *
+	 * Additionally validates the CSS height against a strict length
+	 * format so arbitrary values can never reach the inline style.
+	 */
+	public function sanitize( array $input ): array {
+		$out = parent::sanitize( $input );
+
+		if ( isset( $out['cytoscape_height'] ) ) {
+			$height = (string) $out['cytoscape_height'];
+			if ( '' === $height || ! preg_match( '/^\d+(?:\.\d+)?(?:px|%|vh|vw|em|rem)$/', $height ) ) {
+				$out['cytoscape_height'] = '600px';
+			}
+		}
+
+		return $out;
 	}
 
 	/**

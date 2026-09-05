@@ -26,25 +26,26 @@
 		}
 
 		var visual = config.visual || {};
+		var i18n   = config.i18n || {};
 
-		$container.html( '<p class="nvoos-content-graph-loading">Loading graph…</p>' );
+		$container.html( '<p class="nvoos-content-graph-loading">' + ( i18n.loading || 'Loading graph…' ) + '</p>' );
 
 		// Cytoscape and the fcose layout extension are enqueued as hard
 		// dependencies of this script (see Shortcode.php), so no dynamic CDN
 		// injection is required. We still guard for the rare case where
 		// another plugin dequeues them.
 		if ( typeof window.cytoscape === 'undefined' ) {
-			$container.html( '<p class="nvoos-content-graph-error">Cytoscape.js not loaded.</p>' );
+			$container.html( '<p class="nvoos-content-graph-error">' + ( i18n.cytoscape_missing || 'Cytoscape.js not loaded.' ) + '</p>' );
 			return;
 		}
 
-		fetchAndRender( config, visual, $container );
+		fetchAndRender( config, visual, i18n, $container );
 	}
 
 	/**
 	 * Fetch nodes (and optionally edges) from REST API and render the graph.
 	 */
-	function fetchAndRender( config, visual, $container ) {
+	function fetchAndRender( config, visual, i18n, $container ) {
 		var params = { per_page: config.max_nodes || 300 };
 		if ( config.community_id ) {
 			params.community_id = config.community_id;
@@ -109,7 +110,7 @@
 				finish();
 			}
 		} ).fail( function () {
-			$container.html( '<p class="nvoos-content-graph-error">Graph data unavailable.</p>' );
+			$container.html( '<p class="nvoos-content-graph-error">' + ( i18n.graph_unavailable || 'Graph data unavailable.' ) + '</p>' );
 		} );
 	}
 
@@ -119,7 +120,7 @@
 	function renderGraph( config, visual, $container, elements, maxDegree ) {
 		$container.html( '' );
 		if ( typeof window.cytoscape === 'undefined' ) {
-			$container.html( '<p class="nvoos-content-graph-error">Cytoscape.js not loaded.</p>' );
+			$container.html( '<p class="nvoos-content-graph-error">' + ( ( config.i18n && config.i18n.cytoscape_missing ) || 'Cytoscape.js not loaded.' ) + '</p>' );
 			return;
 		}
 
@@ -161,7 +162,7 @@
 		}
 
 		// Minimal zoom cluster for touch/small screens.
-		appendZoomCluster( $container, cy );
+		appendZoomCluster( $container, cy, config.i18n || {} );
 
 		// Click node: open URL or highlight.
 		cy.on( 'tap', 'node', function ( e ) {
@@ -210,11 +211,11 @@
 	/**
 	 * Append a small zoom cluster to the embed (absolute-positioned).
 	 */
-	function appendZoomCluster( $container, cy ) {
+	function appendZoomCluster( $container, cy, i18n ) {
 		var $cluster = $( '<div class="nvoos-cg-zoom-cluster nvoos-cg-zoom-cluster-frontend">' +
-			'<button type="button" class="nvoos-cg-zoom-btn" data-zoom="out" aria-label="Zoom out">−</button>' +
-			'<button type="button" class="nvoos-cg-zoom-btn" data-zoom="fit" aria-label="Fit">⤢</button>' +
-			'<button type="button" class="nvoos-cg-zoom-btn" data-zoom="in" aria-label="Zoom in">+</button>' +
+			'<button type="button" class="nvoos-cg-zoom-btn" data-zoom="out" aria-label="' + ( i18n.zoom_out || 'Zoom out' ) + '">−</button>' +
+			'<button type="button" class="nvoos-cg-zoom-btn" data-zoom="fit" aria-label="' + ( i18n.fit || 'Fit' ) + '">⤢</button>' +
+			'<button type="button" class="nvoos-cg-zoom-btn" data-zoom="in" aria-label="' + ( i18n.zoom_in || 'Zoom in' ) + '">+</button>' +
 			'</div>' );
 		$container.append( $cluster );
 

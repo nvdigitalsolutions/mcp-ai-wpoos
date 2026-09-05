@@ -260,6 +260,32 @@
 	}
 
 	/**
+	 * Load Stripe.js on demand — only when the purchase modal opens.
+	 *
+	 * Stripe.js is intentionally NOT enqueued with the settings page: this
+	 * keeps js.stripe.com from being contacted until the user actually
+	 * chooses to start a checkout (privacy-conscious script loading).
+	 *
+	 * @param {Function} callback Invoked once Stripe.js is available.
+	 * @return {void}
+	 */
+	function loadStripeJs( callback ) {
+		if ( window.Stripe ) {
+			callback();
+			return;
+		}
+
+		var script = document.createElement( 'script' );
+		script.src = 'https://js.stripe.com/v3/';
+		script.async = true;
+		script.onload = callback;
+		script.onerror = function () {
+			showError( i18n.stripe_load_error || 'Stripe failed to load. Check your network connection and try again.' );
+		};
+		document.head.appendChild( script );
+	}
+
+	/**
 	 * Create the Stripe PaymentIntent session and mount the Payment Element.
 	 *
 	 * When a previous payment never finished verifying, resume it first —
@@ -270,8 +296,21 @@
 	 * @return {void}
 	 */
 	function startCheckout( payBox, payBtn ) {
+		loadStripeJs( function () {
+			beginCheckout( payBox, payBtn );
+		} );
+	}
+
+	/**
+	 * Checkout flow once Stripe.js is guaranteed loaded.
+	 *
+	 * @param {HTMLElement} payBox Container for the payment element.
+	 * @param {HTMLButtonElement} payBtn The pay/verify button.
+	 * @return {void}
+	 */
+	function beginCheckout( payBox, payBtn ) {
 		if ( ! window.Stripe ) {
-			showError( 'Stripe failed to load. Check your network connection and try again.' );
+			showError( i18n.stripe_load_error || 'Stripe failed to load. Check your network connection and try again.' );
 			return;
 		}
 
@@ -344,7 +383,7 @@
 					rememberPendingIntent( intent.id );
 					verifyAndInstall( intent.id );
 				} else {
-					showError( 'Payment is still processing. Click Verify once it completes.' );
+					showError( i18n.payment_processing || 'Payment is still processing. Click Verify once it completes.' );
 					setBusy( false );
 				}
 			} ).catch( function () {
@@ -375,11 +414,11 @@
 			} else if ( 'processing' === intent.status ) {
 				verifying = true;
 				rememberPendingIntent( intent.id );
-				payBtn.textContent = 'Verify';
-				showError( 'Payment is still processing. Click Verify once it completes.' );
+				payBtn.textContent = i18n.verify || 'Verify';
+				showError( i18n.payment_processing || 'Payment is still processing. Click Verify once it completes.' );
 				setBusy( false );
 			} else {
-				showError( 'Payment did not complete. Status: ' + intent.status );
+				showError( ( i18n.payment_incomplete || 'Payment did not complete. Status: ' ) + intent.status );
 			}
 		} ).catch( function () {
 			showError( i18n.generic_error );
@@ -436,7 +475,7 @@
 
 				if ( data.zip_url ) {
 					errorBox.style.display = 'none';
-					var dl = el( 'a', 'button', 'Download ZIP manually' );
+					var dl = el( 'a', 'button', i18n.download_zip || 'Download ZIP manually' );
 					dl.href = data.zip_url;
 					dl.target = '_blank';
 					dl.rel = 'noopener';
