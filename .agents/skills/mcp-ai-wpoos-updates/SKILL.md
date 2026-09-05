@@ -5,8 +5,8 @@ description: "Operational guide for the two recurring NV oOS maintenance tracks 
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.70"
-  plugin-version-tested: "1.1.70"
+  plugin-version: "1.1.71"
+  plugin-version-tested: "1.1.71"
   last-updated: "2026-09-05"
 ---
 

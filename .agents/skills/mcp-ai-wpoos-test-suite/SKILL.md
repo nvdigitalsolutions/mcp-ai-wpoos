@@ -527,7 +527,7 @@ K15 skill-suite upload isolation (pack normalisation + install action
 landed via direct commit d452a125bf).
 
 Session 2026-09-05 cluster (run 91942465749): #6327 post-K16 singles
-(open) — chat transcript session-key mock restore, MemPalace wing-scope
+(merged) — chat transcript session-key mock restore, MemPalace wing-scope
 graph leak (production fix in `wake_up_context`), OKF Pro tools lost to
 `clear_tools()` on the shared registry, Site Health provider-key
 isolation, transcript-mining logging cache reset.
