@@ -13,13 +13,14 @@
  * - The legacy option-based fallback storage (`wp_mcp_ai_job_queue_state`
  *   / `wp_mcp_ai_active_jobs`, deprecated in the base at 1.1.37) is NOT
  *   ported — the platform starts on the custom table.
- * - SLA tier limits resolve through the base `WP_MCP_AI_SLA_Manager`
- *   when present (dormant standalone until SlaManager ports); the
- *   resource-manager concurrency default falls back to
- *   `DEFAULT_MAX_CONCURRENT` standalone; the DLQ forward resolves per
- *   install mode (base `WP_MCP_AI_Dead_Letter_Queue` monolith / this
- *   package's `DeadLetterQueue` standalone) behind a method_exists
- *   guard (documented hardening); logging goes through a dormant seam.
+ * - SLA tier limits resolve per install mode (base
+ *   `WP_MCP_AI_SLA_Manager` monolith / this package's `SlaManager`
+ *   standalone); the resource-manager concurrency default falls back
+ *   to `DEFAULT_MAX_CONCURRENT` standalone; the DLQ forward resolves
+ *   per install mode (base `WP_MCP_AI_Dead_Letter_Queue` monolith /
+ *   this package's `DeadLetterQueue` standalone) behind a
+ *   method_exists guard (documented hardening); logging goes through
+ *   a dormant seam.
  *
  * @package NvoosContentGraphAiPlatform\Queues
  * @since   2.1.0
@@ -209,12 +210,13 @@ class JobQueueManager {
 		$sla_tier = null;
 
 		if ( static::sla_available() ) {
+			$sla_class = static::sla_class();
 			if ( isset( $job_data['sla_tier'] ) ) {
 				$sla_tier = sanitize_key( $job_data['sla_tier'] );
-				$priority = \WP_MCP_AI_SLA_Manager::get_priority( $sla_tier );
+				$priority = $sla_class::get_priority( $sla_tier );
 			} elseif ( isset( $job_data['tool'] ) && is_object( $job_data['tool'] ) ) {
-				$sla_tier = \WP_MCP_AI_SLA_Manager::get_tier_for_tool( $job_data['tool'] );
-				$priority = \WP_MCP_AI_SLA_Manager::get_priority( $sla_tier );
+				$sla_tier = $sla_class::get_tier_for_tool( $job_data['tool'] );
+				$priority = $sla_class::get_priority( $sla_tier );
 			}
 		}
 
@@ -429,7 +431,7 @@ class JobQueueManager {
 				continue;
 			}
 
-			$tier_max_concurrent = \WP_MCP_AI_SLA_Manager::get_default_concurrent( $tier );
+			$tier_max_concurrent = static::sla_class()::get_default_concurrent( $tier );
 			$tier_active_count   = isset( $active_by_tier[ $tier ] ) ? $active_by_tier[ $tier ] : 0;
 
 			if ( $tier_active_count < $tier_max_concurrent ) {
@@ -803,14 +805,35 @@ class JobQueueManager {
 	/**
 	 * Whether the SLA manager is available.
 	 *
-	 * Dormant standalone until SlaManager ports (E2).
+	 * Resolves per install mode: the base `WP_MCP_AI_SLA_Manager` in
+	 * monolith installs, this package's `SlaManager` standalone. The
+	 * method_exists guard is a documented hardening deviation.
 	 *
 	 * @return bool
 	 */
 	protected static function sla_available(): bool {
-		return class_exists( 'WP_MCP_AI_SLA_Manager' )
-			&& method_exists( 'WP_MCP_AI_SLA_Manager', 'is_enabled' )
-			&& \WP_MCP_AI_SLA_Manager::is_enabled();
+		$sla_class = static::sla_class();
+
+		return method_exists( $sla_class, 'is_enabled' )
+			&& $sla_class::is_enabled();
+	}
+
+	/**
+	 * Resolve the SLA manager class.
+	 *
+	 * The base plugin owns SLA prioritization in monolith installs;
+	 * standalone resolves this package's `SlaManager`. The base probe
+	 * is gated on the base plugin being booted — the monorepo autoloader
+	 * can resolve base classes in standalone installs.
+	 *
+	 * @return string Fully-qualified class name.
+	 */
+	protected static function sla_class(): string {
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_SLA_Manager' ) ) {
+			return 'WP_MCP_AI_SLA_Manager';
+		}
+
+		return __NAMESPACE__ . '\SlaManager';
 	}
 
 	/**

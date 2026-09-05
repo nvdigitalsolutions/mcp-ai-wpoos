@@ -30,6 +30,12 @@ approval events. `CronManager` is the aligned port of
 argument normalisation, record/remove lifecycle, retention-window
 pruning, and stable job-ID generation — the tracked cron-event layer
 for the plugin's scheduling tools.
+`SlaManager` is the aligned port of `WP_MCP_AI_SLA_Manager`:
+byte-identical tier/priority/SLA-target/concurrency constants,
+capability-flag tier inference, Little's Law capacity math, tuning
+recommendations, and compliance tracking/statistics (same
+`wp_mcp_ai_sla_compliance_log` option) — the prioritization layer the
+job queue managers consume.
 
 ## Tier
 
@@ -52,6 +58,7 @@ for the plugin's scheduling tools.
 | `NvoosContentGraphAiPlatform\Queues\RateLimitManager` | `RateLimitManager.php` | API callers (static utility; no hooks of its own — consumed directly) |
 | `NvoosContentGraphAiPlatform\Queues\OutboundWebhook` | `OutboundWebhook.php` | `Plugin::registerOutboundWebhook()` — event-listener registration; consumed by the eventual workflow (E1) / approvals (E3) ports + notifier |
 | `NvoosContentGraphAiPlatform\Queues\CronManager` | `CronManager.php` | `Plugin::registerCronManager()` — `init` prune hook; consumed by the plugin's cron tools |
+| `NvoosContentGraphAiPlatform\Queues\SlaManager` | `SlaManager.php` | `JobQueueManager` (tier limits + enqueue priorities) + analytics/dashboard consumers (static utility; no hooks of its own) |
 
 ## Inputs / Outputs / Neighbors
 
@@ -62,7 +69,9 @@ for the plugin's scheduling tools.
   `OutboundWebhook` reads/writes the `wp_mcp_ai_outbound_webhooks` option
   and POSTs to subscribed URLs (non-blocking, signed); `CronManager`
   reads/writes the `wp_mcp_ai_cron_jobs` option and reads
-  `wp_mcp_ai_settings['cron_job_retention_period']`
+  `wp_mcp_ai_settings['cron_job_retention_period']`;
+  `SlaManager` reads `wp_mcp_ai_settings` (`sla_prioritization_enabled`,
+  `sla_*_concurrent`) and reads/writes `wp_mcp_ai_sla_compliance_log`
 - **Writes to:** job rows, cron events (`wp_mcp_ai_process_job_queue`,
   `wp_mcp_ai_cleanup_job_queue`), the `minute` cron interval,
   `wp_mcp_ai_emit_sse_event` (byte-identical action)
@@ -72,11 +81,16 @@ for the plugin's scheduling tools.
   Scheduler bridge, Job Notifier (E2), base logger;
   `QueueManager` resolves the RabbitMQ client + tool registry per install
   mode (base classes monolith / AI addon + CoreBridge standalone);
-  `JobQueueManager` resolves SLA/resource/logging through dormant
-  seams until those pieces port; `DeadLetterQueue` resolves the retry
-  dispatchers per install mode (base manager/notifier/executor monolith —
-  boot-gated probes — platform `JobQueueManager` standalone);
-  `RateLimitManager` targets the base logger through a dormant seam
+  `JobQueueManager` resolves SLA per install mode (base
+  `WP_MCP_AI_SLA_Manager` monolith / this package's `SlaManager`
+  standalone — both probes gated on `defined( 'WP_MCP_AI_PATH' )`),
+  resource/logging through dormant seams; `DeadLetterQueue` resolves the
+  retry dispatchers per install mode (base manager/notifier/executor
+  monolith — boot-gated probes — platform `JobQueueManager` standalone);
+  `RateLimitManager` targets the base logger through a dormant seam;
+  `SlaManager` resolves queue statistics per install mode (base
+  `WP_MCP_AI_Job_Queue_Manager` monolith / platform `JobQueueManager`
+  standalone)
 
 ## Conventions
 
