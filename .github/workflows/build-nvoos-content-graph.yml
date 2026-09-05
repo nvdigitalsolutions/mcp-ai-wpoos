@@ -122,6 +122,8 @@ jobs:
             --exclude='package-lock.json' \
             --exclude='scripts/' \
             --exclude='src/**/README.md' \
+            --exclude='vendor.bak-phpunit-conflict/' \
+            --exclude='docs/wporg-page-preview.html' \
             --exclude='.DS_Store' \
             plugins/nvoos-content-graph/ "dist/${ARTIFACT}/nvoos-content-graph/"
 

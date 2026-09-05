@@ -471,19 +471,14 @@ class SettingsPage {
 		\wp_enqueue_style( 'wp-color-picker' );
 		\wp_enqueue_script( 'wp-color-picker' );
 
-		// Stripe.js + the addon purchase modal. Only enqueued on this page;
-		// Stripe is contacted exclusively when the user opens the checkout.
-		\wp_enqueue_script(
-			'stripe-v3',
-			'https://js.stripe.com/v3/',
-			array(),
-			'3',
-			true
-		);
+		// Addon purchase modal. Stripe.js itself is NOT enqueued here —
+		// content-graph-commerce.js injects https://js.stripe.com/v3/ on
+		// demand when the user opens the purchase modal, so Stripe is never
+		// contacted by merely visiting this settings page.
 		\wp_enqueue_script(
 			'nvoos-content-graph-commerce',
 			NVOOS_CONTENT_GRAPH_URL . 'assets/js/content-graph-commerce.js',
-			array( 'stripe-v3' ),
+			array(),
 			NVOOS_CONTENT_GRAPH_VERSION,
 			true
 		);
@@ -547,20 +542,25 @@ class SettingsPage {
 				'price_label'  => \NvoosContentGraph\Commerce\Payments::priceLabel(),
 				'fallback_url' => esc_url_raw( \NvoosContentGraph\Commerce\Payments::fallbackProductUrl() ),
 				'i18n'         => array(
-					'title'         => __( 'Get NV oOS Content Graph — AI', 'nvoos-content-graph' ),
-					'pay'           => __( 'Pay', 'nvoos-content-graph' ),
-					'cancel'        => __( 'Cancel', 'nvoos-content-graph' ),
-					'close'         => __( 'Close', 'nvoos-content-graph' ),
-					'secure_note'   => __( 'Payments are processed securely by Stripe. Your card never touches this server.', 'nvoos-content-graph' ),
-					'generic_error' => __( 'Something went wrong. Please try again.', 'nvoos-content-graph' ),
-					'installing'    => __( 'Recording your license and installing the addon…', 'nvoos-content-graph' ),
-					'success_title' => __( 'You’re all set!', 'nvoos-content-graph' ),
-					'refresh'       => __( 'Reload page', 'nvoos-content-graph' ),
-					'license_label' => __( 'License key', 'nvoos-content-graph' ),
-					'test_mode'     => __( 'Test mode — no real payment will be taken.', 'nvoos-content-graph' ),
-					'pending_retry' => __( 'Check again', 'nvoos-content-graph' ),
-					'pending_new'   => __( 'Start a new purchase', 'nvoos-content-graph' ),
-					'fallback_note' => __( 'The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…', 'nvoos-content-graph' ),
+					'title'              => __( 'Get NV oOS Content Graph — AI', 'nvoos-content-graph' ),
+					'pay'                => __( 'Pay', 'nvoos-content-graph' ),
+					'cancel'             => __( 'Cancel', 'nvoos-content-graph' ),
+					'close'              => __( 'Close', 'nvoos-content-graph' ),
+					'secure_note'        => __( 'Payments are processed securely by Stripe. Your card never touches this server.', 'nvoos-content-graph' ),
+					'generic_error'      => __( 'Something went wrong. Please try again.', 'nvoos-content-graph' ),
+					'stripe_load_error'  => __( 'Stripe failed to load. Check your network connection and try again.', 'nvoos-content-graph' ),
+					'installing'         => __( 'Recording your license and installing the addon…', 'nvoos-content-graph' ),
+					'success_title'      => __( 'You’re all set!', 'nvoos-content-graph' ),
+					'refresh'            => __( 'Reload page', 'nvoos-content-graph' ),
+					'license_label'      => __( 'License key', 'nvoos-content-graph' ),
+					'test_mode'          => __( 'Test mode — no real payment will be taken.', 'nvoos-content-graph' ),
+					'pending_retry'      => __( 'Check again', 'nvoos-content-graph' ),
+					'pending_new'        => __( 'Start a new purchase', 'nvoos-content-graph' ),
+					'fallback_note'      => __( 'The checkout service is unavailable right now. Redirecting you to the product page to complete your purchase…', 'nvoos-content-graph' ),
+					'verify'             => __( 'Verify', 'nvoos-content-graph' ),
+					'payment_processing' => __( 'Payment is still processing. Click Verify once it completes.', 'nvoos-content-graph' ),
+					'payment_incomplete' => __( 'Payment did not complete. Status: ', 'nvoos-content-graph' ),
+					'download_zip'       => __( 'Download ZIP manually', 'nvoos-content-graph' ),
 				),
 			)
 		);
