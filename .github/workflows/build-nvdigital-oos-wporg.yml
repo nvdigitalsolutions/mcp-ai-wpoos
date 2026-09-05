@@ -118,6 +118,28 @@ jobs:
             fi
           done
 
+      - name: Verify Pro vendor autoloader completeness
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+
+          echo "🔎 Verifying vendor autoload references in the committed Pro tree..."
+          php bin/check-vendor-autoload.php addons/pro
+
+          echo "🔎 Verifying vendor autoload references in the built Pro ZIP..."
+          PRO_ZIP="build/nvdigital-open-operator-system-oos-pro-${VERSION}.zip"
+          rm -rf /tmp/oos-vendor-verify
+          mkdir -p /tmp/oos-vendor-verify
+          unzip -q "${PRO_ZIP}" -d /tmp/oos-vendor-verify
+          php bin/check-vendor-autoload.php "/tmp/oos-vendor-verify/nvdigital-open-operator-system-oos-pro"
+
+          echo "🔎 Verifying vendor autoload references in the built Complete ZIP..."
+          COMPLETE_ZIP="build/nvdigital-open-operator-system-oos-complete-${VERSION}.zip"
+          unzip -q "${COMPLETE_ZIP}" -d /tmp/oos-vendor-verify
+          php bin/check-vendor-autoload.php "/tmp/oos-vendor-verify/nvdigital-open-operator-system-oos-complete/addons/pro"
+
+          echo "✅ Pro vendor autoloader verified complete"
+
       - name: Upload base package artifact
         uses: actions/upload-artifact@v4
         with:
