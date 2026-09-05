@@ -6,7 +6,14 @@ Wave E2 port surface. `AsyncJobQueue` is an aligned port of the base
 plugin's `WP_MCP_AI_Async_Job_Queue`: byte-identical table schema
 (`mcp_ai_job_queue`), priority/status/type constants, cron hook names,
 error codes, and envelopes. It powers background command/workflow/tool
-execution for the platform in standalone installs.
+execution for the platform in standalone installs. `QueueManager` is
+the aligned port of `WP_MCP_AI_Queue_Manager`: byte-identical
+mode/priority constants, capability-flag semantics, and the deferred
+result envelope — the tool-execution orchestration layer. `JobQueueManager`
+is the aligned port of `WP_MCP_AI_Job_Queue_Manager`: byte-identical
+`mcp_ai_concurrent_jobs` schema, priority/status constants, atomic
+claiming, retry/fail handling, stale-job cleanup, and queue stats — the
+concurrency layer the queue-processing cron path consumes.
 
 ## Tier
 
@@ -23,6 +30,8 @@ execution for the platform in standalone installs.
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraphAiPlatform\Queues\AsyncJobQueue` | `AsyncJobQueue.php` | `Plugin::registerQueues()` — queue lifecycle + cron wiring |
+| `NvoosContentGraphAiPlatform\Queues\QueueManager` | `QueueManager.php` | `Plugin::registerQueueManager()` — tool-execution orchestration (filter + AJAX status) |
+| `NvoosContentGraphAiPlatform\Queues\JobQueueManager` | `JobQueueManager.php` | Queue-processing cron path + CLI (static utility; no hooks of its own — wiring lands with the scheduler bridge) |
 
 ## Inputs / Outputs / Neighbors
 
@@ -35,7 +44,11 @@ execution for the platform in standalone installs.
 - **Upstream callers:** WP-Cron ticks, future platform subsystems
   (workflow engine E1 registers executors via the filter)
 - **Downstream collaborators (dormant until their waves):** Action
-  Scheduler bridge, Dead Letter Queue, Job Notifier (E2), base logger
+  Scheduler bridge, Dead Letter Queue, Job Notifier (E2), base logger;
+  `QueueManager` resolves the RabbitMQ client + tool registry per install
+  mode (base classes monolith / AI addon + CoreBridge standalone);
+  `JobQueueManager` resolves SLA/resource/DLQ/logging through dormant
+  seams until those pieces port
 
 ## Conventions
 
@@ -43,7 +56,8 @@ execution for the platform in standalone installs.
   hooks in monolith installs.
 - Byte-identical constants/hooks/error codes with the base; deviations
   documented in the class docblock (minute interval registration,
-  method_exists guards, executor filter seam).
+  method_exists guards, executor filter seam; `JobQueueManager` drops the
+  base's deprecated option-fallback storage — custom table only).
 - Protected seams (`*_available()`, `emit_sse_event`, `log_event`) let
   tests exercise dormant collaborators without global stubs.
 
