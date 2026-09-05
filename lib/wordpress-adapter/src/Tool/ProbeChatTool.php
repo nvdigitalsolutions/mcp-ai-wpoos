@@ -78,13 +78,13 @@ class ProbeChatTool extends AbstractTool {
 			: \get_current_user_id();
 
 		if ( ! $user_id || ! \user_can( $user_id, 'manage_options' ) ) {
-			return $this->errors->accessDenied(
+			return $this->errors->forbidden(
 				'You do not have permission to probe assistant chats.'
 			);
 		}
 
 		if ( \is_multisite() && ! \is_user_member_of_blog( $user_id, \get_current_blog_id() ) ) {
-			return $this->errors->accessDenied(
+			return $this->errors->forbidden(
 				'You do not have access to this site.'
 			);
 		}
@@ -109,9 +109,11 @@ class ProbeChatTool extends AbstractTool {
 		}
 
 		// Access the WordPress REST controller via the global registry.
+		// Standalone gate: the base REST class references WP_MCP_AI_PATH
+		// at file scope, so the instanceof probe must not autoload it.
 		$controller = $GLOBALS['wp_mcp_ai_rest_controller'] ?? null;
 
-		if ( ! $controller instanceof \WP_MCP_AI_REST ) {
+		if ( ! \defined( 'WP_MCP_AI_PATH' ) || ! $controller instanceof \WP_MCP_AI_REST ) {
 			return $this->errors->create(
 				'wp_mcp_ai_rest_unavailable',
 				'The NV oOS REST controller is not available for probing.',
@@ -171,6 +173,16 @@ class ProbeChatTool extends AbstractTool {
 	 * @return array{id: int, exists: bool, ...}
 	 */
 	private function summariseAssistant( int $assistant_id ): array {
+		// Standalone gate: the base assistant CPT and settings classes are
+		// absent; fall back to a plain post check with the literal slug.
+		if ( ! \defined( 'WP_MCP_AI_PATH' ) || ! \class_exists( 'WP_MCP_AI_Assistant_CPT' ) || ! \class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$post = \get_post( $assistant_id );
+			return array(
+				'id'     => $assistant_id,
+				'exists' => (bool) $post && 'mcp_ai_assistant' === $post->post_type,
+			);
+		}
+
 		$post_type = \WP_MCP_AI_Assistant_CPT::POST_TYPE;
 		$post      = \get_post( $assistant_id );
 

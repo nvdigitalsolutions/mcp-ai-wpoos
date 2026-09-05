@@ -80,9 +80,12 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		$this->assertFalse( $bridge->tools->has( 'okf_search' ) );
 		$this->assertFalse( $bridge->tools->has( 'evolve_harness' ) );
 		$this->assertFalse( $bridge->tools->has( 'get_woo_products' ) );
+	}
 
-		// Base-coupled adapter tools await Cluster 2 hardening.
-		$cluster_2 = array(
+	public function test_hardened_adapter_tools_are_registered(): void {
+		$bridge = CoreBridge::instance();
+
+		$hardened = array(
 			'vectorize_image',
 			'media_library_optimizer',
 			'run_gemini_managed_agent',
@@ -91,9 +94,42 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 			'query_mesh_intelligent',
 			'visualize_workflow_metrics',
 		);
-		foreach ( $cluster_2 as $slug ) {
-			$this->assertFalse( $bridge->tools->has( $slug ), "Cluster-2 tool {$slug} must not register yet." );
+		foreach ( $hardened as $slug ) {
+			$this->assertTrue( $bridge->tools->has( $slug ), "Hardened tool {$slug} must be registered (Cluster 2)." );
 		}
+	}
+
+	public function test_hardened_tools_degrade_without_the_base_plugin(): void {
+		$bridge  = CoreBridge::instance();
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$context = array(
+			'user_id'       => $user_id,
+			'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+		);
+
+		// probe_chat needs the base REST controller — standalone must
+		// answer the documented degradation error, not fatal.
+		$result = $bridge->tools->execute(
+			'probe_chat',
+			array( 'assistant_id' => 12345 ),
+			$context
+		);
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_rest_unavailable', $result->get_error_code() );
+
+		// delegate_to_a2a_agent needs the base A2A client — same contract.
+		$a2a = $bridge->tools->execute(
+			'delegate_to_a2a_agent',
+			array(
+				'agent_url'        => 'https://example.com/.well-known/agent.json',
+				'task_description' => 'Probe',
+			),
+			$context
+		);
+
+		$this->assertInstanceOf( \WP_Error::class, $a2a );
+		$this->assertSame( 'wp_mcp_ai_a2a_unavailable', $a2a->get_error_code() );
 	}
 
 	public function test_manifest_entries_resolve_to_classes(): void {

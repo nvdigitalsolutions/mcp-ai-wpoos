@@ -102,6 +102,14 @@ class DelegateToA2aAgentTool extends AbstractTool {
 			);
 		}
 
+		// Standalone gate: A2A transport lives in the base plugin.
+		if ( ! \defined( 'WP_MCP_AI_PATH' ) || ! \class_exists( 'WP_MCP_AI_A2A_Client' ) ) {
+			return $this->errors->create(
+				'wp_mcp_ai_a2a_unavailable',
+				'A2A client is unavailable in this install.',
+			);
+		}
+
 		// Step 1: Discover the remote agent.
 		$agent_card = \WP_MCP_AI_A2A_Client::discover_agent( $agent_url );
 		if ( \is_wp_error( $agent_card ) ) {

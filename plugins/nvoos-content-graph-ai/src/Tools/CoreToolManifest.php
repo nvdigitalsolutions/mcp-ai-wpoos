@@ -1,17 +1,18 @@
 <?php
 /**
- * D8 Cluster 1 — pre-ported core tool inventory manifest.
+ * D8 Clusters 1–2 — pre-ported core tool inventory manifest.
  *
  * Maps each tool slug to its nvoos/core (or wordpress-adapter)
  * implementation FQCN plus the ordered dependency keys the class
  * constructor expects (resolved by CoreToolFactory). Generated
  * 2026-09-05 from lib/core/src/Tool + lib/wordpress-adapter/src/Tool
  * (EvolveHarnessTool excluded — platform-owned, Cluster 3;
- * LegacyToolAdapter excluded — adapter wrapper, not a tool;
- * seven base-coupled adapter tools excluded — Cluster 2 hardening:
+ * LegacyToolAdapter excluded — adapter wrapper, not a tool). The seven
+ * base-coupled adapter tools were hardened standalone-safe (Cluster 2)
+ * and are registered from the tail section of this manifest:
  * VectorizeImageTool, MediaLibraryOptimizerTool,
  * RunGeminiManagedAgentTool, DelegateToA2aAgentTool, ProbeChatTool,
- * QueryMeshIntelligentTool, VisualizeWorkflowMetricsTool).
+ * QueryMeshIntelligentTool, VisualizeWorkflowMetricsTool.
  *
  * @package NvoosContentGraphAi\Tools
  * @since   1.0.4
@@ -225,6 +226,15 @@ final class CoreToolManifest {
 			'wait_for_user' => array( 'Nvoos\Core\Tool\WaitForUserTool', array( 'errors' ) ),
 			'web_search' => array( 'Nvoos\Core\Tool\WebSearchTool', array( 'errors', 'settings', 'http' ) ),
 			'web_search_validated' => array( 'Nvoos\Core\Tool\WebSearchValidatedTool', array( 'errors', 'settings', 'http' ) ),
+
+			// ── D8 Cluster 2 — hardened adapter tools (standalone-safe) ──
+			'delegate_to_a2a_agent'       => array( 'Nvoos\WordPress\Tool\DelegateToA2aAgentTool', array( 'errors' ) ),
+			'media_library_optimizer'     => array( 'Nvoos\WordPress\Tool\MediaLibraryOptimizerTool', array( 'errors' ) ),
+			'probe_chat'                  => array( 'Nvoos\WordPress\Tool\ProbeChatTool', array( 'errors' ) ),
+			'query_mesh_intelligent'      => array( 'Nvoos\WordPress\Tool\QueryMeshIntelligentTool', array( 'errors' ) ),
+			'run_gemini_managed_agent'    => array( 'Nvoos\WordPress\Tool\RunGeminiManagedAgentTool', array( 'errors' ) ),
+			'vectorize_image'             => array( 'Nvoos\WordPress\Tool\VectorizeImageTool', array( 'errors' ) ),
+			'visualize_workflow_metrics'  => array( 'Nvoos\WordPress\Tool\VisualizeWorkflowMetricsTool', array( 'errors' ) ),
 		);
 		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
 	}

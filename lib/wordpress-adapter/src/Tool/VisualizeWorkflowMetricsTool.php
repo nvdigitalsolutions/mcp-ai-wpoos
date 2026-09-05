@@ -90,6 +90,14 @@ class VisualizeWorkflowMetricsTool extends AbstractTool {
 			$charts['timing'] = $this->generateTimingChart( $results );
 		}
 
+		// Standalone gate: the Chart.js bundle ships with the base plugin.
+		if ( ! \defined( 'WP_MCP_AI_URL' ) ) {
+			return $this->errors->create(
+				'wp_mcp_ai_chart_assets_unavailable',
+				'Workflow metrics charts require the NV oOS base plugin asset bundle in this install.',
+			);
+		}
+
 		$html = $this->generateChartHtml( $charts );
 
 		if ( ! empty( $arguments['save_attachment'] ) ) {
