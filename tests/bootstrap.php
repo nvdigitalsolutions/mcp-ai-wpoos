@@ -892,3 +892,11 @@ ob_end_clean();
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-ajax-testcase.php';
 require_once __DIR__ . '/helpers/class-wp-mcp-ai-mock-http-client.php';
 require_once __DIR__ . '/paper-store/trait-paper-store-test-helpers.php';
+
+// Checkout API addon tests (addons/checkout-api). The addon's own bootstrap
+// self-guards on ABSPATH (defined by the WP test bootstrap above) and only
+// defines constants + requires the addon's classes — no file-scope hooks, so
+// it is safe to load into the shared suite.
+if ( file_exists( __DIR__ . '/../addons/checkout-api/tests/bootstrap.php' ) ) {
+	require_once __DIR__ . '/../addons/checkout-api/tests/bootstrap.php';
+}

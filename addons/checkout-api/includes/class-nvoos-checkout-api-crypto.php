@@ -109,6 +109,8 @@ class NVOOS_Checkout_API_Crypto {
 	 * @return string
 	 */
 	private static function key(): string {
-		return hash( 'sha256', AUTH_KEY . SECURE_AUTH_KEY );
+		// wp_salt() returns the defined *_KEY constants on a normal install
+		// and a stable fallback when wp-config omits them (never a fatal).
+		return hash( 'sha256', wp_salt( 'auth' ) . wp_salt( 'secure_auth' ) );
 	}
 }
