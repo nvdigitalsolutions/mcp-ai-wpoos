@@ -235,6 +235,14 @@ final class CoreToolManifest {
 			'run_gemini_managed_agent'    => array( 'Nvoos\WordPress\Tool\RunGeminiManagedAgentTool', array( 'errors' ) ),
 			'vectorize_image'             => array( 'Nvoos\WordPress\Tool\VectorizeImageTool', array( 'errors' ) ),
 			'visualize_workflow_metrics'  => array( 'Nvoos\WordPress\Tool\VisualizeWorkflowMetricsTool', array( 'errors' ) ),
+
+			// ── D8 Cluster 2b — ported self-contained base tools ──
+			'create_term'             => array( 'NvoosContentGraphAi\Tools\CreateTermTool', array( 'errors' ) ),
+			'get_environment_status'  => array( 'NvoosContentGraphAi\Tools\GetEnvironmentStatusTool', array( 'errors' ) ),
+			'list_mcp_tools'          => array( 'NvoosContentGraphAi\Tools\ListMcpToolsTool', array( 'errors' ) ),
+			'list_taxonomies'         => array( 'NvoosContentGraphAi\Tools\ListTaxonomiesTool', array( 'errors' ) ),
+			'list_terms'              => array( 'NvoosContentGraphAi\Tools\ListTermsTool', array( 'errors' ) ),
+			'update_term'             => array( 'NvoosContentGraphAi\Tools\UpdateTermTool', array( 'errors' ) ),
 		);
 		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
 	}

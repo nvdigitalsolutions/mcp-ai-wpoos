@@ -162,4 +162,83 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		$this->assertArrayHasKey( 'success', $result );
 		$this->assertTrue( $result['success'] );
 	}
+
+	public function test_taxonomy_quartet_round_trip(): void {
+		$bridge  = CoreBridge::instance();
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$context = array(
+			'user_id'       => $user_id,
+			'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+		);
+
+		// create_term.
+		$created = $bridge->tools->execute(
+			'create_term',
+			array(
+				'name'        => 'D8 Cluster 2b term',
+				'taxonomy'    => 'category',
+				'description' => 'Ported-tool round trip.',
+			),
+			$context
+		);
+		$this->assertIsArray( $created );
+		$this->assertArrayHasKey( 'term_id', $created );
+		$term_id = $created['term_id'];
+
+		// list_terms.
+		$listed = $bridge->tools->execute(
+			'list_terms',
+			array( 'taxonomy' => 'category' ),
+			$context
+		);
+		$this->assertIsArray( $listed );
+		$names = wp_list_pluck( $listed['terms'], 'name' );
+		$this->assertContains( 'D8 Cluster 2b term', $names );
+
+		// update_term.
+		$updated = $bridge->tools->execute(
+			'update_term',
+			array(
+				'term_id'     => $term_id,
+				'taxonomy'    => 'category',
+				'description' => 'Updated description.',
+			),
+			$context
+		);
+		$this->assertIsArray( $updated );
+		$this->assertSame( 'Updated description.', $updated['description'] );
+
+		// list_taxonomies.
+		$taxonomies = $bridge->tools->execute( 'list_taxonomies', array(), $context );
+		$this->assertIsArray( $taxonomies );
+		$taxonomy_names = wp_list_pluck( $taxonomies['taxonomies'], 'name' );
+		$this->assertContains( 'category', $taxonomy_names );
+
+		// Cleanup.
+		wp_delete_term( $term_id, 'category' );
+	}
+
+	public function test_list_mcp_tools_and_environment_status_smoke(): void {
+		$bridge  = CoreBridge::instance();
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		\wp_set_current_user( $user_id );
+		$context = array(
+			'user_id'       => $user_id,
+			'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+		);
+
+		$listed = $bridge->tools->execute(
+			'list_mcp_tools',
+			array( 'limit' => 10 ),
+			$context
+		);
+		$this->assertIsArray( $listed );
+		$this->assertGreaterThan( 0, $listed['total_found'] );
+		$this->assertNotContains( 'list_mcp_tools', wp_list_pluck( $listed['tools'], 'name' ) );
+
+		$status = $bridge->tools->execute( 'get_environment_status', array(), $context );
+		$this->assertIsArray( $status );
+		$this->assertArrayHasKey( 'environment', $status );
+		$this->assertSame( get_bloginfo( 'version' ), $status['environment']['wordpress_version'] );
+	}
 }
