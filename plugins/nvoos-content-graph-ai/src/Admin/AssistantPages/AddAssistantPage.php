@@ -230,9 +230,16 @@ class AddAssistantPage {
 								<button type="button" class="button button-primary button-large nvoos-cg-create-assistant" data-profession-id="<?php echo esc_attr( (string) $profession->ID ); ?>">
 									<?php esc_html_e( 'Create Assistant', 'nvoos-content-graph-ai' ); ?>
 								</button>
-								<a href="<?php echo esc_url( get_edit_post_link( $profession->ID ) ); ?>" class="button button-secondary">
-									<?php esc_html_e( 'View Template', 'nvoos-content-graph-ai' ); ?>
-								</a>
+								<?php
+								// get_edit_post_link() returns null when the current user
+								// cannot edit the post — never render an empty anchor.
+								$edit_link = get_edit_post_link( $profession->ID );
+								if ( $edit_link ) :
+									?>
+									<a href="<?php echo esc_url( $edit_link ); ?>" class="button button-secondary">
+										<?php esc_html_e( 'View Template', 'nvoos-content-graph-ai' ); ?>
+									</a>
+								<?php endif; ?>
 							</div>
 						</div>
 					<?php endforeach; ?>

@@ -67,11 +67,11 @@ Byte-parity target is the base `WP_MCP_AI_REST_MCP_Methods::mcp_tools_call()` ch
 | Cluster | Plugin | Scope | Exit gate |
 |---|---|---|---|
 | **0 — Execution spine** (✅ landed 2026-09-05) | CG-AI | `McpController::mcp_tools_call()` execution chain (items 2–8 above); `registry_has_tool()` / `execute_registry_tool()` per-mode seams; fix the stale "(D-Tools)" docblock reference | `tools/call` on the 13 AI tools + graph tools returns byte-parity envelopes; 503 gone |
-| **1 — Register the pre-ported inventory** (✅ landed 2026-09-05) | CG-AI | Registration manifest mapping the 148 core-parity slugs (+ optionally the 43 core utilities) to `lib/core` FQCNs, instantiated with `CoreBridge`'s `ErrorFactory` and registered via `$bridge->tools->register()` + `notifyRegistered()`; feature-flag gating mirrors the base's `is_available()` contract | `CoreToolFactory` + 196-entry `CoreToolManifest` (148 parity + 48 utilities incl. 7 adapter tools) wired in `CoreBridge`; standalone registry serves 223 tools; 581 ecosystem tests green in both matrices; seven base-coupled adapter tools defer to Cluster 2 |
+| **1 — Register the pre-ported inventory** (✅ landed 2026-09-05) | CG-AI | Registration manifest mapping the 148 core-parity slugs (+ optionally the 43 core utilities) to `lib/core` FQCNs, instantiated with `CoreBridge`'s `ErrorFactory` and registered via `$bridge->tools->register()` + `notifyRegistered()`; feature-flag gating mirrors the base's `is_available()` contract | `CoreToolFactory` + 196-entry `CoreToolManifest` (148 parity + 48 utilities incl. 7 adapter tools) wired in `CoreBridge`; seven base-coupled adapter tools defer to Cluster 2 |
 | **1a–1f batches** | CG-AI | Batch by category: 1a core WordPress (posts/users/site), 1b OpenAI files/models/embeddings/vector stores, 1c client-side AI (`client_*` — Transformers.js substrate), 1d memory/agent tools, 1e media/geospatial/misc, 1f `*_validated` wrappers for ported destructive tools (pair with D4i gate) | Per-batch parity tests |
-| **2 — Port the ~46 self-contained tools** | CG-AI | Port the missing self-contained buckets listed in §2 as core-style classes (same slugs/envelopes); media tools degrade cleanly without the media worker URL; `probe_chat`/`submit_document_prompt` follow their E6 owners where they cross paper-store | Delta shrinks to the deferred buckets only |
-| **3 — Harness tools** | Platform | Port the 8 harness tools registered standalone by `HarnessService`; eval-dependent paths return the documented degradation envelopes (`wp_mcp_ai_harness_eval_unavailable`, …) | Harness tools appear in standalone `tools/list`; non-eval paths execute |
-| **4 — Deferred buckets** | — | Document-only: each deferred bucket already names its owning wave (§2); no code ships | Tracker cross-references stay truthful |
+| **2 — Port the ~46 self-contained tools** (✅ landed 2026-09-05) | CG-AI | Port the missing self-contained buckets listed in §2 as core-style classes (same slugs/envelopes); media tools degrade cleanly without the media worker URL; `probe_chat`/`submit_document_prompt` follow their E6 owners where they cross paper-store | 2a hardened the 7 adapter tools; 2b + 2c ported 32 self-contained tools (taxonomy quartet, `list_mcp_tools`, `get_environment_status`, `enable_reasoning_mode`, model trio, 6-tool security batch, site/admin trio, 13-tool media/memory/content/usage batch) with per-mode seams (`ModelConfigStore`, `WordPressNativeTrait`, `ReasoningController`, context/settings/provider seams) |
+| **3 — Harness tools** (✅ landed 2026-09-05) | Platform | Port the 8 harness tools registered standalone by `HarnessService`; eval-dependent paths return the documented degradation envelopes (`wp_mcp_ai_harness_eval_unavailable`, …) | 8 tools in `platform/src/Harness/Tools/` registered standalone by `HarnessToolRegistrar` (monolith no-op); per-mode evolver/bootstrap seams (base classes monolith / Wave C platform ports standalone); harness tools appear in standalone `tools/list` and non-eval paths execute (36 platform harness tests green in both platform matrices; live design-stack smoke) |
+| **4 — Deferred buckets** (✅ landed 2026-09-05) | — | Document-only: each deferred bucket already names its owning wave (§2); no code ships | Tracker D8 row flipped ✅; deferred buckets keep their owning-wave cross-references |
 
 ## 5. Test strategy
 
@@ -82,8 +82,8 @@ Byte-parity target is the base `WP_MCP_AI_REST_MCP_Methods::mcp_tools_call()` ch
 
 ## 6. Tracking
 
-- Tracker row D8 flips 🟡 → ✅ when Clusters 0–3 land; the deferred buckets keep the row honest via cross-references to E1/E4/E6/F/D3.
-- Tracker D5c deviation ("until tool execution ports (D8)") resolves with Cluster 0.
+- Tracker row D8 flipped 🟡 → ✅ (2026-09-05) with Clusters 0–4 landed; the deferred buckets keep the row honest via cross-references to E1/E4/E6/F/D3.
+- Tracker D5c deviation ("until tool execution ports (D8)") resolved with Cluster 0.
 - `MIGRATION-GAPS.md` gains a one-line note under Wave E2 pointing at this plan for the tool layer.
 
 ## 7. Risks / notes

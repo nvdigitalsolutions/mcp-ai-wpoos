@@ -77,7 +77,16 @@ class Test_Platform_Professions extends \WP_UnitTestCase {
 		}
 
 		ProfessionService::instance()->register();
-		do_action( 'init' );
+
+		// The service wires the CPT onto `init` (priority 5) through a
+		// closure that instantiates ProfessionCpt, whose constructor hooks
+		// the real registration. Call the registration methods directly
+		// instead of re-firing `do_action( 'init' )`, which re-registers
+		// WooCommerce blocks/integrations in the local Docker matrix and
+		// fails the test with "already registered" incorrect-usage notices.
+		$cpt = new ProfessionCpt();
+		$cpt->register_post_type();
+		$cpt->register_meta();
 
 		$this->assertTrue( post_type_exists( ProfessionCpt::POST_TYPE ) );
 	}

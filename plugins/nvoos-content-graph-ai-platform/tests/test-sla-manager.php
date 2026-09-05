@@ -347,25 +347,33 @@ class Test_Sla_Manager extends \WP_UnitTestCase {
 	// ─── Queue metrics analysis ─────────────────────────────────────
 
 	public function test_analyze_queue_metrics_shape(): void {
-		$metrics = SlaManager::analyze_queue_metrics( 'realtime' );
+		// The metrics analysis reads live queue counts from the real
+		// concurrent-jobs table — open it or every SELECT prints a DB error.
+		$this->open_queue_table();
 
-		$this->assertArrayNotHasKey( 'error', $metrics );
-		$this->assertSame( 'realtime', $metrics['tier'] );
-		$this->assertArrayHasKey( 'sla_target', $metrics );
-		$this->assertArrayHasKey( 'arrival_rate', $metrics );
-		$this->assertArrayHasKey( 'service_time', $metrics );
-		$this->assertArrayHasKey( 'wait_time', $metrics );
-		$this->assertArrayHasKey( 'queue_length', $metrics );
-		$this->assertArrayHasKey( 'system_capacity', $metrics );
-		$this->assertArrayHasKey( 'utilization', $metrics );
-		$this->assertArrayHasKey( 'required_workers', $metrics );
-		$this->assertArrayHasKey( 'recommended_workers', $metrics );
-		$this->assertSame( 5, $metrics['max_concurrent'] );
+		try {
+			$metrics = SlaManager::analyze_queue_metrics( 'realtime' );
 
-		$this->assertIsArray( $metrics['current_stats'] );
-		$this->assertArrayHasKey( 'pending', $metrics['current_stats'] );
-		$this->assertIsBool( $metrics['over_capacity'] );
-		$this->assertIsBool( $metrics['meets_sla'] );
+			$this->assertArrayNotHasKey( 'error', $metrics );
+			$this->assertSame( 'realtime', $metrics['tier'] );
+			$this->assertArrayHasKey( 'sla_target', $metrics );
+			$this->assertArrayHasKey( 'arrival_rate', $metrics );
+			$this->assertArrayHasKey( 'service_time', $metrics );
+			$this->assertArrayHasKey( 'wait_time', $metrics );
+			$this->assertArrayHasKey( 'queue_length', $metrics );
+			$this->assertArrayHasKey( 'system_capacity', $metrics );
+			$this->assertArrayHasKey( 'utilization', $metrics );
+			$this->assertArrayHasKey( 'required_workers', $metrics );
+			$this->assertArrayHasKey( 'recommended_workers', $metrics );
+			$this->assertSame( 5, $metrics['max_concurrent'] );
+
+			$this->assertIsArray( $metrics['current_stats'] );
+			$this->assertArrayHasKey( 'pending', $metrics['current_stats'] );
+			$this->assertIsBool( $metrics['over_capacity'] );
+			$this->assertIsBool( $metrics['meets_sla'] );
+		} finally {
+			$this->close_queue_table();
+		}
 	}
 
 	public function test_analyze_queue_metrics_error_envelope_when_manager_missing(): void {
@@ -377,16 +385,24 @@ class Test_Sla_Manager extends \WP_UnitTestCase {
 	}
 
 	public function test_tuning_recommendations_shape(): void {
-		$recommendations = SlaManager::get_tuning_recommendations();
+		// Recommendations embed the live queue metrics per tier — open the
+		// real concurrent-jobs table so the embedded analysis is quiet.
+		$this->open_queue_table();
 
-		$this->assertSame( array( 'realtime', 'near_realtime', 'batch' ), array_keys( $recommendations ) );
+		try {
+			$recommendations = SlaManager::get_tuning_recommendations();
 
-		foreach ( $recommendations as $tier => $rec ) {
-			$this->assertSame( $tier, $rec['tier'] );
-			$this->assertArrayHasKey( 'current', $rec );
-			$this->assertArrayHasKey( 'recommended', $rec );
-			$this->assertContains( $rec['status'], array( 'ok', 'warning', 'critical' ) );
-			$this->assertArrayHasKey( 'message', $rec );
+			$this->assertSame( array( 'realtime', 'near_realtime', 'batch' ), array_keys( $recommendations ) );
+
+			foreach ( $recommendations as $tier => $rec ) {
+				$this->assertSame( $tier, $rec['tier'] );
+				$this->assertArrayHasKey( 'current', $rec );
+				$this->assertArrayHasKey( 'recommended', $rec );
+				$this->assertContains( $rec['status'], array( 'ok', 'warning', 'critical' ) );
+				$this->assertArrayHasKey( 'message', $rec );
+			}
+		} finally {
+			$this->close_queue_table();
 		}
 	}
 
@@ -486,21 +502,29 @@ class Test_Sla_Manager extends \WP_UnitTestCase {
 	// ─── Dashboard shape ────────────────────────────────────────────
 
 	public function test_dashboard_data_shape(): void {
-		$data = SlaManager::get_dashboard_data();
+		// The dashboard embeds per-tier queue metrics — open the real
+		// concurrent-jobs table so the embedded analysis is quiet.
+		$this->open_queue_table();
 
-		$this->assertSame( array( 'realtime', 'near_realtime', 'batch' ), array_keys( $data['tiers'] ) );
-		foreach ( $data['tiers'] as $tier_data ) {
-			$this->assertArrayHasKey( 'queue_metrics', $tier_data );
-			$this->assertArrayHasKey( 'compliance_rate', $tier_data );
+		try {
+			$data = SlaManager::get_dashboard_data();
+
+			$this->assertSame( array( 'realtime', 'near_realtime', 'batch' ), array_keys( $data['tiers'] ) );
+			foreach ( $data['tiers'] as $tier_data ) {
+				$this->assertArrayHasKey( 'queue_metrics', $tier_data );
+				$this->assertArrayHasKey( 'compliance_rate', $tier_data );
+			}
+
+			$this->assertArrayHasKey( 'total_jobs', $data['overall'] );
+			$this->assertArrayHasKey( 'compliant_jobs', $data['overall'] );
+			$this->assertArrayHasKey( 'violated_jobs', $data['overall'] );
+			$this->assertArrayHasKey( 'compliance_rate', $data['overall'] );
+			$this->assertSame( 'unknown', $data['overall']['health_status'] );
+
+			$this->assertSame( array( 'realtime', 'near_realtime', 'batch' ), array_keys( $data['recommendations'] ) );
+		} finally {
+			$this->close_queue_table();
 		}
-
-		$this->assertArrayHasKey( 'total_jobs', $data['overall'] );
-		$this->assertArrayHasKey( 'compliant_jobs', $data['overall'] );
-		$this->assertArrayHasKey( 'violated_jobs', $data['overall'] );
-		$this->assertArrayHasKey( 'compliance_rate', $data['overall'] );
-		$this->assertSame( 'unknown', $data['overall']['health_status'] );
-
-		$this->assertSame( array( 'realtime', 'near_realtime', 'batch' ), array_keys( $data['recommendations'] ) );
 	}
 
 	// ─── Per-install-mode seams ─────────────────────────────────────
