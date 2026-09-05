@@ -385,3 +385,14 @@ can die during bootstrap, or if wp-phpunit starts guarding its declarations.
 - Validation-first reordering of `update_model_costs()` (product change).
 - `addons/saas-controller/worker/dist/index.js` working-tree deletion (build
   artifact, unrelated).
+- **Wave-5 residual findings (2026-09-05, from the v1.1.70 docs-catch-up PR
+  review):** (1) `test-skill-manager-ajax.php::test_generate_skill_happy_path_stubs_ai_request`
+  order-dependent `TypeError` at `wp-includes/update.php:606` when any suite
+  runs first (pre_http_request stub swallows the api.wordpress.org
+  update-check) — passes standalone, not in the 91771001271 CI list (#6312);
+  (2) `test-chat-transcripts.php` + `test-chat-transcript-save-endpoint.php`
+  14 pre-existing WP 7.1-only local failures not present in the CI log
+  (#6280) — re-verify on WP 7.1 before filing; (3) unhealthy `oos-wp`
+  container causing `Lock wait timeout` retries on the shared test DB (#6295).
+  Full detail + verified-closed list in
+  `docs/project/plans/docs-catch-up-open-items.md` OI-4.

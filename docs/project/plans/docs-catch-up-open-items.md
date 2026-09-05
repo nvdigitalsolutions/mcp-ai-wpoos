@@ -1,8 +1,8 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-04 (v1.1.69 pass)
-> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.68-docs-catch-up.md`](v1.1.68-docs-catch-up.md).
+> **Last reviewed:** 2026-09-05 (v1.1.70 pass)
+> **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.70-docs-catch-up.md`](v1.1.70-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
 ---
@@ -27,6 +27,7 @@
 | 8 | `@since 2.1.0` | `addons/pro/includes/class-wp-mcp-ai-pro-spa-shortcode.php` (5×) + `class-wp-mcp-ai-pro-spa-config.php` (11×, PR #6256) | 1.1.68 (Pro addon ships 1.1.68) | v1.1.68 plan |
 | 9 | `@since 1.2.0` | `includes/rest/class-wp-mcp-ai-rest-validator.php` — `wp_mcp_ai_attachment_segment_provider` filter (PR #6259) | 1.1.68 | v1.1.68 plan |
 | 10 | `@since 1.1.68` | `addons/pro/includes/tools/vision-analysis/` (5 files) + `class-wp-mcp-ai-vision-analysis-settings.php` + `class-wp-mcp-ai-hf-vision-inference-service.php` (PR #6267; also the "Vision Analysis Toolkit … 1.1.68" code comment in `addons/pro/mcp-ai-wpoos-pro.php`) | 1.1.69 | v1.1.69 plan |
+| 11 | `@since 1.1.69` | `addons/pro/includes/npm-integration-filters.php` (2×, PR #6295) + `addons/pro/mcp-ai-wpoos-pro.php` (`wp_mcp_ai_pro_get_tool_map()`, PR #6300) + `includes/integrations/class-wp-mcp-ai-github-oauth-handler.php` (PR #6301) + `includes/admin/class-wp-mcp-ai-admin-plugins-integration.php` (PR #6303) — 5 instances, all added in the wave-5 window | 1.1.70 | v1.1.70 plan |
 
 - **Blocked on:** version-jump decision — does the next release stay on 1.1.x or jump to 1.2.0?
 - **Broader drift (new finding, 2026-08-26):** non-1.1.x tags are repo-wide (`@since 1.0.0` ×1,928 · `1.2.0` ×1,707 · `1.1.0` ×1,269 · `1.3.0` ×795 · `1.9.0` ×734, PHP source ex vendor). Many are legitimate history. A full-tree audit is a scripted-sweep project needing explicit sign-off — tracked inside issue #5968, not a catch-up-pass task.
@@ -45,6 +46,16 @@
 - **Status:** 🟡 Active workstream with its own tracker. Not owned by the docs catch-up.
 - **Tracker:** [`docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md`](../developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md)
 - **Why listed here:** the v1.1.63/v1.1.64 catch-up passes repeatedly point future passes at this doc (post-#5929 sweep remediation, #5931/#5935 follow-ups). Do not duplicate its items here — follow the link.
+
+### OI-4 · Test-suite wave-5 residual findings (from the v1.1.70 PR-description review — test-suite-owned follow-ups)
+
+- **Status:** 🟡 Open, recorded 2026-09-05 by the v1.1.70 pass. These came from the PR-description audit of the wave-5 window (#6280–#6312, CI runs 91006542428 + 91771001271) and were not in any CI failure list — hand to the test-suite workstream (OI-3 tracker) rather than the docs catch-up.
+- **What:**
+  1. **`tests/test-skill-manager-ajax.php::test_generate_skill_happy_path_stubs_ai_request`** — order-dependent `TypeError: array_walk(): Argument #1 ($array) must be of type array, null given` at `wp-includes/update.php:606` when any suite runs before it in the same process (its `pre_http_request` stub intercepts the `api.wordpress.org` update-check and `wp_update_plugins()` receives a payload missing `response`/`no_update`). Passes standalone; **not** in the 91771001271 failure list. Noted in PR #6312 ("out of scope").
+  2. **`tests/test-chat-transcripts.php` + `tests/test-chat-transcript-save-endpoint.php`** — 14 pre-existing failures on the local WP 7.1 copy that do **not** appear in the CI log (a separate version-drift cluster). Noted in PR #6280 ("not touched here"); verify current status on WP 7.1 before filing.
+  3. **Shared test-DB `Lock wait timeout` retries** — the long-running `oos-wp` Docker container is unhealthy; WP 6.9 runs occasionally log lock-wait retries from the shared test DB. Infra item noted in PR #6295; consider a container health/replace step in the test workflow.
+- **Verified closed (do not re-raise):** K16 failures #33 (`test-llm-sanitizer`), #107/#108 (`test-shortcodes-coordinator.php`) — fixed by PR #6311 (referenced as out-of-scope in #6304/#6305, which merged first); triage failure #50 (mempalace block count) — does not reproduce in any local ordering and is explained by the Graphify-precondition fix in PR #6302.
+- **First noted in:** v1.1.70 plan.
 
 ---
 

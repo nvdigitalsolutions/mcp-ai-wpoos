@@ -1,7 +1,8 @@
 # NV oOS Tool Registry Context
 
 > **GSD Context File** — Load this when working on tool implementations, toolkits, MCP servers, or OKF tools.
-> Last reviewed: September 4, 2026 (v1.1.69).
+> Last reviewed: September 5, 2026 (v1.1.70).
+> **New in v1.1.70 (counts unchanged — ~303 base + ~1,263 Pro, ~1,566 total):** a fifth PHPUnit repair wave (PRs #6280–#6312, CI triage runs 91006542428 + 91771001271) carried grouped tool-contract fixes: the validated `web_search` variant's `profession_tags` now matches the base tool (`writer`/`librarian` added — the registry resolves `web_search` to the validated variant, so stale tags hid the tool from profession lookups, #6282); JetFormBuilder `get_jetformbuilder_submissions` restores the `id` + flat `per_page`/`status` dispatch params (a refactor dropped them and the HTTP path always failed `missing_id`, #6300); `wp_mcp_ai_pro_get_tool_map()` caches the computed Pro tool map and `WP_MCP_AI_Token_Usage_Service::get_unregistered_tools()` reads it — the old filter source was never registered, so settings-gated Pro tools vanished from the token-manager listing (#6300); `web_search` `validate_and_normalize_result()` preserves `published_date` (Tavily/Brave, #6306); `resolve_image_input()` rejects with `wp_mcp_ai_missing_image` when the resolver returns nothing instead of a misleading `wp_mcp_ai_missing_api_key` (#6306); the four `conversation_import_*` tools join the Data & Analytics preset (#6296); `create_chart` HTML attachments gate on the acting user's `unfiltered_html` (#6311); skill-pack `normalise_packs()` keeps only slug-keyed entries and `install_pack()` fires `wp_mcp_ai_skill_pack_installed` for empty packs (#6302); schedule presets drop the phantom `validate_contact_data` step and the `auto_import_scheduled_sources` hook moved into `schedule_data.hook` (#6283). No tools added or removed — every count surface stays ~1,566.
 
 ---
 

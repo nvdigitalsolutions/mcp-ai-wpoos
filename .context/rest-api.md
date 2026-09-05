@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 4, 2026 (v1.1.69).
+> Last reviewed: September 5, 2026 (v1.1.70).
+>
+> **New in v1.1.70 (no new routes):** markup REST validation `WP_Error`s now carry `status => 400` — client errors must not surface as 500s (#6302); the legacy HTTP+SSE handshake's `legacy_sse_enabled()` is filterable via `wp_mcp_ai_legacy_sse_enabled` (default unchanged — the blocking emitter keeps strict machine auth, #6302); transcript-GET tests derive their expectation from `table_exists()` at test time instead of assuming storage availability (#6302); the GitHub OAuth handler and the plugins-integration save handler gained `wp_mcp_ai_github_oauth_redirect_terminate` / `wp_mcp_ai_plugins_integration_redirect_terminate` filter seams for their terminating `exit`s (#6301, #6303).
 >
 > **New in v1.1.69 (PR #6265):** no new routes this window — `WP_MCP_AI_REST::check_rate_limit()` now accepts the dispatching request's HTTP method so internal dispatches (`rest_do_request`, WP-CLI) are classified by their real verb instead of the ambient `$_SERVER['REQUEST_METHOD']`; GET/HEAD remain exempt. The nefarious-usage monitor keeps its own `wp_mcp_ai_nefarious_rate_limit_` counter, separate from the chat REST limiter's `wp_mcp_ai_rate_limit_` (a shared counter halves the configured chat budget). Custom emitters of `wp_mcp_ai_before_chat_request` may fire the legacy 2-arg `( $messages, $request_data )` shape — core subscribers default every parameter and tolerate both shapes.
 >

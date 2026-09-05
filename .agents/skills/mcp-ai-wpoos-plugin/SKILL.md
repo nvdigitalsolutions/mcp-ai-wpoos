@@ -5,9 +5,9 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.69"
-  plugin-version-tested: "1.1.69"
-  last-updated: "2026-09-04"
+  plugin-version: "1.1.70"
+  plugin-version-tested: "1.1.70"
+  last-updated: "2026-09-05"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -624,6 +624,26 @@ Import external AI conversation exports into the JetEngine
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Wave-5 Repair Campaign & Host-Hardening Fixes (v1.1.70+)
+
+- **exec-disabled hosts** — on PHP 8+ a disabled function throws a fatal
+  `Error` that `@` cannot suppress; never call `exec`/`shell_exec`/`proc_open`
+  unguarded. Use `wp_mcp_ai_check_nodejs_available()` /
+  `wp_mcp_ai_get_nodejs_version()` (exec-first, Process Service fallback) and
+  the OCR service's `is_cli_tool_available()` / `run_cli_command()` helpers;
+  sanitizers clamp with `max( 0, … )`, never `absint()` (it flips negatives).
+- **Wave-5 fixes** (PRs #6280–#6312) — transcript `attachments` metadata
+  preserved; complexity-based model routing restored; JetEngine gates require
+  `JET_ENGINE_VERSION` + a physical CCT-table probe (`is_storage_available()`);
+  mesh peer URLs validated before `esc_url_raw()`; Auth0 audiences validated
+  structurally (no DNS); image/chart permission checks use the **acting user**;
+  markup REST validation errors return `400`; the legacy SSE handshake is
+  filterable (`wp_mcp_ai_legacy_sse_enabled`); `wp_mcp_ai_pro_get_tool_map()`
+  caches the Pro tool map; settings-repository reads fall back to the canonical
+  `wp_mcp_ai_settings` blob so runtime gates see dashboard-saved values;
+  agentic events reach the recent-activity feed.
+- **Tool count** — unchanged: ~303 base + ~1,263 Pro (~1,566 total).
 
 ## Vision Analysis, tagDiv Compat, DeepSeek Schemas & ZipSlip Revival (v1.1.69+)
 

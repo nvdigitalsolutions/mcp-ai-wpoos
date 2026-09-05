@@ -444,24 +444,27 @@ sortable compat, #6259 chat attachments, #6260 count-tokens params, #6262
 continuation seam, #6263 chat SSE handler, #6264 cache helper, #6265
 nefarious rate limiter + chat hook tolerance (open).
 
-Session 2026-09-04 clusters (run 91006542428): #6286 memory auto-capture
-service (open), #6287 AI CPT management integration (open), #6288 PayHere
-API tests vs Remote Connections migration (open), #6289 music generation
-tests vs Mubert contract (open), #6290 OpenAI image tests vs classic
-Images API (open), #6291 pro settings composer drift (open), #6293 pro
-schedule research AJAX hook wipe + curriculum exporter array-input drift
-(open).
-
-Session 2026-09-04 clusters (run 91771001271): #6304 K10 Elementor
-control-stack singleton drift, #6305 K11 permission gates (acting-user
-capability checks), #6306 K12 HTTP/provider client drift, #6307 K13
-orchestration budget/settings enforcement, #6308 K14 logging/events
-(recent-activity allowlist + trace durations), #6311 K16 misc singles
-(webhook round-trip, settings-repository blob fallback, chart HTML
-attachment gating, site-builder heading tags, PSO keyword inflections,
-scheduled-post publish date reset + 16 suite contract updates), K15
-skill packs/REST (pack normalisation + install action via direct commit
-d452a125bf; cross-suite uploads isolation completed in #6312).
+Session 2026-09-04/05 wave-5 clusters (runs 91006542428 + 91771001271,
+all merged): #6280 chat transcripts + attachments, #6281 charts + Pro
+dashboard, #6282 professions/teams, #6283 presets/remote connections,
+#6284 Cloudflare, #6285 mesh networking, #6286 memory auto-capture,
+#6287 AI CPT management integration, #6288 PayHere vs Remote
+Connections, #6289 Mubert music contract, #6290 OpenAI classic Images
+API, #6291/#6297 composer metadata drift, #6292 Content Graph AI
+ecosystem, #6293 pro schedule AJAX + curriculum exporter, #6294
+cluster-board docs, #6295 exec-disabled host hardening, #6296
+conversation-import CCT gate, #6298 model routing/complexity routing,
+#6299 Gemini, #6300 JetEngine/Graphify stub isolation + gates, #6301
+OAuth/credentials encryption, #6302 REST + skill-pack registry, #6303
+admin/settings drift, #6304 K10 Elementor, #6305 K11 permission gates
+(acting-user capability checks), #6306 K12 HTTP/provider clients, #6307
+K13 orchestration budget, #6308 K14 logging/events (recent-activity
+allowlist + trace durations), #6311 K16 misc singles (webhook
+round-trip, settings-repository blob fallback, chart HTML attachment
+gating, site-builder heading tags, PSO keyword inflections,
+scheduled-post publish date reset + 16 suite contract updates), #6312
+K15 skill-suite upload isolation (pack normalisation + install action
+landed via direct commit d452a125bf).
 
 Remaining candidates change quickly; re-triage from the latest CI log rather
 than trusting an old list.
