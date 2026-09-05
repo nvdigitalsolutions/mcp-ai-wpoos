@@ -104,8 +104,8 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 				),
 				'model'          => array(
 					'type'        => 'string',
-					'description' => __( 'Model to use. Defaults to gemini-3.5-flash which is optimized for agentic workflows.', 'mcp-ai-wpoos' ),
-					'default'     => 'gemini-3.5-flash',
+					'description' => __( 'Model to use. Defaults to gemini-3.6-flash which is optimized for agentic workflows.', 'mcp-ai-wpoos' ),
+					'default'     => 'gemini-3.6-flash',
 				),
 			),
 			'required'   => array( 'operation' ),
@@ -127,7 +127,7 @@ class WP_MCP_AI_Tool_Run_Gemini_Managed_Agent implements WP_MCP_AI_Tool_Interfac
 		$tool_slugs    = isset( $arguments['tool_slugs'] ) ? array_map( 'sanitize_key', (array) $arguments['tool_slugs'] ) : array();
 		$max_iter      = isset( $arguments['max_iterations'] ) ? absint( $arguments['max_iterations'] ) : 10;
 		$timeout       = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 300;
-		$model         = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'gemini-3.5-flash';
+		$model         = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'gemini-3.6-flash';
 
 		$service = new WP_MCP_AI_Gemini_Managed_Agent_Service();
 

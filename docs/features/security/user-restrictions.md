@@ -1,10 +1,10 @@
 # User Restrictions — Flagging & Unblocking
 
 The restriction system converts ephemeral enforcement events — chat rate limits,
-daily token overages, and per-session budgets — into persistent, reviewable
-records. When a user is blocked, administrators can see **who** is blocked,
-**why**, and **for how long**, and can lift the restriction with one action
-from the Token Manager or the Pro Command Center.
+general REST request limits, daily token overages, and per-session budgets — into
+persistent, reviewable records. When a user is blocked, administrators can see
+**who** is blocked, **why**, and **for how long**, and can lift the restriction
+with one action from the Token Manager or the Pro Command Center.
 
 ## Lifecycle
 
@@ -21,7 +21,8 @@ flowchart TD
 ```
 
 1. **Flag** — one of the enforcement hooks fires (`wp_mcp_ai_tool_token_limit_exceeded`,
-   `wp_mcp_ai_per_session_limit_exceeded`, or `wp_mcp_ai_rate_limit_exceeded`).
+   `wp_mcp_ai_per_session_limit_exceeded`, `wp_mcp_ai_rate_limit_exceeded`, or
+   `wp_mcp_ai_rest_request_rate_limit_exceeded`).
    The `WP_MCP_AI_Restriction_Registry` upserts a restriction record and indexes it.
 2. **Review** — the restriction appears on the Token Manager page ("Restricted
    Users" panel), the Pro Command Center ("Restrictions" tab with a live badge),
@@ -37,10 +38,14 @@ flowchart TD
 
 | Restriction type | Trigger | Auto-release |
 |---|---|---|
-| `rate_limit` | Chat rate limit exhausted (default 60 requests/min per user+assistant) | Window end |
+| `rate_limit` | Chat rate limit exhausted (default 60 requests/min per user+assistant), or the general REST request limiter exhausted (`enable_rate_limiting` / `rate_limit_requests` / `rate_limit_window`) | Window end |
 | `token_overage` | Daily per-tool token limit exceeded (tier-based) | Next daily reset |
 | `session_limit` | Per-session token budget exhausted | 1 hour grace (or admin lift) |
 | `manual` | Admin-applied block via REST/CLI | Optional expiry |
+
+Guest traffic is IP-keyed (`wp_mcp_ai_rate_limit_ip_{hash}`) and is never
+flagged, because there is no user record to attach the block to — guest
+windows simply expire on their own.
 
 ## Admin surfaces
 
@@ -62,7 +67,9 @@ Lifting also clears the storage behind the block:
   the usage-tracker user meta.
 - `session_limit` → the session usage transient for that session.
 - `rate_limit` → every `chat:{user_id}:*` window in the rate-limiter adapter's
-  key index.
+  key index, plus the general REST request-limit window
+  (`wp_mcp_ai_rate_limit_user_{user_id}`) so the user's next request starts a
+  fresh window.
 
 Every lift is audit-logged (who lifted, for whom, when) via the security audit
 logger, and fires the `wp_mcp_ai_restriction_lifted` action.
@@ -104,6 +111,13 @@ wp mcp-ai restrictions add 42 --reason="Manual review" [--expires-in=86400]
 
 ## Rate-limit response headers
 
+The general REST request limiter (`WP_MCP_AI_REST::check_rate_limit()`) uses a
+**fixed window**: the counter records when the window started
+(`{count, first_seen}` transient payload) and the TTL is never extended past
+`first_seen + window`, so sustained traffic cannot keep a window alive
+indefinitely. Its 429 error reports the time actually remaining in
+`data.retry_after`.
+
 REST responses that carry a rate-limited chat error include IETF-style headers
 (`draft-ietf-httpapi-ratelimit-headers`) so clients can adapt their retry
 policy:
@@ -124,7 +138,10 @@ the guidance "If you believe this is an error, contact the site administrator."
 - **Fast index:** option `wp_mcp_ai_active_restrictions` (autoload off), keyed
   `user_id:type`, powering badge counts and table listings.
 - **Rate-limit keys:** option `wp_mcp_ai_rl_index` maintained by the
-  `Nvoos\WordPress\Adapter\RateLimiter` so windows can be enumerated and reset.
+  `Nvoos\WordPress\Adapter\RateLimiter` so chat windows can be enumerated and
+  reset; the general REST request limiter uses transient keys
+  `wp_mcp_ai_rate_limit_user_{id}` (authenticated) and
+  `wp_mcp_ai_rate_limit_ip_{md5}` (guests).
 - **Audit:** `wp_mcp_ai_security_log` via the security audit logger
   (`wp_mcp_ai_restriction_flagged`, `wp_mcp_ai_restriction_lifted`,
   `wp_mcp_ai_restriction_manual_added`).

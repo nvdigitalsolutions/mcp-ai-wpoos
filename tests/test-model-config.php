@@ -570,7 +570,10 @@ class Test_Model_Config extends WP_UnitTestCase {
 
 		$this->assertIsArray( $models );
 		$this->assertNotEmpty( $models, 'DeepSeek models should be present in catalog' );
-		$this->assertArrayHasKey( 'deepseek-chat', $models );
-		$this->assertArrayHasKey( 'deepseek-reasoner', $models );
+		$this->assertArrayHasKey( 'deepseek-v4-flash', $models );
+		$this->assertArrayHasKey( 'deepseek-v4-pro', $models );
+		$this->assertArrayHasKey( 'deepseek-v4-flash-vision-exp', $models );
+		$this->assertArrayNotHasKey( 'deepseek-chat', $models, 'deepseek-chat was retired from the API on 2026-07-24.' );
+		$this->assertArrayNotHasKey( 'deepseek-reasoner', $models, 'deepseek-reasoner was retired from the API on 2026-07-24.' );
 	}
 }

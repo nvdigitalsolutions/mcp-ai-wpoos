@@ -173,6 +173,14 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
+		// GPT-6 Astra (flagship - Sep 2026) - limited preview, computer use.
+		$models['gpt-6-astra'] = 'GPT-6 Astra (Limited Preview)';
+
+		// GPT-5.6 series (flagship - Jul 2026) - Sol/Terra/Luna tiers, 1M+ context.
+		$models['gpt-5.6-sol']   = 'GPT-5.6 Sol (Flagship)';
+		$models['gpt-5.6-terra'] = 'GPT-5.6 Terra (Balanced)';
+		$models['gpt-5.6-luna']  = 'GPT-5.6 Luna (Lowest Cost)';
+
 		// GPT-5.5 series (flagship - Apr 2026) - 1M+ context window, highest reasoning quality.
 		$models['gpt-5.5'] = 'GPT-5.5 (Flagship - Apr 2026)';
 
@@ -287,8 +295,11 @@ class WP_MCP_AI_Model_Service {
 		// The models are static and don't require API access to list.
 		$models = array();
 
-		// Claude Mythos (Capybara tier) - Most capable (Apr 2026).
-		$models['claude-mythos-preview'] = 'Claude Mythos Preview (Apr 2026) - Most Capable';
+		// Claude Mythos 5 / Fable 5.1 / Opus 5 (Jul-Sep 2026).
+		$models['claude-mythos-5']  = 'Claude Mythos 5 (Invitation-only) - Most Capable';
+		$models['claude-fable-5.1'] = 'Claude Fable 5.1 (Sep 2026) - Top Tier';
+		$models['claude-opus-5']    = 'Claude Opus 5 (Jul 2026) - Flagship';
+		$models['claude-sonnet-5']  = 'Claude Sonnet 5 (Jun 2026) - Default';
 
 		// Claude 4.7 series (multimodal - vision capable) - Latest flagship (Apr 2026).
 		$models['claude-opus-4-7'] = 'Claude Opus 4.7 (Apr 2026) - Flagship';
@@ -314,7 +325,6 @@ class WP_MCP_AI_Model_Service {
 		$models['claude-3-7-sonnet-20250219'] = 'Claude 3.7 Sonnet (Feb 2025)';
 
 		// Claude 3.5 series (legacy - for backward compatibility).
-		$models['claude-sonnet-5']           = 'Claude 3.5 Sonnet (Legacy)';
 		$models['claude-3-5-haiku-20241022'] = 'Claude 3.5 Haiku (Legacy)';
 
 		// Claude 3 series (legacy).
@@ -340,12 +350,17 @@ class WP_MCP_AI_Model_Service {
 		$models             = array();
 		$requires_image_gen = isset( $args['requires_image_gen'] ) ? $args['requires_image_gen'] : false;
 
+		// Gemini 3.8/3.7/3.6 Flash (Jul-Sep 2026 - latest GA workhorses).
+		$models['gemini-3.8-flash']      = 'Gemini 3.8 Flash (Recommended)';
+		$models['gemini-3.7-flash']      = 'Gemini 3.7 Flash';
+		$models['gemini-3.6-flash']      = 'Gemini 3.6 Flash';
+		$models['gemini-3.5-flash-lite'] = 'Gemini 3.5 Flash-Lite (Budget)';
+
 		// Gemini 3.5 series (May 2026 GA - latest flagship).
-		$models['gemini-3.5-flash'] = 'Gemini 3.5 Flash (Recommended)';
+		$models['gemini-3.5-flash'] = 'Gemini 3.5 Flash';
 
 		// Gemini 3.1 series (April 2026 GA).
 		$models['gemini-3.1-pro']        = 'Gemini 3.1 Pro';
-		$models['gemini-3.1-flash']      = 'Gemini 3.1 Flash';
 		$models['gemini-3.1-flash-lite'] = 'Gemini 3.1 Flash Lite (Budget)';
 
 		// Gemini 2.5 series (multimodal - text, image, video) - Stable.
@@ -367,7 +382,6 @@ class WP_MCP_AI_Model_Service {
 		}
 
 		// Gemini 2.0 series (stable).
-		$models['gemini-2.5-flash']      = 'Gemini 2.0 Flash';
 		$models['gemini-2.0-flash-lite'] = 'Gemini 2.0 Flash Lite';
 		$models['gemini-2.0-flash-exp']  = 'Gemini 2.0 Flash (Experimental)';
 
@@ -376,7 +390,7 @@ class WP_MCP_AI_Model_Service {
 		$models['gemini-exp-1121'] = 'Gemini Exp 1121';
 
 		// Gemini 1.5 series (legacy - for backward compatibility).
-		$models['gemini-2.5-flash'] = 'Gemini 1.5 Pro (Legacy)';
+		$models['gemini-1.5-pro']   = 'Gemini 1.5 Pro (Legacy)';
 		$models['gemini-1.5-flash'] = 'Gemini 1.5 Flash (Legacy)';
 
 		// Gemma 4 models (Google's latest open models - multimodal).
@@ -1008,17 +1022,10 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// DeepSeek V4 series (current flagship).
-		$models['deepseek-v4-flash'] = 'DeepSeek V4 Flash (1M Context, Fast)';
-		$models['deepseek-v4-pro']   = 'DeepSeek V4 Pro (Enhanced Reasoning)';
-
-		// DeepSeek V3 (legacy).
-		$models['deepseek-chat'] = 'DeepSeek V3 (Chat)';
-
-		// DeepSeek R1 (legacy reasoning, no tool calling).
-		if ( empty( $requires_vision ) && empty( $requires_multimodal ) ) {
-			$models['deepseek-reasoner'] = 'DeepSeek R1 (Reasoning, No Tools)';
-		}
+		// DeepSeek V4 series (current lineup).
+		$models['deepseek-v4-flash']            = 'DeepSeek V4 Flash (1M Context, Fast)';
+		$models['deepseek-v4-pro']              = 'DeepSeek V4 Pro (Enhanced Reasoning)';
+		$models['deepseek-v4-flash-vision-exp'] = 'DeepSeek V4 Flash Vision (Experimental)';
 
 		return $models;
 	}
@@ -1059,8 +1066,8 @@ class WP_MCP_AI_Model_Service {
 		$models['meta-llama/llama-4-scout-17b-16e-instruct']     = 'Meta Llama 4 Scout 17Bx16E';
 
 		// DeepSeek models via OpenRouter.
-		$models['deepseek/deepseek-chat']                 = 'DeepSeek V3 (Chat)';
-		$models['deepseek/deepseek-r1']                   = 'DeepSeek R1 (Reasoning)';
+		$models['deepseek/deepseek-v4-flash']             = 'DeepSeek V4 Flash';
+		$models['deepseek/deepseek-v4-pro']               = 'DeepSeek V4 Pro (Reasoning)';
 		$models['deepseek/deepseek-r1-distill-llama-70b'] = 'DeepSeek R1 Distill Llama 70B';
 
 		return $models;
@@ -1106,6 +1113,8 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
+		$models['kimi-k3']          = 'Kimi K3 (2.8T MoE, 1M Context, Open Weights)';
+		$models['kimi-k2.7-code']   = 'Kimi K2.7 Code (256K, Multimodal)';
 		$models['kimi-latest']      = 'Kimi Latest (1M Context)';
 		$models['moonshot-v1-8k']   = 'Moonshot V1 (8K)';
 		$models['moonshot-v1-32k']  = 'Moonshot V1 (32K)';

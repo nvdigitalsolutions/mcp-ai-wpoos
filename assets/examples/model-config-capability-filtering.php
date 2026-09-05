@@ -40,17 +40,18 @@ Array(
     'anthropic_group' => Array(
         'label' => 'Anthropic (Claude)',
         'options' => Array(
-            'claude-sonnet-5' => 'Claude 3.5 Sonnet',
-            'claude-haiku-4-5' => 'Claude 3.5 Haiku'
+            'claude-sonnet-5' => 'Claude Sonnet 5',
+            'claude-opus-5' => 'Claude Opus 5',
+            'claude-haiku-4-5' => 'Claude Haiku 4.5'
             // All Claude models are multimodal
         )
     ),
     'gemini_group' => Array(
         'label' => 'Google Gemini',
         'options' => Array(
+            'gemini-3.6-flash' => 'Gemini 3.6 Flash',
             'gemini-2.5-flash' => 'Gemini 2.5 Flash',
-            'gemini-2.5-pro' => 'Gemini 1.5 Pro',
-            'gemini-3.1-flash' => 'Gemini 1.5 Flash'
+            'gemini-2.5-pro' => 'Gemini 2.5 Pro'
             // Note: gemma models NOT included (text-only)
         )
     )
@@ -184,16 +185,16 @@ Array(
     'anthropic_group' => Array(
         'label' => 'Anthropic (Claude)',
         'options' => Array(
-            'claude-sonnet-5' => 'Claude 3.5 Sonnet',
-            'claude-haiku-4-5' => 'Claude 3.5 Haiku'
+            'claude-sonnet-5' => 'Claude Sonnet 5',
+            'claude-haiku-4-5' => 'Claude Haiku 4.5'
         )
     ),
     'gemini_group' => Array(
         'label' => 'Google Gemini',
         'options' => Array(
+            'gemini-3.6-flash' => 'Gemini 3.6 Flash',
             'gemini-2.5-flash' => 'Gemini 2.5 Flash',
-            'gemini-2.5-pro' => 'Gemini 1.5 Pro',
-            'gemini-3.1-flash' => 'Gemini 1.5 Flash'
+            'gemini-2.5-pro' => 'Gemini 2.5 Pro'
         )
     )
 )

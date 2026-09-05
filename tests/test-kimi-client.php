@@ -268,14 +268,14 @@ class Test_Kimi_Client extends WP_UnitTestCase {
 		$this->assertEquals( 'https://api.moonshot.ai/v1', WP_MCP_AI_Kimi_Client::DEFAULT_BASE_URL );
 		$this->assertEquals( '/chat/completions', WP_MCP_AI_Kimi_Client::API_ENDPOINT );
 		$this->assertEquals( '/models', WP_MCP_AI_Kimi_Client::API_MODELS );
-		$this->assertEquals( 'kimi-k2.6', WP_MCP_AI_Kimi_Client::DEFAULT_MODEL );
+		$this->assertEquals( 'kimi-k3', WP_MCP_AI_Kimi_Client::DEFAULT_MODEL );
 	}
 
 	/**
 	 * Test models with tool calling constant.
 	 */
 	public function test_models_with_tool_calling_constant() {
-		$expected = array( 'kimi-k2.7-code', 'kimi-k2.6', 'kimi-k2.5', 'kimi-k2' );
+		$expected = array( 'kimi-k3', 'kimi-k2.7-code', 'kimi-k2.6', 'kimi-k2.5', 'kimi-k2' );
 		$this->assertEquals( $expected, WP_MCP_AI_Kimi_Client::MODELS_WITH_TOOL_CALLING );
 	}
 

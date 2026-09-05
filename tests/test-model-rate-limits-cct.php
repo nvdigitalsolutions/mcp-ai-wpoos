@@ -453,8 +453,11 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		// Check that Gemini 3.1 Flash Image is included (latest).
 		$this->assertContains( 'gemini-3.1-flash-image', $model_names, 'Gemini 3.1 Flash Image should be in default models' );
 
-		// Check that Imagen 4 is included (alternative).
-		$this->assertContains( 'imagen-4', $model_names, 'Imagen 4 should be in default models' );
+		// Check that the Gemini 3.1 Flash Image preview is included (migration target for gemini-2.5-flash-image).
+		$this->assertContains( 'gemini-3.1-flash-image-preview', $model_names, 'Gemini 3.1 Flash Image preview should be in default models' );
+
+		// Imagen 4 was shut down on 2026-08-17 and must no longer appear.
+		$this->assertNotContains( 'imagen-4', $model_names, 'Imagen 4 was retired on 2026-08-17 and should be absent from default models' );
 
 		// Verify Gemini 2.5 Flash Image has correct configuration.
 		$gemini_25_flash_image = array_values(

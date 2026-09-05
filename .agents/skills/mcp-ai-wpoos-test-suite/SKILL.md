@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 37 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, 40 recurring root-cause patterns (hook resets, singleton interference, zombie mocks, WP_Error envelope drift, SSE blocking-emitter contract, sub-tab sanitizer routing, rest_api_init DDL commits, cron-array lookups, Pro autoload gaps, three-layer settings defaults, capability-gated renders, rate-limiter contracts, dual-shape action emitters, Docs Hub addon contracts, Graphify bridge graph-mode flip, opt-in logging cache gates), cluster-by-cluster PR workflow against alpha-working, and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-09-03"
+  last-updated: "2026-09-05"
 ---
 
 # NV oOS Test Suite — Repair & Triage Guide
@@ -368,6 +368,39 @@ one-off runners too (same shared DB).
     (`NVOOS_DOCS_HUB_VERSION/PATH/URL/FILE`) and `require` the classes they
     need directly in `setUp()`; filters like
     `nvoos_docs_hub_fixer_allowed_roots` provide the temp-dir seams.
+38. **Graphify bridge load flips `wake_up_context` into graph mode.** Once
+    any earlier suite `require`s `NV_oOS_Graphify_Memory_Bridge`
+    (`tests/graphify/bootstrap.php` also installs the graph tables), the
+    `auto` mode of `wake_up_context` switches to graph retrieval for the
+    rest of the process. The graph anchors only *boost* wing/room scores —
+    they never exclude — so cross-wing memories leak into a wing-scoped
+    block. Symptom: MemPalace phase-2 wing test fails (`count` 3 vs 2)
+    only when a graphify suite ran first. Fix (production, #6327): enforce
+    `wing`/`room` in `WP_MCP_AI_Tool_Wake_Up_Context::matches_wake_filters()`.
+    Reproduce with
+    `tests/graphify/test-graphify-connectors.php tests/test-mempalace-phase2-memory-tools.php`
+    in one invocation.
+39. **`clear_tools()` on the SHARED registry instance destroys one-shot
+    bootstrap tools.** Swapping in a fresh per-test registry is safe only if
+    the ORIGINAL shared instance is restored untouched.
+    `test-hooks-registry.php` used to `clear_tools()` the saved shared
+    instance before restoring it; a later lazy `init()` re-registers
+    file-scanned default tools but NOT tools registered by one-shot actions
+    (`wp_mcp_ai_bootstrapped` — OKF Pro tools, composio, paper-store).
+    Symptom: `is_tool_registered( 'okf_enrich_site_content' )` false in later
+    suites while the class exists. Fix: restore the shared instance without
+    clearing; the stub tools live on the fresh instance and die with it.
+40. **Opt-in logging gates read the static settings cache.**
+    `WP_MCP_AI_Logger::log_event()` early-returns on
+    `is_logging_enabled()`, which reads the merged settings through the
+    static cache. Tests asserting recent-activity/recent-errors entries must
+    write `enable_logging => true` AND call
+    `WP_MCP_AI_Admin_Settings::reset_settings_cache()` afterwards so the gate
+    observes the test's write, independent of options left behind by earlier
+    suites (house pattern from #6311's wp-cli fix, applied in #6327). Same
+    idea for provider-connectivity assertions: isolate the provider key under
+    test — `unset` the other provider keys before asserting `good`, or a
+    leftover invalid key downgrades the status to `recommended`.
 
 ## Production fix vs test fix
 
@@ -391,6 +424,33 @@ committing.**
 ```php
 fwrite( STDERR, 'STATE: ' . wp_json_encode( $data ) . PHP_EOL );
 ```
+
+### Order-dependent bisection pitfalls (session 2026-09-05)
+
+- **Chunk-only prefix runs produce false results.** Suites depend on side
+  effects of earlier suites (registry state, generated skill knowledge,
+  installed addon tables), so running an arbitrary subset can produce
+  failures that don't exist in CI and mask the ones that do. Bisect with
+  ever-larger prefixes of the full sorted order — never random subsets.
+- **Reset the DB between experiments.** A killed run leaves residue (open
+  transactions, deadlocks, mid-run DDL) that corrupts the next run:
+  `docker exec oos-wp-db sh -c 'mysql -uwordpress -pwordpress -e "DROP
+  DATABASE wordpress_test; CREATE DATABASE wordpress_test;"'`. The fresh
+  install then takes a few minutes on the first run.
+- **Scratch phpunit XML configs** must carry the `external-http` group
+  exclusion (otherwise suites hit the real network and crawl) and list each
+  `<file>` exactly once in sorted order — duplicates abort with "already
+  added to test suite". Multiple `<directory>` entries append per-directory
+  sorted files; do NOT merge directories into one sort.
+- **Local full-prefix runs are 5-10x slower than CI** (loopback HTTP per
+  test). Always `--log-events-text /tmp/events.txt` with a host-mounted
+  `/tmp` so the per-suite order survives even if the run is killed by
+  `timeout`.
+- **CI-log archaeology.** Progress lines (`NNNN / 17245 (NN%)`) plus
+  `[NV oOS]` debug lines locate suites; a suite whose logging gate is off
+  emits no `[NV oOS]` lines while its neighbours do. Consecutive failing
+  tests can straddle a progress-line boundary (`FF` at the end of one line
+  plus `F` at the start of the next = three consecutive failures).
 
 ## Enumerating the suite
 
@@ -465,6 +525,12 @@ gating, site-builder heading tags, PSO keyword inflections,
 scheduled-post publish date reset + 16 suite contract updates), #6312
 K15 skill-suite upload isolation (pack normalisation + install action
 landed via direct commit d452a125bf).
+
+Session 2026-09-05 cluster (run 91942465749): #6327 post-K16 singles
+(open) — chat transcript session-key mock restore, MemPalace wing-scope
+graph leak (production fix in `wake_up_context`), OKF Pro tools lost to
+`clear_tools()` on the shared registry, Site Health provider-key
+isolation, transcript-mining logging cache reset.
 
 Remaining candidates change quickly; re-triage from the latest CI log rather
 than trusting an old list.

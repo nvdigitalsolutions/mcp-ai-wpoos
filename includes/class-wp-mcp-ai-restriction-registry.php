@@ -99,6 +99,8 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 		 * - `wp_mcp_ai_per_session_limit_exceeded` (per-session budget).
 		 * - `wp_mcp_ai_rate_limit_exceeded` (fired by the Nvoos rate limiter
 		 *   WordPress adapter when a chat/SSE window is exhausted).
+		 * - `wp_mcp_ai_rest_request_rate_limit_exceeded` (fired by the general
+		 *   REST request limiter when a user exhausts their request budget).
 		 *
 		 * @since 1.2.0
 		 * @return void
@@ -107,6 +109,7 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 			add_action( 'wp_mcp_ai_tool_token_limit_exceeded', array( __CLASS__, 'on_tool_token_limit_exceeded' ), 10, 6 );
 			add_action( 'wp_mcp_ai_per_session_limit_exceeded', array( __CLASS__, 'on_per_session_limit_exceeded' ), 10, 4 );
 			add_action( 'wp_mcp_ai_rate_limit_exceeded', array( __CLASS__, 'on_rate_limit_exceeded' ), 10, 3 );
+			add_action( 'wp_mcp_ai_rest_request_rate_limit_exceeded', array( __CLASS__, 'on_rest_request_rate_limit_exceeded' ), 10, 5 );
 
 			// Lazy expiry sweep on the existing daily cleanup cron.
 			add_action( 'wp_mcp_ai_daily_cleanup', array( __CLASS__, 'maybe_expire' ) );
@@ -410,15 +413,23 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 		/**
 		 * Reset every rate-limit window tracked for a user.
 		 *
-		 * Uses the adapter's enumerable key index when the OOS engine is
-		 * active, and falls back to the per-session transients otherwise.
+		 * Clears the general REST request limiter's per-user window
+		 * (`wp_mcp_ai_rate_limit_user_{id}`) and, when the OOS engine is
+		 * active, every chat window in the adapter's enumerable key index.
+		 * Guest (IP-keyed) windows cannot be mapped back to a user and are
+		 * left to expire on their own.
 		 *
 		 * @since 1.2.0
+		 * @since 1.1.71 Also clears the general REST request-limit window.
 		 *
 		 * @param int $user_id Affected user ID.
 		 * @return void
 		 */
 		private static function reset_rate_limit_counters( $user_id ) {
+			// General REST request limiter: delete the fixed-window transient
+			// so the user's next request starts a fresh window.
+			delete_transient( 'wp_mcp_ai_rate_limit_user_' . absint( $user_id ) );
+
 			if ( function_exists( 'wp_mcp_ai_oos_rate_limiter' ) ) {
 				$limiter = wp_mcp_ai_oos_rate_limiter();
 
@@ -898,6 +909,54 @@ if ( ! class_exists( 'WP_MCP_AI_Restriction_Registry' ) ) {
 					'reason'       => sprintf(
 						/* translators: 1: request limit, 2: window in seconds */
 						__( 'Chat rate limit reached (%1$d requests per %2$d seconds).', 'mcp-ai-wpoos' ),
+						absint( $max_requests ),
+						$window_seconds
+					),
+				)
+			);
+		}
+
+		/**
+		 * Flag handler: general REST request-limit window exhausted.
+		 *
+		 * Fired by WP_MCP_AI_REST::check_rate_limit() when a user exhausts
+		 * their configured per-window request budget. Guest (user_id=0)
+		 * blocks are IP-keyed and cannot be attached to a user record, so
+		 * they are ignored here and left to expire on their own.
+		 *
+		 * @since 1.1.71
+		 *
+		 * @param int $user_id       Affected user ID (0 for guests — ignored).
+		 * @param int $max_requests  Requests allowed per window.
+		 * @param int $window_seconds Window length in seconds.
+		 * @param int $current_count Requests consumed in the current window.
+		 * @param int $window_end    Unix timestamp at which the fixed window ends.
+		 * @return void
+		 */
+		public static function on_rest_request_rate_limit_exceeded( $user_id, $max_requests, $window_seconds, $current_count, $window_end ) {
+			$user_id = (int) $user_id;
+			if ( $user_id <= 0 ) {
+				return;
+			}
+
+			$window_seconds = max( 1, absint( $window_seconds ) );
+			$window_end     = absint( $window_end );
+			if ( $window_end <= time() ) {
+				$window_end = time() + $window_seconds;
+			}
+
+			self::flag(
+				$user_id,
+				self::TYPE_RATE_LIMIT,
+				array(
+					'scope'       => 'rest',
+					'limit'       => absint( $max_requests ),
+					'window'      => $window_seconds,
+					'usage'       => absint( $current_count ),
+					'released_at' => $window_end,
+					'reason'      => sprintf(
+						/* translators: 1: request limit, 2: window in seconds */
+						__( 'REST request rate limit reached (%1$d requests per %2$d seconds).', 'mcp-ai-wpoos' ),
 						absint( $max_requests ),
 						$window_seconds
 					),

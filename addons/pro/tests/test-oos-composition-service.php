@@ -340,7 +340,7 @@ class Test_WP_MCP_AI_Pro_Composition_Service extends WP_UnitTestCase {
 				'_wp_mcp_ai_denied_tools'  => array( 'save_post' ),
 				'_wp_mcp_ai_guard_slugs'   => array( 'guard_a' ),
 				'_wp_mcp_ai_provider'      => 'deepseek',
-				'_wp_mcp_ai_model'         => 'deepseek-chat',
+				'_wp_mcp_ai_model'         => 'deepseek-v4-flash',
 				'_wp_mcp_ai_system_prompt' => 'You are a test assistant.',
 			)
 		);
@@ -351,7 +351,7 @@ class Test_WP_MCP_AI_Pro_Composition_Service extends WP_UnitTestCase {
 
 		$this->assertSame( $assistant_id, $effective['assistant_id'] );
 		$this->assertSame( 'deepseek', $effective['provider'] );
-		$this->assertSame( 'deepseek-chat', $effective['model'] );
+		$this->assertSame( 'deepseek-v4-flash', $effective['model'] );
 		$this->assertSame( array( 'guard_a' ), $effective['guard_slugs'] );
 		$this->assertSame( array( 'create_post' ), $effective['visible_slugs'] );
 		$this->assertSame( 1, $effective['visible_tool_count'] );

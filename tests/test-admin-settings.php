@@ -27,11 +27,11 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'default_model', $defaults );
 		$this->assertSame( 'gpt-4.1', $defaults['default_model'] );
 		$this->assertArrayHasKey( 'default_gemini_model', $defaults );
-		$this->assertSame( 'gemini-3.5-flash', $defaults['default_gemini_model'] );
+		$this->assertSame( 'gemini-3.6-flash', $defaults['default_gemini_model'] );
 		$this->assertArrayHasKey( 'default_provider', $defaults );
 		$this->assertSame( 'openai', $defaults['default_provider'] );
 		$this->assertArrayHasKey( 'openai_image_model', $defaults );
-			$this->assertSame( 'gpt-image-1', $defaults['openai_image_model'] );
+			$this->assertSame( 'gpt-image-2', $defaults['openai_image_model'] );
 		$this->assertArrayHasKey( 'openai_image_size', $defaults );
 		$this->assertSame( '1024x1024', $defaults['openai_image_size'] );
 		$this->assertArrayHasKey( 'openai_image_quality', $defaults );

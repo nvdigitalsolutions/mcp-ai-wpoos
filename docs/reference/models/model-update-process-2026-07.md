@@ -269,3 +269,65 @@ git --no-pager diff -- includes/ addons/pro/includes/
 | `o1` / `o1-mini` / `o1-preview` | `o4-mini` | `o3-mini` |
 | `claude-mythos-preview` | `claude-opus-4-7` | `claude-opus-4-8` |
 | `imagen-3` | `imagen-4` | `gemini-3.1-flash-image` |
+
+---
+
+## This Month's Changes (September 2026)
+
+### New Models Added to Catalog
+| Model | Provider | Notes |
+|---|---|---|
+| `gpt-6-astra` | openai | Next-gen flagship, limited preview (Sept 3, 2026). $10/$50 per 1M, 1M ctx, computer use. |
+| `gpt-5.6-sol` | openai | GPT-5.6 flagship tier. $4/$20 promo through Nov 21, 2026 (standard $5/$30). |
+| `gpt-5.6-terra` | openai | Balanced tier. $2/$12. Replacement for gpt-3.5-turbo-instruct/babbage/davinci (Sept 28). |
+| `gpt-5.6-luna` | openai | Cost tier. $0.20/$1.20 after July 30 80% cut. |
+| `gpt-image-2` | openai | Token-based image model replacing the gpt-image-1 family (retires Oct 23 / Dec 1). |
+| `claude-opus-5` | anthropic | New default flagship (July 24, 2026). $5/$25, 1M ctx, 128K out. |
+| `claude-fable-5.1` | anthropic | Top tier (Sept 1, 2026). $10/$50; cache reads cut 75% to $0.25. |
+| `claude-mythos-5` | anthropic | Invitation-gated top tier (restored July 1). Successor of claude-mythos-preview. |
+| `gemini-3.8-flash` | gemini | Third Flash in six weeks (Sept 2, 2026). $0.75/$3.75 intro through Dec 31. |
+| `gemini-3.7-flash` | gemini | Workhorse Flash targeting coding/agents. $0.75/$3.75 intro through Dec 31. |
+| `gemini-3.6-flash` | gemini | GA July 21, 2026. New default Gemini model. $0.75/$3.75 intro through Dec 31. |
+| `gemini-3.5-flash-lite` | gemini | GA July 21, 2026. $0.30/$2.50 per 1M. |
+| `gemini-3.1-flash-image-preview` | gemini | Migration target for gemini-2.5-flash-image (shutdown Oct 2, 2026). |
+| `deepseek-v4-flash-vision-exp` | deepseek | Experimental vision V4 Flash (Aug 21, 2026). Images billed as input tokens. |
+| `kimi-k3` | kimi | 2.8T MoE flagship (July 16, 2026), open weights, 1M ctx. $3/$15 per 1M. |
+| `kimi-k2.7-code` | kimi | June 2026 code model; referenced by the admin Kimi default before K3. |
+
+### Status Changes / Removals
+| Model | Change | Reason |
+|---|---|---|
+| `gemini-3.1-flash` | Removed | Sunset 2026-09-01 passed. |
+| `imagen-4` | Removed | Shut down Aug 17, 2026. |
+| `deepseek-chat` / `deepseek-reasoner` / `deepseek-coder` | Removed | Retired from the DeepSeek API on July 24, 2026. |
+| `gemini-2.5-flash-image` | Sunset set to 2026-10-02 | Google shutdown date; fallback now points at the preview endpoint. |
+| `claude-sonnet-4-6` | Sunset cleared | Anthropic publishes retirement floors into 2027; the Sept-30 date was wrong. |
+
+### Default Changes
+| Setting | Old | New |
+|---|---|---|
+| `default_gemini_model` | `gemini-3.5-flash` | `gemini-3.6-flash` |
+| `openai_image_model` | `gpt-image-1` | `gpt-image-2` |
+| Kimi `DEFAULT_MODEL` / section default | `kimi-k2.6` / `kimi-k2.7-code` | `kimi-k3` |
+| Router verification: anthropic | `claude-opus-4-8` | `claude-opus-5` |
+| Router verification: deepseek | `deepseek-reasoner` | `deepseek-v4-pro` |
+| Router verification: kimi | `moonshot-v1-128k` | `kimi-k3` |
+| Router verification: gemini | `gemini-2.5-pro` | `gemini-3.1-pro` |
+| OpenAI image tool `DEFAULT_MODEL` | `gpt-image-1` | `gpt-image-2` |
+| DeepSeek research-tool fallbacks (pro ×9 + deep-research) | `deepseek-chat` | `deepseek-v4-flash` |
+
+### Pricing Fixes
+| Model | Old | New | Notes |
+|---|---|---|---|
+| `deepseek-v4-flash` input | $0.014/1M | $0.14/1M | Catalog entry was 10x too low. |
+| `deepseek-v4-pro` | $1.74/$3.48 | $0.435/$0.87 | Official pricing per DeepSeek's pricing page (Aug 2026). |
+| `gemini-2.5-flash` (usage tracker) | $0.075/$0.30 | $0.30/$2.50 | Tracker was 10x off; aligned with catalog. |
+| `claude-opus-4-5/4-6/4-7` input | $15/1M | $5/1M | July fix finally applied in the cost calculator. |
+
+### Migration Map Fixes
+| Legacy ID | Old Target | New Target |
+|---|---|---|
+| `claude-mythos-preview` | `claude-opus-4-8` | `claude-mythos-5` |
+| `gemini-3.1-flash` | — | `gemini-3.5-flash` |
+| `imagen-4` | — | `gemini-3.1-flash-image` |
+| `deepseek-reasoner` / `deepseek-coder` | `deepseek-v4-flash` | `deepseek-v4-pro` |
