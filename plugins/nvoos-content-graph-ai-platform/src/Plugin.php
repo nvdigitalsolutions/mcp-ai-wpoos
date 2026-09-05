@@ -44,6 +44,7 @@ final class Plugin {
 		$this->registerDeadLetterQueue();
 		$this->registerOutboundWebhook();
 		$this->registerCronManager();
+		$this->registerApprovals();
 	}
 
 	private function registerAdmin(): void {
@@ -285,6 +286,29 @@ final class Plugin {
 
 		if ( class_exists( __NAMESPACE__ . '\Queues\CronManager' ) ) {
 			\NvoosContentGraphAiPlatform\Queues\CronManager::init();
+		}
+	}
+
+	/**
+	 * Register the HITL approval queue (Wave E3).
+	 *
+	 * Standalone-only: the base bootstrap loader owns the same `init`
+	 * registration (CPT priority 11, cleanup cron priority 1) in monolith
+	 * installs; double registration would collide on the shared
+	 * `mcp_ai_approval` CPT slug.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerApprovals(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Approvals\ApprovalQueue' ) ) {
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Approvals\ApprovalQueue::class, 'register_cpt' ), 11 );
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Approvals\ApprovalQueue::class, 'register_cron' ), 1 );
 		}
 	}
 
