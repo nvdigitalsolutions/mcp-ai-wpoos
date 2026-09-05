@@ -459,7 +459,9 @@ orchestration budget/settings enforcement, #6308 K14 logging/events
 (recent-activity allowlist + trace durations), #6311 K16 misc singles
 (webhook round-trip, settings-repository blob fallback, chart HTML
 attachment gating, site-builder heading tags, PSO keyword inflections,
-scheduled-post publish date reset + 16 suite contract updates).
+scheduled-post publish date reset + 16 suite contract updates), K15
+skill packs/REST (pack normalisation + install action via direct commit
+d452a125bf; cross-suite uploads isolation completed in #6312).
 
 Remaining candidates change quickly; re-triage from the latest CI log rather
 than trusting an old list.
