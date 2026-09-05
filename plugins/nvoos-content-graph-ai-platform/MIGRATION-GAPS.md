@@ -31,7 +31,7 @@
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
 | Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` + `src/Mesh/` | 🟢 Extracted (Wave A) — settings admin UI stays in base by design (FederationAdmin covers the platform dashboard) |
 | Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🟢 Built (Phase 4 greenfield) |
-| Queues (E2) | `includes/class-wp-mcp-ai-async-job-queue.php` | `src/Queues/` (`AsyncJobQueue` ported) | 🟡 In progress (Wave E2) — remaining: JobQueueManager, QueueManager, DeadLetterQueue, RateLimitManager, SlaManager, CronManager, JobNotifier + REST, outbound webhook |
+| Queues (E2) | `includes/class-wp-mcp-ai-async-job-queue.php` | `src/Queues/` (`AsyncJobQueue` ported) | 🟡 In progress (Wave E2) — remaining: SlaManager, JobNotifier + REST |
 
 ## Wave E2 extraction notes (2026-09-05)
 
@@ -45,7 +45,15 @@
 
 ### SchedulerBridge 🟡 In progress (2026-09-05)
 
-- Ported as `src/Queues/SchedulerBridge.php` under `NvoosContentGraphAiPlatform\Queues`: byte-identical runner hook, default group, availability contract, idempotent hook registration, and enqueue semantics. `run_job()` resolves the executing queue per install mode (base monolith / platform `AsyncJobQueue` standalone); `AsyncJobQueue`'s bridge seams now resolve per install mode. 16 characterization tests in `tests/test-scheduler-bridge.php` green in both matrices (stub AS standalone / real AS API monolith).
+- Ported as `src/Queues/SchedulerBridge.php` under `NvoosContentGraphAiPlatform\Queues`: byte-identical runner hook, default group, availability contract, idempotent hook registration, and enqueue semantics. `run_job()` resolves the executing queue per install mode (base monolith / platform `AsyncJobQueue` standalone); `AsyncJobQueue`'s bridge seams now resolve per install mode. 16 characterization tests in `tests/test-scheduler-bridge.php` green in both matrices (AS stub when Action Scheduler is absent / real AS API when present).
+
+### OutboundWebhook 🟡 In progress (2026-09-05)
+
+- Ported as `src/Queues/OutboundWebhook.php` under `NvoosContentGraphAiPlatform\Queues`: byte-identical option key, subscription lifecycle, signed dispatch, signature verification, and event listeners. Standalone-only listener registration via `Plugin::registerOutboundWebhook()`. 11 characterization tests in `tests/test-outbound-webhook.php` green in both matrices.
+
+### CronManager 🟡 In progress (2026-09-05)
+
+- Ported as `src/Queues/CronManager.php` under `NvoosContentGraphAiPlatform\Queues`: byte-identical `wp_mcp_ai_cron_jobs` option, argument normalisation, record/remove lifecycle, retention pruning, and stable job-ID generation. Standalone-only `init` prune hook via `Plugin::registerCronManager()`; the retention setting resolves per install mode (base `WP_MCP_AI_Settings_Registry` monolith / direct option read standalone). 22 characterization tests in `tests/test-cron-manager.php` green in both matrices.
 
 ## Wave A extraction notes (2026-08-31)
 
