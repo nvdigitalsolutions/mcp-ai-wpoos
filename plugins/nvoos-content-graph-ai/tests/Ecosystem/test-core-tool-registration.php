@@ -748,4 +748,77 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		delete_user_meta( $admin_id, 'wp_mcp_ai_2fa_email' );
 		delete_user_meta( $admin_id, 'wp_mcp_ai_2fa_backup_codes' );
 	}
+
+	public function test_get_system_logs_envelope(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$result = $bridge->tools->execute(
+			'get_system_logs',
+			array(
+				'activity_limit'      => 10,
+				'error_limit'         => 5,
+				'include_plugin_logs' => false,
+			),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'System logs retrieved successfully', $result['summary'] );
+		$this->assertArrayHasKey( 'logging_enabled', $result['wp_mcp_ai'] );
+		$this->assertArrayHasKey( 'wordpress', $result );
+		$this->assertArrayHasKey( 'message', $result['plugin_logs'] );
+	}
+
+	public function test_get_system_logs_rejects_non_admin(): void {
+		$bridge = CoreBridge::instance();
+		$tool   = new \NvoosContentGraphAi\Tools\GetSystemLogsTool( $bridge->errors );
+
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		$result = $tool->execute( array(), array( 'user_id' => $subscriber_id ) );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+	}
+
+	public function test_get_system_logs_validated_passes_valid_and_rejects_invalid(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$context  = array(
+			'user_id'       => $admin_id,
+			'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+		);
+
+		// Valid arguments flow through to the original tool envelope.
+		$valid = $bridge->tools->execute(
+			'get_system_logs_validated',
+			array(
+				'activity_limit'      => 10,
+				'include_plugin_logs' => false,
+			),
+			$context
+		);
+
+		$this->assertIsArray( $valid );
+		$this->assertSame( 'System logs retrieved successfully', $valid['summary'] );
+
+		// Out-of-range ints produce the base-identical validation_failed
+		// WP_Error with field/message violations.
+		$invalid = $bridge->tools->execute(
+			'get_system_logs_validated',
+			array( 'activity_limit' => 500 ),
+			$context
+		);
+
+		$this->assertInstanceOf( \WP_Error::class, $invalid );
+		$this->assertSame( 'validation_failed', $invalid->get_error_code() );
+		$violations = $invalid->get_error_data();
+		$this->assertArrayHasKey( 'errors', $violations );
+		$this->assertSame( 'activity_limit', $violations['errors'][0]['field'] );
+		$this->assertStringContainsString( 'between 1 and 50', $violations['errors'][0]['message'] );
+	}
 }
