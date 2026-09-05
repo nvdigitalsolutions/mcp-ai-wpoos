@@ -118,12 +118,11 @@ class Test_Hooks_Registry extends WP_UnitTestCase {
 	public function tearDown(): void {
 		$this->registry->unregister_tool( 'test_registry_hook_stub' );
 
-		// Clear tools from the original instance to prevent leakage to other test files.
-		if ( $this->original_instance instanceof WP_MCP_AI_Tool_Registry ) {
-			$this->original_instance->clear_tools();
-		}
-
-		// Restore original instance.
+		// Restore the original registry instance untouched. All stub tools
+		// were registered on the fresh per-test instance, which is discarded
+		// here; clearing the shared instance would destroy the tools
+		// registered by one-shot bootstrap actions (e.g. the Pro OKF tools
+		// hooked to wp_mcp_ai_bootstrapped) for every later suite.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Registry' );
 		$property   = $reflection->getProperty( 'instance' );
 		$property->setAccessible( true );
