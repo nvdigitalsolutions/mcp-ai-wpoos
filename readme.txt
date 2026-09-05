@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.1.70
+Stable tag: 1.1.71
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.71 - September 5, 2026 =
+
+Rate-limit, model-catalog, and ecosystem release. Admins can now lift REST rate-limit blocks from the Command Center: the general request limiter uses fixed-window accounting (retry_after reports the true remaining time instead of a sliding full window; legacy transients normalize on read) and fires a new wp_mcp_ai_rest_request_rate_limit_exceeded action that flags the restriction registry, so blocked users appear in the Restrictions tab and Token Manager with the existing Lift button — lifting also clears the request window, and guest (IP-keyed) blocks expire on their own. The wake_up_context tool now enforces wing/room scope exclusions (Graphify graph anchors could leak cross-wing memories into a wing-scoped block). The checkout-api addon joins the standard build and test pipeline (nvoos-checkout-api ZIP in the addon build + its 6 suites in the main PHPUnit gate) and its token/crypto classes derive salts from wp_salt() instead of reading AUTH_KEY/SECURE_AUTH_KEY directly (a latent fatal on installs without salt constants). The Settings → Connectors links now point at the real core Connectors screen (options-connectors.php). September 2026 model catalog refresh: 228 models (gpt-5.6 family, gpt-6-astra preview, gpt-image-2, claude-opus-5, gemini-3.6/3.7/3.8-flash, kimi-k3, kimi-k2.7-code), retired DeepSeek chat/reasoner/coder plus gemini-3.1-flash and imagen-4 IDs with migration-map successors, pricing drift fixes (DeepSeek v4-flash input was 10x too low, Claude Opus inputs $15 → $5), and new defaults (default Gemini model gemini-3.6-flash, OpenAI image model gpt-image-2, Kimi default kimi-k3). The standalone Content Graph plugin ships its 1.0.4 visual experience system (theme engine, appearance tab, SVG type glyphs, legend/minimap/keyboard explorer chrome, edges REST route, export, WCAG-checked palettes, checkout fallback); Content Graph AI gains the assistant-builder block set and the settings shell; the Content Graph AI Platform completes the Wave E2 queue layer (async job queue, queue manager, job queue manager, dead-letter queue). New mcp-ai-wpoos-updates coding-time skill — coding-time agent skills are now 54. Stale 1.1.68 and 1.1.69 build ZIPs removed. Tool count unchanged: ~303 base + ~1,263 Pro (~1,566 total; live registry authoritative).
 
 = 1.1.70 - September 5, 2026 =
 

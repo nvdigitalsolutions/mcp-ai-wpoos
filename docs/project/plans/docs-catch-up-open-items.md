@@ -1,7 +1,7 @@
 # Docs & Release Catch-Up — Standing Open-Items Tracker
 
 > **Purpose:** Single registry of every open item identified (and parked or deferred) by the docs & release catch-up runs, so future passes carry from this file instead of re-copying items between plans.
-> **Last reviewed:** 2026-09-05 (v1.1.70 pass)
+> **Last reviewed:** 2026-09-05 (v1.1.71 pass)
 > **Scope:** items raised in [`docs-catch-up-post-1157-fixes.md`](docs-catch-up-post-1157-fixes.md) and [`v1.1.58-docs-catch-up.md`](v1.1.58-docs-catch-up.md) through [`v1.1.70-docs-catch-up.md`](v1.1.70-docs-catch-up.md).
 > **Rule for future passes:** read this file first; a catch-up plan's "Open items" section should point here and only add new items it introduces.
 
@@ -54,6 +54,7 @@
   1. **`tests/test-skill-manager-ajax.php::test_generate_skill_happy_path_stubs_ai_request`** — order-dependent `TypeError: array_walk(): Argument #1 ($array) must be of type array, null given` at `wp-includes/update.php:606` when any suite runs before it in the same process (its `pre_http_request` stub intercepts the `api.wordpress.org` update-check and `wp_update_plugins()` receives a payload missing `response`/`no_update`). Passes standalone; **not** in the 91771001271 failure list. Noted in PR #6312 ("out of scope").
   2. **`tests/test-chat-transcripts.php` + `tests/test-chat-transcript-save-endpoint.php`** — 14 pre-existing failures on the local WP 7.1 copy that do **not** appear in the CI log (a separate version-drift cluster). Noted in PR #6280 ("not touched here"); verify current status on WP 7.1 before filing.
   3. **Shared test-DB `Lock wait timeout` retries** — the long-running `oos-wp` Docker container is unhealthy; WP 6.9 runs occasionally log lock-wait retries from the shared test DB. Infra item noted in PR #6295; consider a container health/replace step in the test workflow.
+  4. **`test-agents.php` "Audit trail cpt registered in standalone mode" (v1.1.71 pass, PR #6319)** — fails locally when the WooCommerce test plugins are loaded (`do_action('init')` re-registers Woo blocks → incorrect-usage notices); reproduced on clean `alpha-working` via a temp worktree, passes in CI where Woo isn't loaded. Noted in PR #6319 as "Known pre-existing failure (not fixed here)" — hand to the test-suite workstream (OI-3 tracker).
 - **Verified closed (do not re-raise):** K16 failures #33 (`test-llm-sanitizer`), #107/#108 (`test-shortcodes-coordinator.php`) — fixed by PR #6311 (referenced as out-of-scope in #6304/#6305, which merged first); triage failure #50 (mempalace block count) — does not reproduce in any local ordering and is explained by the Graphify-precondition fix in PR #6302.
 - **First noted in:** v1.1.70 plan.
 

@@ -1,7 +1,9 @@
 # NV oOS REST API Patterns
 
 > **GSD Context File** — Load this when working on REST API endpoints.
-> Last reviewed: September 5, 2026 (v1.1.70).
+> Last reviewed: September 5, 2026 (v1.1.71).
+>
+> **New in v1.1.71 (PR #6322, no new routes):** the general REST request limiter (`WP_MCP_AI_REST::check_rate_limit()`) now uses fixed-window accounting — the transient stores `{count, first_seen}`, the TTL is never extended past the window end, and `retry_after` reports the **remaining** time (a contract change: clients should not assume the full window). When the limit trips, the limiter fires `wp_mcp_ai_rest_request_rate_limit_exceeded` (window-end timestamp) and `WP_MCP_AI_Restriction_Registry` flags a `rate_limit` restriction (scope `rest`, auto-release at window end) so blocked users appear in the Restrictions tab + Token Manager; lifting a `rate_limit` restriction deletes the `wp_mcp_ai_rate_limit_user_{id}` transient. Guest (IP-keyed) blocks are not user-attached and expire on their own.
 >
 > **New in v1.1.70 (no new routes):** markup REST validation `WP_Error`s now carry `status => 400` — client errors must not surface as 500s (#6302); the legacy HTTP+SSE handshake's `legacy_sse_enabled()` is filterable via `wp_mcp_ai_legacy_sse_enabled` (default unchanged — the blocking emitter keeps strict machine auth, #6302); transcript-GET tests derive their expectation from `table_exists()` at test time instead of assuming storage availability (#6302); the GitHub OAuth handler and the plugins-integration save handler gained `wp_mcp_ai_github_oauth_redirect_terminate` / `wp_mcp_ai_plugins_integration_redirect_terminate` filter seams for their terminating `exit`s (#6301, #6303).
 >

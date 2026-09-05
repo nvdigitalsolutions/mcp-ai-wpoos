@@ -5,8 +5,8 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.70"
-  plugin-version-tested: "1.1.70"
+  plugin-version: "1.1.71"
+  plugin-version-tested: "1.1.71"
   last-updated: "2026-09-05"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
@@ -624,6 +624,28 @@ Import external AI conversation exports into the JetEngine
   registration; CSV list args accept `"1,2"` and `"1, 2"`;
   assistant-builder and Pro toolkit blocks register idempotently
   (WP 7.1 notices).
+
+## Rate-Limit Unlock, Model Catalog & Ecosystem (v1.1.71+)
+
+- **REST rate-limit unlock** (PR #6322) — `check_rate_limit()` uses fixed-window
+  accounting (`{count, first_seen}` payload; TTL never extended past window end)
+  with honest remaining-time `retry_after`; the new
+  `wp_mcp_ai_rest_request_rate_limit_exceeded` action flags the restriction
+  registry, so blocked users appear in Command Center → Restrictions with the
+  Lift button (lifting also clears the `wp_mcp_ai_rate_limit_user_{id}`
+  transient; guest IP-keyed blocks expire on their own).
+- **MemPalace wing scope** (PR #6327) — `wake_up_context` enforces
+  `wing`/`room` exclusions (`matches_wake_filters()`); Graphify graph anchors
+  only boost scores and never excluded out-of-scope memories.
+- **September 2026 model catalog** (PR #6328) — 228 models; new defaults
+  `default_gemini_model` → `gemini-3.6-flash`, `openai_image_model` →
+  `gpt-image-2`, Kimi default → `kimi-k3`; retired DeepSeek chat/reasoner/coder,
+  `gemini-3.1-flash`, `imagen-4` have migration-map successors.
+- **Checkout API** (PR #6315) — addon joins the standard build + PHPUnit
+  pipeline; token/crypto classes derive `wp_salt()` salts (never raw
+  `AUTH_KEY . SECURE_AUTH_KEY`). Connectors links → `options-connectors.php`
+  (PR #6314). Coding-time agent skills: 53 → **54** (`mcp-ai-wpoos-updates`).
+- **Tool count** — unchanged: ~303 base + ~1,263 Pro (~1,566 total).
 
 ## Wave-5 Repair Campaign & Host-Hardening Fixes (v1.1.70+)
 
