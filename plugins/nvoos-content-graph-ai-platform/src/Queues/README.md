@@ -14,6 +14,10 @@ is the aligned port of `WP_MCP_AI_Job_Queue_Manager`: byte-identical
 `mcp_ai_concurrent_jobs` schema, priority/status constants, atomic
 claiming, retry/fail handling, stale-job cleanup, and queue stats — the
 concurrency layer the queue-processing cron path consumes.
+`RateLimitManager` is the aligned port of `WP_MCP_AI_Rate_Limit_Manager`:
+byte-identical retry constants, backoff multiplier, retriable
+status/timeout tables, and the `execute_with_retry()` loop — the API
+rate-limit resilience layer.
 
 ## Tier
 
@@ -32,12 +36,14 @@ concurrency layer the queue-processing cron path consumes.
 | `NvoosContentGraphAiPlatform\Queues\AsyncJobQueue` | `AsyncJobQueue.php` | `Plugin::registerQueues()` — queue lifecycle + cron wiring |
 | `NvoosContentGraphAiPlatform\Queues\QueueManager` | `QueueManager.php` | `Plugin::registerQueueManager()` — tool-execution orchestration (filter + AJAX status) |
 | `NvoosContentGraphAiPlatform\Queues\JobQueueManager` | `JobQueueManager.php` | Queue-processing cron path + CLI (static utility; no hooks of its own — wiring lands with the scheduler bridge) |
+| `NvoosContentGraphAiPlatform\Queues\RateLimitManager` | `RateLimitManager.php` | API callers (static utility; no hooks of its own — consumed directly) |
 
 ## Inputs / Outputs / Neighbors
 
 - **Reads from:** job rows in `wp_*mcp_ai_job_queue`, the
   `wp_mcp_ai_queue_worker_dedicated` option (RabbitMQ gating), the
-  `nvoos_content_graph_ai_platform/async_job_executors` filter
+  `nvoos_content_graph_ai_platform/async_job_executors` filter;
+  `RateLimitManager` reads/writes `wp_mcp_ai_retry_*` transients
 - **Writes to:** job rows, cron events (`wp_mcp_ai_process_job_queue`,
   `wp_mcp_ai_cleanup_job_queue`), the `minute` cron interval,
   `wp_mcp_ai_emit_sse_event` (byte-identical action)
@@ -48,7 +54,8 @@ concurrency layer the queue-processing cron path consumes.
   `QueueManager` resolves the RabbitMQ client + tool registry per install
   mode (base classes monolith / AI addon + CoreBridge standalone);
   `JobQueueManager` resolves SLA/resource/DLQ/logging through dormant
-  seams until those pieces port
+  seams until those pieces port; `RateLimitManager` targets the base
+  logger through a dormant seam
 
 ## Conventions
 
