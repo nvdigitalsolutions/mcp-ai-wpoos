@@ -16,11 +16,13 @@
  *   executors without touching this class. Without a registered executor
  *   the base's per-type guards apply (byte-identical "not available"
  *   failures).
- * - The Action Scheduler bridge (`WP_MCP_AI_Async_Scheduler_Bridge`),
- *   dead-letter queue, job notifier, and base logger have no platform
- *   counterparts yet — their guards are preserved as protected seams and
- *   stay dormant until those E2 pieces port (jobs poll via the WP-Cron
- *   tick meanwhile).
+ * - The Action Scheduler bridge, dead-letter queue, job notifier, and
+ *   base logger have no platform counterparts yet — their guards are
+ *   preserved as protected seams and stay dormant until those E2 pieces
+ *   port (jobs poll via the WP-Cron tick meanwhile). The bridge seam is
+ *   the exception: it now resolves per install mode (base bridge
+ *   monolith / `SchedulerBridge` standalone) via
+ *   `scheduler_bridge_class()`.
  * - RabbitMQ gating uses the AI addon's `RabbitMqClient` (D2d) + the same
  *   `wp_mcp_ai_queue_worker_dedicated` option.
  * - The `minute` cron interval is registered by this class — the base
@@ -941,16 +943,41 @@ class AsyncJobQueue {
 	/**
 	 * Whether the Action Scheduler bridge is available.
 	 *
-	 * Dormant until the bridge ports (E2): the platform has no counterpart
-	 * yet, so jobs poll via the WP-Cron tick.
+	 * Resolves per install mode: the base `WP_MCP_AI_Async_Scheduler_Bridge`
+	 * in monolith installs, this package's `SchedulerBridge` standalone.
+	 * The method_exists guards are a documented hardening deviation. When
+	 * neither bridge is usable the queue polls via the WP-Cron tick.
 	 *
 	 * @return bool
 	 */
 	protected static function scheduler_bridge_available(): bool {
-		return class_exists( 'WP_MCP_AI_Async_Scheduler_Bridge' )
+		if ( defined( 'WP_MCP_AI_PATH' )
+			&& class_exists( 'WP_MCP_AI_Async_Scheduler_Bridge' )
 			&& method_exists( 'WP_MCP_AI_Async_Scheduler_Bridge', 'is_available' )
 			&& method_exists( 'WP_MCP_AI_Async_Scheduler_Bridge', 'enqueue_job' )
-			&& \WP_MCP_AI_Async_Scheduler_Bridge::is_available();
+		) {
+			return \WP_MCP_AI_Async_Scheduler_Bridge::is_available();
+		}
+
+		return method_exists( __NAMESPACE__ . '\SchedulerBridge', 'is_available' )
+			&& method_exists( __NAMESPACE__ . '\SchedulerBridge', 'enqueue_job' )
+			&& \NvoosContentGraphAiPlatform\Queues\SchedulerBridge::is_available();
+	}
+
+	/**
+	 * Resolve the Action Scheduler bridge class.
+	 *
+	 * The base plugin owns AS dispatch in monolith installs; standalone
+	 * resolves this package's `SchedulerBridge`.
+	 *
+	 * @return string Fully-qualified class name.
+	 */
+	protected static function scheduler_bridge_class(): string {
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Async_Scheduler_Bridge' ) ) {
+			return 'WP_MCP_AI_Async_Scheduler_Bridge';
+		}
+
+		return __NAMESPACE__ . '\SchedulerBridge';
 	}
 
 	/**
@@ -1000,7 +1027,8 @@ class AsyncJobQueue {
 		if ( ! static::scheduler_bridge_available() ) {
 			return;
 		}
-		\WP_MCP_AI_Async_Scheduler_Bridge::enqueue_job( (int) $job_id );
+		$bridge_class = static::scheduler_bridge_class();
+		$bridge_class::enqueue_job( (int) $job_id );
 	}
 
 	/**
