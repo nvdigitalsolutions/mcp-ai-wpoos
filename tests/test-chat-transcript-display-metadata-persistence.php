@@ -147,15 +147,15 @@ class Test_Chat_Transcript_Display_Metadata_Persistence extends WP_UnitTestCase 
 		remove_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 
 		// Restore the original transcript repository so later suites in the
-		// same process do not inherit this suite's mock.
-		if ( null !== $this->original_transcript_repository ) {
-			$rest       = WP_MCP_AI_REST::get_instance();
-			$reflection = new ReflectionClass( $rest );
-			$property   = $reflection->getProperty( 'transcript_repository' );
-			$property->setAccessible( true );
-			$property->setValue( $rest, $this->original_transcript_repository );
-			$this->original_transcript_repository = null;
-		}
+		// same process do not inherit this suite's mock. Always restore — the
+		// original may legitimately be null (the repository is lazily created
+		// on first use), and leaving the mock behind breaks later suites.
+		$rest       = WP_MCP_AI_REST::get_instance();
+		$reflection = new ReflectionClass( $rest );
+		$property   = $reflection->getProperty( 'transcript_repository' );
+		$property->setAccessible( true );
+		$property->setValue( $rest, $this->original_transcript_repository );
+		$this->original_transcript_repository = null;
 
 		wp_set_current_user( 0 );
 		$this->transcript_handler = null;
