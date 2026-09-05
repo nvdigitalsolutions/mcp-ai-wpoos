@@ -31,7 +31,7 @@
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
 | Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` + `src/Mesh/` | 🟢 Extracted (Wave A) — settings admin UI stays in base by design (FederationAdmin covers the platform dashboard) |
 | Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🟢 Built (Phase 4 greenfield) |
-| Queues (E2) | `includes/class-wp-mcp-ai-async-job-queue.php` | `src/Queues/` (`AsyncJobQueue` ported) | 🟡 In progress (Wave E2) — remaining: JobQueueManager, QueueManager, DeadLetterQueue, RateLimitManager, SlaManager, CronManager, JobNotifier + REST, outbound webhook, scheduler bridge |
+| Queues (E2) | `includes/class-wp-mcp-ai-async-job-queue.php` | `src/Queues/` (`AsyncJobQueue` ported) | 🟡 In progress (Wave E2) — remaining: JobQueueManager, QueueManager, DeadLetterQueue, RateLimitManager, SlaManager, JobNotifier + REST, outbound webhook, scheduler bridge |
 
 ## Wave E2 extraction notes (2026-09-05)
 
@@ -42,6 +42,10 @@
 - Deviations (documented in the class docblock): the `minute` cron interval is registered by the class (the base relies on an external registration, so its polling cron never fires standalone); the Action Scheduler bridge / DLQ / notifier / logger seams are dormant with `method_exists` guards (the base's own calls target methods its DLQ/notifier classes do not expose); a new executor filter (`nvoos_content_graph_ai_platform/async_job_executors`) lets E1 register job-type executors.
 - Drive-by fix: `AgentCapabilityBoundaryHooks` extracted from `AgentCapabilityBoundary.php` into its own PSR-4 file — the multi-class file broke standalone autoloading and fatalled `Plugin::register()`.
 - 19 characterization tests in `tests/test-async-job-queue.php` green in both matrices.
+
+### CronManager 🟡 In progress (2026-09-05)
+
+- Ported as `src/Queues/CronManager.php` under `NvoosContentGraphAiPlatform\Queues`: byte-identical `wp_mcp_ai_cron_jobs` option, argument normalisation, record/remove lifecycle, retention pruning, and stable job-ID generation. Standalone-only `init` prune hook via `Plugin::registerCronManager()`; the retention setting resolves per install mode (base `WP_MCP_AI_Settings_Registry` monolith / direct option read standalone). 22 characterization tests in `tests/test-cron-manager.php` green in both matrices.
 
 ## Wave A extraction notes (2026-08-31)
 

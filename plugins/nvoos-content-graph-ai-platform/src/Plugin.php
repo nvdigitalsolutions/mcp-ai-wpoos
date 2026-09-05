@@ -42,6 +42,7 @@ final class Plugin {
 		$this->registerQueues();
 		$this->registerQueueManager();
 		$this->registerDeadLetterQueue();
+		$this->registerCronManager();
 	}
 
 	private function registerAdmin(): void {
@@ -242,6 +243,27 @@ final class Plugin {
 
 		add_action( 'init', array( \NvoosContentGraphAiPlatform\Queues\DeadLetterQueue::class, 'schedule_cleanup' ) );
 		add_action( 'wp_mcp_ai_dlq_cleanup', array( \NvoosContentGraphAiPlatform\Queues\DeadLetterQueue::class, 'cleanup' ) );
+	}
+
+	/**
+	 * Register the cron manager (Wave E2).
+	 *
+	 * Standalone-only: the base plugin owns the same `init` prune hook in
+	 * monolith installs; double registration would double-prune the shared
+	 * `wp_mcp_ai_cron_jobs` option.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerCronManager(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Queues\CronManager' ) ) {
+			\NvoosContentGraphAiPlatform\Queues\CronManager::init();
+		}
 	}
 
 	private function __clone() {}
