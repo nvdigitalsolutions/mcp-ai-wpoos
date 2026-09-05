@@ -1,5 +1,11 @@
 # NV oOS Content Graph — AI · Changelog
 
+## Unreleased
+
+### Added
+
+- **Assistant builder block set (Wave D-UI-4 close-out)** — four new server-rendered blocks (`nvoos-content-graph-ai/assistant-selector`, `tools-grid`, `knowledge-base`, `assistant-builder`) ported from the base plugin's assistant builder set, with editor registrations, a lean vanilla frontend script, and block styles. The tools grid resolves tools per install mode (base registry in monolith installs, the nvoos/core registry standalone); the builder composite embeds the CG chat widget and submits its build payload to the per-mode create action. The Build Assistant page's Prompt tab now embeds the tools grid + knowledge base components. 18 characterization tests green in both ecosystem matrices.
+
 ## 1.0.4 — 2026-08-31
 
 ### Security

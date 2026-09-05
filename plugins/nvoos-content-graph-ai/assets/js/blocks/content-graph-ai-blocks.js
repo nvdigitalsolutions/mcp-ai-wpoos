@@ -258,4 +258,294 @@
 			return null; // Server-rendered.
 		},
 	});
+
+// ─── Assistant selector block ───────────────────────────────────
+
+registerBlockType('nvoos-content-graph-ai/assistant-selector', {
+	apiVersion: 3,
+	title: __('Assistant Selector', 'nvoos-content-graph-ai'),
+	icon: 'admin-users',
+	category: 'nvoos-content-graph-ai',
+	description: __('A dropdown to select from available AI assistants.', 'nvoos-content-graph-ai'),
+	keywords: ['ai', 'assistant', 'selector', 'dropdown'],
+	attributes: {
+		defaultAssistantId: { type: 'number', default: 0 },
+		label: { type: 'string', default: '' },
+		showStartButton: { type: 'boolean', default: true },
+		startButtonText: { type: 'string', default: '' },
+	},
+	supports: { anchor: true, html: false },
+	edit: function (props) {
+		const attributes = props.attributes;
+		const setAttributes = props.setAttributes;
+
+		return el(
+			'div',
+			{ className: 'nvoos-cg-block-preview-wrap' },
+			el(
+				InspectorControls,
+				null,
+				el(
+					PanelBody,
+					{ title: __('Selector settings', 'nvoos-content-graph-ai'), initialOpen: true },
+					el(TextControl, {
+						label: __('Label', 'nvoos-content-graph-ai'),
+						value: attributes.label,
+						onChange: function (value) {
+							setAttributes({ label: value });
+						},
+					}),
+					el(ToggleControl, {
+						label: __('Show start button', 'nvoos-content-graph-ai'),
+						checked: attributes.showStartButton,
+						onChange: function (value) {
+							setAttributes({ showStartButton: value });
+						},
+					}),
+					el(TextControl, {
+						label: __('Start button text', 'nvoos-content-graph-ai'),
+						value: attributes.startButtonText,
+						onChange: function (value) {
+							setAttributes({ startButtonText: value });
+						},
+					})
+				)
+			),
+			el(PreviewCard, { title: __('Assistant Selector', 'nvoos-content-graph-ai') })
+		);
+	},
+	save: function () {
+		return null; // Server-rendered.
+	},
+});
+
+// ─── Tools grid block ───────────────────────────────────────────
+
+registerBlockType('nvoos-content-graph-ai/tools-grid', {
+	apiVersion: 3,
+	title: __('AI Tools Grid', 'nvoos-content-graph-ai'),
+	icon: 'admin-tools',
+	category: 'nvoos-content-graph-ai',
+	description: __('Display a grid of available AI tools that users can enable or disable.', 'nvoos-content-graph-ai'),
+	keywords: ['ai', 'tools', 'grid', 'capabilities', 'mcp'],
+	attributes: {
+		title: { type: 'string', default: '' },
+		description: { type: 'string', default: '' },
+		showDescriptions: { type: 'boolean', default: true },
+		startCollapsed: { type: 'boolean', default: true },
+		showActions: { type: 'boolean', default: true },
+		selectedTools: { type: 'array', default: [] },
+	},
+	supports: { anchor: true, html: false },
+	edit: function (props) {
+		const attributes = props.attributes;
+		const setAttributes = props.setAttributes;
+
+		return el(
+			'div',
+			{ className: 'nvoos-cg-block-preview-wrap' },
+			el(
+				InspectorControls,
+				null,
+				el(
+					PanelBody,
+					{ title: __('Grid settings', 'nvoos-content-graph-ai'), initialOpen: true },
+					el(TextControl, {
+						label: __('Title', 'nvoos-content-graph-ai'),
+						value: attributes.title,
+						onChange: function (value) {
+							setAttributes({ title: value });
+						},
+					}),
+					el(ToggleControl, {
+						label: __('Show descriptions', 'nvoos-content-graph-ai'),
+						checked: attributes.showDescriptions,
+						onChange: function (value) {
+							setAttributes({ showDescriptions: value });
+						},
+					}),
+					el(ToggleControl, {
+						label: __('Start collapsed', 'nvoos-content-graph-ai'),
+						checked: attributes.startCollapsed,
+						onChange: function (value) {
+							setAttributes({ startCollapsed: value });
+						},
+					}),
+					el(ToggleControl, {
+						label: __('Show actions', 'nvoos-content-graph-ai'),
+						checked: attributes.showActions,
+						onChange: function (value) {
+							setAttributes({ showActions: value });
+						},
+					})
+				)
+			),
+			el(PreviewCard, { title: __('AI Tools Grid', 'nvoos-content-graph-ai') })
+		);
+	},
+	save: function () {
+		return null; // Server-rendered.
+	},
+});
+
+// ─── Knowledge base block ───────────────────────────────────────
+
+registerBlockType('nvoos-content-graph-ai/knowledge-base', {
+	apiVersion: 3,
+	title: __('Knowledge Base Upload', 'nvoos-content-graph-ai'),
+	icon: 'media-document',
+	category: 'nvoos-content-graph-ai',
+	description: __('Upload files to include in an AI assistant\'s knowledge base.', 'nvoos-content-graph-ai'),
+	keywords: ['ai', 'knowledge', 'upload', 'files', 'documents'],
+	attributes: {
+		title: { type: 'string', default: '' },
+		description: { type: 'string', default: '' },
+		allowedTypes: { type: 'string', default: '.pdf,.txt,.md,.doc,.docx,.csv,.json' },
+		maxFiles: { type: 'number', default: 10 },
+		maxFileSizeMB: { type: 'number', default: 10 },
+		showPreview: { type: 'boolean', default: true },
+		uploadedFileIds: { type: 'array', default: [] },
+	},
+	supports: { anchor: true, html: false },
+	edit: function (props) {
+		const attributes = props.attributes;
+		const setAttributes = props.setAttributes;
+
+		return el(
+			'div',
+			{ className: 'nvoos-cg-block-preview-wrap' },
+			el(
+				InspectorControls,
+				null,
+				el(
+					PanelBody,
+					{ title: __('Upload settings', 'nvoos-content-graph-ai'), initialOpen: true },
+					el(TextControl, {
+						label: __('Title', 'nvoos-content-graph-ai'),
+						value: attributes.title,
+						onChange: function (value) {
+							setAttributes({ title: value });
+						},
+					}),
+					el(TextControl, {
+						label: __('Allowed file types', 'nvoos-content-graph-ai'),
+						value: attributes.allowedTypes,
+						onChange: function (value) {
+							setAttributes({ allowedTypes: value });
+						},
+					}),
+					el(RangeControl, {
+						label: __('Max files', 'nvoos-content-graph-ai'),
+						value: attributes.maxFiles,
+						min: 1,
+						max: 50,
+						onChange: function (value) {
+							setAttributes({ maxFiles: value });
+						},
+					}),
+					el(RangeControl, {
+						label: __('Max file size (MB)', 'nvoos-content-graph-ai'),
+						value: attributes.maxFileSizeMB,
+						min: 1,
+						max: 100,
+						onChange: function (value) {
+							setAttributes({ maxFileSizeMB: value });
+						},
+					})
+				)
+			),
+			el(PreviewCard, { title: __('Knowledge Base Upload', 'nvoos-content-graph-ai') })
+		);
+	},
+	save: function () {
+		return null; // Server-rendered.
+	},
+});
+
+// ─── Assistant builder block ────────────────────────────────────
+
+registerBlockType('nvoos-content-graph-ai/assistant-builder', {
+	apiVersion: 3,
+	title: __('AI Assistant Builder', 'nvoos-content-graph-ai'),
+	icon: 'hammer',
+	category: 'nvoos-content-graph-ai',
+	description: __('A complete interface for building new AI assistants with tools configuration, knowledge base, and build functionality.', 'nvoos-content-graph-ai'),
+	keywords: ['ai', 'assistant', 'builder', 'create', 'tools', 'mcp'],
+	attributes: {
+		showAssistantSelector: { type: 'boolean', default: true },
+		showToolsGrid: { type: 'boolean', default: true },
+		showKnowledgeBase: { type: 'boolean', default: true },
+		showBuildButton: { type: 'boolean', default: true },
+		defaultAssistantId: { type: 'number', default: 0 },
+		layout: { type: 'string', default: 'stacked' },
+		toolsCollapsed: { type: 'boolean', default: true },
+		showToolDescriptions: { type: 'boolean', default: true },
+		enableStreaming: { type: 'boolean', default: true },
+		chatPlaceholder: { type: 'string', default: '' },
+		allowedFileTypes: { type: 'string', default: '.pdf,.txt,.md,.doc,.docx,.csv,.json' },
+		maxFiles: { type: 'number', default: 10 },
+		maxFileSizeMB: { type: 'number', default: 10 },
+	},
+	supports: { anchor: true, html: false },
+	edit: function (props) {
+		const attributes = props.attributes;
+		const setAttributes = props.setAttributes;
+
+		return el(
+			'div',
+			{ className: 'nvoos-cg-block-preview-wrap' },
+			el(
+				InspectorControls,
+				null,
+				el(
+					PanelBody,
+					{ title: __('Builder sections', 'nvoos-content-graph-ai'), initialOpen: true },
+					el(ToggleControl, {
+						label: __('Show assistant selector', 'nvoos-content-graph-ai'),
+						checked: attributes.showAssistantSelector,
+						onChange: function (value) {
+							setAttributes({ showAssistantSelector: value });
+						},
+					}),
+					el(ToggleControl, {
+						label: __('Show tools grid', 'nvoos-content-graph-ai'),
+						checked: attributes.showToolsGrid,
+						onChange: function (value) {
+							setAttributes({ showToolsGrid: value });
+						},
+					}),
+					el(ToggleControl, {
+						label: __('Show knowledge base', 'nvoos-content-graph-ai'),
+						checked: attributes.showKnowledgeBase,
+						onChange: function (value) {
+							setAttributes({ showKnowledgeBase: value });
+						},
+					}),
+					el(ToggleControl, {
+						label: __('Show build button', 'nvoos-content-graph-ai'),
+						checked: attributes.showBuildButton,
+						onChange: function (value) {
+							setAttributes({ showBuildButton: value });
+						},
+					}),
+					el(SelectControl, {
+						label: __('Layout', 'nvoos-content-graph-ai'),
+						value: attributes.layout,
+						options: [
+							{ label: __('Stacked', 'nvoos-content-graph-ai'), value: 'stacked' },
+							{ label: __('Side by side', 'nvoos-content-graph-ai'), value: 'side-by-side' },
+						],
+						onChange: function (value) {
+							setAttributes({ layout: value });
+						},
+					})
+				)
+			),
+			el(PreviewCard, { title: __('AI Assistant Builder', 'nvoos-content-graph-ai') })
+		);
+	},
+	save: function () {
+		return null; // Server-rendered.
+	},
+});
 })(window.wp);

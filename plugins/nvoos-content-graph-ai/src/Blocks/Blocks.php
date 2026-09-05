@@ -2,10 +2,12 @@
 /**
  * Block registration hub for the Content Graph AI addon.
  *
- * Registers the ecosystem's chat-family blocks (Wave D-UI-2) —
- * `nvoos-content-graph-ai/chat` and `nvoos-content-graph-ai/chat-bubble`
- * — with the block category, the bubble frontend assets (script + style,
- * shared with any future Elementor bubble widget), and the block editor
+ * Registers the ecosystem's block surface — the chat-family blocks
+ * (Wave D-UI-2: `nvoos-content-graph-ai/chat` and
+ * `nvoos-content-graph-ai/chat-bubble`) and the assistant builder set
+ * (Wave D-UI-4: `assistant-selector`, `tools-grid`, `knowledge-base`,
+ * `assistant-builder`) — with the block category, the bubble and
+ * assistant-set frontend assets (scripts + styles), and the block editor
  * script. Block names and category are ecosystem-specific and never
  * collide with the base plugin's `mcp-ai-wpoos/*` blocks in monolith
  * installs.
@@ -53,6 +55,17 @@ class Blocks {
 	const EDITOR_SCRIPT_HANDLE = 'nvoos-content-graph-ai-blocks';
 
 	/**
+	 * Assistant-builder frontend script handle (selector / tools grid /
+	 * knowledge base / builder composite).
+	 */
+	const ASSISTANT_SCRIPT_HANDLE = 'nvoos-content-graph-ai-assistant-blocks';
+
+	/**
+	 * Assistant-builder frontend style handle.
+	 */
+	const ASSISTANT_STYLE_HANDLE = 'nvoos-content-graph-ai-assistant-blocks-style';
+
+	/**
 	 * Register the hub (hooked to `init` by `register()`).
 	 *
 	 * @return void
@@ -92,6 +105,7 @@ class Blocks {
 		}
 
 		$this->register_bubble_assets();
+		$this->register_assistant_assets();
 
 		$registry = \WP_Block_Type_Registry::get_instance();
 
@@ -113,6 +127,26 @@ class Blocks {
 					array( 'render_callback' => array( ChatBubbleBlock::class, 'render' ) )
 				)
 			);
+		}
+
+		// Assistant builder block set (Wave D-UI-4 close-out).
+		$assistant_blocks = array(
+			AssistantSelectorBlock::class,
+			ToolsGridBlock::class,
+			KnowledgeBaseBlock::class,
+			AssistantBuilderBlock::class,
+		);
+
+		foreach ( $assistant_blocks as $block_class ) {
+			if ( ! $registry->is_registered( $block_class::BLOCK_NAME ) ) {
+				register_block_type(
+					$block_class::BLOCK_NAME,
+					array_merge(
+						$block_class::metadata(),
+						array( 'render_callback' => array( $block_class, 'render' ) )
+					)
+				);
+			}
 		}
 	}
 
@@ -140,6 +174,49 @@ class Blocks {
 				NVOOS_CONTENT_GRAPH_AI_VERSION
 			);
 		}
+	}
+
+	/**
+	 * Register the assistant-builder frontend script + style.
+	 *
+	 * @return void
+	 */
+	protected function register_assistant_assets(): void {
+		if ( ! wp_script_is( self::ASSISTANT_SCRIPT_HANDLE, 'registered' ) ) {
+			wp_register_script(
+				self::ASSISTANT_SCRIPT_HANDLE,
+				NVOOS_CONTENT_GRAPH_AI_URL . 'assets/js/blocks/content-graph-ai-assistant-blocks.js',
+				array(),
+				NVOOS_CONTENT_GRAPH_AI_VERSION,
+				true
+			);
+		}
+
+		if ( ! wp_style_is( self::ASSISTANT_STYLE_HANDLE, 'registered' ) ) {
+			wp_register_style(
+				self::ASSISTANT_STYLE_HANDLE,
+				NVOOS_CONTENT_GRAPH_AI_URL . 'assets/css/blocks/content-graph-ai-assistant-blocks.css',
+				array(),
+				NVOOS_CONTENT_GRAPH_AI_VERSION
+			);
+		}
+	}
+
+	/**
+	 * Enqueue the assistant-builder frontend script + style.
+	 *
+	 * Called by the assistant block-set render callbacks; registering
+	 * first keeps the calls idempotent and safe outside a block context
+	 * (admin embeds).
+	 *
+	 * @return void
+	 */
+	public static function enqueue_assistant_assets(): void {
+		$hub = new self();
+		$hub->register_assistant_assets();
+
+		wp_enqueue_script( self::ASSISTANT_SCRIPT_HANDLE );
+		wp_enqueue_style( self::ASSISTANT_STYLE_HANDLE );
 	}
 
 	/**

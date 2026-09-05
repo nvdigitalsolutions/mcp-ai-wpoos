@@ -14,9 +14,9 @@
  * side by side without collisions (documented deviation).
  *
  * Documented deviations (additive decoupling):
- * - The Prompt tab's Tools Grid + Knowledge Base block components are
- *   deferred until the ecosystem block set grows counterparts; the tab
- *   keeps the builder-assistant chat modal surface.
+ * - The Prompt tab embeds the ecosystem Tools Grid + Knowledge Base
+ *   block components (Wave D-UI-4 close-out) via their static render
+ *   methods; the builder-assistant chat modal surface stays alongside.
  * - The background-create flag is accepted but answers `async_unavailable`
  *   until the queue wave (E2) ports the async creator.
  * - `create_from_form()` builds a simple structured system prompt from
@@ -36,6 +36,8 @@ declare(strict_types=1);
 namespace NvoosContentGraphAi\Admin\AssistantPages;
 
 use NvoosContentGraphAi\Admin\AssistantPostType;
+use NvoosContentGraphAi\Blocks\KnowledgeBaseBlock;
+use NvoosContentGraphAi\Blocks\ToolsGridBlock;
 use NvoosContentGraphAi\CoreBridge;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -112,11 +114,11 @@ class BuildAssistantPage {
 			'nvoos-cg-build-assistant-js',
 			'nvoosCgCreateAssistant',
 			array(
-				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
-				'action'   => self::CREATE_ACTION,
-				'nonce'    => wp_create_nonce( self::CREATE_ACTION ),
-				'redirect' => admin_url( 'edit.php?post_type=' . AssistantPostType::POST_TYPE ),
-				'strings'  => array(
+				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+				'action'      => self::CREATE_ACTION,
+				'nonce'       => wp_create_nonce( self::CREATE_ACTION ),
+				'redirect'    => admin_url( 'edit.php?post_type=' . AssistantPostType::POST_TYPE ),
+				'strings'     => array(
 					'creating' => __( 'Creating assistant...', 'nvoos-content-graph-ai' ),
 					'success'  => __( 'Assistant created successfully!', 'nvoos-content-graph-ai' ),
 					'error'    => __( 'Error creating assistant. Please try again.', 'nvoos-content-graph-ai' ),
@@ -418,6 +420,32 @@ class BuildAssistantPage {
 						</div>
 					<?php endif; ?>
 				</div>
+			</div>
+
+			<div class="nvoos-cg-section">
+				<h2><?php esc_html_e( 'Tools & Knowledge Base', 'nvoos-content-graph-ai' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Select the tools the assistant can use and upload knowledge-base files before starting the build.', 'nvoos-content-graph-ai' ); ?></p>
+
+				<?php
+				// The Prompt tab embeds the ecosystem block components
+				// (Wave D-UI-4 close-out). Static renders are safe
+				// outside a block context — wrapper attributes fall
+				// back to the esc_attr() path.
+				echo ToolsGridBlock::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Block render escapes every value internally.
+					array(
+						'startCollapsed' => true,
+						'showActions'    => true,
+					),
+					'',
+					null
+				);
+
+				echo KnowledgeBaseBlock::render( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Block render escapes every value internally.
+					array(),
+					'',
+					null
+				);
+				?>
 			</div>
 		</div>
 
