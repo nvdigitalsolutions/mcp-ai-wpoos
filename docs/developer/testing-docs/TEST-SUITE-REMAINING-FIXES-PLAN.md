@@ -66,6 +66,11 @@ skill.
 | #6105 | `WP_MCP_AI_Profession_Team_CPT_Sanitization_Test` + `WP_MCP_AI_Professional_Tools_Test` (production: negative memory-file IDs clamp to 0) |
 | #6106 | `Test_Project_Management_Submenu_Registration` (production: Graphify admin classes loaded defensively on `plugins_loaded`) |
 | #6107 | `WP_MCP_AI_Toolkit_Registry_Test` + `Test_Hooks_Registry` |
+| #6327 | Post-K16 singles (run 91942465749): chat transcript session-key mock restore; MemPalace wing-scope leak (production: `wake_up_context` graph path now enforces wing/room exclusions); Pro OKF tools lost to `clear_tools()` on the shared registry; Site Health provider-key isolation; transcript-mining logging cache reset |
+
+Clusters #6109–#6327 beyond the rows above are tracked in the
+[`.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md`](../../../.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md)
+cluster state board, which is the live source of truth.
 
 Remaining candidates re-triage from the latest CI log; this table is updated
 as clusters land.
@@ -396,3 +401,20 @@ can die during bootstrap, or if wp-phpunit starts guarding its declarations.
   container causing `Lock wait timeout` retries on the shared test DB (#6295).
   Full detail + verified-closed list in
   `docs/project/plans/docs-catch-up-open-items.md` OI-4.
+- **Post-K16 residual findings (2026-09-05, from CI run 91942465749, PR
+  #6327):** (1) `WP_MCP_AI_Site_Health_Class_Test` openai/ollama connectivity
+  tests failed with `recommended` instead of `good` — the polluting leftover
+  provider key was not definitively isolated (options roll back per test and
+  no `option_*` filter exists in tests, so the channel is an un-identified
+  cross-suite leak); fixed defensively by unsetting the other provider keys
+  per test. (2) `WP_MCP_AI_Transcript_Mining_Job_Logging_Test` — all three
+  activity/error-entry assertions empty with no `[NV oOS]` debug output in CI
+  (the opt-in logging gate read false); not reproduced locally in pair runs;
+  fixed defensively by resetting the settings cache after enabling logging.
+  Both suites remain candidates for a full-prefix bisect with
+  `--log-events-text` if they reappear in a future CI log — see the
+  "Order-dependent bisection pitfalls" section of the test-suite skill.
+- `test-shortcodes-coordinator.php` (chat-shortcode methods / lightweight
+  assertions) fails when `test-shortcodes.php` runs first in an isolated
+  pair — an artifact of chunk-order runs only, not present in the CI failure
+  list; left untouched.
