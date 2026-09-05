@@ -555,14 +555,17 @@ class Test_Platform_Measurement extends \WP_UnitTestCase {
 		$this->assertTrue( function_exists( 'wp_mcp_ai_register_reference_rewards' ) );
 
 		// Hook wiring mirrors the base bootstrap file (this test triggers the
-		// shim load, so the wiring lives in the current hook globals).
-		$this->assertSame( 50, has_action( 'plugins_loaded', 'wp_mcp_ai_measurement_bootstrap' ) );
+		// shim load, so the wiring lives in the current hook globals). The
+		// bootstrap runs on `init` (WP 6.7+ translation timing), not
+		// `plugins_loaded`.
+		$this->assertSame( 50, has_action( 'init', 'wp_mcp_ai_measurement_bootstrap' ) );
+		$this->assertFalse( has_action( 'plugins_loaded', 'wp_mcp_ai_measurement_bootstrap' ) );
 		$this->assertSame( 5, has_action( 'admin_init', 'wp_mcp_ai_measurement_ensure_capabilities' ) );
 		$this->assertSame( 20, has_action( 'wp_mcp_ai_register_verifiers', 'wp_mcp_ai_register_reference_verifiers' ) );
 		$this->assertSame( 20, has_action( 'wp_mcp_ai_register_reward_functions', 'wp_mcp_ai_register_reference_rewards' ) );
 
-		// WP_UnitTestCase resets hook globals between tests, so plugins_loaded
-		// never re-fires in this process — invoke the bootstrap directly.
+		// WP_UnitTestCase resets hook globals between tests, so the init
+		// bootstrap never re-fires in this process — invoke it directly.
 		// Suspend the framework's CREATE TABLE → TEMPORARY rewrite first:
 		// the bootstrap installs the metric-events table, and temporary
 		// tables are invisible to the table_exists() assertion below.
