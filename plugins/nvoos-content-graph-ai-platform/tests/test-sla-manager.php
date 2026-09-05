@@ -532,40 +532,16 @@ class Test_Sla_Manager extends \WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_settings' );
 		$this->assertTrue( JobQueueManagerSlaSeam::seam_sla_available() );
 	}
-}
 
-/**
- * @group queues
- */
-class Test_Sla_Manager_Job_Queue_Wiring extends \WP_UnitTestCase {
-
-	public function setUp(): void {
-		parent::setUp();
-
-		$this->suspend_temporary_table_rewrite();
-		JobQueueManager::create_table();
-		$this->truncate_table();
-	}
-
-	public function tearDown(): void {
-		global $wpdb;
-
-		// Drop the real table BEFORE re-arming the framework rewrite so the
-		// cleanup is not redirected to a TEMPORARY table.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-harness cleanup on a plugin-owned table; the name comes from a class constant.
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . JobQueueManager::TABLE_NAME );
-
-		$this->restore_temporary_table_rewrite();
-
-		parent::tearDown();
-	}
+	// ─── JobQueueManager SLA wiring (real queue table) ──────────────
 
 	/**
-	 * Suspend the WP test framework's CREATE/DROP TABLE → TEMPORARY rewrite.
+	 * Suspend the WP test framework's CREATE/DROP TABLE → TEMPORARY rewrite
+	 * and create the real concurrent-jobs table for one test.
 	 *
 	 * @return void
 	 */
-	private function suspend_temporary_table_rewrite(): void {
+	private function open_queue_table(): void {
 		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
 		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 
@@ -573,35 +549,38 @@ class Test_Sla_Manager_Job_Queue_Wiring extends \WP_UnitTestCase {
 		$table_name = $wpdb->prefix . JobQueueManager::TABLE_NAME;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-harness shadow cleanup on a plugin-owned table; the name comes from a class constant.
 		$wpdb->query( "DROP TEMPORARY TABLE IF EXISTS {$table_name}" );
+
+		JobQueueManager::create_table();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Static plugin-controlled table name; test isolation on the custom table.
+		$wpdb->query( 'TRUNCATE TABLE ' . $table_name );
 	}
 
 	/**
-	 * Re-arm the framework's TEMPORARY-table rewrite for subsequent tests.
+	 * Drop the real concurrent-jobs table and re-arm the TEMPORARY-table
+	 * rewrite.
 	 *
 	 * @return void
 	 */
-	private function restore_temporary_table_rewrite(): void {
+	private function close_queue_table(): void {
+		global $wpdb;
+
+		// Drop the real table BEFORE re-arming the framework rewrite so the
+		// cleanup is not redirected to a TEMPORARY table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-harness cleanup on a plugin-owned table; the name comes from a class constant.
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . JobQueueManager::TABLE_NAME );
+
 		add_filter( 'query', array( $this, '_create_temporary_tables' ) );
 		add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 	}
 
 	/**
-	 * Truncate the queue table for deterministic counts.
-	 *
-	 * @return void
-	 */
-	private function truncate_table(): void {
-		global $wpdb;
-		$wpdb->query( 'TRUNCATE TABLE ' . $wpdb->prefix . JobQueueManager::TABLE_NAME ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Static plugin-controlled table name; test isolation on the custom table.
-	}
-
-	/**
-	 * Fetch a raw row by job ID.
+	 * Fetch a raw queue row by job ID.
 	 *
 	 * @param string $job_id Job ID.
 	 * @return array|null Raw row.
 	 */
-	private function raw_row( string $job_id ): ?array {
+	private function queue_row( string $job_id ): ?array {
 		global $wpdb;
 		$row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Test read on the custom table.
 			$wpdb->prepare(
@@ -615,6 +594,8 @@ class Test_Sla_Manager_Job_Queue_Wiring extends \WP_UnitTestCase {
 	}
 
 	public function test_enqueue_job_applies_sla_tier_priority(): void {
+		$this->open_queue_table();
+
 		$result = JobQueueManager::enqueue_job(
 			'sla-tier-job',
 			array(
@@ -624,13 +605,17 @@ class Test_Sla_Manager_Job_Queue_Wiring extends \WP_UnitTestCase {
 		);
 		$this->assertTrue( $result );
 
-		$row = $this->raw_row( 'sla-tier-job' );
+		$row = $this->queue_row( 'sla-tier-job' );
 		$this->assertNotNull( $row );
 		$this->assertSame( 'realtime', $row['sla_tier'] );
 		$this->assertSame( 100, (int) $row['priority'] );
+
+		$this->close_queue_table();
 	}
 
 	public function test_enqueue_job_infers_tier_from_tool_capabilities(): void {
+		$this->open_queue_table();
+
 		$tool = new SlaToolFixture( array( 'async' ) );
 
 		$result = JobQueueManager::enqueue_job(
@@ -642,9 +627,11 @@ class Test_Sla_Manager_Job_Queue_Wiring extends \WP_UnitTestCase {
 		);
 		$this->assertTrue( $result );
 
-		$row = $this->raw_row( 'sla-tool-job' );
+		$row = $this->queue_row( 'sla-tool-job' );
 		$this->assertNotNull( $row );
 		$this->assertSame( 'near_realtime', $row['sla_tier'] );
 		$this->assertSame( 50, (int) $row['priority'] );
+
+		$this->close_queue_table();
 	}
 }
