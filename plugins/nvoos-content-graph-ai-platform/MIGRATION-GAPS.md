@@ -31,7 +31,7 @@
 | ACP | `includes/acp/` (4 classes + transport/) | `src/ACP/` (6 classes ported) | 🟢 Extracted (Wave A) |
 | Federation | `includes/class-wp-mcp-ai-federation*.php` + mesh classes | `src/Federation/` + `src/Mesh/` | 🟢 Extracted (Wave A) — settings admin UI stays in base by design (FederationAdmin covers the platform dashboard) |
 | Blueprints | — (Pro has tool-import/unified pages only) | `src/Blueprints/` | 🟢 Built (Phase 4 greenfield) |
-| Queues (E2) | `includes/class-wp-mcp-ai-async-job-queue.php` | `src/Queues/` (`AsyncJobQueue` ported) | 🟡 In progress (Wave E2) — remaining: JobQueueManager, QueueManager, DeadLetterQueue, RateLimitManager, SlaManager, CronManager, JobNotifier + REST, outbound webhook, scheduler bridge |
+| Queues (E2) | `includes/class-wp-mcp-ai-async-job-queue.php` | `src/Queues/` (`AsyncJobQueue` ported) | 🟡 In progress (Wave E2) — remaining: JobQueueManager, QueueManager, DeadLetterQueue, RateLimitManager, SlaManager, CronManager, JobNotifier + REST, outbound webhook |
 
 ## Wave E2 extraction notes (2026-09-05)
 
@@ -42,6 +42,10 @@
 - Deviations (documented in the class docblock): the `minute` cron interval is registered by the class (the base relies on an external registration, so its polling cron never fires standalone); the Action Scheduler bridge / DLQ / notifier / logger seams are dormant with `method_exists` guards (the base's own calls target methods its DLQ/notifier classes do not expose); a new executor filter (`nvoos_content_graph_ai_platform/async_job_executors`) lets E1 register job-type executors.
 - Drive-by fix: `AgentCapabilityBoundaryHooks` extracted from `AgentCapabilityBoundary.php` into its own PSR-4 file — the multi-class file broke standalone autoloading and fatalled `Plugin::register()`.
 - 19 characterization tests in `tests/test-async-job-queue.php` green in both matrices.
+
+### SchedulerBridge 🟡 In progress (2026-09-05)
+
+- Ported as `src/Queues/SchedulerBridge.php` under `NvoosContentGraphAiPlatform\Queues`: byte-identical runner hook, default group, availability contract, idempotent hook registration, and enqueue semantics. `run_job()` resolves the executing queue per install mode (base monolith / platform `AsyncJobQueue` standalone); `AsyncJobQueue`'s bridge seams now resolve per install mode. 16 characterization tests in `tests/test-scheduler-bridge.php` green in both matrices (stub AS standalone / real AS API monolith).
 
 ## Wave A extraction notes (2026-08-31)
 
