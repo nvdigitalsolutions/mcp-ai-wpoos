@@ -554,9 +554,13 @@ class Test_Platform_Measurement extends \WP_UnitTestCase {
 		$this->assertTrue( function_exists( 'wp_mcp_ai_register_reference_verifiers' ) );
 		$this->assertTrue( function_exists( 'wp_mcp_ai_register_reference_rewards' ) );
 
-		// Hook wiring mirrors the base bootstrap file (this test triggers the
-		// shim load, so the wiring lives in the current hook globals).
-		$this->assertSame( 50, has_action( 'plugins_loaded', 'wp_mcp_ai_measurement_bootstrap' ) );
+		// Hook wiring mirrors the base bootstrap file with one intentional
+		// divergence: the bootstrap runs on `init` (priority 50) instead of
+		// `plugins_loaded` so translatable stock-metric labels stay legal on
+		// WP 6.7+ (translation functions must not run before `init`). This
+		// test triggers the shim load, so the wiring lives in the current
+		// hook globals.
+		$this->assertSame( 50, has_action( 'init', 'wp_mcp_ai_measurement_bootstrap' ) );
 		$this->assertSame( 5, has_action( 'admin_init', 'wp_mcp_ai_measurement_ensure_capabilities' ) );
 		$this->assertSame( 20, has_action( 'wp_mcp_ai_register_verifiers', 'wp_mcp_ai_register_reference_verifiers' ) );
 		$this->assertSame( 20, has_action( 'wp_mcp_ai_register_reward_functions', 'wp_mcp_ai_register_reference_rewards' ) );

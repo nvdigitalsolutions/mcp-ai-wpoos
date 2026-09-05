@@ -142,7 +142,7 @@ Base plugin `includes/` copies remain for the transition; deletion happens at cu
 ### Measurement 🟢 Extracted
 
 - All measurement classes ported to `src/Measurement/` (registries, collector, event store, persister, retention, chat-turn metrics/observer, SSE metrics, session-log observer, reward functions, verifiers, budgets).
-- `MeasurementService::register()` requires the standalone `shim-functions.php` — a faithful port of `wp_mcp_ai_measurement_bootstrap()` and its companions (plugins_loaded priority 50, admin_init capability seeding, reference verifier/reward registration hooks).
+- `MeasurementService::register()` requires the standalone `shim-functions.php` — a faithful port of `wp_mcp_ai_measurement_bootstrap()` and its companions (`init` priority 50 — deferred from `plugins_loaded` so translatable stock-metric labels comply with the WP 6.7+ early-textdomain rule; admin_init capability seeding, reference verifier/reward registration hooks).
 - Standalone degradations: base-only eval suites, tool-execution/SSE/stock-metrics observers, reference verifiers/rewards, and the base admin dashboard are gated off.
 
 ### Agents (role system) 🟢 Extracted

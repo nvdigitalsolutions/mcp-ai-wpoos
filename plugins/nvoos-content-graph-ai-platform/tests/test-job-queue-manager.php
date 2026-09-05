@@ -71,6 +71,12 @@ class Test_Job_Queue_Manager extends \WP_UnitTestCase {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-harness cleanup on a plugin-owned table; the name comes from a class constant.
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . JobQueueManager::TABLE_NAME );
 
+		// The drop happens behind the class's back — reset the memoized
+		// table-existence probe so later test files (SlaManager's queue
+		// metrics) re-check instead of querying a table that no longer
+		// exists (which would print wpdb errors and mark them risky).
+		JobQueueManager::reset_table_exists_cache();
+
 		$this->restore_temporary_table_rewrite();
 
 		parent::tearDown();
