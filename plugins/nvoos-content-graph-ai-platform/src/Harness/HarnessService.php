@@ -34,9 +34,9 @@ final class HarnessService {
 	 * Wire the ported harness subscribers in standalone mode.
 	 *
 	 * Mirrors the subscriber wiring in the base plugin's
-	 * includes/harness/harness-init.php. The seven harness tools and the
-	 * artifact-replay verifier live in the base plugin and are intentionally
-	 * not wired here (their registrars are absent in standalone mode).
+	 * includes/harness/harness-init.php. The eight harness tools are
+	 * registered into the CG-AI core registry via HarnessToolRegistrar
+	 * (D8 Cluster 3); the artifact-replay verifier remains base-owned.
 	 *
 	 * @return void
 	 */
@@ -49,6 +49,11 @@ final class HarnessService {
 		CitationVerifier::register();
 		HarnessEvalScheduler::register();
 		HarnessTraceCapture::register();
+
+		// D8 Cluster 3: surface the eight harness tools through the
+		// CG-AI core registry (no-op in monolith installs where the
+		// base plugin owns the same slugs).
+		HarnessToolRegistrar::register();
 	}
 
 	private function registerAdmin(): void {
