@@ -158,11 +158,17 @@ class WP_MCP_AI_Social_Media_Optimization {
 			return;
 		}
 
-		// Transition to publish.
+		// Transition to publish. Reset the post date to now: WP core coerces
+		// 'publish' back to 'future' when post_date is still in the future,
+		// so an early/manual cron fire would otherwise leave the post
+		// scheduled forever.
+		$now = current_time( 'mysql', true );
 		wp_update_post(
 			array(
-				'ID'          => $post_id,
-				'post_status' => 'publish',
+				'ID'            => $post_id,
+				'post_status'   => 'publish',
+				'post_date'     => get_date_from_gmt( $now ),
+				'post_date_gmt' => $now,
 			)
 		);
 

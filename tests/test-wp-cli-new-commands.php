@@ -340,7 +340,8 @@ class Test_WP_CLI_New_Commands extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Revoking a credential removes it from the stored list.
+	 * Revoking a credential marks it revoked so it can no longer authenticate,
+	 * while the record stays listed for auditing.
 	 */
 	public function test_credential_revoke_removes_entry() {
 		if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
@@ -376,8 +377,15 @@ class Test_WP_CLI_New_Commands extends WP_UnitTestCase {
 		$this->assertNotWPError( $revoke_result, 'Revocation should not return WP_Error' );
 
 		$after = WP_MCP_AI_Credentials::get_credentials( $assistant_id );
-		$ids   = array_column( $after, 'id' );
-		$this->assertNotContains( $credential_id, $ids, 'Revoked credential should no longer appear in the list' );
+		$found = false;
+		foreach ( $after as $record ) {
+			if ( isset( $record['id'] ) && $credential_id === $record['id'] ) {
+				$found = true;
+				$this->assertNotEmpty( $record['revoked_at'] ?? '', 'Revoked credential should carry a revoked_at timestamp' );
+				break;
+			}
+		}
+		$this->assertTrue( $found, 'Revoked credential should remain listed with revoked status' );
 	}
 
 	// -----------------------------------------------------------------------
@@ -414,6 +422,13 @@ class Test_WP_CLI_New_Commands extends WP_UnitTestCase {
 	public function test_log_error_persists_to_recent_errors() {
 		if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			$this->markTestSkipped( 'WP_MCP_AI_Logger not available.' );
+		}
+
+		// Logging is opt-in; enable it explicitly so the assertion is
+		// independent of options left behind by other suites.
+		update_option( 'wp_mcp_ai_settings', array( 'enable_logging' => true ) );
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		}
 
 		$unique = 'cli-test-error-' . uniqid( '', true );

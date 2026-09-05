@@ -10,6 +10,14 @@
  * @license   GPL-3.0-or-later
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Loaded at file scope so the test-clock helper below can extend it.
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
+require_once __DIR__ . '/helpers/class-wp-mcp-ai-timeout-detection-test-clock.php';
+
 /**
  * Test class for timeout detection service
  */
@@ -71,7 +79,7 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test timeout approaching detection
+	 * Test timeout approaching detection.
 	 */
 	public function test_timeout_approaching_detection() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
@@ -79,20 +87,19 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 		// Set very short timeout for testing.
 		set_time_limit( 2 );
 
-		$detector = new WP_MCP_AI_Timeout_Detection_Service( 1 ); // 1 second buffer.
+		// Threshold = 2 - 1 = 1, clamped up to the service minimum of 5.
+		$detector = new WP_MCP_AI_Timeout_Detection_Service_Test_Clock( 1 );
 
-		// Should be threshold of 1 second (2 - 1).
-		$this->assertEquals( 1, $detector->get_timeout_threshold() );
+		$this->assertEquals( 5, $detector->get_timeout_threshold() );
 
 		// Not approaching timeout yet.
+		$detector->set_elapsed( 0 );
 		$this->assertFalse( $detector->is_approaching_timeout() );
 
-		// Wait 1.1 seconds to exceed threshold (shorter than original 1.5s for faster tests).
-		usleep( 1100000 ); // 1.1 seconds in microseconds.
-
-		// Should now be approaching timeout.
+		// Past the threshold: approaching, elapsed beyond it, negative remaining.
+		$detector->set_elapsed( 5.5 );
 		$this->assertTrue( $detector->is_approaching_timeout() );
-		$this->assertGreaterThan( 1, $detector->get_elapsed_time() );
+		$this->assertGreaterThan( 5, $detector->get_elapsed_time() );
 		$this->assertLessThan( 0, $detector->get_remaining_time() );
 	}
 

@@ -98,7 +98,7 @@ class WP_MCP_AI_STDIO_Transport_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'capabilities', $result );
 		$this->assertArrayHasKey( 'serverInfo', $result );
 		$this->assertArrayHasKey( 'instructions', $result );
-		$this->assertSame( '2024-11-05', $result['protocolVersion'] );
+		$this->assertSame( WP_MCP_AI_STDIO_Transport::PROTOCOL_VERSION, $result['protocolVersion'] );
 	}
 
 	/**

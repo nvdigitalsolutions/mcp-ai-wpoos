@@ -150,7 +150,10 @@ class Test_Image_Manipulation_Tools extends WP_UnitTestCase {
 			);
 
 			$sanitized = $tool->sanitize_for_llm( $result );
-			$this->assertArrayNotHasKey( 'content', $sanitized );
+			// The sanitizer strips the base64 payload fields but preserves the
+			// remaining content metadata (e.g. encoding).
+			$this->assertArrayNotHasKey( 'data', $sanitized['content'] );
+			$this->assertArrayNotHasKey( 'data_url', $sanitized['content'] );
 		}
 	}
 

@@ -324,7 +324,10 @@ class Test_Schedule_Manager_AJAX extends WP_MCP_AI_Ajax_TestCase {
 
 		$response = $this->dispatch(
 			'wp_mcp_ai_sm_clear_history',
-			array( 'nonce' => wp_create_nonce( self::NONCE ) )
+			array(
+				'nonce'       => wp_create_nonce( self::NONCE ),
+				'schedule_id' => 99999,
+			)
 		);
 
 		$this->assertAjaxSuccess( $response );

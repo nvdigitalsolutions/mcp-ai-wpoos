@@ -188,7 +188,8 @@ class WP_MCP_AI_Tiered_Token_Limits_Test extends WP_UnitTestCase {
 		$forecast = WP_MCP_AI_Tool_Token_Limits::forecast_limit_exhaustion( $user_id, $tool_slug );
 		$this->assertNull( $forecast );
 
-		// Create some hourly usage data (simulate 48 hours of usage).
+		// Create some hourly usage data (simulate 168 hours = 7 days of usage,
+		// which the confidence ladder rates as high confidence).
 		$usage = array(
 			$tool_slug => array(
 				'total_tokens' => 0,
@@ -200,7 +201,7 @@ class WP_MCP_AI_Tiered_Token_Limits_Test extends WP_UnitTestCase {
 			),
 		);
 
-		for ( $i = 0; $i < 48; $i++ ) {
+		for ( $i = 0; $i < 168; $i++ ) {
 			$hour_key                                   = gmdate( 'Y-m-d-H', strtotime( "-{$i} hours" ) );
 			$usage[ $tool_slug ]['hourly'][ $hour_key ] = 1000; // 1000 tokens per hour.
 		}
@@ -217,7 +218,7 @@ class WP_MCP_AI_Tiered_Token_Limits_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'will_exceed', $forecast );
 		$this->assertArrayHasKey( 'projected_usage', $forecast );
 		$this->assertArrayHasKey( 'confidence', $forecast );
-		$this->assertGreaterThan( 70, $forecast['confidence'] ); // Should have high confidence with 48 hours of data.
+		$this->assertGreaterThan( 70, $forecast['confidence'] ); // High confidence with 7 days of data.
 	}
 
 	/**

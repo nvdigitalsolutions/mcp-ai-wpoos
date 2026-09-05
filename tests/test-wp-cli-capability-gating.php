@@ -75,12 +75,12 @@ class Test_WP_CLI_Capability_Gating extends WP_UnitTestCase {
 	 */
 	public function test_tool_enable_requires_manage_options() {
 		$this->assertFalse(
-			current_user_can( $this->subscriber_user_id, 'manage_options' ),
+			user_can( $this->subscriber_user_id, 'manage_options' ),
 			'Subscriber should not have manage_options'
 		);
 
 		$this->assertTrue(
-			current_user_can( $this->admin_user_id, 'manage_options' ),
+			user_can( $this->admin_user_id, 'manage_options' ),
 			'Admin should have manage_options'
 		);
 	}
@@ -262,9 +262,16 @@ class Test_WP_CLI_Capability_Gating extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * require_capability() is available via the base class.
+	 * The base class exposes require_capability().
+	 *
+	 * The class only loads under WP-CLI (it extends WP_CLI_Command), so the
+	 * assertion is skipped when WP-CLI is not available in this environment.
 	 */
 	public function test_base_class_has_require_capability_method() {
+		if ( ! defined( 'WP_CLI' ) || ! WP_CLI || ! class_exists( 'WP_CLI_Command' ) ) {
+			$this->markTestSkipped( 'WP-CLI is not available in this environment.' );
+		}
+
 		$this->assertTrue(
 			method_exists( 'WP_MCP_AI_CLI_Base_Command', 'require_capability' ),
 			'Base CLI command should have require_capability()'
@@ -272,9 +279,16 @@ class Test_WP_CLI_Capability_Gating extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_format() is available via the base class.
+	 * The base class exposes get_format().
+	 *
+	 * The class only loads under WP-CLI (it extends WP_CLI_Command), so the
+	 * assertion is skipped when WP-CLI is not available in this environment.
 	 */
 	public function test_base_class_has_get_format_method() {
+		if ( ! defined( 'WP_CLI' ) || ! WP_CLI || ! class_exists( 'WP_CLI_Command' ) ) {
+			$this->markTestSkipped( 'WP-CLI is not available in this environment.' );
+		}
+
 		$this->assertTrue(
 			method_exists( 'WP_MCP_AI_CLI_Base_Command', 'get_format' ),
 			'Base CLI command should have get_format()'

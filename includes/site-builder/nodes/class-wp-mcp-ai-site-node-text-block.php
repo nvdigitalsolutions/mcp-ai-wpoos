@@ -114,7 +114,7 @@ class WP_MCP_AI_Site_Node_Text_Block implements WP_MCP_AI_Site_Node_Interface {
 		$style      = isset( $inputs['style'] ) ? esc_attr( (string) $inputs['style'] ) : '';
 
 		// Allow only safe block-level tags.
-		$allowed_tags = array( 'div', 'section', 'article', 'aside', 'header', 'footer', 'p', 'blockquote', 'pre', 'figure' );
+		$allowed_tags = array( 'div', 'section', 'article', 'aside', 'header', 'footer', 'p', 'blockquote', 'pre', 'figure', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' );
 		if ( ! in_array( $tag, $allowed_tags, true ) ) {
 			$tag = 'div';
 		}
