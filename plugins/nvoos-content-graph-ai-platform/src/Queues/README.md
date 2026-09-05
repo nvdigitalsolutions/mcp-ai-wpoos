@@ -23,6 +23,7 @@ execution for the platform in standalone installs.
 | Symbol | File | Used by |
 |---|---|---|
 | `NvoosContentGraphAiPlatform\Queues\AsyncJobQueue` | `AsyncJobQueue.php` | `Plugin::registerQueues()` — queue lifecycle + cron wiring |
+| `NvoosContentGraphAiPlatform\Queues\QueueManager` | `QueueManager.php` | `Plugin::registerQueueManager()` — tool-execution orchestration (filter + AJAX status) |
 
 ## Inputs / Outputs / Neighbors
 
@@ -35,7 +36,9 @@ execution for the platform in standalone installs.
 - **Upstream callers:** WP-Cron ticks, future platform subsystems
   (workflow engine E1 registers executors via the filter)
 - **Downstream collaborators (dormant until their waves):** Action
-  Scheduler bridge, Dead Letter Queue, Job Notifier (E2), base logger
+  Scheduler bridge, Dead Letter Queue, Job Notifier (E2), base logger;
+  `QueueManager` resolves the RabbitMQ client + tool registry per install
+  mode (base classes monolith / AI addon + CoreBridge standalone)
 
 ## Conventions
 
