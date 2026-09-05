@@ -21,6 +21,11 @@ queue managers forward exhausted retries to. `RateLimitManager` is the
 aligned port of `WP_MCP_AI_Rate_Limit_Manager`: byte-identical retry
 constants, backoff multiplier, retriable status/timeout tables, and the
 `execute_with_retry()` loop — the API rate-limit resilience layer.
+`OutboundWebhook` is the aligned port of `WP_MCP_AI_Outbound_Webhook`:
+byte-identical `wp_mcp_ai_outbound_webhooks` option, subscription
+lifecycle, signed non-blocking dispatch, signature verification, and
+core event listeners — the webhook delivery layer for workflow and
+approval events.
 
 ## Tier
 
@@ -41,13 +46,16 @@ constants, backoff multiplier, retriable status/timeout tables, and the
 | `NvoosContentGraphAiPlatform\Queues\JobQueueManager` | `JobQueueManager.php` | Queue-processing cron path + CLI (static utility; no hooks of its own — wiring lands with the scheduler bridge) |
 | `NvoosContentGraphAiPlatform\Queues\DeadLetterQueue` | `DeadLetterQueue.php` | `Plugin::registerDeadLetterQueue()` — table + weekly cleanup cron; consumed by `JobQueueManager` failure forwarding |
 | `NvoosContentGraphAiPlatform\Queues\RateLimitManager` | `RateLimitManager.php` | API callers (static utility; no hooks of its own — consumed directly) |
+| `NvoosContentGraphAiPlatform\Queues\OutboundWebhook` | `OutboundWebhook.php` | `Plugin::registerOutboundWebhook()` — event-listener registration; consumed by the eventual workflow (E1) / approvals (E3) ports + notifier |
 
 ## Inputs / Outputs / Neighbors
 
 - **Reads from:** job rows in `wp_*mcp_ai_job_queue`, the
   `wp_mcp_ai_queue_worker_dedicated` option (RabbitMQ gating), the
   `nvoos_content_graph_ai_platform/async_job_executors` filter;
-  `RateLimitManager` reads/writes `wp_mcp_ai_retry_*` transients
+  `RateLimitManager` reads/writes `wp_mcp_ai_retry_*` transients;
+  `OutboundWebhook` reads/writes the `wp_mcp_ai_outbound_webhooks` option
+  and POSTs to subscribed URLs (non-blocking, signed)
 - **Writes to:** job rows, cron events (`wp_mcp_ai_process_job_queue`,
   `wp_mcp_ai_cleanup_job_queue`), the `minute` cron interval,
   `wp_mcp_ai_emit_sse_event` (byte-identical action)

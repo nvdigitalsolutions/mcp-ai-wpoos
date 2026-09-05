@@ -42,6 +42,7 @@ final class Plugin {
 		$this->registerQueues();
 		$this->registerQueueManager();
 		$this->registerDeadLetterQueue();
+		$this->registerOutboundWebhook();
 	}
 
 	private function registerAdmin(): void {
@@ -242,6 +243,27 @@ final class Plugin {
 
 		add_action( 'init', array( \NvoosContentGraphAiPlatform\Queues\DeadLetterQueue::class, 'schedule_cleanup' ) );
 		add_action( 'wp_mcp_ai_dlq_cleanup', array( \NvoosContentGraphAiPlatform\Queues\DeadLetterQueue::class, 'cleanup' ) );
+	}
+
+	/**
+	 * Register the outbound webhook manager (Wave E2).
+	 *
+	 * Standalone-only: the base plugin's loader owns the same listener
+	 * registration in monolith installs; double registration would
+	 * double-dispatch every workflow/approval event.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerOutboundWebhook(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Queues\OutboundWebhook' ) ) {
+			\NvoosContentGraphAiPlatform\Queues\OutboundWebhook::get_instance();
+		}
 	}
 
 	private function __clone() {}
