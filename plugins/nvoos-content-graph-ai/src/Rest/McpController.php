@@ -19,13 +19,16 @@
  * - `tools/list` delegates to `ToolsController` (constructor composition)
  *   which resolves the registry per install mode; `McpController` adds the
  *   MCP annotations + `ttlMs`/`cacheScope` contract on top.
- * - `tools/call` validates its parameters but tool *execution* is not
- *   ported to CG-AI yet — it answers the documented
- *   `wp_mcp_ai_mcp_unavailable` (HTTP 503 data) error. Execution lands
- *   with the tool-execution wave (D8) —
- *   docs/project/plans/d8-tool-execution-port-plan.md; the response-shaping helpers
- *   (`is_mcp_content_array` / `convert_to_text_content` / async polling)
- *   are ported then too.
+ * - `tools/call` executes through the per-install-mode registry seam
+ *   (base registry monolith / nvoos-core registry standalone) with
+ *   capability checks, assistant scoping when an `assistant_id` is
+ *   supplied, the base's tool rate limiter, the before/after execution
+ *   hooks, and MCP content shaping — Wave D8 Cluster 0
+ *   (docs/project/plans/d8-tool-execution-port-plan.md). Documented
+ *   deviations: no default-assistant resolution (an assistant is
+ *   optional here; the base requires one), no async orchestrator (tools
+ *   execute synchronously — the base's agentic-loop semantics), and the
+ *   async polling helpers land with a standalone queue (E2).
  * - SSE transports are deferred: `GET /mcp` always returns discovery
  *   JSON (the base's `?stream=true` / Accept-header negotiation and the
  *   legacy HTTP+SSE session store/handler are not ported), `GET /sse`
@@ -70,6 +73,19 @@ class McpController {
 	 * Assistant post type slug (byte-identical to the base plugin).
 	 */
 	const POST_TYPE = 'mcp_ai_assistant';
+
+	/**
+	 * Default tool rate-limit window in seconds (byte-identical fallback
+	 * to the base plugin; the `tool_rate_limit_window` setting overrides).
+	 */
+	const TOOL_RATE_LIMIT_WINDOW = 60;
+
+	/**
+	 * Default maximum tool executions per window (byte-identical fallback
+	 * to the base plugin; the `tool_rate_limit_max` setting overrides;
+	 * 0 disables the limiter).
+	 */
+	const TOOL_RATE_LIMIT_MAX = 60;
 
 	/**
 	 * Tools controller used for the tools/list delegation (composition).
@@ -940,19 +956,19 @@ class McpController {
 	/**
 	 * Handle MCP tools/call request.
 	 *
-	 * Parameter validation is byte-identical to the base. Tool *execution*
-	 * is not ported to CG-AI yet, so after validation the handler answers
-	 * the documented `wp_mcp_ai_mcp_unavailable` error (HTTP 503 data).
-	 * Execution (and the async poll + MCP content shaping) lands with the
-	 * tool-execution wave (D8 — docs/project/plans/d8-tool-execution-port-plan.md).
+	 * Wave D8 Cluster 0: the execution path is ported. Parameter
+	 * validation, per-install-mode registry resolution, assistant
+	 * scoping (when an `assistant_id` is supplied), the tool rate
+	 * limiter, the before/after execution hooks, and MCP content
+	 * shaping mirror the base plugin's chain in
+	 * `WP_MCP_AI_REST_MCP_Methods::mcp_tools_call()` /
+	 * `WP_MCP_AI_REST::handle_tool_request()`.
 	 *
 	 * @param array           $params  Method parameters.
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array|WP_Error
 	 */
 	protected function mcp_tools_call( $params, \WP_REST_Request $request ) {
-		unset( $request ); // Reserved for the execution path (D8 wave).
-
 		if ( ! isset( $params['name'] ) ) {
 			return new \WP_Error(
 				'wp_mcp_ai_invalid_params',
@@ -983,15 +999,606 @@ class McpController {
 			);
 		}
 
-		// Tool execution infrastructure is not ported to CG-AI yet — the
-		// base plugin keeps the full execution path in monolith installs.
+		$arguments = isset( $params['arguments'] ) ? $params['arguments'] : array();
+
+		// Resolve and validate the assistant when one is supplied. Unlike
+		// the base there is no default-assistant resolution yet, so an
+		// assistant is optional here (documented deviation).
+		$assistant_id     = isset( $params['assistant_id'] ) ? absint( $params['assistant_id'] ) : 0;
+		$assistant_config = array();
+
+		if ( $assistant_id ) {
+			$scoped_id = $this->apply_token_assistant_scope( $this->resolve_assistant_id( $assistant_id ) );
+			if ( is_wp_error( $scoped_id ) ) {
+				return $scoped_id;
+			}
+
+			$assistant_post = $this->validate_assistant_access( $scoped_id );
+			if ( is_wp_error( $assistant_post ) ) {
+				return $assistant_post;
+			}
+
+			$assistant_config = $this->get_assistant_configuration( $scoped_id );
+		}
+
+		$candidates = $this->generate_tool_slug_candidates( $tool_name );
+
+		if ( $assistant_id ) {
+			$allowed_tools = isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] )
+				? $assistant_config['tools']
+				: array();
+
+			$tool_slug = $this->resolve_tool_slug_from_candidates( $candidates, $allowed_tools );
+
+			// Byte-identical guard: the requested tool must be on the
+			// assistant's allow-list (the base auto-injects its utility
+			// tools into the config before this check).
+			if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
+				return new \WP_Error(
+					'wp_mcp_ai_tool_forbidden',
+					__( 'This assistant is not allowed to execute the requested tool.', 'nvoos-content-graph-ai' ),
+					array( 'status' => 403 )
+				);
+			}
+		} else {
+			$tool_slug = isset( $candidates[0] ) ? $candidates[0] : '';
+		}
+
+		if ( '' === $tool_slug || ! $this->registry_has_tool( $tool_slug ) ) {
+			return new \WP_Error(
+				'wp_mcp_ai_tool_missing',
+				__( 'The requested tool is not registered.', 'nvoos-content-graph-ai' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$user_id = get_current_user_id();
+
+		// Enforce per-user, per-tool rate limiting (byte-identical
+		// transient keys, filters, error code and envelope).
+		$rate_check = $this->check_tool_rate_limit( $user_id );
+		if ( is_wp_error( $rate_check ) ) {
+			return $rate_check;
+		}
+
+		$context = array(
+			'user_id'      => $user_id,
+			'assistant_id' => $assistant_id,
+			'request'      => $request,
+		);
+
+		if ( $assistant_id ) {
+			$context['assistant_config'] = $assistant_config;
+		}
+
+		/**
+		 * Fires immediately before executing a registered tool.
+		 *
+		 * @param string $tool_slug Tool identifier.
+		 * @param array  $arguments Arguments passed in the request.
+		 * @param array  $context   Execution context including user_id and assistant_id.
+		 */
+		try {
+			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
+		} catch ( \WP_MCP_AI_Destructive_Confirmation_Required $wp_mcp_ai_gate_exception ) {
+			// Destructive-ops gate (base parity): surface the confirmation
+			// request as a WP_Error envelope (HTTP 428).
+			return $wp_mcp_ai_gate_exception->to_wp_error();
+		} catch ( \WP_MCP_AI_Concurrency_Limit_Reached $wp_mcp_ai_concurrency_exception ) {
+			return $wp_mcp_ai_concurrency_exception->to_wp_error();
+		} catch ( \WP_MCP_AI_Cost_Budget_Exceeded $wp_mcp_ai_cost_exception ) {
+			return $wp_mcp_ai_cost_exception->to_wp_error();
+		}
+
+		$wp_mcp_ai_tool_start = microtime( true );
+		$result               = $this->execute_registry_tool( $tool_slug, $arguments, $context );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		/**
+		 * Filters the result of a registered tool before MCP shaping.
+		 *
+		 * @param mixed  $result    Tool result.
+		 * @param string $tool_slug Tool identifier.
+		 * @param array  $arguments Arguments passed in the request.
+		 * @param array  $context   Execution context.
+		 */
+		$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context );
+
+		// Adjust the result to fit token-budget constraints (per-mode seam).
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			$result = \WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget( $result, $tool_slug, $context );
+		} elseif ( class_exists( 'NvoosContentGraphAi\Analytics\ToolTokenLimits' ) ) {
+			$result = \NvoosContentGraphAi\Analytics\ToolTokenLimits::adjust_tool_result_for_budget( $result, $tool_slug, $context );
+		}
+
+		/**
+		 * Fires after a registered tool has completed execution.
+		 *
+		 * @param string $tool_slug  Tool identifier.
+		 * @param array  $arguments  Arguments passed in the request.
+		 * @param array  $context    Execution context including user_id and assistant_id.
+		 * @param mixed  $result     Tool result after filters have been applied.
+		 * @param array  $descriptor Normalised lifecycle descriptor
+		 *                           ({success, error_code, data_type, duration_ms}).
+		 *                           Subscribers with `accepted_args = 4` ignore this.
+		 */
+		do_action(
+			'wp_mcp_ai_after_tool_execution',
+			$tool_slug,
+			$arguments,
+			$context,
+			$result,
+			$this->build_tool_lifecycle_descriptor( $result, $wp_mcp_ai_tool_start, $tool_slug, $context )
+		);
+
+		// Check if the tool already returned MCP-compatible structured content.
+		if ( $this->is_mcp_content_array( $result ) ) {
+			return array( 'content' => $result );
+		}
+
+		// Convert the tool result to MCP text content.
+		$text_content = $this->convert_to_text_content( $result );
+
+		if ( is_wp_error( $text_content ) ) {
+			return $text_content;
+		}
+
+		return array(
+			'content' => array(
+				array(
+					'type' => 'text',
+					'text' => $text_content,
+				),
+			),
+		);
+	}
+
+	// ─── Wave D8 Cluster 0 — tool execution helpers ────────────────
+
+	/**
+	 * Check whether a tool slug exists in the active registry
+	 * (per-install-mode seam).
+	 *
+	 * @param string $slug Tool slug.
+	 * @return bool
+	 */
+	protected function registry_has_tool( $slug ) {
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			return (bool) \WP_MCP_AI_Tool_Registry::get_instance()->get_tool( $slug );
+		}
+
+		return null !== CoreBridge::instance()->tools->get( (string) $slug );
+	}
+
+	/**
+	 * Execute a registered tool (per-install-mode seam).
+	 *
+	 * The nvoos-core registry enforces capability checks, guards, and
+	 * pre/post events internally; the WordPress auth provider is supplied
+	 * so required capabilities resolve against the acting user.
+	 *
+	 * @param string $tool_slug Tool slug.
+	 * @param array  $arguments Tool arguments.
+	 * @param array  $context   Execution context.
+	 * @return mixed Tool result or WP_Error.
+	 */
+	protected function execute_registry_tool( $tool_slug, array $arguments, array $context ) {
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$tool = \WP_MCP_AI_Tool_Registry::get_instance()->get_tool( $tool_slug );
+			return $tool ? $tool->execute( $arguments, $context ) : new \WP_Error(
+				'wp_mcp_ai_tool_missing',
+				__( 'The requested tool is not registered.', 'nvoos-content-graph-ai' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$context['auth_provider'] = new \Nvoos\WordPress\Adapter\AuthProvider();
+		return CoreBridge::instance()->tools->execute( (string) $tool_slug, $arguments, $context );
+	}
+
+	/**
+	 * Enforce the per-user tool execution rate limit.
+	 *
+	 * Byte-identical transient keys, filters, error code, and envelope to
+	 * the base plugin's `WP_MCP_AI_REST::check_tool_rate_limit()`.
+	 * Credential-token exemption does not apply here — CG-AI's MCP
+	 * surface is capability-based with no token auth.
+	 *
+	 * @param int $user_id Acting user ID (0 = guest, IP-keyed).
+	 * @return true|WP_Error
+	 */
+	protected function check_tool_rate_limit( $user_id ) {
+		$settings = $this->get_settings();
+
+		$window_default = isset( $settings['tool_rate_limit_window'] ) ? absint( $settings['tool_rate_limit_window'] ) : self::TOOL_RATE_LIMIT_WINDOW;
+		$window_default = max( 10, $window_default );
+
+		$max_default = isset( $settings['tool_rate_limit_max'] ) ? absint( $settings['tool_rate_limit_max'] ) : self::TOOL_RATE_LIMIT_MAX;
+		$max_default = max( 0, $max_default );
+
+		/**
+		 * Filters the tool rate limit window in seconds.
+		 *
+		 * @param int $window Window in seconds. Defaults to the
+		 *                    tool_rate_limit_window setting (60).
+		 */
+		$window = apply_filters( 'wp_mcp_ai_tool_rate_limit_window', $window_default );
+
+		/**
+		 * Filters the maximum tool executions per window.
+		 *
+		 * @param int $max Maximum executions. Defaults to the
+		 *                 tool_rate_limit_max setting (60). 0 = unlimited.
+		 */
+		$max = apply_filters( 'wp_mcp_ai_tool_rate_limit_max', $max_default );
+
+		$window = max( 10, absint( $window ) );
+		$max    = max( 0, absint( $max ) );
+
+		// 0 disables the limiter.
+		if ( 0 === $max ) {
+			return true;
+		}
+
+		// Guests (user_id=0) get an IP-based key to prevent one attacker
+		// from exhausting the global quota.
+		if ( $user_id > 0 ) {
+			$transient_key = 'wp_mcp_ai_tool_rl_' . $user_id;
+		} else {
+			$client_ip     = isset( $_SERVER['REMOTE_ADDR'] )
+				? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+				: 'unknown';
+			$transient_key = 'wp_mcp_ai_tool_rl_ip_' . md5( $client_ip . wp_salt( 'nonce' ) );
+		}
+
+		$current_count = get_transient( $transient_key );
+
+		if ( false === $current_count ) {
+			// First request in this time window, start counting.
+			set_transient( $transient_key, 1, $window );
+			return true;
+		}
+
+		if ( $current_count >= $max ) {
+			return new \WP_Error(
+				'wp_mcp_ai_tool_rate_limit_exceeded',
+				sprintf(
+					/* translators: 1: Maximum executions allowed, 2: Time window in seconds */
+					__( 'Tool rate limit exceeded. Maximum %1$d tool executions allowed per %2$d seconds.', 'nvoos-content-graph-ai' ),
+					$max,
+					$window
+				),
+				array(
+					'status'        => 429,
+					'retry_after'   => $window,
+					'max'           => $max,
+					'window'        => $window,
+					'current_count' => $current_count,
+				)
+			);
+		}
+
+		// Increment the counter.
+		set_transient( $transient_key, $current_count + 1, $window );
+		return true;
+	}
+
+	/**
+	 * Build the lifecycle descriptor for the after-execution hook.
+	 *
+	 * Uses the base plugin's descriptor when present (monolith); builds
+	 * the same {success, error_code, data_type, duration_ms} shape inline
+	 * in standalone mode.
+	 *
+	 * @param mixed      $result       Tool execution result.
+	 * @param float      $start_micros High-resolution start timestamp.
+	 * @param string     $tool_slug    Tool slug.
+	 * @param array      $context      Execution context.
+	 * @return array
+	 */
+	protected function build_tool_lifecycle_descriptor( $result, $start_micros, $tool_slug, array $context ) {
+		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Tool_Lifecycle_Descriptor' ) ) {
+			return \WP_MCP_AI_Tool_Lifecycle_Descriptor::build( $result, $start_micros, $tool_slug, $context );
+		}
+
+		$is_error = is_wp_error( $result );
+
+		$descriptor = array(
+			'success'     => ! $is_error,
+			'error_code'  => $is_error ? (string) $result->get_error_code() : null,
+			'data_type'   => null,
+			'duration_ms' => null,
+		);
+
+		if ( $is_error ) {
+			$descriptor['error_code'] = (string) $result->get_error_code();
+		}
+
+		if ( is_array( $result ) ) {
+			$descriptor['data_type'] = isset( $result['produces'] ) && is_string( $result['produces'] ) && '' !== $result['produces']
+				? sanitize_key( $result['produces'] )
+				: 'array';
+		} elseif ( is_string( $result ) ) {
+			$descriptor['data_type'] = 'string';
+		} elseif ( is_bool( $result ) ) {
+			$descriptor['data_type'] = 'bool';
+		} elseif ( is_int( $result ) ) {
+			$descriptor['data_type'] = 'int';
+		} elseif ( is_float( $result ) ) {
+			$descriptor['data_type'] = 'float';
+		} elseif ( null === $result ) {
+			$descriptor['data_type'] = 'null';
+		} elseif ( is_object( $result ) ) {
+			$descriptor['data_type'] = 'object';
+		} else {
+			$descriptor['data_type'] = 'generic';
+		}
+
+		if ( null !== $start_micros && is_numeric( $start_micros ) ) {
+			$descriptor['duration_ms'] = round( ( microtime( true ) - (float) $start_micros ) * 1000.0, 3 );
+			if ( $descriptor['duration_ms'] < 0 ) {
+				$descriptor['duration_ms'] = 0.0;
+			}
+		}
+
+		return $descriptor;
+	}
+
+	/**
+	 * Build a list of potential tool slugs based on the supplied identifier
+	 * (byte-identical to the base plugin's candidate generation).
+	 *
+	 * @param mixed $tool_name Raw tool identifier from the MCP request.
+	 * @return array
+	 */
+	protected function generate_tool_slug_candidates( $tool_name ) {
+		if ( ! is_string( $tool_name ) ) {
+			$tool_name = '';
+		}
+
+		$tool_name = trim( $tool_name );
+
+		if ( '' === $tool_name ) {
+			return array();
+		}
+
+		$candidates = array();
+
+		$primary = sanitize_key( $tool_name );
+		if ( '' !== $primary ) {
+			$candidates[] = $primary;
+		}
+
+		$variants = array(
+			str_replace( array( '-', ' ' ), '_', $tool_name ),
+		);
+
+		$camel_split = preg_replace( '/(?<=\p{Ll})(\p{Lu})/u', '_$1', $tool_name );
+
+		if ( is_string( $camel_split ) && '' !== $camel_split ) {
+			$lower_camel = strtolower( $camel_split );
+			$variants[]  = $lower_camel;
+			$variants[]  = str_replace( array( '-', ' ' ), '_', $lower_camel );
+		}
+
+		foreach ( $variants as $variant ) {
+			if ( ! is_string( $variant ) ) {
+				continue;
+			}
+
+			$variant = trim( $variant );
+
+			if ( '' === $variant ) {
+				continue;
+			}
+
+			$sanitized = sanitize_key( $variant );
+			if ( '' !== $sanitized ) {
+				$candidates[] = $sanitized;
+			}
+		}
+
+		return array_values( array_unique( $candidates ) );
+	}
+
+	/**
+	 * Resolve the requested tool slug by comparing candidates against the
+	 * assistant's allow-list (byte-identical to the base plugin).
+	 *
+	 * @param array $candidates    Candidate tool slugs derived from the payload.
+	 * @param array $allowed_tools Assistant tool allow-list.
+	 * @return string
+	 */
+	protected function resolve_tool_slug_from_candidates( array $candidates, array $allowed_tools ) {
+		if ( empty( $candidates ) ) {
+			return '';
+		}
+
+		$allowed_lookup = array();
+		foreach ( $allowed_tools as $slug ) {
+			$sanitized = sanitize_key( $slug );
+
+			if ( '' === $sanitized ) {
+				continue;
+			}
+
+			$allowed_lookup[ $sanitized ] = $sanitized;
+		}
+
+		foreach ( $candidates as $candidate ) {
+			if ( isset( $allowed_lookup[ $candidate ] ) ) {
+				return $allowed_lookup[ $candidate ];
+			}
+		}
+
+		// If a candidate ends with `_validated`, also try its base slug.
+		// This handles the registry auto-upgrade where get_tool( 'web_search' )
+		// transparently returns the web_search_validated instance, and the MCP
+		// tools/list endpoint reports the validated slug while the assistant
+		// config stores the base slug.
+		foreach ( $candidates as $candidate ) {
+			if ( substr( $candidate, -10 ) === '_validated' ) {
+				$base = substr( $candidate, 0, -10 );
+				if ( '' !== $base && isset( $allowed_lookup[ $base ] ) ) {
+					return $allowed_lookup[ $base ];
+				}
+			}
+		}
+
+		if ( ! empty( $allowed_lookup ) ) {
+			$normalised_candidates = array();
+			foreach ( $candidates as $candidate ) {
+				$normalised_candidates[] = preg_replace( '/[_-]/', '', $candidate );
+			}
+
+			$normalised_candidates = array_values( array_filter( array_unique( $normalised_candidates ) ) );
+
+			if ( ! empty( $normalised_candidates ) ) {
+				foreach ( $allowed_lookup as $slug ) {
+					$normalised_slug = preg_replace( '/[_-]/', '', $slug );
+
+					if ( in_array( $normalised_slug, $normalised_candidates, true ) ) {
+						return $slug;
+					}
+				}
+			}
+		}
+
+		return $candidates[0];
+	}
+
+	/**
+	 * Check if a value is a valid MCP content array
+	 * (byte-identical to the base plugin).
+	 *
+	 * @param mixed $value Value to check.
+	 * @return bool
+	 */
+	protected function is_mcp_content_array( $value ) {
+		if ( ! is_array( $value ) ) {
+			return false;
+		}
+
+		// Empty arrays are not valid MCP content.
+		if ( empty( $value ) ) {
+			return false;
+		}
+
+		// Check if this is a numeric array (content items).
+		if ( ! isset( $value[0] ) ) {
+			return false;
+		}
+
+		// All items must have a 'type' field.
+		foreach ( $value as $item ) {
+			if ( ! is_array( $item ) || ! isset( $item['type'] ) ) {
+				return false;
+			}
+
+			switch ( $item['type'] ) {
+				case 'text':
+					if ( ! isset( $item['text'] ) ) {
+						return false;
+					}
+					break;
+				case 'image':
+					if ( ! isset( $item['data'] ) && ! isset( $item['url'] ) ) {
+						return false;
+					}
+					break;
+				case 'resource':
+				case 'embedded_resource':
+					if ( ! isset( $item['resource'] ) ) {
+						return false;
+					}
+					break;
+				default:
+					// Unknown type - could be valid for future MCP versions.
+					break;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Convert a tool result to text content for MCP
+	 * (byte-identical to the base plugin).
+	 *
+	 * @param mixed $tool_result The tool result to convert.
+	 * @return string|WP_Error
+	 */
+	protected function convert_to_text_content( $tool_result ) {
+		// Handle string results directly.
+		if ( is_string( $tool_result ) ) {
+			return $tool_result;
+		}
+
+		// Handle scalar values (int, float, bool, null).
+		if ( is_scalar( $tool_result ) || is_null( $tool_result ) ) {
+			$text_content = wp_json_encode( $tool_result );
+			if ( false === $text_content ) {
+				return new \WP_Error(
+					'wp_mcp_ai_encoding_failed',
+					sprintf(
+						/* translators: %s: data type */
+						__( 'Failed to encode scalar tool result of type: %s', 'nvoos-content-graph-ai' ),
+						gettype( $tool_result )
+					),
+					array(
+						'status'  => 500,
+						'actions' => array(
+							'check_result' => __( 'This is an internal error. The tool returned data that could not be encoded.', 'nvoos-content-graph-ai' ),
+						),
+					)
+				);
+			}
+			return $text_content;
+		}
+
+		// Handle arrays and objects - encode as JSON.
+		if ( is_array( $tool_result ) || is_object( $tool_result ) ) {
+			// Try pretty printing first for better readability.
+			$text_content = wp_json_encode( $tool_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+			if ( false === $text_content ) {
+				// Fallback to basic encoding.
+				$text_content = wp_json_encode( $tool_result );
+
+				if ( false === $text_content ) {
+					// Encoding failed completely - return structured error.
+					return new \WP_Error(
+						'wp_mcp_ai_encoding_failed',
+						__( 'Unable to encode tool result to JSON. The tool may have returned circular references or invalid data.', 'nvoos-content-graph-ai' ),
+						array(
+							'status'  => 500,
+							'actions' => array(
+								'check_tool'   => __( 'This is likely a bug in the tool implementation. Check if the tool is returning circular references or non-serializable data.', 'nvoos-content-graph-ai' ),
+								'report_issue' => __( 'Please report this to the plugin administrator with the tool name you were trying to execute.', 'nvoos-content-graph-ai' ),
+							),
+						)
+					);
+				}
+			}
+
+			return $text_content;
+		}
+
+		// Unexpected type - return error.
 		return new \WP_Error(
-			'wp_mcp_ai_mcp_unavailable',
-			__( 'Tool execution is not available in this install yet. The MCP tools/call method requires the tool execution runtime, which has not been ported to the content graph AI addon.', 'nvoos-content-graph-ai' ),
+			'wp_mcp_ai_invalid_result_type',
+			sprintf(
+				/* translators: %s: data type */
+				__( 'Tool result has unexpected type: %s', 'nvoos-content-graph-ai' ),
+				gettype( $tool_result )
+			),
 			array(
-				'status'  => 503,
+				'status'  => 500,
 				'actions' => array(
-					'use_base_plugin' => __( 'In monolith installs the base plugin serves tools/call on the same route.', 'nvoos-content-graph-ai' ),
+					'report_issue' => __( 'This is an internal error. The tool returned an unexpected data type. Please report this to the plugin administrator.', 'nvoos-content-graph-ai' ),
 				),
 			)
 		);
