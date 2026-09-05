@@ -35,6 +35,10 @@ composer.phar
 /build/nvdigital-open-operator-system-oos-complete/
 /build/nvdigital-open-operator-system-oos-core/
 /build/.tmp-addon-zips/
+# Vendor-side proprietary addon — built locally/CI with the other addons but
+# deliberately never committed to the repository.
+/build/nvoos-checkout-api-v*.zip
+/build/nvoos-checkout-api-v*.zip.sha256
 # Ignore all generated files in build/ (ZIPs, docs, etc.)
 /build/WORDPRESS_ORG_SUBMISSION_README.md
 

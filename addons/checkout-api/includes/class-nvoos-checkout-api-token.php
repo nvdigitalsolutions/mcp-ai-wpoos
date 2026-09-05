@@ -31,7 +31,9 @@ class NVOOS_Checkout_API_Token {
 	 * @return string
 	 */
 	private static function secret(): string {
-		return AUTH_KEY . SECURE_AUTH_KEY;
+		// wp_salt() returns the defined *_KEY constants on a normal install
+		// and a stable fallback when wp-config omits them (never a fatal).
+		return wp_salt( 'auth' ) . wp_salt( 'secure_auth' );
 	}
 
 	/**

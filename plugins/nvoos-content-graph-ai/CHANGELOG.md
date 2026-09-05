@@ -4,6 +4,7 @@
 
 ### Added
 
+- **Assistant builder block set (Wave D-UI-4 close-out)** — four new server-rendered blocks (`nvoos-content-graph-ai/assistant-selector`, `tools-grid`, `knowledge-base`, `assistant-builder`) ported from the base plugin's assistant builder set, with editor registrations, a lean vanilla frontend script, and block styles. The tools grid resolves tools per install mode (base registry in monolith installs, the nvoos/core registry standalone); the builder composite embeds the CG chat widget and submits its build payload to the per-mode create action. The Build Assistant page's Prompt tab now embeds the tools grid + knowledge base components. 18 characterization tests green in both ecosystem matrices.
 - **Settings shell (Wave D-UI-5)** — the ported settings shell lands in `src/Admin/Settings/`: `SettingsValidator` (the base validator's method/error-code contract), `AiSection` (validate-then-sanitize section base — rejected input records a settings error and preserves previous values), and a `SettingsRegistry` facade over the parent plugin's registry (consumed, never modified) exposing the public `nvoos_content_graph_ai/register_settings_sections` hook for the platform addon. All four settings sections re-base onto `AiSection`; provider/model and chat-behaviour fields now validate on save. 14 characterization tests green in both ecosystem matrices.
 
 ## 1.0.4 — 2026-08-31
