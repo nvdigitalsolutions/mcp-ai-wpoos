@@ -144,11 +144,71 @@ jobs:
           if-no-files-found: error
 
   # ===========================================================================
+  # Run the addon's PHPUnit suite (WP test env, MySQL) so every checkout
+  # build ships with its tests green. Mirrors the main phpunit.yml gate but
+  # scoped to addons/checkout-api/tests (no coverage baseline).
+  # ===========================================================================
+  tests:
+    name: Checkout API PHPUnit Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_DB_NAME: wordpress_test
+      WP_DB_USER: wordpress
+      WP_DB_PASSWORD: wordpress
+      WP_DB_HOST: 127.0.0.1
+      WP_CORE_DIR: /tmp/wordpress
+      WP_TESTS_DIR: /tmp/wordpress-tests-lib
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, mysqli
+          tools: composer
+
+      - name: Configure Composer GitHub token
+        run: composer config --global github-oauth.github.com ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Configure WordPress test suite
+        run: |
+          bin/install-wp-tests.sh "$WP_DB_NAME" "$WP_DB_USER" "$WP_DB_PASSWORD" "$WP_DB_HOST" latest
+
+      - name: Run checkout-api PHPUnit suite
+        # Glob (not the bare directory): PHPUnit applies its default
+        # *Test.php suffix to CLI paths; the config's suffix=".php" only
+        # applies to config-declared test directories.
+        run: vendor/bin/phpunit addons/checkout-api/tests/test-*.php --no-coverage
+
+  # ===========================================================================
   # Create a GitHub Release (optional, triggered by tag or workflow_dispatch)
   # ===========================================================================
   release:
     name: Create GitHub Release
-    needs: build
+    needs: [build, tests]
     runs-on: ubuntu-latest
     if: |
       inputs.create_release == true || startsWith(github.ref, 'refs/tags/checkout-api-v')
