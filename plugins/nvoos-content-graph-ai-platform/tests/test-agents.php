@@ -410,11 +410,15 @@ class Test_Platform_Agents extends \WP_UnitTestCase {
 			$this->markTestSkipped( 'Monolith matrix: the base plugin owns the audit trail wiring.' );
 		}
 
-		// Agents::register() mirrors the base agents-init.php wiring in
-		// standalone mode. Fire init manually (Plugin::register() does not
-		// run during the test bootstrap in this matrix) and assert the CPT.
 		Agents::instance()->register();
-		do_action( 'init' );
+
+		// Agents::register() calls AgentAuditTrail::init(), which hooks
+		// register_cpt + schedule_pruning onto `init`. Call them directly
+		// instead of re-firing `do_action( 'init' )`, which re-registers
+		// WooCommerce blocks/integrations in the local Docker matrix and
+		// fails the test with "already registered" incorrect-usage notices.
+		AgentAuditTrail::register_cpt();
+		AgentAuditTrail::schedule_pruning();
 
 		$this->assertTrue( post_type_exists( AgentAuditTrail::CPT_SLUG ) );
 
