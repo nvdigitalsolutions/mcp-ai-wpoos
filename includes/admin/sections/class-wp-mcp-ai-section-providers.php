@@ -408,7 +408,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'gpt-image-1'      => 'gpt-image-1',
 						'gpt-image-1-mini' => 'gpt-image-1-mini',
 					),
-					'default'     => 'gpt-image-1',
+					'default'     => 'gpt-image-2',
 				),
 				'openai_image_size'                  => array(
 					'type'        => 'select',
