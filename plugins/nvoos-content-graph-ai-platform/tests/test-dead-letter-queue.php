@@ -110,6 +110,11 @@ class Test_Dead_Letter_Queue extends \WP_UnitTestCase {
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test fixture DDL on a plugin-owned table; name from a class constant.
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . JobQueueManager::TABLE_NAME );
+
+		// The drop happens behind the class's back — reset the memoized
+		// table-existence probe so later probes re-check instead of trusting
+		// the now-stale cache.
+		JobQueueManager::reset_table_exists_cache();
 	}
 
 	/**

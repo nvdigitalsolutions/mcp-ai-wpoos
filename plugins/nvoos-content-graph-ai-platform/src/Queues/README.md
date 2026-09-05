@@ -21,15 +21,20 @@ queue managers forward exhausted retries to. `RateLimitManager` is the
 aligned port of `WP_MCP_AI_Rate_Limit_Manager`: byte-identical retry
 constants, backoff multiplier, retriable status/timeout tables, and the
 `execute_with_retry()` loop — the API rate-limit resilience layer.
-`OutboundWebhook` is the aligned port of `WP_MCP_AI_Outbound_Webhook`:
-byte-identical `wp_mcp_ai_outbound_webhooks` option, subscription
-lifecycle, signed non-blocking dispatch, signature verification, and
-core event listeners — the webhook delivery layer for workflow and
-approval events. `CronManager` is the aligned port of
-`WP_MCP_AI_Cron_Manager`: byte-identical `wp_mcp_ai_cron_jobs` option,
-argument normalisation, record/remove lifecycle, retention-window
-pruning, and stable job-ID generation — the tracked cron-event layer
-for the plugin's scheduling tools.
+`SchedulerBridge` is the aligned port of `WP_MCP_AI_Async_Scheduler_Bridge`:
+byte-identical runner hook (`wp_mcp_ai_run_async_job`), default group,
+availability contract, idempotent hook registration, and enqueue semantics —
+the Action Scheduler fast-dispatch layer for queued jobs, with per-mode
+queue-class resolution in `run_job()`. `OutboundWebhook` is the aligned
+port of `WP_MCP_AI_Outbound_Webhook`: byte-identical
+`wp_mcp_ai_outbound_webhooks` option, subscription lifecycle, signed
+non-blocking dispatch, signature verification, and core event listeners —
+the webhook delivery layer for workflow and approval events.
+`CronManager` is the aligned port of `WP_MCP_AI_Cron_Manager`:
+byte-identical `wp_mcp_ai_cron_jobs` option, argument normalisation,
+record/remove lifecycle, retention-window pruning, and stable job-ID
+generation — the tracked cron-event layer for the plugin's scheduling
+tools.
 `SlaManager` is the aligned port of `WP_MCP_AI_SLA_Manager`:
 byte-identical tier/priority/SLA-target/concurrency constants,
 capability-flag tier inference, Little's Law capacity math, tuning
@@ -56,9 +61,9 @@ job queue managers consume.
 | `NvoosContentGraphAiPlatform\Queues\JobQueueManager` | `JobQueueManager.php` | Queue-processing cron path + CLI (static utility; no hooks of its own — wiring lands with the scheduler bridge) |
 | `NvoosContentGraphAiPlatform\Queues\DeadLetterQueue` | `DeadLetterQueue.php` | `Plugin::registerDeadLetterQueue()` — table + weekly cleanup cron; consumed by `JobQueueManager` failure forwarding |
 | `NvoosContentGraphAiPlatform\Queues\RateLimitManager` | `RateLimitManager.php` | API callers (static utility; no hooks of its own — consumed directly) |
+| `NvoosContentGraphAiPlatform\Queues\SchedulerBridge` | `SchedulerBridge.php` | `AsyncJobQueue::queue_job()` fast-dispatch path (static utility; runner hook registered lazily) |
 | `NvoosContentGraphAiPlatform\Queues\OutboundWebhook` | `OutboundWebhook.php` | `Plugin::registerOutboundWebhook()` — event-listener registration; consumed by the eventual workflow (E1) / approvals (E3) ports + notifier |
 | `NvoosContentGraphAiPlatform\Queues\CronManager` | `CronManager.php` | `Plugin::registerCronManager()` — `init` prune hook; consumed by the plugin's cron tools |
-| `NvoosContentGraphAiPlatform\Queues\SlaManager` | `SlaManager.php` | `JobQueueManager` (tier limits + enqueue priorities) + analytics/dashboard consumers (static utility; no hooks of its own) |
 
 ## Inputs / Outputs / Neighbors
 
@@ -66,12 +71,12 @@ job queue managers consume.
   `wp_mcp_ai_queue_worker_dedicated` option (RabbitMQ gating), the
   `nvoos_content_graph_ai_platform/async_job_executors` filter;
   `RateLimitManager` reads/writes `wp_mcp_ai_retry_*` transients;
+  `SchedulerBridge` reads Action Scheduler functions/filters and delegates
+  job execution back into the async job queue;
   `OutboundWebhook` reads/writes the `wp_mcp_ai_outbound_webhooks` option
   and POSTs to subscribed URLs (non-blocking, signed); `CronManager`
   reads/writes the `wp_mcp_ai_cron_jobs` option and reads
-  `wp_mcp_ai_settings['cron_job_retention_period']`;
-  `SlaManager` reads `wp_mcp_ai_settings` (`sla_prioritization_enabled`,
-  `sla_*_concurrent`) and reads/writes `wp_mcp_ai_sla_compliance_log`
+  `wp_mcp_ai_settings['cron_job_retention_period']`
 - **Writes to:** job rows, cron events (`wp_mcp_ai_process_job_queue`,
   `wp_mcp_ai_cleanup_job_queue`), the `minute` cron interval,
   `wp_mcp_ai_emit_sse_event` (byte-identical action)
@@ -90,6 +95,9 @@ job queue managers consume.
   `RateLimitManager` targets the base logger through a dormant seam;
   `SlaManager` resolves queue statistics per install mode (base
   `WP_MCP_AI_Job_Queue_Manager` monolith / platform `JobQueueManager`
+  standalone);
+  `SchedulerBridge` resolves the executing queue class per install mode
+  (base `WP_MCP_AI_Async_Job_Queue` monolith / platform `AsyncJobQueue`
   standalone)
 
 ## Conventions

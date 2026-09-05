@@ -540,6 +540,23 @@ jobs:
 
           echo "✅ All nvdigital-oos WP.org packages built"
 
+      - name: Verify Pro vendor autoloader completeness
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          PRO_ZIP="nvdigital-open-operator-system-oos-pro-${VERSION}.zip"
+
+          echo "🔎 Verifying vendor autoload references in the full build tree..."
+          php bin/check-vendor-autoload.php "build-full/${PLUGIN_SLUG}/addons/pro"
+
+          echo "🔎 Verifying vendor autoload references in the built Pro ZIP..."
+          rm -rf /tmp/oos-vendor-verify
+          mkdir -p /tmp/oos-vendor-verify
+          unzip -q "${PRO_ZIP}" -d /tmp/oos-vendor-verify
+          php bin/check-vendor-autoload.php "/tmp/oos-vendor-verify/nvdigital-open-operator-system-oos-pro"
+
+          echo "✅ Pro vendor autoloader verified complete"
+
       - name: Build optional component ZIPs (knowledge-base, vectorizer)
         run: |
           echo "📦 Building optional component ZIPs for on-demand downloads..."

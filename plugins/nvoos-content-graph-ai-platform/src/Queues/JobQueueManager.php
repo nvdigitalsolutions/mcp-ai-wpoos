@@ -154,6 +154,22 @@ class JobQueueManager {
 	}
 
 	/**
+	 * Reset the cached table-existence probe.
+	 *
+	 * `use_custom_table()` memoizes its SHOW TABLES probe for the request;
+	 * resetting forces the next probe to re-check. Test harnesses use this
+	 * when they create and drop the real table between cases (the drop
+	 * happens behind the class's back, so the cache would otherwise stay
+	 * stale). Safe for production callers that rebuild the table
+	 * out-of-band, too.
+	 *
+	 * @return void
+	 */
+	public static function reset_table_exists_cache(): void {
+		self::$table_exists = null;
+	}
+
+	/**
 	 * Get the table name with prefix.
 	 *
 	 * @return string Full table name.
