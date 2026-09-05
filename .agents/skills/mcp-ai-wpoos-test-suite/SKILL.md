@@ -452,6 +452,17 @@ Images API (open), #6291 pro settings composer drift (open), #6293 pro
 schedule research AJAX hook wipe + curriculum exporter array-input drift
 (open).
 
+Session 2026-09-04 clusters (run 91771001271): #6304 K10 Elementor
+control-stack singleton drift, #6305 K11 permission gates (acting-user
+capability checks), #6306 K12 HTTP/provider client drift, #6307 K13
+orchestration budget/settings enforcement, #6308 K14 logging/events
+(recent-activity allowlist + trace durations), #6311 K16 misc singles
+(webhook round-trip, settings-repository blob fallback, chart HTML
+attachment gating, site-builder heading tags, PSO keyword inflections,
+scheduled-post publish date reset + 16 suite contract updates), K15
+skill packs/REST (pack normalisation + install action via direct commit
+d452a125bf; cross-suite uploads isolation completed in #6312).
+
 Remaining candidates change quickly; re-triage from the latest CI log rather
 than trusting an old list.
 
