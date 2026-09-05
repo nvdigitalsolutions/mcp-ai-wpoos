@@ -245,7 +245,10 @@ final class CoreToolManifest {
 			'update_term'             => array( 'NvoosContentGraphAi\Tools\UpdateTermTool', array( 'errors' ) ),
 
 			// ── D8 Cluster 2c — ported self-contained base tools ──
+			'add_model_config'       => array( 'NvoosContentGraphAi\Tools\AddModelConfigTool', array( 'errors' ) ),
+			'discover_new_models'    => array( 'NvoosContentGraphAi\Tools\DiscoverNewModelsTool', array( 'errors' ) ),
 			'enable_reasoning_mode'  => array( 'NvoosContentGraphAi\Tools\EnableReasoningModeTool', array( 'errors' ) ),
+			'research_model'         => array( 'NvoosContentGraphAi\Tools\ResearchModelTool', array( 'errors' ) ),
 		);
 		// phpcs:enable WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned
 	}

@@ -284,4 +284,191 @@ class Test_Core_Tool_Registration extends \WP_UnitTestCase {
 		$this->assertFalse( $result['data']['reasoning_recommended'] );
 		$this->assertFalse( $result['data']['reasoning_activated'] );
 	}
+
+	public function test_add_model_config_round_trip(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$context  = array(
+			'user_id'       => $admin_id,
+			'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+		);
+
+		$config = array(
+			'name'           => 'D8 Test Model',
+			'provider'       => 'openai',
+			'context_window' => 128000,
+		);
+
+		$added = $bridge->tools->execute(
+			'add_model_config',
+			array(
+				'model_id' => 'd8-test-model',
+				'config'   => $config,
+			),
+			$context
+		);
+
+		$this->assertIsArray( $added );
+		$this->assertTrue( $added['success'] );
+		$this->assertSame( 'added', $added['action'] );
+		$this->assertSame( 'openai', $added['config']['provider'] );
+		$this->assertSame( 128000, $added['config']['context_window'] );
+		$this->assertSame( 80000, $added['config']['tpm'] ); // Defaulted.
+		$this->assertSame( $admin_id, $added['config']['_metadata']['added_by'] );
+
+		// Byte-identical storage: the base plugin's option key.
+		$stored = get_option( 'wp_mcp_ai_model_configs', array() );
+		$this->assertArrayHasKey( 'd8-test-model', $stored );
+
+		// Duplicate without overwrite → byte-identical error code.
+		$duplicate = $bridge->tools->execute(
+			'add_model_config',
+			array(
+				'model_id' => 'd8-test-model',
+				'config'   => $config,
+			),
+			$context
+		);
+		$this->assertInstanceOf( \WP_Error::class, $duplicate );
+		$this->assertSame( 'wp_mcp_ai_model_exists', $duplicate->get_error_code() );
+
+		// Overwrite updates and preserves original metadata.
+		$updated = $bridge->tools->execute(
+			'add_model_config',
+			array(
+				'model_id'  => 'd8-test-model',
+				'config'    => array_merge( $config, array( 'context_window' => 256000 ) ),
+				'overwrite' => true,
+			),
+			$context
+		);
+		$this->assertIsArray( $updated );
+		$this->assertSame( 'updated', $updated['action'] );
+		$this->assertSame( 256000, $updated['config']['context_window'] );
+		$this->assertSame( $admin_id, $updated['config']['_metadata']['updated_by'] );
+		$this->assertSame( $admin_id, $updated['config']['_metadata']['original_added_by'] );
+
+		delete_option( 'wp_mcp_ai_model_configs' );
+	}
+
+	public function test_add_model_config_denies_non_admins(): void {
+		$bridge = CoreBridge::instance();
+		$tool   = new \NvoosContentGraphAi\Tools\AddModelConfigTool( $bridge->errors );
+
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		// Direct call: the execute-time capability check is byte-identical
+		// to the base tool (the registry gate is a separate layer).
+		$result = $tool->execute(
+			array(
+				'model_id' => 'd8-denied-model',
+				'config'   => array(
+					'name'           => 'Denied',
+					'provider'       => 'openai',
+					'context_window' => 8192,
+				),
+			),
+			array( 'user_id' => $subscriber_id )
+		);
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+	}
+
+	public function test_research_model_cache_hit_returns_cached_config(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$cached = array(
+			'name'           => 'Cached Research Model',
+			'provider'       => 'openai',
+			'context_window' => 64000,
+			'status'         => 'active',
+		);
+
+		// Seed the base-identical cache key so execute() takes the
+		// cache-hit path (no network call in tests).
+		wp_cache_set(
+			'model_research_' . md5( 'openai_d8-cached-model' ),
+			$cached,
+			'wp_mcp_ai_model_research',
+			7 * DAY_IN_SECONDS
+		);
+
+		$result = $bridge->tools->execute(
+			'research_model',
+			array(
+				'model_id' => 'd8-cached-model',
+				'provider' => 'openai',
+			),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['_from_cache'] );
+		$this->assertSame( 'Cached Research Model', $result['name'] );
+		$this->assertSame( 64000, $result['context_window'] );
+	}
+
+	public function test_discover_new_models_anthropic_static_list(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		// Anthropic needs no API call — the static known-model list is
+		// served verbatim, making the discovery loop deterministic.
+		$result = $bridge->tools->execute(
+			'discover_new_models',
+			array( 'providers' => array( 'anthropic' ) ),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'message', $result );
+		$this->assertNotEmpty( $result['discovered'] );
+
+		$model_ids = wp_list_pluck( $result['discovered'], 'model_id' );
+		$this->assertContains( 'claude-opus-5', $model_ids );
+		$this->assertContains( 'claude-sonnet-4-5-20250929', $model_ids );
+
+		// Recommendations carry the base-identical scoring contract.
+		$this->assertNotEmpty( $result['recommendations'] );
+		$opus = null;
+		foreach ( $result['recommendations'] as $recommendation ) {
+			if ( 'claude-opus-5' === $recommendation['model_id'] ) {
+				$opus = $recommendation;
+				break;
+			}
+		}
+		$this->assertNotNull( $opus );
+		$this->assertSame( 'research_and_add', $opus['action'] );
+		$this->assertSame( 85, $opus['confidence'] ); // 50 + 20 major + 15 naming.
+	}
+
+	public function test_discover_new_models_unsupported_provider_buckets_error(): void {
+		$bridge   = CoreBridge::instance();
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		// 'nvidia' is accepted by the schema but has no discovery
+		// implementation — byte-identical unsupported-provider error.
+		$result = $bridge->tools->execute(
+			'discover_new_models',
+			array( 'providers' => array( 'nvidia' ) ),
+			array(
+				'user_id'       => $admin_id,
+				'auth_provider' => new \Nvoos\WordPress\Adapter\AuthProvider(),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'nvidia', $result['errors'] );
+		$this->assertStringContainsString( 'not supported', $result['errors']['nvidia'] );
+		$this->assertEmpty( $result['discovered'] );
+		$this->assertSame( 'Found 0 new models', $result['message'] );
+	}
 }
