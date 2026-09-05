@@ -382,6 +382,97 @@ if ( ! function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_pro_vendor_is_intact' ) ) {
+	/**
+	 * Check whether the Composer vendor autoloader shipped with the Pro addon
+	 * is complete enough to load without a fatal error.
+	 *
+	 * Composer's generated autoloader eagerly requires every file listed in
+	 * vendor/composer/autoload_files.php. If one of those files is missing
+	 * (e.g. after a partial update on a distributed filesystem), requiring
+	 * vendor/autoload.php fatals the whole site. Detect that state up front
+	 * so Pro can degrade to an admin notice instead of a white screen.
+	 *
+	 * @since 1.1.72
+	 *
+	 * @return true|array True when the vendor tree is loadable, or an array of missing file paths.
+	 */
+	function wp_mcp_ai_pro_vendor_is_intact() {
+		$pro_root   = untrailingslashit( WP_MCP_AI_PRO_PATH );
+		$vendor_dir = $pro_root . '/vendor';
+
+		$critical = array(
+			$vendor_dir . '/autoload.php',
+			$vendor_dir . '/composer/autoload_real.php',
+			$vendor_dir . '/composer/autoload_files.php',
+			$vendor_dir . '/composer/ClassLoader.php',
+		);
+
+		$missing = array();
+		foreach ( $critical as $file ) {
+			if ( ! file_exists( $file ) ) {
+				$missing[] = str_replace( WP_MCP_AI_PRO_PATH, '', $file );
+			}
+		}
+
+		// Cross-check the Composer "files" map against the filesystem.
+		$autoload_files_php = $vendor_dir . '/composer/autoload_files.php';
+		if ( file_exists( $autoload_files_php ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local generated autoload map, not a remote resource.
+			$content = file_get_contents( $autoload_files_php );
+			if ( false !== $content && preg_match_all( '/\$(vendorDir|baseDir)(\s*\.\s*\'(?:[^\'\\\\]|\\\\.)*\')+/', $content, $matches ) ) {
+				foreach ( $matches[0] as $expr ) {
+					$base = ( 0 === strpos( $expr, '$vendorDir' ) ) ? $vendor_dir : $pro_root;
+					preg_match_all( '/\'((?:[^\'\\\\]|\\\\.)*)\'/', $expr, $parts );
+					$relative = '';
+					foreach ( $parts[1] as $part ) {
+						$relative .= stripcslashes( $part );
+					}
+					if ( '' !== $relative ) {
+						$absolute = $base . $relative;
+						if ( ! file_exists( $absolute ) ) {
+							$missing[] = str_replace( WP_MCP_AI_PRO_PATH, '', $absolute );
+						}
+					}
+				}
+			}
+		}
+
+		$missing = array_values( array_unique( $missing ) );
+
+		return empty( $missing ) ? true : $missing;
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_pro_vendor_incomplete_notice' ) ) {
+	/**
+	 * Display an admin notice when the Pro vendor autoloader is incomplete.
+	 *
+	 * Pro features are disabled until the addon is re-installed or updated so
+	 * the site keeps running on the base plugin alone.
+	 *
+	 * @since 1.1.72
+	 *
+	 * @param array $missing_files List of missing file paths (relative to the Pro root).
+	 */
+	function wp_mcp_ai_pro_vendor_incomplete_notice( $missing_files ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$sample  = implode( ', ', array_slice( (array) $missing_files, 0, 3 ) );
+		$message = sprintf(
+			/* translators: %s: comma-separated sample of missing vendor file paths */
+			'<strong>NV oOS Pro:</strong> ' . esc_html__( 'The Pro addon vendor files are incomplete (missing: %s). Pro features have been disabled to protect the site. Please re-run the Pro update from NV oOS &#8594; Settings &#8594; Advanced &#8594; Data Management, or re-upload the Pro addon ZIP via Plugins &#8594; Add New &#8594; Upload Plugin.', 'mcp-ai-wpoos-pro' ),
+			esc_html( $sample )
+		);
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			wp_kses_post( $message )
+		);
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	/**
 	 * Initialize Open Operator System Pro.
@@ -402,6 +493,25 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		if ( version_compare( PHP_VERSION, '8.1.0', '>=' ) ) {
 			$pro_vendor_autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
 			if ( file_exists( $pro_vendor_autoload ) ) {
+				// Guard against a partially installed vendor tree. Requiring the
+				// autoloader when a files-map entry is missing fatals the whole
+				// site, so degrade to an admin notice instead.
+				$vendor_check = wp_mcp_ai_pro_vendor_is_intact();
+				if ( true !== $vendor_check ) {
+					if ( is_admin() ) {
+						add_action(
+							'admin_notices',
+							function () use ( $vendor_check ) {
+								wp_mcp_ai_pro_vendor_incomplete_notice( $vendor_check );
+							}
+						);
+					}
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only diagnostics for a broken vendor install.
+						error_log( 'WP MCP AI Pro: vendor autoload incomplete, Pro disabled. Missing: ' . implode( ', ', $vendor_check ) );
+					}
+					return;
+				}
 				require_once $pro_vendor_autoload;
 			}
 		}
