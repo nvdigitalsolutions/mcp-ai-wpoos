@@ -21,13 +21,13 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 	/**
 	 * Provides a wrapper around the DeepSeek API (OpenAI-compatible).
 	 *
-	 * Supports chat completions, tool/function calling (deepseek-chat only),
+	 * Supports chat completions, tool/function calling (all V4 models),
 	 * streaming (SSE identical to OpenAI), JSON mode, and live model listing.
 	 *
 	 * Note on embeddings: DeepSeek does not currently expose a public embeddings
 	 * endpoint. No WP_MCP_AI_Embedding_Provider_DeepSeek is registered.
 	 *
-	 * Note on vision: DeepSeek has experimental VL models (deepseek-vl2) but
+	 * Note on vision: DeepSeek ships deepseek-v4-flash-vision-exp (experimental);
 	 * this integration does not advertise vision support in v1 to avoid
 	 * mis-routing. Enable via the filter {@see wp_mcp_ai_deepseek_supports_vision}.
 	 */
@@ -73,12 +73,13 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		/**
 		 * Models that do not support tool/function calling.
 		 *
-		 * The deepseek-reasoner (legacy DeepSeek-R1) is a chain-of-thought model
-		 * that rejects the `tools` parameter. All V4 models support tools.
+		 * All DeepSeek V4 models (flash, pro, flash-vision) support tool calling.
+		 * The legacy deepseek-reasoner entry was removed when DeepSeek retired the
+		 * deepseek-chat / deepseek-reasoner ids from the API on July 24, 2026.
 		 *
 		 * @var array
 		 */
-		const MODELS_WITHOUT_TOOL_CALLING = array( 'deepseek-reasoner' );
+		const MODELS_WITHOUT_TOOL_CALLING = array();
 
 		/**
 		 * Maximum context window sizes by model family prefix.
@@ -86,10 +87,8 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 		 * @var array
 		 */
 		const MODEL_CONTEXT_WINDOWS = array(
-			'deepseek-v4'       => 131072,
-			'deepseek-v3'       => 131072,
-			'deepseek-chat'     => 131072,
-			'deepseek-reasoner' => 65536,
+			'deepseek-v4' => 1048576,
+			'deepseek-v3' => 131072,
 		);
 
 		// -------------------------------------------------------------------------
@@ -1409,7 +1408,7 @@ if ( ! class_exists( 'WP_MCP_AI_DeepSeek_Client' ) ) {
 				$normalized['tool_calls'] = $message['tool_calls'];
 			}
 
-			// Pass through reasoning_content for deepseek-reasoner models.
+			// Pass through reasoning_content for thinking-mode responses (V4 thinking mode).
 			if ( ! empty( $message['reasoning_content'] ) ) {
 				$normalized['reasoning_content'] = $message['reasoning_content'];
 			}

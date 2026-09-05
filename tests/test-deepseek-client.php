@@ -55,7 +55,7 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$this->assertEquals( '/chat/completions', WP_MCP_AI_DeepSeek_Client::API_ENDPOINT );
 		$this->assertEquals( '/models', WP_MCP_AI_DeepSeek_Client::API_MODELS );
 		$this->assertEquals( 'deepseek-v4-flash', WP_MCP_AI_DeepSeek_Client::DEFAULT_MODEL );
-		$this->assertContains( 'deepseek-reasoner', WP_MCP_AI_DeepSeek_Client::MODELS_WITHOUT_TOOL_CALLING );
+		$this->assertEmpty( WP_MCP_AI_DeepSeek_Client::MODELS_WITHOUT_TOOL_CALLING, 'All current DeepSeek V4 models support tool calling.' );
 	}
 
 	/**
@@ -90,11 +90,11 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	 * Test get_model() returns configured model.
 	 */
 	public function test_get_model_returns_configured_model() {
-		update_option( 'wp_mcp_ai_settings', array( 'deepseek_model' => 'deepseek-reasoner' ) );
+		update_option( 'wp_mcp_ai_settings', array( 'deepseek_model' => 'deepseek-v4-pro' ) );
 
 		$model = $this->client->get_model();
 
-		$this->assertEquals( 'deepseek-reasoner', $model );
+		$this->assertEquals( 'deepseek-v4-pro', $model );
 	}
 
 	/**
@@ -171,63 +171,9 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Test that deepseek-reasoner is identified as lacking tool calling support.
+	 * Test build_payload passes tools through for V4 models.
 	 */
-	public function test_model_lacks_tool_calling_for_reasoner() {
-		// Use reflection to call protected method.
-		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'model_lacks_tool_calling' );
-		$method->setAccessible( true );
-
-		$this->assertTrue( $method->invoke( $this->client, 'deepseek-reasoner' ) );
-	}
-
-	/**
-	 * Test that deepseek-chat is identified as supporting tool calling.
-	 */
-	public function test_model_supports_tool_calling_for_chat() {
-		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'model_lacks_tool_calling' );
-		$method->setAccessible( true );
-
-		$this->assertFalse( $method->invoke( $this->client, 'deepseek-chat' ) );
-	}
-
-	/**
-	 * Test build_payload strips tools for deepseek-reasoner.
-	 */
-	public function test_build_payload_strips_tools_for_reasoner() {
-		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
-
-		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'build_payload' );
-		$method->setAccessible( true );
-
-		$messages = array(
-			array(
-				'role'    => 'user',
-				'content' => 'Hello',
-			),
-		);
-		$options  = array(
-			'tools' => array(
-				array(
-					'type'     => 'function',
-					'function' => array( 'name' => 'test_fn' ),
-				),
-			),
-		);
-
-		$payload = $method->invoke( $this->client, $messages, $options, 'deepseek-reasoner' );
-
-		$this->assertIsArray( $payload );
-		$this->assertArrayNotHasKey( 'tools', $payload, 'Tools should be stripped for deepseek-reasoner' );
-	}
-
-	/**
-	 * Test build_payload passes tools through for deepseek-chat.
-	 */
-	public function test_build_payload_passes_tools_for_chat_model() {
+	public function test_build_payload_passes_tools_for_v4_model() {
 		update_option( 'wp_mcp_ai_settings', array( 'deepseek_api_key' => 'sk-test' ) );
 
 		$reflection = new ReflectionClass( $this->client );
@@ -246,7 +192,7 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		);
 		$options  = array( 'tools' => array( $tool ) );
 
-		$payload = $method->invoke( $this->client, $messages, $options, 'deepseek-chat' );
+		$payload = $method->invoke( $this->client, $messages, $options, 'deepseek-v4-flash' );
 
 		$this->assertIsArray( $payload );
 		$this->assertArrayHasKey( 'tools', $payload );
@@ -452,7 +398,12 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$reflection = new ReflectionClass( $this->client );
 		$method     = $reflection->getMethod( 'build_payload' );
 		$method->setAccessible( true );
-		$messages = array( array( 'role' => 'user', 'content' => 'Hi' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hi',
+			),
+		);
 		$payload  = $method->invoke( $this->client, $messages, array( 'temperature' => 5.0 ), 'deepseek-chat' );
 		$this->assertEquals( 2.0, $payload['temperature'] );
 	}
@@ -462,13 +413,18 @@ class Test_DeepSeek_Client extends WP_UnitTestCase {
 		$reflection = new ReflectionClass( $this->client );
 		$method     = $reflection->getMethod( 'build_payload' );
 		$method->setAccessible( true );
-		$messages = array( array( 'role' => 'user', 'content' => 'Hi' ) );
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hi',
+			),
+		);
 		$payload  = $method->invoke( $this->client, $messages, array( 'max_completion_tokens' => 200 ), 'deepseek-chat' );
 		$this->assertEquals( 200, $payload['max_tokens'] );
 	}
 
 	public function test_model_supports_tools_public() {
-		$this->assertTrue( $this->client->model_supports_tools( 'deepseek-chat' ) );
-		$this->assertFalse( $this->client->model_supports_tools( 'deepseek-reasoner' ) );
+		$this->assertTrue( $this->client->model_supports_tools( 'deepseek-v4-flash' ) );
+		$this->assertTrue( $this->client->model_supports_tools( 'deepseek-v4-pro' ) );
 	}
 }

@@ -65,7 +65,7 @@ class WP_MCP_AI_CLI_Chat_Command extends WP_MCP_AI_CLI_Base_Command {
 	 *
 	 *     $ wp mcp-ai chat "What is the capital of France?"
 	 *     $ wp mcp-ai chat "Explain recursion" --assistant=42 --stream
-	 *     $ wp mcp-ai chat "Write a haiku" --provider=gemini --model=gemini-3.5-flash
+	 *     $ wp mcp-ai chat "Write a haiku" --provider=gemini --model=gemini-3.6-flash
 	 *
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.

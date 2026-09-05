@@ -49,100 +49,111 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 * @var array
 	 */
 	protected static $model_limits = array(
+		// OpenAI GPT-5.6 family (July 2026).
+		'gpt-5.6'                        => 1050000,
+		'gpt-5.6-sol'                    => 1050000,
+		'gpt-5.6-terra'                  => 1050000,
+		'gpt-5.6-luna'                   => 1050000,
+		'gpt-6-astra'                    => 1000000,
 		// OpenAI GPT-5 family (June 2026).
-		'gpt-5.5'                   => 1050000,
-		'gpt-5.5-mini'              => 270000,
-		'gpt-5.4'                   => 1050000,
-		'gpt-5.4-mini'              => 270000,
-		'gpt-5.4-nano'              => 128000,
-		'gpt-5.3'                   => 922000,
-		'gpt-5.2'                   => 270000,
-		'gpt-5.1'                   => 128000,
-		'gpt-5'                     => 128000,
-		'gpt-5-mini'                => 128000,
+		'gpt-5.5'                        => 1050000,
+		'gpt-5.5-mini'                   => 270000,
+		'gpt-5.4'                        => 1050000,
+		'gpt-5.4-mini'                   => 270000,
+		'gpt-5.4-nano'                   => 128000,
+		'gpt-5.3'                        => 922000,
+		'gpt-5.2'                        => 270000,
+		'gpt-5.1'                        => 128000,
+		'gpt-5'                          => 128000,
+		'gpt-5-mini'                     => 128000,
 		// OpenAI o-series reasoning models.
-		'o4'                        => 200000,
-		'o4-mini'                   => 200000,
-		'o3'                        => 200000,
-		'o3-mini'                   => 128000,
-		'o1-2024-12-17'             => 200000,
-		'o1-preview'                => 128000,
-		'o1-mini'                   => 128000,
+		'o4'                             => 200000,
+		'o4-mini'                        => 200000,
+		'o3'                             => 200000,
+		'o3-mini'                        => 128000,
+		'o1-2024-12-17'                  => 200000,
+		'o1-preview'                     => 128000,
+		'o1-mini'                        => 128000,
 		// OpenAI legacy (still in use via OpenRouter / older configs).
-		'gpt-4.1-mini'              => 1000000,
-		'gpt-4.1-nano'              => 1000000,
-		'gpt-4.1'                   => 128000,
-		'gpt-4o'                    => 128000,
-		'gpt-4o-mini'               => 128000,
-		'gpt-4-turbo'               => 128000,
-		'gpt-4'                     => 8192,
-		'gpt-3.5-turbo'             => 16385,
-		// Anthropic Claude (June 2026).
-		// Opus 4.6-4.8 and Sonnet 4.6: 1M context at standard pricing.
-		'claude-mythos-preview'     => 1000000,
-		'claude-opus-4-8'           => 1000000,
-		'claude-opus-4-7'           => 1000000,
-		'claude-opus-4-6'           => 1000000,
-		'claude-sonnet-4-6'         => 1000000,
-		'claude-opus-4-5'           => 200000,
-		'claude-sonnet-4-5'         => 200000,
-		'claude-haiku-4-5'          => 200000,
-		'claude-3-5-sonnet'         => 200000,
-		'claude-3-opus'             => 200000,
-		'claude-3-haiku'            => 200000,
-		// Google Gemini (June 2026).
-		'gemini-3.5-flash'          => 1048576,
-		'gemini-3.1-pro'            => 2000000,
-		'gemini-3.1-pro-preview'    => 1000000,
-		'gemini-3.1-flash'          => 1000000,
-		'gemini-3.1-flash-lite'     => 1000000,
-		'gemini-3-pro-preview'      => 1000000,
-		'gemini-3-flash-preview'    => 1000000,
-		'gemini-2.5-pro'            => 1048576,
-		'gemini-3.1-flash-image'    => 131072,
-		'gemini-2.5-flash-image'    => 1048576,
-		'gemini-2.0-flash-image'    => 1048576,
-		'gemini-2.5-flash'          => 2097152,
-		'gemini-1.5-flash'          => 1048576,
-		'imagen-3'                  => 8192,
+		'gpt-4.1-mini'                   => 1000000,
+		'gpt-4.1-nano'                   => 1000000,
+		'gpt-4.1'                        => 128000,
+		'gpt-4o'                         => 128000,
+		'gpt-4o-mini'                    => 128000,
+		'gpt-4-turbo'                    => 128000,
+		'gpt-4'                          => 8192,
+		'gpt-3.5-turbo'                  => 16385,
+		// Anthropic Claude (September 2026).
+		// Opus 4.6-5 and Sonnet 4.6: 1M context at standard pricing.
+		'claude-mythos-5'                => 1000000,
+		'claude-fable-5.1'               => 200000,
+		'claude-opus-5'                  => 1000000,
+		'claude-opus-4-8'                => 1000000,
+		'claude-opus-4-7'                => 1000000,
+		'claude-opus-4-6'                => 1000000,
+		'claude-sonnet-4-6'              => 1000000,
+		'claude-opus-4-5'                => 200000,
+		'claude-sonnet-4-5'              => 200000,
+		'claude-haiku-4-5'               => 200000,
+		'claude-3-5-sonnet'              => 200000,
+		'claude-3-opus'                  => 200000,
+		'claude-3-haiku'                 => 200000,
+		// Google Gemini (September 2026).
+		'gemini-3.8-flash'               => 1048576,
+		'gemini-3.7-flash'               => 1048576,
+		'gemini-3.6-flash'               => 1048576,
+		'gemini-3.5-flash-lite'          => 1048576,
+		'gemini-3.5-flash'               => 1048576,
+		'gemini-3.1-pro'                 => 2000000,
+		'gemini-3.1-pro-preview'         => 1000000,
+		'gemini-3.1-flash-lite'          => 1000000,
+		'gemini-3-pro-preview'           => 1000000,
+		'gemini-3-flash-preview'         => 1000000,
+		'gemini-2.5-pro'                 => 1048576,
+		'gemini-3.1-flash-image-preview' => 131072,
+		'gemini-3.1-flash-image'         => 131072,
+		'gemini-2.5-flash-image'         => 1048576,
+		'gemini-2.0-flash-image'         => 1048576,
+		'gemini-2.5-flash'               => 2097152,
+		'gemini-1.5-flash'               => 1048576,
 		// DeepSeek.
-		'deepseek-v4-flash'         => 1048576,
-		'deepseek-v4-pro'           => 1048576,
-		'deepseek-chat'             => 65536,
-		'deepseek-reasoner'         => 65536,
-		'deepseek-v3'               => 65536,
-		'deepseek-coder'            => 16384,
-		'deepseek-r1-0528-qwen3-8b' => 32768,
+		'deepseek-v4-flash-vision-exp'   => 1048576,
+		'deepseek-v4-flash'              => 1048576,
+		'deepseek-v4-pro'                => 1048576,
+		'deepseek-v3'                    => 65536,
+		'deepseek-r1-0528-qwen3-8b'      => 32768,
 		// Kimi / Moonshot AI.
-		'kimi-k2.6'                 => 262144,
-		'kimi-k2.5'                 => 262144,
-		'kimi-k2'                   => 262144,
-		'kimi-k2-thinking'          => 262144,
+		'kimi-k3'                        => 1048576,
+		'kimi-k2.7-code'                 => 256000,
+		'kimi-k2.6'                      => 262144,
+		'kimi-k2.5'                      => 262144,
+		'kimi-k2'                        => 262144,
+		'kimi-k2-thinking'               => 262144,
 		// Meta Llama.
-		'llama4'                    => 131072,
-		'llama3.3'                  => 131072,
-		'llama3.2'                  => 131072,
-		'llama3.1'                  => 131072,
-		'llama3'                    => 8192,
+		'llama4'                         => 131072,
+		'llama3.3'                       => 131072,
+		'llama3.2'                       => 131072,
+		'llama3.1'                       => 131072,
+		'llama3'                         => 8192,
 		// Mistral AI.
-		'mixtral'                   => 32768,
-		'mistral-large'             => 131072,
-		'mistral-small'             => 32768,
-		'mistral'                   => 8192,
+		'mixtral'                        => 32768,
+		'mistral-large'                  => 131072,
+		'mistral-small'                  => 32768,
+		'mistral'                        => 8192,
 		// Qwen (Alibaba).
-		'qwen3.5'                   => 131072,
-		'qwen3'                     => 131072,
-		'qwen2.5'                   => 131072,
-		'qwen2'                     => 32768,
+		'qwen3.5'                        => 131072,
+		'qwen3'                          => 131072,
+		'qwen2.5'                        => 131072,
+		'qwen2'                          => 32768,
 		// NVIDIA Nemotron.
-		'nemotron-3'                => 1048576,
+		'nemotron-3'                     => 1048576,
 		// Other open models.
-		'codellama'                 => 16384,
-		'phi4'                      => 16384,
-		'phi3'                      => 4096,
-		'gemma4'                    => 262144,
-		'gemma3'                    => 32768,
-		'gemma2'                    => 8192,
+		'codellama'                      => 16384,
+		'phi4'                           => 16384,
+		'phi3'                           => 4096,
+		'gemma4'                         => 262144,
+		'gemma3'                         => 32768,
+		'gemma2'                         => 8192,
 	);
 
 	/**
@@ -156,15 +167,17 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 */
 	protected static $default_tpm_limits = array(
 		// Anthropic Claude models — Tier 1 defaults.
-		'claude-mythos-preview' => 40000,
-		'claude-opus-4-6'       => 40000,
-		'claude-sonnet-4-6'     => 80000,
-		'claude-opus-4-5'       => 40000,
-		'claude-sonnet-4-5'     => 80000,
-		'claude-haiku-4-5'      => 50000,
-		'claude-3-5-sonnet'     => 80000,
-		'claude-3-opus'         => 40000,
-		'claude-3-haiku'        => 50000,
+		'claude-mythos-5'   => 40000,
+		'claude-opus-5'     => 40000,
+		'claude-sonnet-5'   => 80000,
+		'claude-opus-4-6'   => 40000,
+		'claude-sonnet-4-6' => 80000,
+		'claude-opus-4-5'   => 40000,
+		'claude-sonnet-4-5' => 80000,
+		'claude-haiku-4-5'  => 50000,
+		'claude-3-5-sonnet' => 80000,
+		'claude-3-opus'     => 40000,
+		'claude-3-haiku'    => 50000,
 	);
 
 	/**
@@ -176,15 +189,17 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 * @var array
 	 */
 	protected static $model_max_output_tokens = array(
-		'claude-mythos-preview' => 128000,
-		'claude-opus-4-6'       => 128000,
-		'claude-sonnet-4-6'     => 64000,
-		'claude-opus-4-5'       => 128000,
-		'claude-sonnet-4-5'     => 64000,
-		'claude-haiku-4-5'      => 64000,
-		'claude-3-5-sonnet'     => 8192,
-		'claude-3-opus'         => 4096,
-		'claude-3-haiku'        => 4096,
+		'claude-mythos-5'   => 128000,
+		'claude-opus-5'     => 128000,
+		'claude-sonnet-5'   => 128000,
+		'claude-opus-4-6'   => 128000,
+		'claude-sonnet-4-6' => 64000,
+		'claude-opus-4-5'   => 128000,
+		'claude-sonnet-4-5' => 64000,
+		'claude-haiku-4-5'  => 64000,
+		'claude-3-5-sonnet' => 8192,
+		'claude-3-opus'     => 4096,
+		'claude-3-haiku'    => 4096,
 	);
 
 	/**
@@ -890,9 +905,9 @@ class WP_MCP_AI_Token_Budget_Manager {
 			}
 		} elseif ( $is_gemini ) {
 			// Gemini models have very high TPM limits (1M).
-			$suggested[] = 'gemini-1.5-flash';
 			$suggested[] = 'gemini-2.5-flash';
-			$suggested[] = 'gemini-2.5-flash';
+			$suggested[] = 'gemini-3.5-flash-lite';
+			$suggested[] = 'gemini-3.6-flash';
 		} elseif ( $is_claude ) {
 			// Claude models — suggest models with higher TPM limits.
 			// Uses the same hardcoded defaults as $default_tpm_limits.
@@ -905,8 +920,8 @@ class WP_MCP_AI_Token_Budget_Manager {
 
 		// Always suggest Gemini as a fallback for very large requests.
 		if ( $required_tokens > 200000 && ! $is_gemini ) {
-			$suggested[] = 'gemini-1.5-flash';
 			$suggested[] = 'gemini-2.5-flash';
+			$suggested[] = 'gemini-3.6-flash';
 		}
 
 		return array_unique( $suggested );

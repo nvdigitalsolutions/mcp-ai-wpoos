@@ -324,7 +324,7 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 
 		$sanitized = $section->sanitize_settings( $input );
 
-		$this->assertEquals( 'kimi-k2.7-code', $sanitized['kimi_model'] );
+		$this->assertEquals( 'kimi-k3', $sanitized['kimi_model'] );
 	}
 
 	/**

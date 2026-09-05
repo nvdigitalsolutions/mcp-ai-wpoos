@@ -910,7 +910,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 				return isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5';
 
 			case 'deepseek':
-				return ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-chat';
+				return ! empty( $settings['deepseek_model'] ) ? $settings['deepseek_model'] : 'deepseek-v4-flash';
 
 			case 'cloudflare':
 				return ! empty( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : '@cf/meta/llama-4-scout-17b-16e-instruct';
