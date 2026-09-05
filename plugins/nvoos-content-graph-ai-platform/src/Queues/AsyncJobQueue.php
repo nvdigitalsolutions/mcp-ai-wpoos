@@ -997,9 +997,10 @@ class AsyncJobQueue {
 	/**
 	 * Whether the job notifier (webhooks) is available.
 	 *
-	 * Dormant until the notifier ports (E2). The method_exists guard is a
-	 * documented hardening deviation — the base's own call targets a
-	 * method its notifier class does not expose.
+	 * Dormant by design: the base's own call targets a `notify()` method
+	 * neither notifier class exposes (documented hardening deviation —
+	 * kept byte-identical even though the notifier itself has now ported
+	 * to this package in Wave E2).
 	 *
 	 * @return bool
 	 */

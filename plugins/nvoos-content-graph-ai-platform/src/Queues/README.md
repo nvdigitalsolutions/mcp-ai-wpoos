@@ -41,6 +41,13 @@ capability-flag tier inference, Little's Law capacity math, tuning
 recommendations, and compliance tracking/statistics (same
 `wp_mcp_ai_sla_compliance_log` option) — the prioritization layer the
 job queue managers consume.
+`JobNotifier` is the aligned port of `WP_MCP_AI_Job_Notifier`:
+byte-identical cache prefix/duration, webhook option key, per-job
+webhook/step caps, lifecycle hooks, error codes, filters, transient
+keys, and the `wp_mcp_ai_emit_sse_event` action — the job-status
+notification layer (SSE + webhooks + Little's Law metrics). Its REST
+surface (`JobNotifierRestController` + `SseStream`) lives in
+[`../Rest/`](../Rest/).
 
 ## Tier
 
@@ -50,7 +57,7 @@ job queue managers consume.
 | **PHP target** | 8.1+ |
 | **License** | Proprietary (commercial license required) |
 | **Loaded by** | `NvoosContentGraphAiPlatform\Plugin::register()` — standalone-only (`! defined('WP_MCP_AI_PATH')`) |
-| **Optional dependencies** | Action Scheduler bridge, DLQ, job notifier (dormant seams until they port) |
+| **Optional dependencies** | Action Scheduler bridge, DLQ (dormant seams until they port) |
 
 ## Public Surface
 
@@ -64,6 +71,7 @@ job queue managers consume.
 | `NvoosContentGraphAiPlatform\Queues\SchedulerBridge` | `SchedulerBridge.php` | `AsyncJobQueue::queue_job()` fast-dispatch path (static utility; runner hook registered lazily) |
 | `NvoosContentGraphAiPlatform\Queues\OutboundWebhook` | `OutboundWebhook.php` | `Plugin::registerOutboundWebhook()` — event-listener registration; consumed by the eventual workflow (E1) / approvals (E3) ports + notifier |
 | `NvoosContentGraphAiPlatform\Queues\CronManager` | `CronManager.php` | `Plugin::registerCronManager()` — `init` prune hook; consumed by the plugin's cron tools |
+| `NvoosContentGraphAiPlatform\Queues\JobNotifier` | `JobNotifier.php` | `Plugin::registerJobNotifier()` — lifecycle + cleanup-cron hook registration; consumed by `Rest\JobNotifierRestController` + the eventual workflow (E1) ports |
 
 ## Inputs / Outputs / Neighbors
 
@@ -98,7 +106,12 @@ job queue managers consume.
   standalone);
   `SchedulerBridge` resolves the executing queue class per install mode
   (base `WP_MCP_AI_Async_Job_Queue` monolith / platform `AsyncJobQueue`
-  standalone)
+  standalone);
+  `JobNotifier` resolves its collaborators per install mode (base cron
+  manager / DLQ / job store / API-key helpers monolith — boot-gated
+  probes — platform `CronManager` + `DeadLetterQueue` standalone, the
+  job store + logger dormant standalone, the webhook secret via the
+  Content Graph AI addon's `ApiKeyStore`)
 
 ## Conventions
 
