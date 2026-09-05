@@ -5,7 +5,7 @@ use Nvoos\Core\Domain\Contract\EmailServiceInterface;
 
 final class EmailService implements EmailServiceInterface {
     private $legacy;
-    public function __construct() { if (\class_exists('WP_MCP_AI_Nodemailer_Service')) { $this->legacy = new \WP_MCP_AI_Nodemailer_Service(); } }
+    public function __construct() { if (\defined('WP_MCP_AI_PATH') && \class_exists('WP_MCP_AI_Nodemailer_Service')) { $this->legacy = new \WP_MCP_AI_Nodemailer_Service(); } }
     public function send(array $message): array {
         if (!$this->legacy) { return ['success' => false, 'error' => 'Email service unavailable']; }
         try { $r = $this->legacy->send_email($message); return \is_wp_error($r) ? ['success' => false, 'error' => $r->get_error_message()] : \array_merge(['success' => true], \is_array($r) ? $r : []); }
