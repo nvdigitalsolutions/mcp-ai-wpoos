@@ -23,7 +23,11 @@ array|WP_Error = ownership), the default-executor fallback chain
 (Engine V2 when available and enabled), and the `no_workflow_executor`
 error envelope — the pluggable entry point the trigger CPT, replay
 tool, and any workflow consumer call without hard-binding to the
-engine. The engine itself lands in a later sub-cluster.
+engine. `WorkflowEngine` is the aligned port of
+`WP_MCP_AI_Workflow_Engine_V2`: byte-identical enable gate, execution
+guards, lifecycle actions, durable run records, graph →
+`execute_workflow` tool delegation, and the result envelope — the
+default executor the dispatcher hands off to.
 
 ## Tier
 
@@ -43,6 +47,7 @@ engine. The engine itself lands in a later sub-cluster.
 | `NvoosContentGraphAiPlatform\Workflows\WorkflowRunCpt` | `WorkflowRunCpt.php` | `Plugin::registerWorkflowCpts()` — CPT + meta at `init` 13; consumed by the engine/dispatcher (E1) |
 | `NvoosContentGraphAiPlatform\Workflows\WorkflowTriggerCpt` | `WorkflowTriggerCpt.php` | `Plugin::registerWorkflowCpts()` — CPT + meta at `init` 14, trigger hooking at 20; consumed by trigger registry (E1) |
 | `NvoosContentGraphAiPlatform\Workflows\Dispatcher` | `Dispatcher.php` | `WorkflowTriggerCpt::fire_trigger()` hand-off (standalone), the replay tool, third-party executors via the `wp_mcp_ai_workflow_executor` filter |
+| `NvoosContentGraphAiPlatform\Workflows\WorkflowEngine` | `WorkflowEngine.php` | Static utility — resolved by `Dispatcher::engine_class()` + `WorkflowTriggerCpt::engine_class()` standalone |
 
 ## Inputs / Outputs / Neighbors
 
@@ -89,6 +94,12 @@ engine. The engine itself lands in a later sub-cluster.
   executor fallback with a fake engine (enabled/disabled), the
   `no_workflow_executor` degradation, the per-mode engine seam, and the
   trigger hand-off integration through the real filter (both matrices).
+- `tests/test-workflow-engine.php` — characterization suite covering
+  the enable gate + filter, execution guards, lifecycle actions, the
+  run-record roundtrip (running → terminal + step events), the graph →
+  tool delegation shape, parallel-node detection, budget forwarding,
+  the no-tool/no-registry degradations, and the per-mode collaborator
+  seams (both matrices).
 
 ## Also Load
 
