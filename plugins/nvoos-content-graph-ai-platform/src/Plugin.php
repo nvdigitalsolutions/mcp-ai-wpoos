@@ -53,6 +53,7 @@ final class Plugin {
 		$this->registerIntegrations();
 		$this->registerGoogleCalendar();
 		$this->registerContentAssistant();
+		$this->registerConversationImport();
 	}
 
 	private function registerAdmin(): void {
@@ -566,6 +567,34 @@ final class Plugin {
 
 		if ( class_exists( __NAMESPACE__ . '\ContentAssistant\ContentAssistantBootstrap' ) ) {
 			add_action( 'admin_init', array( \NvoosContentGraphAiPlatform\ContentAssistant\ContentAssistantBootstrap::class, 'register' ) );
+		}
+	}
+
+	/**
+	 * Register the conversation import subsystem (Wave E4, sub-cluster 6).
+	 *
+	 * Standalone-only: the base loader requires all sixteen
+	 * conversation-import files unconditionally and owns the
+	 * self-bootstrapping hooks (privacy exporter/eraser, memory-mining
+	 * defaults) in monolith installs. The ported classes are PSR-4
+	 * autoloaded passive libraries, so only the two self-bootstrapping
+	 * classes need explicit standalone wiring.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerConversationImport(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\ConversationImport\Privacy' ) ) {
+			\NvoosContentGraphAiPlatform\ConversationImport\Privacy::bootstrap();
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\ConversationImport\MemoryMiner' ) ) {
+			\NvoosContentGraphAiPlatform\ConversationImport\MemoryMiner::bootstrap();
 		}
 	}
 
