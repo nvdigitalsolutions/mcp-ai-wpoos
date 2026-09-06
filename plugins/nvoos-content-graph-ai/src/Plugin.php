@@ -216,11 +216,12 @@ final class Plugin {
 	 * Register the engine pieces (Wave E6).
 	 *
 	 * Standalone-only: the base plugin's bridge/init files own the same
-	 * shadow-runner subscriber, suppression waterfall, and markup wiring
-	 * in monolith installs; double registration would double-record
-	 * shadow runs and double-short-circuit write-class tools. Dormant
-	 * until a standalone surface emits the respective hooks
-	 * (byte-identical dormancy).
+	 * shadow-runner subscriber, suppression waterfall, markup wiring, and
+	 * Paper Store tool registration in monolith installs; double
+	 * registration would double-record shadow runs, double-short-circuit
+	 * write-class tools, and double-register tools. Dormant until a
+	 * standalone surface emits the respective hooks (byte-identical
+	 * dormancy).
 	 *
 	 * @since 1.1.0
 	 *
@@ -243,6 +244,12 @@ final class Plugin {
 		// `markup-init.php` owns the same hooks monolith.
 		if ( class_exists( 'NvoosContentGraphAi\Engine\Markup\MarkupBootstrap' ) ) {
 			\NvoosContentGraphAi\Engine\Markup\MarkupBootstrap::register();
+		}
+
+		// Paper Store engine (Wave E6, sub-cluster 3) — the base
+		// `paper-store-init.php` owns the same tool registration monolith.
+		if ( class_exists( 'NvoosContentGraphAi\Engine\PaperStore\PaperStoreBootstrap' ) ) {
+			\NvoosContentGraphAi\Engine\PaperStore\PaperStoreBootstrap::register();
 		}
 	}
 
