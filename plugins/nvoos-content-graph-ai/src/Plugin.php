@@ -206,6 +206,38 @@ final class Plugin {
 		if ( class_exists( 'NvoosContentGraphAi\Elementor\ElementorHub' ) ) {
 			( new \NvoosContentGraphAi\Elementor\ElementorHub() )->register();
 		}
+
+		// Engine pieces (Wave E6, sub-cluster 1 — OOS shadow runner +
+		// suppression). Standalone-only (see registerEngine()).
+		$this->registerEngine();
+	}
+
+	/**
+	 * Register the OOS engine pieces (Wave E6, sub-cluster 1).
+	 *
+	 * Standalone-only: the base plugin's `oos-bridge.php` factory owns the
+	 * same shadow-runner subscriber and `tools/execute` suppression
+	 * waterfall in monolith installs; double registration would
+	 * double-record shadow runs and double-short-circuit write-class
+	 * tools. Dormant until a standalone surface emits
+	 * `wp_mcp_ai_before_chat_request` (byte-identical dormancy).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return void
+	 */
+	private function registerEngine(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( 'NvoosContentGraphAi\Engine\OosShadowRunner' ) ) {
+			\NvoosContentGraphAi\Engine\OosShadowRunner::register();
+		}
+
+		if ( class_exists( 'NvoosContentGraphAi\Engine\OosShadowSuppression' ) ) {
+			\NvoosContentGraphAi\Engine\OosShadowSuppression::register();
+		}
 	}
 
 	/**

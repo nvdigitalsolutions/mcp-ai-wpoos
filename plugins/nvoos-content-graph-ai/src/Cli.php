@@ -43,6 +43,13 @@ final class Cli {
 		\WP_CLI::add_command( 'nvoos-cg-ai settings list', array( \NvoosContentGraphAi\Cli\SettingsCommand::class, 'run_list' ) );
 		\WP_CLI::add_command( 'nvoos-cg-ai settings get', array( \NvoosContentGraphAi\Cli\SettingsCommand::class, 'run_get' ) );
 		\WP_CLI::add_command( 'nvoos-cg-ai graph stats', array( \NvoosContentGraphAi\Cli\GraphCommand::class, 'run' ) );
+
+		// Engine surface (Wave E6): OOS shadow parity reporting — the base
+		// plugin owns `wp mcp-ai oos parity` in monolith installs.
+		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+			\WP_CLI::add_command( 'nvoos-cg-ai oos parity', array( \NvoosContentGraphAi\Cli\OosParityCommand::class, 'report' ) );
+			\WP_CLI::add_command( 'nvoos-cg-ai oos parity diff', array( \NvoosContentGraphAi\Cli\OosParityCommand::class, 'diff' ) );
+		}
 	}
 
 	/**
