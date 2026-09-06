@@ -49,6 +49,7 @@ final class Plugin {
 		$this->registerJobNotifierRest();
 		$this->registerA2aRest();
 		$this->registerWorkflowCpts();
+		$this->registerTenant();
 	}
 
 	private function registerAdmin(): void {
@@ -412,6 +413,30 @@ final class Plugin {
 			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowTriggerCpt::class, 'register_cpt' ), 14 );
 			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowTriggerCpt::class, 'register_meta' ), 14 );
 			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowTriggerCpt::class, 'register_all_triggers' ), 20 );
+		}
+	}
+
+	/**
+	 * Register the tenant isolation subsystem (Wave E4, sub-cluster 1).
+	 *
+	 * Standalone-only: the base plugin's tenant init.php owns the same
+	 * admin_init/wp_mcp_ai_activate table hooks, rest_api_init meta
+	 * registration, pre_get_posts filters, save_post stamping, and the
+	 * wp_mcp_ai_after_plugin_upgrade migration hook in monolith installs;
+	 * double registration would double-create the shared tenant tables and
+	 * double-stamp tenant meta.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerTenant(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Tenant\TenantBootstrap' ) ) {
+			\NvoosContentGraphAiPlatform\Tenant\TenantBootstrap::register();
 		}
 	}
 
