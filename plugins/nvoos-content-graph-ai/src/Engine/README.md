@@ -2,12 +2,16 @@
 
 ## Purpose
 
-Wave E6 port surface (sub-cluster 1 — OOS). The OOS shadow subsystem
+Wave E6 port surface. Sub-cluster 1 — OOS: the OOS shadow subsystem
 from the base plugin's `includes/oos/` + `includes/bootstrap/oos-bridge.php`
 (Proposal 029, Phase 4.1): the sampled parallel shadow runner, the
 engine/shadow gate helpers, the write-class tool suppression waterfall,
-and the parity CLI — ported into the AI addon per decision D4 (engine
-pieces fold into `nvoos-content-graph-ai` under the `Engine\`
+and the parity CLI. Sub-cluster 2 — markup: the markup elicitation
+subsystem from the base plugin's `includes/markup/` +
+`includes/markup-init.php` (plus the markup-owned slash command and
+telemetry admin page) — the interrupt-and-resume canvas flow (see
+`Markup/README.md`). Both ported into the AI addon per decision D4
+(engine pieces fold into `nvoos-content-graph-ai` under the `Engine\`
 namespace).
 
 ## Tier
@@ -27,6 +31,7 @@ namespace).
 | `NvoosContentGraphAi\Engine\OosEngineFlags` | `OosEngineFlags.php` | `OosShadowRunner`, `OosShadowSuppression` — shadow/engine gates + write-class classifier |
 | `NvoosContentGraphAi\Engine\OosShadowSuppression` | `OosShadowSuppression.php` | `Plugin::registerEngine()` — `tools/execute` waterfall (priority 20) |
 | `NvoosContentGraphAi\Cli\OosParityCommand` | `../Cli/OosParityCommand.php` | `wp nvoos-cg-ai oos parity [diff <run-id>]` (standalone-only) |
+| `NvoosContentGraphAi\Engine\Markup\MarkupBootstrap` | `Markup/MarkupBootstrap.php` | `Plugin::registerEngine()` — wraps the base `markup-init.php` hook surface (standalone-only); see `Markup/README.md` for the full 15-class surface |
 
 Stable contract: `STORE_OPTION = 'wp_mcp_ai_oos_shadow_runs'`,
 `STORE_MAX = 100`, the run-record shape (`build_record()`), the hook
@@ -86,13 +91,23 @@ option/filter surface (`enable_oos_shadow`, `oos_shadow_sample_rate`,
   containment paths, the capped newest-first store, flag helpers,
   classifier, the suppression waterfall (real dispatcher + registry),
   per-mode seams, and the CLI aggregate/diff data methods.
+- `tests/Ecosystem/test-markup-*.php` — markup core (value objects,
+  store, validator, rasterizer), loop/REST (interceptor gate chain,
+  per-mode wiring, REST contract, tool-resume seam), telemetry/UI
+  (recorder, slash command, admin page, assets). See
+  `Markup/README.md`.
 
 ```bash
 vendor/bin/phpunit -c plugins/nvoos-content-graph-ai/phpunit-ecosystem.xml.dist plugins/nvoos-content-graph-ai/tests/Ecosystem/test-oos-shadow-runner.php
+vendor/bin/phpunit -c plugins/nvoos-content-graph-ai/phpunit-ecosystem.xml.dist plugins/nvoos-content-graph-ai/tests/Ecosystem/test-markup-core.php
 ```
+
+Markup suites (also `test-markup-loop-rest.php` and
+`test-markup-telemetry-ui.php`) — see `Markup/README.md`.
 
 ## Also Load
 
+- [`Markup/README.md`](Markup/README.md) — the markup sub-cluster (sub-cluster 2)
 - [`../README.md`](../README.md) — composition root + subsystem index
 - [`../CoreBridge.php`](../CoreBridge.php) — the standalone engine seam
 - [`../../../../.context/conventions.md`](../../../../.context/conventions.md) — naming + style
@@ -102,5 +117,6 @@ vendor/bin/phpunit -c plugins/nvoos-content-graph-ai/phpunit-ecosystem.xml.dist 
 
 - [`docs/project/plans/ecosystem-port-cluster-loop.md`](../../../../docs/project/plans/ecosystem-port-cluster-loop.md) — cluster ordering + pipeline
 - [`docs/project/ecosystem-port-tracker.md`](../../../../docs/project/ecosystem-port-tracker.md) — E6 row status
-- [`includes/oos/`](../../../../includes/oos/) + [`includes/bootstrap/oos-bridge.php`](../../../../includes/bootstrap/oos-bridge.php) — the base subsystem (the port's origin)
+- [`includes/oos/`](../../../../includes/oos/) + [`includes/bootstrap/oos-bridge.php`](../../../../includes/bootstrap/oos-bridge.php) — the base OOS subsystem (the sub-cluster 1 port's origin)
+- [`includes/markup/`](../../../../includes/markup/) + [`includes/markup-init.php`](../../../../includes/markup-init.php) — the base markup subsystem (the sub-cluster 2 port's origin)
 - `docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md` — Phase 4 gates and kill criteria

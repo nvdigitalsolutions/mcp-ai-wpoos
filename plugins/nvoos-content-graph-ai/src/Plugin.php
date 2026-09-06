@@ -213,14 +213,14 @@ final class Plugin {
 	}
 
 	/**
-	 * Register the OOS engine pieces (Wave E6, sub-cluster 1).
+	 * Register the engine pieces (Wave E6).
 	 *
-	 * Standalone-only: the base plugin's `oos-bridge.php` factory owns the
-	 * same shadow-runner subscriber and `tools/execute` suppression
-	 * waterfall in monolith installs; double registration would
-	 * double-record shadow runs and double-short-circuit write-class
-	 * tools. Dormant until a standalone surface emits
-	 * `wp_mcp_ai_before_chat_request` (byte-identical dormancy).
+	 * Standalone-only: the base plugin's bridge/init files own the same
+	 * shadow-runner subscriber, suppression waterfall, and markup wiring
+	 * in monolith installs; double registration would double-record
+	 * shadow runs and double-short-circuit write-class tools. Dormant
+	 * until a standalone surface emits the respective hooks
+	 * (byte-identical dormancy).
 	 *
 	 * @since 1.1.0
 	 *
@@ -237,6 +237,12 @@ final class Plugin {
 
 		if ( class_exists( 'NvoosContentGraphAi\Engine\OosShadowSuppression' ) ) {
 			\NvoosContentGraphAi\Engine\OosShadowSuppression::register();
+		}
+
+		// Markup elicitation subsystem (Wave E6, sub-cluster 2) — the base
+		// `markup-init.php` owns the same hooks monolith.
+		if ( class_exists( 'NvoosContentGraphAi\Engine\Markup\MarkupBootstrap' ) ) {
+			\NvoosContentGraphAi\Engine\Markup\MarkupBootstrap::register();
 		}
 	}
 
