@@ -17,7 +17,10 @@ root manager (see `PaperStore/README.md`). Sub-cluster 4 — OKF: the
 Open Knowledge Format engine from the base plugin's `includes/okf/` —
 the YAML frontmatter parser, bundle reader/writer, bundle manager with
 ZIP distribution, and the skill-knowledge generator (see
-`Okf/README.md`). All ported into the AI
+`Okf/README.md`). Sub-cluster 5 — crawler: the
+Crawl4AI background coordinator from the base plugin's
+`includes/crawler/` plus its required inline-async-tick trait
+collaborator (see `Crawler/README.md`). All ported into the AI
 addon per decision D4 (engine pieces fold into `nvoos-content-graph-ai`
 under the `Engine\` namespace).
 
@@ -41,6 +44,7 @@ under the `Engine\` namespace).
 | `NvoosContentGraphAi\Engine\Markup\MarkupBootstrap` | `Markup/MarkupBootstrap.php` | `Plugin::registerEngine()` — wraps the base `markup-init.php` hook surface (standalone-only); see `Markup/README.md` for the full 15-class surface |
 | `NvoosContentGraphAi\Engine\PaperStore\PaperStoreBootstrap` | `PaperStore/PaperStoreBootstrap.php` | `Plugin::registerEngine()` — wraps the base `paper-store-init.php` hook surface (standalone-only); see `PaperStore/README.md` for the full 8-class surface |
 | `NvoosContentGraphAi\Engine\Okf\OkfBootstrap` | `Okf/OkfBootstrap.php` | `Plugin::registerEngine()` — wraps the base `okf-init.php` hook surface (standalone-only); see `Okf/README.md` for the full 6-class surface |
+| `NvoosContentGraphAi\Engine\Crawler\Crawler` | `Crawler/Crawler.php` | `Plugin::registerEngine()` — the Crawl4AI background coordinator (standalone-only); see `Crawler/README.md` for the trait collaborator |
 
 Stable contract: `STORE_OPTION = 'wp_mcp_ai_oos_shadow_runs'`,
 `STORE_MAX = 100`, the run-record shape (`build_record()`), the hook
@@ -117,6 +121,10 @@ option/filter surface (`enable_oos_shadow`, `oos_shadow_sample_rate`,
   (resolution/containment, lifecycle, real ZIP round-trips + ZipSlip
   defenses, per-mode generation, priority-32 hook surface). See
   `Okf/README.md`.
+- `tests/Ecosystem/test-crawler.php` — crawler registration paths
+  (URL gate, defaults/clamps, cron scheduling), tick lock + poll
+  outcomes (expiry, retry backoff, permanent failure), storage
+  helpers, per-mode seams, trait primitives. See `Crawler/README.md`.
 
 ```bash
 vendor/bin/phpunit -c plugins/nvoos-content-graph-ai/phpunit-ecosystem.xml.dist plugins/nvoos-content-graph-ai/tests/Ecosystem/test-oos-shadow-runner.php
@@ -128,13 +136,15 @@ Markup suites (also `test-markup-loop-rest.php` and
 suites (`test-paper-store-core.php` and
 `test-paper-store-repository-query.php`) — see `PaperStore/README.md`.
 OKF suites (`test-okf-core.php` and `test-okf-bundle-manager.php`) —
-see `Okf/README.md`.
+see `Okf/README.md`. Crawler suite (`test-crawler.php`) — see
+`Crawler/README.md`.
 
 ## Also Load
 
 - [`Markup/README.md`](Markup/README.md) — the markup sub-cluster (sub-cluster 2)
 - [`PaperStore/README.md`](PaperStore/README.md) — the paper-store sub-cluster (sub-cluster 3)
 - [`Okf/README.md`](Okf/README.md) — the OKF sub-cluster (sub-cluster 4)
+- [`Crawler/README.md`](Crawler/README.md) — the crawler sub-cluster (sub-cluster 5)
 - [`../README.md`](../README.md) — composition root + subsystem index
 - [`../CoreBridge.php`](../CoreBridge.php) — the standalone engine seam
 - [`../../../../.context/conventions.md`](../../../../.context/conventions.md) — naming + style
@@ -148,4 +158,5 @@ see `Okf/README.md`.
 - [`includes/markup/`](../../../../includes/markup/) + [`includes/markup-init.php`](../../../../includes/markup-init.php) — the base markup subsystem (the sub-cluster 2 port's origin)
 - [`includes/paper-store/`](../../../../includes/paper-store/) + [`includes/tools/paper-store/`](../../../../includes/tools/paper-store/) — the base paper-store subsystem (the sub-cluster 3 port's origin) and its deferred tool surface
 - [`includes/okf/`](../../../../includes/okf/) + [`includes/tools/okf/`](../../../../includes/tools/okf/) — the base OKF subsystem (the sub-cluster 4 port's origin) and its deferred tool surface
+- [`includes/crawler/`](../../../../includes/crawler/) + [`includes/traits/trait-wp-mcp-ai-inline-async-tick.php`](../../../../includes/traits/trait-wp-mcp-ai-inline-async-tick.php) — the base crawler subsystem (the sub-cluster 5 port's origin) and its trait collaborator
 - `docs/project/proposals/029-oos-orchestration-runtime-consolidation-implementation-plan.md` — Phase 4 gates and kill criteria
