@@ -1,7 +1,7 @@
 # Ecosystem Port Tracker
 
 **Living tracker for the additive base+pro → Content Graph ecosystem port.**
-Last updated: 2026-09-06 · Plan: [`base-pro-ecosystem-port-plan.md`](plans/base-pro-ecosystem-port-plan.md) · Gaps: [`base-pro-ecosystem-port-gap-analysis.md`](proposals/base-pro-ecosystem-port-gap-analysis.md)
+Last updated: 2026-09-07 · Plan: [`base-pro-ecosystem-port-plan.md`](plans/base-pro-ecosystem-port-plan.md) · Gaps: [`base-pro-ecosystem-port-gap-analysis.md`](proposals/base-pro-ecosystem-port-gap-analysis.md)
 
 Locked constraints: **D-NOBASE** (zero changes to `mcp-ai-wpoos`), **D-NOCORE** (zero changes to `nvoos-content-graph`), **D-UI** (all UIs ported), **D-SPA** (Pro SPA v2 ported).
 
@@ -97,7 +97,7 @@ Locked constraints: **D-NOBASE** (zero changes to `mcp-ai-wpoos`), **D-NOCORE** 
 
 | # | Subsystem | Status | Notes |
 |---|---|---|---|
-| E-UI-1 | Dashboards (multi-agent, orchestration, slash-commands, run timeline) | 🔴 | |
+| E-UI-1 | Dashboards (multi-agent, orchestration, slash-commands, run timeline) | 🟡 | Sub-cluster 1 (multi-agent) landed: `MultiAgentDashboard` ported (`src/Admin/Dashboards/MultiAgentDashboard.php`): byte-identical `PAGE_SLUG` (`mcp-ai-multi-agent`), `NONCE_ACTION` (`wp_mcp_ai_multi_agent`), AJAX action names (`wp_ajax_wp_mcp_ai_get_multi_agent_stats` / `wp_ajax_wp_mcp_ai_reinstall_agents`), menu/enqueue/render registration, the admin-gate render (`wp_die` non-managers), the nonce+capability AJAX gates, the statistics shape, the workflow-pattern classification, and the reinstall flow; per-mode seams (`defined( 'WP_MCP_AI_PATH' )` discriminator — base `WP_MCP_AI_Default_Assistants` monolith / `false`+`WP_Error('wp_mcp_ai_default_assistants_unavailable')` standalone; meta-key map base `WP_MCP_AI_Assistant_CPT::META_*` monolith / AI addon `AssistantPostType::META_*` standalone (byte-identical values); JetEngine via `function_exists('wp_mcp_ai_is_jetengine_available')` deferral; the chat-bundle + test-chat modal are monolith-only — standalone renders agent cards without the Test button); the four operational dashboards mount as submenu pages under the platform's NV Platform menu (`PlatformDashboard::PAGE_SLUG`) — routing-review note: the base's tab/sub-tab/view routing lives in the settings dashboard and Pro orchestration settings, so these single-page section-composed surfaces do NOT replicate settings-level routing; the orchestration dashboard's own section view-routing lands with its sub-cluster; own assets (admin-multi-agent-dashboard.css/js + shared admin-monitor/admin-test-assistant) copied byte-identically into the platform assets tree; standalone-only wiring via `Plugin::registerDashboards()` (the base admin owns the same page monolith); 16 characterization tests green in both matrices (exposer fixture + AJAX capture harness); full platform suite 929 tests, 0 failures in both matrices, PHPCS-clean. Remaining: orchestration, slash-commands, run-timeline sub-clusters |
 | E-UI-2 | Managers (tool/token/cron/DAG/DLQ/approvals) | 🔴 | |
 | E-UI-3 | Integrations screens | 🔴 | |
 
