@@ -216,12 +216,12 @@ final class Plugin {
 	 * Register the engine pieces (Wave E6).
 	 *
 	 * Standalone-only: the base plugin's bridge/init files own the same
-	 * shadow-runner subscriber, suppression waterfall, markup wiring, and
-	 * Paper Store tool registration in monolith installs; double
-	 * registration would double-record shadow runs, double-short-circuit
-	 * write-class tools, and double-register tools. Dormant until a
-	 * standalone surface emits the respective hooks (byte-identical
-	 * dormancy).
+	 * shadow-runner subscriber, suppression waterfall, markup wiring,
+	 * Paper Store tool registration, and OKF tool registration +
+	 * generator hooks in monolith installs; double registration would
+	 * double-record shadow runs, double-short-circuit write-class tools,
+	 * and double-register tools. Dormant until a standalone surface emits
+	 * the respective hooks (byte-identical dormancy).
 	 *
 	 * @since 1.1.0
 	 *
@@ -250,6 +250,12 @@ final class Plugin {
 		// `paper-store-init.php` owns the same tool registration monolith.
 		if ( class_exists( 'NvoosContentGraphAi\Engine\PaperStore\PaperStoreBootstrap' ) ) {
 			\NvoosContentGraphAi\Engine\PaperStore\PaperStoreBootstrap::register();
+		}
+
+		// OKF engine (Wave E6, sub-cluster 4) — the base `okf-init.php`
+		// owns the same tool registration + generator hooks monolith.
+		if ( class_exists( 'NvoosContentGraphAi\Engine\Okf\OkfBootstrap' ) ) {
+			\NvoosContentGraphAi\Engine\Okf\OkfBootstrap::register();
 		}
 	}
 
