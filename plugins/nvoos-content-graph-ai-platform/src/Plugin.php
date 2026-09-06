@@ -51,6 +51,7 @@ final class Plugin {
 		$this->registerWorkflowCpts();
 		$this->registerTenant();
 		$this->registerIntegrations();
+		$this->registerGoogleCalendar();
 	}
 
 	private function registerAdmin(): void {
@@ -520,6 +521,29 @@ final class Plugin {
 		// Mailjet: byte-identical to the base — its integration init wires
 		// only the webhook handler; the OAuth handler is a static token
 		// utility with no hooks of its own.
+	}
+
+	/**
+	 * Register the Google Calendar subsystem (Wave E4, sub-cluster 3).
+	 *
+	 * Standalone-only: the base loader's `google-calendar-init.php` owns
+	 * the same `cron_schedules` filter, sync/renew cron actions, push
+	 * receiver, and connection-gated scheduling in monolith installs;
+	 * double registration would double-schedule the safety-net sync and
+	 * double-register the webhook REST route.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerGoogleCalendar(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Google\GoogleCalendarBootstrap' ) ) {
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Google\GoogleCalendarBootstrap::class, 'register' ) );
+		}
 	}
 
 	private function __clone() {}

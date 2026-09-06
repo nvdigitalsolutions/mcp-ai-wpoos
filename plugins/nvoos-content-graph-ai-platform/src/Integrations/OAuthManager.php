@@ -18,11 +18,12 @@
  *  - Settings access resolves per install mode (`settings()` seam —
  *    base `WP_MCP_AI_Admin_Settings::get_settings()` monolith
  *    boot-gated / the `wp_mcp_ai_settings` option standalone).
- *  - The Google Calendar flow delegates to the base's
- *    `WP_MCP_AI_Google_OAuth_Service` + `WP_MCP_AI_Google_Calendar_Scopes`
- *    monolith (boot-gated probes); standalone these resolve to this
- *    package's Google classes once the calendar sub-cluster ports and
- *    degrade with a documented `calendar_error` redirect until then.
+ *  - The Google Calendar flow resolves the shared Google classes per
+ *    install mode (the discriminator is `defined( 'WP_MCP_AI_PATH' )`):
+ *    the base `WP_MCP_AI_Google_OAuth_Service` +
+ *    `WP_MCP_AI_Google_Calendar_Scopes` monolith, this package's
+ *    `Google\GoogleOAuthService` + `Google\GoogleCalendarScopes`
+ *    standalone (Wave E4, sub-cluster 3).
  *  - Standalone-only hook registration via `Plugin::registerIntegrations()`
  *    — the base admin-settings component owns the same `admin_post_*`
  *    wiring in monolith installs; double registration would double-handle
@@ -79,26 +80,61 @@ class OAuthManager {
 	}
 
 	/**
-	 * Whether the base Google OAuth service classes are available.
+	 * Whether the shared Google OAuth service classes are available.
+	 *
+	 * Per-mode: the base monolith classes in monolith installs, this
+	 * package's `Google\*` classes standalone.
 	 *
 	 * @return bool
 	 */
 	protected function google_services_available(): bool {
-		return defined( 'WP_MCP_AI_PATH' )
-			&& class_exists( 'WP_MCP_AI_Google_OAuth_Service' )
-			&& class_exists( 'WP_MCP_AI_Google_Calendar_Scopes' );
+		return class_exists( $this->google_oauth_service_class() )
+			&& class_exists( $this->google_calendar_scopes_class() );
 	}
 
 	/**
 	 * Ensure the shared Google service classes are loaded.
 	 *
+	 * Standalone: the platform PSR-4 autoloader resolves the `Google\*`
+	 * classes on demand, so there is nothing to preload. Monolith: the
+	 * base loader normally owns these requires, but preload defensively
+	 * so the calendar handlers never depend on load order.
+	 *
 	 * @return void
 	 */
 	protected function require_google_services() {
-		if ( defined( 'WP_MCP_AI_PATH' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
-			require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
 		}
+
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-oauth-service.php';
+		require_once WP_MCP_AI_PATH . 'includes/google/class-wp-mcp-ai-google-calendar-scopes.php';
+	}
+
+	/**
+	 * Resolve the Google OAuth service class per install mode.
+	 *
+	 * The discriminator is `defined( 'WP_MCP_AI_PATH' )` — never bare
+	 * `class_exists()` — because the monorepo autoloader resolves base
+	 * classes to disk even when the base plugin is inactive.
+	 *
+	 * @return string Class name.
+	 */
+	protected function google_oauth_service_class(): string {
+		return defined( 'WP_MCP_AI_PATH' )
+			? 'WP_MCP_AI_Google_OAuth_Service'
+			: 'NvoosContentGraphAiPlatform\Google\GoogleOAuthService';
+	}
+
+	/**
+	 * Resolve the Google Calendar scope registry class per install mode.
+	 *
+	 * @return string Class name.
+	 */
+	protected function google_calendar_scopes_class(): string {
+		return defined( 'WP_MCP_AI_PATH' )
+			? 'WP_MCP_AI_Google_Calendar_Scopes'
+			: 'NvoosContentGraphAiPlatform\Google\GoogleCalendarScopes';
 	}
 
 	/**
@@ -1117,12 +1153,13 @@ class OAuthManager {
 		$this->require_google_services();
 
 		if ( ! $this->google_services_available() ) {
-			// Standalone degradation: the shared Google OAuth service lands
-			// with the E4 calendar sub-cluster.
 			$this->google_calendar_fail(
 				__( 'Google Calendar OAuth is not available in this install mode yet.', 'nvoos-content-graph-ai-platform' )
 			);
 		}
+
+		$oauth  = $this->google_oauth_service_class();
+		$scopes = $this->google_calendar_scopes_class();
 
 		$settings      = self::settings();
 		$client_id     = isset( $settings['google_calendar_client_id'] ) ? trim( (string) $settings['google_calendar_client_id'] ) : '';
@@ -1134,19 +1171,19 @@ class OAuthManager {
 			);
 		}
 
-		$profile = \WP_MCP_AI_Google_Calendar_Scopes::normalise_profile(
+		$profile = $scopes::normalise_profile(
 			isset( $settings['google_calendar_scope_profile'] ) ? $settings['google_calendar_scope_profile'] : ''
 		);
 
-		$state = \WP_MCP_AI_Google_OAuth_Service::store_state( 'google_calendar' );
+		$state = $oauth::store_state( 'google_calendar' );
 
-		$authorize_url = \WP_MCP_AI_Google_OAuth_Service::build_authorize_url(
+		$authorize_url = $oauth::build_authorize_url(
 			array(
 				'client_id'    => $client_id,
-				'redirect_uri' => \WP_MCP_AI_Google_OAuth_Service::build_redirect_uri(
+				'redirect_uri' => $oauth::build_redirect_uri(
 					self::GOOGLE_CALENDAR_OAUTH_CALLBACK_HANDLER
 				),
-				'scope'        => \WP_MCP_AI_Google_Calendar_Scopes::get_profile_scope_string( $profile ),
+				'scope'        => $scopes::get_profile_scope_string( $profile ),
 				'state'        => $state,
 				'login_hint'   => isset( $settings['google_calendar_user_email'] ) ? (string) $settings['google_calendar_user_email'] : '',
 			)
@@ -1158,7 +1195,7 @@ class OAuthManager {
 
 		add_filter(
 			'allowed_redirect_hosts',
-			array( 'WP_MCP_AI_Google_OAuth_Service', 'filter_allowed_redirect_hosts' )
+			array( $oauth, 'filter_allowed_redirect_hosts' )
 		);
 
 		wp_safe_redirect( $authorize_url );
@@ -1183,12 +1220,12 @@ class OAuthManager {
 		$this->require_google_services();
 
 		if ( ! $this->google_services_available() ) {
-			// Standalone degradation: the shared Google OAuth service lands
-			// with the E4 calendar sub-cluster.
 			$this->google_calendar_fail(
 				__( 'Google Calendar OAuth is not available in this install mode yet.', 'nvoos-content-graph-ai-platform' )
 			);
 		}
+
+		$oauth = $this->google_oauth_service_class();
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
 		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
@@ -1207,7 +1244,7 @@ class OAuthManager {
 			);
 		}
 
-		$state_data = \WP_MCP_AI_Google_OAuth_Service::consume_state( 'google_calendar', $state );
+		$state_data = $oauth::consume_state( 'google_calendar', $state );
 
 		if ( is_wp_error( $state_data ) ) {
 			$this->google_calendar_fail( $state_data->get_error_message() );
@@ -1225,13 +1262,13 @@ class OAuthManager {
 			$this->google_calendar_fail( __( 'Google Calendar OAuth credentials are missing. Save them and try again.', 'nvoos-content-graph-ai-platform' ) );
 		}
 
-		$tokens = \WP_MCP_AI_Google_OAuth_Service::exchange_code(
+		$tokens = $oauth::exchange_code(
 			array(
 				'code'          => $code,
 				'client_id'     => $client_id,
 				'client_secret' => $client_secret,
 				// Must byte-match the authorize request.
-				'redirect_uri'  => \WP_MCP_AI_Google_OAuth_Service::build_redirect_uri(
+				'redirect_uri'  => $oauth::build_redirect_uri(
 					self::GOOGLE_CALENDAR_OAUTH_CALLBACK_HANDLER
 				),
 			)
@@ -1256,7 +1293,7 @@ class OAuthManager {
 			);
 		}
 
-		$email = \WP_MCP_AI_Google_OAuth_Service::fetch_userinfo_email( $access_token );
+		$email = $oauth::fetch_userinfo_email( $access_token );
 
 		$settings['google_calendar_refresh_token'] = $refresh_token;
 
@@ -1275,7 +1312,7 @@ class OAuthManager {
 		update_option( self::OPTION_NAME, $settings );
 
 		// A rotated refresh token invalidates any cached access token.
-		\WP_MCP_AI_Google_OAuth_Service::forget_access_token( 'settings:' . get_current_blog_id() );
+		$oauth::forget_access_token( 'settings:' . get_current_blog_id() );
 
 		$message = '' !== $email
 			? sprintf(
@@ -1311,21 +1348,21 @@ class OAuthManager {
 		$this->require_google_services();
 
 		if ( ! $this->google_services_available() ) {
-			// Standalone degradation: the shared Google OAuth service lands
-			// with the E4 calendar sub-cluster.
 			$this->google_calendar_fail(
 				__( 'Google Calendar OAuth is not available in this install mode yet.', 'nvoos-content-graph-ai-platform' )
 			);
 		}
 
+		$oauth = $this->google_oauth_service_class();
+
 		$settings = self::settings();
 		$token    = isset( $settings['google_calendar_refresh_token'] ) ? (string) $settings['google_calendar_refresh_token'] : '';
 
 		if ( '' !== $token ) {
-			\WP_MCP_AI_Google_OAuth_Service::revoke( $token );
+			$oauth::revoke( $token );
 		}
 
-		\WP_MCP_AI_Google_OAuth_Service::forget_access_token( 'settings:' . get_current_blog_id() );
+		$oauth::forget_access_token( 'settings:' . get_current_blog_id() );
 
 		unset( $settings['google_calendar_refresh_token'] );
 		unset( $settings['google_calendar_user_email'] );
