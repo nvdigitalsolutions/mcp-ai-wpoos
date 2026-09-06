@@ -94,6 +94,10 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\OrchestrationDashboard' ) ) {
 			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\OrchestrationDashboard() )->register();
 		}
+
+		if ( class_exists( __NAMESPACE__ . '\Admin\Dashboards\SlashCommandsDashboard' ) ) {
+			( new \NvoosContentGraphAiPlatform\Admin\Dashboards\SlashCommandsDashboard() )->register();
+		}
 	}
 
 	/**
