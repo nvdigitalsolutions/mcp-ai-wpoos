@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Wave E2 REST surface. `JobNotifierRestController` is an aligned port of
+Wave E2 + E5 REST surface. `JobNotifierRestController` is an aligned port of
 the base plugin's `WP_MCP_AI_Job_Notifier_REST`: byte-identical
 namespace/routes (`mcp-ai/v1` jobs stream, status, and webhook
 registration), parameter schemas, permission callbacks, error codes
@@ -15,6 +15,13 @@ and filters, the buffered `stream_job_status()` polling loop with its
 connected/status/complete/timeout/close framing, heartbeat comments,
 the `wp_mcp_ai_sse_stream_started|chunk_sent|ended` notification hooks,
 and the message/comment/backpressure/typed-event helpers.
+`A2aRestController` is the aligned port of
+`WP_MCP_AI_REST_A2A_Controller` (Wave E5): byte-identical `mcp-ai/v1/a2a`
+route surface (JSON-RPC 2.0 POST, agent-card GET, per-assistant card GET,
+webhook receiver POST), parameter schemas, the A2A-Version header gate,
+the JSON-RPC method router (`message/send|stream`, `tasks/*`,
+push-config CRUD, `agent/authenticatedExtendedCard`), and the JSON-RPC
+error-code map — the A2A protocol receive layer.
 
 ## Tier
 
@@ -32,6 +39,7 @@ and the message/comment/backpressure/typed-event helpers.
 |---|---|---|
 | `NvoosContentGraphAiPlatform\Rest\JobNotifierRestController` | `JobNotifierRestController.php` | `Plugin::registerJobNotifierRest()` — `rest_api_init` route registration |
 | `NvoosContentGraphAiPlatform\Rest\SseStream` | `SseStream.php` | `JobNotifierRestController::handle_job_stream()` — buffered status stream |
+| `NvoosContentGraphAiPlatform\Rest\A2aRestController` | `A2aRestController.php` | `Plugin::registerA2aRest()` — `rest_api_init` route registration; consumed by remote A2A agents |
 
 ## Inputs / Outputs / Neighbors
 
@@ -48,7 +56,11 @@ and the message/comment/backpressure/typed-event helpers.
   authenticator (no standalone port — nonce auth works in both modes,
   token/mesh branches degrade with `wp_mcp_ai_auth_unavailable`),
   security manager (monolith headers only), job store (transient cache
-  authoritative standalone)
+  authoritative standalone); `A2aRestController` resolves the A2A
+  collaborator stack per install mode (base `WP_MCP_AI_A2A_*` classes
+  monolith — boot-gated probes — the platform `A2A\*` classes
+  standalone) and the chat pipeline + SSE handler monolith-only
+  (`a2a_processing_error` degradation standalone until E1/D-UI-6)
 
 ## Conventions
 
@@ -58,7 +70,8 @@ and the message/comment/backpressure/typed-event helpers.
   documented in the class docblocks (auth degradation standalone,
   security headers monolith-only, text domain).
 - Protected seams (`notifier_class()`, `sse_stream_class()`,
-  `cors_allow_origin_setting()`, `security_headers()`) let tests
+  `cors_allow_origin_setting()`, `security_headers()`, the
+  `A2aRestController` collaborator + chat-pipeline seams) let tests
   exercise per-mode resolution without global stubs.
 
 ## Also Load
@@ -71,4 +84,4 @@ and the message/comment/backpressure/typed-event helpers.
 
 - Neighbor: [`../Queues/`](../Queues/) — notifier + cron/DLQ collaborators
 - Bootstrap wiring: [`../Plugin.php`](../Plugin.php)
-- Tracker: `docs/project/ecosystem-port-tracker.md` (Wave E2 row)
+- Tracker: `docs/project/ecosystem-port-tracker.md` (Wave E2 + E5 rows)
