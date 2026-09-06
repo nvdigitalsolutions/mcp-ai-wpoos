@@ -33,7 +33,13 @@ catalog the trigger admin/REST surfaces (E-UI-2) render from.
 `WP_MCP_AI_Workflow_Engine_V2`: byte-identical enable gate, execution
 guards, lifecycle actions, durable run records, graph →
 `execute_workflow` tool delegation, and the result envelope — the
-default executor the dispatcher hands off to. `AgenticWorkflowOptimizer`
+default executor the dispatcher hands off to. `PatternConstants` +
+`PatternWorkflowTemplates` are the aligned ports of the base's
+pattern constants + workflow templates: byte-identical eight pattern
+slugs, the template catalog for the multi-agent patterns, template
+lookups, the customize contract, and the toolkit-recommendation path —
+the template library the DAG builder (E-UI-2) and the optimizer (E1)
+consume. `AgenticWorkflowOptimizer`
 is the aligned port of `WP_MCP_AI_Agentic_Workflow_Optimizer`:
 byte-identical optimization constants, the metric collection lifecycle,
 the tool-result cache cycle with the cacheable-tool allowlist filter,
@@ -61,6 +67,8 @@ consumers attach to agentic workflow sessions (D-UI-6/E-UI-2).
 | `NvoosContentGraphAiPlatform\Workflows\Dispatcher` | `Dispatcher.php` | `WorkflowTriggerCpt::fire_trigger()` hand-off (standalone), the replay tool, third-party executors via the `wp_mcp_ai_workflow_executor` filter |
 | `NvoosContentGraphAiPlatform\Workflows\TriggerRegistry` | `TriggerRegistry.php` | Lazy singleton — consumed by the trigger admin/REST surfaces (E-UI-2) + third-party registrations via `wp_mcp_ai_register_workflow_triggers` |
 | `NvoosContentGraphAiPlatform\Workflows\WorkflowEngine` | `WorkflowEngine.php` | Static utility — resolved by `Dispatcher::engine_class()` + `WorkflowTriggerCpt::engine_class()` standalone |
+| `NvoosContentGraphAiPlatform\Workflows\PatternConstants` | `PatternConstants.php` | Pure domain constants — consumed by `PatternWorkflowTemplates` + the pattern registry |
+| `NvoosContentGraphAiPlatform\Workflows\PatternWorkflowTemplates` | `PatternWorkflowTemplates.php` | Template library — consumed by the DAG builder (E-UI-2) + the optimizer (E1) |
 | `NvoosContentGraphAiPlatform\Workflows\AgenticWorkflowOptimizer` | `AgenticWorkflowOptimizer.php` | Constructor-driven hooks — instantiated + wired by consumers (D-UI-6/E-UI-2); no `Plugin` registration |
 
 ## Inputs / Outputs / Neighbors
@@ -127,6 +135,12 @@ consumers attach to agentic workflow sessions (D-UI-6/E-UI-2).
   tool delegation shape, parallel-node detection, budget forwarding,
   the no-tool/no-registry degradations, and the per-mode collaborator
   seams (both matrices).
+- `tests/test-pattern-templates.php` — characterization suite covering
+  the pattern slugs + catalog helpers, the eight-template catalog with
+  role/step shapes, template lookups, the customize contract (role
+  merge + filter, no mutation), the toolkit-recommendation path with a
+  fake registry, and the per-mode toolkit-registry seam (both
+  matrices).
 - `tests/test-agentic-optimizer.php` — characterization suite covering
   the constants, the cache cycle + allowlist filter + key
   normalization, the compression contract, the metrics lifecycle + the
