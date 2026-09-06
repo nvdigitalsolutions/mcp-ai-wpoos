@@ -40,6 +40,7 @@ slugs, the template catalog for the multi-agent patterns, template
 lookups, the customize contract, and the toolkit-recommendation path —
 the template library the DAG builder (E-UI-2) and the optimizer (E1)
 consume.
+default executor the dispatcher hands off to.
 
 ## Tier
 
