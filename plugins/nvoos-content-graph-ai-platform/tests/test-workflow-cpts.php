@@ -800,7 +800,7 @@ class Test_Workflow_Cpts extends \WP_UnitTestCase {
 			$this->assertSame( 'WP_MCP_AI_Workflow_Dispatcher', WorkflowTriggerProbeSeam::probe_dispatcher() );
 			$this->assertSame( 'WP_MCP_AI_Workflow_Engine_V2', WorkflowTriggerProbeSeam::probe_engine() );
 		} else {
-			$this->assertNull( WorkflowTriggerProbeSeam::probe_dispatcher() );
+			$this->assertSame( 'NvoosContentGraphAiPlatform\Workflows\Dispatcher', WorkflowTriggerProbeSeam::probe_dispatcher() );
 			$this->assertNull( WorkflowTriggerProbeSeam::probe_engine() );
 		}
 	}
