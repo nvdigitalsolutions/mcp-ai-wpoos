@@ -46,6 +46,7 @@ final class Plugin {
 		$this->registerCronManager();
 		$this->registerJobNotifier();
 		$this->registerJobNotifierRest();
+		$this->registerWorkflowCpts();
 	}
 
 	private function registerAdmin(): void {
@@ -329,6 +330,40 @@ final class Plugin {
 
 		if ( class_exists( __NAMESPACE__ . '\Rest\JobNotifierRestController' ) ) {
 			\NvoosContentGraphAiPlatform\Rest\JobNotifierRestController::init();
+		}
+	}
+
+	/**
+	 * Register the workflow/run/trigger CPTs (Wave E1, sub-cluster 1).
+	 *
+	 * Standalone-only: the base bootstrap loader owns the same `init`
+	 * registration in monolith installs (workflow at priority 12, run at
+	 * 13, trigger at 14 + trigger hooking at 20); double registration
+	 * would collide on the shared CPT slugs.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerWorkflowCpts(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Workflows\WorkflowCpt' ) ) {
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowCpt::class, 'register_cpt' ), 12 );
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowCpt::class, 'register_meta' ), 12 );
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Workflows\WorkflowRunCpt' ) ) {
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowRunCpt::class, 'register_cpt' ), 13 );
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowRunCpt::class, 'register_meta' ), 13 );
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Workflows\WorkflowTriggerCpt' ) ) {
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowTriggerCpt::class, 'register_cpt' ), 14 );
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowTriggerCpt::class, 'register_meta' ), 14 );
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Workflows\WorkflowTriggerCpt::class, 'register_all_triggers' ), 20 );
 		}
 	}
 
