@@ -39,8 +39,13 @@ pattern constants + workflow templates: byte-identical eight pattern
 slugs, the template catalog for the multi-agent patterns, template
 lookups, the customize contract, and the toolkit-recommendation path —
 the template library the DAG builder (E-UI-2) and the optimizer (E1)
-consume.
-default executor the dispatcher hands off to.
+consume. `AgenticWorkflowOptimizer`
+is the aligned port of `WP_MCP_AI_Agentic_Workflow_Optimizer`:
+byte-identical optimization constants, the metric collection lifecycle,
+the tool-result cache cycle with the cacheable-tool allowlist filter,
+the gzip/base64 compression contract, the low-necessity iteration
+tracker, and optimal-iteration prediction — the optimization layer
+consumers attach to agentic workflow sessions (D-UI-6/E-UI-2).
 
 ## Tier
 
@@ -49,7 +54,7 @@ default executor the dispatcher hands off to.
 | **Distribution** | Platform addon (`nvoos-content-graph-ai-platform`) — proprietary |
 | **PHP target** | 8.1+ |
 | **License** | Proprietary (commercial license required) |
-| **Loaded by** | `NvoosContentGraphAiPlatform\Plugin::registerWorkflowCpts()` — standalone-only (`! defined('WP_MCP_AI_PATH')`); `Dispatcher` is a static utility with no hooks of its own |
+| **Loaded by** | `NvoosContentGraphAiPlatform\Plugin::registerWorkflowCpts()` — standalone-only (`! defined('WP_MCP_AI_PATH')`); `Dispatcher` is a static utility with no hooks of its own; `AgenticWorkflowOptimizer` is constructor-driven (the instantiating consumer registers the hooks — D-UI-6/E-UI-2) |
 | **Optional dependencies** | None (posts + postmeta only); execution hand-off resolves the dispatcher/engine per install mode |
 
 ## Public Surface
@@ -64,19 +69,24 @@ default executor the dispatcher hands off to.
 | `NvoosContentGraphAiPlatform\Workflows\WorkflowEngine` | `WorkflowEngine.php` | Static utility — resolved by `Dispatcher::engine_class()` + `WorkflowTriggerCpt::engine_class()` standalone |
 | `NvoosContentGraphAiPlatform\Workflows\PatternConstants` | `PatternConstants.php` | Pure domain constants — consumed by `PatternWorkflowTemplates` + the pattern registry |
 | `NvoosContentGraphAiPlatform\Workflows\PatternWorkflowTemplates` | `PatternWorkflowTemplates.php` | Template library — consumed by the DAG builder (E-UI-2) + the optimizer (E1) |
+| `NvoosContentGraphAiPlatform\Workflows\AgenticWorkflowOptimizer` | `AgenticWorkflowOptimizer.php` | Constructor-driven hooks — instantiated + wired by consumers (D-UI-6/E-UI-2); no `Plugin` registration |
 
 ## Inputs / Outputs / Neighbors
 
 - **Reads from:** workflow/run/trigger posts + postmeta under the three
   CPT slugs, the `wp_mcp_ai_workflow_executor` filter chain, the
   per-mode engine class (`engine_class()` seam); `wp_mcp_ai_settings`
-  (nothing yet — settings land with the engine)
+  (nothing yet — settings land with the engine); the optimizer reads the
+  `opt-*` tool-result cache + `wp_mcp_ai_settings` (`enable_logging`)
 - **Writes to:** workflow graph/version/tags meta, run records + event
   log + budget meta, trigger last-fired timestamps, the
-  `wp_mcp_ai_trigger_cron_*` cron events, executor return values
+  `wp_mcp_ai_trigger_cron_*` cron events, executor return values; the
+  optimizer writes the `opt-*` tool-result cache + emits
+  `wp_mcp_ai_metrics_collected`
 - **Upstream callers:** the workflow engine (E1 later sub-clusters), the
   trigger registry, the DAG builder UI (E-UI-2), future replay/REST
-  consumers
+  consumers; the agentic workflow UI (D-UI-6/E-UI-2) instantiates the
+  optimizer
 - **Downstream consumers:** `wp_mcp_ai_trigger_fired` +
   `wp_mcp_ai_workflow_run_budget_exceeded` + `wp_mcp_ai_workflow_run_*`
   actions; the dispatcher/engine seams (`dispatcher_class()`,
@@ -96,6 +106,11 @@ default executor the dispatcher hands off to.
   hand-off, method_exists-guarded `is_enabled()`).
 - Static utilities, no hooks of their own beyond the trigger bridges —
   wiring stays in `Plugin`.
+- The optimizer is constructor-driven (byte-identical to the base);
+  logging seams resolve per install mode (base settings/logger
+  monolith, dormant standalone) and `get_iteration_history()` is a
+  dormant placeholder standalone — both documented in the class
+  docblock.
 
 ## Tests
 
@@ -126,6 +141,12 @@ default executor the dispatcher hands off to.
   merge + filter, no mutation), the toolkit-recommendation path with a
   fake registry, and the per-mode toolkit-registry seam (both
   matrices).
+- `tests/test-agentic-optimizer.php` — characterization suite covering
+  the constants, the cache cycle + allowlist filter + key
+  normalization, the compression contract, the metrics lifecycle + the
+  singular/plural key quirk, the low-necessity tracker (5-nudge,
+  per-session), iteration prediction + percentile math (int/float
+  quirk), and the per-mode logging seams (both matrices).
 
 ## Also Load
 
