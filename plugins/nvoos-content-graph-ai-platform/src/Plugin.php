@@ -45,6 +45,8 @@ final class Plugin {
 		$this->registerOutboundWebhook();
 		$this->registerCronManager();
 		$this->registerApprovals();
+		$this->registerJobNotifier();
+		$this->registerJobNotifierRest();
 	}
 
 	private function registerAdmin(): void {
@@ -309,6 +311,48 @@ final class Plugin {
 		if ( class_exists( __NAMESPACE__ . '\Approvals\ApprovalQueue' ) ) {
 			add_action( 'init', array( \NvoosContentGraphAiPlatform\Approvals\ApprovalQueue::class, 'register_cpt' ), 11 );
 			add_action( 'init', array( \NvoosContentGraphAiPlatform\Approvals\ApprovalQueue::class, 'register_cron' ), 1 );
+		}
+	}
+
+	/**
+	 * Register the job notifier (Wave E2).
+	 *
+	 * Standalone-only: the base plugin's job-notifier-init.php owns the
+	 * same lifecycle-hook + cleanup-cron registration in monolith installs;
+	 * double registration would double-cache every job event.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerJobNotifier(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Queues\JobNotifier' ) ) {
+			\NvoosContentGraphAiPlatform\Queues\JobNotifier::init();
+		}
+	}
+
+	/**
+	 * Register the job notifier REST routes (Wave E2).
+	 *
+	 * Standalone-only: the base plugin's job-notifier-init.php owns the
+	 * same `mcp-ai/v1` jobs routes in monolith installs; double
+	 * registration would collide on the shared namespace.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerJobNotifierRest(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Rest\JobNotifierRestController' ) ) {
+			\NvoosContentGraphAiPlatform\Rest\JobNotifierRestController::init();
 		}
 	}
 
