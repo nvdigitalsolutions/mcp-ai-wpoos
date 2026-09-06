@@ -44,8 +44,10 @@ final class Plugin {
 		$this->registerDeadLetterQueue();
 		$this->registerOutboundWebhook();
 		$this->registerCronManager();
+		$this->registerApprovals();
 		$this->registerJobNotifier();
 		$this->registerJobNotifierRest();
+		$this->registerA2aRest();
 		$this->registerWorkflowCpts();
 	}
 
@@ -292,6 +294,29 @@ final class Plugin {
 	}
 
 	/**
+	 * Register the HITL approval queue (Wave E3).
+	 *
+	 * Standalone-only: the base bootstrap loader owns the same `init`
+	 * registration (CPT priority 11, cleanup cron priority 1) in monolith
+	 * installs; double registration would collide on the shared
+	 * `mcp_ai_approval` CPT slug.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerApprovals(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Approvals\ApprovalQueue' ) ) {
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Approvals\ApprovalQueue::class, 'register_cpt' ), 11 );
+			add_action( 'init', array( \NvoosContentGraphAiPlatform\Approvals\ApprovalQueue::class, 'register_cron' ), 1 );
+		}
+	}
+
+	/**
 	 * Register the job notifier (Wave E2).
 	 *
 	 * Standalone-only: the base plugin's job-notifier-init.php owns the
@@ -330,6 +355,29 @@ final class Plugin {
 
 		if ( class_exists( __NAMESPACE__ . '\Rest\JobNotifierRestController' ) ) {
 			\NvoosContentGraphAiPlatform\Rest\JobNotifierRestController::init();
+		}
+	}
+
+	/**
+	 * Register the A2A REST receive routes (Wave E5).
+	 *
+	 * Standalone-only: the base loader owns the same `mcp-ai/v1/a2a`
+	 * routes in monolith installs (boot-gated on `enable_a2a_server`);
+	 * double registration would collide on the shared namespace. The
+	 * request-level `a2a_disabled` gate is enforced per-request in both
+	 * modes.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerA2aRest(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\Rest\A2aRestController' ) ) {
+			\NvoosContentGraphAiPlatform\Rest\A2aRestController::init();
 		}
 	}
 
