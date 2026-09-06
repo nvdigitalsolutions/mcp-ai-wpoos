@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Contains the entire PSR-4 source tree for the NV oOS Content Graph — AI addon — the composition root (`Plugin`), the `nvoos/core` engine bridge (`CoreBridge`), adapters, embeddings, RAG, agent memory, REST endpoints, 13 AI-powered tools, and the ported engine pieces (Wave E6: OOS shadow runner, gates, suppression).
+Contains the entire PSR-4 source tree for the NV oOS Content Graph — AI addon — the composition root (`Plugin`), the `nvoos/core` engine bridge (`CoreBridge`), adapters, embeddings, RAG, agent memory, REST endpoints, 13 AI-powered tools, and the ported engine pieces (Wave E6: OOS shadow runner, gates, suppression; markup elicitation subsystem under `Engine/Markup/`).
 
 ## Tier
 
@@ -25,6 +25,7 @@ Root-level classes form the addon's backbone:
 | `NvoosContentGraphAi\Security\CredentialStore` | `Security/CredentialStore.php` | Encrypted API key storage, save-path routing, render masking, legacy-plaintext migration |
 | `NvoosContentGraphAi\Cli` | `Cli.php` | WP-CLI commands (`wp nvoos-cg-ai migrate-keys` / `key-status` / `status` / `tools list` / `providers list` / `settings list|get` / `graph stats` / `oos parity [diff]` — the parity surface is standalone-only) |
 | `NvoosContentGraphAi\Engine\OosShadowRunner` | `Engine/OosShadowRunner.php` | Sampled parallel OOS shadow runs + parity store (Wave E6, standalone-only) |
+| `NvoosContentGraphAi\Engine\Markup\MarkupBootstrap` | `Engine/Markup/MarkupBootstrap.php` | Markup elicitation bootstrap — interrupt-and-resume canvas flow (Wave E6, standalone-only); full surface in `Engine/Markup/README.md` |
 
 ## Inputs / Outputs / Neighbors
 

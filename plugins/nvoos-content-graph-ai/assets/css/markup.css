@@ -1,0 +1,196 @@
+/**
+ * NV oOS Markup Subsystem — chat canvas styles.
+ *
+ * Scoped under `.wp-mcp-ai-markup` so the inline canvas inherits the
+ * host site's typography but does not leak into surrounding chat
+ * markup. Honours `prefers-reduced-motion` and provides a high
+ * contrast palette by default.
+ *
+ * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
+
+.wp-mcp-ai-markup {
+	box-sizing: border-box;
+	margin: 12px 0;
+	padding: 12px;
+	border: 1px solid var(--wp-mcp-ai-markup-border, #d0d4d9);
+	border-radius: 8px;
+	background: var(--wp-mcp-ai-markup-bg, #fafbfc);
+	font-family: inherit;
+	font-size: 14px;
+	color: inherit;
+	max-width: 100%;
+}
+
+.wp-mcp-ai-markup *,
+.wp-mcp-ai-markup *::before,
+.wp-mcp-ai-markup *::after {
+	box-sizing: border-box;
+}
+
+.wp-mcp-ai-markup__instructions {
+	margin: 0 0 8px 0;
+	font-style: italic;
+	color: var(--wp-mcp-ai-markup-instruction, #444);
+}
+
+.wp-mcp-ai-markup__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 8px;
+	align-items: center;
+}
+
+.wp-mcp-ai-markup__toolbar-spacer {
+	flex: 1;
+}
+
+.wp-mcp-ai-markup__tool,
+.wp-mcp-ai-markup__action {
+	background: #fff;
+	border: 1px solid #c7ccd2;
+	color: #1d2327;
+	padding: 4px 10px;
+	font-size: 13px;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background 80ms ease;
+}
+
+.wp-mcp-ai-markup__tool:hover,
+.wp-mcp-ai-markup__action:hover,
+.wp-mcp-ai-markup__tool:focus-visible,
+.wp-mcp-ai-markup__action:focus-visible {
+	background: #f0f4f8;
+	outline: 2px solid #2271b1;
+	outline-offset: 1px;
+}
+
+.wp-mcp-ai-markup__tool[aria-pressed="true"] {
+	background: #2271b1;
+	color: #fff;
+	border-color: #2271b1;
+}
+
+.wp-mcp-ai-markup__canvas {
+	position: relative;
+	width: 100%;
+	min-height: 240px;
+	border: 1px dashed #c7ccd2;
+	background: repeating-conic-gradient(#f5f5f5 0 25%, #ffffff 0 50%) 0 0 / 24px 24px;
+	cursor: crosshair;
+}
+
+.wp-mcp-ai-markup__canvas:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.wp-mcp-ai-markup__footer {
+	margin-top: 8px;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	align-items: center;
+}
+
+.wp-mcp-ai-markup__cancel.button-link {
+	background: transparent;
+	border: 0;
+	color: #2271b1;
+	cursor: pointer;
+	padding: 4px 8px;
+}
+
+.wp-mcp-ai-markup__cancel.button-link:hover {
+	text-decoration: underline;
+}
+
+.wp-mcp-ai-markup__submit.button {
+	background: #2271b1;
+	color: #fff;
+	border: 0;
+	padding: 6px 14px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.wp-mcp-ai-markup__submit.button:disabled {
+	background: #8c8f94;
+	cursor: not-allowed;
+}
+
+/* Fallback variant for hosts that cannot run Konva. */
+.wp-mcp-ai-markup-fallback {
+	margin: 12px 0;
+	padding: 12px 14px;
+	border-left: 4px solid #2271b1;
+	background: #f0f6fc;
+	border-radius: 4px;
+	font-size: 14px;
+}
+
+.wp-mcp-ai-markup-fallback__title {
+	margin: 0 0 6px 0;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-markup-fallback__instructions {
+	margin: 0 0 8px 0;
+	color: #2c3338;
+}
+
+.wp-mcp-ai-markup-fallback__open {
+	display: inline-block;
+	margin-right: 8px;
+	background: #2271b1;
+	color: #fff;
+	padding: 4px 10px;
+	border-radius: 4px;
+	text-decoration: none;
+}
+
+.wp-mcp-ai-markup-fallback__open:focus-visible {
+	outline: 2px solid #135e96;
+	outline-offset: 2px;
+}
+
+.wp-mcp-ai-markup-fallback__cancel {
+	background: transparent;
+	border: 0;
+	color: #2271b1;
+	cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wp-mcp-ai-markup__tool,
+	.wp-mcp-ai-markup__action {
+		transition: none;
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	.wp-mcp-ai-markup {
+		background: #1d2327;
+		border-color: #3c434a;
+		color: #f0f0f1;
+	}
+	.wp-mcp-ai-markup__tool,
+	.wp-mcp-ai-markup__action {
+		background: #2c3338;
+		color: #f0f0f1;
+		border-color: #3c434a;
+	}
+	.wp-mcp-ai-markup__canvas {
+		border-color: #3c434a;
+		background: repeating-conic-gradient(#2c3338 0 25%, #1d2327 0 50%) 0 0 / 24px 24px;
+	}
+	.wp-mcp-ai-markup-fallback {
+		background: #1f2a36;
+		color: #f0f0f1;
+	}
+}
