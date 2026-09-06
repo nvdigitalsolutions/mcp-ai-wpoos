@@ -52,6 +52,7 @@ final class Plugin {
 		$this->registerTenant();
 		$this->registerIntegrations();
 		$this->registerGoogleCalendar();
+		$this->registerContentAssistant();
 	}
 
 	private function registerAdmin(): void {
@@ -543,6 +544,28 @@ final class Plugin {
 
 		if ( class_exists( __NAMESPACE__ . '\Google\GoogleCalendarBootstrap' ) ) {
 			add_action( 'init', array( \NvoosContentGraphAiPlatform\Google\GoogleCalendarBootstrap::class, 'register' ) );
+		}
+	}
+
+	/**
+	 * Register the AI Content Assistant metabox (Wave E4, sub-cluster 4).
+	 *
+	 * Standalone-only: the base loader's `content-assistant-init.php` owns
+	 * the same `admin_init` wiring in monolith installs; double
+	 * registration would double-add the metabox to every post edit
+	 * screen.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return void
+	 */
+	private function registerContentAssistant(): void {
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			return;
+		}
+
+		if ( class_exists( __NAMESPACE__ . '\ContentAssistant\ContentAssistantBootstrap' ) ) {
+			add_action( 'admin_init', array( \NvoosContentGraphAiPlatform\ContentAssistant\ContentAssistantBootstrap::class, 'register' ) );
 		}
 	}
 
